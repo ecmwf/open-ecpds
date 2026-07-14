@@ -210,6 +210,7 @@
 								<th>Protocol</th>
 								<th>Remote IP</th>
 								<th>Data Mover</th>
+								<c:if test="${incoming.portalService eq 'self-service'}"><th>Subscriber</th></c:if>
 								<th>Start Time (UTC)</th>
 								<th>Duration</th>
 								<auth:if basePathKey="incoming.basepath" paths="/edit/update">
@@ -224,6 +225,16 @@
 									<td><span class="badge bg-secondary-subtle text-secondary-emphasis border">${s.protocol}</span></td>
 									<td>${s.remoteIpAddress}</td>
 									<td>${s.dataMoverName}</td>
+									<c:if test="${incoming.portalService eq 'self-service'}">
+									<td>
+										<c:choose>
+											<c:when test="${not empty s.subscriberEmail}">
+												<a href="mailto:${s.subscriberEmail}" class="text-decoration-none small">${s.subscriberEmail}</a>
+											</c:when>
+											<c:otherwise><span class="text-muted small">—</span></c:otherwise>
+										</c:choose>
+									</td>
+									</c:if>
 									<td data-order="${s.startTime}"><span class="ic-ts" data-ts="${s.startTime}">${s.startTime}</span></td>
 									<td>${s.formatedDuration}</td>
 									<auth:if basePathKey="incoming.basepath" paths="/edit/update">

@@ -29,7 +29,12 @@
       <li><strong>Granularity</strong> &mdash; today's data is available immediately from live counters; historical data is aggregated nightly and kept indefinitely.</li>
       <li><strong>Deleted destinations</strong> &mdash; once a destination is removed from the system its historical traffic records are also permanently deleted and will no longer be included in these totals.</li>
     </ul>
-    <p class="mb-0 text-muted">As a result, the totals on this page may be lower than the true cumulative historical traffic if destinations have been deleted.</p>
+    <strong class="d-block mb-1 mt-2">Controls</strong>
+    <ul class="mb-0 ps-3">
+      <li><strong>Period</strong> &mdash; use the <kbd>30d</kbd> / <kbd>90d</kbd> / <kbd>180d</kbd> / <kbd>1y</kbd> / <kbd>All</kbd> buttons to restrict the visible data. The period filter applies simultaneously to the summary stat cards, the chart, and the table.</li>
+      <li><strong>Table / Chart</strong> &mdash; switch between the bar/line chart view and a sortable, paginated table of daily figures.</li>
+      <li><strong>Sort order</strong> (&uarr;&darr; button) &mdash; toggle between showing the earliest or latest dates first. Applies to both the chart and the table.</li>
+    </ul>
   </div>
 </div>
 
@@ -97,9 +102,18 @@ const tDuration = _si.map(i=>_tDuration[i]);
 const tFiles    = _si.map(i=>_tFiles[i]);
 </script>
 
-<%-- Header bar: view toggle --%>
-<div class="d-flex justify-content-end align-items-center mb-3 mt-2 flex-wrap gap-2">
-  <div class="d-flex align-items-center gap-1">
+<%-- Header bar: period selector (left) + view toggle (right) --%>
+<div class="d-flex align-items-center mb-3 mt-2 flex-wrap gap-2">
+  <span class="text-muted" style="font-size:0.82rem;">Period:</span>
+  <div class="btn-group btn-group-sm" id="chartPeriodSelector">
+    <button class="btn btn-outline-secondary" data-days="30"  onclick="setChartPeriod(30)">30d</button>
+    <button class="btn btn-outline-secondary" data-days="90"  onclick="setChartPeriod(90)">90d</button>
+    <button class="btn btn-outline-secondary" data-days="180" onclick="setChartPeriod(180)">180d</button>
+    <button class="btn btn-outline-secondary" data-days="365" onclick="setChartPeriod(365)">1y</button>
+    <button class="btn btn-outline-secondary active" data-days="0" onclick="setChartPeriod(0)">All</button>
+  </div>
+  <span id="chartPeriodLabel" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis border" style="display:none;font-size:0.75rem;font-weight:500;"></span>
+  <div class="ms-auto d-flex align-items-center gap-1">
     <button type="button" class="btn btn-sm btn-outline-secondary" id="btnTable" onclick="setView('table')">
       <i class="bi bi-table me-1"></i>Table
     </button>
@@ -111,19 +125,6 @@ const tFiles    = _si.map(i=>_tFiles[i]);
       <i class="bi bi-sort-down-alt" id="btnReverseIcon"></i>
     </button>
   </div>
-</div>
-
-<%-- Period selector — global, affects both stat cards and chart --%>
-<div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-  <span class="text-muted" style="font-size:0.82rem;">Period:</span>
-  <div class="btn-group btn-group-sm" id="chartPeriodSelector">
-    <button class="btn btn-outline-secondary" data-days="30"  onclick="setChartPeriod(30)">30d</button>
-    <button class="btn btn-outline-secondary" data-days="90"  onclick="setChartPeriod(90)">90d</button>
-    <button class="btn btn-outline-secondary" data-days="180" onclick="setChartPeriod(180)">180d</button>
-    <button class="btn btn-outline-secondary" data-days="365" onclick="setChartPeriod(365)">1y</button>
-    <button class="btn btn-outline-secondary active" data-days="0" onclick="setChartPeriod(0)">All</button>
-  </div>
-  <span id="chartPeriodLabel" class="text-muted ms-1" style="font-size:0.78rem;"></span>
 </div>
 
 <%-- Summary stat cards — reflect the selected period --%>
@@ -436,7 +437,9 @@ function buildCharts() {
   var pt = n > 180 ? 0 : n > 60 ? 1.5 : 3;
 
   var label = document.getElementById('chartPeriodLabel');
-  label.textContent = n < tLabels.length ? '(' + n + ' of ' + tLabels.length + ' days shown)' : '(' + n + ' days)';
+  var txt = n < tLabels.length ? n + ' of ' + tLabels.length + ' days shown' : n + ' days';
+  label.textContent = txt;
+  label.style.display = txt ? '' : 'none';
 
   _chartBR = new Chart(document.getElementById('chartBytesRate'), {
     data: {

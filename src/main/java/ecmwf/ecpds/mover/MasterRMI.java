@@ -180,6 +180,21 @@ final class MasterRMI implements MasterProxy {
     }
 
     @Override
+    public boolean isSubscriberActive(final long psbId) throws Exception {
+        return _mover.getMasterInterface().isSubscriberActive(psbId);
+    }
+
+    @Override
+    public long findSubscriberIdByPassword(final String inuId, final String password) throws Exception {
+        return _mover.getMasterInterface().findSubscriberIdByPassword(inuId, password);
+    }
+
+    @Override
+    public String getPortalSubscriberEmail(final long psbId) throws Exception {
+        return _mover.getMasterInterface().getPortalSubscriberEmail(psbId);
+    }
+
+    @Override
     public void releaseConnectionSlot(final String incomingUser) throws Exception {
         _mover.getMasterInterface().releaseConnectionSlot(incomingUser);
     }

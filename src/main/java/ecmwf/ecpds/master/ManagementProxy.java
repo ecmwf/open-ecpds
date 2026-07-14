@@ -1097,7 +1097,21 @@ final class ManagementProxy implements ManagementInterface {
     /**
      * {@inheritDoc}
      *
-     * Removes the incoming policy.
+     * Inserts a new portal subscriber.
+     */
+    @Override
+    public String insertPortalSubscriber(final ECpdsSession session, final String inuId, final String email,
+            final String name, final String iso) throws MasterException, DataBaseException, RemoteException {
+        if (session == null || inuId == null || email == null || name == null) {
+            throw new MasterException("Invalid parameter(s) for insertPortalSubscriber");
+        }
+        final var monitor = new MonitorCall(
+                "insertPortalSubscriber(" + session.getWebUser().getName() + "," + inuId + "," + email + ")");
+        final var password = managementInterface.insertPortalSubscriber(session, inuId, email, name, iso);
+        return monitor.done(password);
+    }
+
+    /**
      */
     @Override
     public void removeIncomingPolicy(final ECpdsSession session, final IncomingPolicy policy)

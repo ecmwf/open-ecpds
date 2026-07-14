@@ -27,24 +27,31 @@
     <c:choose>
       <c:when test="${not empty portalTrafficUser}">
         <strong class="d-block mb-1">Data Portal Traffic &mdash; user <c:out value="${portalTrafficUser}"/></strong>
-        <p class="mb-1">This page shows the Data Portal activity for user <strong><c:out value="${portalTrafficUser}"/></strong>, aggregated by day. It can help identify the best time to connect: periods with fewer connections and lower transfer rates indicate less contention on the portal.</p>
+        <p class="mb-1">Daily Data Portal activity for user <strong><c:out value="${portalTrafficUser}"/></strong>. Periods with fewer connections and lower transfer rates indicate lower contention on the portal.</p>
         <ul class="mb-1 ps-3">
-          <li><strong>Connections</strong> &mdash; number of sessions authenticated by this user during the day.</li>
-          <li><strong>Uploaded / Downloaded</strong> &mdash; total bytes transferred in each direction by this user.</li>
-          <li><strong>Upload / Download Rate</strong> &mdash; average Mbps computed from total bytes and cumulated transfer duration for this user's sessions.</li>
+          <li><strong>Connections</strong> &mdash; number of sessions authenticated by this user each day.</li>
+          <li><strong>Uploaded / Downloaded</strong> &mdash; total bytes transferred in each direction.</li>
+          <li><strong>Upload / Download Rate</strong> &mdash; average Mbps (bytes &divide; cumulated transfer duration) for this user's sessions.</li>
           <li><strong>Granularity</strong> &mdash; today's activity appears immediately from live minute-buckets; past days are aggregated nightly and kept indefinitely.</li>
         </ul>
       </c:when>
       <c:otherwise>
         <strong class="d-block mb-1">Data Portal Traffic &mdash; all users</strong>
-        <p class="mb-1">This page shows aggregated Data Portal traffic across all incoming users, by day.</p>
+        <p class="mb-1">Aggregated daily Data Portal traffic across all incoming users.</p>
         <ul class="mb-1 ps-3">
-          <li><strong>Connections</strong> &mdash; total number of new sessions authenticated across all users during the period.</li>
+          <li><strong>Connections</strong> &mdash; total sessions authenticated across all users each day.</li>
+          <li><strong>Uploaded / Downloaded</strong> &mdash; total bytes transferred in each direction.</li>
           <li><strong>Upload / Download Rate</strong> &mdash; average Mbps computed from total bytes and cumulated transfer duration across all sessions.</li>
-          <li><strong>Granularity</strong> &mdash; today's data is shown at daily granularity from live minute-buckets; historical data is aggregated nightly into a permanent daily table and kept indefinitely.</li>
+          <li><strong>Granularity</strong> &mdash; today's data is shown from live minute-buckets; historical data is aggregated nightly and kept indefinitely.</li>
         </ul>
       </c:otherwise>
     </c:choose>
+    <strong class="d-block mb-1 mt-2">Controls</strong>
+    <ul class="mb-0 ps-3">
+      <li><strong>Period</strong> &mdash; use the <kbd>30d</kbd> / <kbd>90d</kbd> / <kbd>180d</kbd> / <kbd>1y</kbd> / <kbd>All</kbd> buttons to restrict the visible data. The filter applies to the summary stat cards, the chart, and the table simultaneously.</li>
+      <li><strong>Table / Chart</strong> &mdash; switch between the bar/line chart view and a sortable, paginated table of daily figures.</li>
+      <li><strong>Sort order</strong> (&uarr;&darr; button) &mdash; toggle between latest-first and earliest-first. Applies to both the chart and the table.</li>
+    </ul>
   </div>
 </div>
 
@@ -90,7 +97,7 @@ const ptTotalConn = ptConnections.reduce((a,b)=>a+b,0);
 const ptPeakIn   = Math.max(...ptRateIn);
 const ptPeakOut  = Math.max(...ptRateOut);
 
-var _ptChartConn = null, _ptChartBw = null, _ptObsTheme = null;
+var _ptChartConn = null, _ptChartBw = null, _ptObsTheme = null, _ptPeriod = 0;
 
 function ptGetThemeColors() {
   var s = getComputedStyle(document.documentElement);
@@ -100,13 +107,63 @@ function ptGetThemeColors() {
   };
 }
 
+function ptGetPeriodIndices() {
+  if (_ptPeriod <= 0) return ptTimes.map(function(_, i) { return i; });
+  var cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - _ptPeriod);
+  var cutStr = cutoff.toISOString().substring(0, 10);
+  var out = [];
+  for (var i = 0; i < ptTimes.length; i++) { if (ptTimes[i] >= cutStr) out.push(i); }
+  return out;
+}
+
+function ptSetPeriod(days) {
+  _ptPeriod = days;
+  document.querySelectorAll('#ptPeriodSelector .btn').forEach(function(b) {
+    b.classList.toggle('active', parseInt(b.getAttribute('data-days'), 10) === days);
+  });
+  ptUpdatePeriodLabel();
+  ptUpdateStats();
+  _ptPage = 0;
+  if (document.getElementById('ptTableView').style.display !== 'none') ptBuildTable();
+  if (document.getElementById('ptChartView').style.display !== 'none') ptBuildCharts();
+  try { localStorage.setItem('ptPeriod', days); } catch(e) {}
+}
+
+function ptUpdatePeriodLabel() {
+  var label = document.getElementById('ptPeriodLabel');
+  if (!label) return;
+  var idx = ptGetPeriodIndices();
+  if (!idx.length) { label.textContent = ''; label.style.display = 'none'; return; }
+  label.textContent = idx.length + ' day' + (idx.length === 1 ? '' : 's') +
+    (_ptPeriod > 0 ? ' (' + ptTimes[idx[0]] + ' \u2013 ' + ptTimes[idx[idx.length-1]] + ')' : '');
+  label.style.display = '';
+}
+
+function ptUpdateStats() {
+  var idx = ptGetPeriodIndices();
+  var totalConn = 0, totalIn = 0, totalOut = 0, peakIn = 0, peakOut = 0;
+  idx.forEach(function(i) {
+    totalConn += ptConnections[i]; totalIn += ptBytesIn[i]; totalOut += ptBytesOut[i];
+    if (ptRateIn[i]  > peakIn)  peakIn  = ptRateIn[i];
+    if (ptRateOut[i] > peakOut) peakOut = ptRateOut[i];
+  });
+  document.getElementById('ptStatConn').textContent    = totalConn.toLocaleString();
+  document.getElementById('ptStatIn').textContent      = ptFmtBytes(totalIn);
+  document.getElementById('ptStatOut').textContent     = ptFmtBytes(totalOut);
+  document.getElementById('ptStatPeakIn').textContent  = ptFmtRate(peakIn);
+  document.getElementById('ptStatPeakOut').textContent = ptFmtRate(peakOut);
+}
+
 function ptBuildCharts() {
   if (_ptChartConn) { _ptChartConn.destroy(); _ptChartConn = null; }
   if (_ptChartBw)   { _ptChartBw.destroy();   _ptChartBw   = null; }
-  var labels = _ptReversed ? ptTimes.slice().reverse()       : ptTimes;
-  var conn   = _ptReversed ? ptConnections.slice().reverse() : ptConnections;
-  var rIn    = _ptReversed ? ptRateIn.slice().reverse()      : ptRateIn;
-  var rOut   = _ptReversed ? ptRateOut.slice().reverse()     : ptRateOut;
+  var idx = ptGetPeriodIndices();
+  if (_ptReversed) idx = idx.slice().reverse();
+  var labels = idx.map(function(i) { return ptTimes[i]; });
+  var conn   = idx.map(function(i) { return ptConnections[i]; });
+  var rIn    = idx.map(function(i) { return ptRateIn[i]; });
+  var rOut   = idx.map(function(i) { return ptRateOut[i]; });
   var theme = ptGetThemeColors();
   _ptChartConn = new Chart(document.getElementById('ptConnChart'), {
     type: 'bar',
@@ -146,12 +203,16 @@ function ptSetView(v) {
   document.addEventListener('DOMContentLoaded', function() {
   // Restore reversed preference (default: true = latest first)
   try { var r = localStorage.getItem('ptReversed'); if (r !== null) _ptReversed = (r === '1'); } catch(e) {}
-  // Populate summary cards
-  document.getElementById('ptStatConn').textContent    = ptTotalConn.toLocaleString();
-  document.getElementById('ptStatIn').textContent      = ptFmtBytes(ptTotalIn);
-  document.getElementById('ptStatOut').textContent     = ptFmtBytes(ptTotalOut);
-  document.getElementById('ptStatPeakIn').textContent  = ptFmtRate(ptPeakIn);
-  document.getElementById('ptStatPeakOut').textContent = ptFmtRate(ptPeakOut);
+  // Restore period preference (default: 0 = all)
+  try { var p = parseInt(localStorage.getItem('ptPeriod'), 10); if ([30,90,180,365,0].indexOf(p) >= 0) {
+    _ptPeriod = p;
+    document.querySelectorAll('#ptPeriodSelector .btn').forEach(function(b) {
+      b.classList.toggle('active', parseInt(b.getAttribute('data-days'), 10) === p);
+    });
+  }} catch(e) {}
+  // Populate summary cards (period-aware)
+  ptUpdateStats();
+  ptUpdatePeriodLabel();
 
   // Restore page size preference
   try { var ps = parseInt(localStorage.getItem('ptPageSize'),10); if([10,25,50,100,250].indexOf(ps)>=0){ _ptPageSize=ps; document.getElementById('ptPageSizeSelect').value=ps; } } catch(e){}
@@ -172,9 +233,18 @@ function ptSetView(v) {
 });
 </script>
 
-<%-- Table|Chart toggle --%>
-<div class="d-flex justify-content-end align-items-center mb-3 flex-wrap gap-2">
-  <div class="d-flex align-items-center gap-1">
+<%-- Header bar: period selector (left) + view toggle (right) --%>
+<div class="d-flex align-items-center mb-3 flex-wrap gap-2">
+  <span class="text-muted" style="font-size:0.82rem;">Period:</span>
+  <div class="btn-group btn-group-sm" id="ptPeriodSelector">
+    <button class="btn btn-outline-secondary" data-days="30"  onclick="ptSetPeriod(30)">30d</button>
+    <button class="btn btn-outline-secondary" data-days="90"  onclick="ptSetPeriod(90)">90d</button>
+    <button class="btn btn-outline-secondary" data-days="180" onclick="ptSetPeriod(180)">180d</button>
+    <button class="btn btn-outline-secondary" data-days="365" onclick="ptSetPeriod(365)">1y</button>
+    <button class="btn btn-outline-secondary active" data-days="0" onclick="ptSetPeriod(0)">All</button>
+  </div>
+  <span id="ptPeriodLabel" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis border" style="display:none;font-size:0.75rem;font-weight:500;"></span>
+  <div class="ms-auto d-flex align-items-center gap-1">
     <button type="button" class="btn btn-sm btn-outline-secondary" id="ptBtnTable" onclick="ptSetView('table')">
       <i class="bi bi-table me-1"></i>Table
     </button>
@@ -285,8 +355,15 @@ function ptSetView(v) {
 var _ptSortedIdx = null, _ptPage = 0, _ptPageSize = 25, _ptSearch = '', _ptReversed = true;
 
 function ptGetFiltered() {
-  var base = _ptSortedIdx || ptTimes.map(function(_,i){return i;});
-  if (_ptReversed && !_ptSortedIdx) base = base.slice().reverse();
+  var periodIdx = ptGetPeriodIndices();
+  var base;
+  if (_ptSortedIdx) {
+    var periodSet = new Set(periodIdx);
+    base = _ptSortedIdx.filter(function(i) { return periodSet.has(i); });
+  } else {
+    base = periodIdx.slice();
+    if (_ptReversed) base = base.slice().reverse();
+  }
   if (!_ptSearch) return base;
   var t = _ptSearch.toLowerCase();
   return base.filter(function(i){ return ptTimes[i].indexOf(t) !== -1; });

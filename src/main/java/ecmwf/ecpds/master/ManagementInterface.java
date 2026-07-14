@@ -1171,6 +1171,33 @@ public interface ManagementInterface extends Remote {
             throws MasterException, DataBaseException, RemoteException;
 
     /**
+     * Creates a new PortalSubscriber for the given IncomingUser with the specified attributes. The subscriber is
+     * created in the active state (no email verification required) and a random password is generated and returned.
+     *
+     * @param session
+     *            the session
+     * @param inuId
+     *            the IncomingUser login to associate the subscriber with
+     * @param email
+     *            the subscriber email address
+     * @param name
+     *            the subscriber display name
+     * @param iso
+     *            the ISO 3166-1 alpha-2 country code (may be null or empty)
+     *
+     * @return the generated plaintext password for the new subscriber
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    String insertPortalSubscriber(ECpdsSession session, String inuId, String email, String name, String iso)
+            throws MasterException, DataBaseException, RemoteException;
+
+    /**
      * Removes the IncomingPolicy.
      *
      * @param session

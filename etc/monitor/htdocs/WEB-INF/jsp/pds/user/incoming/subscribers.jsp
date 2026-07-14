@@ -45,9 +45,14 @@
                 <li><a class="dropdown-item" href="#" data-psb-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides: Country, Registered</small></a></li>
             </ul>
         </div>
-        <a href="/do/user/incoming/${incoming.id}" class="btn btn-sm btn-outline-secondary" title="Back to Data User">
-            <i class="bi bi-arrow-left"></i> Back
-        </a>
+        <auth:if basePathKey="incoming.basepath" paths="/subscribers/${incoming.id}/edit/insert">
+        <auth:then>
+        <button type="button" class="btn btn-sm btn-outline-success" onclick="psbCreate()"
+                title="Create a new subscriber directly">
+            <i class="bi bi-plus-circle"></i> Create
+        </button>
+        </auth:then>
+        </auth:if>
     </div>
 </div>
 
@@ -101,7 +106,7 @@
             <th>Name</th>
             <th class="text-center">Country</th>
             <th class="text-center">Status</th>
-            <th>Registered</th>
+            <th>Registered (UTC)</th>
             <th class="text-center no-sort">Actions</th>
             <th class="d-none">StatusSort</th>
             <th class="d-none">TimeSort</th>
@@ -209,6 +214,7 @@
                     url: '/do/user/incoming/subscribers/' + encodeURIComponent(inuId) + '/edit/activate/' + psbId + '?active=' + activate,
                     method: 'POST',
                     success: function(data) {
+                        $("#loadingBackdrop").hide(); $("#loadingDiv").hide();
                         if (data && data.ok) {
                             _showMsg('success', data.message || 'Updated.');
                             if (_table) _table.ajax.reload(null, false);
@@ -216,7 +222,10 @@
                             _showMsg('danger', (data && data.message) ? data.message : 'Error updating subscriber.');
                         }
                     },
-                    error: function() { _showMsg('danger', 'Error updating subscriber.'); }
+                    error: function() {
+                        $("#loadingBackdrop").hide(); $("#loadingDiv").hide();
+                        _showMsg('danger', 'Error updating subscriber.');
+                    }
                 });
             }
         });
@@ -232,6 +241,7 @@
                     url: '/do/user/incoming/subscribers/' + encodeURIComponent(inuId) + '/edit/delete/' + psbId,
                     method: 'POST',
                     success: function(data) {
+                        $("#loadingBackdrop").hide(); $("#loadingDiv").hide();
                         if (data && data.ok) {
                             _showMsg('success', data.message || 'Deleted.');
                             if (_table) _table.ajax.reload(null, false);
@@ -239,7 +249,10 @@
                             _showMsg('danger', (data && data.message) ? data.message : 'Error deleting subscriber.');
                         }
                     },
-                    error: function() { _showMsg('danger', 'Error deleting subscriber.'); }
+                    error: function() {
+                        $("#loadingBackdrop").hide(); $("#loadingDiv").hide();
+                        _showMsg('danger', 'Error deleting subscriber.');
+                    }
                 });
             }
         });
@@ -267,6 +280,7 @@
             ],
             dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
         });
+        window._psbTable = _table;
 
         $('#psbPageLen').val(String(savedLen));
         $('#psbPageLen').on('change', function() {
@@ -323,5 +337,297 @@
             _applyMode(mode);
         });
     });
+
+    window.psbCreate = function() {
+        $('#psbCreateEmail').val('');
+        $('#psbCreateName').val('');
+        $('#psbCreateIso').val('');
+        $('#psbCreateError').hide().text('');
+        $('#psbCreateResult').hide();
+        $('#psbCreateForm').show();
+        $('#psbCreateModalSubmit').prop('disabled', false);
+        var modal = new bootstrap.Modal(document.getElementById('psbCreateModal'));
+        modal.show();
+    };
+})();
+</script>
+
+<%-- Create Subscriber Modal --%>
+<div class="modal fade" id="psbCreateModal" tabindex="-1" aria-labelledby="psbCreateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="psbCreateModalLabel">
+                    <i class="bi bi-person-plus-fill me-2 text-success"></i>Create Subscriber
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="psbCreateError" class="alert alert-danger py-2 small" style="display:none"></div>
+                <div id="psbCreateResult" class="alert alert-success py-2 small" style="display:none"></div>
+                <div id="psbCreateForm">
+                    <div class="mb-3">
+                        <label for="psbCreateEmail" class="form-label fw-semibold">Email address <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="psbCreateEmail" placeholder="user@example.com" autocomplete="off">
+                    </div>
+                    <div class="mb-3">
+                        <label for="psbCreateName" class="form-label fw-semibold">Full name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="psbCreateName" placeholder="First Last" autocomplete="off">
+                    </div>
+                    <div class="mb-1">
+                        <label for="psbCreateIso" class="form-label fw-semibold">Country <small class="text-muted fw-normal">(optional)</small></label>
+                        <select class="form-select" id="psbCreateIso">
+                            <option value="">Select a country…</option>
+                            <option value="AF">Afghanistan</option>
+                            <option value="AL">Albania</option>
+                            <option value="DZ">Algeria</option>
+                            <option value="AD">Andorra</option>
+                            <option value="AO">Angola</option>
+                            <option value="AG">Antigua and Barbuda</option>
+                            <option value="AR">Argentina</option>
+                            <option value="AM">Armenia</option>
+                            <option value="AU">Australia</option>
+                            <option value="AT">Austria</option>
+                            <option value="AZ">Azerbaijan</option>
+                            <option value="BS">Bahamas</option>
+                            <option value="BH">Bahrain</option>
+                            <option value="BD">Bangladesh</option>
+                            <option value="BB">Barbados</option>
+                            <option value="BY">Belarus</option>
+                            <option value="BE">Belgium</option>
+                            <option value="BZ">Belize</option>
+                            <option value="BJ">Benin</option>
+                            <option value="BT">Bhutan</option>
+                            <option value="BO">Bolivia</option>
+                            <option value="BA">Bosnia and Herzegovina</option>
+                            <option value="BW">Botswana</option>
+                            <option value="BR">Brazil</option>
+                            <option value="BN">Brunei</option>
+                            <option value="BG">Bulgaria</option>
+                            <option value="BF">Burkina Faso</option>
+                            <option value="BI">Burundi</option>
+                            <option value="CV">Cabo Verde</option>
+                            <option value="KH">Cambodia</option>
+                            <option value="CM">Cameroon</option>
+                            <option value="CA">Canada</option>
+                            <option value="CF">Central African Republic</option>
+                            <option value="TD">Chad</option>
+                            <option value="CL">Chile</option>
+                            <option value="CN">China</option>
+                            <option value="CO">Colombia</option>
+                            <option value="KM">Comoros</option>
+                            <option value="CD">Congo (DR)</option>
+                            <option value="CG">Congo (Republic)</option>
+                            <option value="CR">Costa Rica</option>
+                            <option value="HR">Croatia</option>
+                            <option value="CU">Cuba</option>
+                            <option value="CY">Cyprus</option>
+                            <option value="CZ">Czech Republic</option>
+                            <option value="DK">Denmark</option>
+                            <option value="DJ">Djibouti</option>
+                            <option value="DM">Dominica</option>
+                            <option value="DO">Dominican Republic</option>
+                            <option value="EC">Ecuador</option>
+                            <option value="EG">Egypt</option>
+                            <option value="SV">El Salvador</option>
+                            <option value="GQ">Equatorial Guinea</option>
+                            <option value="ER">Eritrea</option>
+                            <option value="EE">Estonia</option>
+                            <option value="SZ">Eswatini</option>
+                            <option value="ET">Ethiopia</option>
+                            <option value="FJ">Fiji</option>
+                            <option value="FI">Finland</option>
+                            <option value="FR">France</option>
+                            <option value="GA">Gabon</option>
+                            <option value="GM">Gambia</option>
+                            <option value="GE">Georgia</option>
+                            <option value="DE">Germany</option>
+                            <option value="GH">Ghana</option>
+                            <option value="GR">Greece</option>
+                            <option value="GD">Grenada</option>
+                            <option value="GT">Guatemala</option>
+                            <option value="GN">Guinea</option>
+                            <option value="GW">Guinea-Bissau</option>
+                            <option value="GY">Guyana</option>
+                            <option value="HT">Haiti</option>
+                            <option value="HN">Honduras</option>
+                            <option value="HU">Hungary</option>
+                            <option value="IS">Iceland</option>
+                            <option value="IN">India</option>
+                            <option value="ID">Indonesia</option>
+                            <option value="IR">Iran</option>
+                            <option value="IQ">Iraq</option>
+                            <option value="IE">Ireland</option>
+                            <option value="IL">Israel</option>
+                            <option value="IT">Italy</option>
+                            <option value="JM">Jamaica</option>
+                            <option value="JP">Japan</option>
+                            <option value="JO">Jordan</option>
+                            <option value="KZ">Kazakhstan</option>
+                            <option value="KE">Kenya</option>
+                            <option value="KI">Kiribati</option>
+                            <option value="KP">Korea (North)</option>
+                            <option value="KR">Korea (South)</option>
+                            <option value="KW">Kuwait</option>
+                            <option value="KG">Kyrgyzstan</option>
+                            <option value="LA">Laos</option>
+                            <option value="LV">Latvia</option>
+                            <option value="LB">Lebanon</option>
+                            <option value="LS">Lesotho</option>
+                            <option value="LR">Liberia</option>
+                            <option value="LY">Libya</option>
+                            <option value="LI">Liechtenstein</option>
+                            <option value="LT">Lithuania</option>
+                            <option value="LU">Luxembourg</option>
+                            <option value="MG">Madagascar</option>
+                            <option value="MW">Malawi</option>
+                            <option value="MY">Malaysia</option>
+                            <option value="MV">Maldives</option>
+                            <option value="ML">Mali</option>
+                            <option value="MT">Malta</option>
+                            <option value="MH">Marshall Islands</option>
+                            <option value="MR">Mauritania</option>
+                            <option value="MU">Mauritius</option>
+                            <option value="MX">Mexico</option>
+                            <option value="FM">Micronesia</option>
+                            <option value="MD">Moldova</option>
+                            <option value="MC">Monaco</option>
+                            <option value="MN">Mongolia</option>
+                            <option value="ME">Montenegro</option>
+                            <option value="MA">Morocco</option>
+                            <option value="MZ">Mozambique</option>
+                            <option value="MM">Myanmar</option>
+                            <option value="NA">Namibia</option>
+                            <option value="NR">Nauru</option>
+                            <option value="NP">Nepal</option>
+                            <option value="NL">Netherlands</option>
+                            <option value="NZ">New Zealand</option>
+                            <option value="NI">Nicaragua</option>
+                            <option value="NE">Niger</option>
+                            <option value="NG">Nigeria</option>
+                            <option value="MK">North Macedonia</option>
+                            <option value="NO">Norway</option>
+                            <option value="OM">Oman</option>
+                            <option value="PK">Pakistan</option>
+                            <option value="PW">Palau</option>
+                            <option value="PA">Panama</option>
+                            <option value="PG">Papua New Guinea</option>
+                            <option value="PY">Paraguay</option>
+                            <option value="PE">Peru</option>
+                            <option value="PH">Philippines</option>
+                            <option value="PL">Poland</option>
+                            <option value="PT">Portugal</option>
+                            <option value="QA">Qatar</option>
+                            <option value="RO">Romania</option>
+                            <option value="RU">Russia</option>
+                            <option value="RW">Rwanda</option>
+                            <option value="KN">Saint Kitts and Nevis</option>
+                            <option value="LC">Saint Lucia</option>
+                            <option value="VC">Saint Vincent and the Grenadines</option>
+                            <option value="WS">Samoa</option>
+                            <option value="SM">San Marino</option>
+                            <option value="ST">Sao Tome and Principe</option>
+                            <option value="SA">Saudi Arabia</option>
+                            <option value="SN">Senegal</option>
+                            <option value="RS">Serbia</option>
+                            <option value="SC">Seychelles</option>
+                            <option value="SL">Sierra Leone</option>
+                            <option value="SG">Singapore</option>
+                            <option value="SK">Slovakia</option>
+                            <option value="SI">Slovenia</option>
+                            <option value="SB">Solomon Islands</option>
+                            <option value="SO">Somalia</option>
+                            <option value="ZA">South Africa</option>
+                            <option value="SS">South Sudan</option>
+                            <option value="ES">Spain</option>
+                            <option value="LK">Sri Lanka</option>
+                            <option value="SD">Sudan</option>
+                            <option value="SR">Suriname</option>
+                            <option value="SE">Sweden</option>
+                            <option value="CH">Switzerland</option>
+                            <option value="SY">Syria</option>
+                            <option value="TW">Taiwan</option>
+                            <option value="TJ">Tajikistan</option>
+                            <option value="TZ">Tanzania</option>
+                            <option value="TH">Thailand</option>
+                            <option value="TL">Timor-Leste</option>
+                            <option value="TG">Togo</option>
+                            <option value="TO">Tonga</option>
+                            <option value="TT">Trinidad and Tobago</option>
+                            <option value="TN">Tunisia</option>
+                            <option value="TR">Turkey</option>
+                            <option value="TM">Turkmenistan</option>
+                            <option value="TV">Tuvalu</option>
+                            <option value="UG">Uganda</option>
+                            <option value="UA">Ukraine</option>
+                            <option value="AE">United Arab Emirates</option>
+                            <option value="GB">United Kingdom</option>
+                            <option value="US">United States</option>
+                            <option value="UY">Uruguay</option>
+                            <option value="UZ">Uzbekistan</option>
+                            <option value="VU">Vanuatu</option>
+                            <option value="VE">Venezuela</option>
+                            <option value="VN">Vietnam</option>
+                            <option value="YE">Yemen</option>
+                            <option value="ZM">Zambia</option>
+                            <option value="ZW">Zimbabwe</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" id="psbCreateModalSubmit" class="btn btn-success"
+                        onclick="psbCreateSubmit()">
+                    <i class="bi bi-plus-circle me-1"></i>Create Subscriber
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function() {
+    window.psbCreateSubmit = function() {
+        var email = $('#psbCreateEmail').val().trim();
+        var name  = $('#psbCreateName').val().trim();
+        var iso   = $('#psbCreateIso').val();
+        if (!email || !name) {
+            $('#psbCreateError').text('Email and name are required.').show();
+            return;
+        }
+        $('#psbCreateError').hide();
+        $('#psbCreateModalSubmit').prop('disabled', true);
+        $("#loadingBackdrop").show(); $("#loadingDiv").show();
+        $.ajax({
+            type: 'POST',
+            url: '/do/user/incoming/subscribers/' + encodeURIComponent('${incoming.id}') + '/edit/insert',
+            data: { email: email, name: name, iso: iso },
+            dataType: 'json',
+            success: function(r) {
+                $("#loadingBackdrop").hide(); $("#loadingDiv").hide();
+                if (r.ok) {
+                    $('#psbCreateForm').hide();
+                    $('#psbCreateModalSubmit').hide();
+                    $('#psbCreateResult').html(
+                        '<strong><i class="bi bi-check-circle-fill me-1 text-success"></i>Subscriber created.</strong><br>' +
+                        'Email: <code>' + $('<span>').text(email).html() + '</code><br>' +
+                        'Password: <code id="psbCreatedPwd">' + $('<span>').text(r.password).html() + '</code> ' +
+                        '<button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1" title="Copy password" onclick="navigator.clipboard&&navigator.clipboard.writeText($(\'#psbCreatedPwd\').text())">' +
+                        '<i class="bi bi-clipboard"></i></button><br>' +
+                        '<small class="text-muted">Please share these credentials with the subscriber. The password is shown only once.</small>'
+                    ).show();
+                    if (window._psbTable) window._psbTable.ajax.reload(null, false);
+                } else {
+                    $('#psbCreateError').text(r.message || 'Creation failed.').show();
+                    $('#psbCreateModalSubmit').prop('disabled', false);
+                }
+            },
+            error: function() {
+                $("#loadingBackdrop").hide(); $("#loadingDiv").hide();
+                $('#psbCreateError').text('Request failed. Please try again.').show();
+                $('#psbCreateModalSubmit').prop('disabled', false);
+            }
+        });
+    };
 })();
 </script>

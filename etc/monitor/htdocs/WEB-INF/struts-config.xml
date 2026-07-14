@@ -980,6 +980,9 @@
 		<action path="/user/incoming/subscribers/*/edit/delete/*" parameter="{1}|{2}"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.DeletePortalSubscriberAction">
 		</action>
+		<action path="/user/incoming/subscribers/*/edit/insert" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.InsertPortalSubscriberAction">
+		</action>
 		<action path="/user/incoming/subscribers/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetPortalSubscribersAction">
 			<forward name="success" path=".pds.user.incoming.subscribers" />

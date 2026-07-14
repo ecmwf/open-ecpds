@@ -201,6 +201,50 @@ public interface MasterProxy {
     IncomingProfile getIncomingProfileNoAuth(String incomingUser) throws Exception;
 
     /**
+     * Check whether a specific portal subscriber is still active. Lightweight single-row lookup by primary key — used
+     * on cookie re-auth to detect deactivated subscribers without a full password re-validation round-trip.
+     *
+     * @param psbId
+     *            the PortalSubscriber primary key
+     *
+     * @return {@code true} if the subscriber exists and is active
+     *
+     * @throws java.lang.Exception
+     *             the exception
+     */
+    boolean isSubscriberActive(long psbId) throws Exception;
+
+    /**
+     * Find the PSB_ID of the active subscriber matching the given password for the given IncomingUser. Returns -1 if
+     * not found.
+     *
+     * @param inuId
+     *            the IncomingUser login
+     * @param password
+     *            the subscriber password
+     *
+     * @return the subscriber's PSB_ID, or {@code -1} if not found
+     *
+     * @throws java.lang.Exception
+     *             the exception
+     */
+    long findSubscriberIdByPassword(String inuId, String password) throws Exception;
+
+    /**
+     * Get the email address of the portal subscriber with the given PSB_ID. Returns an empty string if the subscriber
+     * does not exist or has no email recorded.
+     *
+     * @param psbId
+     *            the portal subscriber PSB_ID
+     *
+     * @return the subscriber email, or an empty string if not found
+     *
+     * @throws java.lang.Exception
+     *             the exception
+     */
+    String getPortalSubscriberEmail(long psbId) throws Exception;
+
+    /**
      * Releases a pending connection slot for the given user.
      *
      * @param incomingUser

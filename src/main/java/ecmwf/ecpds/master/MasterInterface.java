@@ -414,6 +414,50 @@ public interface MasterInterface extends ProviderInterface {
     String verifyRegistrationToken(String token, boolean autoApprove) throws DataBaseException, RemoteException;
 
     /**
+     * Check whether a specific portal subscriber is still active. This is a lightweight single-row lookup by primary
+     * key used on every cookie re-auth to detect deactivated subscribers without a full password re-validation.
+     *
+     * @param psbId
+     *            the PortalSubscriber primary key
+     *
+     * @return {@code true} if the subscriber exists and {@code PSB_ACTIVE = true}
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    boolean isSubscriberActive(long psbId) throws RemoteException;
+
+    /**
+     * Find the PSB_ID of the active subscriber that matches the given password for the given IncomingUser. Returns
+     * {@code -1} if no active subscriber with that password exists (e.g. standard-login or open-access user).
+     *
+     * @param inuId
+     *            the IncomingUser login
+     * @param password
+     *            the subscriber password to match
+     *
+     * @return the subscriber's PSB_ID, or {@code -1} if not found
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    long findSubscriberIdByPassword(String inuId, String password) throws RemoteException;
+
+    /**
+     * Get the email address of the portal subscriber with the given PSB_ID. Returns an empty string if the subscriber
+     * does not exist or has no email recorded.
+     *
+     * @param psbId
+     *            the portal subscriber PSB_ID
+     *
+     * @return the subscriber email, or an empty string if not found
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    String getPortalSubscriberEmail(long psbId) throws RemoteException;
+
+    /**
      * Send an email notification via the MasterServer mail infrastructure.
      *
      * @param to

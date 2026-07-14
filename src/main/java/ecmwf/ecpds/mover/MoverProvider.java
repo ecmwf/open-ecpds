@@ -99,10 +99,16 @@ public final class MoverProvider extends NativeAuthenticationProvider {
     /** The Class PortalSessionEntry. */
     private static final class PortalSessionEntry {
         final String user;
+        /** PSB_ID of the authenticated subscriber; -1 for non-self-service users. */
+        final long subscriberId;
+        /** Email address of the subscriber; empty string for non-self-service users. */
+        final String subscriberEmail;
         volatile long expiry;
 
-        PortalSessionEntry(final String user) {
+        PortalSessionEntry(final String user, final long subscriberId, final String subscriberEmail) {
             this.user = user;
+            this.subscriberId = subscriberId;
+            this.subscriberEmail = subscriberEmail != null ? subscriberEmail : "";
             this.expiry = System.currentTimeMillis() + _portalSessionTtlMs;
         }
     }
@@ -139,7 +145,7 @@ public final class MoverProvider extends NativeAuthenticationProvider {
      */
     public static String registerPortalSession(final String user, final IncomingProfile profile) {
         final var token = UUID.randomUUID().toString();
-        _portalSessions.put(token, new PortalSessionEntry(user));
+        _portalSessions.put(token, new PortalSessionEntry(user, -1L, ""));
         return token;
     }
 
@@ -413,13 +419,46 @@ public final class MoverProvider extends NativeAuthenticationProvider {
                 _portalSessions.remove(token);
                 throw e;
             }
+            // For self-service users, also verify the subscriber is still active via a lightweight
+            // single-row lookup (PSB_ID primary key). This is O(1) and avoids a full password scan.
+            if ("self-service".equals(incomingProfile.getIncomingUser().getPortalService())
+                    && entry.subscriberId >= 0) {
+                try {
+                    if (!_mover.getMasterProxy().isSubscriberActive(entry.subscriberId)) {
+                        _portalSessions.remove(token);
+                        throw new EccmdException("Subscriber account is no longer active");
+                    }
+                } catch (final EccmdException e) {
+                    throw e;
+                } catch (final Exception e) {
+                    _portalSessions.remove(token);
+                    throw e;
+                }
+            }
             sessionToken = token;
         } else {
             // Normal auth (password or TOTP) — validate against the master
             incomingProfile = _mover.getMasterProxy().getIncomingProfile(user, password, from);
-            // Issue a fresh session token (profile not cached — fetched fresh on every subsequent hit)
+            // Resolve the subscriber ID and email for self-service users
+            long subscriberId = -1L;
+            String subscriberEmail = "";
+            if ("self-service".equals(incomingProfile.getIncomingUser().getPortalService()) && password != null) {
+                try {
+                    subscriberId = _mover.getMasterProxy().findSubscriberIdByPassword(user, password);
+                } catch (final Exception ignored) {
+                    // subscriber ID unavailable — re-auth will skip the active check
+                }
+                if (subscriberId >= 0) {
+                    try {
+                        subscriberEmail = _mover.getMasterProxy().getPortalSubscriberEmail(subscriberId);
+                    } catch (final Exception ignored) {
+                        // email unavailable — display will fall back gracefully
+                    }
+                }
+            }
+            // Issue a fresh session token with the subscriber ID for subsequent active checks
             sessionToken = UUID.randomUUID().toString();
-            _portalSessions.put(sessionToken, new PortalSessionEntry(user));
+            _portalSessions.put(sessionToken, new PortalSessionEntry(user, subscriberId, subscriberEmail));
             // Prune expired sessions opportunistically (avoid unbounded growth)
             try {
                 _portalSessions.entrySet().removeIf(e -> e.getValue().expiry < System.currentTimeMillis());
@@ -693,6 +732,10 @@ public final class MoverProvider extends NativeAuthenticationProvider {
             connection.setProtocol(_protocol);
             connection.setRemoteIpAddress(_host);
             connection.setStartTime(_start);
+            final var entry = _portalSessions.get(getToken());
+            if (entry != null && !entry.subscriberEmail.isEmpty()) {
+                connection.setSubscriberEmail(entry.subscriberEmail);
+            }
             return connection;
         }
 

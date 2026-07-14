@@ -334,7 +334,8 @@ function buildCharts() {
   var pt = n > 180 ? 0 : n > 60 ? 1.5 : 3;
 
   document.getElementById('chartPeriodLabel').textContent =
-    n < tLabels.length ? '(' + n + ' of ' + tLabels.length + ' days shown)' : '(' + n + ' days)';
+    n < tLabels.length ? n + ' of ' + tLabels.length + ' days shown' : n + ' days';
+  document.getElementById('chartPeriodLabel').style.display = '';
 
   _chartBR = new Chart(document.getElementById('chartBytesRate'), {
     data: {
@@ -509,21 +510,38 @@ new MutationObserver(function() {
 }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 </script>
 
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-  <h6 class="fw-semibold text-secondary mb-0">
-    <c:choose>
-      <c:when test="${option == 'rates'}">
-        <i class="bi bi-bar-chart-line-fill me-1"></i>Rates per Transfer Group &mdash; <c:out value="${caller}" /> / <c:out value="${sourceHost}" />
-      </c:when>
-      <c:when test="${option == 'ratesPerTransferServer'}">
-        <i class="bi bi-server me-1"></i>Rates per Data Mover &mdash; <c:out value="${caller}" /> / <c:out value="${sourceHost}" />
-      </c:when>
-      <c:otherwise>
-        <i class="bi bi-hdd-fill me-1"></i>Rates per File System for <c:out value="${transferServerName}" /> &mdash; <c:out value="${caller}" /> / <c:out value="${sourceHost}" />
-      </c:otherwise>
-    </c:choose>
-  </h6>
-  <div class="d-flex align-items-center gap-1">
+<%-- Header bar: title + info | period selector (left) | view toggle (right) --%>
+<div class="d-flex align-items-center mb-3 flex-wrap gap-2">
+  <div class="d-flex align-items-center gap-2 me-2">
+    <h6 class="fw-semibold text-secondary mb-0">
+      <c:choose>
+        <c:when test="${option == 'rates'}">
+          <i class="bi bi-bar-chart-line-fill me-1"></i>Rates per Transfer Group &mdash; <c:out value="${caller}" /> / <c:out value="${sourceHost}" />
+        </c:when>
+        <c:when test="${option == 'ratesPerTransferServer'}">
+          <i class="bi bi-server me-1"></i>Rates per Data Mover &mdash; <c:out value="${caller}" /> / <c:out value="${sourceHost}" />
+        </c:when>
+        <c:otherwise>
+          <i class="bi bi-hdd-fill me-1"></i>Rates per File System for <c:out value="${transferServerName}" /> &mdash; <c:out value="${caller}" /> / <c:out value="${sourceHost}" />
+        </c:otherwise>
+      </c:choose>
+    </h6>
+    <button class="btn btn-link btn-sm text-muted p-0" type="button"
+        data-bs-toggle="collapse" data-bs-target="#successInfoPanel"
+        aria-expanded="false" title="About this page">
+      <i class="bi bi-info-circle"></i>
+    </button>
+  </div>
+  <span class="text-muted" style="font-size:0.82rem;">Period:</span>
+  <div class="btn-group btn-group-sm" id="chartPeriodSelector">
+    <button class="btn btn-outline-secondary" data-days="30" onclick="setChartPeriod(30)">30d</button>
+    <button class="btn btn-outline-secondary" data-days="90" onclick="setChartPeriod(90)">90d</button>
+    <button class="btn btn-outline-secondary" data-days="180" onclick="setChartPeriod(180)">180d</button>
+    <button class="btn btn-outline-secondary" data-days="365" onclick="setChartPeriod(365)">1y</button>
+    <button class="btn btn-outline-secondary active" data-days="0" onclick="setChartPeriod(0)">All</button>
+  </div>
+  <span id="chartPeriodLabel" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis border" style="display:none;font-size:0.75rem;font-weight:500;"></span>
+  <div class="ms-auto d-flex align-items-center gap-1">
     <button type="button" class="btn btn-sm btn-outline-secondary active" id="btnTable" onclick="setView('table')">
       <i class="bi bi-table me-1"></i>Table
     </button>
@@ -537,17 +555,21 @@ new MutationObserver(function() {
   </div>
 </div>
 
-<%-- Period selector — global, affects both stat cards and chart --%>
-<div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-  <span class="text-muted" style="font-size:0.82rem;">Period:</span>
-  <div class="btn-group btn-group-sm" id="chartPeriodSelector">
-    <button class="btn btn-outline-secondary" data-days="30" onclick="setChartPeriod(30)">30d</button>
-    <button class="btn btn-outline-secondary" data-days="90" onclick="setChartPeriod(90)">90d</button>
-    <button class="btn btn-outline-secondary" data-days="180" onclick="setChartPeriod(180)">180d</button>
-    <button class="btn btn-outline-secondary" data-days="365" onclick="setChartPeriod(365)">1y</button>
-    <button class="btn btn-outline-secondary active" data-days="0" onclick="setChartPeriod(0)">All</button>
+<div class="collapse mb-3" id="successInfoPanel">
+  <div class="card-body py-2 px-3 border rounded" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+    <strong class="d-block mb-1">Daily transfer rates for the selected monitoring criteria</strong>
+    <p class="mb-1">Each row represents one calendar day of successful transfers matching the search criteria (caller, source host, and grouping option). Data is aggregated nightly and kept indefinitely; today's figures appear immediately from live counters.</p>
+    <ul class="mb-1 ps-3">
+      <li><strong>Volume / Rate</strong> &mdash; total bytes transferred and average Mbps (bytes &divide; cumulated transfer duration) for the day.</li>
+      <li><strong>Transfers</strong> &mdash; number of files successfully disseminated.</li>
+    </ul>
+    <strong class="d-block mb-1 mt-2">Controls</strong>
+    <ul class="mb-0 ps-3">
+      <li><strong>Period</strong> &mdash; use <kbd>30d</kbd> / <kbd>90d</kbd> / <kbd>180d</kbd> / <kbd>1y</kbd> / <kbd>All</kbd> to restrict the visible data. The filter applies to the summary stat cards, the chart, and the table simultaneously.</li>
+      <li><strong>Table / Chart</strong> &mdash; switch between a bar/line chart and a sortable, paginated table of daily figures.</li>
+      <li><strong>Sort order</strong> (&uarr;&darr; button) &mdash; toggle between earliest-first and latest-first. Applies to both the chart and the table.</li>
+    </ul>
   </div>
-  <span id="chartPeriodLabel" class="text-muted ms-1" style="font-size:0.78rem;"></span>
 </div>
 
 <div class="d-flex flex-wrap gap-3 mb-4">

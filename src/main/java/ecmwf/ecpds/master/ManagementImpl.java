@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -1598,8 +1599,57 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         }
     }
 
+    @Override
+    public String insertPortalSubscriber(final ECpdsSession session, final String inuId, final String email,
+            final String name, final String iso) throws MasterException, DataBaseException {
+        final var monitor = new MonitorCall("insertPortalSubscriber(" + inuId + "," + email + ")");
+        final var existing = base.getPortalSubscriberByEmailAndUser(email, inuId);
+        if (existing != null) {
+            throw new DataBaseException(existing.getPsbActive() ? "Email '" + email + "' is already registered"
+                    : "Email '" + email + "' is already registered (pending verification)");
+        }
+        final var password = _randomString(12);
+        final var sub = new PortalSubscriber();
+        sub.setPsbInuId(inuId);
+        sub.setPsbEmail(email);
+        sub.setPsbName(name);
+        if (iso != null && !iso.isBlank()) {
+            sub.setPsbIso(iso.toUpperCase(java.util.Locale.ROOT));
+        }
+        sub.setPsbPassword(password);
+        sub.setPsbActive(true);
+        sub.setPsbVerifyToken(null);
+        sub.setPsbCreatedTime(System.currentTimeMillis());
+        final var action = master.startECpdsAction(session, "insert", sub);
+        Exception exception = null;
+        try {
+            base.insert(sub, false);
+            monitor.done();
+        } catch (final DataBaseException e) {
+            exception = e;
+            _log.warn(e);
+            throw e;
+        } catch (final Exception e) {
+            exception = e;
+            _log.warn(e);
+            throw new MasterException(e.getMessage());
+        } finally {
+            master.logECpdsAction(action, null, exception);
+        }
+        return password;
+    }
+
+    private static final String _RANDOM_AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    private static String _randomString(final int len) {
+        final var sb = new StringBuilder(len);
+        for (var i = 0; i < len; i++) {
+            sb.append(_RANDOM_AB.charAt(ThreadLocalRandom.current().nextInt(_RANDOM_AB.length())));
+        }
+        return sb.toString();
+    }
+
     /**
-     * Removes the incoming policy.
      *
      * @param session
      *            the session

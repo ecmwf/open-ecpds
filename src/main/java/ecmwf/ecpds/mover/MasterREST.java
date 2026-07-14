@@ -216,6 +216,21 @@ final class MasterREST implements MasterProxy {
     }
 
     @Override
+    public boolean isSubscriberActive(final long psbId) throws Exception {
+        throw new RestException("Not implemented");
+    }
+
+    @Override
+    public long findSubscriberIdByPassword(final String inuId, final String password) throws Exception {
+        throw new RestException("Not implemented");
+    }
+
+    @Override
+    public String getPortalSubscriberEmail(final long psbId) throws Exception {
+        throw new RestException("Not implemented");
+    }
+
+    @Override
     public void releaseConnectionSlot(final String incomingUser) throws Exception {
         // Not applicable for REST — no-op
     }

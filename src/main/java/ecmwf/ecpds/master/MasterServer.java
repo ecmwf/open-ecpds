@@ -4821,6 +4821,37 @@ public final class MasterServer extends ECaccessProvider
     }
 
     @Override
+    public boolean isSubscriberActive(final long psbId) throws RemoteException {
+        try {
+            final var sub = getECpdsBase().getPortalSubscriberById(psbId);
+            return sub != null && sub.getPsbActive();
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("MasterServer=" + getRoot(), t);
+        }
+    }
+
+    @Override
+    public long findSubscriberIdByPassword(final String inuId, final String password) throws RemoteException {
+        try {
+            final var sub = getECpdsBase().findActiveSubscriberByPassword(inuId, password);
+            return sub != null && sub.getPsbId() != null ? sub.getPsbId() : -1L;
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("MasterServer=" + getRoot(), t);
+        }
+    }
+
+    @Override
+    public String getPortalSubscriberEmail(final long psbId) throws RemoteException {
+        try {
+            final var sub = getECpdsBase().getPortalSubscriberById(psbId);
+            final var email = sub != null ? sub.getPsbEmail() : null;
+            return email != null ? email : "";
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("MasterServer=" + getRoot(), t);
+        }
+    }
+
+    @Override
     public void sendNotificationEmail(final String to, final String subject, final String body) throws RemoteException {
         sendECpdsMessage(to, null, subject, body, null, null);
     }

@@ -697,6 +697,7 @@ document.addEventListener('DOMContentLoaded', function() {
           body: '{}'
         }).then(function(r){ return r.json(); })
           .then(function(data) {
+            $("#loadingBackdrop").hide(); $("#loadingDiv").hide();
             if (data.success) {
               // Remove deleted rows from DOM and re-render
               _mfAllRows = _mfAllRows.filter(function(tr){
@@ -708,7 +709,10 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
               alert('Error: ' + (data.error || 'unknown'));
             }
-          }).catch(function(){ alert('Network error'); });
+          }).catch(function(){
+            $("#loadingBackdrop").hide(); $("#loadingDiv").hide();
+            alert('Network error');
+          });
       }
     });
   });

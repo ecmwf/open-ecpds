@@ -53,6 +53,9 @@ public class IncomingConnection implements Serializable {
     /** The protocol. */
     private String _protocol;
 
+    /** The subscriber email (populated for self-service portal sessions only). */
+    private String _subscriberEmail;
+
     /** The start time. */
     private long _startTime;
 
@@ -149,6 +152,25 @@ public class IncomingConnection implements Serializable {
      */
     public void setProtocol(final String protocol) {
         _protocol = protocol;
+    }
+
+    /**
+     * Gets the subscriber email for self-service portal sessions.
+     *
+     * @return the subscriber email, or {@code null} if not a self-service session
+     */
+    public String getSubscriberEmail() {
+        return _subscriberEmail;
+    }
+
+    /**
+     * Sets the subscriber email.
+     *
+     * @param subscriberEmail
+     *            the subscriber email
+     */
+    public void setSubscriberEmail(final String subscriberEmail) {
+        _subscriberEmail = subscriberEmail;
     }
 
     /**
