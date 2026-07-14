@@ -136,8 +136,12 @@ function tableColumnCount() {
 var _reversed = false, _sortedIdx = null, _page = 0, _pageSize = 25, _searchTerm = '';
 
 function getFilteredTableRows() {
-  var base = _sortedIdx || getBaseRows();
-  if (_reversed && !_sortedIdx) base = base.slice().reverse();
+  var allIdx = _sortedIdx || getBaseRows();
+  if (_reversed && !_sortedIdx) allIdx = allIdx.slice().reverse();
+  // Restrict to the selected period
+  var base = _periodCutoffDate
+    ? allIdx.filter(function(i) { return rawDates[i] >= _periodCutoffDate; })
+    : allIdx;
   if (!_searchTerm) return base;
   var term = _searchTerm.toLowerCase();
   return base.filter(function(i) {
@@ -278,10 +282,11 @@ function sortRatesTable(col) {
   buildTable();
 }
 
-var _chartPeriod = 0, _chartBR = null, _chartF = null;
+var _chartPeriod = 0, _chartBR = null, _chartF = null, _periodCutoffDate = '';
 
 function getChartData(days) {
   var start = (days > 0 && tLabels.length > days) ? tLabels.length - days : 0;
+  _periodCutoffDate = start > 0 ? tLabels[start] : '';
   var labels   = tLabels.slice(start);
   var bytes    = tBytes.slice(start);
   var rates    = tRates.slice(start);
@@ -306,6 +311,8 @@ function setChartPeriod(days) {
   });
   computeStats();
   buildCharts();
+  _page = 0;
+  buildTable();
 }
 
 function getThemeColors() {
