@@ -1083,6 +1083,18 @@ final class ManagementProxy implements ManagementInterface {
     }
 
     @Override
+    public void approvePortalSubscriber(final ECpdsSession session, final PortalSubscriber sub)
+            throws MasterException, DataBaseException, RemoteException {
+        if (session == null || sub == null) {
+            throw new MasterException("Invalid parameter(s) for approvePortalSubscriber");
+        }
+        final var monitor = new MonitorCall(
+                "approvePortalSubscriber(" + session.getWebUser().getName() + "," + sub.getPsbId() + ")");
+        managementInterface.approvePortalSubscriber(session, sub);
+        monitor.done();
+    }
+
+    @Override
     public void removePortalSubscriber(final ECpdsSession session, final PortalSubscriber sub)
             throws MasterException, DataBaseException, RemoteException {
         if (session == null || sub == null) {

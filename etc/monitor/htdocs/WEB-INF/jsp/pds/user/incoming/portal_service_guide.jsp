@@ -216,6 +216,10 @@
                   <td>If <code>true</code>, subscriber accounts are activated immediately on email verification. If <code>false</code>, an admin must approve each subscriber via the Portal Subscribers page.</td></tr>
               <tr><td><code>portal.registrationAdminEmail</code></td><td>(none)</td>
                   <td>Email address that receives notifications when a registration is submitted, when a subscriber verifies their email, or when a subscriber is activated. If empty, no admin notifications are sent.</td></tr>
+              <tr><td><code>portal.registrationEmailExtraVerify</code></td><td>(none)</td>
+                  <td>Optional extra text (plain text or HTML) appended at the bottom of the <em>Verify your data portal registration</em> email. Use this to include organisation-specific instructions or terms of use for new registrants.</td></tr>
+              <tr><td><code>portal.registrationEmailExtraAccess</code></td><td>(none)</td>
+                  <td>Optional extra text (plain text or HTML) appended at the bottom of the <em>Your data portal access is ready</em> email. Use this to include onboarding instructions, usage guidelines, or support contact details.</td></tr>
             </tbody>
           </table>
         </div>

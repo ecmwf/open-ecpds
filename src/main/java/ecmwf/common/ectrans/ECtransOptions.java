@@ -1621,6 +1621,12 @@ public enum ECtransOptions {
     /** The user portal registration admin email. */
     USER_PORTAL_REGISTRATION_ADMIN_EMAIL("registrationAdminEmail", String.class, STRING_NONE),
 
+    /** The user portal registration email extra text for the verification email. */
+    USER_PORTAL_REGISTRATION_EMAIL_EXTRA_VERIFY("registrationEmailExtraVerify", String.class, STRING_NONE),
+
+    /** The user portal registration email extra text for the credentials/access-ready email. */
+    USER_PORTAL_REGISTRATION_EMAIL_EXTRA_ACCESS("registrationEmailExtraAccess", String.class, STRING_NONE),
+
     /** The user portal trigger event. */
     USER_PORTAL_TRIGGER_EVENT("triggerEvent", Boolean.class, true),
 

@@ -59,8 +59,10 @@ public class UpdatePortalSubscriberAction extends PDSAction {
             sub.setPsbActive(activate);
             if (activate) {
                 sub.setPsbVerifyToken(null);
+                MasterManager.getMI().approvePortalSubscriber(session, sub);
+            } else {
+                MasterManager.getMI().updatePortalSubscriber(session, sub);
             }
-            MasterManager.getMI().updatePortalSubscriber(session, sub);
             writeJsonResult(response, true, activate ? "Subscriber activated" : "Subscriber deactivated");
         } catch (final Exception e) {
             writeJsonResult(response, false, e.getMessage());

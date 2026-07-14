@@ -1153,6 +1153,26 @@ public interface ManagementInterface extends Remote {
             throws MasterException, DataBaseException, RemoteException;
 
     /**
+     * Activates a PortalSubscriber and sends the credentials email to the subscriber. This is the method to call when
+     * an administrator manually approves a pending subscriber. The subscriber's stored password is included in the
+     * email along with any extra text configured via {@code portal.registrationEmailExtraAccess}.
+     *
+     * @param session
+     *            the session
+     * @param sub
+     *            the portal subscriber to approve
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void approvePortalSubscriber(ECpdsSession session, PortalSubscriber sub)
+            throws MasterException, DataBaseException, RemoteException;
+
+    /**
      * Removes a PortalSubscriber permanently.
      *
      * @param session

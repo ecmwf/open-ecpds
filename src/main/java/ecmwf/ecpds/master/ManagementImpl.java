@@ -80,6 +80,8 @@ import ecmwf.common.database.IncomingUser;
 import ecmwf.common.database.MonitoringValue;
 import ecmwf.common.database.PortalSubscriber;
 import ecmwf.common.database.TransferGroup;
+import ecmwf.common.ectrans.ECtransGroups;
+import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.database.TransferMethod;
 import ecmwf.common.database.TransferServer;
 import ecmwf.common.database.Url;
@@ -1574,6 +1576,56 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
             throw new MasterException(e.getMessage());
         } finally {
             master.logECpdsAction(action, null, exception);
+        }
+    }
+
+    @Override
+    public void approvePortalSubscriber(final ECpdsSession session, final PortalSubscriber sub)
+            throws MasterException, DataBaseException {
+        final var monitor = new MonitorCall("approvePortalSubscriber(" + sub.getPsbId() + ")");
+        sub.setPsbActive(true);
+        sub.setPsbVerifyToken(null);
+        final var action = master.startECpdsAction(session, "approve", sub);
+        Exception exception = null;
+        try {
+            base.update(sub);
+            monitor.done();
+        } catch (final DataBaseException e) {
+            exception = e;
+            _log.warn(e);
+            throw e;
+        } catch (final Exception e) {
+            exception = e;
+            _log.warn(e);
+            throw new MasterException(e.getMessage());
+        } finally {
+            master.logECpdsAction(action, null, exception);
+        }
+        // Send credentials email after successful DB update
+        final var email = sub.getPsbEmail();
+        final var password = sub.getPsbPassword();
+        final var inuId = sub.getPsbInuId();
+        if (email != null && !email.isBlank() && password != null && !password.isBlank()) {
+            var extraAccess = "";
+            try {
+                final var incomingUser = base.getIncomingUser(inuId);
+                if (incomingUser != null && incomingUser.getData() != null) {
+                    final var setup = ECtransGroups.Module.USER_PORTAL.getECtransSetup(incomingUser.getData());
+                    extraAccess = setup.getString(ECtransOptions.USER_PORTAL_REGISTRATION_EMAIL_EXTRA_ACCESS);
+                }
+            } catch (final Exception ignored) {
+                // proceed without extra text
+            }
+            final var extraHtml = extraAccess.isEmpty() ? "" : "<hr>" + extraAccess;
+            final var credBody = "<p>Your registration has been confirmed!</p>"
+                    + "<p>You can now log in to the data portal using:</p>" + "<ul><li><strong>Username:</strong> "
+                    + inuId + "</li>" + "<li><strong>Password:</strong> <code>" + password + "</code></li></ul>"
+                    + "<p>We recommend changing your password after your first login.</p>" + extraHtml;
+            try {
+                master.sendNotificationEmail(email, "Your data portal access is ready", credBody);
+            } catch (final Exception e) {
+                _log.warn("approvePortalSubscriber: failed to send credentials email to {}", email, e);
+            }
         }
     }
 

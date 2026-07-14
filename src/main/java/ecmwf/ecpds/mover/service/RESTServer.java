@@ -1641,6 +1641,7 @@ public final class RESTServer {
             // Resolve per-user registration settings from ECtrans options (with global fallback for admin email)
             var registrationAdminEmail = Cnf.at("DataPortal", "registrationAdminEmail", "");
             var registrationAutoApprove = false;
+            var registrationEmailExtraVerify = "";
             try {
                 final var profile = mover.getMasterInterface().getIncomingProfileNoAuth(user);
                 if (profile != null) {
@@ -1652,11 +1653,15 @@ public final class RESTServer {
                         }
                         registrationAutoApprove = setup
                                 .getBoolean(ECtransOptions.USER_PORTAL_REGISTRATION_AUTO_APPROVE);
+                        registrationEmailExtraVerify = setup
+                                .getString(ECtransOptions.USER_PORTAL_REGISTRATION_EMAIL_EXTRA_VERIFY);
                     }
                 }
             } catch (final Exception ignored) {
                 // fall back to global Cnf settings
             }
+            final var emailExtraHtml = registrationEmailExtraVerify.isEmpty() ? ""
+                    : "<hr>" + registrationEmailExtraVerify;
             // Derive the verify URL from the exact URL the client used to reach this endpoint.
             // Replacing /register at the end gives the correct external URL even behind a
             // reverse proxy (e.g. https://portal.example.com/ecpds/verify?token=...).
@@ -1672,7 +1677,8 @@ public final class RESTServer {
                     + "<ul><li><strong>Username:</strong> " + escapeHtml(user) + "</li>"
                     + "<li><strong>Email:</strong> " + escapeHtml(email) + "</li></ul>"
                     + "<p>Your personal password will be sent in a follow-up email after your access is confirmed.</p>"
-                    + "<p>This link expires in 24 hours. If you did not make this request, please ignore this email.</p>";
+                    + "<p>This link expires in 24 hours. If you did not make this request, please ignore this email.</p>"
+                    + emailExtraHtml;
             try {
                 mover.getMasterInterface().sendNotificationEmail(email, subject, emailBody);
             } catch (final Exception e) {
@@ -1740,6 +1746,8 @@ public final class RESTServer {
                 final var inuId = parts.length > 3 ? parts[3] : "";
                 // Resolve per-user admin email (with global fallback)
                 final var adminEmail = getRegistrationAdminEmail(inuId);
+                final var extraHtml = getRegistrationEmailExtra(inuId);
+                final var emailExtraHtml = extraHtml.isEmpty() ? "" : "<hr>" + extraHtml;
                 // Send welcome email with credentials directly to the subscriber
                 if (!email.isEmpty()) {
                     final var credSubject = "Your data portal access is ready";
@@ -1747,7 +1755,7 @@ public final class RESTServer {
                             + "<p>You can now log in to the data portal using:</p>"
                             + "<ul><li><strong>Username:</strong> " + escapeHtml(inuId) + "</li>"
                             + "<li><strong>Password:</strong> <code>" + escapeHtml(password) + "</code></li></ul>"
-                            + "<p>We recommend changing your password after your first login.</p>";
+                            + "<p>We recommend changing your password after your first login.</p>" + emailExtraHtml;
                     try {
                         mover.getMasterInterface().sendNotificationEmail(email, credSubject, credBody);
                     } catch (final Exception e) {
@@ -1827,6 +1835,28 @@ public final class RESTServer {
         return Cnf.at("DataPortal", "registrationAdminEmail", "");
     }
 
+    /**
+     * Helper: resolve the optional extra email text for the credentials/access-ready email for a given IncomingUser
+     * login via the per-user ECtrans option {@code portal.registrationEmailExtraAccess}. Returns an empty string if not
+     * set.
+     */
+    private String getRegistrationEmailExtra(final String inuId) {
+        if (inuId != null && !inuId.isBlank()) {
+            try {
+                final var profile = mover.getMasterInterface().getIncomingProfileNoAuth(inuId);
+                if (profile != null) {
+                    final var setup = profile.getECtransSetup();
+                    if (setup != null) {
+                        return setup.getString(ECtransOptions.USER_PORTAL_REGISTRATION_EMAIL_EXTRA_ACCESS);
+                    }
+                }
+            } catch (final Exception ignored) {
+                // fall through
+            }
+        }
+        return "";
+    }
+
     /** Build a JSON error response. */
     private static Response jsonError(final int status, final String message) {
         final var body = "{\"message\":\"" + message.replace("\"", "\\\"") + "\"}";
@@ -1876,8 +1906,7 @@ public final class RESTServer {
         // clearly invalid credentials to the target so the browser discards its cached ones,
         // then navigate to the target URL which will now prompt for fresh credentials.
         final var html = "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Logging out\u2026</title>"
-                + "<script>" + "var u='" + targetUrl + "';" + "var x=new XMLHttpRequest();"
-                + "x.open('GET',u,true,'logout','logout');"
+                + "<script>" + "var u='" + targetUrl + "';" + "var x=new XMLHttpRequest();" + "x.open('GET',u,true);"
                 + "x.setRequestHeader('Authorization','Basic bG9nb3V0OmxvZ291dA==');"
                 + "x.onload=function(){location.href=u;};" + "x.onerror=function(){location.href=u;};" + "x.send();"
                 + "</script></head><body></body></html>";

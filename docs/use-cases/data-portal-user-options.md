@@ -140,12 +140,16 @@ They control how subscriber self-registration and admin notifications work.
 |---|---|---|---|
 | `portal.registrationAutoApprove` | Boolean | `false` | When `true`, subscriber accounts are activated automatically as soon as the subscriber verifies their email, and login credentials are emailed to them immediately. When `false`, a new registration enters *Awaiting Approval* state and must be manually activated by an administrator via the Portal Subscribers page |
 | `portal.registrationAdminEmail` | String | *none* | Email address to notify when a new registration is submitted, when a subscriber verifies their email and is awaiting approval, or when a subscriber is auto-activated. If empty, no admin notifications are sent |
+| `portal.registrationEmailExtraVerify` | String | *none* | Optional extra text (plain text or HTML) appended at the bottom of the *Verify your data portal registration* email. Use this to include organisation-specific instructions, terms of use, or contact information for new registrants |
+| `portal.registrationEmailExtraAccess` | String | *none* | Optional extra text (plain text or HTML) appended at the bottom of the *Your data portal access is ready* email. Use this to include onboarding instructions, usage guidelines, or support contact details |
 
 **Example:**
 
 ```properties
 portal.registrationAutoApprove = "true"
 portal.registrationAdminEmail = "dataadmin@example.com"
+portal.registrationEmailExtraVerify = "<p>By registering you agree to our <a href=\"https://example.com/terms\">Terms of Use</a>.</p>"
+portal.registrationEmailExtraAccess = "<p>For help getting started, see our <a href=\"https://example.com/docs\">documentation</a> or contact <a href=\"mailto:support@example.com\">support@example.com</a>.</p>"
 ```
 
 !!! tip "Global admin email fallback"
