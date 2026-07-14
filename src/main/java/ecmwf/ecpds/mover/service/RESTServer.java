@@ -2504,6 +2504,26 @@ public final class RESTServer {
                                 Response.status(403).type(MediaType.TEXT_PLAIN).entity("Forbidden").build());
                     }
                 }
+                // Auth failed — check if the attempted username is a self-service data user.
+                // If so, redirect to the registration page rather than showing "Unauthorized".
+                try {
+                    final var decodedAuth = new String(BASE64Coder.decode(authString.split("\\s+")[1]));
+                    final var credentials = decodedAuth.split(":");
+                    if (credentials.length >= 1) {
+                        final var attemptedUser = credentials[0];
+                        final var profile = mover.getMasterInterface().getIncomingProfileNoAuth(attemptedUser);
+                        if (profile != null && "self-service".equals(profile.getIncomingUser().getPortalService())) {
+                            final var registerUrl = request.getRequestURL().toString().replaceFirst("/ecpds/.*",
+                                    "/ecpds/register") + "?user=" + attemptedUser;
+                            throw new WebApplicationException(
+                                    Response.status(302).header("Location", registerUrl).build());
+                        }
+                    }
+                } catch (final WebApplicationException wae) {
+                    throw wae;
+                } catch (final Exception ignored) {
+                    // lookup failed — fall through to standard 401
+                }
             }
         }
         // For whatever reason we were not able to authenticate the user!
