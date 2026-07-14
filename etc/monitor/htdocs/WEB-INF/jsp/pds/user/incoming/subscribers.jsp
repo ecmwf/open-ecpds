@@ -1,4 +1,4 @@
-<%@ page session="true" %>
+<%@ page session="true" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
@@ -105,7 +105,7 @@
             <th>Email</th>
             <th>Name</th>
             <th class="text-center">Country</th>
-            <th class="text-center">Status</th>
+            <th class="text-end">Status</th>
             <th>Registered (UTC)</th>
             <th class="text-center no-sort">Actions</th>
             <th class="d-none">StatusSort</th>
@@ -276,7 +276,8 @@
                 { orderable: false, targets: 'no-sort' },
                 { orderData: [6], targets: [3] },
                 { orderData: [7], targets: [4] },
-                { visible: false, targets: [6, 7] }
+                { visible: false, targets: [6, 7] },
+                { className: 'text-end', targets: [3] }
             ],
             dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
         });
@@ -377,7 +378,7 @@
                     <div class="mb-1">
                         <label for="psbCreateIso" class="form-label fw-semibold">Country <small class="text-muted fw-normal">(optional)</small></label>
                         <select class="form-select" id="psbCreateIso">
-                            <option value="">Select a country…</option>
+                            <option value="">Select a country&hellip;</option>
                             <option value="AF">Afghanistan</option>
                             <option value="AL">Albania</option>
                             <option value="DZ">Algeria</option>
