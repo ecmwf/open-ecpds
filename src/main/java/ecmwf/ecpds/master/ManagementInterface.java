@@ -408,6 +408,20 @@ public interface ManagementInterface extends Remote {
     void closeIncomingConnection(ECpdsSession session, String id) throws IOException;
 
     /**
+     * Invalidate all portal session cookies for a data user on all movers. Forces re-authentication immediately when
+     * the user's Portal Service mode or password changes.
+     *
+     * @param session
+     *            the session
+     * @param user
+     *            the data user login name
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void invalidatePortalSessionsForUser(ECpdsSession session, String user) throws java.rmi.RemoteException;
+
+    /**
      * Restart destination.
      *
      * @param session

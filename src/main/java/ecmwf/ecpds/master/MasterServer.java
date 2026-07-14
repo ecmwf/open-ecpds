@@ -1055,34 +1055,38 @@ public final class MasterServer extends ECaccessProvider
                     }
                 } else {
                     // User/password authentication against the database
-                    final var localPassword = user.getPassword();
-                    if (localPassword != null && !localPassword.equals(incomingPassword)
-                            && !_getIncomingUserHash(user).equals(incomingPassword)) {
-                        if ("self-service".equals(user.getPortalService())) {
-                            final var subscriber = base.findActiveSubscriberByPassword(incomingUser, incomingPassword);
-                            if (subscriber == null) {
-                                if (_splunk.isInfoEnabled())
-                                    _splunk.info(
-                                            "DEA;{};UserId={};Message=Subscriber password authentication failed;Context={}",
-                                            "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
-                                throw new MasterException("Login failed");
-                            }
-                            _log.debug("Subscriber {} authenticated as IncomingUser {}", subscriber.getPsbEmail(),
-                                    incomingUser);
-                        } else {
+                    if ("self-service".equals(user.getPortalService())) {
+                        // For self-service users the IncomingUser's own password is NEVER accepted —
+                        // only active subscriber passwords are valid. This ensures that switching a
+                        // user's Portal Service to self-service takes effect immediately and that
+                        // no admin password "back-door" can bypass the subscriber flow.
+                        final var subscriber = base.findActiveSubscriberByPassword(incomingUser, incomingPassword);
+                        if (subscriber == null) {
+                            if (_splunk.isInfoEnabled())
+                                _splunk.info(
+                                        "DEA;{};UserId={};Message=Subscriber password authentication failed;Context={}",
+                                        "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
+                            throw new MasterException("Login failed");
+                        }
+                        _log.debug("Subscriber {} authenticated as IncomingUser {}", subscriber.getPsbEmail(),
+                                incomingUser);
+                    } else {
+                        // Standard login: check the IncomingUser's own password
+                        final var localPassword = user.getPassword();
+                        if (localPassword == null) {
+                            if (_splunk.isInfoEnabled())
+                                _splunk.info("DEA;{};UserId={};Message=Password not set;Context={}",
+                                        "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
+                            _log.debug("Password not set for IncomingUser {}", incomingUser);
+                            throw new MasterException("Login failed");
+                        }
+                        if (!localPassword.equals(incomingPassword)
+                                && !_getIncomingUserHash(user).equals(incomingPassword)) {
                             if (_splunk.isInfoEnabled())
                                 _splunk.info("DEA;{};UserId={};Message=Password authentication failed;Context={}",
                                         "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
                             throw new MasterException("Login failed");
                         }
-                    }
-                    if (localPassword == null) {
-                        // There was no password set for this user!
-                        if (_splunk.isInfoEnabled())
-                            _splunk.info("DEA;{};UserId={};Message=Password not set;Context={}",
-                                    "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
-                        _log.debug("Password not set for IncomingUser {}", incomingUser);
-                        throw new MasterException("Login failed");
                     }
                 }
             }
@@ -4819,6 +4823,27 @@ public final class MasterServer extends ECaccessProvider
     @Override
     public void sendNotificationEmail(final String to, final String subject, final String body) throws RemoteException {
         sendECpdsMessage(to, null, subject, body, null, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void invalidatePortalSessionsForUser(final String user) throws RemoteException {
+        for (final var server : getECpdsBase().getTransferServerArray()) {
+            final var mover = getDataMoverInterface(server.getName());
+            if (mover != null) {
+                try {
+                    final var count = mover.invalidatePortalSessionsForUser(user);
+                    if (count > 0) {
+                        _log.info("Invalidated {} portal session(s) for user {} on mover {}", count, user,
+                                server.getName());
+                    }
+                } catch (final Exception e) {
+                    _log.warn("Could not invalidate portal sessions on mover {}: {}", server.getName(), e.getMessage());
+                }
+            }
+        }
     }
 
     /**

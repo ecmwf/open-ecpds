@@ -428,4 +428,17 @@ public interface MasterInterface extends ProviderInterface {
      */
     void sendNotificationEmail(String to, String subject, String body) throws RemoteException;
 
+    /**
+     * Invalidate all portal HTTPS session cookies for the given data user on all movers. Forces the user (and any
+     * subscribers) to re-authenticate on their next request. Call this whenever the user's Portal Service mode or
+     * password changes.
+     *
+     * @param user
+     *            the data user login name
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void invalidatePortalSessionsForUser(String user) throws RemoteException;
+
 }

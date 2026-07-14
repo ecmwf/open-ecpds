@@ -36,7 +36,9 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
+import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingPolicyHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingUserHome;
@@ -54,6 +56,10 @@ import ecmwf.web.model.users.User;
  * The Class UpdateAction.
  */
 public class UpdateAction extends PDSAction {
+
+    /** The Constant _log. */
+    private static final org.apache.logging.log4j.Logger _log = org.apache.logging.log4j.LogManager
+            .getLogger(UpdateAction.class);
 
     /** The Constant ADD_POLICY. */
     private static final String ADD_POLICY = "addPolicy";
@@ -110,6 +116,15 @@ public class UpdateAction extends PDSAction {
             final var incomingUser = IncomingUserHome.findByPrimaryKey(c.iterator().next().toString());
             daf.populateUser(incomingUser);
             incomingUser.save(user);
+            // Invalidate any cached portal session cookies for this user on all movers.
+            // This ensures that changes such as Portal Service mode take effect immediately
+            // rather than waiting for the cookie TTL to expire.
+            try {
+                MasterManager.getMI().invalidatePortalSessionsForUser(Util.getECpdsSessionFromObject(user),
+                        incomingUser.getId());
+            } catch (final Exception e) {
+                _log.warn("Could not invalidate portal sessions for user {}: {}", incomingUser.getId(), e.getMessage());
+            }
             return mapping.findForward("success");
         } else if (c.size() == 3) {
             final Iterator<?> i = c.iterator();

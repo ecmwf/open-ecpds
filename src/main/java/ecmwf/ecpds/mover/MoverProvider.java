@@ -154,6 +154,27 @@ public final class MoverProvider extends NativeAuthenticationProvider {
     }
 
     /**
+     * Invalidate all portal session tokens for a given user. Called when the user's configuration changes (e.g. Portal
+     * Service mode update) so that existing browser cookies stop working immediately.
+     *
+     * @param user
+     *            the user name whose sessions should be invalidated
+     *
+     * @return the number of sessions removed
+     */
+    public static int invalidatePortalSessionsForUser(final String user) {
+        final var removed = new java.util.concurrent.atomic.AtomicInteger(0);
+        _portalSessions.entrySet().removeIf(e -> {
+            if (user.equals(e.getValue().user)) {
+                removed.incrementAndGet();
+                return true;
+            }
+            return false;
+        });
+        return removed.get();
+    }
+
+    /**
      * Adds the.
      *
      * @param dataSpace

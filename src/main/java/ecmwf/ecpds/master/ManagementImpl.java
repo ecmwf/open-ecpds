@@ -807,6 +807,18 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void invalidatePortalSessionsForUser(final ECpdsSession session, final String user)
+            throws java.rmi.RemoteException {
+        final var monitor = new MonitorCall(
+                "invalidatePortalSessionsForUser(" + session.getWebUser().getName() + "," + user + ")");
+        master.invalidatePortalSessionsForUser(user);
+        monitor.done();
+    }
+
+    /**
      * Restart destination.
      *
      * @param session

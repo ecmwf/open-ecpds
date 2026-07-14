@@ -560,6 +560,20 @@ public interface MoverInterface extends ClientInterface {
     boolean closeIncomingConnection(String id) throws RemoteException;
 
     /**
+     * Invalidate all portal HTTPS session tokens for the given user, forcing re-authentication on the next browser
+     * request. Called when the user's configuration changes (e.g. Portal Service mode).
+     *
+     * @param user
+     *            the data user login name
+     *
+     * @return the number of sessions removed
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    int invalidatePortalSessionsForUser(String user) throws RemoteException;
+
+    /**
      * Close all incoming connections.
      *
      * @throws IOException

@@ -1189,6 +1189,15 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int invalidatePortalSessionsForUser(final String user) {
+        _log.debug("Invalidating portal sessions for user: {}", user);
+        return ecmwf.ecpds.mover.MoverProvider.invalidatePortalSessionsForUser(user);
+    }
+
+    /**
      * Close all incoming connections.
      */
     @Override

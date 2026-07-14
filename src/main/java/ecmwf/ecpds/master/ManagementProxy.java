@@ -447,6 +447,20 @@ final class ManagementProxy implements ManagementInterface {
 
     /**
      * {@inheritDoc}
+     */
+    @Override
+    public void invalidatePortalSessionsForUser(final ECpdsSession session, final String user)
+            throws java.rmi.RemoteException {
+        if (session != null && user != null) {
+            final var monitor = new MonitorCall(
+                    "invalidatePortalSessionsForUser(" + session.getWebUser().getName() + "," + user + ")");
+            managementInterface.invalidatePortalSessionsForUser(session, user);
+            monitor.done();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
      *
      * Restart destination.
      */
