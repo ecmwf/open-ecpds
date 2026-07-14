@@ -2488,8 +2488,14 @@ public final class RESTServer {
                     return session;
                 }
             } catch (final Throwable t) {
-                _log.warn("getUserSession", t);
+                // "Login failed" is a normal auth rejection — log at DEBUG without stack trace.
+                // Everything else (RMI errors, unexpected exceptions) keeps WARN + stack trace.
                 final var message = t.getMessage();
+                if (message != null && message.contains("Login failed")) {
+                    _log.debug("getUserSession: login failed for request from {}", request.getRemoteAddr());
+                } else {
+                    _log.warn("getUserSession", t);
+                }
                 if (message != null) {
                     if (message.contains("Maximum number of connections exceeded")) {
                         throw new WebApplicationException(
