@@ -38,6 +38,9 @@ import ecmwf.web.model.users.User;
 
 public class UpdatePortalSubscriberAction extends PDSAction {
 
+    private static final org.apache.logging.log4j.Logger _log = org.apache.logging.log4j.LogManager
+            .getLogger(UpdatePortalSubscriberAction.class);
+
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Override
@@ -64,8 +67,9 @@ public class UpdatePortalSubscriberAction extends PDSAction {
                 MasterManager.getMI().updatePortalSubscriber(session, sub);
             }
             writeJsonResult(response, true, activate ? "Subscriber activated" : "Subscriber deactivated");
-        } catch (final Exception e) {
-            writeJsonResult(response, false, e.getMessage());
+        } catch (final Throwable e) {
+            _log.warn("UpdatePortalSubscriberAction", e);
+            writeJsonResult(response, false, e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
         }
         return null;
     }

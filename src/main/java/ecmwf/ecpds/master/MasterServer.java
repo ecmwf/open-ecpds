@@ -5165,6 +5165,10 @@ public final class MasterServer extends ECaccessProvider
                                     DataBaseImpl.updateGeoIpCache(hostIp, geo);
                                 }
                             }
+                        } catch (final java.net.UnknownHostException e) {
+                            // DNS resolution failed (no reverse DNS or unreachable) — not unexpected,
+                            // log at DEBUG to avoid noisy WARN on every location refresh cycle.
+                            _log.debug("Could not resolve hostname for Host-{} ({}): no DNS record", hostId, dnsName);
                         } catch (final Throwable t) {
                             _log.warn("Could not get geolocation for Host-{}: {}", hostId, hostIp, t);
                         }
