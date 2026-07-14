@@ -40,8 +40,7 @@ flags them as **Unassigned** in the user list.
 ## Portal Service modes
 
 The **Portal Service** field controls how visitors authenticate when they access the data
-portal for a given Data User. It replaces the deprecated `portal.anonymous` ECtrans
-option and is stored as a first-class column on the `INCOMING_USER` table.
+portal for a given Data User. It is stored as a first-class column on the `INCOMING_USER` table.
 
 ### Standard Login *(default)*
 
@@ -71,7 +70,6 @@ portal serves the data publicly, with no login prompt.
 - TOTP and password fields are not shown or used
 - Suitable for fully public, open datasets
 - Can be combined with `portal.geoblocking` to restrict by geography if needed
-- Replaces the old `portal.anonymous = "yes"` ECtrans option
 
 **Use when:** the data is intended for unrestricted public access (e.g. open-data portals,
 WMO WIS2 datasets).

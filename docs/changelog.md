@@ -8,7 +8,8 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 ## open-ecpds 8.0.5-11072026 (2026-07-11)
 
 - Added a new destination metadata framework with web-based editing, automatic form generation, REST API support, and XML import for migrating existing metadata.
-- Introduced the **Portal Service** field on Data Users, replacing the previous `portal.anonymous` ECtrans option. Each data user can now be assigned one of three service modes: **Standard Login** (the default, requires credentials and supports TOTP), **Open Access** (no authentication required — the portal serves files directly without a login), or **Self-Service** (self-registration workflows). The mode is visible and editable in the Data Users admin pages, and reflected in the user list alongside the other account properties.
+- Introduced the **Portal Service** field on Data Users. Each data user can now be assigned one of three service modes: **Standard Login** (the default, requires credentials and supports TOTP), **Open Access** (no authentication required — the portal serves files directly without a login), or **Self-Service** (visitors self-register via email verification and receive personal credentials, all sharing the same data user configuration). The mode is visible and editable in the Data Users admin pages, and reflected in the user list alongside the other account properties.
+- Added a self-service **registration page** (`/ecpds/register?user=<login>`) for data users configured with the Self-Service portal mode. Visitors fill in their name, email address, and country; a verification link is emailed to them; on confirmation their credentials are activated and emailed back. When enabled, a *Share registration link* item appears in the portal user menu for self-service data users. Failed login attempts on self-service users are automatically redirected to the registration page rather than showing an authentication error.
 - Added two OPTIONS endpoints to the data portal to support CORS preflight requests. When CORS is configured at the data user level, the appropriate CORS headers are now returned in the preflight OPTIONS response.
 - Enhanced the login page with an on-screen numeric keypad for OTP authentication. When OTP is the only available authentication method, users can now enter their one-time password using either the keyboard or the on-screen keypad.
 - Improved the transfer status display by introducing a user icon to identify status changes initiated by end users (e.g. Stop or Requeue actions). The icon is displayed in both the Destination Transfers table and the Transfer History view, making it easier to distinguish user-initiated actions from scheduler-driven status changes.
@@ -20,7 +21,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Added a new configurable CORS option at the Data User level, allowing specific origins (or *) to be defined for browser access to download endpoints, with support for preflight requests and ranged downloads.
 - Added the ability to filter Destinations, Hosts, Web Users, and Data Users by properties containing errors or warnings, making it easier to quickly identify items that require attention.
 - In addition, Destinations and Hosts with errors or warnings are now highlighted with a red badge on their main page icons, providing an immediate visual indication that action may be required.
-- Prevented data transfers from being requeued to destinations with no enabled dissemination hosts. This prevents transfers from being queued for destinations that cannot currently process them and avoids the destination switching to the NoHosts status.
+- Prevented data transfers from being requeued to destinations with no enabled dissemination hosts. This prevents transfers from being queued for destinations that cannot currently process them and avoids the destination switching to the `NoHosts` status.
 - The *Test on Server* panel now includes a **File Content Preview**: fetches live file content directly from a remote acquisition host via the DataMover/ECtrans stack, making it straightforward to inspect file formats and tune CSV, JSON, or other parser configurations without leaving the UI.
 - URLs detected in the directory output are shown in an **editable textarea**, so individual paths can be modified and re-fetched on the fly — no need to re-run the full acquisition cycle.
 - A **line count selector** (default: 5) limits how much of each file is retrieved, keeping previews fast during iterative testing.
@@ -34,7 +35,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Acquisition Hosts now include an **Acquisition Console** that centralises the Progress Console and listing output, providing better visibility into acquisition activities.
 - Added data collection to track and display Data Mover availability periods and overall availability statistics.
 - Added comprehensive configuration guides directly accessible from the Hosts pages in the Monitoring Interface, covering listing, authentication, connection, registration, acquisition, and dissemination engines. (These guides are the basis for the [Transfer Modules](transfer-modules/index.md) and [Host Directory](host-directory/index.md) sections of this site.)
-- Added a new authentication mechanism supporting static Bearer/API tokens as well as automatic refresh of expiring tokens. For tokens with limited lifetimes (OAuth 2, NASA Earthdata, etc.), define a function in the JavaScript editor; the engine automatically calls it when the cached token is approaching expiry.
+- Added a new authentication mechanism supporting static `Bearer`/`API` tokens as well as automatic refresh of expiring tokens. For tokens with limited lifetimes (OAuth 2, NASA Earthdata, etc.), define a function in the JavaScript editor; the engine automatically calls it when the cached token is approaching expiry.
 - Added support for single-file URL handling, allowing the Host Directory URL to point directly to a file to download. A HEAD (or GET) request is issued to retrieve the file size and last modification time, resulting in a single listing entry.
 - Allowed filtering Data Transfers by Transfer Method for processed transfers that have already been assigned to a Host.
 - Added additional icons to improve workflow in the Monitoring Interface (e.g. Sync Now, Requeue, and Stop icons on the Data Transfer page).
@@ -45,9 +46,9 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Added new dashboards to the Monitoring Interface for tracking Data Portal activity, including uploads and downloads, both globally and per data user.
 - Added activity statistics to the Data Portal, helping users identify less busy periods and optimise transfer performance.
 - The Data Portal now supports server-side **AWS S3 SDK v2** operations, including file upload and synchronisation.
-- Upgraded the S3 transfer module client to the AWS SDK v2.
-- Added warning badges to the Properties, Directory, JavaScript, and Python editor accordions to improve visibility of errors and warnings.
-- When adding several related items, the Add panel now stays open automatically after each addition.
+- Upgraded the S3 transfer module client to the **AWS SDK v2**.
+- Added warning badges to the *Properties*, *Directory*, *JavaScript*, and *Python* editor accordions to improve visibility of errors and warnings.
+- When adding several related items, the *Add panel* now stays open automatically after each addition.
 - In the Host editor, a warning is displayed when the Directory content does not appear to match the selected type (JavaScript or Python).
 - Allowed all active sessions for a data user to be closed with a single click.
 - Allowed the maximum number of connections for a data user to be scheduled (e.g. higher limits during off-peak hours).
@@ -56,8 +57,8 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Added a filter to select destinations with or without associated data users.
 - Added a badge indicating whether a destination has associated data users, either directly or indirectly through a data policy.
 - Improved the workflow for creating data users, web users, and other entities.
-- Added presets and a "Remove All" option to association cards.
-- Added a filter to identify problematic data users and web users, along with a "Delete All" button.
+- Added presets and a *Remove All* option to association cards.
+- Added a filter to identify problematic data users and web users, along with a *Delete All* button.
 - Added feedback form to collect user input and satisfaction.
 - Introduced properties for Web Users, similar to those available for Data Users.
 
@@ -84,7 +85,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ## open-ecpds 7.5.0-05042026 (2026-04-05)
 
-- Major new release of the web interface. The previous stack (JSP + Apache Struts 1.x + jQuery) was fully modernised to incorporate **Bootstrap 5**, Bootstrap Icons, and DataTables.js. These upgrades deliver a sleeker, more responsive interface with significantly improved performance across all pages.
+- Major new release of the web interface. The previous stack (JSP + Apache Struts 1.x + jQuery) was fully modernised to incorporate **Bootstrap 5**, **Bootstrap Icons**, and **DataTables.js**. These upgrades deliver a sleeker, more responsive interface with significantly improved performance across all pages.
 
 ## open-ecpds 7.3.7-27022026 (2026-02-27)
 
@@ -97,8 +98,8 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ## open-ecpds 7.3.6-17022026 (2026-02-05)
 
-- Added `ErrorMessage` field to the PRS Splunk event to report product status processing errors.
-- Added `NetworkCode` field to the ERR Splunk event to allow tracking of dissemination failures per network type.
+- Added `ErrorMessage` field to the `PRS` Splunk event to report product status processing errors.
+- Added `NetworkCode` field to the `ERR` Splunk event to allow tracking of dissemination failures per network type.
 - Introduced a server-side check for destination existence, accessible via the `ecpds` command.
 - Added an extra validation step in the monitoring interface when deleting critical entities (destinations, hosts, transfer groups, data movers) by requiring the entity name to be entered.
 - Enhanced pop-up messages with a clearer design, replacing browser-native alert and confirmation boxes with a jQuery alternative.
@@ -107,7 +108,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Delete the stage file if the download fails during data retrieval on a data mover.
 - Allowed a file to be purged on a data mover when its allocated data mover is not in the same group as its data file entry.
 - Allowed separate SMTP and store hosts to be defined in the mail subsystem configuration, and added support for IMAPS.
-- Allowed defining how directory listings are displayed in the ECAUTH module.
+- Allowed defining how directory listings are displayed in the `ECAUTH` module.
 - Fixed incorrect load balancing in transfer group allocation when new files are registered.
 
 ## open-ecpds 7.3.5-20012026 (2026-01-20)
@@ -209,7 +210,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 - Ensured RMI stream objects are properly unexported when streams close.
 - Fixed long-term memory leak for expired RMI scheduled tasks.
-- Cached RestClient to reduce object creation overhead for Opsview notifications.
+- Cached `RestClient` to reduce object creation overhead for Opsview notifications.
 - Fixed batch file selection and race conditions causing stuck transfers.
 
 ## open-ecpds 7.1.0-21072025 (2025-07-21)
@@ -217,7 +218,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 - Major release with dependency updates, bug fixes, and new features.
 - Scripts now require explicit return statements to avoid global context pollution.
 - Removed `wmoLikeFormat` from FTP, FTPS, SFTP modules.
-- Switched from MariaDB JDBC to Oracle MySQL JDBC; upgraded to Hibernate 7.
+- Switched from MariaDB JDBC to Oracle MySQL JDBC; upgraded to **Hibernate 7**.
 - Used virtual threads where possible.
 - Aggressive purging of expired files on movers and proxies.
 
@@ -227,7 +228,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 - Removed deprecated `finalize()` and replaced with `java.lang.ref.Cleaner`.
 - Cleaned thread-locals, MDC, and context class loader to prevent leaks.
-- Removed bzip2a support; preferred lbzip2.
+- Removed `bzip2a` support; preferred `lbzip2`.
 - Added `$${context:...}` placeholders in host/destination editors.
 - Sandboxed Polyglot context execution; prevented global scope pollution.
 - Pooled Polyglot contexts; enforced statement limits.
@@ -238,8 +239,8 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 - Enabled native access for Polyglot JDK support.
 - Activated virtual threads within Polyglot context.
-- Finer JVM heap memory control; switched to ZGC.
-- Introduced DirectBuffer pool for I/O performance.
+- Finer JVM heap memory control; switched to **ZGC**.
+- Introduced **DirectBuffer** pool for I/O performance.
 - Showed MQTT file retrieval progress.
 - Prevented double synchronisation after file writing.
 - Allowed custom `User-Agent` and `Accept` headers in the HTTP/S transfer module.
@@ -247,7 +248,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ## open-ecpds 6.8.0-01032025 (2025-03-01)
 
-- Added `libsocketoption.so` to timeout `ss` processes after 2 s (Java-native implementation).
+- Added `libsocketoption.so` to timeout `ss` processes after 2 s (**Java-native** implementation).
 - Introduced new Splunk events for denial monitoring.
 - Default sorting for product page; search by email and quick access to destination type.
 - Displayed retrieval progress on transfer pages.
@@ -255,7 +256,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 ## open-ecpds 6.7.9-09112024 (2024-11-09)
 
 - Added additional fields for improved Splunk monitoring.
-- Configured data portal for RFC 3986 compliance (allow ambiguous URIs).
+- Configured data portal for **RFC 3986** compliance (allow ambiguous URIs).
 
 ---
 
