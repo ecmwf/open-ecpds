@@ -57,7 +57,7 @@ API users and their allowed operations are defined in the OpenECPDS properties f
 
 ```ini
 [API]
-<username> = <password>:<service-regex>
+<username>=<password>:<service-regex>
 ```
 
 | Field | Description |
@@ -74,28 +74,28 @@ Allow a user to call all services:
 
 ```ini
 [API]
-myuser = mysecret:.*
+myuser=mysecret:.*
 ```
 
 Allow a user only to read destination metadata (GET operations):
 
 ```ini
 [API]
-readonly = readpass:getDestinationMetaFields|getDestinationMetaValuesByDestination
+readonly=readpass:getDestinationMetaFields|getDestinationMetaValuesByDestination
 ```
 
 Allow a user to manage incoming users and associations, but nothing else:
 
 ```ini
 [API]
-incomingmgr = pass123:incomingUser.*|incomingCategory.*|incomingAssociation.*
+incomingmgr=pass123:incomingUser.*|incomingCategory.*|incomingAssociation.*
 ```
 
 Allow a user to submit data files and manage destination backups:
 
 ```ini
 [API]
-datapipeline = pipepass:datafilePut|datafileDel|datafileSize|destinationBackup.*
+datapipeline=pipepass:datafilePut|datafileDel|datafileSize|destinationBackup.*
 ```
 
 !!! note "No permissions = no access"
@@ -792,16 +792,16 @@ The following shows a typical `[API]` section for a production configuration wit
 ```ini
 [API]
 # Full administrative access
-admin_api = Admin$ecret99:.*
+admin_api=Admin$ecret99:.*
 
 # Read-only metadata access
-metadata_reader = MdRead42:getDestinationMetaFields|getDestinationMetaValuesByDestination
+metadata_reader=MdRead42:getDestinationMetaFields|getDestinationMetaValuesByDestination
 
 # Pipeline user: submit and delete files, read destination info
-pipeline = Pipe#pass88:datafilePut|datafileDel|datafileSize|destinationList|destination
+pipeline=Pipe#pass88:datafilePut|datafileDel|datafileSize|destinationList|destination
 
 # Incoming user management (e.g. called from a provisioning system)
-provisioning = Prov&key77:incomingUser.*|incomingCategory.*|incomingAssociation.*
+provisioning=Prov&key77:incomingUser.*|incomingCategory.*|incomingAssociation.*
 ```
 
 !!! tip "Regex tips"
