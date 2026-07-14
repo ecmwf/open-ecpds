@@ -1368,7 +1368,7 @@ public final class RESTServer {
             Format.replaceAll(sb, "${accessGuide}", String.valueOf(accessGuide));
             final var loginButton = setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_LOGIN_BUTTON);
             Format.replaceAll(sb, "${loginButtonHidden}", loginButton ? "" : "d-none");
-            final var registrationEnabled = Cnf.at("DataPortal", "registrationEnabled", false)
+            final var registrationEnabled = Cnf.at("DataPortal", "registrationEnabled", true)
                     && "self-service".equals(session.getPortalService());
             Format.replaceAll(sb, "${registerLinkHidden}", registrationEnabled ? "" : "d-none");
             final var trafficStats = setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_TRAFFIC_STATS);
@@ -1639,6 +1639,25 @@ public final class RESTServer {
             } catch (final ecmwf.common.database.DataBaseException e) {
                 return jsonError(400, e.getMessage());
             }
+            // Resolve per-user registration settings from ECtrans options (with global fallback)
+            var registrationAdminEmail = Cnf.at("DataPortal", "registrationAdminEmail", "");
+            var registrationAutoApprove = Cnf.at("DataPortal", "registrationAutoApprove", false);
+            try {
+                final var profile = mover.getMasterInterface().getIncomingProfileNoAuth(user);
+                if (profile != null) {
+                    final var setup = profile.getECtransSetup();
+                    if (setup != null) {
+                        final var perUserEmail = setup.getString(ECtransOptions.USER_PORTAL_REGISTRATION_ADMIN_EMAIL);
+                        if (!perUserEmail.isEmpty()) {
+                            registrationAdminEmail = perUserEmail;
+                        }
+                        registrationAutoApprove = setup
+                                .getBoolean(ECtransOptions.USER_PORTAL_REGISTRATION_AUTO_APPROVE);
+                    }
+                }
+            } catch (final Exception ignored) {
+                // fall back to global Cnf settings
+            }
             // Derive the verify URL from the exact URL the client used to reach this endpoint.
             // Replacing /register at the end gives the correct external URL even behind a
             // reverse proxy (e.g. https://portal.example.com/ecpds/verify?token=...).
@@ -1661,19 +1680,18 @@ public final class RESTServer {
                 _log.warn("Failed to send verification email to {}", email, e);
             }
             // Notify admin
-            final var adminEmail = Cnf.at("DataPortal", "registrationAdminEmail", "");
-            if (!adminEmail.isEmpty()) {
+            if (!registrationAdminEmail.isEmpty()) {
                 final var adminSubject = "New registration request for data user '" + user + "'";
                 final var adminBody = "<p>A new subscriber registration has been submitted for data user <strong>"
                         + escapeHtml(user) + "</strong>:</p>" + "<ul><li><strong>Name:</strong> " + escapeHtml(name)
                         + "</li>" + "<li><strong>Email:</strong> " + escapeHtml(email) + "</li>"
                         + "<li><strong>Country:</strong> " + escapeHtml(iso) + "</li></ul>"
                         + "<p>The subscriber has been sent a verification email. Once verified, the account will be "
-                        + (Cnf.at("DataPortal", "registrationAutoApprove", false) ? "activated automatically."
+                        + (registrationAutoApprove ? "activated automatically."
                                 : "pending your approval in the admin interface.")
                         + "</p>";
                 try {
-                    mover.getMasterInterface().sendNotificationEmail(adminEmail, adminSubject, adminBody);
+                    mover.getMasterInterface().sendNotificationEmail(registrationAdminEmail, adminSubject, adminBody);
                 } catch (final Exception e) {
                     _log.warn("Failed to send admin notification email", e);
                 }
@@ -1722,6 +1740,8 @@ public final class RESTServer {
                 final var email = parts.length > 1 ? parts[1] : "";
                 final var password = parts.length > 2 ? parts[2] : "";
                 final var inuId = parts.length > 3 ? parts[3] : "";
+                // Resolve per-user admin email (with global fallback)
+                final var adminEmail = getRegistrationAdminEmail(inuId);
                 // Send welcome email with credentials directly to the subscriber
                 if (!email.isEmpty()) {
                     final var credSubject = "Your data portal access is ready";
@@ -1737,7 +1757,6 @@ public final class RESTServer {
                     }
                 }
                 // Notify admin too
-                final var adminEmail = Cnf.at("DataPortal", "registrationAdminEmail", "");
                 if (!adminEmail.isEmpty() && !email.isEmpty()) {
                     try {
                         mover.getMasterInterface().sendNotificationEmail(adminEmail,
@@ -1756,8 +1775,9 @@ public final class RESTServer {
                 final var parts = result.split(":", 3);
                 final var email = parts.length > 1 ? parts[1] : "";
                 final var inuId = parts.length > 2 ? parts[2] : "";
+                // Resolve per-user admin email (with global fallback)
+                final var adminEmail = getRegistrationAdminEmail(inuId);
                 // Notify admin to approve
-                final var adminEmail = Cnf.at("DataPortal", "registrationAdminEmail", "");
                 if (!adminEmail.isEmpty() && !email.isEmpty()) {
                     final var adminBody = "<p>Subscriber <strong>" + escapeHtml(email)
                             + "</strong> has verified their email address and is requesting access to data user <strong>"
@@ -1782,6 +1802,31 @@ public final class RESTServer {
     /** Helper: safely trim an object from JSON to a String. */
     private static String trim(final Object o) {
         return o == null ? "" : o.toString().trim();
+    }
+
+    /**
+     * Helper: resolve the registration admin email for a given IncomingUser login. Uses the per-user ECtrans option
+     * {@code portal.registrationAdminEmail} if set, otherwise falls back to the global
+     * {@code DataPortal.registrationAdminEmail} in ecmwf.properties.
+     */
+    private String getRegistrationAdminEmail(final String inuId) {
+        if (inuId != null && !inuId.isBlank()) {
+            try {
+                final var profile = mover.getMasterInterface().getIncomingProfileNoAuth(inuId);
+                if (profile != null) {
+                    final var setup = profile.getECtransSetup();
+                    if (setup != null) {
+                        final var email = setup.getString(ECtransOptions.USER_PORTAL_REGISTRATION_ADMIN_EMAIL);
+                        if (!email.isEmpty()) {
+                            return email;
+                        }
+                    }
+                }
+            } catch (final Exception ignored) {
+                // fall through to global config
+            }
+        }
+        return Cnf.at("DataPortal", "registrationAdminEmail", "");
     }
 
     /** Build a JSON error response. */

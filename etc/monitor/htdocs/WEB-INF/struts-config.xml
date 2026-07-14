@@ -971,6 +971,19 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetIncomingUserPortalTrafficAction">
 			<forward name="success" path=".pds.datafile.portaltraffic" />
 		</action>
+		<action path="/user/incoming/subscribers/*/list" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetPortalSubscriberListJsonAction">
+		</action>
+		<action path="/user/incoming/subscribers/*/edit/activate/*" parameter="{1}|{2}"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.UpdatePortalSubscriberAction">
+		</action>
+		<action path="/user/incoming/subscribers/*/edit/delete/*" parameter="{1}|{2}"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.DeletePortalSubscriberAction">
+		</action>
+		<action path="/user/incoming/subscribers/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetPortalSubscribersAction">
+			<forward name="success" path=".pds.user.incoming.subscribers" />
+		</action>
 		<action path="/user/incoming/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.GetIncomingUserAction">
 			<forward name="success" path=".pds.user.incoming.detail" />

@@ -30,6 +30,9 @@
 				<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 					<i class="bi bi-person-fill-gear text-primary"></i>
 					<span class="fw-semibold">Data User: <c:out value="${incoming.id}" /></span>
+					<a href="#" class="btn btn-sm btn-outline-info ms-1 flex-shrink-0"
+					   onclick="var el=document.getElementById('portalServiceGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"
+					   title="Open Portal Service Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Portal Service </span>Guide</a>
 					<auth:if basePathKey="incoming.basepath" paths="/edit/insert_form">
 					<auth:then>
 					<div class="d-flex gap-1 ms-auto flex-shrink-0 align-items-center">
@@ -46,6 +49,10 @@
 						<span class="border-start mx-1" style="height:1.4em;"></span>
 						<a href="/do/user/incoming/portaltraffic/${incoming.id}"
 						   class="btn btn-sm btn-outline-secondary" title="Portal Traffic"><i class="bi bi-graph-up-arrow"></i></a>
+						<c:if test="${incoming.portalService == 'self-service'}">
+						<a href="/do/user/incoming/subscribers/${incoming.id}"
+						   class="btn btn-sm btn-outline-info" title="Portal Subscribers"><i class="bi bi-people-fill"></i></a>
+						</c:if>
 						</c:if>
 					</div>
 					</auth:then>
@@ -302,6 +309,9 @@
 		</div>
 	</div>
 </div>
+
+<%-- Portal Service Guide offcanvas --%>
+<jsp:include page="/WEB-INF/jsp/pds/user/incoming/portal_service_guide.jsp"/>
 
 <%-- Help offcanvas panel --%>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="incomingViewHelpOffcanvas"

@@ -77,6 +77,7 @@ import ecmwf.common.database.IncomingAssociation;
 import ecmwf.common.database.IncomingPolicy;
 import ecmwf.common.database.IncomingUser;
 import ecmwf.common.database.MonitoringValue;
+import ecmwf.common.database.PortalSubscriber;
 import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferMethod;
 import ecmwf.common.database.TransferServer;
@@ -1527,6 +1528,62 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                 base.update(user);
             }
             base.removeIncomingUser(user);
+            monitor.done();
+        } catch (final DataBaseException e) {
+            exception = e;
+            _log.warn(e);
+            throw e;
+        } catch (final Exception e) {
+            exception = e;
+            _log.warn(e);
+            throw new MasterException(e.getMessage());
+        } finally {
+            master.logECpdsAction(action, null, exception);
+        }
+    }
+
+    @Override
+    public List<PortalSubscriber> getPortalSubscribersByUser(final ECpdsSession session, final String inuId)
+            throws MasterException, DataBaseException {
+        final var monitor = new MonitorCall("getPortalSubscribersByUser(" + inuId + ")");
+        try {
+            return monitor.done(base.getPortalSubscribersByUser(inuId));
+        } catch (final Exception e) {
+            _log.warn(e);
+            throw new MasterException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void updatePortalSubscriber(final ECpdsSession session, final PortalSubscriber sub)
+            throws MasterException, DataBaseException {
+        final var monitor = new MonitorCall("updatePortalSubscriber(" + sub.getPsbId() + ")");
+        final var action = master.startECpdsAction(session, "update", sub);
+        Exception exception = null;
+        try {
+            base.update(sub);
+            monitor.done();
+        } catch (final DataBaseException e) {
+            exception = e;
+            _log.warn(e);
+            throw e;
+        } catch (final Exception e) {
+            exception = e;
+            _log.warn(e);
+            throw new MasterException(e.getMessage());
+        } finally {
+            master.logECpdsAction(action, null, exception);
+        }
+    }
+
+    @Override
+    public void removePortalSubscriber(final ECpdsSession session, final PortalSubscriber sub)
+            throws MasterException, DataBaseException {
+        final var monitor = new MonitorCall("removePortalSubscriber(" + sub.getPsbId() + ")");
+        final var action = master.startECpdsAction(session, "remove", sub);
+        Exception exception = null;
+        try {
+            base.remove(sub);
             monitor.done();
         } catch (final DataBaseException e) {
             exception = e;

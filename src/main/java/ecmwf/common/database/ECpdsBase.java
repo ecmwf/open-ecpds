@@ -615,6 +615,29 @@ public final class ECpdsBase extends DataBase {
         return null;
     }
 
+    public List<PortalSubscriber> getPortalSubscribersByUser(final String inuId) {
+        final var list = new ArrayList<PortalSubscriber>();
+        try (final var iterator = ecpds.getPortalSubscribersByIncomingUser(PortalSubscriber.class, inuId)) {
+            while (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
+        } catch (final Exception e) {
+            _log.warn("getPortalSubscribersByUser({})", inuId, e);
+        }
+        return list;
+    }
+
+    public PortalSubscriber getPortalSubscriberById(final long id) {
+        try {
+            final var sub = new PortalSubscriber();
+            sub.setPsbId(id);
+            return get(sub);
+        } catch (final Exception e) {
+            _log.warn("getPortalSubscriberById({})", id, e);
+            return null;
+        }
+    }
+
     /**
      * Gets the incoming policies for an incoming user.
      *

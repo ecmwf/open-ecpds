@@ -93,12 +93,13 @@ inherit it automatically.
 #### How it works end-to-end
 
 1. **Administrator** sets the Portal Service to **Self-Service** on the Data User and
-   enables registration in `ecmwf.properties`:
+   optionally sets per-user properties in the Data User's **Properties** field:
    ```properties
-   registrationEnabled=true
-   registrationAutoApprove=true        # activate on email click (recommended for testing)
-   registrationAdminEmail=you@org.com  # optional: notify an admin on each new registration
+   portal.registrationAutoApprove = "true"       # activate on email click (recommended for testing)
+   portal.registrationAdminEmail = "you@org.com" # optional: notify an admin on each new registration
    ```
+   The global `registrationEnabled=true` flag in `ecmwf.properties` (`[DataPortal]` section)
+   must also be set to show the *Share registration link* item in the portal menu.
 2. **Administrator** shares the registration link. When logged into the data portal as
    the Self-Service Data User, the username menu (top-right) shows a
    **Share registration link** item which opens:
@@ -111,9 +112,9 @@ inherit it automatically.
    generates a unique verification token and a random 12-character password, and sends
    the visitor a verification email.
 5. **Visitor** clicks the link in the email (`/ecpds/verify?token=…`).
-   - If `registrationAutoApprove=true` → subscriber is immediately activated and receives
+   - If `portal.registrationAutoApprove = "true"` → subscriber is immediately activated and receives
      a second email containing their login credentials (username + personal password).
-   - If `registrationAutoApprove=false` → the administrator is notified and must manually
+   - If `portal.registrationAutoApprove = "false"` (default) → the administrator is notified and must manually
      activate the subscriber in the admin interface before credentials are sent.
 6. **Visitor** logs into the data portal using:
    - **Username:** the Data User's login (e.g. `myorg_data`)
@@ -134,13 +135,26 @@ Each registrant is stored as an independent row:
 | `PSB_VERIFY_TOKEN` | Token sent in the verification email; cleared on activation |
 | `PSB_CREATED_TIME` | Epoch-millisecond registration timestamp |
 
-#### Configuration reference (`ecmwf.properties` `[DataPortal]` section)
+#### Configuration reference
+
+**Global settings** (`ecmwf.properties` `[DataPortal]` section):
 
 | Property | Default | Description |
 |---|---|---|
 | `registrationEnabled` | `false` | Show the *Share registration link* item in the portal menu |
-| `registrationAutoApprove` | `false` | Activate subscriber immediately when they verify their email |
-| `registrationAdminEmail` | *(empty)* | Email address to notify on each new registration or activation |
+
+**Per-user ECtrans properties** (set in the Data User's **Properties** field):
+
+| Property | Default | Description |
+|---|---|---|
+| `portal.registrationAutoApprove` | `"false"` | Activate subscriber immediately when they verify their email |
+| `portal.registrationAdminEmail` | *(empty)* | Email address to notify on each new registration or activation |
+
+!!! tip "Per-user vs global"
+    `portal.registrationAutoApprove` and `portal.registrationAdminEmail` are **per Data User** — each
+    Self-Service user can have a different admin email and approval policy.
+    The global `registrationEnabled` flag only controls whether the portal menu shows the
+    *Share registration link* item; the registration endpoint itself is always active for Self-Service users.
 
 #### Testing without email
 

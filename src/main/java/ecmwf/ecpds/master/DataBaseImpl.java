@@ -111,6 +111,8 @@ import ecmwf.common.database.TransferStatistics;
 import ecmwf.common.database.Url;
 import ecmwf.common.database.WebUser;
 import ecmwf.common.database.WeuCat;
+import ecmwf.common.ectrans.ECtransGroups;
+import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.monitor.MonitorManager;
 import ecmwf.common.technical.Cnf;
@@ -3541,15 +3543,29 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         return monitor.done(token);
     }
 
-    public String verifyRegistrationToken(final String token, final boolean autoApprove)
+    public String verifyRegistrationToken(final String token, final boolean autoApproveDefault)
             throws DataBaseException, RemoteException {
-        final var monitor = new MonitorCall("verifyRegistrationToken(autoApprove=" + autoApprove + ")");
+        final var monitor = new MonitorCall("verifyRegistrationToken");
         if (token == null || token.isBlank() || "VERIFIED".equals(token)) {
             return monitor.done("invalid");
         }
         final var sub = ecpds.getPortalSubscriberByToken(token);
         if (sub == null) {
             return monitor.done("invalid");
+        }
+        // Resolve autoApprove from per-user ECtrans property, falling back to the provided default
+        var autoApprove = autoApproveDefault;
+        try {
+            final var inuId = sub.getPsbInuId();
+            if (inuId != null && !inuId.isBlank()) {
+                final var incomingUser = ecpds.getIncomingUser(inuId);
+                if (incomingUser != null && incomingUser.getData() != null) {
+                    final var setup = ECtransGroups.Module.USER_PORTAL.getECtransSetup(incomingUser.getData());
+                    autoApprove = setup.getBoolean(ECtransOptions.USER_PORTAL_REGISTRATION_AUTO_APPROVE);
+                }
+            }
+        } catch (final Exception ignored) {
+            // fall back to autoApproveDefault
         }
         if (autoApprove) {
             sub.setPsbActive(true);

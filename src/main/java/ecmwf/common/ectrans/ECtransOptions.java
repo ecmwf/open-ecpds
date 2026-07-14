@@ -1615,6 +1615,12 @@ public enum ECtransOptions {
     /** The user portal msg down. */
     USER_PORTAL_MSG_DOWN("msgDown", String.class, STRING_NONE),
 
+    /** The user portal registration auto-approve. */
+    USER_PORTAL_REGISTRATION_AUTO_APPROVE("registrationAutoApprove", Boolean.class, false),
+
+    /** The user portal registration admin email. */
+    USER_PORTAL_REGISTRATION_ADMIN_EMAIL("registrationAdminEmail", String.class, STRING_NONE),
+
     /** The user portal trigger event. */
     USER_PORTAL_TRIGGER_EVENT("triggerEvent", Boolean.class, true),
 

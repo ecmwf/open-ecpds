@@ -44,6 +44,7 @@ import ecmwf.common.database.Host;
 import ecmwf.common.database.IncomingPolicy;
 import ecmwf.common.database.IncomingUser;
 import ecmwf.common.database.MonitoringValue;
+import ecmwf.common.database.PortalSubscriber;
 import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferMethod;
 import ecmwf.common.database.TransferServer;
@@ -1111,6 +1112,62 @@ public interface ManagementInterface extends Remote {
      *             the remote exception
      */
     void removeIncomingUser(ECpdsSession session, IncomingUser user)
+            throws MasterException, DataBaseException, RemoteException;
+
+    /**
+     * Gets all PortalSubscribers for a given IncomingUser.
+     *
+     * @param session
+     *            the session
+     * @param inuId
+     *            the incoming user id
+     *
+     * @return the portal subscribers
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    List<PortalSubscriber> getPortalSubscribersByUser(ECpdsSession session, String inuId)
+            throws MasterException, DataBaseException, RemoteException;
+
+    /**
+     * Updates a PortalSubscriber.
+     *
+     * @param session
+     *            the session
+     * @param sub
+     *            the portal subscriber
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void updatePortalSubscriber(ECpdsSession session, PortalSubscriber sub)
+            throws MasterException, DataBaseException, RemoteException;
+
+    /**
+     * Removes a PortalSubscriber permanently.
+     *
+     * @param session
+     *            the session
+     * @param sub
+     *            the portal subscriber
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void removePortalSubscriber(ECpdsSession session, PortalSubscriber sub)
             throws MasterException, DataBaseException, RemoteException;
 
     /**

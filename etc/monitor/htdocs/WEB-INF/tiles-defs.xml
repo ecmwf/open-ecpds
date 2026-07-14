@@ -942,6 +942,15 @@
 		<put name="spare" value=".pds.user.incoming.spare.edit" />
 	</definition>
 
+	<definition name=".pds.user.incoming.subscribers"
+		extends=".pds.user">
+		<put name="title" value="Portal Subscribers" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/user/submenu.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/user/incoming/subscribers.jsp" />
+		<put name="spare" value=".pds.user.incoming.spare.edit" />
+	</definition>
+
 	<definition name=".pds.user.incoming.insert.content"
 		extends=".pds.form.content">
 		<put name="action" value="/user/incoming/edit/insert" />

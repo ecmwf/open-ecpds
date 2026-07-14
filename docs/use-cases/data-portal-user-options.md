@@ -131,6 +131,29 @@ portal.putPathPermRegex = "(.*):/data/incoming/(.*)"
 | `portal.triggerLastRangeOnly` | Boolean | `false` | For HTTP `multipart/byteranges` requests, emit a single event only after the final range completes rather than one event per range |
 | `portal.updateLastLoginInformation` | Boolean | `true` | Record the last-login timestamp for this user. Consider disabling for anonymous/high-frequency users to avoid database flooding |
 
+## Self-Service Registration
+
+These options only apply when the Data User's **Portal Service** is set to **Self-Service**.
+They control how subscriber self-registration and admin notifications work.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `portal.registrationAutoApprove` | Boolean | `false` | When `true`, subscriber accounts are activated automatically as soon as the subscriber verifies their email, and login credentials are emailed to them immediately. When `false`, a new registration enters *Awaiting Approval* state and must be manually activated by an administrator via the Portal Subscribers page |
+| `portal.registrationAdminEmail` | String | *none* | Email address to notify when a new registration is submitted, when a subscriber verifies their email and is awaiting approval, or when a subscriber is auto-activated. If empty, no admin notifications are sent |
+
+**Example:**
+
+```properties
+portal.registrationAutoApprove = "true"
+portal.registrationAdminEmail = "dataadmin@example.com"
+```
+
+!!! note
+    The global `registrationEnabled` flag in `ecmwf.properties` (`[DataPortal]` section)
+    controls whether the *Share registration link* item is shown in the portal menu.
+    `portal.registrationAutoApprove` and `portal.registrationAdminEmail` are per-user
+    properties and can differ across Data Users.
+
 ## Related
 
 - [Data Portal use case](../use-cases/data-portal.md)

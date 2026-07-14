@@ -52,6 +52,7 @@ import ecmwf.common.database.Host;
 import ecmwf.common.database.IncomingPolicy;
 import ecmwf.common.database.IncomingUser;
 import ecmwf.common.database.MonitoringValue;
+import ecmwf.common.database.PortalSubscriber;
 import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferMethod;
 import ecmwf.common.database.TransferServer;
@@ -1055,6 +1056,41 @@ final class ManagementProxy implements ManagementInterface {
                 "removeIncomingUser(" + session.getWebUser().getName() + "," + user.getId() + ")");
         managementInterface.removeIncomingUser(session, user);
         MasterManager.removeFromCache(user);
+        monitor.done();
+    }
+
+    @Override
+    public List<PortalSubscriber> getPortalSubscribersByUser(final ECpdsSession session, final String inuId)
+            throws MasterException, DataBaseException, RemoteException {
+        if (session == null || isEmpty(inuId)) {
+            throw new MasterException("Invalid parameter(s) for getPortalSubscribersByUser");
+        }
+        final var monitor = new MonitorCall(
+                "getPortalSubscribersByUser(" + session.getWebUser().getName() + "," + inuId + ")");
+        return monitor.done(managementInterface.getPortalSubscribersByUser(session, inuId));
+    }
+
+    @Override
+    public void updatePortalSubscriber(final ECpdsSession session, final PortalSubscriber sub)
+            throws MasterException, DataBaseException, RemoteException {
+        if (session == null || sub == null) {
+            throw new MasterException("Invalid parameter(s) for updatePortalSubscriber");
+        }
+        final var monitor = new MonitorCall(
+                "updatePortalSubscriber(" + session.getWebUser().getName() + "," + sub.getPsbId() + ")");
+        managementInterface.updatePortalSubscriber(session, sub);
+        monitor.done();
+    }
+
+    @Override
+    public void removePortalSubscriber(final ECpdsSession session, final PortalSubscriber sub)
+            throws MasterException, DataBaseException, RemoteException {
+        if (session == null || sub == null) {
+            throw new MasterException("Invalid parameter(s) for removePortalSubscriber");
+        }
+        final var monitor = new MonitorCall(
+                "removePortalSubscriber(" + session.getWebUser().getName() + "," + sub.getPsbId() + ")");
+        managementInterface.removePortalSubscriber(session, sub);
         monitor.done();
     }
 
