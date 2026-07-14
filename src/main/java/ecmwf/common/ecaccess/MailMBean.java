@@ -62,6 +62,11 @@ public class MailMBean extends MBeanRepository<MailMessage> {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(MailMBean.class);
 
+    /** Pattern to detect HTML content — matches any opening HTML tag (e.g. &lt;p&gt;, &lt;ul&gt;, &lt;a …). */
+    private static final java.util.regex.Pattern HTML_PATTERN = java.util.regex.Pattern.compile(
+            "<(p|ul|ol|li|a|b|strong|em|h[1-6]|br|div|span|table|code|html|body)[ >]",
+            java.util.regex.Pattern.CASE_INSENSITIVE);
+
     /** The Constant DATA_ORDER. */
     private static final Comparator<Message> DATA_ORDER = (o1, o2) -> {
         try {
@@ -417,16 +422,23 @@ public class MailMBean extends MBeanRepository<MailMessage> {
                 message.setRecipients(Message.RecipientType.CC, InternetAddress.parse(cc));
             }
             message.setSubject(subject);
+            final var isHtml = content != null && HTML_PATTERN.matcher(content).find();
             if (attachmentName != null && !attachmentName.isBlank()) {
                 final var textPart = new MimeBodyPart();
-                textPart.setText(content, "utf-8");
+                if (isHtml) {
+                    textPart.setContent(content, "text/html; charset=utf-8");
+                } else {
+                    textPart.setText(content, "utf-8");
+                }
                 final var filePart = new MimeBodyPart();
                 filePart.setText(attachmentContent, "utf-8");
                 filePart.setFileName(attachmentName);
-                final Multipart multipart = new MimeMultipart("mixed"); // changed from "alternative"
+                final Multipart multipart = new MimeMultipart("mixed");
                 multipart.addBodyPart(textPart);
                 multipart.addBodyPart(filePart);
                 message.setContent(multipart);
+            } else if (isHtml) {
+                message.setContent(content, "text/html; charset=utf-8");
             } else {
                 message.setText(content);
             }
