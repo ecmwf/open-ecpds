@@ -97,7 +97,7 @@
 </div>
 
 <div class="card-body p-0">
-<div id="psbBulkMsg" style="display:none" class="mx-2 mt-2"></div>
+<div id="psbBulkMsg" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;min-width:320px;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.25);"></div>
 <div class="table-responsive">
 <table id="psbTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
     <thead class="table-info">
@@ -195,7 +195,7 @@
 
     function _showMsg(type, html) {
         var $m = $('#psbBulkMsg');
-        $m.attr('class', 'mx-2 mt-2 alert alert-' + type + ' alert-dismissible d-flex align-items-center gap-2 p-2 mb-0');
+        $m.attr('class', 'alert alert-' + type + ' alert-dismissible d-flex align-items-center gap-2 p-3 mb-0 rounded-3');
         var icon = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
         $m.html('<i class="bi ' + icon + ' flex-shrink-0"></i><div class="flex-grow-1">' + html + '</div>'
               + '<button type="button" class="btn-close p-2" data-bs-dismiss="alert" aria-label="Close"></button>');
