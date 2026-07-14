@@ -1368,8 +1368,7 @@ public final class RESTServer {
             Format.replaceAll(sb, "${accessGuide}", String.valueOf(accessGuide));
             final var loginButton = setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_LOGIN_BUTTON);
             Format.replaceAll(sb, "${loginButtonHidden}", loginButton ? "" : "d-none");
-            final var registrationEnabled = Cnf.at("DataPortal", "registrationEnabled", true)
-                    && "self-service".equals(session.getPortalService());
+            final var registrationEnabled = "self-service".equals(session.getPortalService());
             Format.replaceAll(sb, "${registerLinkHidden}", registrationEnabled ? "" : "d-none");
             final var trafficStats = setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_TRAFFIC_STATS);
             Format.replaceAll(sb, "${trafficStats}", String.valueOf(trafficStats));
@@ -1639,9 +1638,9 @@ public final class RESTServer {
             } catch (final ecmwf.common.database.DataBaseException e) {
                 return jsonError(400, e.getMessage());
             }
-            // Resolve per-user registration settings from ECtrans options (with global fallback)
+            // Resolve per-user registration settings from ECtrans options (with global fallback for admin email)
             var registrationAdminEmail = Cnf.at("DataPortal", "registrationAdminEmail", "");
-            var registrationAutoApprove = Cnf.at("DataPortal", "registrationAutoApprove", false);
+            var registrationAutoApprove = false;
             try {
                 final var profile = mover.getMasterInterface().getIncomingProfileNoAuth(user);
                 if (profile != null) {
@@ -1729,8 +1728,7 @@ public final class RESTServer {
             return Response.seeOther(java.net.URI.create(registerBase + "invalid")).build();
         }
         try {
-            final var autoApprove = Cnf.at("DataPortal", "registrationAutoApprove", false);
-            final var result = mover.getMasterInterface().verifyRegistrationToken(token, autoApprove);
+            final var result = mover.getMasterInterface().verifyRegistrationToken(token, false);
             if (result == null || result.equals("invalid")) {
                 return Response.seeOther(java.net.URI.create(registerBase + "invalid")).build();
             }

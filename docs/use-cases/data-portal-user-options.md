@@ -148,11 +148,11 @@ portal.registrationAutoApprove = "true"
 portal.registrationAdminEmail = "dataadmin@example.com"
 ```
 
-!!! note
-    The global `registrationEnabled` flag in `ecmwf.properties` (`[DataPortal]` section)
-    controls whether the *Share registration link* item is shown in the portal menu.
-    `portal.registrationAutoApprove` and `portal.registrationAdminEmail` are per-user
-    properties and can differ across Data Users.
+!!! tip "Global admin email fallback"
+    `portal.registrationAdminEmail` can also be set globally in `ecmwf.properties`
+    (`[DataPortal]` section) as `registrationAdminEmail=you@org.com`. The per-user
+    property takes precedence when set. Both `portal.registrationAutoApprove` and
+    `portal.registrationAdminEmail` can differ independently across Data Users.
 
 ## Related
 

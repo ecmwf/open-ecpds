@@ -92,14 +92,13 @@ inherit it automatically.
 
 #### How it works end-to-end
 
-1. **Administrator** sets the Portal Service to **Self-Service** on the Data User and
-   optionally sets per-user properties in the Data User's **Properties** field:
+1. **Administrator** sets the Portal Service to **Self-Service** on the Data User.
+   The *Share registration link* item appears automatically in the portal menu for Self-Service users.
+   Optionally, set per-user properties in the Data User's **Properties** field:
    ```properties
    portal.registrationAutoApprove = "true"       # activate on email click (recommended for testing)
    portal.registrationAdminEmail = "you@org.com" # optional: notify an admin on each new registration
    ```
-   The global `registrationEnabled=true` flag in `ecmwf.properties` (`[DataPortal]` section)
-   must also be set to show the *Share registration link* item in the portal menu.
 2. **Administrator** shares the registration link. When logged into the data portal as
    the Self-Service Data User, the username menu (top-right) shows a
    **Share registration link** item which opens:
@@ -137,12 +136,6 @@ Each registrant is stored as an independent row:
 
 #### Configuration reference
 
-**Global settings** (`ecmwf.properties` `[DataPortal]` section):
-
-| Property | Default | Description |
-|---|---|---|
-| `registrationEnabled` | `false` | Show the *Share registration link* item in the portal menu |
-
 **Per-user ECtrans properties** (set in the Data User's **Properties** field):
 
 | Property | Default | Description |
@@ -150,11 +143,10 @@ Each registrant is stored as an independent row:
 | `portal.registrationAutoApprove` | `"false"` | Activate subscriber immediately when they verify their email |
 | `portal.registrationAdminEmail` | *(empty)* | Email address to notify on each new registration or activation |
 
-!!! tip "Per-user vs global"
-    `portal.registrationAutoApprove` and `portal.registrationAdminEmail` are **per Data User** — each
-    Self-Service user can have a different admin email and approval policy.
-    The global `registrationEnabled` flag only controls whether the portal menu shows the
-    *Share registration link* item; the registration endpoint itself is always active for Self-Service users.
+!!! tip "Global admin email fallback"
+    `portal.registrationAdminEmail` can also be set globally in `ecmwf.properties`
+    (`[DataPortal]` section) as `registrationAdminEmail=you@org.com`. The per-user
+    property takes precedence when set.
 
 #### Testing without email
 
