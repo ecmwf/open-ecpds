@@ -1616,7 +1616,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
             } catch (final Exception ignored) {
                 // proceed without extra text
             }
-            final var extraHtml = extraAccess.isEmpty() ? "" : "<hr>" + extraAccess;
+            final var extraHtml = (extraAccess == null || extraAccess.isEmpty()) ? "" : "<hr>" + extraAccess;
             final var credBody = "<p>Your registration has been confirmed!</p>"
                     + "<p>You can now log in to the data portal using:</p>" + "<ul><li><strong>Username:</strong> "
                     + inuId + "</li>" + "<li><strong>Password:</strong> <code>" + password + "</code></li></ul>"

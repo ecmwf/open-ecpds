@@ -1660,8 +1660,8 @@ public final class RESTServer {
             } catch (final Exception ignored) {
                 // fall back to global Cnf settings
             }
-            final var emailExtraHtml = registrationEmailExtraVerify.isEmpty() ? ""
-                    : "<hr>" + registrationEmailExtraVerify;
+            final var emailExtraHtml = (registrationEmailExtraVerify == null || registrationEmailExtraVerify.isEmpty())
+                    ? "" : "<hr>" + registrationEmailExtraVerify;
             // Derive the verify URL from the exact URL the client used to reach this endpoint.
             // Replacing /register at the end gives the correct external URL even behind a
             // reverse proxy (e.g. https://portal.example.com/ecpds/verify?token=...).
@@ -1747,7 +1747,7 @@ public final class RESTServer {
                 // Resolve per-user admin email (with global fallback)
                 final var adminEmail = getRegistrationAdminEmail(inuId);
                 final var extraHtml = getRegistrationEmailExtra(inuId);
-                final var emailExtraHtml = extraHtml.isEmpty() ? "" : "<hr>" + extraHtml;
+                final var emailExtraHtml = (extraHtml == null || extraHtml.isEmpty()) ? "" : "<hr>" + extraHtml;
                 // Send welcome email with credentials directly to the subscriber
                 if (!email.isEmpty()) {
                     final var credSubject = "Your data portal access is ready";
