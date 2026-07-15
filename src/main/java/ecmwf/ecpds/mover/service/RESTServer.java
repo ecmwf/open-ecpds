@@ -645,47 +645,6 @@ public final class RESTServer {
     // End-users methods
 
     /**
-     * Data portal head.
-     *
-     * @param ui
-     *            the ui
-     * @param request
-     *            the request
-     * @param response
-     *            the response
-     * @param filename
-     *            the filename
-     */
-    @HEAD
-    @Path("portal/{filename: .*}")
-    public void dataPortalHead(@Context final UriInfo ui, @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response, @PathParam("filename") final String filename) {
-        dataFileHead(ui, getBasicAuth("portal:portal"), null, request, response, filename);
-    }
-
-    /**
-     * Data portal get.
-     *
-     * @param ui
-     *            the ui
-     * @param request
-     *            the request
-     * @param response
-     *            the response
-     * @param filename
-     *            the filename
-     *
-     * @return the input stream
-     */
-    @GET
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    @Path("portal/{filename: .*}")
-    public Response dataPortalGet(@Context final UriInfo ui, @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response, @PathParam("filename") final String filename) {
-        return dataFileGet(ui, getBasicAuth("portal:portal"), null, request, response, filename);
-    }
-
-    /**
      * File get (if directory then list otherwise download).
      *
      * @param ui
