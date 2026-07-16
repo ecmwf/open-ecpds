@@ -1037,7 +1037,7 @@ public final class MasterServer extends ECaccessProvider
             if ("open-access".equals(user.getPortalService())) {
                 // This is an open-access user so no authentication required!
             } else if (incomingPassword != null) {
-            	final var selfService = "self-service".equals(user.getPortalService());
+                final var selfService = "self-service".equals(user.getPortalService());
                 if (!selfService && user.getSynchronized()) {
                     // User/password authentication through TOTP. Auto-detect passcodes (6 or 8 digits)
                     // to match the behaviour of getWebUser/LoginManagement.
