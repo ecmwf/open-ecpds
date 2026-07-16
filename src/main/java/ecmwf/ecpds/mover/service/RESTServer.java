@@ -1917,8 +1917,7 @@ public final class RESTServer {
 
     @GET
     @Path("logout")
-    public Response logout(@Context final HttpServletRequest request,
-                           @Context final HttpServletResponse response) {
+    public Response logout(@Context final HttpServletRequest request, @Context final HttpServletResponse response) {
         final var cookies = request.getCookies();
         if (cookies != null) {
             for (final var cookie : cookies) {
@@ -1929,7 +1928,7 @@ public final class RESTServer {
             }
         }
         response.addHeader("Set-Cookie",
-            "portal_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax");
+                "portal_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax");
         return Response.seeOther(URI.create("/login")).build();
     }
 
