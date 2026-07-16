@@ -51,7 +51,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -1529,9 +1528,6 @@ public final class RESTServer {
     }
 
     /**
-     * Logout endpoint — clears the portal session cookie and evicts the token from the cache, then flushes any
-     * browser-cached Basic Auth credentials and redirects to the given {@code next} path (default: {@code file}).
-     *
      * Registration page — serves the self-service account request form (no authentication required).
      *
      * @param request
@@ -1921,10 +1917,9 @@ public final class RESTServer {
 
     @GET
     @Path("logout")
-    public Response logout(@Context final HttpServletRequest request, @Context final HttpServletResponse response) {
-
+    public Response logout(@Context final HttpServletRequest request,
+                           @Context final HttpServletResponse response) {
         final var cookies = request.getCookies();
-
         if (cookies != null) {
             for (final var cookie : cookies) {
                 if ("portal_session".equals(cookie.getName())) {
@@ -1933,15 +1928,8 @@ public final class RESTServer {
                 }
             }
         }
-
-        final var expired = new Cookie("portal_session", "");
-        expired.setHttpOnly(true);
-        expired.setSecure(true);
-        expired.setPath("/");
-        expired.setMaxAge(0);
-
-        response.addCookie(expired);
-
+        response.addHeader("Set-Cookie",
+            "portal_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax");
         return Response.seeOther(URI.create("/login")).build();
     }
 
