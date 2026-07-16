@@ -174,7 +174,7 @@ public final class HttpPlugin extends PluginThread {
             httpConfig.setSendXPoweredBy(false);
             // War deployer for ecpds
             final var ecpds = new WebAppContext();
-            ecpds.setContextPath("/ecpds/");
+            ecpds.setContextPath("/ecpds");
             ecpds.setExtractWAR(true);
             ecpds.setParentLoaderPriority(false);
             ecpds.setAllowDuplicateFragmentNames(false);

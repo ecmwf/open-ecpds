@@ -36,6 +36,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.controller.ECMWFAction;
@@ -56,6 +57,7 @@ public class LogoutAction extends ECMWFAction {
             final HttpServletRequest request, final HttpServletResponse response)
             throws ECMWFException, ClassCastException {
         request.setAttribute("title", System.getProperty("monitor.title"));
+        request.setAttribute("loginAnimatedBackground", Cnf.at("MonitorPlugin", "loginAnimatedBackground", true));
         LoginAction.setAuthModeAttributes(request);
         // Wipe the user out from the session
         request.getSession().setAttribute(User.SESSION_KEY, null);

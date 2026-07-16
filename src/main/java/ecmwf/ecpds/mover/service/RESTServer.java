@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.URI;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -55,6 +56,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.HEAD;
 import javax.ws.rs.HeaderParam;
@@ -123,6 +125,9 @@ public final class RESTServer {
     /** The Constant REGISTER_FILE. */
     private static final String REGISTER_FILE = Cnf.at("HttpPlugin", "registerFile");
 
+    /** The Constant LOGIN_FILE. */
+    private static final String LOGIN_FILE = Cnf.at("HttpPlugin", "loginFile");
+
     /** The Constant homeContent. */
     private static final StringBuilder homeContent = new StringBuilder();
 
@@ -131,6 +136,9 @@ public final class RESTServer {
 
     /** The Constant registerContent. */
     private static final StringBuilder registerContent = new StringBuilder();
+
+    /** The Constant loginContent. */
+    private static final StringBuilder loginContent = new StringBuilder();
 
     /** The Constant MULTIPART_BOUNDARY. */
     private static final String MULTIPART_BOUNDARY = "MULTIPART_BYTERANGES";
@@ -952,7 +960,8 @@ public final class RESTServer {
         _log.debug("REST received request: fileGet({})", filename);
         checkIsControlChannel(ui);
         final var session = getUserSession(authString, request, response);
-        // When file-serving is delegated, serveDataFile takes full ownership of the session
+        // When file-serving is delegated, serveDataFile takes full ownership of the
+        // session
         // (closes on failure, transfers to streamer on success) — do not close here.
         var sessionTransferred = false;
         try {
@@ -1170,7 +1179,8 @@ public final class RESTServer {
         _log.debug("REST received request: dataFileGet({})", filename);
         checkIsControlChannel(ui);
         final var session = getUserSession(authString, request, response);
-        // serveDataFile owns the session lifecycle: closes on failure, transfers to streamer on success.
+        // serveDataFile owns the session lifecycle: closes on failure, transfers to
+        // streamer on success.
         return serveDataFile(session, request, filename);
     }
 
@@ -1581,7 +1591,8 @@ public final class RESTServer {
         try {
             final var mapper = new ObjectMapper();
             final var json = mapper.readValue(body, Map.class);
-            // 'user' is the IncomingUser ID (e.g., "test") that this subscriber is registering for
+            // 'user' is the IncomingUser ID (e.g., "test") that this subscriber is
+            // registering for
             final var user = trim(json.get("user"));
             final var name = trim(json.get("name"));
             final var email = trim(json.get("email"));
@@ -1590,14 +1601,16 @@ public final class RESTServer {
                 return jsonError(400, "All fields are required");
             }
             // Create PortalSubscriber + get verification token via master RMI.
-            // selfRegisterUser(id, name, email, iso) where id = the IncomingUser to subscribe to.
+            // selfRegisterUser(id, name, email, iso) where id = the IncomingUser to
+            // subscribe to.
             final String token;
             try {
                 token = mover.getMasterInterface().selfRegisterUser(user, name, email, iso);
             } catch (final ecmwf.common.database.DataBaseException e) {
                 return jsonError(400, e.getMessage());
             }
-            // Resolve per-user registration settings from ECtrans options (with global fallback for admin email)
+            // Resolve per-user registration settings from ECtrans options (with global
+            // fallback for admin email)
             var registrationAdminEmail = Cnf.at("DataPortal", "registrationAdminEmail", "");
             var registrationAutoApprove = false;
             var registrationEmailExtraVerify = "";
@@ -1621,7 +1634,8 @@ public final class RESTServer {
             }
             final var emailExtraHtml = (registrationEmailExtraVerify == null || registrationEmailExtraVerify.isEmpty())
                     ? "" : "<hr>" + registrationEmailExtraVerify;
-            // Derive the verify URL from the exact URL the client used to reach this endpoint.
+            // Derive the verify URL from the exact URL the client used to reach this
+            // endpoint.
             // Replacing /register at the end gives the correct external URL even behind a
             // reverse proxy (e.g. https://portal.example.com/ecpds/verify?token=...).
             final var verifyUrl = request.getRequestURL().toString().replaceFirst("/register$", "/verify") + "?token="
@@ -1714,7 +1728,8 @@ public final class RESTServer {
                             + "<p>You can now log in to the data portal using:</p>"
                             + "<ul><li><strong>Username:</strong> " + escapeHtml(inuId) + "</li>"
                             + "<li><strong>Password:</strong> <code>" + escapeHtml(password) + "</code></li></ul>"
-                            + "<p>We recommend changing your password after your first login.</p>" + emailExtraHtml;
+                            + "<p>Please keep your password secure and confidential. Store your credentials safely, as they will be required for future access to your account.</p>"
+                            + emailExtraHtml;
                     try {
                         mover.getMasterInterface().sendNotificationEmail(email, credSubject, credBody);
                     } catch (final Exception e) {
@@ -1822,23 +1837,94 @@ public final class RESTServer {
         return Response.status(status).entity(body).type(MediaType.APPLICATION_JSON).build();
     }
 
-    /**
-     * Logout endpoint.
-     *
-     * @param next
-     *            optional path to redirect to after logout (relative to the context path, e.g. {@code data/list/})
-     * @param request
-     *            the HTTP request
-     * @param response
-     *            the HTTP response
-     *
-     * @return HTML page that flushes credentials then redirects
-     */
+    @GET
+    @Path("login")
+    @Produces(MediaType.TEXT_HTML)
+    public Response loginPage(@Context final HttpServletRequest request) {
+        // Already logged in? Go directly to the portal.
+        final var cookies = request.getCookies();
+        if (cookies != null) {
+            for (final var cookie : cookies) {
+                if ("portal_session".equals(cookie.getName())) {
+                    final var user = MoverProvider.getUserForPortalSession(cookie.getValue());
+                    if (user != null) {
+                        return Response.seeOther(URI.create("/data/list/")).build();
+                    }
+                }
+            }
+        }
+        try {
+            final var sb = new StringBuilder().append(getTemplateContent(loginContent, LOGIN_FILE));
+            final var title = System.getProperty("mover.title", "Data Store for Acquisition & Dissemination");
+            final var tab = System.getProperty("mover.tab", title);
+            final var footer = System.getProperty("mover.footer",
+                    "Powered by <a href=\"https://github.com/ecmwf/open-ecpds\" target=\"_blank\">OpenECPDS</a>");
+            final var color = System.getProperty("mover.color", "#000000");
+            Format.replaceAll(sb, "${tab}", tab);
+            Format.replaceAll(sb, "${title}", title);
+            Format.replaceAll(sb, "${footer}", footer);
+            Format.replaceAll(sb, "${color}", color);
+            Format.replaceAll(sb, "${version}", Version.getVersion());
+            Format.replaceAll(sb, "${build}", Version.getBuild());
+            Format.replaceAll(sb, "${message}", "");
+            return Response.ok(sb.toString(), MediaType.TEXT_HTML).build();
+        } catch (final Exception e) {
+            _log.warn("registerGet", e);
+            return Response.serverError().entity("Registration page unavailable").build();
+        }
+    }
+
+    @POST
+    @Path("login")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response login(@FormParam("username") final String username, @FormParam("password") final String password,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response) {
+        try {
+            final var session = NativeAuthenticationProvider.getInstance().getUserSession(request.getRemoteAddr(),
+                    username, password, "https", (Closeable) () -> {
+                        try {
+                            response.sendError(-1);
+                        } catch (IOException ignored) {
+                        }
+                    });
+            // Do not create sessions for anonymous/open access users.
+            final var setup = session.getECtransSetup();
+            if (setup == null || !"open-access".equals(session.getPortalService())) {
+                setPortalSessionCookie(response, session.getToken());
+            }
+            session.close(true);
+            return Response.seeOther(URI.create("/data/list/")).build();
+        } catch (final Throwable t) {
+            _log.debug("Browser login failed for {}", username);
+            try {
+                final var sb = new StringBuilder().append(getTemplateContent(loginContent, LOGIN_FILE));
+                final var title = System.getProperty("mover.title", "Data Store for Acquisition & Dissemination");
+                final var tab = System.getProperty("mover.tab", title);
+                final var footer = System.getProperty("mover.footer",
+                        "Powered by <a href=\"https://github.com/ecmwf/open-ecpds\" target=\"_blank\">OpenECPDS</a>");
+                final var color = System.getProperty("mover.color", "#000000");
+                Format.replaceAll(sb, "${tab}", tab);
+                Format.replaceAll(sb, "${title}", title);
+                Format.replaceAll(sb, "${footer}", footer);
+                Format.replaceAll(sb, "${color}", color);
+                Format.replaceAll(sb, "${version}", Version.getVersion());
+                Format.replaceAll(sb, "${build}", Version.getBuild());
+                Format.replaceAll(sb, "${message}", "Login failed");
+                return Response.status(Response.Status.UNAUTHORIZED).entity(sb.toString()).type(MediaType.TEXT_HTML)
+                        .build();
+            } catch (final Exception e) {
+                _log.warn("login", e);
+                return Response.serverError().entity("Login page unavailable").build();
+            }
+        }
+    }
+
     @GET
     @Path("logout")
-    public Response logout(@QueryParam("next") final String next, @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response) {
+    public Response logout(@Context final HttpServletRequest request, @Context final HttpServletResponse response) {
+
         final var cookies = request.getCookies();
+
         if (cookies != null) {
             for (final var cookie : cookies) {
                 if ("portal_session".equals(cookie.getName())) {
@@ -1847,29 +1933,16 @@ public final class RESTServer {
                 }
             }
         }
-        // Clear the cookie in the browser
+
         final var expired = new Cookie("portal_session", "");
         expired.setHttpOnly(true);
         expired.setSecure(true);
         expired.setPath("/");
         expired.setMaxAge(0);
+
         response.addCookie(expired);
-        // Build the target URL from the request to avoid WAR context-path doubling.
-        final var base = request.getScheme() + "://" + request.getServerName()
-                + (request.getServerPort() == 443 || request.getServerPort() == 80 ? "" : ":" + request.getServerPort())
-                + request.getContextPath() + "/";
-        final var targetPath = (next != null && !next.isBlank()) ? next : "file";
-        final var targetUrl = base + targetPath;
-        // Return an HTML page that flushes any browser-cached Basic Auth credentials before
-        // redirecting — same technique as portal.html's logout() function: send an XHR with
-        // clearly invalid credentials to the target so the browser discards its cached ones,
-        // then navigate to the target URL which will now prompt for fresh credentials.
-        final var html = "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Logging out\u2026</title>"
-                + "<script>" + "var u='" + targetUrl + "';" + "var x=new XMLHttpRequest();" + "x.open('GET',u,true);"
-                + "x.setRequestHeader('Authorization','Basic bG9nb3V0OmxvZ291dA==');"
-                + "x.onload=function(){location.href=u;};" + "x.onerror=function(){location.href=u;};" + "x.send();"
-                + "</script></head><body></body></html>";
-        return Response.ok(html, MediaType.TEXT_HTML).build();
+
+        return Response.seeOther(URI.create("/login")).build();
     }
 
     /**
@@ -2443,6 +2516,121 @@ public final class RESTServer {
         }
     }
 
+    private UserSession getPortalSession(final HttpServletRequest request, final HttpServletResponse response) {
+        final var cookies = request.getCookies();
+        if (cookies == null) {
+            return null;
+        }
+        for (final var cookie : cookies) {
+            if (!"portal_session".equals(cookie.getName())) {
+                continue;
+            }
+            final var token = cookie.getValue();
+            final var cachedUser = MoverProvider.getUserForPortalSession(token);
+            if (cachedUser == null) {
+                break;
+            }
+            try {
+                final var session = NativeAuthenticationProvider.getInstance().getUserSession(request.getRemoteAddr(),
+                        cachedUser, MoverProvider.PORTAL_SESSION_PREFIX + token, "https", (Closeable) () -> {
+                            try {
+                                response.sendError(-1);
+                            } catch (IOException ignored) {
+                            }
+                        });
+                // Refresh the cookie only for non-anonymous users.
+                final var setup = session.getECtransSetup();
+                if (setup == null || !"open-access".equals(session.getPortalService())) {
+                    setPortalSessionCookie(response, session.getToken());
+                }
+                return session;
+            } catch (final Throwable t) {
+                _log.debug("Portal session cookie invalid", t);
+                break;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Authenticates the user using HTTP Basic Authentication.
+     *
+     * @param authString
+     *            the Authorization header
+     * @param request
+     *            the HTTP request
+     * @param response
+     *            the HTTP response
+     *
+     * @return the authenticated user session
+     */
+    private UserSession authenticateBasic(final String authString, final HttpServletRequest request,
+            final HttpServletResponse response) {
+        final String[] credentials = decodeBasicCredentials(authString);
+        try {
+            final var session = NativeAuthenticationProvider.getInstance().getUserSession(request.getRemoteAddr(),
+                    credentials[0], credentials[1], "https", (Closeable) () -> response.sendError(-1));
+            // Successful authentication.
+            // Issue/refresh the portal session cookie so browser requests do not
+            // need to re-authenticate (especially important for TOTP users).
+            // Skip anonymous users ("open-access") as they do not require a
+            // server-side portal session.
+            if (!"open-access".equals(session.getPortalService())) {
+                setPortalSessionCookie(response, session.getToken());
+            }
+            // Log request headers if enabled.
+            if (Cnf.at("HttpPlugin", "logHeadersAndUri", false)) {
+                final var headerNames = request.getHeaderNames();
+                while (headerNames.hasMoreElements()) {
+                    final var key = headerNames.nextElement();
+                    _log.debug("Request header: {} = [{}]", key, request.getHeader(key));
+                }
+            }
+            return session;
+        } catch (final Throwable t) {
+            final var message = t.getMessage();
+            // "Login failed" is a normal authentication failure.
+            if (message != null && message.contains("Login failed")) {
+                _log.debug("authenticateBasic: login failed for request from {}", request.getRemoteAddr());
+            } else {
+                _log.warn("authenticateBasic", t);
+            }
+            // Special error mappings.
+            if (message != null) {
+                if (message.contains("Maximum number of connections exceeded")) {
+                    throw new WebApplicationException(
+                            Response.status(429).type(MediaType.TEXT_PLAIN).entity("Too Many Requests").build());
+                }
+                if (message.contains("Upload quota exceeded") || message.contains("Download quota exceeded")) {
+
+                    throw new WebApplicationException(Response.status(429).type(MediaType.TEXT_PLAIN)
+                            .entity("Too Many Requests: " + message).build());
+                }
+                if (message.contains(" not allowed for ")) {
+                    throw new WebApplicationException(
+                            Response.status(403).type(MediaType.TEXT_PLAIN).entity("Forbidden").build());
+                }
+            }
+            // Authentication failed.
+            // Check whether this is a self-service user and redirect to the
+            // registration page instead of returning 401.
+            try {
+                final var attemptedUser = credentials[0];
+                final var profile = mover.getMasterInterface().getIncomingProfileNoAuth(attemptedUser);
+                if (profile != null && "self-service".equals(profile.getIncomingUser().getPortalService())) {
+                    final var registerUrl = request.getRequestURL().toString().replaceFirst("/ecpds/.*",
+                            "/ecpds/register") + "?user=" + attemptedUser;
+                    throw new WebApplicationException(Response.status(302).header("Location", registerUrl).build());
+                }
+            } catch (final WebApplicationException wae) {
+                throw wae;
+            } catch (final Exception ignored) {
+                // Lookup failed — fall through to standard 401.
+            }
+            throw unauthorized();
+        }
+    }
+
     /**
      * Gets the user session.
      *
@@ -2457,115 +2645,52 @@ public final class RESTServer {
      */
     private UserSession getUserSession(final String authString, final HttpServletRequest request,
             final HttpServletResponse response) {
-        // Check for an existing portal session cookie first — avoids re-validating
-        // TOTP on every browser request (TOTP codes are single-use and expire quickly)
-        final var cookies = request.getCookies();
-        if (cookies != null) {
-            for (final var cookie : cookies) {
-                if ("portal_session".equals(cookie.getName())) {
-                    final var token = cookie.getValue();
-                    final var cachedUser = MoverProvider.getUserForPortalSession(token);
-                    if (cachedUser != null) {
-                        try {
-                            final var session = NativeAuthenticationProvider.getInstance().getUserSession(
-                                    request.getRemoteAddr(), cachedUser, MoverProvider.PORTAL_SESSION_PREFIX + token,
-                                    "https", (Closeable) () -> {
-                                        try {
-                                            response.sendError(-1);
-                                        } catch (IOException ignored) {
-                                        }
-                                    });
-                            // Refresh the cookie only for non-anonymous users — anonymous users have no
-                            // TOTP to cache and issuing cookies would waste server memory.
-                            final var setup = session.getECtransSetup();
-                            if (setup == null || !"open-access".equals(session.getPortalService())) {
-                                setPortalSessionCookie(response, session.getToken());
-                            }
-                            return session;
-                        } catch (final Throwable t) {
-                            _log.debug("Portal session cookie invalid, falling back to Basic Auth", t);
-                            // Fall through to Basic Auth
-                        }
-                    }
-                    break;
-                }
-            }
+        final var session = getPortalSession(request, response);
+        if (session != null) {
+            return session;
         }
-        if (authString != null && authString.toLowerCase().startsWith("basic ")) {
-            // Header is in the format "Basic 5tyc0uiDat4". Let's decode the data back to
-            // its original string!
-            try {
-                final var decodedAuth = new String(BASE64Coder.decode(authString.split("\\s+")[1]));
-                final var credentials = decodedAuth.split(":");
-                if (credentials.length == 2) {
-                    final var session = NativeAuthenticationProvider.getInstance().getUserSession(
-                            request.getRemoteAddr(), credentials[0], credentials[1], "https",
-                            (Closeable) () -> response.sendError(-1));
-                    // Successful auth — issue/refresh the portal session cookie so the browser
-                    // doesn't need to re-validate TOTP on every subsequent request.
-                    // Skip for anonymous users — they have no TOTP and issuing cookies would
-                    // create unnecessary server-side session entries under high load.
-                    if (!"open-access".equals(session.getPortalService())) {
-                        setPortalSessionCookie(response, session.getToken());
-                    }
-                    // Log headers if asked to do so?
-                    if (Cnf.at("HttpPlugin", "logHeadersAndUri", false)) {
-                        final var headerNames = request.getHeaderNames();
-                        while (headerNames.hasMoreElements()) {
-                            final var key = headerNames.nextElement();
-                            _log.debug("Request header: {} = [{}]", key, request.getHeader(key));
-                        }
-                    }
-                    return session;
-                }
-            } catch (final Throwable t) {
-                // "Login failed" is a normal auth rejection — log at DEBUG without stack trace.
-                // Everything else (RMI errors, unexpected exceptions) keeps WARN + stack trace.
-                final var message = t.getMessage();
-                if (message != null && message.contains("Login failed")) {
-                    _log.debug("getUserSession: login failed for request from {}", request.getRemoteAddr());
-                } else {
-                    _log.warn("getUserSession", t);
-                }
-                if (message != null) {
-                    if (message.contains("Maximum number of connections exceeded")) {
-                        throw new WebApplicationException(
-                                Response.status(429).type(MediaType.TEXT_PLAIN).entity("Too Many Requests").build());
-                    }
-                    if (message.contains("Upload quota exceeded") || message.contains("Download quota exceeded")) {
-                        throw new WebApplicationException(Response.status(429).type(MediaType.TEXT_PLAIN)
-                                .entity("Too Many Requests: " + message).build());
-                    }
-                    if (message.contains(" not allowed for ")) {
-                        throw new WebApplicationException(
-                                Response.status(403).type(MediaType.TEXT_PLAIN).entity("Forbidden").build());
-                    }
-                }
-                // Auth failed — check if the attempted username is a self-service data user.
-                // If so, redirect to the registration page rather than showing "Unauthorized".
-                try {
-                    final var decodedAuth = new String(BASE64Coder.decode(authString.split("\\s+")[1]));
-                    final var credentials = decodedAuth.split(":");
-                    if (credentials.length >= 1) {
-                        final var attemptedUser = credentials[0];
-                        final var profile = mover.getMasterInterface().getIncomingProfileNoAuth(attemptedUser);
-                        if (profile != null && "self-service".equals(profile.getIncomingUser().getPortalService())) {
-                            final var registerUrl = request.getRequestURL().toString().replaceFirst("/ecpds/.*",
-                                    "/ecpds/register") + "?user=" + attemptedUser;
-                            throw new WebApplicationException(
-                                    Response.status(302).header("Location", registerUrl).build());
-                        }
-                    }
-                } catch (final WebApplicationException wae) {
-                    throw wae;
-                } catch (final Exception ignored) {
-                    // lookup failed — fall through to standard 401
-                }
-            }
+        return authenticateBasic(authString, request, response);
+    }
+
+    private UserSession getPortalUserSession(final HttpServletRequest request, final HttpServletResponse response) {
+        final var session = getPortalSession(request, response);
+        if (session != null) {
+            return session;
         }
-        // For whatever reason we were not able to authenticate the user!
-        throw new WebApplicationException(Response.status(401).type(MediaType.TEXT_PLAIN).entity("Unauthorized")
+        throw unauthorized();
+    }
+
+    private WebApplicationException unauthorized() {
+        return new WebApplicationException(Response.status(401).type(MediaType.TEXT_PLAIN).entity("Unauthorized")
                 .header("WWW-Authenticate", "Basic realm=\"Data User Credentials\"").build());
+    }
+
+    /**
+     * Decodes an HTTP Basic Authorization header.
+     *
+     * @param authString
+     *            the Authorization header
+     *
+     * @return the decoded username/password pair
+     *
+     * @throws WebApplicationException
+     *             if the header is missing or malformed
+     */
+    private String[] decodeBasicCredentials(final String authString) {
+        if (authString == null || !authString.toLowerCase().startsWith("basic ")) {
+            throw unauthorized();
+        }
+        try {
+            final var encoded = authString.split("\\s+", 2)[1];
+            final var decoded = new String(BASE64Coder.decode(encoded), StandardCharsets.UTF_8);
+            final var credentials = decoded.split(":", 2);
+            if (credentials.length != 2) {
+                throw unauthorized();
+            }
+            return credentials;
+        } catch (final IllegalArgumentException e) {
+            throw unauthorized();
+        }
     }
 
     /**
@@ -2577,12 +2702,9 @@ public final class RESTServer {
      *            the session token
      */
     private static void setPortalSessionCookie(final HttpServletResponse response, final String token) {
-        final var cookie = new Cookie("portal_session", token);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge((int) (MoverProvider._portalSessionTtlMs / 1000));
-        response.addCookie(cookie);
+        final var maxAge = (int) (MoverProvider._portalSessionTtlMs / 1000);
+        response.addHeader("Set-Cookie", "portal_session=" + token + "; Path=/" + "; Max-Age=" + maxAge + "; HttpOnly"
+                + "; Secure" + "; SameSite=Lax");
     }
 
     /**

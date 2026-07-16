@@ -924,12 +924,7 @@
     });
 
     function logout(successUrl, failUrl) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', location.href, true, 'logout', 'logout');
-      xhr.setRequestHeader('Authorization', 'Basic bG9nb3V0OmxvZ291dA==');
-      xhr.onload = function() { location.href = xhr.status === 401 ? successUrl : failUrl; };
-      xhr.onerror = function() { location.href = failUrl; };
-      xhr.send();
+      window.location.href = "/ecpds/logout";
     }
 
     function ecpdsToggleTheme() {

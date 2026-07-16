@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>${tab}</title>
+
+<style>
+
+:root{
+    --accent:${color};
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    min-height:100%;
+}
+
+body{
+    min-height:100vh;
+}
+
+body{
+
+    font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+
+    background:
+        linear-gradient(135deg,
+            #0d1b2a 0%,
+            #173654 45%,
+            var(--accent) 100%);
+
+    overflow-x:hidden;
+    overflow-y:auto;
+
+    margin:0;
+}
+
+/* Background glow */
+
+body::before{
+
+    content:"";
+
+    position:fixed;
+    inset:0;
+
+    pointer-events:none;
+
+    background:
+        radial-gradient(circle at 15% 20%,rgba(255,255,255,.06),transparent 28%),
+        radial-gradient(circle at 80% 25%,rgba(255,255,255,.04),transparent 25%),
+        radial-gradient(circle at 45% 85%,rgba(255,255,255,.05),transparent 30%);
+
+}
+
+#background {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+#login-wrap{
+
+    position:relative;
+    z-index:1;
+
+    min-height:100vh;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:40px 20px;
+
+}
+
+@media (max-height:700px){
+
+    #login-wrap{
+
+        align-items:flex-start;
+
+    }
+
+}
+
+/* Login card */
+
+.login-card{
+
+	width:min(390px,100%);
+    max-width:92vw;
+
+    background:rgba(255,255,255,.96);
+
+    backdrop-filter:blur(10px);
+
+    border-radius:18px;
+
+    padding:40px;
+
+    box-shadow:
+        0 25px 60px rgba(0,0,0,.35);
+
+    transition:all .4s ease;
+
+}
+
+/* Logo */
+
+.logo{
+
+    width:72px;
+    height:72px;
+
+    margin:0 auto 18px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:50%;
+
+	background:
+    	radial-gradient(circle at 30% 30%,
+        #6bb8ff,
+        var(--accent));
+
+    color:white;
+
+    box-shadow:
+        0 10px 25px rgba(0,0,0,.18);
+
+}
+
+.logo svg{
+
+    width:36px;
+    height:36px;
+
+}
+
+/* Headings */
+
+h1{
+
+    text-align:center;
+
+    font-size:28px;
+
+    color:#1f3554;
+
+    line-height:1.25;
+
+}
+
+.subtitle{
+
+    text-align:center;
+
+    margin-top:8px;
+    margin-bottom:28px;
+
+    color:#6b7280;
+
+    font-size:15px;
+
+}
+
+/* Error message */
+
+.message{
+
+    overflow:hidden;
+
+    max-height:120px;
+
+    margin-bottom:20px;
+
+    padding:12px 14px;
+
+    border-radius:10px;
+
+    background:#fff3cd;
+
+    border:1px solid #ffe69c;
+
+    color:#664d03;
+
+    font-size:14px;
+
+    transition:
+        opacity .6s ease,
+        max-height .6s ease,
+        margin .6s ease,
+        padding .6s ease,
+        border-width .6s ease;
+
+}
+
+.message.hidden{
+
+    opacity:0;
+
+    max-height:0;
+
+    margin:0;
+
+    padding-top:0;
+    padding-bottom:0;
+
+    border-width:0;
+
+}
+
+/* Form */
+
+label{
+
+    display:block;
+
+    margin-bottom:8px;
+
+    font-size:14px;
+
+    font-weight:600;
+
+    color:#374151;
+
+}
+
+input{
+
+    width:100%;
+
+    padding:14px 16px;
+
+    margin-bottom:22px;
+
+    border-radius:12px;
+
+    border:1px solid #d5dce4;
+
+    font-size:15px;
+
+    transition:.2s;
+
+}
+
+input:focus{
+
+    outline:none;
+
+    border-color:var(--accent);
+
+    box-shadow:0 0 0 4px rgba(0,0,0,.06);
+
+}
+
+/* Button */
+
+button{
+
+    width:100%;
+
+    border:none;
+
+    border-radius:12px;
+
+    padding:15px;
+
+    background:var(--accent);
+
+    color:white;
+
+    font-size:16px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+button:hover{
+
+    filter:brightness(1.05);
+
+    transform:translateY(-1px);
+
+}
+
+button:active{
+
+    transform:none;
+
+}
+
+/* Footer */
+
+.footer{
+
+    margin-top:28px;
+
+    padding-top:18px;
+
+    border-top:1px solid #e5e7eb;
+
+    text-align:center;
+
+}
+
+.version-row{
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:8px;
+
+    flex-wrap:wrap;
+
+}
+
+.badge{
+
+    display:inline-block;
+
+    padding:5px 11px;
+
+    border-radius:999px;
+
+    font-size:12px;
+
+    font-weight:600;
+
+}
+
+.version{
+
+    background:rgba(0,0,0,.04);
+
+    color:var(--accent);
+
+}
+
+.build{
+
+    background:#eef3f8;
+
+    color:#6b7280;
+
+}
+
+.footer-text{
+
+    margin-top:12px;
+
+    font-size:13px;
+
+    color:#6b7280;
+
+}
+
+.footer-text a{
+
+    color:var(--accent);
+
+    text-decoration:none;
+
+    font-weight:600;
+
+}
+
+.footer-text a:hover{
+
+    text-decoration:underline;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<canvas id="background"></canvas>
+
+<div id="login-wrap">
+
+<div class="login-card">
+
+    <div class="logo">
+
+        <svg viewBox="0 0 24 24"
+             fill="none"
+             stroke="white"
+             stroke-width="2"
+             stroke-linecap="round"
+             stroke-linejoin="round">
+
+            <path d="M20 17.6A4.6 4.6 0 0 0 18 9h-1A7 7 0 1 0 5 16.3"/>
+            <polyline points="12 12 12 21"/>
+            <polyline points="8 17 12 21 16 17"/>
+
+        </svg>
+
+    </div>
+
+    <h1>${title}</h1>
+
+    <div class="subtitle">
+        Secure Login
+    </div>
+
+    <div id="message" class="message">
+        ⚠ ${message}
+    </div>
+
+    <form method="post" action="login" autocomplete="off">
+
+        <label for="username">
+            Username
+        </label>
+
+        <input
+            id="username"
+            name="username"
+            type="text"
+            autocomplete="username"
+            autofocus
+            placeholder="Enter your username">
+
+        <label for="password">
+            Password
+        </label>
+
+        <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Enter your password">
+
+        <button type="submit">
+            Sign in
+        </button>
+
+    </form>
+
+    <div class="footer">
+
+        <div class="version-row">
+
+            <span class="badge version">
+                Version ${version}
+            </span>
+
+            <span class="badge build">
+                Build ${build}
+            </span>
+
+        </div>
+
+        <div class="footer-text">
+            ${footer}
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+<script>
+
+(function(){
+
+    var msg=document.getElementById("message");
+
+    var text=msg.textContent.replace("⚠","").trim();
+
+    if(text.length===0){
+
+        msg.classList.add("hidden");
+        return;
+
+    }
+
+    setTimeout(function(){
+
+        msg.classList.add("hidden");
+
+    },4500);
+
+})();
+
+</script>
+
+<script>
+
+(function(){
+
+const canvas = document.getElementById("background");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+window.addEventListener("resize", resize);
+resize();
+
+const hubs = [
+    [0.18,0.32],
+    [0.33,0.25],
+    [0.50,0.40],
+    [0.68,0.28],
+    [0.82,0.52],
+    [0.58,0.72],
+    [0.36,0.68],
+    [0.12,0.58]
+];
+
+const packets = [];
+
+for(let i=0;i<18;i++){
+
+    packets.push({
+        from:Math.floor(Math.random()*hubs.length),
+        to:Math.floor(Math.random()*hubs.length),
+        t:Math.random(),
+        speed:0.002+Math.random()*0.002
+    });
+
+}
+
+function point(i){
+
+    return {
+        x:hubs[i][0]*canvas.width,
+        y:hubs[i][1]*canvas.height
+    };
+
+}
+
+function bezier(t,p0,c,p1){
+
+    const m=1-t;
+
+    return {
+        x:m*m*p0.x+2*m*t*c.x+t*t*p1.x,
+        y:m*m*p0.y+2*m*t*c.y+t*t*p1.y
+    };
+
+}
+
+function animate(){
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    //
+    // draw hubs
+    //
+
+    hubs.forEach(h=>{
+
+        const x=h[0]*canvas.width;
+        const y=h[1]*canvas.height;
+
+        ctx.beginPath();
+        ctx.arc(x,y,3,0,Math.PI*2);
+        ctx.fillStyle="rgba(170,220,255,.9)";
+        ctx.fill();
+
+    });
+
+    packets.forEach(p=>{
+
+        if(p.from===p.to)
+            p.to=(p.to+1)%hubs.length;
+
+        const A=point(p.from);
+        const B=point(p.to);
+
+        const C={
+            x:(A.x+B.x)/2,
+            y:(A.y+B.y)/2-80
+        };
+
+        //
+        // draw route
+        //
+
+        ctx.beginPath();
+        ctx.moveTo(A.x,A.y);
+        ctx.quadraticCurveTo(C.x,C.y,B.x,B.y);
+        ctx.strokeStyle="rgba(13,110,253,.15)";
+        ctx.lineWidth=1;
+        ctx.stroke();
+
+        //
+        // move packet
+        //
+
+        p.t+=p.speed;
+
+        if(p.t>1){
+
+            p.from=Math.floor(Math.random()*hubs.length);
+            p.to=Math.floor(Math.random()*hubs.length);
+            p.t=0;
+
+        }
+
+        const pos=bezier(p.t,A,C,B);
+
+        const g=ctx.createRadialGradient(
+            pos.x,pos.y,0,
+            pos.x,pos.y,8
+        );
+
+        g.addColorStop(0,"rgba(255,255,255,.95)");
+        g.addColorStop(.3,"rgba(100,190,255,.8)");
+        g.addColorStop(1,"rgba(13,110,253,0)");
+
+        ctx.beginPath();
+        ctx.arc(pos.x,pos.y,8,0,Math.PI*2);
+        ctx.fillStyle=g;
+        ctx.fill();
+
+    });
+
+    requestAnimationFrame(animate);
+
+}
+
+animate();
+
+})();
+
+</script>
+
+</body>
+</html>

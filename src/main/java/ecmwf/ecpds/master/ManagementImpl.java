@@ -1620,7 +1620,8 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
             final var credBody = "<p>Your registration has been confirmed!</p>"
                     + "<p>You can now log in to the data portal using:</p>" + "<ul><li><strong>Username:</strong> "
                     + inuId + "</li>" + "<li><strong>Password:</strong> <code>" + password + "</code></li></ul>"
-                    + "<p>We recommend changing your password after your first login.</p>" + extraHtml;
+                    + "<p>Please keep your password secure and confidential. Store your credentials safely, as they will be required for future access to your account.</p>"
+                    + extraHtml;
             try {
                 master.sendNotificationEmail(email, "Your data portal access is ready", credBody);
             } catch (final Exception e) {
