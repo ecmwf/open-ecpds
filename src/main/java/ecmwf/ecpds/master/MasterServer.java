@@ -1037,7 +1037,8 @@ public final class MasterServer extends ECaccessProvider
             if ("open-access".equals(user.getPortalService())) {
                 // This is an open-access user so no authentication required!
             } else if (incomingPassword != null) {
-                if (user.getSynchronized()) {
+            	final var selfService = "self-service".equals(user.getPortalService());
+                if (!selfService && user.getSynchronized()) {
                     // User/password authentication through TOTP. Auto-detect passcodes (6 or 8 digits)
                     // to match the behaviour of getWebUser/LoginManagement.
                     final var isPasscode = LoginManagement.isPasscode(incomingPassword);
@@ -1055,7 +1056,7 @@ public final class MasterServer extends ECaccessProvider
                     }
                 } else {
                     // User/password authentication against the database
-                    if ("self-service".equals(user.getPortalService())) {
+                    if (selfService) {
                         // For self-service users the IncomingUser's own password is NEVER accepted —
                         // only active subscriber passwords are valid. This ensures that switching a
                         // user's Portal Service to self-service takes effect immediately and that
