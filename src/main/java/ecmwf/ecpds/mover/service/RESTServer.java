@@ -2457,8 +2457,11 @@ public final class RESTServer {
         } catch (final EccmdException e) {
             _log.warn("serveDataFile", e);
             final var message = e.getMessage();
-            if (message.contains("File not found") || message.contains("Destination not found")) {
+            if (message != null && (message.contains("File not found") || message.contains("Destination not found"))) {
                 throw newException(e, 404, "Not Found: " + message);
+            }
+            if (message != null && message.contains("Not retrieved")) {
+                throw newException(e, 503, "File temporarily unavailable: " + message);
             }
             throw newException(e, 500, message);
         } catch (final Throwable t) {
