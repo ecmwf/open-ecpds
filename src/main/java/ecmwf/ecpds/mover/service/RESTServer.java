@@ -2651,14 +2651,6 @@ public final class RESTServer {
         return authenticateBasic(authString, request, response);
     }
 
-    private UserSession getPortalUserSession(final HttpServletRequest request, final HttpServletResponse response) {
-        final var session = getPortalSession(request, response);
-        if (session != null) {
-            return session;
-        }
-        throw unauthorized();
-    }
-
     private WebApplicationException unauthorized() {
         return new WebApplicationException(Response.status(401).type(MediaType.TEXT_PLAIN).entity("Unauthorized")
                 .header("WWW-Authenticate", "Basic realm=\"Data User Credentials\"").build());
