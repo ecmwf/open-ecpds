@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -1887,6 +1888,7 @@ public final class RESTServer {
             final var setup = session.getECtransSetup();
             if (setup == null || !"open-access".equals(session.getPortalService())) {
                 setPortalSessionCookie(response, session.getToken());
+                setPortalModeCookie(response);
             }
             session.close(true);
             return Response.seeOther(URI.create("/data/list/")).build();
@@ -2506,6 +2508,7 @@ public final class RESTServer {
     private UserSession getPortalSession(final HttpServletRequest request, final HttpServletResponse response) {
         final var cookies = request.getCookies();
         if (cookies == null) {
+            _log.debug("No cookies found");
             return null;
         }
         for (final var cookie : cookies) {
@@ -2515,6 +2518,7 @@ public final class RESTServer {
             final var token = cookie.getValue();
             final var cachedUser = MoverProvider.getUserForPortalSession(token);
             if (cachedUser == null) {
+                _log.debug("No cachedUser found for token: " + token);
                 break;
             }
             try {
@@ -2528,8 +2532,10 @@ public final class RESTServer {
                 // Refresh the cookie only for non-anonymous users.
                 final var setup = session.getECtransSetup();
                 if (setup == null || !"open-access".equals(session.getPortalService())) {
+                    _log.debug("Refresh cookie");
                     setPortalSessionCookie(response, session.getToken());
                 }
+                _log.debug("Return sessionfor user: " + session.getUser());
                 return session;
             } catch (final Throwable t) {
                 _log.debug("Portal session cookie invalid", t);
@@ -2632,9 +2638,12 @@ public final class RESTServer {
      */
     private UserSession getUserSession(final String authString, final HttpServletRequest request,
             final HttpServletResponse response) {
-        final var session = getPortalSession(request, response);
+        UserSession session = getPortalSession(request, response);
         if (session != null) {
             return session;
+        }
+        if (isBrowserMode(request)) {
+            throw new WebApplicationException(Response.seeOther(URI.create("/login")).build());
         }
         return authenticateBasic(authString, request, response);
     }
@@ -2692,6 +2701,30 @@ public final class RESTServer {
         final var maxAge = (int) (MoverProvider._portalSessionTtlMs / 1000);
         response.addHeader("Set-Cookie", "portal_session=" + token + "; Path=/" + "; Max-Age=" + maxAge + "; HttpOnly"
                 + "; Secure" + "; SameSite=Lax");
+    }
+
+    /**
+     * Set (or refresh) the portal mode cookie on the HTTP response.
+     *
+     * @param response
+     *            the HTTP response
+     */
+    private static void setPortalModeCookie(final HttpServletResponse response) {
+        response.addHeader("Set-Cookie",
+                "portal_client=browser; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax");
+    }
+
+    private static boolean isBrowserMode(final HttpServletRequest request) {
+        final Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return false;
+        }
+        for (final Cookie cookie : cookies) {
+            if ("portal_client".equals(cookie.getName()) && "browser".equals(cookie.getValue())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
