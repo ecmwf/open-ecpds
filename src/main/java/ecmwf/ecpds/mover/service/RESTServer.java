@@ -1929,8 +1929,7 @@ public final class RESTServer {
                 }
             }
         }
-        response.addHeader("Set-Cookie",
-                "portal_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax");
+        clearPortalSessionCookie(response);
         return Response.seeOther(URI.create("/login")).build();
     }
 
@@ -2522,6 +2521,7 @@ public final class RESTServer {
             final var cachedUser = MoverProvider.getUserForPortalSession(token);
             if (cachedUser == null) {
                 _log.debug("No cachedUser found for token: " + token);
+                clearPortalSessionCookie(response);
                 break;
             }
             try {
@@ -2645,7 +2645,30 @@ public final class RESTServer {
         if (session != null) {
             return session;
         }
+        // Existing portal session could not be restored.
+        // If this is an open-access URL, transparently
+        // recreate the anonymous session.
         if (isBrowserMode(request)) {
+            final var uri = request.getRequestURI();
+            final var prefix = request.getContextPath() + "/home/";
+            if (uri.startsWith(prefix)) {
+                var user = uri.substring(prefix.length());
+                final var slash = user.indexOf('/');
+                if (slash >= 0) {
+                    user = user.substring(0, slash);
+                }
+                if (!user.isEmpty()) {
+                    try {
+                        final var profile = mover.getMasterInterface().getIncomingProfileNoAuth(user);
+                        if (profile != null && "open-access".equals(profile.getIncomingUser().getPortalService())) {
+                            return authenticateBasic(getBasicAuth(user + ":" + user), request, response);
+                        }
+                    } catch (final Exception e) {
+                        _log.debug("Unable to determine whether '{}' is an open-access user for URI '{}'", user, uri,
+                                e);
+                    }
+                }
+            }
             throw new WebApplicationException(Response.seeOther(URI.create("/login")).build());
         }
         return authenticateBasic(authString, request, response);
@@ -2699,7 +2722,18 @@ public final class RESTServer {
     }
 
     /**
-     * Set (or refresh) the portal mode cookie on the HTTP response.
+     * Clear the portal session cookie on the HTTP response.
+     *
+     * @param response
+     *            the HTTP response
+     */
+    private static void clearPortalSessionCookie(final HttpServletResponse response) {
+        response.addHeader("Set-Cookie",
+                "portal_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax");
+    }
+
+    /**
+     * Set (or refresh) the portal client cookie on the HTTP response.
      *
      * @param response
      *            the HTTP response
@@ -2709,6 +2743,14 @@ public final class RESTServer {
                 "portal_client=browser; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax");
     }
 
+    /**
+     * Determines whether the request originates from a browser client.
+     *
+     * @param request
+     *            the HTTP request
+     *
+     * @return {@code true} if the browser mode cookie is present, otherwise {@code false}
+     */
     private static boolean isBrowserMode(final HttpServletRequest request) {
         final Cookie[] cookies = request.getCookies();
         if (cookies == null) {
