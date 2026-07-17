@@ -27,12 +27,11 @@ WHERE
 #if ('$target' != '')
   AND DAT.DAT_TARGET LIKE '$target'
 #fi
-  AND NOT DAT.STA_CODE = 'INIT'
-  AND NOT DAT.STA_CODE = 'SCHE'
-  AND DAT.DAT_TIME_BASE >= '$fromDate'
-  AND DAT.DAT_TIME_BASE < '$toDate'
+  AND DAT.STA_CODE NOT IN ('INIT', 'SCHE', 'FETC')
   AND DAT.DAT_QUEUE_TIME < $currentTimeMillis
   AND DAT.DAT_DELETED = 0
+  AND DAT.DAT_TIME_BASE >= '$fromDate'
+  AND DAT.DAT_TIME_BASE < '$toDate'
 ORDER BY
 #if ('$sort' == '1')
   (DAT_SIZE IS NULL), DAT_SIZE

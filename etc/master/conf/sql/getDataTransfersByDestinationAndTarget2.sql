@@ -27,7 +27,7 @@ WHERE
   AND (DAT.DAT_TARGET LIKE '$target' OR DAT.DAT_TARGET LIKE '/$target')
 #fi
 #if ('$runnable' == 'true')
-  AND NOT DAT.STA_CODE = 'INIT'
+  AND DAT.STA_CODE NOT IN ('INIT', 'SCHE', 'FETC')
   AND DAT.DAT_QUEUE_TIME < $currentTimeMillis
   AND DAT.DAT_DELETED = 0
 #fi
