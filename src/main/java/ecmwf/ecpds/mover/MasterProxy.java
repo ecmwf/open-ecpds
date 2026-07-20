@@ -256,6 +256,24 @@ public interface MasterProxy {
     void releaseConnectionSlot(String incomingUser) throws Exception;
 
     /**
+     * Ask the Master to locate a portal session token on any currently connected data mover other than the requesting
+     * one. Used after a load-balancer failover to migrate a session from one mover to another without forcing the user
+     * to re-authenticate.
+     *
+     * @param token
+     *            the portal session token to search for
+     * @param excludeMoverName
+     *            the name of the calling mover (excluded from the search to avoid a self-lookup round-trip)
+     *
+     * @return the serialised session entry (tab-separated {@code user\tsubscriberId\tsubscriberEmail\texpiryEpochMs}),
+     *         or {@code null} if the token is not found on any other mover
+     *
+     * @throws java.lang.Exception
+     *             the exception
+     */
+    String resolvePortalSessionAcrossMovers(String token, String excludeMoverName) throws Exception;
+
+    /**
      * Gets the ecauth token.
      *
      * @param user

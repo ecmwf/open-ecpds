@@ -235,6 +235,12 @@ final class MasterREST implements MasterProxy {
         // Not applicable for REST — no-op
     }
 
+    @Override
+    public String resolvePortalSessionAcrossMovers(final String token, final String excludeMoverName) throws Exception {
+        // REST-mode mover has no connection to other movers — return null so the caller falls back to re-auth
+        return null;
+    }
+
     /**
      * {@inheritDoc}
      *

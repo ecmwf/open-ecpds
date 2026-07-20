@@ -574,6 +574,30 @@ public interface MoverInterface extends ClientInterface {
     int invalidatePortalSessionsForUser(String user) throws RemoteException;
 
     /**
+     * Look up a portal session token in this mover's local session cache. Used by the Master Server to locate a token
+     * that was originally issued on a different mover (e.g. after a load-balancer failover).
+     *
+     * <p>
+     * If the token is found and has not expired, the session entry is serialised as a single-line string in the format:
+     *
+     * <pre>
+     * user TAB subscriberId TAB subscriberEmail TAB expiryEpochMs
+     * </pre>
+     *
+     * The caller is responsible for importing the entry into its own local cache.
+     * </p>
+     *
+     * @param token
+     *            the portal session token to resolve
+     *
+     * @return the serialised session entry, or {@code null} if not found or expired
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    String resolvePortalSession(String token) throws RemoteException;
+
+    /**
      * Close all incoming connections.
      *
      * @throws IOException

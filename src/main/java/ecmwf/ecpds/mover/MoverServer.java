@@ -1198,6 +1198,17 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Serialise a local portal session entry so the Master can migrate it to another mover after a load-balancer
+     * failover.
+     */
+    @Override
+    public String resolvePortalSession(final String token) {
+        return ecmwf.ecpds.mover.MoverProvider.exportPortalSession(token);
+    }
+
+    /**
      * Close all incoming connections.
      */
     @Override

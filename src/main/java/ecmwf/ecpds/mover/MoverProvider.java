@@ -115,7 +115,9 @@ public final class MoverProvider extends NativeAuthenticationProvider {
 
     /**
      * Look up the cached user name for a portal session token. Returns {@code null} if the token is unknown or has
-     * expired.
+     * expired. If the token is not found locally, asks the Master to locate it on another data mover (load-balancer
+     * failover scenario). If found remotely the entry is imported into the local cache so subsequent requests are
+     * served locally without another round-trip.
      *
      * @param token
      *            the session token
@@ -126,6 +128,20 @@ public final class MoverProvider extends NativeAuthenticationProvider {
         final var entry = _portalSessions.get(token);
         if (entry == null || entry.expiry < System.currentTimeMillis()) {
             _portalSessions.remove(token);
+            // Not found locally — ask the Master to check all other movers (failover case).
+            try {
+                final var serialised = _mover.getMasterProxy().resolvePortalSessionAcrossMovers(token,
+                        _mover.getRoot());
+                if (serialised != null) {
+                    final var imported = _importPortalSession(token, serialised);
+                    if (imported != null) {
+                        _log.debug("Portal session token migrated from remote mover to {}", _mover.getRoot());
+                        return imported.user;
+                    }
+                }
+            } catch (final Exception e) {
+                _log.debug("Cross-mover portal session lookup failed", e);
+            }
             return null;
         }
         return entry.user;
@@ -178,6 +194,62 @@ public final class MoverProvider extends NativeAuthenticationProvider {
             return false;
         });
         return removed.get();
+    }
+
+    /**
+     * Serialise a local portal session entry for cross-mover migration. Returns a tab-separated string
+     * {@code "user\tsubscriberId\tsubscriberEmail\texpiryEpochMs"}, or {@code null} if the token is not found or has
+     * already expired.
+     *
+     * @param token
+     *            the portal session token
+     *
+     * @return the serialised entry, or {@code null}
+     */
+    public static String exportPortalSession(final String token) {
+        final var entry = _portalSessions.get(token);
+        if (entry == null || entry.expiry < System.currentTimeMillis()) {
+            _portalSessions.remove(token);
+            return null;
+        }
+        return entry.user + "\t" + entry.subscriberId + "\t" + entry.subscriberEmail + "\t" + entry.expiry;
+    }
+
+    /**
+     * Deserialise a session entry produced by {@link #exportPortalSession} and add it to the local cache under the
+     * given token. Returns the imported entry, or {@code null} if the serialised string is malformed or the session has
+     * already expired.
+     *
+     * @param token
+     *            the portal session token
+     * @param serialised
+     *            the tab-separated entry string from {@link #exportPortalSession}
+     *
+     * @return the imported {@link PortalSessionEntry}, or {@code null}
+     */
+    private static PortalSessionEntry _importPortalSession(final String token, final String serialised) {
+        try {
+            final var parts = serialised.split("\t", 4);
+            if (parts.length < 4) {
+                return null;
+            }
+            final var user = parts[0];
+            final var subscriberId = Long.parseLong(parts[1]);
+            final var subscriberEmail = parts[2];
+            final var remoteExpiry = Long.parseLong(parts[3]);
+            if (remoteExpiry < System.currentTimeMillis()) {
+                return null; // already expired
+            }
+            // Cap the local TTL at the remaining time on the remote entry so we don't extend it indefinitely
+            final var remainingMs = remoteExpiry - System.currentTimeMillis();
+            final var entry = new PortalSessionEntry(user, subscriberId, subscriberEmail);
+            entry.expiry = System.currentTimeMillis() + Math.min(remainingMs, _portalSessionTtlMs);
+            _portalSessions.put(token, entry);
+            return entry;
+        } catch (final Exception e) {
+            _log.debug("Failed to import portal session entry", e);
+            return null;
+        }
     }
 
     /**

@@ -4879,6 +4879,50 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Searches all active data movers (except the calling one) in parallel for the given portal session token. Returns
+     * the first serialised entry found, or {@code null}.
+     */
+    @Override
+    public String resolvePortalSessionAcrossMovers(final String token, final String excludeMoverName)
+            throws RemoteException {
+        final var servers = getECpdsBase().getTransferServerArray();
+        // Use a CompletableFuture-based parallel scan so a slow/unresponsive mover does not block others.
+        final var futures = new java.util.ArrayList<java.util.concurrent.CompletableFuture<String>>();
+        for (final var server : servers) {
+            if (excludeMoverName != null && excludeMoverName.equals(server.getName())) {
+                continue;
+            }
+            final var mover = getDataMoverInterface(server.getName());
+            if (mover == null) {
+                continue;
+            }
+            futures.add(java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                try {
+                    return mover.resolvePortalSession(token);
+                } catch (final Exception e) {
+                    _log.debug("resolvePortalSession on mover {} failed: {}", server.getName(), e.getMessage());
+                    return null;
+                }
+            }));
+        }
+        for (final var future : futures) {
+            try {
+                final var result = future.get(5, java.util.concurrent.TimeUnit.SECONDS);
+                if (result != null) {
+                    return result;
+                }
+            } catch (final java.util.concurrent.TimeoutException e) {
+                _log.debug("resolvePortalSessionAcrossMovers: timeout waiting for a mover response");
+            } catch (final Exception e) {
+                _log.debug("resolvePortalSessionAcrossMovers: future failed", e);
+            }
+        }
+        return null;
+    }
+
+    /**
      * Checks if is available.
      *
      * @return the long

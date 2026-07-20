@@ -485,4 +485,28 @@ public interface MasterInterface extends ProviderInterface {
      */
     void invalidatePortalSessionsForUser(String user) throws RemoteException;
 
+    /**
+     * Locate a portal session token on any currently connected data mover other than the one named by
+     * {@code excludeMoverName}. Used for cross-mover session migration after a load-balancer failover so the user does
+     * not have to re-authenticate.
+     *
+     * <p>
+     * The search iterates all active {@code TransferServer} entries and calls
+     * {@link ecmwf.ecpds.mover.MoverInterface#resolvePortalSession} on each (in parallel). The first non-null result is
+     * returned immediately.
+     * </p>
+     *
+     * @param token
+     *            the portal session token to search for
+     * @param excludeMoverName
+     *            the name of the calling mover (skipped to avoid a self-lookup round-trip)
+     *
+     * @return the serialised session entry ({@code user\tsubscriberId\tsubscriberEmail\texpiryEpochMs}), or
+     *         {@code null} if not found on any mover
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    String resolvePortalSessionAcrossMovers(String token, String excludeMoverName) throws RemoteException;
+
 }
