@@ -39,7 +39,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ecmwf.common.ectrans.ECtransGroups;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.ecpds.master.plugin.http.home.ecuser.EcUserHome;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebUser;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.home.users.UserHome;
@@ -95,7 +94,7 @@ public class GetWebUserListJsonAction extends PDSAction {
             boolean exists = false;
             if (id != null && !id.isBlank()) {
                 try {
-                    EcUserHome.findByPrimaryKey(id);
+                    UserHome.findByPrimaryKey(id);
                     exists = true;
                 } catch (final Exception ignored) {
                 }
