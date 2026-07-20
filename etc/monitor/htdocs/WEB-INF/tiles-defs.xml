@@ -619,6 +619,12 @@
 			value="/WEB-INF/jsp/pds/transfer/destination/aliases_to.jsp" />
 	</definition>
 
+	<definition name=".pds.transfer.destination.aliasgraph"
+		extends=".pds.transfer.destination.detail">
+		<put name="content"
+			value="/WEB-INF/jsp/pds/transfer/destination/alias_graph.jsp" />
+	</definition>
+
 	<definition name=".pds.transfer.destination.datausers"
 		extends=".pds.transfer.destination.detail">
 		<put name="title.expression" value="Data Users for %{destination.name}" />

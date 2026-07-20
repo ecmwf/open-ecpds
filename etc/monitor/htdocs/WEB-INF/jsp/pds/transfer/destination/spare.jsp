@@ -88,6 +88,8 @@
 
     <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=aliasesto'><i class="bi bi-arrow-right sidebar-icon"></i> Aliases To</a></td></tr>
 
+    <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=aliasgraph'><i class="bi bi-diagram-3 sidebar-icon"></i> Alias Graph</a></td></tr>
+
     <c:if test="${destination.monitoringStatus.present}">
         <c:if test="${empty time}"><c:set var="time" value="00" /></c:if>
     </c:if>

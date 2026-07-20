@@ -108,6 +108,8 @@
                class="btn btn-sm btn-outline-secondary" title="Metadata"><i class="bi bi-paperclip"></i></a>
             </auth:then>
             </auth:if>
+            <a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=aliasgraph'
+               class="btn btn-sm btn-outline-secondary" title="Alias Graph"><i class="bi bi-diagram-3"></i></a>
         </div>
         </c:if>
         </div><%-- end #_destIconBar --%>

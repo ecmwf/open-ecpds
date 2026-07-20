@@ -559,6 +559,8 @@
 				path=".pds.transfer.destination.aliasesfrom" />
 			<forward name="aliasesto"
 				path=".pds.transfer.destination.aliasesto" />
+			<forward name="aliasgraph"
+				path=".pds.transfer.destination.aliasgraph" />
 			<forward name="datausers"
 				path=".pds.transfer.destination.datausers" />
 		</action>

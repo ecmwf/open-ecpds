@@ -26,6 +26,7 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
  * @since 2004-10-09
  */
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -172,6 +173,15 @@ public class GetDestinationAction extends PDSAction {
             } else if ("aliasesto".equals(mode)) {
                 // This is the aliases_to.jsp page!
                 return mapping.findForward("aliasesto");
+            } else if ("aliasgraph".equals(mode)) {
+                // This is the alias graph diagram page!
+                try {
+                    request.setAttribute("aliasGraphJson", buildAliasGraphJson(destination));
+                } catch (final Exception e) {
+                    log.warn("Could not build alias graph for {}", destination.getName(), e);
+                    request.setAttribute("aliasGraphJson", "{}");
+                }
+                return mapping.findForward("aliasgraph");
             } else if ("datausers".equals(mode)) {
                 // This is the data users page for this destination!
                 List<IncomingUser> directUsers = new ArrayList<>();
@@ -293,6 +303,131 @@ public class GetDestinationAction extends PDSAction {
             }
         }
         return params;
+    }
+
+    /**
+     * Builds alias graph JSON for Mermaid diagram rendering.
+     *
+     * <p>
+     * Performs a BFS from the focal destination, following both outgoing alias edges ({@code getAliases()}) and
+     * incoming alias edges ({@code getAliasedFrom()}) recursively until all reachable destinations are collected.
+     * </p>
+     *
+     * @param root
+     *            the focal destination
+     *
+     * @return JSON object string: {@code {"center":"…","nodes":[…],"edges":[…]}}
+     */
+    private static String buildAliasGraphJson(final Destination root) {
+        final var rootName = root.getName();
+        final var visited = new LinkedHashSet<String>();
+        final var nodes = new LinkedHashMap<String, Destination>();
+        final var edgeKeys = new LinkedHashSet<String>();
+        final var edgeList = new ArrayList<String[]>(); // [from, to, condition]
+        final var queue = new ArrayDeque<Destination>();
+        visited.add(rootName);
+        nodes.put(rootName, root);
+        queue.add(root);
+        while (!queue.isEmpty()) {
+            final var current = queue.poll();
+            final var currentName = current.getName();
+            // Outgoing: current → alias
+            try {
+                for (final var alias : current.getAliases()) {
+                    final var aliasName = alias.getName();
+                    if (edgeKeys.add(currentName + "\0" + aliasName)) {
+                        edgeList.add(
+                                new String[] { currentName, aliasName, _normalizeCondition(alias.getDataAlias()) });
+                    }
+                    if (visited.add(aliasName)) {
+                        nodes.put(aliasName, alias);
+                        queue.add(alias);
+                    }
+                }
+            } catch (final TransferException e) {
+                log.warn("buildAliasGraphJson: getAliases failed for {}", currentName, e);
+            }
+            // Incoming: from → current
+            try {
+                for (final var from : current.getAliasedFrom()) {
+                    final var fromName = from.getName();
+                    if (edgeKeys.add(fromName + "\0" + currentName)) {
+                        edgeList.add(new String[] { fromName, currentName, _normalizeCondition(from.getDataAlias()) });
+                    }
+                    if (visited.add(fromName)) {
+                        nodes.put(fromName, from);
+                        queue.add(from);
+                    }
+                }
+            } catch (final TransferException e) {
+                log.warn("buildAliasGraphJson: getAliasedFrom failed for {}", currentName, e);
+            }
+        }
+        final var sb = new StringBuilder("{");
+        sb.append("\"center\":").append(_jsonStr(rootName));
+        sb.append(",\"nodes\":[");
+        var first = true;
+        for (final var entry : nodes.entrySet()) {
+            if (!first) {
+                sb.append(",");
+            }
+            first = false;
+            final var name = entry.getKey();
+            final var dest = entry.getValue();
+            final var status = dest.getFormattedStatus();
+            final var statusPrefix = status.contains("-") ? status.substring(0, status.indexOf('-')) : status;
+            sb.append("{\"name\":").append(_jsonStr(name));
+            sb.append(",\"active\":").append(dest.getActive());
+            sb.append(",\"status\":").append(_jsonStr(statusPrefix));
+            sb.append("}");
+        }
+        sb.append("],\"edges\":[");
+        first = true;
+        for (final var edge : edgeList) {
+            if (!first) {
+                sb.append(",");
+            }
+            first = false;
+            sb.append("{\"from\":").append(_jsonStr(edge[0]));
+            sb.append(",\"to\":").append(_jsonStr(edge[1]));
+            sb.append(",\"condition\":").append(_jsonStr(edge[2]));
+            sb.append("}");
+        }
+        sb.append("]}");
+        return sb.toString();
+    }
+
+    /**
+     * Normalise an alias condition string for use as a Mermaid edge label.
+     *
+     * @param raw
+     *            the raw condition string (may contain HTML {@code <br>} line-breaks, may be {@code null})
+     *
+     * @return the normalised condition; {@code ".*"} when the condition is absent or matches everything
+     */
+    private static String _normalizeCondition(final String raw) {
+        if (raw == null) {
+            return ".*";
+        }
+        // getDataAlias() replaces newlines with <br>; restore first line only
+        final var s = raw.replace("<br>", "\n");
+        final var firstLine = s.contains("\n") ? s.substring(0, s.indexOf('\n')).trim() : s.trim();
+        return firstLine.isEmpty() ? ".*" : firstLine;
+    }
+
+    /**
+     * Encodes a Java string as a JSON string literal (including surrounding double-quotes).
+     *
+     * @param s
+     *            the string to encode; {@code null} becomes JSON {@code null}
+     *
+     * @return the JSON string literal
+     */
+    private static String _jsonStr(final String s) {
+        if (s == null) {
+            return "null";
+        }
+        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
     }
 
     /**
