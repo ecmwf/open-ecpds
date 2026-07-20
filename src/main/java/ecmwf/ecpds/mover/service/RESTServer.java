@@ -2412,36 +2412,44 @@ public final class RESTServer {
             final var rangeHeader = request.getHeader(RANGE);
             final StreamingOutput streamer;
             if (rangeHeader == null) {
-                // Return full file
+                // Full file — open proxy socket eagerly so any retrieval error is reported
+                // before the 200 OK headers are committed.
+                final var proxy = _openProxySocket(session, mediaRequest, 0, -1);
                 builder.header(CONTENT_LENGTH, fullRange.length);
-                streamer = new SingleStreamer(session, mediaRequest, 0, -1);
+                streamer = new SingleStreamer(session, proxy, mediaRequest, -1, -1);
             } else {
                 // Found a Range request, returning HTTP 206 Partial Content
                 builder.status(206);
                 final var ranges = getRanges(rangeHeader, fullRange, filename, mediaRequest.size, request);
                 if (ranges.isEmpty() || ranges.get(0) == fullRange) {
-                    // Return full file
+                    // Return full file via range request — also open eagerly
+                    final var proxy = _openProxySocket(session, mediaRequest, 0, -1);
                     builder.header(CONTENT_RANGE,
                             "bytes " + fullRange.start + "-" + fullRange.end + "/" + fullRange.total);
                     builder.header(CONTENT_LENGTH, fullRange.length);
-                    streamer = new SingleStreamer(session, mediaRequest, 0, -1);
+                    streamer = new SingleStreamer(session, proxy, mediaRequest, -1, -1);
                 } else if (ranges.size() == 1) {
-                    // Only one range requested
+                    // Only one range requested — open eagerly
                     final var singleRange = ranges.get(0);
+                    final var proxy = _openProxySocket(session, mediaRequest, singleRange.start, singleRange.length);
                     builder.header(CONTENT_RANGE,
                             "bytes " + singleRange.start + "-" + singleRange.end + "/" + singleRange.total);
                     builder.header(CONTENT_LENGTH, singleRange.length);
-                    streamer = new SingleStreamer(session, mediaRequest, singleRange.start, singleRange.length);
+                    streamer = new SingleStreamer(session, proxy, mediaRequest, -1, -1);
                 } else {
-                    // Multiple ranges requested
+                    // Multiple ranges — open all proxy sockets eagerly before committing headers
                     final var rangeSize = ranges.size();
                     final var setup = session.getECtransSetup();
                     if (setup != null
                             && rangeSize > setup.getByteSize(ECtransOptions.USER_PORTAL_MAX_RANGES_ALLOWED).size()) {
                         throw newException(429, "Too Many Requests: Max ranges allowed exceeded (" + rangeSize + ")");
                     }
+                    final var proxies = new java.util.ArrayList<ProxySocket>(rangeSize);
+                    for (final var range : ranges) {
+                        proxies.add(_openProxySocket(session, mediaRequest, range.start, range.length));
+                    }
                     builder.header(CONTENT_TYPE, "multipart/byteranges; boundary=" + MULTIPART_BOUNDARY);
-                    streamer = new MultiStreamer(session, mediaRequest, ranges);
+                    streamer = new MultiStreamer(session, proxies, mediaRequest, ranges);
                 }
             }
             success = true;
@@ -2455,14 +2463,7 @@ public final class RESTServer {
             throw newException(e, 404, "Not Found: " + e.getMessage());
         } catch (final EccmdException e) {
             _log.warn("serveDataFile", e);
-            final var message = e.getMessage();
-            if (message != null && (message.contains("File not found") || message.contains("Destination not found"))) {
-                throw newException(e, 404, "Not Found: " + message);
-            }
-            if (message != null && message.contains("Not retrieved")) {
-                throw newException(e, 503, "File temporarily unavailable: " + message);
-            }
-            throw newException(e, 500, message);
+            throw _mapEccmdException(e);
         } catch (final Throwable t) {
             _log.warn("serveDataFile", t);
             throw newException(t, 500, Format.getMessage(t));
@@ -2474,8 +2475,81 @@ public final class RESTServer {
     }
 
     /**
-     * Adds CORS response headers derived from the user's {@code portal.corsAllowOrigin} ECtrans option. Does nothing if
-     * the request has no {@code Origin} header or the option is not set for the user.
+     * Open a proxy socket for reading the given file range. Throws a {@link WebApplicationException} with an
+     * appropriate HTTP status code if the file or source is not available:
+     * <ul>
+     * <li>404 — file / DataTransfer not found</li>
+     * <li>429 — download quota exceeded</li>
+     * <li>503 — source temporarily unavailable or no transfer server reachable</li>
+     * <li>500 — all other errors</li>
+     * </ul>
+     * This must be called <em>before</em> the HTTP response headers are committed so that the caller can still set the
+     * correct status code.
+     *
+     * @param session
+     *            the authenticated user session
+     * @param mediaRequest
+     *            the resolved file name / content-type descriptor
+     * @param posn
+     *            byte offset into the file (0 for start)
+     * @param length
+     *            number of bytes to read, or {@code -1} for the remainder of the file
+     *
+     * @return an open {@link ProxySocket} ready for reading
+     *
+     * @throws FileNotFoundException
+     *             if the named file does not exist
+     * @throws EccmdException
+     *             for other retrieval failures (caller maps these via {@link #_mapEccmdException})
+     * @throws IOException
+     *             for low-level I/O errors
+     */
+    private static ProxySocket _openProxySocket(final UserSession session, final MediaRequest mediaRequest,
+            final long posn, final long length) throws FileNotFoundException, EccmdException, IOException {
+        return session.getProxySocketInput(mediaRequest.name, posn, length);
+    }
+
+    /**
+     * Map an {@link EccmdException} to a {@link WebApplicationException} with the most appropriate HTTP status code.
+     *
+     * <ul>
+     * <li>404 Not Found — file or DataTransfer not found, destination not found</li>
+     * <li>429 Too Many Requests — download quota exceeded</li>
+     * <li>503 Service Unavailable — source not yet retrieved, no transfer server available, mover or source
+     * unavailable</li>
+     * <li>403 Forbidden — operation not allowed</li>
+     * <li>500 Internal Server Error — all other cases</li>
+     * </ul>
+     *
+     * @param e
+     *            the exception to map
+     *
+     * @return the corresponding {@link WebApplicationException}
+     */
+    private static WebApplicationException _mapEccmdException(final EccmdException e) {
+        final var message = e.getMessage();
+        if (message == null) {
+            return newException(e, 500, "Internal retrieval error");
+        }
+        if (message.contains("File not found") || message.contains("Destination not found")
+                || message.contains("DataTransfer not found")) {
+            return newException(e, 404, "Not Found: " + message);
+        }
+        if (message.contains("Download quota exceeded")) {
+            return newException(e, 429, "Too Many Requests: " + message);
+        }
+        if (message.contains("Not retrieved") || message.contains("not available")
+                || message.contains("No TransferServer available")) {
+            return newException(e, 503, "Service Unavailable: " + message);
+        }
+        if (message.contains("not allowed") || message.contains("Forbidden")) {
+            return newException(e, 403, "Forbidden: " + message);
+        }
+        return newException(e, 500, message);
+    }
+
+    /**
+     * Add CORS headers to the response when the user session is available and the request includes an Origin header.
      *
      * @param session
      *            the user session (may be null)
@@ -2988,33 +3062,40 @@ public final class RESTServer {
         /** The session. */
         private final UserSession session;
 
+        /** Pre-opened proxy socket (obtained before the response was committed). */
+        private final ProxySocket proxy;
+
         /** The media request. */
         private final MediaRequest mediaRequest;
 
-        /** The posn. */
-        private final long posn;
+        /** The start time (for event recording); -1 means record a single-range event. */
+        private final long startTime;
 
-        /** The length. */
-        private final long length;
+        /** The full length (for event recording); -1 means single-range, 0 means no event. */
+        private final long fullLength;
 
         /**
-         * Instantiates a new single streamer.
+         * Instantiates a new single streamer with a pre-opened proxy socket.
          *
          * @param session
          *            the session
+         * @param proxy
+         *            the already-opened proxy socket
          * @param mediaRequest
          *            the media request
-         * @param posn
-         *            the posn
-         * @param length
-         *            the length
+         * @param startTime
+         *            start time for transfer-rate event recording, or {@code -1}
+         * @param fullLength
+         *            total bytes being sent (for event recording), or {@code -1} for single-range, or {@code 0} for no
+         *            event
          */
-        public SingleStreamer(final UserSession session, final MediaRequest mediaRequest, final long posn,
-                final long length) {
+        public SingleStreamer(final UserSession session, final ProxySocket proxy, final MediaRequest mediaRequest,
+                final long startTime, final long fullLength) {
             this.session = session;
+            this.proxy = proxy;
             this.mediaRequest = mediaRequest;
-            this.posn = posn;
-            this.length = length;
+            this.startTime = startTime;
+            this.fullLength = fullLength;
         }
 
         /**
@@ -3025,13 +3106,14 @@ public final class RESTServer {
          *
          * @throws IOException
          *             Signals that an I/O exception has occurred.
+         *
          * @throws WebApplicationException
          *             the web application exception
          */
         @Override
         public void write(final OutputStream out) throws IOException, WebApplicationException {
             try {
-                transferRange(out, session, mediaRequest, posn, length, -1, -1);
+                _copyFromProxy(out, session, proxy, mediaRequest, startTime, fullLength);
             } finally {
                 session.close(true);
             }
@@ -3046,6 +3128,9 @@ public final class RESTServer {
         /** The session. */
         private final UserSession session;
 
+        /** Pre-opened proxy sockets, one per range, in order. */
+        private final List<ProxySocket> proxies;
+
         /** The media request. */
         private final MediaRequest mediaRequest;
 
@@ -3053,17 +3138,21 @@ public final class RESTServer {
         private final List<Range> ranges;
 
         /**
-         * Instantiates a new multi streamer.
+         * Instantiates a new multi streamer with pre-opened proxy sockets.
          *
          * @param session
          *            the session
+         * @param proxies
+         *            the pre-opened proxy sockets, one per entry in {@code ranges}
          * @param mediaRequest
          *            the media request
          * @param ranges
-         *            the ranges
+         *            the byte ranges to serve
          */
-        public MultiStreamer(final UserSession session, final MediaRequest mediaRequest, final List<Range> ranges) {
+        public MultiStreamer(final UserSession session, final List<ProxySocket> proxies,
+                final MediaRequest mediaRequest, final List<Range> ranges) {
             this.session = session;
+            this.proxies = proxies;
             this.mediaRequest = mediaRequest;
             this.ranges = ranges;
         }
@@ -3076,6 +3165,7 @@ public final class RESTServer {
          *
          * @throws IOException
          *             Signals that an I/O exception has occurred.
+         *
          * @throws WebApplicationException
          *             the web application exception
          */
@@ -3099,15 +3189,16 @@ public final class RESTServer {
                 for (var i = 0; i < rangesCount; i++) {
                     final var range = ranges.get(i);
                     fullLength += range.length;
-                    // Print the header!
+                    // Print the MIME multipart header for this part
                     println(out, "");
                     println(out, "--" + MULTIPART_BOUNDARY);
                     println(out, "Content-Type: " + mediaRequest.contentType);
                     println(out, "Content-Range: bytes " + range.start + "-" + range.end + "/" + range.total);
                     println(out, "");
-                    // And drop the content
-                    transferRange(out, session, mediaRequest, range.start, range.length, startTime,
-                            triggerEvent ? triggerLastRangeOnly ? i == rangesCount - 1 ? fullLength : 0 : -1 : 0);
+                    // Stream the content from the pre-opened proxy socket
+                    final var eventFullLength = triggerEvent
+                            ? triggerLastRangeOnly ? i == rangesCount - 1 ? fullLength : 0 : -1 : 0;
+                    _copyFromProxy(out, session, proxies.get(i), mediaRequest, startTime, eventFullLength);
                 }
                 // End with multipart boundary.
                 println(out, "");
@@ -3186,76 +3277,74 @@ public final class RESTServer {
     }
 
     /**
-     * Transfer range.
+     * Copy data from a pre-opened {@link ProxySocket} to the HTTP response output stream.
      *
-     * If fullLength is -1 then we trigger an event. If fullLength is 0 we do nothing and if fullLength is > 0 then we
-     * record an event with the start time and full length specified.
+     * <p>
+     * If {@code fullLength} is {@code -1} a single-range transfer event is recorded. If {@code fullLength} is {@code 0}
+     * no event is recorded. If {@code fullLength > 0} a multi-range event with the provided start time and cumulative
+     * length is recorded.
+     * </p>
      *
      * @param out
-     *            the out
+     *            the HTTP response output stream
      * @param session
-     *            the session
+     *            the authenticated user session
+     * @param proxy
+     *            the already-opened proxy socket (obtained before response headers were committed)
      * @param mediaRequest
-     *            the media request
-     * @param posn
-     *            the posn
-     * @param length
-     *            the length
+     *            the resolved file descriptor
      * @param startTime
-     *            the start time
+     *            epoch-ms start of the overall multi-range transfer (used when {@code fullLength > 0})
      * @param fullLength
-     *            the full length
+     *            cumulative bytes for event recording: {@code -1} single range, {@code 0} no event, {@code >0} last
+     *            part of multi-range
      *
      * @throws IOException
      *             Signals that an I/O exception has occurred.
+     *
      * @throws WebApplicationException
      *             the web application exception
      */
-    private static void transferRange(final OutputStream out, final UserSession session,
-            final MediaRequest mediaRequest, final long posn, final long length, final long startTime,
-            final long fullLength) throws IOException, WebApplicationException {
-        try {
-            final var proxy = session.getProxySocketInput(mediaRequest.name, posn, length);
-            final InputStream in = new MonitoredInputStream(proxy.getDataInputStream()) {
-                @Override
-                public void close() throws IOException {
-                    try {
-                        super.close();
-                    } finally {
-                        // Populating with the transfer rate informations if required!
-                        if (fullLength != 0) {
-                            final var event = new ProxyEvent(proxy);
-                            event.setProtocol("https");
-                            event.setLocalHost(mover.getRoot());
-                            event.setRemoteHost(mediaRequest.remoteAddr);
-                            event.setUserType(ProxyEvent.UserType.DATA_USER);
-                            event.setUserName(session.getUser());
-                            if (fullLength > 0) {
-                                // This is the last range of the list!
-                                event.setDuration(System.currentTimeMillis() - startTime);
-                                event.setStartTime(startTime);
-                                event.setSent(fullLength);
-                            } else {
-                                // Only one range sent!
-                                event.setDuration(getDuration());
-                                event.setStartTime(getStartTime());
-                                event.setSent(getByteSent());
-                            }
-                        }
-                        try {
-                            session.check(proxy);
-                        } catch (final EccmdException e) {
-                            throw newException(e, 500, e.getMessage());
+    private static void _copyFromProxy(final OutputStream out, final UserSession session, final ProxySocket proxy,
+            final MediaRequest mediaRequest, final long startTime, final long fullLength)
+            throws IOException, WebApplicationException {
+        final InputStream in = new MonitoredInputStream(proxy.getDataInputStream()) {
+            @Override
+            public void close() throws IOException {
+                try {
+                    super.close();
+                } finally {
+                    // Record transfer-rate event if required
+                    if (fullLength != 0) {
+                        final var event = new ProxyEvent(proxy);
+                        event.setProtocol("https");
+                        event.setLocalHost(mover.getRoot());
+                        event.setRemoteHost(mediaRequest.remoteAddr);
+                        event.setUserType(ProxyEvent.UserType.DATA_USER);
+                        event.setUserName(session.getUser());
+                        if (fullLength > 0) {
+                            // Last range of a multi-part request
+                            event.setDuration(System.currentTimeMillis() - startTime);
+                            event.setStartTime(startTime);
+                            event.setSent(fullLength);
+                        } else {
+                            // Single-range or full-file transfer
+                            event.setDuration(getDuration());
+                            event.setStartTime(getStartTime());
+                            event.setSent(getByteSent());
                         }
                     }
+                    try {
+                        session.check(proxy);
+                    } catch (final EccmdException e) {
+                        throw newException(e, 500, e.getMessage());
+                    }
                 }
-            };
-            StreamPlugThread.copy(out, in, StreamPlugThread.DEFAULT_BUFF_SIZE);
-            out.flush();
-            in.close();
-        } catch (final EccmdException e) {
-            throw newException(e, 500, e.getMessage());
-        }
+            }
+        };
+        StreamPlugThread.copy(out, in, StreamPlugThread.DEFAULT_BUFF_SIZE);
+        out.flush();
+        in.close();
     }
 
     /**
