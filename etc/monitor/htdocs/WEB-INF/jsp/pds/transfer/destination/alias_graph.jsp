@@ -64,7 +64,8 @@
     <%-- Tooltip lives inside _agContainer so it remains visible in fullscreen mode
          (only descendants of the fullscreen element are rendered by the browser) --%>
     <div id="_agTip" style="display:none;position:fixed;z-index:9999;
-         font-size:12px;line-height:1.5;padding:5px 9px;border-radius:4px;white-space:pre;
+         font-size:12px;line-height:1.5;padding:5px 9px;border-radius:4px;
+         white-space:pre-wrap;word-break:break-word;max-width:360px;
          pointer-events:none;font-family:monospace"></div>
   </div>
 </div>
@@ -97,21 +98,6 @@
   var _ready   = false;   // true once Mermaid has been initialised
   var _tipData = [];      // [{lg, tip}] rebuilt on every render
 
-  /* sessionStorage cache: key = 'ecpds_ag:<center>:<layout>', value = svg.outerHTML.
-     Lets the user navigate away and return without waiting for Mermaid to re-render.
-     Clicking the already-active layout button clears that entry and forces a fresh render. */
-  function _agCacheKey(layout) {
-    return 'ecpds_ag:' + ((_data && _data.center) || '') + ':' + layout;
-  }
-  function _agCacheGet(layout) {
-    try { return sessionStorage.getItem(_agCacheKey(layout)); } catch(e) { return null; }
-  }
-  function _agCachePut(layout, svgHtml) {
-    try { sessionStorage.setItem(_agCacheKey(layout), svgHtml); } catch(e) { /* quota exceeded — ignore */ }
-  }
-  function _agCacheClear(layout) {
-    try { sessionStorage.removeItem(_agCacheKey(layout)); } catch(e) {}
-  }
   try {
     _data = JSON.parse(document.getElementById('_aliasGraphData').textContent);
   } catch (e) { _data = {}; }
@@ -168,16 +154,33 @@
   }
 
   /**
-   * Escape text for embedding inside a Mermaid quoted label.
+   * Escape text for embedding inside a Mermaid |…| edge label.
    * Mermaid understands HTML entity references (e.g. #quot;) inside labels.
+   * Control characters (newlines, tabs, etc.) are replaced with a space because
+   * a newline inside a Mermaid directive breaks the parser.
+   * IMPORTANT: semicolons must be escaped FIRST — otherwise the semicolons we
+   * introduce as part of #amp; / #quot; / etc. would themselves be re-escaped,
+   * turning e.g. #quot; into #quot#semi; which Mermaid cannot parse.
+   *
+   * Characters that are syntactically special inside |…| labels:
+   *   ( )  → #lpar; / #rpar;   (cause parse error if unescaped)
+   *   [ ]  → #lsqb; / #rsqb;  (treated as node-shape delimiters)
+   *   |    → #vert;            (would terminate the label prematurely)
+   * All of the above are listed as supported Mermaid entities.
    */
   function mLabel(s) {
     return s
+      .replace(/[\r\n\t\x00-\x1f\x7f]+/g, ' ')  /* control chars → space (MUST be first) */
+      .replace(/;/g, '#semi;')                   /* escape ; BEFORE adding any #…; tokens */
       .replace(/&/g, '#amp;')
       .replace(/"/g, '#quot;')
       .replace(/</g, '#lt;')
       .replace(/>/g, '#gt;')
-      .replace(/;/g, '#semi;');
+      .replace(/\(/g, '#lpar;')
+      .replace(/\)/g, '#rpar;')
+      .replace(/\[/g, '#lsqb;')
+      .replace(/\]/g, '#rsqb;')
+      .replace(/\|/g, '#vert;');
   }
 
   /** Build the Mermaid flowchart source for the given layout direction. */
@@ -220,25 +223,20 @@
       } else if (e.full) {
         /* Default pattern (.*) but there IS a condition string: show ⓘ as a
            hoverable anchor so the tooltip is accessible even on bare arrows */
-        labelText = '\u24d8';
+        labelText = 'i';  /* plain ASCII — post-render code replaces this with the blue pill badge */
       } else {
         labelText = '';
       }
-      var cond = labelText ? '|"' + mLabel(labelText) + '"|' : '';
+      /* NOTE: inside Mermaid's |…| edge-label syntax the text must NOT be
+         additionally wrapped in double-quotes — those are only valid in the
+         alternative  A -- "text" --> B  form and cause a parse error here. */
+      var cond = labelText ? '|' + mLabel(labelText) + '|' : '';
       lines.push('  ' + fromId + ' -->' + cond + ' ' + toId);
     });
 
-    /* Click callbacks — only for nodes the user can access */
-    g.nodes.forEach(function (n) {
-      if (n.accessible !== false) {
-        var tip = (n.comment && n.comment.trim()) ? n.comment.trim() : n.name;
-        lines.push(
-          '  click ' + mId(n.name) +
-          ' "/do/transfer/destination/' + encodeURIComponent(n.name) +
-          '" "' + tip.replace(/"/g, '#quot;') + '"'
-        );
-      }
-    });
+    /* Click callbacks — handled via post-render JS listeners instead of Mermaid's
+       click directive, so no encoding restrictions apply and the diagram source
+       is simpler. See the node-tooltip/click wiring below. */
 
     /* Style classes */
     lines.push('  classDef center       fill:#ffc107,stroke:#e0a800,color:#212529,font-weight:bold');
@@ -258,44 +256,38 @@
     hideAll();
     if (!diagram) { show('_agEmpty'); return; }
 
-    var uid    = 'ag_' + Date.now();
-    var cached = _agCacheGet(layout);
+    show('_agSpinner');
+    /* Yield the main thread so the browser can repaint the spinner before
+       mermaid.run() begins its CPU-intensive SVG generation. Without this
+       yield the spinner is never painted — the JS call stack stays busy
+       until Mermaid finishes and the browser only paints the final result. */
+    await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-    if (cached) {
-      /* ── Cache hit: inject the pre-rendered SVG immediately ── */
-      el('_agOutput').innerHTML =
-        '<div id="' + uid + '" style="width:100%;max-width:100%">' + cached + '</div>';
+    /* Fresh unique ID on every render so Mermaid never skips re-processing */
+    var uid = 'ag_' + Date.now();
+
+    /* Use mermaid.render() which takes the diagram string directly (no DOM read),
+       avoiding HTML-encoding issues that occur when setting innerHTML first. */
+    var svgText;
+    try {
+      var renderResult = await mermaid.render(uid, diagram);
+      svgText = renderResult.svg || renderResult;
+    } catch (err) {
+      console.error('[alias-graph] mermaid.render() error:', err);
       hideAll();
-      show('_agOutput');
-    } else {
-      /* ── Cache miss: run Mermaid ── */
-      show('_agSpinner');
-      /* Yield the main thread so the browser can repaint the spinner before
-         mermaid.run() begins its CPU-intensive SVG generation. */
-      await new Promise(function (resolve) { setTimeout(resolve, 0); });
-
-      el('_agOutput').innerHTML =
-        '<div id="' + uid + '" class="mermaid" style="max-width:100%">' + diagram + '</div>';
-
-      try {
-        await mermaid.run({ nodes: [el(uid)] });
-      } catch (err) {
-        var rendered = el(uid) && el(uid).querySelector('svg');
-        if (!rendered) {
-          console.error('Mermaid render error:', err);
-          hideAll();
-          show('_agError');
-          el('_agErrorMsg').textContent = 'Diagram render failed: ' + (err.message || err);
-          return;
-        }
-      }
-      hideAll();
-      show('_agOutput');
+      show('_agError');
+      el('_agErrorMsg').textContent = 'Diagram render failed: ' + (err.message || err);
+      return;
     }
+
+    el('_agOutput').innerHTML = '<div id="' + uid + '_wrap" style="max-width:100%">' + svgText + '</div>';
+    hideAll();
+    show('_agOutput');
+
     /* Stretch the SVG to fill the available card width regardless of
        Mermaid's auto-computed max-width (LR diagrams can otherwise render
        very small when there are only a few nodes). */
-    var svg = el(uid) && el(uid).querySelector('svg');
+    var svg = el(uid + '_wrap') && el(uid + '_wrap').querySelector('svg');
     if (svg) {
       svg.style.width    = '100%';
       svg.style.maxWidth = '100%';
@@ -314,12 +306,13 @@
         if (labelsGroup) { labelsGroup.style.display = 'none'; }
         _tipData = [];
       } else {
-        /* CSS scoped to current uid — must be re-injected on every render,
-           including cache hits, because the uid changes each time. */
+        /* Force cursor and suppress text selection on all edge labels so the
+           browser doesn't show a text cursor over the ⓘ marker. */
         var styleEl = document.createElement('style');
         styleEl.textContent =
           '#' + uid + ' .edgeLabel, #' + uid + ' .edgeLabel * ' +
           '{ cursor: help !important; user-select: none !important; }' +
+          /* Remove edge-label background: covers SVG <rect> fills and HTML backgrounds */
           '#' + uid + ' .edgeLabel rect ' +
           '{ fill: transparent !important; stroke: none !important; }' +
           '#' + uid + ' .edgeLabel div, #' + uid + ' .edgeLabel span, ' +
@@ -327,56 +320,56 @@
           '{ background: transparent !important; background-color: transparent !important; }';
         document.head.appendChild(styleEl);
 
-        if (!cached) {
-          /* Fresh render: inject ⓘ pill badges into default-pattern edge labels.
-             On cache hits the pills are already baked into the SVG HTML. */
-          edges.forEach(function (e, i) {
-            if (!edgeLabels[i] || e.condition !== '.*') return;
-            var lg = edgeLabels[i];
-            var fo = lg.querySelector('foreignObject');
-            if (!fo) return;
+        /* For default-pattern (ⓘ) edges: replace the label with a visible pill badge. */
+        edges.forEach(function (e, i) {
+          if (!edgeLabels[i] || e.condition !== '.*') return;
+          var lg = edgeLabels[i];
+          var fo = lg.querySelector('foreignObject');
+          if (!fo) return;
 
-            lg.querySelectorAll('rect').forEach(function (r) {
-              r.style.setProperty('fill', 'transparent', 'important');
-              r.style.setProperty('stroke', 'none', 'important');
-            });
-
-            fo.setAttribute('width', '36');
-            fo.setAttribute('height', '22');
-            fo.setAttribute('x', String(parseFloat(fo.getAttribute('x') || 0) - 10));
-            fo.setAttribute('y', String(parseFloat(fo.getAttribute('y') || 0) - 2));
-            fo.style.overflow = 'visible';
-
-            var node = fo;
-            while (node.firstElementChild) { node = node.firstElementChild; }
-            var walk = node;
-            while (walk && walk !== fo) {
-              walk.style.setProperty('background', 'transparent', 'important');
-              walk.style.setProperty('background-color', 'transparent', 'important');
-              walk.style.setProperty('padding', '0', 'important');
-              walk = walk.parentElement;
-            }
-            node.innerHTML =
-              '<span style="display:inline-flex;align-items:center;justify-content:center;' +
-              'padding:2px 8px;border-radius:12px;' +
-              'background:#0d6efd;color:#fff;' +
-              'font-size:10px;font-style:italic;font-weight:bold;font-family:Georgia,serif;' +
-              'line-height:1.4;letter-spacing:0.5px;' +
-              'box-shadow:0 1px 4px rgba(0,0,0,.5);cursor:help;white-space:nowrap">i</span>';
-            var pill = node.querySelector('span');
-            if (pill) {
-              pill.style.setProperty('background',       '#0d6efd', 'important');
-              pill.style.setProperty('background-color', '#0d6efd', 'important');
-              pill.style.setProperty('color',            '#ffffff', 'important');
-            }
+          /* Clear backgrounds on all SVG rect descendants */
+          lg.querySelectorAll('rect').forEach(function (r) {
+            r.style.setProperty('fill', 'transparent', 'important');
+            r.style.setProperty('stroke', 'none', 'important');
           });
 
-          /* Store the fully-processed SVG in sessionStorage for future visits. */
-          _agCachePut(layout, svg.outerHTML);
-        }
+          /* Widen the foreignObject — Mermaid sized it for the ⓘ character alone */
+          fo.setAttribute('width', '36');
+          fo.setAttribute('height', '22');
+          fo.setAttribute('x', String(parseFloat(fo.getAttribute('x') || 0) - 10));
+          fo.setAttribute('y', String(parseFloat(fo.getAttribute('y') || 0) - 2));
+          fo.style.overflow = 'visible';
 
-        /* Rebuild tooltip DOM references — always required because element
-           handles change with every injection, cached or not. */
+          /* Walk down to the innermost element and replace its content */
+          var node = fo;
+          while (node.firstElementChild) { node = node.firstElementChild; }
+          /* Clear all backgrounds on ancestors inside the foreignObject */
+          var walk = node;
+          while (walk && walk !== fo) {
+            walk.style.setProperty('background', 'transparent', 'important');
+            walk.style.setProperty('background-color', 'transparent', 'important');
+            walk.style.setProperty('padding', '0', 'important');
+            walk = walk.parentElement;
+          }
+          /* Inject the pill */
+          node.innerHTML =
+            '<span style="display:inline-flex;align-items:center;justify-content:center;' +
+            'padding:2px 8px;border-radius:12px;' +
+            'background:#0d6efd;color:#fff;' +
+            'font-size:10px;font-style:italic;font-weight:bold;font-family:Georgia,serif;' +
+            'line-height:1.4;letter-spacing:0.5px;' +
+            'box-shadow:0 1px 4px rgba(0,0,0,.5);cursor:help;white-space:nowrap">i</span>';
+          /* Re-apply background with !important to beat the blanket
+             "background:transparent !important" CSS rule we injected above. */
+          var pill = node.querySelector('span');
+          if (pill) {
+            pill.style.setProperty('background',       '#0d6efd', 'important');
+            pill.style.setProperty('background-color', '#0d6efd', 'important');
+            pill.style.setProperty('color',            '#ffffff', 'important');
+          }
+        });
+
+        /* Rebuild tooltip lookup (replaces any previous render's data). */
         _tipData = [];
         edges.forEach(function (e, i) {
           var tip = e.full || e.condition || '';
@@ -386,7 +379,43 @@
           var hit = fo || lg.querySelector('text') || lg;
           _tipData.push({ lg: hit, tip: tip });
         });
+      } /* end else (!_labelsHidden) */
+
+      /* Node hover tooltips: show the destination comment (or name as fallback).
+         Handled here rather than via Mermaid's click-directive tooltip so the
+         comment text can contain any characters without Mermaid encoding limits.
+         Mermaid renders each node as <g class="node" id="flowchart-N_name-N">. */
+      var nodeCommentMap = {};
+      if (_data && _data.nodes) {
+        _data.nodes.forEach(function (n) {
+          var txt = (n.comment && n.comment.trim()) ? n.comment.trim() : n.name;
+          nodeCommentMap[mId(n.name)] = txt;
+        });
       }
+      /* Build node-id → url map for click navigation (we don't use Mermaid's
+         click directive because it causes parse errors in Mermaid 11.16). */
+      var nodeUrlMap = {};
+      if (_data && _data.nodes) {
+        _data.nodes.forEach(function (n) {
+          if (n.accessible !== false) {
+            nodeUrlMap[mId(n.name)] = '/do/transfer/destination/' + encodeURIComponent(n.name);
+          }
+        });
+      }
+      svg.querySelectorAll('g.node').forEach(function (g) {        /* With mermaid.render(uid, …) node IDs are prefixed: "{uid}-flowchart-{NODEID}-{IDX}"
+           Strip the uid prefix before matching so we can extract the NODEID correctly. */
+        var rawId = g.id || '';
+        if (rawId.indexOf(uid + '-') === 0) { rawId = rawId.slice(uid.length + 1); }
+        var m = rawId.match(/^flowchart-(.+)-\d+$/);
+        if (!m) return;
+        var tip = nodeCommentMap[m[1]];
+        if (tip) { _tipData.push({ lg: g, tip: tip }); }
+        var url = nodeUrlMap[m[1]];
+        if (url) {
+          g.style.cursor = 'pointer';
+          g.addEventListener('click', function () { window.location.href = url; });
+        }
+      });
     }
   }
 
@@ -395,11 +424,7 @@
   window._agSetLayout = function (layout) {
     if (layout === 'TD' && _tdDisabled) return;
     var isCurrent = (layout === _layout && el('_agOutput') && !el('_agOutput').classList.contains('d-none'));
-    if (isCurrent) {
-      /* Clicking the already-active button: force a fresh render by evicting
-         the cached SVG.  This lets the user refresh without a page reload. */
-      _agCacheClear(layout);
-    } else {
+    if (!isCurrent) {
       _layout = layout;
       el('btnLR').classList.toggle('active', layout === 'LR');
       el('btnTD').classList.toggle('active', layout === 'TD');
