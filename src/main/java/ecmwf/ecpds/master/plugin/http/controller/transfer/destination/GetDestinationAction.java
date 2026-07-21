@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -169,14 +170,17 @@ public class GetDestinationAction extends PDSAction {
                 return mapping.findForward("changelog");
             } else if ("aliasesfrom".equals(mode)) {
                 // This is the aliases_from.jsp page!
+                request.setAttribute("accessibleDestNames", _getAccessibleDestinationNames(user));
                 return mapping.findForward("aliasesfrom");
             } else if ("aliasesto".equals(mode)) {
                 // This is the aliases_to.jsp page!
+                request.setAttribute("accessibleDestNames", _getAccessibleDestinationNames(user));
                 return mapping.findForward("aliasesto");
             } else if ("aliasgraph".equals(mode)) {
                 // This is the alias graph diagram page!
+                final var accessible = _getAccessibleDestinationNames(user);
                 try {
-                    request.setAttribute("aliasGraphJson", buildAliasGraphJson(destination));
+                    request.setAttribute("aliasGraphJson", buildAliasGraphJson(destination, accessible));
                 } catch (final Exception e) {
                     log.warn("Could not build alias graph for {}", destination.getName(), e);
                     request.setAttribute("aliasGraphJson", "{}");
@@ -315,15 +319,17 @@ public class GetDestinationAction extends PDSAction {
      *
      * @param root
      *            the focal destination
+     * @param accessibleDestNames
+     *            set of destination names the current user may access; {@code null} means fail-open (all accessible)
      *
      * @return JSON object string: {@code {"center":"…","nodes":[…],"edges":[…]}}
      */
-    private static String buildAliasGraphJson(final Destination root) {
+    private static String buildAliasGraphJson(final Destination root, final Set<String> accessibleDestNames) {
         final var rootName = root.getName();
         final var visited = new LinkedHashSet<String>();
         final var nodes = new LinkedHashMap<String, Destination>();
         final var edgeKeys = new LinkedHashSet<String>();
-        final var edgeList = new ArrayList<String[]>(); // [from, to, condition]
+        final var edgeList = new ArrayList<String[]>(); // [from, to, condition, full]
         final var queue = new ArrayDeque<Destination>();
         visited.add(rootName);
         nodes.put(rootName, root);
@@ -336,8 +342,9 @@ public class GetDestinationAction extends PDSAction {
                 for (final var alias : current.getAliases()) {
                     final var aliasName = alias.getName();
                     if (edgeKeys.add(currentName + "\0" + aliasName)) {
+                        final var raw = alias.getDataAlias();
                         edgeList.add(
-                                new String[] { currentName, aliasName, _normalizeCondition(alias.getDataAlias()) });
+                                new String[] { currentName, aliasName, _normalizeCondition(raw), _fullCondition(raw) });
                     }
                     if (visited.add(aliasName)) {
                         nodes.put(aliasName, alias);
@@ -352,7 +359,9 @@ public class GetDestinationAction extends PDSAction {
                 for (final var from : current.getAliasedFrom()) {
                     final var fromName = from.getName();
                     if (edgeKeys.add(fromName + "\0" + currentName)) {
-                        edgeList.add(new String[] { fromName, currentName, _normalizeCondition(from.getDataAlias()) });
+                        final var raw = from.getDataAlias();
+                        edgeList.add(
+                                new String[] { fromName, currentName, _normalizeCondition(raw), _fullCondition(raw) });
                     }
                     if (visited.add(fromName)) {
                         nodes.put(fromName, from);
@@ -376,9 +385,12 @@ public class GetDestinationAction extends PDSAction {
             final var dest = entry.getValue();
             final var status = dest.getFormattedStatus();
             final var statusPrefix = status.contains("-") ? status.substring(0, status.indexOf('-')) : status;
+            final var isAccessible = name.equals(rootName) || accessibleDestNames == null
+                    || accessibleDestNames.contains(name);
             sb.append("{\"name\":").append(_jsonStr(name));
             sb.append(",\"active\":").append(dest.getActive());
             sb.append(",\"status\":").append(_jsonStr(statusPrefix));
+            sb.append(",\"accessible\":").append(isAccessible);
             sb.append("}");
         }
         sb.append("],\"edges\":[");
@@ -391,6 +403,7 @@ public class GetDestinationAction extends PDSAction {
             sb.append("{\"from\":").append(_jsonStr(edge[0]));
             sb.append(",\"to\":").append(_jsonStr(edge[1]));
             sb.append(",\"condition\":").append(_jsonStr(edge[2]));
+            sb.append(",\"full\":").append(_jsonStr(edge[3]));
             sb.append("}");
         }
         sb.append("]}");
@@ -398,25 +411,94 @@ public class GetDestinationAction extends PDSAction {
     }
 
     /**
+     * Returns the set of destination names accessible to the given user, or {@code null} when the set cannot be
+     * determined (fail-open: callers treat {@code null} as "all accessible").
+     *
+     * @param user
+     *            the authenticated user
+     *
+     * @return set of destination names, or {@code null} on error
+     */
+    private static Set<String> _getAccessibleDestinationNames(final User user) {
+        try {
+            final var destinations = DestinationHome.findByUser(user, "", "All", true,
+                    StatusFactory.getDestinationStatusCode("All Status"), getDestinationTypeIds("-1"), "All");
+            final var names = new HashSet<String>(destinations.size() * 2);
+            for (final var d : destinations) {
+                names.add(d.getName());
+            }
+            return names;
+        } catch (final Exception e) {
+            log.warn("Could not determine accessible destinations for user {}", user.getUid(), e);
+            return null; // fail-open
+        }
+    }
+
+    /**
      * Normalise an alias condition string for use as a Mermaid edge label.
      *
-     * @param raw
-     *            the raw condition string (may contain HTML {@code <br>} line-breaks, may be {@code null})
+     * <p>
+     * The condition stored per-destination is an ECtrans options string of the form
+     * {@code "recursive=no;delay=0;pattern=.*"}. This method extracts the {@code pattern=} value so that the edge label
+     * shows only the file-name filter, not the full options block. When the pattern is the default {@code ".*"}
+     * (match-everything) the method returns {@code ".*"} so the caller can suppress the label entirely.
+     * </p>
      *
-     * @return the normalised condition; {@code ".*"} when the condition is absent or matches everything
+     * @param raw
+     *            the raw condition string from {@link Destination#getDataAlias()} (may contain HTML {@code <br>}
+     *            line-breaks; may be {@code null})
+     *
+     * @return the extracted pattern, or {@code ".*"} when the condition is absent / matches everything
      */
     private static String _normalizeCondition(final String raw) {
         if (raw == null) {
             return ".*";
         }
-        // getDataAlias() replaces newlines with <br>; restore first line only
+        // getDataAlias() replaces newlines with <br>; restore and take only the first line
         final var s = raw.replace("<br>", "\n");
         final var firstLine = s.contains("\n") ? s.substring(0, s.indexOf('\n')).trim() : s.trim();
-        return firstLine.isEmpty() ? ".*" : firstLine;
+        if (firstLine.isEmpty()) {
+            return ".*";
+        }
+        // Options are semicolon-separated key=value pairs (e.g. "recursive=no;delay=0;pattern=.*")
+        for (final var part : firstLine.split(";")) {
+            if (part.startsWith("pattern=")) {
+                final var pattern = part.substring("pattern=".length()).trim();
+                return pattern.isEmpty() ? ".*" : pattern;
+            }
+        }
+        // Fallback: treat the whole first line as the condition (legacy plain-pattern format)
+        return firstLine;
     }
 
     /**
-     * Encodes a Java string as a JSON string literal (including surrounding double-quotes).
+     * Returns the full, human-readable condition string for use as a tooltip.
+     *
+     * <p>
+     * Unlike {@link #_normalizeCondition}, this method returns the complete first-line condition (with {@code <br>
+     * } sequences replaced by newlines and individual semicolon-separated options placed on separate lines), making it
+     * suitable for display in a tooltip.
+     * </p>
+     *
+     * @param raw
+     *            the raw condition string from {@link Destination#getDataAlias()} (may be {@code null})
+     *
+     * @return the formatted full condition, or an empty string when none is set
+     */
+    private static String _fullCondition(final String raw) {
+        if (raw == null) {
+            return "";
+        }
+        final var s = raw.replace("<br>", "\n");
+        final var firstLine = s.contains("\n") ? s.substring(0, s.indexOf('\n')).trim() : s.trim();
+        if (firstLine.isEmpty()) {
+            return "";
+        }
+        // Replace semicolons with newlines so each key=value pair appears on its own tooltip line
+        return firstLine.replace(";", "\n");
+    }
+
+    /**
      *
      * @param s
      *            the string to encode; {@code null} becomes JSON {@code null}

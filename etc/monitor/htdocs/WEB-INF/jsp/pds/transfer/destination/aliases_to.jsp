@@ -55,7 +55,14 @@
     <tbody>
     <c:forEach var="alias" items="${aliases}">
         <tr>
-            <td><a href="/do/transfer/destination/${alias.name}">${alias.name}</a></td>
+            <td><c:choose>
+              <c:when test="${empty accessibleDestNames or accessibleDestNames.contains(alias.name)}">
+                <a href="/do/transfer/destination/${alias.name}">${alias.name}</a>
+              </c:when>
+              <c:otherwise>
+                <span class="text-muted" title="You do not have access to this destination">${alias.name}</span>
+              </c:otherwise>
+            </c:choose></td>
             <td>${alias.typeText}</td>
             <td>
 <c:set var="_sb" value="${fn:contains(alias.formattedStatus, '-') ? fn:substringBefore(alias.formattedStatus, '-') : alias.formattedStatus}"/>

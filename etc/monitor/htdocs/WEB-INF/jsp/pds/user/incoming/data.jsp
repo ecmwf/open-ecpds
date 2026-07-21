@@ -27,9 +27,9 @@
 	<div class="row g-3">
 		<div class="col-lg-6">
 			<div class="card">
-				<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
-					<i class="bi bi-person-fill-gear text-primary"></i>
-					<span class="fw-semibold">Data User: <c:out value="${incoming.id}" /></span>
+				<div class="card-header d-flex align-items-center gap-2 flex-wrap" style="background:var(--bs-secondary-bg)">
+					<i class="bi bi-person-fill-gear text-primary flex-shrink-0"></i>
+					<span class="fw-semibold text-truncate" style="min-width:0;flex:1 1 auto">Data User: <c:out value="${incoming.id}" /></span>
 					<a href="#" class="btn btn-sm btn-outline-info ms-1 flex-shrink-0"
 					   onclick="var el=document.getElementById('portalServiceGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"
 					   title="Open Portal Service Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Portal Service </span>Guide</a>

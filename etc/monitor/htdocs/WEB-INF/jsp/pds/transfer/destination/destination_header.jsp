@@ -48,7 +48,7 @@
         </c:if>
         </div>
         <%-- Desktop: full icon bar, hidden on mobile --%>
-        <div id="_destIconBar" class="d-none d-sm-flex gap-2 align-items-center ms-auto">
+        <div id="_destIconBar" class="d-none d-md-flex gap-2 align-items-center ms-auto">
         <auth:if basePathKey="destination.basepath" paths="">
         <auth:then>
         <a href='<bean:message key="destination.basepath"/>' class="btn btn-sm btn-outline-secondary" title="All Destinations"><i class="bi bi-arrow-left"></i></a>
@@ -108,14 +108,21 @@
                class="btn btn-sm btn-outline-secondary" title="Metadata"><i class="bi bi-paperclip"></i></a>
             </auth:then>
             </auth:if>
+        </div>
+        <%-- Alias group: Graph / Aliased From / Aliases To --%>
+        <div class="d-flex gap-1 align-items-center" style="border-left:1px solid var(--bs-border-color);padding-left:0.5rem;">
             <a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=aliasgraph'
                class="btn btn-sm btn-outline-secondary" title="Alias Graph"><i class="bi bi-diagram-3"></i></a>
+            <a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=aliasesfrom'
+               class="btn btn-sm btn-outline-secondary" title="Aliased From"><i class="bi bi-arrow-left-circle"></i></a>
+            <a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=aliasesto'
+               class="btn btn-sm btn-outline-secondary" title="Aliases To"><i class="bi bi-arrow-right-circle"></i></a>
         </div>
         </c:if>
         </div><%-- end #_destIconBar --%>
 
-        <%-- Mobile: ⋯ dropdown, hidden on sm+ --%>
-        <div class="d-sm-none ms-auto dest-mobile-menu">
+        <%-- Mobile: ⋯ dropdown, hidden on md+ --%>
+        <div class="d-md-none ms-auto dest-mobile-menu">
             <div class="dropdown">
                 <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
                         id="_destActionsToggle" data-bs-toggle="dropdown" aria-expanded="false"
