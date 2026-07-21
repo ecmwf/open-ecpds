@@ -64,9 +64,15 @@
   </div>
 
   <div class="card-body p-2" id="_agContainer" style="min-height:400px;position:relative;display:flex;flex-direction:column;justify-content:center;background:var(--bs-body-bg);">
-    <div id="_agSpinner" class="d-flex justify-content-center align-items-center p-4">
-      <div class="spinner-border spinner-border-sm text-secondary me-2" role="status"></div>
-      <span class="text-muted small">Loading diagram&hellip;</span>
+    <div id="_agSpinner" class="d-flex flex-column justify-content-center align-items-center p-4 gap-2 d-none">
+      <div class="d-flex align-items-center gap-2">
+        <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+        <span class="text-muted small" id="_agSpinnerMsg">Rendering diagram&hellip;</span>
+      </div>
+      <div class="progress w-100" style="height:4px;max-width:220px">
+        <div class="progress-bar progress-bar-striped progress-bar-animated w-100"
+             role="progressbar" style="background:var(--bs-primary)"></div>
+      </div>
     </div>
     <div id="_agOutput" class="w-100 d-flex d-none justify-content-center align-items-center"></div>
     <div id="_agEmpty"  class="alert alert-info d-flex d-none align-items-center gap-2 m-2">
@@ -121,34 +127,36 @@
   } catch (e) { _data = {}; }
 
   /* ── TD layout availability + edge-label visibility ─────────── */
-  /* TD (top-down) stacks all nodes at the same depth horizontally,
-     producing a diagram that is far too wide and illegible when the
-     graph has many nodes.  LR (left-right) is always workable because
-     alias graphs tend to be shallow, so disable TD above a threshold.
-     The same threshold is used to suppress edge labels: with many nodes
-     the labels overlap and misalign, making the diagram harder to read. */
+  /* Both are re-evaluated on every render based on the *filtered* node count
+     so narrowing the graph via depth/direction re-enables labels and TD layout. */
   var _TD_NODE_THRESHOLD = 30;
-  var _tdDisabled    = (_data && _data.nodes) ? _data.nodes.length > _TD_NODE_THRESHOLD : false;
-  var _labelsHidden  = _tdDisabled;   /* hide edge labels whenever TD is also disabled */
+  var _tdDisabled   = false;   /* updated in buildDiagram() */
+  var _labelsHidden = false;   /* updated in buildDiagram() */
 
-  function _applyTdButtonState() {
+  /* Stored so removeEventListener can target the same function reference */
+  var _tdBlocker = function (e) { e.preventDefault(); e.stopPropagation(); };
+
+  function _applyTdButtonState(disabled) {
     var btn = el('btnTD');
     if (!btn) return;
-    if (_tdDisabled) {
-      // Do NOT use aria-disabled="true" — Bootstrap 5 Tooltip._isDisabled() checks
-      // it and refuses to show the tooltip (and still removes the native title).
-      // Do NOT initialise a Bootstrap Tooltip — it moves title to data-bs-original-title
-      // and then refuses to show due to the disabled check above.
-      // Simply keep the button as a normal .btn (so btn-group CSS still applies),
-      // prevent clicks, and rely on the browser's native title tooltip which works
-      // because we never set the HTML disabled attribute (pointer events remain active).
+    _tdDisabled = disabled;
+    if (disabled) {
       btn.setAttribute('tabindex', '-1');
       btn.removeAttribute('onclick');
-      btn.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); });
+      btn.removeEventListener('click', _tdBlocker);
+      btn.addEventListener('click', _tdBlocker);
       btn.style.opacity = '0.65';
       btn.style.cursor  = 'not-allowed';
       btn.title = 'TD layout is disabled for graphs with more than ' + _TD_NODE_THRESHOLD +
                   ' nodes \u2014 the diagram would be too small to read. Use LR instead.';
+    } else {
+      btn.removeAttribute('tabindex');
+      btn.setAttribute('onclick', "_agSetLayout('TD')");
+      btn.removeEventListener('click', _tdBlocker);
+      btn.style.opacity = '';
+      btn.style.cursor  = '';
+      btn.title = 'Top \u2192 Down';
+      btn.classList.toggle('active', _layout === 'TD');
     }
   }
 
@@ -246,6 +254,21 @@
     var g = applyFilters(_data, _depth, _direction);
     if (!g || !g.nodes || g.nodes.length === 0) return null;
 
+    /* Re-evaluate threshold flags based on the *filtered* node count so that
+       narrowing the graph via depth/direction re-enables labels and TD layout. */
+    var nodeCount = g.nodes.length;
+    _labelsHidden = nodeCount > _TD_NODE_THRESHOLD;
+    _applyTdButtonState(nodeCount > _TD_NODE_THRESHOLD);
+
+    /* If TD just became unavailable and we're currently in TD, silently fall
+       back to LR so the rendered diagram is always usable. */
+    if (_labelsHidden && layout === 'TD') {
+      _layout = 'LR';
+      layout  = 'LR';
+      el('btnLR') && el('btnLR').classList.add('active');
+      el('btnTD') && el('btnTD').classList.remove('active');
+    }
+
     var lines = ['flowchart ' + layout];
 
     /* Node declarations */
@@ -309,17 +332,37 @@
 
   /* ── rendering ───────────────────────────────────────────────── */
 
-  async function doRender(layout) {
-    var diagram = buildDiagram(layout);
-    hideAll();
-    if (!diagram) { show('_agEmpty'); return; }
+  /* Yield helper: waits for the next animation frame + a setTimeout so the
+     browser has a full repaint cycle before the next CPU-intensive step. */
+  function yieldToUI() {
+    return new Promise(function (resolve) {
+      requestAnimationFrame(function () { setTimeout(resolve, 0); });
+    });
+  }
 
+  async function doRender(layout) {
+    /* Show the spinner immediately — before any CPU work — so the user sees
+       feedback as soon as they change a control. */
+    hideAll();
     show('_agSpinner');
-    /* Yield the main thread so the browser can repaint the spinner before
-       mermaid.run() begins its CPU-intensive SVG generation. Without this
-       yield the spinner is never painted — the JS call stack stays busy
-       until Mermaid finishes and the browser only paints the final result. */
-    await new Promise(function (resolve) { setTimeout(resolve, 0); });
+    var msgEl = el('_agSpinnerMsg');
+    if (msgEl) { msgEl.textContent = 'Building diagram\u2026'; }
+
+    /* Yield so the browser repaints the spinner and progress bar before we
+       start the synchronous work (buildDiagram + mermaid.render). */
+    await yieldToUI();
+
+    var diagram = buildDiagram(layout);
+    if (!diagram) { hideAll(); show('_agEmpty'); return; }
+
+    if (msgEl) {
+      var filteredCount = (applyFilters(_data, _depth, _direction) || {nodes:[]}).nodes.length;
+      msgEl.textContent = 'Rendering ' + filteredCount + ' node' +
+                          (filteredCount !== 1 ? 's' : '') + '\u2026';
+    }
+
+    /* Second yield so the updated message is painted before mermaid blocks. */
+    await yieldToUI();
 
     /* Fresh unique ID on every render so Mermaid never skips re-processing */
     var uid = 'ag_' + Date.now();
@@ -571,7 +614,6 @@
 
   /* Called by onload on the Mermaid <script src> below */
   window._agInit = function () {
-    _applyTdButtonState();
     _agPopulateDepthSelect();
     _agInitMermaid();
     _ready = true;
