@@ -43,6 +43,10 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 
+import net.i2p.crypto.eddsa.EdDSASecurityProvider;
+import net.i2p.crypto.eddsa.spec.EdDSAGenParameterSpec;
+import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable;
+
 import javax.management.AttributeNotFoundException;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanException;
@@ -211,9 +215,10 @@ public final class SshPlugin extends PluginThread {
             return;
         }
         _log.info("No SSH host keys found in {}; auto-generating default key pairs", keysDir);
-        generateHostKey(keysDir, "ecdsa", "EC", new ECGenParameterSpec("secp521r1"), 0);
-        generateHostKey(keysDir, "ed25519", "Ed25519", null, 0);
-        generateHostKey(keysDir, "rsa", "RSA", null, 4096);
+        generateHostKey(keysDir, "ecdsa", "EC", null, new ECGenParameterSpec("secp521r1"), 0);
+        generateHostKey(keysDir, "ed25519", "EdDSA", new EdDSASecurityProvider(),
+                new EdDSAGenParameterSpec(EdDSANamedCurveTable.ED_25519), 0);
+        generateHostKey(keysDir, "rsa", "RSA", null, null, 4096);
     }
 
     /**
@@ -222,8 +227,10 @@ public final class SshPlugin extends PluginThread {
      * where POSIX permissions are supported.
      */
     private static void generateHostKey(final Path keysDir, final String name, final String algorithm,
-            final AlgorithmParameterSpec spec, final int keySize) throws IOException, GeneralSecurityException {
-        final var kpg = KeyPairGenerator.getInstance(algorithm);
+            final java.security.Provider provider, final AlgorithmParameterSpec spec, final int keySize)
+            throws IOException, GeneralSecurityException {
+        final var kpg = provider != null ? KeyPairGenerator.getInstance(algorithm, provider)
+                : KeyPairGenerator.getInstance(algorithm);
         if (spec != null)
             kpg.initialize(spec);
         else if (keySize > 0)
@@ -232,16 +239,30 @@ public final class SshPlugin extends PluginThread {
         final var comment = "ecpds@auto-generated";
         final var privateKeyPath = keysDir.resolve("id_" + name);
         final var publicKeyPath = keysDir.resolve("id_" + name + ".pub");
-        try (var out = Files.newOutputStream(privateKeyPath)) {
-            OpenSSHKeyPairResourceWriter.INSTANCE.writePrivateKey(kp, comment, null, out);
-        }
+        /*
+         * Write to a temp file first; rename atomically so a failure never leaves a corrupt partial key that blocks
+         * future auto-generation.
+         */
+        final var tmpPrivate = keysDir.resolve("id_" + name + ".tmp");
+        final var tmpPublic = keysDir.resolve("id_" + name + ".pub.tmp");
         try {
-            Files.setPosixFilePermissions(privateKeyPath, PosixFilePermissions.fromString("rw-------"));
-        } catch (final UnsupportedOperationException e) {
-            _log.debug("Cannot set POSIX permissions on {}: {}", privateKeyPath, e.getMessage());
-        }
-        try (var out = Files.newOutputStream(publicKeyPath)) {
-            OpenSSHKeyPairResourceWriter.INSTANCE.writePublicKey(kp.getPublic(), comment, out);
+            try (var out = Files.newOutputStream(tmpPrivate)) {
+                OpenSSHKeyPairResourceWriter.INSTANCE.writePrivateKey(kp, comment, null, out);
+            }
+            try {
+                Files.setPosixFilePermissions(tmpPrivate, PosixFilePermissions.fromString("rw-------"));
+            } catch (final UnsupportedOperationException e) {
+                _log.debug("Cannot set POSIX permissions on {}: {}", privateKeyPath, e.getMessage());
+            }
+            try (var out = Files.newOutputStream(tmpPublic)) {
+                OpenSSHKeyPairResourceWriter.INSTANCE.writePublicKey(kp.getPublic(), comment, out);
+            }
+            Files.move(tmpPrivate, privateKeyPath);
+            Files.move(tmpPublic, publicKeyPath);
+        } catch (final IOException | GeneralSecurityException e) {
+            Files.deleteIfExists(tmpPrivate);
+            Files.deleteIfExists(tmpPublic);
+            throw e;
         }
         _log.info("Generated SSH host key: {} ({})", privateKeyPath, algorithm);
     }
