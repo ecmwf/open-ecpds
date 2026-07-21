@@ -49,7 +49,7 @@
     <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
       <strong class="d-block mb-1">Alias Relationship Graph &mdash; overview</strong>
       <ul class="mb-0 ps-3">
-        <li>Click any destination node to navigate to its page.</li>
+        <li>Click any destination node to navigate to <strong>its</strong> alias graph, allowing you to explore the graph hop by hop.</li>
         <li>Arrows show the direction of aliasing (source &rarr; target).</li>
         <li>Edge labels show the file-name filter pattern when it is not the default <code>.*</code>.</li>
         <li>A <strong>ⓘ</strong> marker appears on arrows that use the default pattern but have other conditions set; hover the marker to see the full condition string.</li>
@@ -121,6 +121,22 @@
   var _direction = 'both';   // 'both' | 'upstream' | 'downstream'
   var _ready     = false;    // true once Mermaid has been initialised
   var _tipData   = [];       // [{lg, tip}] rebuilt on every render
+
+  /* ── restore state from URL parameters ──────────────────────── */
+  /* When navigating hop-by-hop the click URL carries the current filter
+     state so the new graph opens with the same layout/direction/depth. */
+  (function () {
+    try {
+      var p = new URLSearchParams(window.location.search);
+      var l = p.get('agl');   /* layout    */
+      var d = p.get('agd');   /* direction */
+      var z = p.get('agz');   /* depth     */
+      if (l === 'TD')                                    { _layout    = 'TD';        }
+      if (d === 'upstream' || d === 'downstream')        { _direction = d;           }
+      var zi = parseInt(z, 10);
+      if (!isNaN(zi) && zi >= 0)                         { _depth     = zi;          }
+    } catch (e) { /* URLSearchParams not available — use defaults */ }
+  }());
 
   try {
     _data = JSON.parse(document.getElementById('_aliasGraphData').textContent);
@@ -499,7 +515,11 @@
       if (_data && _data.nodes) {
         _data.nodes.forEach(function (n) {
           if (n.accessible !== false) {
-            nodeUrlMap[mId(n.name)] = '/do/transfer/destination/' + encodeURIComponent(n.name);
+            /* Carry current filter state so the new graph opens with the same settings */
+            var params = '?mode=aliasgraph&agl=' + _layout +
+                         '&agd=' + _direction +
+                         '&agz=' + _depth;
+            nodeUrlMap[mId(n.name)] = '/do/transfer/destination/' + encodeURIComponent(n.name) + params;
           }
         });
       }
@@ -614,6 +634,13 @@
 
   /* Called by onload on the Mermaid <script src> below */
   window._agInit = function () {
+    /* Sync button UI to the state restored from URL parameters */
+    el('btnLR') && el('btnLR').classList.toggle('active', _layout    === 'LR');
+    el('btnTD') && el('btnTD').classList.toggle('active', _layout    === 'TD');
+    ['btnDirBoth', 'btnDirUp', 'btnDirDown'].forEach(function (id) {
+      var btn = el(id);
+      if (btn) { btn.classList.toggle('active', btn.dataset.dir === _direction); }
+    });
     _agPopulateDepthSelect();
     _agInitMermaid();
     _ready = true;
