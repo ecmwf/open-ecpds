@@ -16,6 +16,7 @@
 - [Http Options](#http-options)
 - [Incoming Options](#incoming-options)
 - [Master Options](#master-options)
+- [Monitor Options](#monitor-options)
 - [Mqtt Options](#mqtt-options)
 - [Portal Options](#portal-options)
 - [Proxy Options](#proxy-options)
@@ -897,6 +898,12 @@ Allow specifying an alternative URL to connect to the MQTT/S server. By default,
 ### http.multipartMode
 In the context of a file upload (PUT or POST), defines how the multipart entity handles and encodes the parts within it. This value should be set according to the requirements of the HTTP server.
 
+### http.parser
+Allow specifying which parser should be used to interpret and extract file listings from content retrieved from the remote HTTP/S endpoint; supported values are html, csv, json, xml, stac, and script, allowing the system to parse different remote listing formats such as web directory listings, CSV feeds, JSON/XML APIs, STAC catalogs, and user-defined JavaScript-based parsing logic when built-in parsers are not sufficient.
+
+### http.parserOptions
+Allow passing key=value pairs (comma-separated) to configure the selected parser, overriding its built-in defaults. For json: arrayPath (dot-path to the array of items), nameField (field used as the entry name), urlField (field used as the download URL), timeField (field used as the modification time). For xml: same keys but arrayPath uses dot-notation (e.g. items.item). For csv: delimiter (column separator), nameCol (0-based column index for the name), urlCol (column index for the URL), timeCol (column index for the time). For stac: arrayPath (default features), nameField (default id), urlField (dot-path to the asset href, default assets.data.href), timeField (default properties.start_datetime). Example for json: arrayPath=results,nameField=filename,urlField=download,timeField=modified.
+
 ### http.port
 Allow specifying the port number of the remote HTTP/S server to connect to.
 
@@ -921,8 +928,23 @@ If enabled, enforce hostname verification for SSL connections.
 ### http.supportedProtocols
 This parameter defines which protocols can be used during the SSL handshake process to establish a secure connection with the HTTPS server.
 
+### http.tokenFunction
+Specify the name of the JavaScript function defined in the script editor that will be called to obtain a bearer token when none is cached or the current token is about to expire. The function receives two script-global objects: "setup" (read-only view of the current host options, accessible via setup.get("http.optionName")) and "http" (a helper providing get(url, headers) and post(url, headers, body) methods for making HTTP/S requests). In addition to regular option keys, "setup" exposes three virtual keys: "http.login" (username from the host location), "http.password" (password from the host location), and "http.basicAuth" (pre-computed "Basic &lt;base64(login:password)&gt;" value ready to use as an Authorization header). The function must return a nested JavaScript object using the module name as the top-level key, e.g. { http: { tokenValue: "Bearer eyJ...", tokenExpiry: 1234567890000 } }, where "tokenValue" is the full token string and "tokenExpiry" is the optional expiry time as a Unix timestamp in milliseconds. If "tokenExpiry" is omitted or zero, the token is treated as single-use and will be refreshed on every transfer. Defaults to "getAuthToken".
+
+### http.tokenHeader
+Specify the HTTP request header name into which the cached bearer token value (obtained via the function named in "http.tokenFunction") will be injected for every outgoing request. Defaults to "Authorization", which is the standard header used for OAuth 2.0 bearer tokens (e.g. "Authorization: Bearer eyJ..."). Change this if the remote server expects the token in a non-standard header.
+
+### http.tokenLookahead
+Specify the number of seconds before the token expiry time (stored in "http.tokenExpiry") at which the token should be proactively refreshed. For example, a value of 60 means the token will be renewed one minute before it expires, avoiding failed requests caused by using a token that expires mid-transfer. Defaults to 60 seconds.
+
 ### http.uploadEndPoint
 In the context of a file upload (PUT or POST), this option allow specifying the URL or route on the remote server that expects incoming data using the PUT or POST method for uploading purposes. This endpoint is designed to handle and process the incoming data according to the server logic or application requirements. By default the name of the target file is used.
+
+### http.urlIsFile
+When enabled, treats the URL used for listing as a direct reference to the file to be retrieved, rather than a directory to crawl. A single HEAD (or GET if "http.useHead" is false) request is issued to that URL to obtain the file size and last-modified date, and a single-line FTP-like listing entry is produced. Use this when the acquisition URL points directly to the file and no directory index page exists at that URL.
+
+### http.urlIsFileName
+When "http.urlIsFile" is enabled, this option allows forcing a specific filename for the resulting FTP listing entry. The URL becomes the symlink source and the specified name becomes its target (e.g. the entry is formatted as "URL -&gt; filename" with symlink permissions). Use this when the URL itself does not contain a meaningful filename (e.g. it contains query parameters or is an opaque path).
 
 ### http.urldir
 When performing a listing, a "/" is appended to the end of the URL if it lacks parameters (i.e. no "?" is found in the URL) or does not end with an extension such as ".html", ".htm", or ".txt". This option allows overriding the default behavior and enforcing a specific choice.
@@ -946,6 +968,9 @@ Allow specifying the date format when using the "$date" parameter in the "incomi
 ### incoming.delay
 Allow specifying a delay when creating the scheduled time for a file pushed by a user via the data portal. By default the scheduled time is the current time.
 
+### incoming.downloadPeriod
+Define the rolling time window for the download byte quota set by "incoming.maxDownloadBytes". If not set, the quota is disabled.
+
 ### incoming.event
 Enable the generation of an event when a user pushes a file through the data portal, triggering a notification system push (e.g. MQTT).
 
@@ -960,6 +985,12 @@ Allow capping the transfer rate for downloads via the data portal.
 
 ### incoming.maxBytesPerSecForOutput
 Allow capping the transfer rate for uploads via the data portal.
+
+### incoming.maxDownloadBytes
+Define the maximum number of bytes that can be downloaded (pulled) from this destination within the rolling time window defined by "incoming.downloadPeriod". If the limit is reached, new download connections from this destination will be refused. If not set, the quota is disabled.
+
+### incoming.maxUploadBytes
+Define the maximum number of bytes that can be uploaded (pushed) to this destination within the rolling time window defined by "incoming.uploadPeriod". If the limit is reached, new upload connections to this destination will be refused. If not set, the quota is disabled.
 
 ### incoming.metadata
 Enable the specification of metadata for a file uploaded by a user through the data portal. Use placeholders like "$date", "$timestamp", "$destination", "$target", "$original", and "$timefile" within the metadata, which will be substituted by their respective values.
@@ -985,6 +1016,9 @@ When a user uploads a file through the data portal, enabling this feature forces
 ### incoming.tmpPattern
 When incoming.tmpDetect is enabled, this feature allows specifying a regex pattern to identify temporary files. By default, a file is considered temporary if its filename (excluding the path) starts with a dot and/or ends with the .tmp extension (case-insensitive).
 
+### incoming.uploadPeriod
+Define the rolling time window for the upload byte quota set by "incoming.maxUploadBytes". If not set, the quota is disabled.
+
 ### incoming.version
 Allow specifying an optional version number for a file pushed by a user via the data portal.  Use placeholders like "$date", "$timestamp", "$destination", "$target", "$original", and "$timefile" within the version, which will be substituted by their respective values.
 
@@ -994,6 +1028,13 @@ This option help fine-tune the virtual FTP server for accessing the underlying h
 
 ### master.homeDir
 Define the home directory when accessing this host via the virtual FTP server on the master. This is particularly helpful when the host is dedicated to acquisition and contains multiple directories.
+
+## Monitor Options
+
+These options allow customising the behaviour of the monitoring portal for individual Web Users.
+
+### monitor.shareFeedback
+Control the visibility of the "Share Feedback" icon in the portal header for this Web User. When set to "no", the feedback button is hidden. The change takes effect on the user's next login (default: "yes").
 
 ## Mqtt Options
 
@@ -1024,11 +1065,14 @@ Build the MQTT topic. It is either defined in the destination setup (Properties 
 
 These options help fine-tune the data portal for the underlying data user and are accessible via the data user editor.
 
-### portal.anonymous
-Allow treating this data user as anonymous, requiring no authentication.
+### portal.accessGuide
+Allow specifying whether the Access Guide button should be displayed in the data portal for this user. When set to false, the Access Guide button and its associated connection instructions are hidden.
 
 ### portal.color
 Allow specifying the color to be used for the header and footer sections (e.g. "black" or "#000000").
+
+### portal.corsAllowOrigin
+Sets the value of the Access-Control-Allow-Origin response header for HTTP GET/HEAD requests served through the DNS-mapped data portal path for this Data User. Use * to allow any browser origin (suitable for fully public datasets such as open data portals). A specific origin such as https://app.example.com can also be provided. When set, the headers Access-Control-Allow-Methods (GET, HEAD, OPTIONS), Access-Control-Allow-Headers (Range, Content-Type, Authorization) and Access-Control-Expose-Headers (Content-Range, Content-Length, Accept-Ranges, ETag, Last-Modified) are also added automatically, and OPTIONS preflight requests are answered with 204 No Content. Leave empty (default) to disable CORS for this user, in which case the global corsAllowOrigin value from the HttpPlugin configuration is used as a fallback.
 
 ### portal.deletePathPermRegex
 Allow the configuration of a regular expression (regex) to control whether the "delete" operation is permitted. The regex is applied to the full path, including the domain name. A valid value could be: "(.*):/data/incoming/(.*)".
@@ -1042,6 +1086,9 @@ Allow the configuration of a regular expression (regex) to control whether the "
 ### portal.domain
 Allow setting a default domain to prevent displaying the DATA directory within the path. This option is ignored if "portal.destination" is defined as it takes over.
 
+### portal.downloadPeriod
+Define the rolling time window for the download byte quota set by "portal.maxDownloadBytes". Accepts a duration. If not set, the quota is disabled.
+
 ### portal.footer
 Allow specifying the title to be displayed at the bottom of the page (e.g. "Copyright ECMWF").
 
@@ -1054,11 +1101,23 @@ Allow the configuration of a regular expression (regex) to control whether the "
 ### portal.headerRegistry
 Files served through the data portal can have specific headers based on their file extension. For example, MIME types defined through the Content-Type header are standard, but in some situations, one might want to define a custom MIME type for a specific extension. This option allows overwriting a default MIME type or creating a new one for a file extension. Accepts a value spanning multiple lines, with each line following this format: ({operator} {value}) {header-name1=value1;header-name2=value2 ...}. The {operator} can be '==', '!=', '.=', or '=.'. For example, a line might be: (== {*.grib}) Content-Type=application/grib. Please note the headers Accept-Ranges, Content-Disposition, ETag and Last-Modified cannot be modified.
 
+### portal.loginButton
+Allow specifying whether the Login button should be displayed in the data portal for this user. When set to false, the Login button and its associated authentication interface are hidden.
+
 ### portal.maxConnections
 Define the maximum concurrent connections allowed for this user.
 
+### portal.maxConnectionsSchedule
+Define time-based maximum concurrent connections for this user as a comma-separated list of entries in the format HH:MM-HH:MM=N (e.g. "00:00-08:00=200,08:00-20:00=50,20:00-24:00=100"). Times are in UTC. When the current time falls within a range, that maximum overrides the maxConnections value. If no range matches, maxConnections is used as the fallback.
+
+### portal.maxDownloadBytes
+Define the maximum number of bytes a user can download (pull from the portal) within the rolling time window defined by "portal.downloadPeriod". If the limit is reached, new connections will be refused. If not set, the quota is disabled.
+
 ### portal.maxRangesAllowed
 This option allow setting the maximum count of ranges that can be provided in HTTP multipart/byteranges requests.
+
+### portal.maxUploadBytes
+Define the maximum number of bytes a user can upload (push to the portal) within the rolling time window defined by "portal.uploadPeriod". If the limit is reached, new connections will be refused. If not set, the quota is disabled.
 
 ### portal.mkdirPathPermRegex
 Allow the configuration of a regular expression (regex) to control whether the "mkdir" operation is permitted. The regex is applied to the full path, including the domain name. A valid value could be: "(.*):/data/incoming/(.*)".
@@ -1087,6 +1146,18 @@ If enabled, specify that any upload or download must be added to the data transf
 ### portal.recordSplunk
 If enabled, specify that any upload or download must be logged in Splunk as an INH (INcoming History) entry. Only valid if Splunk is configured.
 
+### portal.registrationAdminEmail
+Specify the administrator email address to notify when a new self-service registration is submitted or when a subscriber verifies their email and is awaiting approval. Only used when the Portal Service is set to "Self-Service". If left empty, no admin notification is sent.
+
+### portal.registrationAutoApprove
+When set to true, self-service subscriber accounts are activated automatically as soon as the subscriber verifies their email address, and their login credentials are sent immediately by email. When set to false (the default), a new registration is put in "Awaiting Approval" state and must be manually activated by an administrator via the Portal Subscribers page. Only used when the Portal Service is set to "Self-Service".
+
+### portal.registrationEmailExtraAccess
+Optional extra text (plain or HTML) to append to the "Your data portal access is ready" email sent to subscribers when their account is activated. Use this to include organisation-specific onboarding instructions, usage guidelines, or support contact details. Only used when the Portal Service is set to "Self-Service".
+
+### portal.registrationEmailExtraVerify
+Optional extra text (plain or HTML) to append to the "Verify your data portal registration" email sent to new subscribers during self-service registration. Use this to include organisation-specific instructions, terms of use, or contact information. Only used when the Portal Service is set to "Self-Service".
+
 ### portal.renamePathPermRegex
 Allow the configuration of a regular expression (regex) to control whether the "rename" operation is permitted. The regex is applied to the full path, including the domain name. A valid value could be: "(.*):/data/incoming/(.*)".
 
@@ -1108,6 +1179,9 @@ Allow specifying the text to be displayed on the browser tab (&lt;title&gt; HTML
 ### portal.title
 Allow specifying the title to be displayed at the top of the page (e.g. "Personal Data Store (PDS)").
 
+### portal.trafficStats
+Allow specifying whether the traffic statistics section (connection count and quota usage) should be displayed in the data portal for this user. When set to false, the traffic stats panel is hidden regardless of any connection limit configured via "portal.maxConnections".
+
 ### portal.triggerEvent
 If deactivated, block any transfer history or Splunk recording from being initiated.
 
@@ -1117,8 +1191,8 @@ If activated, and in the case of an HTTP multipart/byteranges request, an event 
 ### portal.updateLastLoginInformation
 Specify whether the last login information should be recorded for this user. For anonymous access, it might be desirable to deactivate recording to prevent flooding the underlying database.
 
-### portal.usePasscode
-Specify whether the TOTP authentication is using a passcode obtained from a Token or is using a password.
+### portal.uploadPeriod
+Define the rolling time window for the upload byte quota set by "portal.maxUploadBytes". Accepts a duration. If not set, the quota is disabled.
 
 ### portal.warning
 Allow specifying a warning message to be displayed after the header (e.g. "Service downtime scheduled, apologies for the inconvenience!").
@@ -1177,8 +1251,14 @@ Allow empty bucket names (no "s3.bucketName" option). In that case the prefix an
 ### s3.bucketName
 This option allows for the provision of the S3 bucket name. If the bucket name is not explicitly defined, it is extracted from the path specified in the directory field.
 
+### s3.crossRegionAccess
+When enabled, the S3 client automatically follows cross-region redirects (HTTP 301 PermanentRedirect) to reach the correct AWS region for the target bucket, without needing to set s3.region explicitly. Useful when the bucket region is unknown or when a single host is used for buckets spread across multiple regions.
+
 ### s3.disableChunkedEncoding
 Allow disabling chunked encoding for PutObject and UploadPart requests. Setting this option has performance implications since the checksum for the payload will have to be pre-calculated before sending the data. If the payload is large this will affect the overall time required to upload an object. Using this option is recommended only if the endpoint does not implement chunked uploading.
+
+### s3.disableSdkRetries
+When enabled, disables the AWS SDK built-in retry logic for the S3 client. The SDK normally retries on certain transient errors (5xx responses, throttling) by replaying the request body, but this requires the input stream to support mark/reset. Since ECPDS feeds a non-resettable pipeline stream, a retry by the SDK results in "Content input stream does not support mark/reset, and was already read once". Enabling this option prevents that error for S3-compatible endpoints (such as MinIO, or Ceph) that may return responses the SDK considers retryable. ECpds handles its own retry logic at a higher level, so disabling SDK retries is safe. Default: no (SDK default retry policy applies).
 
 ### s3.dualstack
 Enabling this option allows the client to utilize AWS-provided dual-stack endpoints when communicating with the Amazon S3 service. However, it assumes that the network environment of the data movers supports IPv6 and is appropriately configured to use it. This setting ensures attempts to utilize IPv6-capable endpoints for interactions with S3.
@@ -1186,17 +1266,11 @@ Enabling this option allows the client to utilize AWS-provided dual-stack endpoi
 ### s3.durationSeconds
 Specifies the duration, in seconds, for which the temporary security credentials obtained from STS will remain valid. The value can range from a few minutes up to the maximum allowed by the IAM role configuration (typically 1 hour by default, but some roles may allow longer sessions). Once this time expires, the credentials can no longer be used to access AWS resources, and a new STS request is required.
 
-### s3.enableMarkAndReset
-Used to enable mark-and-reset for non-mark-and-resettable non-file input stream for up to 128K memory buffering.
-
 ### s3.enablePathStyleAccess
 Enabling path-style access means that requests to Amazon S3 will use the path-style URL format, explicitly adding the bucket name in the request path, irrespective of whether the bucket name adheres to DNS naming conventions. This feature can be beneficial in scenarios where there are challenges with DNS-compliant bucket names or when accessing buckets not configured for virtual-hosted-style access. It is essential to note that although path-style access can be enabled, AWS strongly recommends using virtual-hosted-style access for S3 buckets whenever possible due to its superior performance and scalability.
 
 ### s3.externalId
 An optional identifier used when assuming a role in another AWS account to prevent the 'confused deputy' problem. It allows the role owner to ensure that only trusted clients providing the correct externalId can assume the role.
-
-### s3.forceGlobalBucketAccess
-Enable global access to S3 buckets via the global S3 endpoint (s3.amazonaws.com). This functionality allows accessing buckets globally, utilizing their DNS-compliant names across all AWS regions, rather than region-specific endpoints. This can be beneficial in scenarios where bucket names are DNS-compliant and uniquely global across AWS regions. However, it is important to note that not all bucket names are suitable for global access due to DNS restrictions, so the use of this feature should be considered carefully based on the application requirements.
 
 ### s3.ftpgroup
 Allow forcing a group name in the listing output. Default group name is the login name.
@@ -1214,7 +1288,7 @@ Allow creating missing buckets when pushing data. This requires specific permiss
 When the file size is predetermined and exceeds this specified value, a multipart upload is initiated. If the file size is not known in advance (e.g. due to on-the-fly compression), a multipart upload is always performed.
 
 ### s3.numUploadThreads
-This option allow the configuration of the number of upload threads to be used during multipart uploads.
+Number of threads used to upload parts in parallel during multipart uploads. Increasing this value allows uploading a completed part to S3 while the next part is being filled from the source, improving throughput for large files. The default is 2.
 
 ### s3.partSize
 This option allows for configuring the size of parts, measured in megabytes, used during multipart uploads.
@@ -1229,13 +1303,19 @@ Allow specifying a prefix, which refers to a part of an object key name that com
 Allows the selection of the SSL/TLS (Secure Sockets Layer/Transport Layer Security) protocol to use.
 
 ### s3.queueCapacity
-This option enables the configuration of the queue capacity used during multipart uploads to store parts for processing. When the queue reaches its maximum capacity, any attempts to add more elements will result in blocking.
+Maximum number of part buffers that may be queued waiting for an upload thread. Together with numUploadThreads, this bounds peak heap usage during multipart uploads to approximately (numUploadThreads + queueCapacity) x partSize MB. When all slots are occupied the write thread blocks, providing back-pressure.
 
 ### s3.recursiveLevel
 Allow specifying a depth level while recursively listing sub-directories.
 
 ### s3.region
 Sets the region where the AWS service client will operate. Setting the region is crucial because it determines the geographical location of the S3 bucket and the AWS servers that will handle the requests.
+
+### s3.requestChecksumCalculation
+Controls when the AWS SDK calculates checksums for outgoing requests. Accepted values are "WHEN_SUPPORTED" (calculate and send a checksum for all requests that support it) and "WHEN_REQUIRED" (only calculate checksums when the operation explicitly requires it). When this option is not set, the SDK default applies ("WHEN_SUPPORTED" for SDK v2.46+).
+
+### s3.responseChecksumValidation
+Controls when the AWS SDK validates checksums on incoming responses. Accepted values are "WHEN_SUPPORTED" (validate response checksums whenever the server provides one) and "WHEN_REQUIRED" (only validate when the operation explicitly requires it). When this option is not set, the SDK default applies ("WHEN_SUPPORTED" for SDK v2.46+).
 
 ### s3.roleArn
 This option allows the provision of the Amazon Resource Name (ARN) of the IAM role to be assumed. It is part of the AWS Security Token Service (STS) and is used to request temporary security credentials by assuming an IAM role.
