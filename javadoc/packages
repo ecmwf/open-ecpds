@@ -1,4 +1,5 @@
 ecmwf.ecpds.mover
+ecmwf.ecpds.mover.plugin.ssh
 ecmwf.ecpds.mover.plugin.ecproxy
 ecmwf.ecpds.mover.plugin.http
 ecmwf.ecpds.mover.plugin.mqtt
@@ -73,6 +74,7 @@ ecmwf.common.parser.format
 ecmwf.common.parser
 ecmwf.common.ectrans
 ecmwf.common.ectrans.module
+ecmwf.common.ssh
 ecmwf.common.ftpd
 ecmwf.common.version
 ecmwf.common.starter

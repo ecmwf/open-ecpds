@@ -23,6 +23,7 @@ ecmwf.common.plugin
 ecmwf.common.rmi
 ecmwf.common.rmi.interruptible
 ecmwf.common.security
+ecmwf.common.ssh
 ecmwf.common.starter
 ecmwf.common.technical
 ecmwf.common.telnet
@@ -85,4 +86,5 @@ ecmwf.ecpds.mover
 ecmwf.ecpds.mover.plugin.ecproxy
 ecmwf.ecpds.mover.plugin.http
 ecmwf.ecpds.mover.plugin.mqtt
+ecmwf.ecpds.mover.plugin.ssh
 ecmwf.ecpds.mover.service
