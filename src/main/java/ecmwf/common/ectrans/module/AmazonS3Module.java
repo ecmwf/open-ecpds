@@ -312,6 +312,9 @@ public final class AmazonS3Module extends TransferModule {
         // pass empty, so the SDK uses the correct regional endpoint rather than the bare IP.
         // Note: set s3.enablePathStyleAccess=yes if the IP must be used directly.
         // 4. Any other hostname (MinIO, Ceph, NIRD, custom S3-compatible service) — auto-use as override.
+        // 5. Empty host (no explicit S3 hostname in the destination configuration) — pass empty so
+        // the SDK builds the correct regional endpoint from s3.region; if s3.region is not set it
+        // falls back to us-east-1.
         //
         // IPv6 detection: a bare IPv6 address has more than one colon (e.g. 2001:db8::1), or is
         // wrapped in brackets ([::1]). A single colon means host:port — NOT an IPv6 address.
@@ -322,8 +325,10 @@ public final class AmazonS3Module extends TransferModule {
         final boolean isIpAddress = resolvedHost.matches("\\d{1,3}(\\.\\d{1,3}){3}") // IPv4
                 || resolvedHost.startsWith("[") // bracketed IPv6: [2001:db8::1]
                 || resolvedHost.indexOf(':') != resolvedHost.lastIndexOf(':'); // bare IPv6: multiple colons
-        final var url = setup.getOptionalString(HOST_S3_URL)
-                .orElseGet(() -> isAwsHost || (isIpAddress && isNotEmpty(region)) ? "" : defaultUrl);
+        // 5. Empty host — destination has no explicit S3 hostname configured;
+        // let the SDK build the correct regional endpoint from s3.region alone.
+        final var url = setup.getOptionalString(HOST_S3_URL).orElseGet(
+                () -> resolvedHost.isEmpty() || isAwsHost || (isIpAddress && isNotEmpty(region)) ? "" : defaultUrl);
         _log.debug("AmazonS3 connection on {} ({})", isNotEmpty(url) ? url : "default-regional-endpoint", user);
         var connected = false;
         setAttribute("remote.hostName", host);
@@ -1145,6 +1150,7 @@ public final class AmazonS3Module extends TransferModule {
             final var request = sdkRequest.httpRequest();
             final var uri = request.getUri();
             final var body = sdkRequest.contentStreamProvider().orElse(null);
+            _log.debug("S3 HTTP {} {}", request.method(), uri);
             // Build Apache request based on method
             final HttpUriRequest apacheRequest;
             switch (request.method().name().toUpperCase(java.util.Locale.ROOT)) {
@@ -1180,7 +1186,16 @@ public final class AmazonS3Module extends TransferModule {
             return new ExecutableHttpRequest() {
                 @Override
                 public HttpExecuteResponse call() throws IOException {
-                    final var apacheResponse = httpClient.execute(apacheRequest);
+                    final org.apache.http.client.methods.CloseableHttpResponse apacheResponse;
+                    try {
+                        apacheResponse = httpClient.execute(apacheRequest);
+                    } catch (final java.net.UnknownHostException e) {
+                        // Enrich the exception message with the target hostname so it
+                        // appears in the transfer history instead of an empty message.
+                        final var host = uri.getHost();
+                        final var msg = (host != null && !host.isEmpty()) ? host : uri.toString();
+                        throw new java.net.UnknownHostException(msg + ": Name or service not known");
+                    }
                     final var statusLine = apacheResponse.getStatusLine();
                     final var sdkResponseBuilder = SdkHttpResponse.builder().statusCode(statusLine.getStatusCode())
                             .statusText(statusLine.getReasonPhrase());
@@ -1422,6 +1437,7 @@ public final class AmazonS3Module extends TransferModule {
                         bucketName);
             } else if (acceleration || isEmpty(url)) {
                 clientBuilder.region(Region.of(resolvedRegion));
+                _log.debug("EndPoint: default-regional - region: {}", resolvedRegion);
             } else {
                 clientBuilder.endpointOverride(URI.create(url)).region(Region.of(resolvedRegion));
                 _log.debug("EndPoint: {} - region: {}", url, resolvedRegion);
