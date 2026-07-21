@@ -391,6 +391,7 @@ public class GetDestinationAction extends PDSAction {
             sb.append(",\"active\":").append(dest.getActive());
             sb.append(",\"status\":").append(_jsonStr(statusPrefix));
             sb.append(",\"accessible\":").append(isAccessible);
+            sb.append(",\"comment\":").append(_jsonStr(dest.getComment()));
             sb.append("}");
         }
         sb.append("],\"edges\":[");

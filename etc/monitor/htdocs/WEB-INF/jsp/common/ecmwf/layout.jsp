@@ -354,8 +354,8 @@ $(document).ready(function() {
 </script>
 </logic:present>
 
-<div id="loadingBackdrop"></div>
-<div id="loadingDiv"><div class="loader"></div></div>
+<div id="loadingBackdrop" style="display:none"></div>
+<div id="loadingDiv" style="display:none"><div class="loader"></div></div>
 
 <div class="modal fade" id="testResultModal" tabindex="-1"
      aria-labelledby="testResultModalLabel" aria-hidden="true">
