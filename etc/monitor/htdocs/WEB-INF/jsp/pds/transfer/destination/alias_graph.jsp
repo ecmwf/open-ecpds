@@ -24,6 +24,20 @@
         <button class="btn btn-outline-secondary active" id="btnLR" onclick="_agSetLayout('LR')" title="Left &rarr; Right">LR</button>
         <button class="btn btn-outline-secondary"        id="btnTD" onclick="_agSetLayout('TD')" title="Top &rarr; Down">TD</button>
       </div>
+      <div class="btn-group btn-group-sm">
+        <button class="btn btn-outline-secondary active" id="btnDirBoth" data-dir="both"
+                onclick="_agSetDirection('both')"       title="Show all connections">&#8660; All</button>
+        <button class="btn btn-outline-secondary"       id="btnDirUp"   data-dir="upstream"
+                onclick="_agSetDirection('upstream')"   title="Show only upstream (nodes that alias into this destination)">&larr; Up</button>
+        <button class="btn btn-outline-secondary"       id="btnDirDown" data-dir="downstream"
+                onclick="_agSetDirection('downstream')" title="Show only downstream (nodes this destination aliases into)">Down &rarr;</button>
+      </div>
+      <span id="_agDepthWrap">
+        <select class="form-select form-select-sm" id="_agDepthSel"
+                style="width:auto" title="Maximum depth from centre node"
+                onchange="_agSetDepth(this.value)">
+        </select>
+      </span>
       <button class="btn btn-sm btn-outline-secondary d-none d-md-inline-flex" id="_agFsBtn"
               title="Toggle fullscreen" onclick="_agFullscreen()">
         <i class="bi bi-fullscreen"></i>
@@ -40,6 +54,8 @@
         <li>Edge labels show the file-name filter pattern when it is not the default <code>.*</code>.</li>
         <li>A <strong>ⓘ</strong> marker appears on arrows that use the default pattern but have other conditions set; hover the marker to see the full condition string.</li>
         <li>On large graphs (more than 30 nodes) edge labels and ⓘ markers are hidden automatically to avoid overlap and keep the diagram readable.</li>
+        <li>Use <strong>⇔ All / ← Up / Down →</strong> to show all connections, only upstream parents, or only downstream children of this destination.</li>
+        <li>Use the <strong>Depth</strong> selector to limit the graph to nodes within N hops of this destination — useful for large graphs.</li>
         <li>Use <strong>LR</strong> (left &rarr; right) or <strong>TD</strong> (top &rarr; down) to switch the layout direction.
             TD is disabled automatically when the graph has too many nodes to remain readable.</li>
         <li>The <i class="bi bi-fullscreen"></i> button enters fullscreen mode; large graphs can be scrolled inside it.</li>
@@ -93,10 +109,12 @@
 (function () {
 
   /* ── state ───────────────────────────────────────────────────── */
-  var _data    = null;
-  var _layout  = 'LR';
-  var _ready   = false;   // true once Mermaid has been initialised
-  var _tipData = [];      // [{lg, tip}] rebuilt on every render
+  var _data      = null;
+  var _layout    = 'LR';
+  var _depth     = 0;         // 0 = all levels; positive integer = max hops from centre
+  var _direction = 'both';   // 'both' | 'upstream' | 'downstream'
+  var _ready     = false;    // true once Mermaid has been initialised
+  var _tipData   = [];       // [{lg, tip}] rebuilt on every render
 
   try {
     _data = JSON.parse(document.getElementById('_aliasGraphData').textContent);
@@ -183,9 +201,49 @@
       .replace(/\|/g, '#vert;');
   }
 
+  /**
+   * Return a filtered copy of {nodes, edges, center} applying both the depth
+   * limit and the direction filter.
+   *
+   * direction:
+   *   'both'       – traverse edges in both directions (default)
+   *   'upstream'   – only follow edges that point TO the current node
+   *                  (shows ancestors: nodes that alias into the centre)
+   *   'downstream' – only follow edges that go FROM the current node
+   *                  (shows descendants: nodes the centre aliases into)
+   *
+   * depth = 0 means unlimited hops.
+   */
+  function applyFilters(g, depth, direction) {
+    if (!g || !g.center) return g;
+    var unlimited = !depth || depth <= 0;
+    var visited   = {};
+    var queue     = [g.center];
+    visited[g.center] = 0;
+    while (queue.length) {
+      var cur  = queue.shift();
+      var hops = visited[cur];
+      if (!unlimited && hops >= depth) continue;
+      g.edges.forEach(function (e) {
+        var nb = null;
+        /* downstream: follow edges out of cur */
+        if (direction !== 'upstream'   && e.from === cur && !(e.to   in visited)) { nb = e.to;   }
+        /* upstream:   follow edges into cur (traverse backwards) */
+        if (direction !== 'downstream' && e.to   === cur && !(e.from in visited)) { nb = e.from; }
+        if (nb !== null) { visited[nb] = hops + 1; queue.push(nb); }
+      });
+    }
+    /* Keep all edges where both endpoints are in the visible set */
+    return {
+      center: g.center,
+      nodes:  g.nodes.filter(function (n) { return n.name in visited; }),
+      edges:  g.edges.filter(function (e) { return (e.from in visited) && (e.to in visited); })
+    };
+  }
+
   /** Build the Mermaid flowchart source for the given layout direction. */
   function buildDiagram(layout) {
-    var g = _data;
+    var g = applyFilters(_data, _depth, _direction);
     if (!g || !g.nodes || g.nodes.length === 0) return null;
 
     var lines = ['flowchart ' + layout];
@@ -421,6 +479,23 @@
 
   /* ── public API ─────────────────────────────────────────────── */
 
+  window._agSetDepth = function (val) {
+    var d = parseInt(val, 10);
+    _depth = isNaN(d) || d <= 0 ? 0 : d;
+    if (_ready) { doRender(_layout); }
+  };
+
+  window._agSetDirection = function (dir) {
+    _direction = dir;
+    ['btnDirBoth', 'btnDirUp', 'btnDirDown'].forEach(function (id) {
+      var btn = el(id);
+      if (btn) { btn.classList.toggle('active', btn.dataset.dir === dir); }
+    });
+    /* Rebuild depth options to reflect what's reachable in the new direction */
+    _agPopulateDepthSelect();
+    if (_ready) { doRender(_layout); }
+  };
+
   window._agSetLayout = function (layout) {
     if (layout === 'TD' && _tdDisabled) return;
     var isCurrent = (layout === _layout && el('_agOutput') && !el('_agOutput').classList.contains('d-none'));
@@ -497,10 +572,53 @@
   /* Called by onload on the Mermaid <script src> below */
   window._agInit = function () {
     _applyTdButtonState();
+    _agPopulateDepthSelect();
     _agInitMermaid();
     _ready = true;
     doRender(_layout);
   };
+
+  /* Populate the depth <select> with "All levels" + one option per reachable
+     depth level in the graph, respecting the current _direction filter. */
+  function _agPopulateDepthSelect() {
+    var sel = el('_agDepthSel');
+    if (!sel || !_data || !_data.center || !_data.edges) return;
+
+    /* BFS respecting direction to find max hop distance from centre */
+    var dist  = {};
+    var queue = [_data.center];
+    dist[_data.center] = 0;
+    var maxDepth = 0;
+    while (queue.length) {
+      var cur  = queue.shift();
+      var hops = dist[cur];
+      _data.edges.forEach(function (e) {
+        var nb = null;
+        if (_direction !== 'upstream'   && e.from === cur && !(e.to   in dist)) { nb = e.to;   }
+        if (_direction !== 'downstream' && e.to   === cur && !(e.from in dist)) { nb = e.from; }
+        if (nb) { dist[nb] = hops + 1; if (hops + 1 > maxDepth) { maxDepth = hops + 1; } queue.push(nb); }
+      });
+    }
+
+    /* Reset depth to "all" if current depth exceeds the new max */
+    if (_depth > maxDepth) {
+      _depth = 0;
+    }
+
+    /* Rebuild options */
+    sel.innerHTML = '<option value="0">All levels</option>';
+    for (var d = 1; d <= maxDepth; d++) {
+      var opt = document.createElement('option');
+      opt.value       = d;
+      opt.textContent = 'Depth ' + d;
+      opt.selected    = (d === _depth);
+      sel.appendChild(opt);
+    }
+
+    /* Hide when there is only one depth level (filtering would change nothing) */
+    var wrap = el('_agDepthWrap');
+    if (wrap) { wrap.style.display = maxDepth <= 1 ? 'none' : ''; }
+  }
 
   function _agInitMermaid() {
     var dark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
