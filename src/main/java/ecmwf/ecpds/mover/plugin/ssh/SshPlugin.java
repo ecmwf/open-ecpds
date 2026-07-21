@@ -31,9 +31,14 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.GeneralSecurityException;
+import java.security.KeyPairGenerator;
 import java.security.PublicKey;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.ECGenParameterSpec;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
@@ -51,6 +56,7 @@ import org.apache.sshd.common.SshConstants;
 import org.apache.sshd.common.SshException;
 import org.apache.sshd.common.config.keys.AuthorizedKeyEntry;
 import org.apache.sshd.common.config.keys.KeyUtils;
+import org.apache.sshd.common.config.keys.writer.openssh.OpenSSHKeyPairResourceWriter;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.keyboard.DefaultKeyboardInteractiveAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
@@ -155,6 +161,7 @@ public final class SshPlugin extends PluginThread {
                 server.getProperties().put(CoreModuleProperties.SERVER_IDENTIFICATION.getName(),
                         Cnf.at("SshPlugin", "softwareVersion", "ECPDS_SSHD"));
                 CoreModuleProperties.WELCOME_BANNER.set(server, Cnf.fileContentAt("SshPlugin", "banner", ""));
+                ensureHostKeys(Path.of(keyPairsDir));
                 server.setKeyPairProvider(
                         ClientIdentity.loadDefaultKeyPairProvider(Path.of(keyPairsDir), false, true, null));
                 server.setPublickeyAuthenticator(this::verifyKey);
@@ -182,6 +189,61 @@ public final class SshPlugin extends PluginThread {
             }
         }
         return server != null;
+    }
+
+    /**
+     * Ensures that at least one SSH host key exists in {@code keysDir}. If the directory contains no private key files
+     * (files whose name starts with {@code id_} and does not end with {@code .pub}), three key pairs are generated
+     * automatically: ECDSA (P-256), Ed25519, and RSA (4096-bit). Each private key is written in OpenSSH format and its
+     * permissions are set to {@code 600}; the matching public key is written alongside it.
+     */
+    private static void ensureHostKeys(final Path keysDir) throws IOException, GeneralSecurityException {
+        Files.createDirectories(keysDir);
+        long existing;
+        try (var stream = Files.list(keysDir)) {
+            existing = stream.filter(p -> {
+                final var n = p.getFileName().toString();
+                return n.startsWith("id_") && !n.endsWith(".pub");
+            }).count();
+        }
+        if (existing > 0) {
+            _log.debug("Found {} host key file(s) in {}", existing, keysDir);
+            return;
+        }
+        _log.info("No SSH host keys found in {}; auto-generating default key pairs", keysDir);
+        generateHostKey(keysDir, "ecdsa", "EC", new ECGenParameterSpec("secp521r1"), 0);
+        generateHostKey(keysDir, "ed25519", "Ed25519", null, 0);
+        generateHostKey(keysDir, "rsa", "RSA", null, 4096);
+    }
+
+    /**
+     * Generates a single SSH key pair and writes it to {@code keysDir/id_<name>} (private) and
+     * {@code keysDir/id_<name>.pub} (public). The private key file is restricted to owner read/write ({@code 600})
+     * where POSIX permissions are supported.
+     */
+    private static void generateHostKey(final Path keysDir, final String name, final String algorithm,
+            final AlgorithmParameterSpec spec, final int keySize) throws IOException, GeneralSecurityException {
+        final var kpg = KeyPairGenerator.getInstance(algorithm);
+        if (spec != null)
+            kpg.initialize(spec);
+        else if (keySize > 0)
+            kpg.initialize(keySize);
+        final var kp = kpg.generateKeyPair();
+        final var comment = "ecpds@auto-generated";
+        final var privateKeyPath = keysDir.resolve("id_" + name);
+        final var publicKeyPath = keysDir.resolve("id_" + name + ".pub");
+        try (var out = Files.newOutputStream(privateKeyPath)) {
+            OpenSSHKeyPairResourceWriter.INSTANCE.writePrivateKey(kp, comment, null, out);
+        }
+        try {
+            Files.setPosixFilePermissions(privateKeyPath, PosixFilePermissions.fromString("rw-------"));
+        } catch (final UnsupportedOperationException e) {
+            _log.debug("Cannot set POSIX permissions on {}: {}", privateKeyPath, e.getMessage());
+        }
+        try (var out = Files.newOutputStream(publicKeyPath)) {
+            OpenSSHKeyPairResourceWriter.INSTANCE.writePublicKey(kp.getPublic(), comment, out);
+        }
+        _log.info("Generated SSH host key: {} ({})", privateKeyPath, algorithm);
     }
 
     private boolean verifyKey(final String username, final PublicKey key, final ServerSession session) {
