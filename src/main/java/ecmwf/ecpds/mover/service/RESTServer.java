@@ -875,6 +875,10 @@ public final class RESTServer {
     public Response homeGet(@Context final UriInfo ui, @PathParam("user") final String user,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @Context final HttpHeaders headers) {
+        final var redirect = selfServiceLoginRedirect(user, request, response);
+        if (redirect != null) {
+            return redirect;
+        }
         return fileGet(ui, getBasicAuth(user + ":" + user), range, request, response, headers, "");
     }
 
@@ -904,7 +908,34 @@ public final class RESTServer {
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @Context final HttpHeaders headers,
             @PathParam("filename") final String filename) {
+        final var redirect = selfServiceLoginRedirect(user, request, response);
+        if (redirect != null) {
+            return redirect;
+        }
         return fileGet(ui, getBasicAuth(user + ":" + user), range, request, response, headers, filename);
+    }
+
+    /**
+     * If there is no active portal session and the requested user has the self-service portal mode enabled, returns a
+     * redirect response to the login page with the username pre-filled. Returns null in all other cases so the caller
+     * can continue with normal processing.
+     */
+    private Response selfServiceLoginRedirect(final String user, final HttpServletRequest request,
+            final HttpServletResponse response) {
+        if (getPortalSession(request, response) != null) {
+            return null;
+        }
+        try {
+            final var profile = mover.getMasterInterface().getIncomingProfileNoAuth(user);
+            if (profile != null && "self-service".equals(profile.getIncomingUser().getPortalService())) {
+                final var loginUrl = request.getRequestURL().toString().replaceFirst("/ecpds/.*", "/ecpds/login")
+                        + "?user=" + user;
+                return Response.seeOther(URI.create(loginUrl)).build();
+            }
+        } catch (final Exception e) {
+            _log.debug("Unable to check portal service for '{}' in selfServiceLoginRedirect", user, e);
+        }
+        return null;
     }
 
     /**
@@ -1837,7 +1868,7 @@ public final class RESTServer {
     @GET
     @Path("login")
     @Produces(MediaType.TEXT_HTML)
-    public Response loginPage(@Context final HttpServletRequest request) {
+    public Response loginPage(@Context final HttpServletRequest request, @QueryParam("user") final String prefillUser) {
         // Already logged in? Go directly to the portal.
         final var cookies = request.getCookies();
         if (cookies != null) {
@@ -1850,25 +1881,18 @@ public final class RESTServer {
                 }
             }
         }
-        try {
-            final var sb = new StringBuilder().append(getTemplateContent(loginContent, LOGIN_FILE));
-            final var title = System.getProperty("mover.title", "Data Store for Acquisition & Dissemination");
-            final var tab = System.getProperty("mover.tab", title);
-            final var footer = System.getProperty("mover.footer",
-                    "Powered by <a href=\"https://github.com/ecmwf/open-ecpds\" target=\"_blank\">OpenECPDS</a>");
-            final var color = System.getProperty("mover.color", "#000000");
-            Format.replaceAll(sb, "${tab}", tab);
-            Format.replaceAll(sb, "${title}", title);
-            Format.replaceAll(sb, "${footer}", footer);
-            Format.replaceAll(sb, "${color}", color);
-            Format.replaceAll(sb, "${version}", Version.getVersion());
-            Format.replaceAll(sb, "${build}", Version.getBuild());
-            Format.replaceAll(sb, "${message}", "");
-            return Response.ok(sb.toString(), MediaType.TEXT_HTML).build();
-        } catch (final Exception e) {
-            _log.warn("registerGet", e);
-            return Response.serverError().entity("Registration page unavailable").build();
+        // Check whether the prefilled user is a self-service user so we can show
+        // the registration link at the bottom of the login card.
+        var canRegister = false;
+        if (prefillUser != null && !prefillUser.isEmpty()) {
+            try {
+                final var profile = mover.getMasterInterface().getIncomingProfileNoAuth(prefillUser);
+                canRegister = profile != null && "self-service".equals(profile.getIncomingUser().getPortalService());
+            } catch (final Exception e) {
+                _log.debug("Unable to check portal service for prefill user '{}'", prefillUser, e);
+            }
         }
+        return buildLoginResponse(prefillUser, canRegister, "", Response.Status.OK);
     }
 
     @POST
@@ -1894,26 +1918,59 @@ public final class RESTServer {
             return Response.seeOther(URI.create("/data/list/")).build();
         } catch (final Throwable t) {
             _log.debug("Browser login failed for {}", username);
-            try {
-                final var sb = new StringBuilder().append(getTemplateContent(loginContent, LOGIN_FILE));
-                final var title = System.getProperty("mover.title", "Data Store for Acquisition & Dissemination");
-                final var tab = System.getProperty("mover.tab", title);
-                final var footer = System.getProperty("mover.footer",
-                        "Powered by <a href=\"https://github.com/ecmwf/open-ecpds\" target=\"_blank\">OpenECPDS</a>");
-                final var color = System.getProperty("mover.color", "#000000");
-                Format.replaceAll(sb, "${tab}", tab);
-                Format.replaceAll(sb, "${title}", title);
-                Format.replaceAll(sb, "${footer}", footer);
-                Format.replaceAll(sb, "${color}", color);
-                Format.replaceAll(sb, "${version}", Version.getVersion());
-                Format.replaceAll(sb, "${build}", Version.getBuild());
-                Format.replaceAll(sb, "${message}", "Login failed");
-                return Response.status(Response.Status.UNAUTHORIZED).entity(sb.toString()).type(MediaType.TEXT_HTML)
-                        .build();
-            } catch (final Exception e) {
-                _log.warn("login", e);
-                return Response.serverError().entity("Login page unavailable").build();
+            // Re-show the login form with the attempted username pre-filled and,
+            // if appropriate, a link to the self-service registration page.
+            var canRegister = false;
+            if (username != null && !username.isEmpty()) {
+                try {
+                    final var profile = mover.getMasterInterface().getIncomingProfileNoAuth(username);
+                    canRegister = profile != null
+                            && "self-service".equals(profile.getIncomingUser().getPortalService());
+                } catch (final Exception e) {
+                    _log.debug("Unable to check portal service for user '{}' after failed login", username, e);
+                }
             }
+            return buildLoginResponse(username, canRegister, "Login failed", Response.Status.UNAUTHORIZED);
+        }
+    }
+
+    /**
+     * Builds and returns an HTML login page response with all template placeholders substituted.
+     *
+     * @param prefillUser
+     *            username to pre-fill in the login form (may be null or empty)
+     * @param canRegister
+     *            whether to show the self-service registration link
+     * @param message
+     *            error/info message displayed in the login card (empty string for none)
+     * @param status
+     *            HTTP response status
+     *
+     * @return the login page response
+     */
+    private Response buildLoginResponse(final String prefillUser, final boolean canRegister, final String message,
+            final Response.Status status) {
+        try {
+            final var sb = new StringBuilder().append(getTemplateContent(loginContent, LOGIN_FILE));
+            final var title = System.getProperty("mover.title", "Data Store for Acquisition & Dissemination");
+            final var tab = System.getProperty("mover.tab", title);
+            final var footer = System.getProperty("mover.footer",
+                    "Powered by <a href=\"https://github.com/ecmwf/open-ecpds\" target=\"_blank\">OpenECPDS</a>");
+            final var color = System.getProperty("mover.color", "#000000");
+            Format.replaceAll(sb, "${tab}", tab);
+            Format.replaceAll(sb, "${title}", title);
+            Format.replaceAll(sb, "${footer}", footer);
+            Format.replaceAll(sb, "${color}", color);
+            Format.replaceAll(sb, "${version}", Version.getVersion());
+            Format.replaceAll(sb, "${build}", Version.getBuild());
+            Format.replaceAll(sb, "${message}", message != null ? message : "");
+            Format.replaceAll(sb, "${prefillUser}", prefillUser != null ? prefillUser : "");
+            Format.replaceAll(sb, "${registerUser}", prefillUser != null ? prefillUser : "");
+            Format.replaceAll(sb, "${registerLinkHidden}", canRegister ? "" : "d-none");
+            return Response.status(status).entity(sb.toString()).type(MediaType.TEXT_HTML).build();
+        } catch (final Exception e) {
+            _log.warn("buildLoginResponse", e);
+            return Response.serverError().entity("Login page unavailable").build();
         }
     }
 
