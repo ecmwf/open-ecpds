@@ -6,19 +6,19 @@
 -source
 '25'
 -sourcepath
-'/workspaces/open-ecpds/src/main/java'
+'/workspaces/open-ecpds/ecpds-core/../src/main/java'
 -author
 -bottom
 'Copyright &#169; 2026. All rights reserved.'
 -charset
 'UTF-8'
 -d
-'/workspaces/open-ecpds/target/site/apidocs'
+'/workspaces/open-ecpds/ecpds-core/target/site/apidocs'
 -docencoding
 'UTF-8'
 -doctitle
-'Product Data Store (OpenECPDS) 8.0.6 API'
+'OpenECPDS Core (Java) 8.0.6 API'
 -use
 -version
 -windowtitle
-'Product Data Store (OpenECPDS) 8.0.6 API'
+'OpenECPDS Core (Java) 8.0.6 API'
