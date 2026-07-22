@@ -24,7 +24,7 @@ DB_DATA_DIR := run/var/lib/ecpds/database
 AI_DATA_DIR := run/var/lib/ecpds/ia
 DOCS_HOST ?= 0.0.0.0
 DOCS_PORT ?= 8000
-JAVADOC_SRC := target/site/apidocs
+JAVADOC_SRC := ecpds-core/target/site/apidocs
 SITE_DIR    := site
 
 # Extract the tag number from the Maven file
@@ -138,7 +138,7 @@ build: ## Compile java sources into JARs, create RPMs and Docker images (**)
 docs: ## Build the documentation site (MkDocs + JavaDocs) into site/ (**)
 	@$(call is-dev-container,"",inside)
 	@echo "Generating JavaDocs..."
-	@mvn javadoc:javadoc -Dcheckstyle.skip=true -Dspotbugs.skip=true -Dmaven.javadoc.failOnError=false -q
+	@mvn javadoc:javadoc -pl ecpds-core -Dcheckstyle.skip=true -Dspotbugs.skip=true -Dmaven.javadoc.failOnError=false -q
 	@echo "Building MkDocs static site..."
 	@mkdocs build --strict
 	@echo "Copying JavaDocs into $(SITE_DIR)/javadoc/ ..."
@@ -149,7 +149,7 @@ docs: ## Build the documentation site (MkDocs + JavaDocs) into site/ (**)
 docs-preview: ## Serve the documentation locally for testing, accessible from the Docker host (**)
 	@$(call is-dev-container,"",inside)
 	@echo "Generating JavaDocs..."
-	@mvn javadoc:javadoc -Dcheckstyle.skip=true -Dspotbugs.skip=true -Dmaven.javadoc.failOnError=false -q
+	@mvn javadoc:javadoc -pl ecpds-core -Dcheckstyle.skip=true -Dspotbugs.skip=true -Dmaven.javadoc.failOnError=false -q
 	@echo "Copying JavaDocs into docs/javadoc/ for local preview..."
 	@mkdir -p docs/javadoc
 	@cp -r $(JAVADOC_SRC)/. docs/javadoc/
