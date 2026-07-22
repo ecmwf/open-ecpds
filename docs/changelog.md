@@ -5,7 +5,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ---
 
-## open-ecpds 8.0.6-16072026
+## open-ecpds 8.0.6-22072026
 
 - Added a new **Destination Metadata Framework** with web-based editing, automatic form generation, REST API support, and XML import for migrating existing metadata.
 - Added a recursive destination alias diagram to the Monitor UI. The new visualization presents the complete destination alias hierarchy around the selected destination, including recursive alias chains and conditional aliases annotated with their matching conditions, providing a clear overview of complex routing relationships.
