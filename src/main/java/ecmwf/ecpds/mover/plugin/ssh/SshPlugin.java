@@ -79,6 +79,7 @@ import ecmwf.common.ssh.MinaFileSystemAccessor;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.version.Version;
 import ecmwf.ecpds.mover.MoverServer;
+import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_WELCOME;
 
 /**
  * The Class SshPlugin.
@@ -311,6 +312,11 @@ public final class SshPlugin extends PluginThread {
                                     (Closeable) () -> session.disconnect(SshConstants.SSH2_DISCONNECT_BY_APPLICATION,
                                             "Close requested")));
                     session.setAttribute(AuthenticationInfo.AUTHENTICATION_INFO, info);
+                    // Send per-user welcome banner if configured in portal.welcome
+                    final var welcome = info.profile().getECtransSetup().get(USER_PORTAL_WELCOME, (String) null);
+                    if (welcome != null && !welcome.isBlank()) {
+                        CoreModuleProperties.WELCOME_BANNER.set(session, welcome);
+                    }
                     // Check ECtransSetup: info.profile().getECtransSetup()
                     CoreModuleProperties.IDLE_TIMEOUT.set(session, Duration.ofMinutes(10));
                     session.getProperties().put(CoreModuleProperties.AUTH_TIMEOUT.getName(),
