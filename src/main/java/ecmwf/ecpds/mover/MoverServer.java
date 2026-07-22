@@ -1200,6 +1200,18 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     /**
      * {@inheritDoc}
      *
+     * Invalidate a single portal session token in the local cache. Called by the Master when the user logs out on
+     * another mover that previously exported the token to this one via cross-mover session migration.
+     */
+    @Override
+    public void invalidatePortalSession(final String token) {
+        _log.debug("Invalidating imported portal session token");
+        ecmwf.ecpds.mover.MoverProvider.invalidatePortalSession(token);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Serialise a local portal session entry so the Master can migrate it to another mover after a load-balancer
      * failover.
      */

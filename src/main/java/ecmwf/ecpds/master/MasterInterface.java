@@ -509,4 +509,20 @@ public interface MasterInterface extends ProviderInterface {
      */
     String resolvePortalSessionAcrossMovers(String token, String excludeMoverName) throws RemoteException;
 
+    /**
+     * Broadcast a portal session token invalidation to all currently connected data movers except the calling one. Used
+     * after a user-initiated logout so that any mover that imported the token via cross-mover session migration also
+     * evicts it, preventing the user from remaining logged in if a load-balancer routes their next request to a
+     * different mover.
+     *
+     * @param token
+     *            the portal session token to invalidate
+     * @param excludeMoverName
+     *            the name of the calling mover (already invalidated locally — skipped to avoid a redundant round-trip)
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void invalidatePortalSessionAcrossMovers(String token, String excludeMoverName) throws RemoteException;
+
 }

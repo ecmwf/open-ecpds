@@ -204,6 +204,12 @@ final class MasterRMI implements MasterProxy {
         return _mover.getMasterInterface().resolvePortalSessionAcrossMovers(token, excludeMoverName);
     }
 
+    @Override
+    public void invalidatePortalSessionAcrossMovers(final String token, final String excludeMoverName)
+            throws Exception {
+        _mover.getMasterInterface().invalidatePortalSessionAcrossMovers(token, excludeMoverName);
+    }
+
     /**
      * {@inheritDoc}
      *

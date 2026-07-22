@@ -274,6 +274,20 @@ public interface MasterProxy {
     String resolvePortalSessionAcrossMovers(String token, String excludeMoverName) throws Exception;
 
     /**
+     * Broadcast a portal session token invalidation to all connected data movers except the calling one. Used after
+     * user-initiated logout to evict imported tokens from any mover that received the token via cross-mover migration.
+     *
+     * @param token
+     *            the portal session token to invalidate
+     * @param excludeMoverName
+     *            the name of the calling mover (already invalidated locally)
+     *
+     * @throws java.lang.Exception
+     *             the exception
+     */
+    void invalidatePortalSessionAcrossMovers(String token, String excludeMoverName) throws Exception;
+
+    /**
      * Gets the ecauth token.
      *
      * @param user

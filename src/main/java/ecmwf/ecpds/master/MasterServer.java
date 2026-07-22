@@ -4923,6 +4923,35 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Broadcast a portal session token invalidation to all connected data movers except the calling one. Each mover is
+     * called in parallel (best-effort); failures are logged but do not propagate so a single unreachable mover does not
+     * prevent the others from being notified.
+     */
+    @Override
+    public void invalidatePortalSessionAcrossMovers(final String token, final String excludeMoverName)
+            throws RemoteException {
+        final var servers = getECpdsBase().getTransferServerArray();
+        for (final var server : servers) {
+            if (excludeMoverName != null && excludeMoverName.equals(server.getName())) {
+                continue;
+            }
+            final var mover = getDataMoverInterface(server.getName());
+            if (mover == null) {
+                continue;
+            }
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    mover.invalidatePortalSession(token);
+                } catch (final Exception e) {
+                    _log.debug("invalidatePortalSession on mover {} failed: {}", server.getName(), e.getMessage());
+                }
+            });
+        }
+    }
+
+    /**
      * Checks if is available.
      *
      * @return the long

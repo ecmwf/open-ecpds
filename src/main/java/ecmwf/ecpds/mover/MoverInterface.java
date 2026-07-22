@@ -574,6 +574,19 @@ public interface MoverInterface extends ClientInterface {
     int invalidatePortalSessionsForUser(String user) throws RemoteException;
 
     /**
+     * Invalidate a single portal session token in this mover's local session cache, if present. Used by the Master
+     * Server to propagate a user-initiated logout to all other movers that may have imported the token via cross-mover
+     * session migration.
+     *
+     * @param token
+     *            the portal session token to invalidate
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void invalidatePortalSession(String token) throws RemoteException;
+
+    /**
      * Look up a portal session token in this mover's local session cache. Used by the Master Server to locate a token
      * that was originally issued on a different mover (e.g. after a load-balancer failover).
      *

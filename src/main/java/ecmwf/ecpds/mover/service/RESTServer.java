@@ -1924,7 +1924,17 @@ public final class RESTServer {
         if (cookies != null) {
             for (final var cookie : cookies) {
                 if ("portal_session".equals(cookie.getName())) {
-                    MoverProvider.invalidatePortalSession(cookie.getValue());
+                    final var token = cookie.getValue();
+                    // Invalidate locally first
+                    MoverProvider.invalidatePortalSession(token);
+                    // Broadcast to all other movers so any imported copy of this token is also evicted.
+                    // This prevents the user from remaining logged in if a load-balancer routes their
+                    // next request to a different mover that previously imported the token.
+                    try {
+                        mover.getMasterProxy().invalidatePortalSessionAcrossMovers(token, mover.getRoot());
+                    } catch (final Exception e) {
+                        _log.warn("Could not broadcast portal session invalidation across movers", e);
+                    }
                     break;
                 }
             }

@@ -241,6 +241,12 @@ final class MasterREST implements MasterProxy {
         return null;
     }
 
+    @Override
+    public void invalidatePortalSessionAcrossMovers(final String token, final String excludeMoverName)
+            throws Exception {
+        // REST-mode mover has no cross-mover channel — logout invalidation is local only
+    }
+
     /**
      * {@inheritDoc}
      *
