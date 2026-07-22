@@ -175,15 +175,15 @@ function wuqbApply() {
     wuqbUpdateBadge();
     _wuqbSave();
     var p = document.getElementById('webUsrQueryBuilder'); if (p) p.style.display = 'none';
-    if (_webUsrTable) _webUsrTable.ajax.url(_buildAjaxUrl()).load();
+    if (_webUsrTable) _webUsrTable.ajax.reload();
 }
-function wuqbReload() { wuqbUpdateBadge(); if (_webUsrTable) _webUsrTable.ajax.url(_buildAjaxUrl()).load(); }
+function wuqbReload() { wuqbUpdateBadge(); if (_webUsrTable) _webUsrTable.ajax.reload(); }
 function wuqbClear() {
     ['wuqb_enabled','wuqb_monitor','wuqb_propErrors'].forEach(function(id) { var el=document.getElementById(id); if(el) el.value=''; });
     var p = document.getElementById('webUsrQueryBuilder'); if (p) p.style.display = 'none';
     try { localStorage.removeItem(_WU_QB_KEY); } catch(e) {}
     wuqbUpdateBadge();
-    if (_webUsrTable) _webUsrTable.ajax.url(_buildAjaxUrl()).load();
+    if (_webUsrTable) _webUsrTable.ajax.reload();
 }
 function toggleQBPanel(panelId, btnId) {
     var panel = document.getElementById(panelId);
@@ -215,7 +215,13 @@ $(document).ready(function() {
     var _filteredCount = 0;
     var table = $('#usersWebTable').DataTable({
         ajax: {
-            url: _buildAjaxUrl(),
+            url: '/do/user/user/list',
+            data: function(d) {
+                if (_monitorNoDestOnly) d.monitorNoDestination = 'true';
+                var en = wuqbVal('wuqb_enabled');    if (en) d.enabled = en;
+                var mo = wuqbVal('wuqb_monitor');    if (mo) d.monitor = mo;
+                var pe = wuqbVal('wuqb_propErrors'); if (pe) d.propErrors = pe;
+            },
             dataSrc: function(json) {
                 _canDelete = !!json.canDelete;
                 _filteredCount = json.recordsFiltered || 0;
@@ -260,7 +266,7 @@ $(document).ready(function() {
                .toggleClass('btn-warning', _monitorNoDestOnly);
         if (!_monitorNoDestOnly) $('#webUserDeleteAllBtn').addClass('d-none');
         _setFilterLoading($(this), true);
-        table.ajax.url(_buildAjaxUrl()).load();
+        table.ajax.reload();
     });
 
     function _updateDeleteAllBtn() {
@@ -301,7 +307,7 @@ $(document).ready(function() {
                         } else {
                             _showBulkMsg('success', msg + '.');
                         }
-                        table.ajax.url(_buildAjaxUrl()).load();
+                        table.ajax.reload();
                     },
                     error: function() { _showBulkMsg('danger', 'Error performing bulk delete. Please try again.'); }
                 });

@@ -1908,12 +1908,18 @@ public final class RESTServer {
                         } catch (IOException ignored) {
                         }
                     });
-            // Do not create sessions for anonymous/open access users.
+            // Do not create sessions for open-access users — show an informational message instead.
             final var setup = session.getECtransSetup();
-            if (setup == null || !"open-access".equals(session.getPortalService())) {
-                setPortalSessionCookie(response, session.getToken());
-                setPortalModeCookie(response);
+            if (setup != null && "open-access".equals(session.getPortalService())) {
+                session.close(true);
+                final var dataUrl = "/ecpds/home/" + username;
+                return buildLoginResponse(username, false,
+                        "This account uses open access — no login required. "
+                                + "Data can be accessed directly without signing in.",
+                        "info", dataUrl, Response.Status.OK);
             }
+            setPortalSessionCookie(response, session.getToken());
+            setPortalModeCookie(response);
             session.close(true);
             return Response.seeOther(URI.create("/data/list/")).build();
         } catch (final Throwable t) {
@@ -1943,13 +1949,20 @@ public final class RESTServer {
      *            whether to show the self-service registration link
      * @param message
      *            error/info message displayed in the login card (empty string for none)
+     * @param messageType
+     *            banner style: "error" for red (login failure), "info" for blue (informational)
      * @param status
      *            HTTP response status
      *
      * @return the login page response
      */
     private Response buildLoginResponse(final String prefillUser, final boolean canRegister, final String message,
-            final Response.Status status) {
+            final String messageType, final Response.Status status) {
+        return buildLoginResponse(prefillUser, canRegister, message, messageType, null, status);
+    }
+
+    private Response buildLoginResponse(final String prefillUser, final boolean canRegister, final String message,
+            final String messageType, final String dataLink, final Response.Status status) {
         try {
             final var sb = new StringBuilder().append(getTemplateContent(loginContent, LOGIN_FILE));
             final var title = System.getProperty("mover.title", "Data Store for Acquisition & Dissemination");
@@ -1964,6 +1977,8 @@ public final class RESTServer {
             Format.replaceAll(sb, "${version}", Version.getVersion());
             Format.replaceAll(sb, "${build}", Version.getBuild());
             Format.replaceAll(sb, "${message}", message != null ? message : "");
+            Format.replaceAll(sb, "${messageType}", messageType != null ? messageType : "error");
+            Format.replaceAll(sb, "${dataLink}", dataLink != null ? dataLink : "");
             Format.replaceAll(sb, "${prefillUser}", prefillUser != null ? prefillUser : "");
             Format.replaceAll(sb, "${registerUser}", prefillUser != null ? prefillUser : "");
             Format.replaceAll(sb, "${registerLinkHidden}", canRegister ? "" : "d-none");
@@ -1972,6 +1987,25 @@ public final class RESTServer {
             _log.warn("buildLoginResponse", e);
             return Response.serverError().entity("Login page unavailable").build();
         }
+    }
+
+    /**
+     * Builds and returns an HTML login page response (error banner variant).
+     *
+     * @param prefillUser
+     *            username to pre-fill in the login form (may be null or empty)
+     * @param canRegister
+     *            whether to show the self-service registration link
+     * @param message
+     *            error message displayed in the login card (empty string for none)
+     * @param status
+     *            HTTP response status
+     *
+     * @return the login page response
+     */
+    private Response buildLoginResponse(final String prefillUser, final boolean canRegister, final String message,
+            final Response.Status status) {
+        return buildLoginResponse(prefillUser, canRegister, message, "error", status);
     }
 
     @GET

@@ -30,6 +30,8 @@ import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -53,6 +55,8 @@ import ecmwf.web.model.users.User;
  * Returns a DataTables-compatible JSON payload for the Data Users list page.
  */
 public class GetIncomingUserListJsonAction extends PDSAction {
+
+    private static final Logger log = LogManager.getLogger(GetIncomingUserListJsonAction.class);
 
     private static final String INCOMING_BASE_PATH = "/do/user/incoming";
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -113,8 +117,11 @@ public class GetIncomingUserListJsonAction extends PDSAction {
         }
 
         final var destFilter = request.getParameter("destinationNameForSearch");
+        log.debug("Destination filter param: {}", destFilter);
         if (destFilter != null && !destFilter.isBlank() && !"Any Destination".equals(destFilter)) {
+            final int before = users.size();
             users = filterByDestination(users, destFilter);
+            log.debug("Destination filter '{}': {} → {} users", destFilter, before, users.size());
         }
 
         final var policyFilter = request.getParameter("policyNameForSearch");
@@ -465,11 +472,17 @@ public class GetIncomingUserListJsonAction extends PDSAction {
                 "\" class=\"btn btn-sm btn-outline-primary me-1\" title=\"Edit\"><i class=\"bi bi-pencil\"></i></a>")
                 .append("<a href=\"").append(INCOMING_BASE_PATH).append("/edit/delete_form/").append(escaped)
                 .append("\" class=\"btn btn-sm btn-outline-danger me-1\" title=\"Delete\"><i class=\"bi bi-trash\"></i></a>");
-        if (canEdit && connectionCount > 0) {
-            final var closeUrl = INCOMING_BASE_PATH + "/edit/update/" + escaped + "/closeAllSessions/all";
-            sb.append("&nbsp;<a href=\"javascript:confirmCloseAll('").append(closeUrl).append("',")
-                    .append(connectionCount).append(")\" title=\"Close all sessions (").append(connectionCount)
-                    .append(")\"><i class=\"bi bi-plug-fill text-warning\" style=\"font-size:1rem\"></i></a>");
+        if (canEdit) {
+            if (connectionCount > 0) {
+                final var closeUrl = INCOMING_BASE_PATH + "/edit/update/" + escaped + "/closeAllSessions/all";
+                sb.append("<a href=\"javascript:confirmCloseAll('").append(closeUrl).append("',")
+                        .append(connectionCount)
+                        .append(")\" class=\"btn btn-sm btn-outline-warning\" title=\"Close all sessions (")
+                        .append(connectionCount).append(")\"><i class=\"bi bi-plug-fill\"></i></a>");
+            } else {
+                sb.append(
+                        "<button type=\"button\" class=\"btn btn-sm btn-outline-warning\" disabled title=\"No active sessions\"><i class=\"bi bi-plug\"></i></button>");
+            }
         }
         return sb.toString();
     }
@@ -498,7 +511,8 @@ public class GetIncomingUserListJsonAction extends PDSAction {
                         }
                     }
                 }
-            } catch (final Exception ignored) {
+            } catch (final Exception e) {
+                log.warn("Error checking destinations for user {}: {}", u.getId(), e.getMessage());
             }
         }
         return filtered;
@@ -515,7 +529,8 @@ public class GetIncomingUserListJsonAction extends PDSAction {
                         break;
                     }
                 }
-            } catch (final Exception ignored) {
+            } catch (final Exception e) {
+                log.warn("Error checking policies for user {}: {}", u.getId(), e.getMessage());
             }
         }
         return filtered;

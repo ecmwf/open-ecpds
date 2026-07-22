@@ -265,9 +265,9 @@ function iqbApply() {
     iqbUpdateBadge();
     _syncUrl();
     var p = document.getElementById('incUsrQueryBuilder'); if (p) p.style.display = 'none';
-    if (_incUsrTable) _incUsrTable.ajax.url(_buildAjaxUrl()).load();
+    if (_incUsrTable) _incUsrTable.ajax.reload();
 }
-function iqbReload() { iqbUpdateBadge(); if (_incUsrTable) _incUsrTable.ajax.url(_buildAjaxUrl()).load(); }
+function iqbReload() { iqbUpdateBadge(); if (_incUsrTable) _incUsrTable.ajax.reload(); }
 function iqbClear() {
     _destFilter = ''; _policyFilter = '';
     var di = document.getElementById('destPickerInput');   if (di) di.value = '';
@@ -280,7 +280,7 @@ function iqbClear() {
     _syncUrl();
     var p = document.getElementById('incUsrQueryBuilder'); if (p) p.style.display = 'none';
     iqbUpdateBadge();
-    if (_incUsrTable) _incUsrTable.ajax.url(_buildAjaxUrl()).load();
+    if (_incUsrTable) _incUsrTable.ajax.reload();
 }
 function toggleIQBPanel(panelId, btnId) {
     var panel = document.getElementById(panelId);
@@ -310,7 +310,18 @@ $(document).ready(function() {
     var _filteredCount = 0;
     var table = $('#usersTable').DataTable({
         ajax: {
-            url: _buildAjaxUrl(),
+            url: '/do/user/incoming/list',
+            data: function(d) {
+                if (_destFilter)     d.destinationNameForSearch = _destFilter;
+                if (_policyFilter)   d.policyNameForSearch = _policyFilter;
+                if (_unassignedOnly) d.unassigned = 'true';
+                var en = iqbVal('iqb_enabled');    if (en) d.enabled = en;
+                var sv = iqbVal('iqb_service');    if (sv) d.service = sv;
+                var tp = iqbVal('iqb_totp');       if (tp) d.totp = tp;
+                var pe = iqbVal('iqb_propErrors'); if (pe) d.propErrors = pe;
+                var co = iqbVal('iqb_country');    if (co) d.country = co;
+                var cm = iqbVal('iqb_comment');    if (cm) d.comment = cm;
+            },
             dataSrc: function(json) {
                 _canDelete = !!json.canDelete;
                 _filteredCount = json.recordsFiltered || 0;
@@ -375,7 +386,7 @@ $(document).ready(function() {
                .toggleClass('btn-warning', _unassignedOnly);
         if (!_unassignedOnly) $('#incomingDeleteAllBtn').addClass('d-none');
         _setFilterLoading($(this), true);
-        table.ajax.url(_buildAjaxUrl()).load();
+        table.ajax.reload();
     });
 
     function _updateDeleteAllBtn() {
@@ -416,7 +427,7 @@ $(document).ready(function() {
                         } else {
                             _showBulkMsg('success', msg + '.');
                         }
-                        table.ajax.url(_buildAjaxUrl()).load();
+                        table.ajax.reload();
                     },
                     error: function() { _showBulkMsg('danger', 'Error performing bulk delete. Please try again.'); }
                 });
