@@ -128,6 +128,10 @@
       border-color: #0d6efd; background: #fff;
       box-shadow: 0 0 0 3px rgba(13,110,253,.15);
     }
+    /* Autofill detection: fires animationstart when browser fills a field,
+       which we use to re-evaluate the submit button state. */
+    @keyframes autofill-detected { from {} to {} }
+    input:-webkit-autofill { animation-name: autofill-detected; }
 
     /* Password show/hide */
     .login-pass-wrap { position: relative; }
@@ -392,7 +396,12 @@
     }
     user.addEventListener('input', check);
     pass.addEventListener('input', check);
+    user.addEventListener('change', check);
+    pass.addEventListener('change', check);
+    user.addEventListener('animationstart', check);
+    pass.addEventListener('animationstart', check);
     check(); // run immediately in case username is pre-filled
+    setTimeout(check, 300); // fallback for browsers that autofill after load
     // Focus password if username is already pre-filled, otherwise focus username
     if (user.value.trim().length > 0) {
       pass.focus();
