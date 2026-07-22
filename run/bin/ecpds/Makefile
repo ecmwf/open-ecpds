@@ -80,8 +80,8 @@ check-yaml:
 help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-12s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-up: check-yaml ## Create and start containers (arg: container, default: all)
-	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml up -d $(container)
+up: check-yaml ## Create and start containers (arg: svc, default: all)
+	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml up -d $(svc)
 
 down: check-yaml ## Stop and remove containers, networks, images, and volumes
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml down
@@ -89,8 +89,8 @@ down: check-yaml ## Stop and remove containers, networks, images, and volumes
 config: check-yaml ## Validate and view the Compose file
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml config
 
-connect: check-yaml ## Open a bash session in a running container (arg: container)
-	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec $(container) bash
+connect: check-yaml ## Open a bash session in a running container (arg: svc)
+	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec $(svc) bash
 
 mariadb: check-yaml ## Connect to the database
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec database sh -c 'mariadb ecpds -p"$$MYSQL_ROOT_PASSWORD"'
@@ -141,8 +141,8 @@ clean: check-db down .clean-log .clean-lib .clean-tmp .fix-perms ## Remove all l
 	cd ${LOCAL_ROOT_PATH}/var/lib/ecpds ; chown -R $(shell id -u):$(shell id -g) database/ ; chmod -R 755 database/
 	cd ${LOCAL_ROOT_PATH}/etc/ecpds ; chmod -R 755 database/*
 
-logs: check-yaml ## View output from a container (arg: container)
-	@TERM=dumb NO_COLOR=1 $(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml logs --no-color --no-log-prefix $(container)
+logs: check-yaml ## View output from a container (arg: svc)
+	@TERM=dumb NO_COLOR=1 $(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml logs --no-color --no-log-prefix $(svc)
 
 prune: ## Remove unused data (stopped containers, unused networks, and volumes)
 	@$(DOCKER) system prune -f

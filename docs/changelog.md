@@ -7,6 +7,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ## open-ecpds 8.0.6-22072026
 
+- Refactored the Maven build from a single monolithic `pom.xml` into a **multi-module structure** with 7 dedicated modules: `ecpds-core` (Java compilation), `ecpds-native` (C/JNI), `ecpds-common` (shared runtime RPM), `ecpds-master`, `ecpds-monitor`, `ecpds-mover`, and `ecpds-tools`. This separates concerns, reduces rebuild times, and makes the dependency graph explicit. The shared runtime libraries are now packaged once in `ecpds-common` and declared as an RPM dependency by each service module.
 - Added a new **Destination Metadata Framework** with web-based editing, automatic form generation, REST API support, and XML import for migrating existing metadata.
 - Added a recursive destination alias diagram to the Monitor UI. The new visualization presents the complete destination alias hierarchy around the selected destination, including recursive alias chains and conditional aliases annotated with their matching conditions, providing a clear overview of complex routing relationships.
 - Added portal session recovery across data movers. If a browser request is routed to a different data mover by the load balancer, the portal session is automatically located on the original data mover, transferred to the current one, and the request continues transparently without requiring the user to log in again. 

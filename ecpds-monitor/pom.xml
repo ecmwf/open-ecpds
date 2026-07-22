@@ -1,0 +1,94 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>ecmwf</groupId>
+		<artifactId>open-ecpds</artifactId>
+		<version>8.0.6</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<artifactId>ecpds-monitor</artifactId>
+	<packaging>pom</packaging>
+	<name>OpenECPDS Monitor Server RPM</name>
+
+	<profiles>
+		<profile>
+			<id>native-build</id>
+			<activation>
+				<property>
+					<name>env.IN_DEV_CONTAINER</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>rpm-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>rpm-ecpds-monitor</id>
+								<phase>package</phase>
+								<goals>
+									<goal>rpm</goal>
+								</goals>
+								<configuration>
+									<name>ecpds-monitor</name>
+									<summary>Monitor-Server</summary>
+									<description>The Monitor-Server daemon</description>
+									<group>System Environment/Daemons</group>
+									<version>${project.version}</version>
+									<release>${build.number}</release>
+									<packager>${packager.name} - ${packager.email}</packager>
+									<distribution>${packager.distribution}</distribution>
+									<license>Apache License 2.0</license>
+									<requires>
+										<require>ecpds-common = ${project.version}-${build.number}</require>
+									</requires>
+									<mappings>
+										<mapping>
+											<directory>/usr/local/ecpds/monitor/conf</directory>
+											<directoryIncluded>true</directoryIncluded>
+											<filemode>0644</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>${project.basedir}/../etc/monitor/conf</location>
+												</source>
+											</sources>
+										</mapping>
+										<mapping>
+											<directory>/usr/local/ecpds/monitor/sh</directory>
+											<directoryIncluded>true</directoryIncluded>
+											<filemode>0755</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>${project.basedir}/../etc/monitor/sh</location>
+												</source>
+											</sources>
+										</mapping>
+										<mapping>
+											<directory>/usr/local/ecpds/monitor/htdocs</directory>
+											<directoryIncluded>true</directoryIncluded>
+											<filemode>0644</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>${project.basedir}/../etc/monitor/htdocs</location>
+												</source>
+											</sources>
+										</mapping>
+									</mappings>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+</project>

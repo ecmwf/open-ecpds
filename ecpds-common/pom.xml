@@ -1,0 +1,95 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>ecmwf</groupId>
+		<artifactId>open-ecpds</artifactId>
+		<version>8.0.6</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<artifactId>ecpds-common</artifactId>
+	<packaging>pom</packaging>
+	<name>OpenECPDS Common (Shared Runtime RPM)</name>
+
+	<profiles>
+		<profile>
+			<id>native-build</id>
+			<activation>
+				<property>
+					<name>env.IN_DEV_CONTAINER</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>rpm-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>rpm-ecpds-common</id>
+								<phase>package</phase>
+								<goals>
+									<goal>rpm</goal>
+								</goals>
+								<configuration>
+									<name>ecpds-common</name>
+									<summary>OpenECPDS Shared Runtime</summary>
+									<description>Shared JAR and runtime libraries for all OpenECPDS services</description>
+									<group>System Environment/Libraries</group>
+									<version>${project.version}</version>
+									<release>${build.number}</release>
+									<packager>${packager.name} - ${packager.email}</packager>
+									<distribution>${packager.distribution}</distribution>
+									<license>Apache License 2.0</license>
+									<requires>
+										<require>java >= ${maven.compiler.target}</require>
+									</requires>
+									<mappings>
+										<!-- Runtime dependency JARs (excludes the ecmwf JAR itself). -->
+										<mapping>
+											<directory>/usr/local/ecpds/lib</directory>
+											<directoryIncluded>true</directoryIncluded>
+											<filemode>0644</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>${project.basedir}/../lib</location>
+												</source>
+											</sources>
+										</mapping>
+										<!-- Main application JAR. -->
+										<mapping>
+											<directory>/usr/local/ecpds/lib</directory>
+											<directoryIncluded>false</directoryIncluded>
+											<filemode>0644</filemode>
+											<sources>
+												<source>
+													<location>${project.basedir}/../ecpds-core/target/ecmwf-${project.version}-${build.number}.jar</location>
+												</source>
+											</sources>
+										</mapping>
+										<!-- VERSION file. -->
+										<mapping>
+											<directory>/usr/local/ecpds</directory>
+											<directoryIncluded>false</directoryIncluded>
+											<filemode>0644</filemode>
+											<sources>
+												<source>
+													<location>${project.basedir}/../VERSION</location>
+												</source>
+											</sources>
+										</mapping>
+									</mappings>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+</project>

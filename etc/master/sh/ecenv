@@ -39,7 +39,7 @@ wc=wc
 #####################################
 dir_etc="/etc/ecpds/master"
 dir_conf="$ECPDS_APP/master/conf"
-dir_lib="$ECPDS_APP/master/lib"
+dir_lib="$ECPDS_APP/lib"
 dir_sh="$ECPDS_APP/master/sh"
 dir_log="$ECPDS_LOG/master"
 dir_tmp="$ECPDS_TMP/master"

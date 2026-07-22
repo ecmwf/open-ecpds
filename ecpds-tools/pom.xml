@@ -1,0 +1,70 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>ecmwf</groupId>
+		<artifactId>open-ecpds</artifactId>
+		<version>8.0.6</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<artifactId>ecpds-tools</artifactId>
+	<packaging>pom</packaging>
+	<name>OpenECPDS Tools RPM</name>
+
+	<profiles>
+		<profile>
+			<id>native-build</id>
+			<activation>
+				<property>
+					<name>env.IN_DEV_CONTAINER</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>rpm-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>rpm-ecpds-tools</id>
+								<phase>package</phase>
+								<goals>
+									<goal>rpm</goal>
+								</goals>
+								<configuration>
+									<name>ecpds-tools</name>
+									<summary>ECpds command-line utilities</summary>
+									<description>Command-line client and administrative utilities for OpenECPDS</description>
+									<group>System Environment/Base</group>
+									<version>${project.version}</version>
+									<release>${build.number}</release>
+									<packager>${packager.name} - ${packager.email}</packager>
+									<distribution>${packager.distribution}</distribution>
+									<license>Apache License 2.0</license>
+									<needarch>true</needarch>
+									<!-- ecpds binary links only against libcrypto; no JVM needed. -->
+									<mappings>
+										<mapping>
+											<directory>/usr/local/bin</directory>
+											<filemode>0755</filemode>
+											<dirmode>0755</dirmode>
+											<sources>
+												<source>
+													<location>${project.basedir}/../ecpds-native/target/ecpds</location>
+												</source>
+											</sources>
+										</mapping>
+									</mappings>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+</project>

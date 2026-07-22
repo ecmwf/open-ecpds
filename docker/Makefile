@@ -22,9 +22,8 @@ GREEN := \033[32m
 RED := \033[31m
 RESET := \033[0m
 
-# Source directories for the rpms and licences
-RPM_DIR := ../target/rpm
-LICENSES_DIR := ../target/generated-resources
+# Source directories for the licences (cached outside target/ to avoid re-downloading)
+LICENSES_DIR := ../licenses-cache
 
 # Detect container manager (Docker or Podman)
 ifeq ($(shell command -v podman 2> /dev/null),)
@@ -63,13 +62,19 @@ all: ## Get RPMs, licenses and build images
 
 get-rpms: ## Get RPMs from the source RPM directories
 	@$(MAKE) .get-rpm app=mover rpm=mover arch=$(shell uname -m)
-	@$(MAKE) .get-rpm app=master rpm=master arch=$(shell uname -m)
+	@$(MAKE) .get-rpm app=mover rpm=common arch=noarch
+	@$(MAKE) .get-rpm app=master rpm=master arch=noarch
+	@$(MAKE) .get-rpm app=master rpm=common arch=noarch
 	@$(MAKE) .get-rpm app=monitor rpm=monitor arch=noarch
+	@$(MAKE) .get-rpm app=monitor rpm=common arch=noarch
 
 .get-rpm: # Create the target directory and get the specified RPM (args: app, rpm, arch)
-	mkdir -p ecpds/$(app)/rpms && cp -f $(RPM_DIR)/ecpds-$(rpm)/RPMS/$(arch)/ecpds-$(rpm)-$(TAG).$(arch).rpm ecpds/$(app)/rpms/.
+	mkdir -p ecpds/$(app)/rpms && cp -f ../ecpds-$(rpm)/target/rpm/ecpds-$(rpm)/RPMS/$(arch)/ecpds-$(rpm)-$(TAG).$(arch).rpm ecpds/$(app)/rpms/.
 
 get-licenses: ## Get the licenses for the java image
+	@if [ ! -d $(LICENSES_DIR) ]; then \
+		printf "$(RED)** Licenses not found — run 'mvn prepare-package -pl ecpds-core -Ddependency-check.skip=true' first **$(RESET)\n" && exit 1; \
+	fi
 	cp -fr $(LICENSES_DIR)/licenses* ecpds/java/.
 	cp -f ../AUTHORS  ../LICENSE.txt ../NOTICE ../VERSION ecpds/java/.
 

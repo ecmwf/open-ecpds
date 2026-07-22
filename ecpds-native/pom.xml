@@ -1,0 +1,82 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>ecmwf</groupId>
+		<artifactId>open-ecpds</artifactId>
+		<version>8.0.6</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<artifactId>ecpds-native</artifactId>
+	<packaging>pom</packaging>
+	<name>OpenECPDS Native (C)</name>
+
+	<profiles>
+		<profile>
+			<id>native-build</id>
+			<activation>
+				<property>
+					<name>env.IN_DEV_CONTAINER</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<executions>
+							<!-- Compile the JNI shared library used by the Mover. -->
+							<execution>
+								<id>compile-native</id>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<phase>package</phase>
+								<configuration>
+									<executable>gcc</executable>
+									<arguments>
+										<argument>-shared</argument>
+										<argument>-O2</argument>
+										<argument>-D_GNU_SOURCE</argument>
+										<argument>-D_FILE_OFFSET_BITS=64</argument>
+										<argument>-olibsocketoptions.so</argument>
+										<argument>-I${java.home}/include</argument>
+										<argument>-I${java.home}/include/linux</argument>
+										<argument>-fPIC</argument>
+										<argument>${project.basedir}/../src/main/c/SocketOptions.c</argument>
+									</arguments>
+									<workingDirectory>${project.build.directory}</workingDirectory>
+								</configuration>
+							</execution>
+							<!-- Compile the ECpds command-line client binary. -->
+							<execution>
+								<id>compile-ecpds</id>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<phase>package</phase>
+								<configuration>
+									<executable>gcc</executable>
+									<arguments>
+										<argument>-O2</argument>
+										<argument>-D_GNU_SOURCE</argument>
+										<argument>-D_FILE_OFFSET_BITS=64</argument>
+										<argument>${project.basedir}/../src/main/c/ECpdsCmd.c</argument>
+										<argument>-oecpds</argument>
+										<argument>-L/usr/include/openssl</argument>
+										<argument>-lcrypto</argument>
+									</arguments>
+									<workingDirectory>${project.build.directory}</workingDirectory>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+</project>

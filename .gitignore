@@ -3,5 +3,14 @@
 /docker/ecpds/mover/rpms/
 /etc/master/conf/GeoLite2-City.mmdb
 /lib/
-/target/
 /site/
+
+# Maven build output (all modules)
+target/
+
+# Eclipse build output
+bin/
+.settings/
+
+# License cache (populated by license-maven-plugin, not committed)
+/licenses-cache/

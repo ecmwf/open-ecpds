@@ -32,11 +32,11 @@ ENV LOG_ROLLOVER_SIZE_KEEP=20
 ENV LOG_LEVEL=warn
 
 # Add OpenECPDS rpms
-COPY rpms/ecpds-monitor-${TAG}.noarch.rpm .
+COPY rpms/ecpds-common-${TAG}.noarch.rpm rpms/ecpds-monitor-${TAG}.noarch.rpm ./
 
 # Install OpenECPDS rpms
-RUN yum install -d1 -y ecpds-monitor-${TAG}.noarch.rpm && \
-    yum clean all && rm -f ecpds-monitor-${TAG}.noarch.rpm
+RUN yum install -d1 -y ecpds-common-${TAG}.noarch.rpm ecpds-monitor-${TAG}.noarch.rpm && \
+    yum clean all && rm -f ecpds-common-${TAG}.noarch.rpm ecpds-monitor-${TAG}.noarch.rpm
 
 # Mountable volumes
 VOLUME /var/log/ecpds/monitor

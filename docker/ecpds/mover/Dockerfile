@@ -35,12 +35,12 @@ ENV LOG_ROLLOVER_SIZE_KEEP=20
 ENV LOG_LEVEL=warn
 
 # Add OpenECPDS rpms
-COPY rpms/ecpds-mover-${TAG}.*.rpm .
+COPY rpms/ecpds-common-${TAG}.noarch.rpm rpms/ecpds-mover-${TAG}.*.rpm ./
 
 # Install OpenECPDS rpms, lbzip2, zstd, nmap and mtr
 RUN yum install -d1 -y lbzip2 zstd nmap mtr && \
-    yum install -d1 -y ecpds-mover-${TAG}.*.rpm && \
-    yum clean all && rm -f ecpds-mover-${TAG}.*.rpm
+    yum install -d1 -y ecpds-common-${TAG}.noarch.rpm ecpds-mover-${TAG}.*.rpm && \
+    yum clean all && rm -f ecpds-common-${TAG}.noarch.rpm ecpds-mover-${TAG}.*.rpm
 
 # Mountable volumes
 VOLUME /var/log/ecpds/mover
