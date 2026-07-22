@@ -41,7 +41,7 @@ DOCKER_VERSION := $(shell $(DOCKER) --version)
 HTTPS_ACCESS := $(shell curl -s --max-time 2 -I https://google.com | sed 's/^[^ ]*  *\([0-9]\).*/\1/; 1q')
 
 # Output the help for each task
-.PHONY: help all get-rpms get-licenses build-db build-ai build-backend build images bk-images rm-images clean .clean info
+.PHONY: help all get-rpms get-licenses build-db build-ai build-backend build build-standalone get-standalone images bk-images rm-images clean .clean info
 
 help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -90,6 +90,22 @@ build: build-db build-ai ## Build database, AI, Java, and service images
 	@$(MAKE) .build app=master tag=$(TAG)
 	@$(MAKE) .build app=monitor tag=$(TAG)
 
+get-standalone: ## Copy RPMs, SQL, and certs into standalone build context
+	@if ! ls ecpds/mover/rpms/ecpds-mover-*.rpm >/dev/null 2>&1; then \
+		printf "$(RED)** RPMs not staged — run 'make get-rpms' first **$(RESET)\n" && exit 1; \
+	fi
+	mkdir -p ecpds/ecpds-standalone/rpms ecpds/ecpds-standalone/etc/mover ecpds/ecpds-standalone/etc/monitor
+	cp -f ecpds/mover/rpms/ecpds-common-*.noarch.rpm ecpds/ecpds-standalone/rpms/
+	cp -f ecpds/master/rpms/ecpds-master-*.noarch.rpm ecpds/ecpds-standalone/rpms/
+	cp -f ecpds/mover/rpms/ecpds-mover-*.rpm ecpds/ecpds-standalone/rpms/
+	cp -f ecpds/monitor/rpms/ecpds-monitor-*.noarch.rpm ecpds/ecpds-standalone/rpms/
+	cp -f ecpds/database/ecpds.sql ecpds/ecpds-standalone/.
+	cp -f ../run/etc/ecpds/mover/ecpds-mover.pfx ecpds/ecpds-standalone/etc/mover/
+	cp -f ../run/etc/ecpds/monitor/ecpds-monitor.pfx ecpds/ecpds-standalone/etc/monitor/
+
+build-standalone: .https-access get-standalone ## Build the standalone all-in-one image
+	@$(MAKE) .build app=ecpds-standalone tag=$(TAG)
+
 .build: # Build the image (args: app, tag)
 	$(DOCKER) build $(BUILD_OPTS) --build-arg SDKMAN_JDK=$(SDKMAN_JDK) --build-arg OLLAMA_FAST_MODEL_NAME=$(OLLAMA_FAST_MODEL_NAME) --build-arg OLLAMA_DEEP_MODEL_NAME=$(OLLAMA_DEEP_MODEL_NAME) --build-arg OLLAMA_EMBD_MODEL_NAME=$(OLLAMA_EMBD_MODEL_NAME) --build-arg TAG=$(tag) --label "app=$(app)" --label "tag=$(tag)" -t ecpds/$(app):$(tag) ecpds/$(app)
 
@@ -136,6 +152,9 @@ clean: ## Remove all RPMs and licenses
 	@$(MAKE) .clean app=mover
 	@$(MAKE) .clean app=master
 	@$(MAKE) .clean app=monitor
+	@$(MAKE) .clean app=ecpds-standalone
+	rm -f ecpds/ecpds-standalone/ecpds.sql
+	rm -rf ecpds/ecpds-standalone/etc
 	cd ecpds/java && rm -fr AUTHORS LICENSE.txt NOTICE VERSION licenses*
 
 .clean: # Remove RPMs for the specified app (arg: app)

@@ -79,7 +79,7 @@ dev-container-exists = \
   fi
 
 # Conditional targets based on the environment
-.PHONY: dev .dev-cntnr .run login rm-dev get-geodb get-licenses build start-db stop-db start-ai stop-ai start-backend stop-backend clean info docs docs-preview docs-publish
+.PHONY: dev .dev-cntnr .run login rm-dev get-geodb get-licenses build build-standalone start-db stop-db start-ai stop-ai start-backend stop-backend clean info docs docs-preview docs-publish
 dev: .dev-cntnr .run login ## Build, run and login into the development container (*)
 
 .dev-cntnr: ## Build the development container (*)
@@ -134,6 +134,10 @@ build: ## Compile java sources into JARs, create RPMs and Docker images (**)
 	@echo -n "$(TAG)" > VERSION
 	@mvn package
 	@cd docker && $(MAKE) all
+
+build-standalone: ## Build the standalone all-in-one Docker image (**)
+	@$(call is-dev-container,"",inside)
+	@cd docker && $(MAKE) build-standalone
 
 docs: ## Build the documentation site (MkDocs + JavaDocs) into site/ (**)
 	@$(call is-dev-container,"",inside)

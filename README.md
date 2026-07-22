@@ -68,6 +68,90 @@ See [Getting Started](https://ecmwf.github.io/open-ecpds/getting-started/require
 
 ---
 
+## 📦 Standalone Image
+
+The **standalone image** packages all OpenECPDS services (MariaDB, Master, Data Mover, and Monitor) into a single container, making it easy to evaluate or demo the full stack with a single command.
+
+### Build
+
+```bash
+# Inside the development container, after running 'make build':
+make build-standalone
+```
+
+This copies the RPMs into `docker/ecpds/ecpds-standalone/` and builds the `ecpds/ecpds-standalone:<tag>` image.
+
+### Run
+
+The database is initialised automatically on first start. Mount `/data` to persist everything (database, service data, and logs) across restarts:
+
+```bash
+docker run -d \
+  --name ecpds-standalone \
+  -v $(pwd)/ecpds-data:/data \
+  -p 7080:7080 -p 7443:7443 \
+  -p 8080:8080 -p 8443:8443 \
+  -p 9600:9600 -p 9640:9640 \
+  ecpds/ecpds-standalone:<tag>
+```
+
+The `/data` directory layout once running:
+
+```
+ecpds-data/
+├── db/                   # MariaDB database files
+├── lib/
+│   ├── master/           # Master service persistent data
+│   ├── mover/
+│   │   ├── data/         # Mover persistent data
+│   │   └── mqtt/         # MQTT broker persistence
+│   └── monitor/          # Monitor service persistent data
+├── log/
+│   ├── master/           # Master log files (master.output, gc logs)
+│   ├── mover/            # Mover log files
+│   └── monitor/          # Monitor log files
+└── tmp/
+    ├── master/           # Master temporary files and PID
+    ├── mover/            # Mover temporary files and PID
+    └── monitor/          # Monitor temporary files and PID
+```
+
+### Access
+
+| Service | URL | Default credentials |
+|---|---|---|
+| Data Portal (HTTP) | `http://localhost:7080/ecpds` | — |
+| Data Portal (HTTPS) | `https://localhost:7443/ecpds` | — |
+| Monitoring UI (HTTP) | `http://localhost:8080` | admin / admin |
+| Monitoring UI (HTTPS) | `https://localhost:8443` | admin / admin |
+
+### Exposed ports
+
+| Port | Service |
+|---|---|
+| `7080` / `7443` | Data Mover — HTTP / HTTPS portal |
+| `7021` | Data Mover — FTP |
+| `7022` | Data Mover — SFTP |
+| `1883` | Data Mover — MQTT |
+| `8080` / `8443` | Monitor — HTTP / HTTPS UI |
+| `9600` | Master — callback (internal) |
+| `9640` | Master — ECpds CLI |
+| `9021` | Master — FTP |
+
+### Logs
+
+```bash
+# Supervisord output (service startup)
+docker logs -f ecpds-standalone
+
+# Individual service logs
+docker exec ecpds-standalone tail -f /data/log/master/master.output
+docker exec ecpds-standalone tail -f /data/log/mover/mover.output
+docker exec ecpds-standalone tail -f /data/log/monitor/monitor.output
+```
+
+---
+
 ## 📜 License
 
 Copyright 2022–2024 ECMWF. Licensed under the [Apache License 2.0](LICENSE.txt).

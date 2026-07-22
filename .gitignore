@@ -1,6 +1,9 @@
 /docker/ecpds/master/rpms/
 /docker/ecpds/monitor/rpms/
 /docker/ecpds/mover/rpms/
+/docker/ecpds/ecpds-standalone/rpms/
+/docker/ecpds/ecpds-standalone/etc/
+/docker/ecpds/ecpds-standalone/ecpds.sql
 /etc/master/conf/GeoLite2-City.mmdb
 /lib/
 /site/
