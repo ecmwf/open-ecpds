@@ -7,7 +7,6 @@ echo "[monitor] Master is ready."
 export PORT_JMX=8062
 export PORT_CALLBACK=8600
 export PORT_HTTPS=8443
-export PORT_PORT=8080
 export PORT_MASTER=9600
 export MASTER_ADDRESS=localhost
 

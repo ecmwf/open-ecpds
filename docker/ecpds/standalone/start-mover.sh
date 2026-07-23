@@ -6,15 +6,16 @@ echo "[mover] Master is ready."
 
 export PORT_JMX=7062
 export PORT_CALLBACK=7600
-export PORT_HTTP=80
 export PORT_HTTPS=7443
-export PORT_MQTT=1883
 export PORT_MQTTS=8883
 export PORT_ECPROXY=7640
 export PORT_FTP=7021
 export PORT_SSH=7022
 export PORT_MASTER=9600
 export MASTER_ADDRESS=localhost
+# Must match TRS_NAME in the database; INTERNAL_ADDRESS stays localhost for RMI
+export EXTERNAL_ADDRESS=ecpds-mover
+export INTERNAL_ADDRESS=localhost
 
 echo "[mover] Starting..."
 exec /usr/local/ecpds/mover/sh/mover start
