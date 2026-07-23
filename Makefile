@@ -137,7 +137,9 @@ build: ## Compile java sources into JARs, create RPMs and Docker images (**)
 
 build-standalone: ## Build the standalone all-in-one Docker image (**)
 	@$(call is-dev-container,"",inside)
-	@cd docker && $(MAKE) build-standalone
+	@echo -n "$(TAG)" > VERSION
+	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
+	@cd docker && $(MAKE) get-rpms get-licenses build-java build-standalone
 
 docs: ## Build the documentation site (MkDocs + JavaDocs) into site/ (**)
 	@$(call is-dev-container,"",inside)

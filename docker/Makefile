@@ -84,6 +84,9 @@ build-db: .https-access ## Build database image for VS Code and Eclipse debuggin
 build-ai: .https-access ## Build AI images for VS Code and Eclipse debugging/running
 	@$(MAKE) .build app=ai tag=$(TAG)
 
+build-java: .https-access ## Build the GraalVM base image
+	@$(MAKE) .build app=java tag=graalvm
+
 build: build-db build-ai ## Build database, AI, Java, and service images
 	@$(MAKE) .build app=java tag=graalvm
 	@$(MAKE) .build app=mover tag=$(TAG)
