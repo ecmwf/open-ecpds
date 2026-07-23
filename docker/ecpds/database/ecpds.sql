@@ -41,9 +41,9 @@ DROP TABLE IF EXISTS `ACTIVITY`;
 CREATE TABLE `ACTIVITY` (
   `ACT_ID` decimal(10,0) NOT NULL DEFAULT 0,
   `ECU_NAME` varchar(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `ACT_PLUGIN` text DEFAULT NULL,
-  `ACT_HOST` text DEFAULT NULL,
-  `ACT_AGENT` text DEFAULT NULL,
+  `ACT_PLUGIN` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ACT_HOST` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ACT_AGENT` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`ACT_ID`),
   KEY `ECU_NAME` (`ECU_NAME`),
   CONSTRAINT `ACTIVITY_ibfk_1` FOREIGN KEY (`ECU_NAME`) REFERENCES `ECUSER` (`ECU_NAME`)
@@ -258,7 +258,7 @@ DROP TABLE IF EXISTS `CATEGORY`;
 CREATE TABLE `CATEGORY` (
   `CAT_ID` bigint(20) NOT NULL DEFAULT 0,
   `CAT_NAME` varchar(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `CAT_DESCRIPTION` text NOT NULL,
+  `CAT_DESCRIPTION` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `CAT_ACTIVE` smallint(6) NOT NULL DEFAULT 0,
   PRIMARY KEY (`CAT_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
@@ -420,8 +420,8 @@ CREATE TABLE `CHANGE_LOG` (
   `CHL_ID` bigint(20) NOT NULL DEFAULT 0,
   `WEU_ID` varchar(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   `CHL_TIME` decimal(20,0) NOT NULL,
-  `CHL_OLD_OBJECT` mediumtext NOT NULL,
-  `CHL_NEW_OBJECT` mediumtext NOT NULL,
+  `CHL_OLD_OBJECT` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `CHL_NEW_OBJECT` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `CHL_KEY_NAME` varchar(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   `CHL_KEY_VALUE` varchar(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   PRIMARY KEY (`CHL_ID`)
@@ -446,7 +446,7 @@ DROP TABLE IF EXISTS `COUNTRY`;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `COUNTRY` (
   `COU_ISO` char(2) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `COU_NAME` text NOT NULL,
+  `COU_NAME` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`COU_ISO`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -882,7 +882,7 @@ CREATE TABLE `DESTINATION` (
   `DES_MAIL_ON_END` smallint(6) NOT NULL DEFAULT 0,
   `DES_MAIL_ON_ERROR` smallint(6) NOT NULL DEFAULT 0,
   `DES_ACTIVE` smallint(6) NOT NULL DEFAULT 0,
-  `DES_COMMENT` text DEFAULT NULL,
+  `DES_COMMENT` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `DES_TRANSFER_RATE` bigint(20) DEFAULT NULL,
   `DES_RESET_FREQUENCY` bigint(20) NOT NULL DEFAULT 0,
   `DES_UPDATE` decimal(20,0) DEFAULT NULL,
@@ -904,7 +904,7 @@ CREATE TABLE `DESTINATION` (
   `DES_DATE_FORMAT` varchar(32) DEFAULT NULL,
   `DES_GROUPBY_DATE` smallint(6) DEFAULT NULL,
   `TRG_NAME` varchar(32) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,
-  `DES_DATA` mediumtext DEFAULT NULL,
+  `DES_DATA` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`DES_NAME`),
   KEY `ECU_NAME` (`ECU_NAME`),
   KEY `COU_ISO` (`COU_ISO`),
@@ -928,7 +928,7 @@ LOCK TABLES `DESTINATION` WRITE;
 /*!40000 ALTER TABLE `DESTINATION` DISABLE KEYS */;
 INSERT INTO `DESTINATION` VALUES
 ('efas_iconeu_opendata','anonymous','de',0,0,5,-1,30000,2,600000,0,'',0,0,0,0,1,'Acquisition of DWD ICON-EU forecasts for EFAS [328 files (344,05 MB) per day]',0,1200000,1759154183598,0,14,10000,1,'STOP','admin',1,0,13,'none',NULL,1,0,-1,0,'yyyyMMdd',0,'internet','scheduler.standby = \"yes\"\n###### END-OF-PROPERTIES ######\n'),
-('hourly_aq','anonymous','us',0,0,5,-1,30000,2,600000,0,'',0,0,0,0,1,'Acquisition of hourly_aq data in the ASCII format from USEPA [24 files (17,21 MB) per day]',0,1200000,1759154573465,0,9,10000,1,'STOP','admin',1,0,12,'none',NULL,1,0,-1,0,'yyyyMMdd',0,'internet','scheduler.standby = \"yes\"\n###### END-OF-PROPERTIES ######\n'),
+('hourly_aq','anonymous','us',0,0,5,-1,30000,2,600000,0,'',0,0,0,0,1,'Acquisition of hourly_aq data in the ASCII format from USEPA [24 files (17,21 MB) per day]',0,1200000,1759154573465,0,9,10000,1,'STOP','admin',1,0,12,'none',NULL,1,0,-1,0,'yyyyMMdd',0,'internet','mqtt.contentType = \"application/json\"\nmqtt.expiryInterval = \"PT48H\"\nmqtt.publish = \"yes\"\nmqtt.retain = \"yes\"\nscheduler.standby = \"yes\"\n###### END-OF-PROPERTIES ######\n// Variables substituted at runtime: $filename, $filesize, $destination, $date, $time,\n// $timefile (ms epoch), $uuid, $checksum, $movername, $datatransferid\nvar destination = "$destination";\nvar filename = "$filename";\nvar filesize = $filesize;\nvar pubtime = new Date($timefile).toISOString();\nvar dataId = destination + "/" + filename;\n// Host/ports used to build access URLs - adjust if not using standalone defaults\nvar host = "localhost";\nvar httpsPort = 7443;\nvar sftpPort = 7022;\nvar baseUrl = "https://" + host + ":" + httpsPort + "/";\nvar s3Url = "https://" + host + ":" + httpsPort + "/s3/";\nvar sftpUrl = "sftp://test@" + host + ":" + sftpPort + "/";\nreturn {\n  mqtt: {\n    payload: JSON.stringify({\n      id: "$uuid",\n      type: "Feature",\n      geometry: null,\n      properties: {\n        datetime: pubtime,\n        pubtime: pubtime,\n        data_id: dataId,\n        content_length: filesize\n      },\n      links: [\n        { rel: "canonical", type: "application/octet-stream", length: filesize,\n          href: baseUrl + filename, title: "Download via HTTPS" },\n        { rel: "alternate", type: "application/octet-stream", length: filesize,\n          href: sftpUrl + filename, title: "Download via SFTP" },\n        { rel: "alternate", type: "application/octet-stream", length: filesize,\n          href: s3Url + filename, title: "Download via S3" }\n      ]\n    })\n  }\n};\n'),
 ('s2s_kwbc_enfo','anonymous','de',0,0,5,-1,30000,2,600000,0,'',0,0,0,0,1,'S2S project, Ensemble Forecast from NCEP [16 files (2,64 GB) per day]',0,1200000,1759156182523,0,15,10000,1,'STOP','admin',1,0,25,'none',NULL,1,0,-1,0,'yyyyMMdd',1,'internet','scheduler.standby = \"yes\"\n###### END-OF-PROPERTIES ######\n'),
 ('wis2_sbo','admin','ex',0,0,10,-1,60000,5,600000,0,'admin@ecmwf.int',0,0,0,0,1,'WIS2 surface data acq [~50K files (~60 MB) per day]',0,1200000,1759154285020,4,13,10000,0,'STOP','admin',1,0,36,'none',NULL,1,0,-1,0,'yyyyMMdd',0,'internet','scheduler.standby = \"yes\"\n###### END-OF-PROPERTIES ######\n');
 /*!40000 ALTER TABLE `DESTINATION` ENABLE KEYS */;
@@ -969,8 +969,8 @@ DROP TABLE IF EXISTS `ECTRANS_MODULE`;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `ECTRANS_MODULE` (
   `ECM_NAME` varchar(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `ECM_CLASSE` text NOT NULL,
-  `ECM_ARCHIVE` text DEFAULT NULL,
+  `ECM_CLASSE` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ECM_ARCHIVE` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `ECM_ACTIVE` smallint(6) NOT NULL DEFAULT 0,
   PRIMARY KEY (`ECM_NAME`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
@@ -1006,9 +1006,9 @@ CREATE TABLE `ECUSER` (
   `ECU_NAME` varchar(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
   `ECU_UID` bigint(20) NOT NULL DEFAULT 0,
   `ECU_GID` bigint(20) NOT NULL DEFAULT 0,
-  `ECU_DIR` text NOT NULL,
-  `ECU_SHELL` text NOT NULL,
-  `ECU_COMMENT` text NOT NULL,
+  `ECU_DIR` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ECU_SHELL` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ECU_COMMENT` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`ECU_NAME`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1038,8 +1038,8 @@ CREATE TABLE `EVENT` (
   `ACT_ID` decimal(10,0) NOT NULL DEFAULT 0,
   `EVE_DATE` date NOT NULL DEFAULT '0000-00-00',
   `EVE_TIME` time NOT NULL DEFAULT '00:00:00',
-  `EVE_ACTION` text NOT NULL,
-  `EVE_COMMENT` text DEFAULT NULL,
+  `EVE_ACTION` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `EVE_COMMENT` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `EVE_ERROR` smallint(6) NOT NULL DEFAULT 0,
   PRIMARY KEY (`EVE_ID`),
   KEY `ACT_ID` (`ACT_ID`),
@@ -1072,10 +1072,10 @@ CREATE TABLE `HOST` (
   `HOS_MAX_CONNECTIONS` decimal(10,0) NOT NULL DEFAULT 0,
   `HOS_RETRY_COUNT` decimal(10,0) NOT NULL DEFAULT 0,
   `HOS_RETRY_FREQUENCY` decimal(10,0) NOT NULL DEFAULT 0,
-  `HOS_COMMENT` text DEFAULT NULL,
+  `HOS_COMMENT` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `HOS_HOST` varchar(255) DEFAULT NULL,
-  `HOS_DIR` text DEFAULT NULL,
-  `HOS_DATA` mediumtext DEFAULT NULL,
+  `HOS_DIR` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `HOS_DATA` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `HOS_CHECK` smallint(6) NOT NULL DEFAULT 0,
   `HOS_CHECK_FREQUENCY` bigint(20) NOT NULL DEFAULT 0,
   `HOS_CHECK_FILENAME` varchar(255) DEFAULT NULL,
@@ -1096,7 +1096,7 @@ CREATE TABLE `HOST` (
   `HLO_ID` decimal(10,0) NOT NULL,
   `HOU_ID` decimal(10,0) NOT NULL,
   `TME_NAME_BACKUP` varchar(128) DEFAULT NULL,
-  `HOS_DATA_BACKUP` mediumtext DEFAULT NULL,
+  `HOS_DATA_BACKUP` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`HOS_NAME`),
   KEY `ECU_NAME` (`ECU_NAME`),
   KEY `TME_NAME` (`TME_NAME`),
@@ -1389,7 +1389,7 @@ CREATE TABLE `INCOMING_POLICY` (
   `INP_ID` varchar(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   `INP_COMMENT` varchar(512) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,
   `INP_ACTIVE` smallint(6) NOT NULL DEFAULT 0,
-  `INP_DATA` mediumtext DEFAULT NULL,
+  `INP_DATA` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`INP_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1420,9 +1420,9 @@ CREATE TABLE `INCOMING_USER` (
   `INU_LAST_LOGIN` decimal(20,0) DEFAULT NULL,
   `INU_LAST_LOGIN_HOST` varchar(128) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,
   `COU_ISO` char(2) DEFAULT NULL,
-  `INU_DATA` mediumtext DEFAULT NULL,
+  `INU_DATA` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `INU_SYNCHRONIZED` smallint(6) NOT NULL DEFAULT 0,
-  `INU_AUTHORIZED_KEYS` mediumtext DEFAULT NULL,
+  `INU_AUTHORIZED_KEYS` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `INU_PORTAL_SERVICE` varchar(16) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'standard-login',
   PRIMARY KEY (`INU_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
@@ -1457,7 +1457,7 @@ CREATE TABLE `PORTAL_SUBSCRIBER` (
 LOCK TABLES `INCOMING_USER` WRITE;
 /*!40000 ALTER TABLE `INCOMING_USER` DISABLE KEYS */;
 INSERT INTO `INCOMING_USER` VALUES
-('test','test2021','For accessing the test destinations',1,1759148604470,'Using sftp on DataMover=ecpds-mover from test@127.0.0.1','ew','portal.domain = \"data\"\r\nportal.color = \"dodgerblue\"\r\nportal.headerRegistry = \"\r\n(== {.*.grib2?$}) Content-Type=application/grib\r\n(== {.*.index$}) Content-Type=application/json\r\n\"\r\nportal.maxConnections = \"100\"\r\nportal.order = \"asc\"\r\nportal.recordHistory = \"no\"\r\nportal.recordSplunk = \"yes\"\r\nportal.simpleList = \"no\"\r\nportal.sort = \"target\"\r\nportal.triggerEvent = \"yes\"\r\nportal.triggerLastRangeOnly = \"yes\"\r\nportal.updateLastLoginInformation = \"no\"\r\nportal.welcome = \"\r\n***********************************************\r\nPDS Data Portal\r\n\r\nPlease note you can also access the Data Portal\r\nwith the same credentials through https/sftp.\r\n***********************************************\r\n\"',0,'','standard-login');
+('test','test2021','For accessing the test destinations',1,1759148604470,'Using sftp on DataMover=ecpds-mover from test@127.0.0.1','ew','portal.domain = \"data\"\r\nportal.color = \"dodgerblue\"\r\nportal.headerRegistry = \"\r\n(== {.*.grib2?$}) Content-Type=application/grib\r\n(== {.*.index$}) Content-Type=application/json\r\n\"\r\nportal.maxConnections = \"100\"\r\nportal.mqttPermission = \"#\"\r\nportal.order = \"asc\"\r\nportal.recordHistory = \"no\"\r\nportal.recordSplunk = \"yes\"\r\nportal.simpleList = \"no\"\r\nportal.sort = \"target\"\r\nportal.triggerEvent = \"yes\"\r\nportal.triggerLastRangeOnly = \"yes\"\r\nportal.updateLastLoginInformation = \"no\"\r\nportal.welcome = \"\r\n***********************************************\r\nPDS Data Portal\r\n\r\nPlease note you can also access the Data Portal\r\nwith the same credentials through https/sftp.\r\n***********************************************\r\n\"',0,'','standard-login');
 /*!40000 ALTER TABLE `INCOMING_USER` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1742,7 +1742,7 @@ DROP TABLE IF EXISTS `TRANSFER_GROUP`;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `TRANSFER_GROUP` (
   `TRG_NAME` varchar(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `TRG_COMMENT` text DEFAULT NULL,
+  `TRG_COMMENT` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `TRG_ACTIVE` smallint(6) NOT NULL DEFAULT 0,
   `TRG_MIN_FILTERING_COUNT` decimal(10,0) DEFAULT 0,
   `TRG_MIN_REPLICATION_COUNT` decimal(10,0) DEFAULT 0,
@@ -1816,12 +1816,12 @@ DROP TABLE IF EXISTS `TRANSFER_METHOD`;
 CREATE TABLE `TRANSFER_METHOD` (
   `TME_NAME` varchar(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
   `ECM_NAME` varchar(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `TME_VALUE` text NOT NULL,
+  `TME_VALUE` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `TME_RESTRICT` smallint(6) NOT NULL DEFAULT 0,
   `TME_RESOLVE` smallint(6) NOT NULL DEFAULT 0,
-  `TME_COMMENT` text DEFAULT NULL,
+  `TME_COMMENT` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `TME_ACTIVE` smallint(6) NOT NULL DEFAULT 0,
-  `TME_COMMENT_BACKUP` text DEFAULT NULL,
+  `TME_COMMENT_BACKUP` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`TME_NAME`),
   KEY `ECM_NAME` (`ECM_NAME`),
   CONSTRAINT `TRANSFER_METHOD_ibfk_1` FOREIGN KEY (`ECM_NAME`) REFERENCES `ECTRANS_MODULE` (`ECM_NAME`)
@@ -1860,7 +1860,7 @@ CREATE TABLE `TRANSFER_SERVER` (
   `TRS_MAX_TRANSFERS` decimal(10,0) DEFAULT NULL,
   `TRS_MAX_INACTIVITY` decimal(10,0) NOT NULL DEFAULT 0,
   `TRS_LAST_UPDATE` decimal(20,0) DEFAULT NULL,
-  `TRS_HOST` text NOT NULL,
+  `TRS_HOST` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `TRS_PORT` decimal(10,0) NOT NULL DEFAULT 0,
   `TRS_CHECK` smallint(6) NOT NULL DEFAULT 0,
   `TRS_ACTIVE` smallint(6) NOT NULL DEFAULT 0,
@@ -1946,7 +1946,7 @@ CREATE TABLE `TRANSFER_STATISTICS` (
   `TST_CWND` int DEFAULT NULL,
   `TST_SEGS_OUT` int DEFAULT NULL,
   `TST_SEGS_IN` int DEFAULT NULL,
-  `TST_RAW` text DEFAULT NULL,
+  `TST_RAW` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `TST_REQUEUE_HISTORY` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`TST_ID`),
   KEY `DAT_ID` (`DAT_ID`),
@@ -2050,11 +2050,11 @@ CREATE TABLE `FEEDBACK` (
   `WEU_ID`        varchar(32) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,
   `FBK_TIME`      decimal(20,0) NOT NULL,
   `FBK_RATING`    tinyint(4) NOT NULL,
-  `FBK_COMMENT`   text DEFAULT NULL,
+  `FBK_COMMENT`   text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `FBK_USAGE`     varchar(32) DEFAULT NULL,
   `FBK_COMPONENT` varchar(32) DEFAULT NULL,
   `FBK_CONTACT`   varchar(255) DEFAULT NULL,
-  `FBK_ONE_THING` text DEFAULT NULL,
+  `FBK_ONE_THING` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `FBK_RECOMMEND` tinyint(1) DEFAULT NULL,
   `FBK_QUOTE_OK`  tinyint(1) NOT NULL DEFAULT 0,
   `FBK_REVIEWED`  tinyint(1) NOT NULL DEFAULT 0,
@@ -2074,9 +2074,9 @@ CREATE TABLE `WEB_USER` (
   `WEU_ID` varchar(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
   `WEU_NAME` varchar(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
   `WEU_LAST_LOGIN` decimal(20,0) DEFAULT NULL,
-  `WEU_LAST_LOGIN_HOST` text DEFAULT NULL,
+  `WEU_LAST_LOGIN_HOST` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `WEU_ACTIVE` smallint(6) NOT NULL DEFAULT 0,
-  `WEU_ENVIRONMENT` text DEFAULT NULL,
+  `WEU_ENVIRONMENT` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `WEU_PASSWORD` varchar(64) DEFAULT NULL,
   PRIMARY KEY (`WEU_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
@@ -2250,3 +2250,4 @@ SELECT DMF_ID, 0 FROM DESTINATION_META_FIELD WHERE DMF_NAME IN (
   'typeOfObservation','importanceForAssimilation','instrument','instrumentChannels','dataFormat',
   'ecfsPath','onLineBackup','opsProcedureWebPage','shiftProcedure','analystProcedure',
   'warningInfo','metappsSystemChange','phoneNumber','contactInformation','comments');
+
