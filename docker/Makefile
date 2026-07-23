@@ -44,7 +44,7 @@ HTTPS_ACCESS := $(shell curl -s --max-time 2 -I https://google.com | sed 's/^[^ 
 .PHONY: help all get-rpms get-licenses build-db build-ai build-backend build build-standalone get-standalone images bk-images rm-images clean .clean info
 
 help: ## Show this help message
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # Display help by default
 .DEFAULT_GOAL := help

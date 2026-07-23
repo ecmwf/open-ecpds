@@ -52,7 +52,7 @@ DOCKER_VERSION = $(shell $(DOCKER) --version)
 # Default target
 .PHONY: help
 help: ## Show this help message (*=outside **=inside the development container)
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # Check if inside or outside the development container
 is-dev-container = \
