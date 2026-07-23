@@ -40,7 +40,7 @@ The database initialises automatically on first start. The `/data` volume persis
 
 | Service | URL | Credentials |
 |---|---|---|
-| Data Portal | `https://localhost:7443/ecpds` | test / test2021 |
+| Data Portal | `https://localhost:7443` | test / test2021 |
 | MQTTS broker | `mqtts://localhost:8883` | test / test2021 |
 | Monitoring UI | `https://localhost:8443` | admin / admin2021 |
 | Monitoring UI | `https://localhost:8443` | monitor / monitor2021 |
@@ -119,7 +119,7 @@ make build
 cd run/bin/ecpds && make up
 ```
 
-The monitoring UI is then available at `https://localhost:4443` and the data portal at `https://localhost:4443/ecpds`.
+The monitoring UI is then available at `https://localhost:3443` and the data portal at `https://localhost:4443`.
 
 See [Getting Started](https://ecmwf.github.io/open-ecpds/getting-started/requirements/) for the full walkthrough, including log inspection, stopping services, IDE setup, and Kubernetes deployment.
 
