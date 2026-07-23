@@ -359,6 +359,26 @@ public interface ManagementInterface extends Remote {
             throws MasterException, DataBaseException, RemoteException;
 
     /**
+     * Clone a host without associating it to any destination.
+     *
+     * @param session
+     *            the session
+     * @param hostName
+     *            the host name
+     *
+     * @return the cloned host name
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    String cloneHost(final ECpdsSession session, final String hostName)
+            throws MasterException, DataBaseException, RemoteException;
+
+    /**
      * Export destination.
      *
      * @param session

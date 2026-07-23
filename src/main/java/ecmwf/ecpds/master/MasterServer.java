@@ -5577,6 +5577,51 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * Clone a host without associating it to any destination. Used to duplicate Proxy hosts and any host directly from
+     * its own page.
+     *
+     * @param hostName
+     *            the name of the host to clone
+     *
+     * @return the new cloned host
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public Host cloneHost(final String hostName) throws DataBaseException {
+        final var base = getDataBase(ECpdsBase.class);
+        final var host = (Host) base.getHost(hostName).clone();
+        host.setName(null);
+        final var setup = HOST_ECTRANS.getECtransSetup(host.getData());
+        setup.remove(HOST_ECTRANS_LASTUPDATE);
+        host.setData(setup.getData());
+        final List<DataBaseObject> toRemove = new ArrayList<>();
+        try {
+            final var hostOutput = new HostOutput();
+            base.insert(hostOutput, true);
+            toRemove.add(hostOutput);
+            host.setHostOutputId(hostOutput.getId());
+            host.setHostOutput(hostOutput);
+            final var hostLocation = new HostLocation();
+            base.insert(hostLocation, true);
+            toRemove.add(hostLocation);
+            host.setHostLocationId(hostLocation.getId());
+            host.setHostLocation(hostLocation);
+            final var hostStats = new HostStats();
+            base.insert(hostStats, true);
+            toRemove.add(hostStats);
+            host.setHostStatsId(hostStats.getId());
+            host.setHostStats(hostStats);
+            base.insert(host, true);
+            return host;
+        } catch (final DataBaseException e) {
+            Collections.reverse(toRemove);
+            base.remove(toRemove.toArray(new DataBaseObject[toRemove.size()]));
+            throw e;
+        }
+    }
+
+    /**
      * Copy a destination.
      *
      * @param fromDestinationName

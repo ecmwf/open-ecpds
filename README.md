@@ -29,6 +29,7 @@ docker run -d \
   --name standalone \
   -v $(pwd)/ecpds-data:/data \
   -p 7443:7443 \
+  -p 7022:7022 \
   -p 8443:8443 \
   -p 8883:8883 \
   ghcr.io/ecmwf/open-ecpds/standalone:latest
@@ -43,7 +44,9 @@ The database initialises automatically on first start. The `/data` volume persis
 | Service | URL | Credentials |
 |---|---|---|
 | Monitoring UI | `https://localhost:8443` | admin / admin2021 · monitor / monitor2021 |
-| Data Portal | `https://localhost:7443` | test / test2021 |
+| Data Portal (HTTPS) | `https://localhost:7443` | test / test2021 |
+| Data Portal (S3) | `https://localhost:7443/s3` | test / test2021 |
+| Data Portal (SFTP) | `sftp://localhost:7022` | test / test2021 |
 | MQTTS broker | `mqtts://localhost:8883` | test / test2021 |
 
 ### Exposed ports
@@ -52,11 +55,54 @@ The database initialises automatically on first start. The `/data` volume persis
 |---|---|
 | `7443` | Data Mover — HTTPS portal |
 | `7022` | Data Mover — SFTP |
-| `7021` | Data Mover — FTP |
 | `8883` | Data Mover — MQTTS (MQTT over TLS) |
 | `8443` | Monitor — HTTPS UI |
 | `9640` | Master — ECpds CLI |
-| `9021` | Master — FTP |
+
+> **Note on FTP:** OpenECPDS fully supports FTP in production deployments. However, FTP passive mode (PASV) is not compatible with Docker port mapping — the server advertises its internal container address for data connections, which external clients cannot reach. For that reason, FTP is disabled in this standalone image. Use SFTP (port 7022) as a drop-in alternative for file transfers in Docker.
+
+### Testing the protocols
+
+All examples below use the pre-configured `test / test2021` account. The container uses a self-signed certificate — pass the appropriate insecure/skip-verify flag for each tool.
+
+**S3** — using [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html):
+```bash
+aws s3 ls s3:// \
+  --endpoint-url https://localhost:7443/s3 \
+  --no-verify-ssl \
+  --no-sign-request \
+  --request-payer \
+  # or with credentials:
+aws configure set aws_access_key_id test
+aws configure set aws_secret_access_key test2021
+aws s3 ls s3:// --endpoint-url https://localhost:7443/s3 --no-verify-ssl
+```
+
+Or with [rclone](https://rclone.org/):
+```bash
+rclone lsd :s3: \
+  --s3-provider=Other \
+  --s3-endpoint=https://localhost:7443/s3 \
+  --s3-access-key-id=test \
+  --s3-secret-access-key=test2021 \
+  --no-check-certificate
+```
+
+**SFTP** — using the `sftp` command-line client:
+```bash
+sftp -P 7022 -o StrictHostKeyChecking=no test@localhost
+# Password: test2021
+```
+
+
+**MQTTS** — using [Mosquitto](https://mosquitto.org/download/) client:
+```bash
+mosquitto_sub \
+  --host localhost --port 8883 \
+  --username test --pw test2021 \
+  --insecure \
+  --topic '#' -v
+```
 
 ### Logs
 

@@ -399,6 +399,19 @@ final class ManagementProxy implements ManagementInterface {
 
     /**
      * {@inheritDoc}
+     */
+    @Override
+    public String cloneHost(final ECpdsSession session, final String hostName)
+            throws MasterException, DataBaseException, RemoteException {
+        if (session == null || isEmpty(hostName)) {
+            throw new MasterException("Invalid parameter(s) for cloneHost");
+        }
+        final var monitor = new MonitorCall("cloneHost(" + session.getWebUser().getName() + "," + hostName + ")");
+        return monitor.done(managementInterface.cloneHost(session, hostName));
+    }
+
+    /**
+     * {@inheritDoc}
      *
      * Export destination.
      */

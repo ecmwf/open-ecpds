@@ -100,10 +100,14 @@ RUN sed -i 's/^\(\[Server\]\)$/\1\nallowPasswordOn=.*/' \
         /usr/local/ecpds/master/conf/ecmwf.properties
 
 # ── Mover: bind service ports on all interfaces (not loopback only) ───────────
-# The mover startup script sets listenAddress from $INTERNAL_ADDRESS which is
-# 'localhost' (needed for RMI/callbacks). Override just the bind address so that
-# HTTPS, ECproxy and MQTTS are reachable from outside the container.
+# Plugin listen addresses default to ${Login[externalAddress]} = 'ecpds-mover'
+# which resolves to the loopback interface inside the container. Replace with
+# 0.0.0.0 so HTTPS, MQTTS, ECproxy etc. are reachable from outside the container.
+# Also fix ecmwf.common.starter.listenAddress in the startup script (JMX port).
 RUN sed -i \
+    's/listenAddress=\${Login\[externalAddress\]}/listenAddress=0.0.0.0/g' \
+    /usr/local/ecpds/mover/conf/ecmwf.properties && \
+    sed -i \
     "s/-Decmwf.common.starter.listenAddress='\\\$INTERNAL_ADDRESS'/-Decmwf.common.starter.listenAddress='0.0.0.0'/" \
     /usr/local/ecpds/mover/sh/mover
 
@@ -129,12 +133,12 @@ RUN chmod +x /usr/local/ecpds/standalone/*.sh
 VOLUME /data
 
 # ── Exposed ports ──────────────────────────────────────────────────────────────
-# Master:   9062 (JMX)  9600 (callback)  9640 (ECpds CLI)  9021 (FTP)
+# Master:   9062 (JMX)  9600 (callback)  9640 (ECpds CLI)  [FTP disabled - see note]
 # Mover:    7062 (JMX)  7600 (callback)  7443 (HTTPS portal)
-#           7022 (SFTP) 7021 (FTP)       8883 (MQTTS)  7640 (ECproxy)
+#           7022 (SFTP) 8883 (MQTTS)  7640 (ECproxy)  [FTP disabled - see note]
 # Monitor:  8062 (JMX)  8600 (callback)  8443 (HTTPS)
-EXPOSE 9062 9600 9640 9021 \
-       7062 7600 7443 7022 7021 8883 7640 \
+EXPOSE 9062 9600 9640 \
+       7062 7600 7443 7022 8883 7640 \
        8062 8600 8443
 
 ENTRYPOINT ["/usr/local/ecpds/standalone/entrypoint.sh"]

@@ -670,6 +670,28 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String cloneHost(final ECpdsSession session, final String hostName)
+            throws MasterException, DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("cloneHost(" + session.getWebUser().getName() + "," + hostName + ")");
+        final var action = master.startECpdsAction(session, "duplicate", base.getHost(hostName));
+        Host host = null;
+        Exception exception = null;
+        try {
+            host = master.cloneHost(hostName);
+            return monitor.done(host.getName());
+        } catch (final Exception e) {
+            exception = e;
+            _log.warn(e);
+            throw new MasterException(e.getMessage());
+        } finally {
+            master.logECpdsAction(action, "Cloning Host", host, exception);
+        }
+    }
+
+    /**
      * Copy destination.
      *
      * @param session

@@ -480,6 +480,10 @@
 			<forward name="cancel" path="/do/transfer/host"
 				redirect="true" />
 		</action>
+		<action path="/transfer/host/edit/duplicate/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.DuplicateAction"
+			name="hostActionForm" scope="request">
+		</action>
 
 		<!-- Method -->
 

@@ -77,14 +77,12 @@
                class="btn btn-sm btn-outline-primary" title="Edit this host"><i class="bi bi-pencil"></i></a>
             <a href='<bean:message key="host.basepath"/>/edit/delete_form/${host.id}'
                class="btn btn-sm btn-outline-danger" title="Delete this host"><i class="bi bi-trash"></i></a>
-            <c:if test="${not empty host.destinations}">
             <auth:if basePathKey="transferhistory.basepath" paths="/">
             <auth:then>
             <a href="#" class="btn btn-sm btn-outline-warning" title="Duplicate this host"
-               onclick="ecpdsHostDuplicate('${host.id}','${host.nickName}');return false;"><i class="bi bi-copy"></i></a>
+               onclick="ecpdsHostDuplicate('${host.id}','${host.nickName}','${host.type}');return false;"><i class="bi bi-copy"></i></a>
             </auth:then>
             </auth:if>
-            </c:if>
             </c:if>
         </div>
         </auth:then>
@@ -315,22 +313,45 @@
 </c:if>
     </div>
 <script>
-function ecpdsHostDuplicate(hostId, nickName) {
+function ecpdsHostDuplicate(hostId, nickName, hostType) {
     var destinations = [<c:forEach var="_d" items="${host.destinations}" varStatus="_s">'<c:out value="${_d.name}"/>'<c:if test="${!_s.last}">,</c:if></c:forEach>];
-    var extra = '';
-    if (destinations.length > 1) {
-        var opts = destinations.map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join('');
-        extra = '<br><br>Select destination:<br><select id="ecpds-dup-dest" class="form-select form-select-sm mt-1">'+opts+'</select>';
+    // Proxy hosts (and any host with no destinations) are cloned directly without a destination
+    if (hostType === 'Proxy' || destinations.length === 0) {
+        confirmationDialog({
+            title: 'Confirm Host Duplication',
+            message: 'Are you sure you want to duplicate host <strong>'+nickName+'</strong>?',
+            showLoading: true,
+            onConfirm: function() {
+                window.location.href = '/do/transfer/host/edit/duplicate/'+hostId;
+            }
+        });
+        return;
+    }
+    // Build a destination picker with a "No destination" option for all cases
+    var opts = '<option value="">(no destination)</option>'
+        + destinations.map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join('');
+    // Pre-select the only destination if there's just one
+    var extra = '<br><br>'
+        + '<p class="small text-muted mb-1">Optionally assign the duplicate to a destination. '
+        + 'Choosing a destination means the new host will be immediately available for data transfers on that destination. '
+        + 'Choosing <em>no destination</em> creates a standalone copy that you can assign manually later.</p>'
+        + '<label class="form-label small mb-1">Destination:</label>'
+        + '<select id="ecpds-dup-dest" class="form-select form-select-sm">'
+        + opts + '</select>';
+    if (destinations.length === 1) {
+        extra = extra.replace('value="'+destinations[0]+'"', 'value="'+destinations[0]+'" selected');
     }
     confirmationDialog({
         title: 'Confirm Host Duplication',
-        message: destinations.length === 1
-            ? 'Are you sure you want to duplicate host <strong>'+nickName+'</strong> in destination <strong>'+destinations[0]+'</strong>?'
-            : 'Are you sure you want to duplicate host <strong>'+nickName+'</strong>?'+extra,
+        message: 'Are you sure you want to duplicate host <strong>'+nickName+'</strong>?'+extra,
         showLoading: true,
         onConfirm: function() {
-            var dest = destinations.length === 1 ? destinations[0] : document.getElementById('ecpds-dup-dest').value;
-            window.location.href = '/do/transfer/destination/operations/'+dest+'/duplicateHost/'+hostId;
+            var dest = document.getElementById('ecpds-dup-dest').value;
+            if (!dest) {
+                window.location.href = '/do/transfer/host/edit/duplicate/'+hostId;
+            } else {
+                window.location.href = '/do/transfer/destination/operations/'+dest+'/duplicateHost/'+hostId;
+            }
         }
     });
 }
