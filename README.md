@@ -20,7 +20,16 @@ Built on container technologies, it scales from a laptop to hundreds of systems 
 
 ## 🚀 Try It Now — No Build Required
 
-Experience the full OpenECPDS stack in a single command. The standalone image bundles MariaDB, Master, Data Mover, and Monitor — everything pre-configured and ready to go:
+Experience the full OpenECPDS stack in a single command. The standalone image bundles MariaDB, Master, Data Mover, and Monitor — everything pre-configured and ready to go.
+
+### Requirements
+
+| Resource | Minimum | Recommended |
+|---|---|---|
+| RAM | 2 GB | 4 GB |
+| Disk (image) | 4.5 GB | — |
+| Disk (data volume) | 1 GB | 10 GB+ (grows with transfer data and logs) |
+| Docker | 20.10+ | latest |
 
 ```bash
 docker run -d \
