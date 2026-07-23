@@ -145,6 +145,9 @@ push: .checkcr ## Push images to CR
 	@$(MAKE) .push app=master tag=$(TAG)
 	@$(MAKE) .push app=monitor tag=$(TAG)
 
+push-standalone: .checkcr ## Push standalone image to CR
+	@$(MAKE) .push app=standalone tag=$(TAG)
+
 .push: ## Push image and tag as latest (args: from, to, app, tag)
 	$(DOCKER) tag ecpds/$(app):$(tag) $(CR_URL)/$(app):$(tag)
 	$(DOCKER) tag ecpds/$(app):$(tag) $(CR_URL)/$(app)
