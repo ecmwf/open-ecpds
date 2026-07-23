@@ -32,12 +32,6 @@ docker run -d \
   ghcr.io/ecmwf/open-ecpds/standalone:latest
 ```
 
-> If you get an `unauthorized` error, the package may still be private. You can authenticate first with:
-> ```bash
-> echo <YOUR_PAT> | docker login ghcr.io -u <YOUR_GITHUB_USERNAME> --password-stdin
-> ```
-> Your PAT needs the `read:packages` scope. Alternatively, ask the maintainers to make the package public.
-
 The database initialises automatically on first start. The `/data` volume persists everything across restarts.
 
 > **Note:** The container uses a self-signed TLS certificate — accept the browser security warning on first visit.
