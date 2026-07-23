@@ -22,9 +22,22 @@ RUN dnf -y install epel-release && \
         net-tools iputils iperf3 iproute wget diffutils joe && \
     dnf clean all
 
-# Install GraalVM via SDKMAN
+# Install GraalVM via SDKMAN, then immediately strip build-only components:
+# svm/ (native-image compiler), static/ (static libs for native-image),
+# jmods/ (module compilation artifacts), src.zip (JDK sources), sdkman
+# archives, and system locale/man/doc data — all unneeded at runtime.
+# Cleanup is in the same RUN to avoid Docker layer bloat.
 RUN curl -s "https://get.sdkman.io" | bash && \
-    bash -c "source /root/.sdkman/bin/sdkman-init.sh && sdk install java $SDKMAN_JDK < /dev/null"
+    bash -c "source /root/.sdkman/bin/sdkman-init.sh && sdk install java $SDKMAN_JDK < /dev/null" && \
+    rm -rf \
+        /root/.sdkman/candidates/java/current/lib/svm \
+        /root/.sdkman/candidates/java/current/lib/static \
+        /root/.sdkman/candidates/java/current/jmods \
+        /root/.sdkman/candidates/java/current/lib/src.zip \
+        /root/.sdkman/archives \
+        /usr/share/locale \
+        /usr/share/man \
+        /usr/share/doc
 
 # Define environment parameters for the JVM
 ENV JAVA_HOME=/root/.sdkman/candidates/java/current
