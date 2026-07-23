@@ -99,6 +99,14 @@ RUN mkdir -p /etc/ecpds/default /usr/local/ecpds/standalone && \
 RUN sed -i 's/^\(\[Server\]\)$/\1\nallowPasswordOn=.*/' \
         /usr/local/ecpds/master/conf/ecmwf.properties
 
+# ── Mover: bind service ports on all interfaces (not loopback only) ───────────
+# The mover startup script sets listenAddress from $INTERNAL_ADDRESS which is
+# 'localhost' (needed for RMI/callbacks). Override just the bind address so that
+# HTTPS, ECproxy and MQTTS are reachable from outside the container.
+RUN sed -i \
+    "s/-Decmwf.common.starter.listenAddress='\\\$INTERNAL_ADDRESS'/-Decmwf.common.starter.listenAddress='0.0.0.0'/" \
+    /usr/local/ecpds/mover/sh/mover
+
 # ── MariaDB datadir → /data/db ────────────────────────────────────────────────
 RUN mkdir -p /etc/my.cnf.d && \
     printf '[mysqld]\ndatadir=/data/db\nsocket=/run/mysqld/mysqld.sock\n\n[client]\nsocket=/run/mysqld/mysqld.sock\n' \
