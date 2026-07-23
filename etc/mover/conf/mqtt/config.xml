@@ -20,10 +20,6 @@
         xsi:noNamespaceSchemaLocation="config.xsd">
 
     <listeners>
-        <tcp-listener>
-            <port>${mqttPort}</port>
-            <bind-address>${listenAddress}</bind-address>
-        </tcp-listener>
         <tls-tcp-listener>
             <port>${mqttsPort}</port>
             <bind-address>${listenAddress}</bind-address>
