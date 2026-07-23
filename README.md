@@ -79,7 +79,7 @@ The **standalone image** packages all OpenECPDS services (MariaDB, Master, Data 
 make build-standalone
 ```
 
-This copies the RPMs into `docker/ecpds/ecpds-standalone/` and builds the `ecpds/ecpds-standalone:<tag>` image.
+This copies the RPMs into `docker/ecpds/standalone/` and builds the `ecpds/standalone:<tag>` image.
 
 ### Run
 
@@ -87,12 +87,12 @@ The database is initialised automatically on first start. Mount `/data` to persi
 
 ```bash
 docker run -d \
-  --name ecpds-standalone \
+  --name standalone \
   -v $(pwd)/ecpds-data:/data \
   -p 7080:7080 -p 7443:7443 \
   -p 8080:8080 -p 8443:8443 \
   -p 9600:9600 -p 9640:9640 \
-  ecpds/ecpds-standalone:<tag>
+  ecpds/standalone:<tag>
 ```
 
 The `/data` directory layout once running:
@@ -142,12 +142,12 @@ ecpds-data/
 
 ```bash
 # Supervisord output (service startup)
-docker logs -f ecpds-standalone
+docker logs -f standalone
 
 # Individual service logs
-docker exec ecpds-standalone tail -f /data/log/master/master.output
-docker exec ecpds-standalone tail -f /data/log/mover/mover.output
-docker exec ecpds-standalone tail -f /data/log/monitor/monitor.output
+docker exec standalone tail -f /data/log/master/master.output
+docker exec standalone tail -f /data/log/mover/mover.output
+docker exec standalone tail -f /data/log/monitor/monitor.output
 ```
 
 ---
