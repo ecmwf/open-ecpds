@@ -330,6 +330,7 @@ public final class SshPlugin extends PluginThread {
                         @Override
                         public void sessionClosed(Session s) {
                             _log.info("Session closed for {}@{}", username, remoteIP);
+                            info.session().close(true);
                         }
 
                         @Override

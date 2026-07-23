@@ -86,6 +86,12 @@ public class ECPDSListener implements ClientLifecycleEventListener {
      */
     @Override
     public void onDisconnect(final @NotNull DisconnectEventInput disconnectEventInput) {
-        log.info("Client disconnected with id: {}", disconnectEventInput.getClientInformation().getClientId());
+        final var clientId = disconnectEventInput.getClientInformation().getClientId();
+        log.info("Client disconnected with id: {}", clientId);
+        // Remove the session from the tracking registry and release the connection slot
+        final var session = ECPDSAuthenticator.SESSION_REGISTRY.remove(clientId);
+        if (session != null) {
+            session.close(true);
+        }
     }
 }

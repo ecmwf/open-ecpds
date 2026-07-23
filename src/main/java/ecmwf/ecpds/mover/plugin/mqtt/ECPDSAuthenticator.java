@@ -28,11 +28,15 @@ package ecmwf.ecpds.mover.plugin.mqtt;
 
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_MQTT_PERMISSION;
 
+import java.io.Closeable;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.hivemq.extension.sdk.api.auth.SimpleAuthenticator;
 import com.hivemq.extension.sdk.api.auth.parameter.SimpleAuthInput;
@@ -41,9 +45,12 @@ import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
 import com.hivemq.extension.sdk.api.packets.auth.DefaultAuthorizationBehaviour;
 import com.hivemq.extension.sdk.api.packets.connect.ConnackReasonCode;
 import com.hivemq.extension.sdk.api.packets.connect.ConnectPacket;
+import com.hivemq.extension.sdk.api.services.Services;
 import com.hivemq.extension.sdk.api.services.builder.Builders;
 
+import ecmwf.common.ecaccess.NativeAuthenticationProvider;
 import ecmwf.common.ecaccess.StarterServer;
+import ecmwf.common.ecaccess.UserSession;
 import ecmwf.ecpds.mover.MoverServer;
 
 /**
@@ -51,8 +58,14 @@ import ecmwf.ecpds.mover.MoverServer;
  */
 public class ECPDSAuthenticator implements SimpleAuthenticator {
 
+    /** The Constant log. */
+    private static final Logger log = LogManager.getLogger(ECPDSAuthenticator.class);
+
     /** The Constant mover. */
     private static final MoverServer mover = StarterServer.getInstance(MoverServer.class);
+
+    /** Registry mapping clientId to its active UserSession (for lifecycle tracking and admin close). */
+    static final ConcurrentHashMap<String, UserSession> SESSION_REGISTRY = new ConcurrentHashMap<>();
 
     /**
      * {@inheritDoc}
@@ -79,18 +92,36 @@ public class ECPDSAuthenticator implements SimpleAuthenticator {
                     "Characters '#' and '+' are not allowed in the client identifier/username");
             return;
         }
-        // Check the credentials and get the associated topic filters!
-        final var topicFilters = validate(inetAddress.get(), userNameOptional.get(), passwordOptional.get());
-        if (topicFilters.isEmpty()) { // No permissions on any topic
+        final var username = userNameOptional.get();
+        final var password = new String(getBytesFromBuffer(passwordOptional.get()), StandardCharsets.UTF_8);
+        final var remoteAddr = inetAddress.get().getHostAddress();
+        final var from = "Using mqtts on DataMover=" + mover.getRoot() + " from " + username + "@" + remoteAddr;
+        try {
+            // Create a tracked session — this adds the connection to _dataSpaces so it
+            // appears in the monitoring UI (/do/user/incoming/{user}) and can be closed by admins.
+            final var session = NativeAuthenticationProvider.getInstance().getUserSession(remoteAddr, username,
+                    password, "mqtts", (Closeable) () -> Services.clientService().disconnectClient(clientId));
+            final var topicFilters = session.getECtransSetup().getStringList(USER_PORTAL_MQTT_PERMISSION);
+            if (topicFilters.isEmpty()) {
+                // No permissions configured — reject and discard the session immediately
+                session.close(true);
+                simpleAuthOutput.failAuthentication(ConnackReasonCode.NOT_AUTHORIZED,
+                        "Authentication failed because of invalid credentials or permissions");
+                return;
+            }
+            // Keep the session alive; onDisconnect will call close(true) to clean up
+            SESSION_REGISTRY.put(clientId, session);
+            // Build the permissions list
+            simpleAuthOutput.getDefaultPermissions()
+                    .addAll(topicFilters.stream().map(this::getTopicPermission).toList());
+            simpleAuthOutput.getDefaultPermissions().setDefaultBehaviour(DefaultAuthorizationBehaviour.DENY);
+            // Good to go!
+            simpleAuthOutput.authenticateSuccessfully();
+        } catch (final Exception e) {
+            log.warn("{}: authentication failed", from, e);
             simpleAuthOutput.failAuthentication(ConnackReasonCode.NOT_AUTHORIZED,
                     "Authentication failed because of invalid credentials or permissions");
-            return;
         }
-        // Build the permissions list
-        simpleAuthOutput.getDefaultPermissions().addAll(topicFilters.stream().map(this::getTopicPermission).toList());
-        simpleAuthOutput.getDefaultPermissions().setDefaultBehaviour(DefaultAuthorizationBehaviour.DENY);
-        // Good to go!
-        simpleAuthOutput.authenticateSuccessfully();
     }
 
     /**
@@ -105,36 +136,6 @@ public class ECPDSAuthenticator implements SimpleAuthenticator {
         return Builders.topicPermission().topicFilter(topicFilter).activity(TopicPermission.MqttActivity.SUBSCRIBE)
                 .type(TopicPermission.PermissionType.ALLOW).retain(TopicPermission.Retain.ALL)
                 .qos(TopicPermission.Qos.ALL).sharedSubscription(TopicPermission.SharedSubscription.ALL).build();
-    }
-
-    /**
-     * Validate.
-     *
-     * "+" matches a single MQTT topic level and can appear at any location in the topic pattern. e.g. foo/+/bar will
-     * match foo/one/bar or foo/two/bar "#" matches multiple whole MQTT topic levels, but can only be used at the end of
-     * the topic pattern. e.g. foo/# will match foo/bar and foo/bar/one and foo/bar/one/two.
-     *
-     * @param inetAddress
-     *            the inet address
-     * @param username
-     *            the username
-     * @param password
-     *            the password
-     *
-     * @return the list
-     */
-    private static List<String> validate(final InetAddress inetAddress, final String username,
-            final ByteBuffer password) {
-        final var from = "Using mqtt on DataMover=" + mover.getRoot() + " from " + username + "@"
-                + inetAddress.getHostAddress();
-        try {
-            final var profile = mover.getMasterProxy().getIncomingProfile(username,
-                    new String(getBytesFromBuffer(password), StandardCharsets.UTF_8), from);
-            // Now let's add all the permissions added through the user configuration
-            return profile.getECtransSetup().getStringList(USER_PORTAL_MQTT_PERMISSION);
-        } catch (final Exception e) {
-            return List.of();
-        }
     }
 
     /**
