@@ -22,26 +22,7 @@ Built on container technologies, it scales from a laptop to hundreds of systems 
 
 Experience the full OpenECPDS stack in a single command. The standalone image bundles MariaDB, Master, Data Mover, and Monitor — everything pre-configured and ready to go.
 
-### Requirements
-
-| Resource | Minimum | Recommended |
-|---|---|---|
-| RAM | 2 GB | 4 GB |
-| Disk (image) | 4.5 GB | — |
-| Disk (data volume) | 1 GB | 10 GB+ (grows with transfer data and logs) |
-| Docker | 20.10+ | latest |
-
-The image bundles three JVM services, each configured with up to 1 GB heap (`-Xmx1G`), plus MariaDB:
-
-| Component | Heap / typical RAM |
-|---|---|
-| Master Server | up to 1 GB |
-| Data Mover | up to 1 GB |
-| Monitor Server | up to 1 GB |
-| MariaDB | ~200–300 MB |
-| OS + supervisord | ~200 MB |
-
-At idle the JVMs use significantly less than their maximum — the 2 GB minimum is sufficient for evaluation, while 4 GB gives comfortable headroom under load.
+> **Requirements:** 4 GB RAM and 6 GB free disk recommended. See [System Requirements](https://ecmwf.github.io/open-ecpds/getting-started/requirements/) for details.
 
 ```bash
 docker run -d \
@@ -61,8 +42,7 @@ The database initialises automatically on first start. The `/data` volume persis
 
 | Service | URL | Credentials |
 |---|---|---|
-| Monitoring UI | `https://localhost:8443` | admin / admin2021 |
-| Monitoring UI | `https://localhost:8443` | monitor / monitor2021 |
+| Monitoring UI | `https://localhost:8443` | admin / admin2021 · monitor / monitor2021 |
 | Data Portal | `https://localhost:7443` | test / test2021 |
 | MQTTS broker | `mqtts://localhost:8883` | test / test2021 |
 

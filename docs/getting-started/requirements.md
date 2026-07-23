@@ -44,6 +44,29 @@ workflow.
 The disk space required depends on the size of the data you expect to handle, but at
 least 15 GB is essential for the development and application containers.
 
+## Standalone image resources
+
+The standalone image is the quickest way to try OpenECPDS without building anything.
+It bundles three JVM services and MariaDB in a single container:
+
+| Component | Heap / typical RAM |
+|---|---|
+| Master Server | up to 1 GB (`-Xmx1G`) |
+| Data Mover | up to 1 GB (`-Xmx1G`) |
+| Monitor Server | up to 1 GB (`-Xmx1G`) |
+| MariaDB | ~200–300 MB |
+| OS + supervisord | ~200 MB |
+
+| Resource | Minimum | Recommended |
+|---|---|---|
+| RAM | 2 GB | 4 GB |
+| Disk (image) | 4.5 GB | — |
+| Disk (data volume) | 1 GB | 10 GB+ (grows with transfer data and logs) |
+| Docker | 20.10+ | latest |
+
+At idle the JVMs stay well below their maximum heap — 2 GB is sufficient for evaluation,
+while 4 GB gives comfortable headroom under load.
+
 ## GitHub Copilot CLI (development container)
 
 The GitHub Copilot CLI is installed in the development container. To use it, you must
