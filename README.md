@@ -92,6 +92,7 @@ docker run -d \
   -p 7080:7080 -p 7443:7443 \
   -p 8080:8080 -p 8443:8443 \
   -p 9600:9600 -p 9640:9640 \
+  -p 1883:1883 -p 8883:8883 \
   ecpds/standalone:<tag>
 ```
 
@@ -133,6 +134,7 @@ ecpds-data/
 | `7021` | Data Mover — FTP |
 | `7022` | Data Mover — SFTP |
 | `1883` | Data Mover — MQTT |
+| `8883` | Data Mover — MQTTS (MQTT over TLS) |
 | `8080` / `8443` | Monitor — HTTP / HTTPS UI |
 | `9600` | Master — callback (internal) |
 | `9640` | Master — ECpds CLI |

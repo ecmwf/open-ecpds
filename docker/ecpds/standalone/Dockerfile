@@ -123,10 +123,10 @@ VOLUME /data
 # ── Exposed ports ──────────────────────────────────────────────────────────────
 # Master:   9062 (JMX)  9600 (callback)  9640 (ECpds CLI)  9021 (FTP)
 # Mover:    7062 (JMX)  7600 (callback)  7080 (HTTP portal) 7443 (HTTPS portal)
-#           7022 (SFTP) 7021 (FTP)       1883 (MQTT)        7640 (ECproxy)
+#           7022 (SFTP) 7021 (FTP)       1883 (MQTT)        8883 (MQTTS)  7640 (ECproxy)
 # Monitor:  8062 (JMX)  8600 (callback)  8080 (HTTP)        8443 (HTTPS)
 EXPOSE 9062 9600 9640 9021 \
-       7062 7600 7080 7443 7022 7021 1883 7640 \
+       7062 7600 7080 7443 7022 7021 1883 8883 7640 \
        8062 8600 8080 8443
 
 ENTRYPOINT ["/usr/local/ecpds/standalone/entrypoint.sh"]
