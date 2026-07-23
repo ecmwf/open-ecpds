@@ -210,7 +210,125 @@ mqtt.contentType = "application/json"
 mqtt.retain = "yes"
 ```
 
-## Related
+### Building the payload with JavaScript
+
+When a static `mqtt.payload` property is not enough, place a JavaScript snippet in the
+destination's **JavaScript** field (after the `###### END-OF-PROPERTIES ######` separator).
+The script is executed once per completed transfer and must return a plain object whose
+keys mirror the `mqtt.*` option names. Only the keys you return are used; everything else
+falls back to the properties.
+
+**Runtime variables** — the following `$`-prefixed placeholders are substituted into the
+script source before execution:
+
+| Variable | Description |
+|---|---|
+| `$filename` | Full target path as stored on the Data Mover (e.g. `destination/data/file.dat`) |
+| `$filesize` | File size in bytes (integer literal) |
+| `$destination` | Destination name |
+| `$date` | Product date formatted as `yyyyMMdd` |
+| `$time` | Product time formatted as `HHmm` |
+| `$timefile` | Product date as Unix milliseconds epoch (integer literal) |
+| `$uuid` | Unique transfer UUID |
+| `$checksum` | File checksum (MD5 hex string, may be empty) |
+| `$etag` | ETag derived from file ID and timestamp |
+| `$movername` | Name of the Data Mover that processed the transfer |
+| `$datatransferid` | Numeric transfer ID |
+| `$datafileid` | Numeric data file ID |
+| `$lifetime` | Remaining transfer lifetime in milliseconds (integer literal) |
+| `$productdate` | Raw product date as Unix milliseconds epoch |
+| `$metadata[key]` | Value of the metadata attribute named `key` (if present) |
+
+**Return object structure** — the script must return an object with a `mqtt` key. Any
+property listed in the table above can be overridden dynamically:
+
+```javascript
+return {
+  mqtt: {
+    topic:       "...",   // overrides mqtt.topic
+    payload:     "...",   // required — the message body
+    contentType: "...",   // overrides mqtt.contentType
+    retain:      true,    // overrides mqtt.retain
+    qos:         1,       // overrides mqtt.qos
+    expiryInterval: "PT48H"  // overrides mqtt.expiryInterval
+  }
+};
+```
+
+Only `mqtt.payload` is strictly required; all other keys are optional overrides.
+
+### Full example — WIS2-style GeoJSON notification with multi-protocol links
+
+This example generates a [WIS2](../notifications/wmo-wis2.md)-compatible GeoJSON
+notification that includes direct download links for HTTPS, SFTP, and S3.
+
+**Properties** (in the destination's **Properties** field):
+
+```properties
+incoming.event = "yes"
+mqtt.contentType = "application/json"
+mqtt.expiryInterval = "PT48H"
+mqtt.publish = "yes"
+mqtt.retain = "yes"
+```
+
+**JavaScript** (in the destination's **JavaScript** field):
+
+```javascript
+// $-placeholders are substituted before execution
+var destination = "$destination";
+var filename    = "$filename";
+var filesize    = $filesize;                          // integer literal
+var pubtime     = new Date($timefile).toISOString();  // integer literal -> ISO string
+var dataId      = destination + "/" + filename;
+
+// Adjust host and ports for your deployment
+var host      = "localhost";
+var httpsPort = 7443;
+var sftpPort  = 7022;
+
+var baseUrl = "https://" + host + ":" + httpsPort + "/";
+var s3Url   = "https://" + host + ":" + httpsPort + "/s3/";
+var sftpUrl = "sftp://test@" + host + ":" + sftpPort + "/";
+
+return {
+  mqtt: {
+    payload: JSON.stringify({
+      id:       "$uuid",
+      type:     "Feature",
+      geometry: null,
+      properties: {
+        datetime:       pubtime,
+        pubtime:        pubtime,
+        data_id:        dataId,
+        content_length: filesize
+      },
+      links: [
+        { rel: "canonical", type: "application/octet-stream",
+          length: filesize, href: baseUrl + filename,
+          title: "Download via HTTPS" },
+        { rel: "alternate", type: "application/octet-stream",
+          length: filesize, href: sftpUrl + filename,
+          title: "Download via SFTP" },
+        { rel: "alternate", type: "application/octet-stream",
+          length: filesize, href: s3Url + filename,
+          title: "Download via S3" }
+      ]
+    })
+  }
+};
+```
+
+The resulting MQTT message published on topic `destinationName/filename` will be a
+GeoJSON Feature carrying three access URLs. Any subscriber can pick the protocol that
+suits them best.
+
+!!! tip "Access control"
+    To allow a data user to subscribe to these notifications, set the
+    [`portal.mqttPermission`](../concepts/web-user-options.md) property on their account.
+    For example, to allow subscribing to all topics: `portal.mqttPermission = "#"`.
+
+
 
 - [Data Portal use case](../use-cases/data-portal.md)
 - [Notifications (MQTT)](../notifications/mqtt-overview.md)

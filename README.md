@@ -95,11 +95,29 @@ sftp -P 7022 -o StrictHostKeyChecking=no test@localhost
 ```
 
 
-**MQTTS** — using [Mosquitto](https://mosquitto.org/download/) client:
+**MQTTS** — The broker uses TLS with a self-signed certificate.
+
+Using [mqttx](https://mqttx.app/cli) CLI (recommended — supports true `--insecure`):
 ```bash
+mqttx sub \
+  -h localhost -p 8883 \
+  -l mqtts \
+  -u test -P test2021 \
+  --insecure \
+  -t '#'
+```
+
+Or using [Mosquitto](https://mosquitto.org/download/) — grab the cert first via openssl (no container access needed):
+```bash
+# Fetch the self-signed cert directly from the broker
+openssl s_client -connect localhost:8883 </dev/null 2>/dev/null \
+  | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /tmp/ecpds.pem
+
+# Subscribe (--insecure skips hostname verification)
 mosquitto_sub \
   --host localhost --port 8883 \
   --username test --pw test2021 \
+  --cafile /tmp/ecpds.pem \
   --insecure \
   --topic '#' -v
 ```

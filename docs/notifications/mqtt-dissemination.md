@@ -72,6 +72,83 @@ greater flexibility in how notifications are handled. Additionally, **access con
 mechanisms can be configured at the **data user** level, ensuring secure and controlled
 distribution of messages.
 
+## Configuring a destination to publish MQTT notifications
+
+### Step 1 — Enable event triggering and MQTT publishing
+
+Add the following to the destination's **Properties** field. The `incoming.event` (for
+portal uploads/downloads) or `acquisition.event` (for acquired files) flag is what causes
+a publication to be queued; `mqtt.publish` then routes that publication to the MQTT broker.
+
+```properties
+incoming.event   = "yes"   # or acquisition.event = "yes" for acquired data
+mqtt.publish     = "yes"
+mqtt.contentType = "application/json"
+mqtt.expiryInterval = "PT48H"
+mqtt.retain      = "yes"
+```
+
+By default the topic is `destinationName/targetFileName`. Override it with `mqtt.topic`:
+
+```properties
+mqtt.topic = "my/custom/topic/"   # trailing slash -> target name is appended
+```
+
+### Step 2 — Build a rich JSON payload with JavaScript
+
+For static payloads use `mqtt.payload` directly in Properties. For dynamic payloads that
+embed file metadata and access URLs, place a JavaScript snippet in the destination's
+**JavaScript** field. The script is executed for every completed transfer and can override
+any `mqtt.*` option by returning a plain object.
+
+See the [full reference and example](../concepts/destination-options.md#building-the-payload-with-javascript)
+in the Destination Options guide, including a complete WIS2-style GeoJSON notification
+with HTTPS, SFTP and S3 download links.
+
+### Step 3 — Grant subscribe access to a data user
+
+Set `portal.mqttPermission` on the data user's account (in their **Properties** field):
+
+```properties
+portal.mqttPermission = "#"           # all topics
+# or restrict to a subtree:
+portal.mqttPermission = "hourly_aq/#"
+```
+
+## Testing MQTT notifications
+
+Once a destination is configured, test the subscription with
+[mqttx](https://mqttx.app/cli) (recommended — supports `--insecure` without a CA file):
+
+```bash
+mqttx sub \
+  -h localhost -p 8883 \
+  -l mqtts \
+  -u test -P test2021 \
+  --insecure \
+  -t '#'
+```
+
+Or with [Mosquitto](https://mosquitto.org/download/) (requires extracting the cert first):
+
+```bash
+# Fetch the broker's self-signed certificate directly
+openssl s_client -connect localhost:8883 </dev/null 2>/dev/null \
+  | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /tmp/ecpds.pem
+
+mosquitto_sub \
+  --host localhost --port 8883 \
+  --username test --pw test2021 \
+  --cafile /tmp/ecpds.pem \
+  --insecure \
+  --topic '#' -v
+```
+
+!!! note
+    Port `8883` is MQTTS (MQTT over TLS). The `--insecure` flag skips hostname
+    verification for self-signed certificates. In production, use a properly signed
+    certificate and remove `--insecure`.
+
 ## Related
 
 - [MQTT Overview](mqtt-overview.md)
