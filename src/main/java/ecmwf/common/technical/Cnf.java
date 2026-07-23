@@ -34,6 +34,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
@@ -334,6 +335,8 @@ public final class Cnf {
         if (isNotEmpty(fileName)) {
             try {
                 return Files.readString(Path.of(fileName));
+            } catch (final NoSuchFileException e) {
+                _log.warn("Could not read file {} (using default content)", fileName);
             } catch (final Exception e) {
                 _log.warn("Could not read file {} (using default content)", fileName, e);
             }
