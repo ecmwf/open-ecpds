@@ -29,6 +29,7 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.host;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
@@ -45,6 +46,7 @@ import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.datafile.TransferGroupHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.HostHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.TransferMethodHome;
 import ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException;
@@ -149,6 +151,49 @@ public class GetHostAction extends PDSAction {
         try {
             request.setAttribute("hostPropErrors", GetHostListJsonAction.hasPropertyErrors(host));
         } catch (final Exception ignored) {
+        }
+        // Returns all destination names grouped by whether the host is already associated.
+        // Used by the duplicate dialog to build a searchable, grouped destination picker.
+        // Response: {"related":["d1","d2"],"others":["d3","d4",...]}
+        if ("destinationNames".equals(request.getParameter("json"))) {
+            try {
+                final Set<String> related = new TreeSet<>();
+                for (final var d : host.getDestinations()) {
+                    related.add(d.getName());
+                }
+                final var others = new TreeSet<String>();
+                for (final Pair p : DestinationHome.findAllNamesAndComments()) {
+                    final var name = (String) p.getName();
+                    if (!related.contains(name)) {
+                        others.add(name);
+                    }
+                }
+                final var sb = new StringBuilder();
+                sb.append("{\"related\":[");
+                var first = true;
+                for (final var n : related) {
+                    if (!first)
+                        sb.append(",");
+                    sb.append("\"").append(n.replace("\"", "\\\"")).append("\"");
+                    first = false;
+                }
+                sb.append("],\"others\":[");
+                first = true;
+                for (final var n : others) {
+                    if (!first)
+                        sb.append(",");
+                    sb.append("\"").append(n.replace("\"", "\\\"")).append("\"");
+                    first = false;
+                }
+                sb.append("]}");
+                response.setContentType("application/json; charset=UTF-8");
+                response.getWriter().write(sb.toString());
+                response.getWriter().flush();
+            } catch (final Exception e) {
+                log.warn("Could not load destination names for duplicate dialog", e);
+                response.setStatus(500);
+            }
+            return null;
         }
         // Lightweight JSON endpoint: returns whether an acquisition thread is running for this host.
         // Called asynchronously by data.jsp to control the Run Now / polling behaviour.

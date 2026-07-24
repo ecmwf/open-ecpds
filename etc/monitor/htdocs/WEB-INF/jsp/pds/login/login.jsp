@@ -11,7 +11,7 @@
   }
 %>
 
-<link href="/assets/css/login.css?v=2026070933" rel="stylesheet" type="text/css"/>
+<link href="/assets/css/login.css?v=2026072401" rel="stylesheet" type="text/css"/>
 
 <c:choose>
 <c:when test="${loginAnimatedBackground}">
@@ -246,7 +246,7 @@
     <div id="login-header">
       <div id="login-logo"><i class="bi bi-cloud-arrow-up-fill"></i></div>
       <h1 id="login-title"><%=System.getProperty("monitor.nickName")%></h1>
-      <p id="login-subtitle"><%=System.getProperty("monitor.title")%></p>
+      <p id="login-subtitle">Monitoring</p>
     </div>
 
     <form name="login-form" action="/do/login" method="post" autocomplete="off" id="login-form">

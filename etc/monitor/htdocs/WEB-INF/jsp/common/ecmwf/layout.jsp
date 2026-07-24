@@ -464,7 +464,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btn && body && !body.querySelector('a, table, button')) btn.style.display = 'none';
 });
 // When browser restores this page from bfcache (e.g. Cancel -> history.back()),
-// close the sidebar offcanvas if it was open at the time of navigation.
+// close the sidebar offcanvas if it was open at the time of navigation, and
+// hide the loading spinner (showLoading:true may have been triggered before navigation).
 window.addEventListener('pageshow', function(event) {
     if (event.persisted) {
         var offcanvasEl = document.getElementById('sidebarMenu');
@@ -473,6 +474,9 @@ window.addEventListener('pageshow', function(event) {
             if (instance) instance.hide();
             else bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl).hide();
         }
+        // Hide loading overlay left visible before the page navigated away
+        $("#loadingBackdrop").hide();
+        $("#loadingDiv").hide();
     }
 });
 </script>

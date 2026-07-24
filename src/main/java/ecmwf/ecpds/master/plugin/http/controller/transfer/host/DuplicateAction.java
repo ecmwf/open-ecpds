@@ -44,6 +44,7 @@ import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.transfer.HostHome;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.web.ECMWFException;
+import ecmwf.web.controller.ECMWFActionForm;
 import ecmwf.web.controller.ECMWFActionFormException;
 import ecmwf.web.model.users.User;
 
@@ -64,7 +65,7 @@ public class DuplicateAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
-        final var hostId = ((HostActionForm) form).getId();
+        final var hostId = ECMWFActionForm.getPathParameter(mapping, request, 0);
         try {
             final var mi = MasterManager.getMI();
             final var session = Util.getECpdsSessionFromObject(user);

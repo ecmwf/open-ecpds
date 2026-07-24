@@ -1577,13 +1577,15 @@ public final class RESTServer {
         _log.debug("REST received request: registerGet");
         try {
             final var sb = new StringBuilder().append(getTemplateContent(registerContent, REGISTER_FILE));
-            final var title = System.getProperty("mover.title", "Data Store for Acquisition & Dissemination");
-            final var tab = System.getProperty("mover.tab", title);
+            final var titleNick = getMoverTitleAndNickname();
+            final var rawTitle = System.getProperty("mover.title", titleNick[0]);
+            final var tab = System.getProperty("mover.tab", rawTitle);
             final var footer = System.getProperty("mover.footer",
                     "Powered by <a href=\"https://github.com/ecmwf/open-ecpds\" target=\"_blank\">OpenECPDS</a>");
             final var color = System.getProperty("mover.color", "#000000");
             Format.replaceAll(sb, "${tab}", tab);
-            Format.replaceAll(sb, "${title}", title);
+            Format.replaceAll(sb, "${title}", titleNick[0]);
+            Format.replaceAll(sb, "${nickname}", titleNick[1]);
             Format.replaceAll(sb, "${footer}", footer);
             Format.replaceAll(sb, "${color}", color);
             Format.replaceAll(sb, "${version}", Version.getVersion());
@@ -1956,6 +1958,27 @@ public final class RESTServer {
      *
      * @return the login page response
      */
+    /**
+     * Extract a short nickname from the mover.title system property.
+     *
+     * When {@code mover.title} ends with a parenthesised suffix such as {@code "Dissemination System (DISS)"} the text
+     * inside the last pair of parentheses is returned as the nickname (e.g. {@code "DISS"}) and the title is the part
+     * before it (e.g. {@code "Dissemination System"}). If no such suffix is present the nickname defaults to
+     * {@code "OpenECPDS"} and the title is the full property value.
+     *
+     * @return a two-element array: {@code [0]} base title, {@code [1]} nickname
+     */
+    private static String[] getMoverTitleAndNickname() {
+        final var raw = System.getProperty("mover.title", "Data Store for Acquisition & Dissemination");
+        if (raw.endsWith(")")) {
+            final var open = raw.lastIndexOf('(');
+            if (open > 0 && open < raw.length() - 2) {
+                return new String[] { raw.substring(0, open).trim(), raw.substring(open + 1, raw.length() - 1).trim() };
+            }
+        }
+        return new String[] { raw, "OpenECPDS" };
+    }
+
     private Response buildLoginResponse(final String prefillUser, final boolean canRegister, final String message,
             final String messageType, final Response.Status status) {
         return buildLoginResponse(prefillUser, canRegister, message, messageType, null, status);
@@ -1965,13 +1988,15 @@ public final class RESTServer {
             final String messageType, final String dataLink, final Response.Status status) {
         try {
             final var sb = new StringBuilder().append(getTemplateContent(loginContent, LOGIN_FILE));
-            final var title = System.getProperty("mover.title", "Data Store for Acquisition & Dissemination");
-            final var tab = System.getProperty("mover.tab", title);
+            final var titleNick = getMoverTitleAndNickname();
+            final var rawTitle = System.getProperty("mover.title", titleNick[0]);
+            final var tab = System.getProperty("mover.tab", rawTitle);
             final var footer = System.getProperty("mover.footer",
                     "Powered by <a href=\"https://github.com/ecmwf/open-ecpds\" target=\"_blank\">OpenECPDS</a>");
             final var color = System.getProperty("mover.color", "#000000");
             Format.replaceAll(sb, "${tab}", tab);
-            Format.replaceAll(sb, "${title}", title);
+            Format.replaceAll(sb, "${title}", titleNick[0]);
+            Format.replaceAll(sb, "${nickname}", titleNick[1]);
             Format.replaceAll(sb, "${footer}", footer);
             Format.replaceAll(sb, "${color}", color);
             Format.replaceAll(sb, "${version}", Version.getVersion());

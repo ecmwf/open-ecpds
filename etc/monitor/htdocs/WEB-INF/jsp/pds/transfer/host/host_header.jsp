@@ -314,46 +314,83 @@
     </div>
 <script>
 function ecpdsHostDuplicate(hostId, nickName, hostType) {
-    var destinations = [<c:forEach var="_d" items="${host.destinations}" varStatus="_s">'<c:out value="${_d.name}"/>'<c:if test="${!_s.last}">,</c:if></c:forEach>];
-    // Proxy hosts (and any host with no destinations) are cloned directly without a destination
-    if (hostType === 'Proxy' || destinations.length === 0) {
-        confirmationDialog({
-            title: 'Confirm Host Duplication',
-            message: 'Are you sure you want to duplicate host <strong>'+nickName+'</strong>?',
-            showLoading: true,
-            onConfirm: function() {
-                window.location.href = '/do/transfer/host/edit/duplicate/'+hostId;
-            }
-        });
-        return;
-    }
-    // Build a destination picker with a "No destination" option for all cases
-    var opts = '<option value="">(no destination)</option>'
-        + destinations.map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join('');
-    // Pre-select the only destination if there's just one
-    var extra = '<br><br>'
-        + '<p class="small text-muted mb-1">Optionally assign the duplicate to a destination. '
-        + 'Choosing a destination means the new host will be immediately available for data transfers on that destination. '
-        + 'Choosing <em>no destination</em> creates a standalone copy that you can assign manually later.</p>'
-        + '<label class="form-label small mb-1">Destination:</label>'
-        + '<select id="ecpds-dup-dest" class="form-select form-select-sm">'
-        + opts + '</select>';
-    if (destinations.length === 1) {
-        extra = extra.replace('value="'+destinations[0]+'"', 'value="'+destinations[0]+'" selected');
-    }
+    // Build the dialog with a searchable grouped destination picker.
+    // Destinations are loaded lazily on first open.
+    var filterHtml =
+        '<p class="small text-muted mb-2">Optionally assign the duplicate to a destination. '
+        + 'Choosing a destination makes the new host immediately available for transfers on that destination. '
+        + 'Leaving it blank creates a standalone copy you can assign later.</p>'
+        + '<label class="form-label small mb-1">Destination <span class="text-muted fst-italic">(optional)</span>:</label>'
+        + '<input type="text" id="ecpds-dup-filter" class="form-control form-control-sm mb-1" placeholder="Type to filter..." autocomplete="off">'
+        + '<select id="ecpds-dup-dest" class="form-select form-select-sm" size="6" style="height:auto;min-height:100px;max-height:160px;overflow-y:auto;">'
+        + '<option value="" selected>(no destination)</option>'
+        + '</select>'
+        + '<div id="ecpds-dup-loading" class="small text-muted fst-italic mt-1">Loading destinations&hellip;</div>';
+
     confirmationDialog({
         title: 'Confirm Host Duplication',
-        message: 'Are you sure you want to duplicate host <strong>'+nickName+'</strong>?'+extra,
+        message: 'Duplicate host <strong>' + nickName + '</strong>?<br><br>' + filterHtml,
         showLoading: true,
         onConfirm: function() {
             var dest = document.getElementById('ecpds-dup-dest').value;
             if (!dest) {
-                window.location.href = '/do/transfer/host/edit/duplicate/'+hostId;
+                window.location.href = '/do/transfer/host/edit/duplicate/' + hostId;
             } else {
-                window.location.href = '/do/transfer/destination/operations/'+dest+'/duplicateHost/'+hostId;
+                window.location.href = '/do/transfer/destination/operations/' + dest + '/duplicateHost/' + hostId;
             }
         }
     });
+
+    // Populate the picker asynchronously
+    fetch('/do/transfer/host/' + encodeURIComponent(hostId) + '?json=destinationNames')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var sel = document.getElementById('ecpds-dup-dest');
+            var loading = document.getElementById('ecpds-dup-loading');
+            if (!sel) return; // dialog was closed
+            if (loading) loading.remove();
+
+            function addGroup(label, names) {
+                if (!names || !names.length) return;
+                var grp = document.createElement('optgroup');
+                grp.label = label;
+                names.forEach(function(n) {
+                    var opt = document.createElement('option');
+                    opt.value = n;
+                    opt.textContent = n;
+                    grp.appendChild(opt);
+                });
+                sel.appendChild(grp);
+            }
+            addGroup('Related destinations', data.related);
+            addGroup('All other destinations', data.others);
+
+            // Live filter: hide/show options as the user types
+            var filterInput = document.getElementById('ecpds-dup-filter');
+            if (filterInput) {
+                filterInput.addEventListener('input', function() {
+                    var q = this.value.toLowerCase();
+                    var anyVisible = false;
+                    sel.querySelectorAll('optgroup').forEach(function(grp) {
+                        var grpVisible = false;
+                        grp.querySelectorAll('option').forEach(function(opt) {
+                            var match = !q || opt.value.toLowerCase().indexOf(q) !== -1;
+                            opt.hidden = !match;
+                            if (match) grpVisible = true;
+                        });
+                        grp.hidden = !grpVisible;
+                        if (grpVisible) anyVisible = true;
+                    });
+                    // If the currently selected option is hidden, reset to "(no destination)"
+                    var cur = sel.options[sel.selectedIndex];
+                    if (cur && cur.hidden) sel.selectedIndex = 0;
+                });
+            }
+        })
+        .catch(function() {
+            var loading = document.getElementById('ecpds-dup-loading');
+            if (loading) loading.textContent = 'Could not load destinations.';
+        });
 }
 </script>
     <c:if test="${not empty host.comment}">

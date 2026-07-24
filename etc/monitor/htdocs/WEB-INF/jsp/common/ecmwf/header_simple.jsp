@@ -103,12 +103,6 @@
           <li><span class="badge bg-info bg-opacity-10 text-info fw-normal px-2">Connect with confidence</span></li>
           <li><span class="badge bg-info bg-opacity-10 text-info fw-normal px-2">Share without limits</span></li>
         </ul>
-        <div class="mt-3">
-          <a href="https://ecmwf.github.io/open-ecpds/" target="_blank" rel="noopener"
-             class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-book me-1"></i>OpenECPDS Documentation
-          </a>
-        </div>
       </div>
     </div>
   </div>

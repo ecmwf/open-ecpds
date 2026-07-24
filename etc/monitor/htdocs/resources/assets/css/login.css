@@ -154,9 +154,10 @@ body:has(#login-wrap) .content {
 
 .login-field input {
     display: block;
-    width: 100%;
-    padding: 0.55rem 0.85rem;
-    font-size: 1rem;
+    width: 100% !important;
+    height: auto !important;
+    padding: 0.55rem 0.85rem !important;
+    font-size: 1rem !important;
     color: #212529;
     background: #f8f9fa;
     border: 1px solid #dee2e6;

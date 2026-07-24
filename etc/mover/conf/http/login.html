@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/bootstrap-icons/bootstrap-icons.min.css">
   <style>
     /* ── Layout ──────────────────────────────────────────── */
-    body { padding-top: 85px; padding-bottom: 44px; min-height: 100vh; overflow-x: hidden; }
+    body { padding-top: 68px; padding-bottom: 34px; min-height: 100vh; overflow-x: hidden; }
     .topheader {
       position: fixed; z-index: 1030; top: 0; left: 0; width: 100%;
       box-shadow: 0 2px 8px rgba(0,0,0,.30);
@@ -60,10 +60,10 @@
     /* ── Login wrap ──────────────────────────────────────── */
     #login-wrap {
       position: relative; z-index: 10;
-      min-height: calc(100svh - 85px - 44px);
+      min-height: calc(100svh - 68px - 34px);
       display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 1.5rem 1rem;
+      align-items: center;
+      padding: 1.25rem 1rem calc(1.25rem + 34px);
       box-sizing: border-box;
     }
 
@@ -74,6 +74,8 @@
       box-shadow: 0 20px 60px rgba(0,0,0,.35);
       width: 100%; max-width: 420px;
       overflow: hidden;
+      margin-top: auto;
+      margin-bottom: auto;
     }
     #login-header {
       background: linear-gradient(135deg, #0d6efd, #0a58ca);
@@ -154,7 +156,27 @@
     }
     #login-btn:hover  { background: #0b5ed7; box-shadow: 0 4px 12px rgba(13,110,253,.35); }
     #login-btn:active { background: #0a58ca; }
+    #login-btn:focus  { outline: none; box-shadow: 0 0 0 3px rgba(13,110,253,.35); }
     #login-btn:disabled { background: #a0bcf8; cursor: not-allowed; box-shadow: none; }
+
+    /* Card footer strip (clear button) */
+    #login-footer {
+      display: flex; align-items: center; justify-content: center;
+      gap: 1rem; padding: 0.55rem 1rem;
+      background: #f4f6f9; border-top: 1px solid #e9ecef;
+    }
+    .login-icon-btn {
+      background: none; border: none; color: #adb5bd;
+      cursor: pointer; padding: 0.35rem 0.5rem; border-radius: 8px;
+      transition: color .15s, background .15s;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .login-icon-btn svg { display: block; }
+    .login-icon-btn:hover { color: #0d6efd; background: rgba(13,110,253,.08); }
+    .login-icon-btn:disabled { opacity: .35; cursor: not-allowed; }
+    [data-bs-theme=dark] #login-footer { background: #141d2b; border-top-color: #253348; }
+    [data-bs-theme=dark] .login-icon-btn { color: #6a8aaa; }
+    [data-bs-theme=dark] .login-icon-btn:hover { color: #6ea8fe; background: rgba(110,168,254,.1); }
 
     /* ── Dark mode ───────────────────────────────────────── */
     [data-bs-theme=dark] #login-card {
@@ -195,7 +217,7 @@
 
   <!-- ── Fixed header ─────────────────────────────────────── -->
   <nav id="topheader" class="topheader navbar py-0" style="background-color: ${color};">
-    <div class="container-fluid d-flex align-items-center px-3 py-2">
+    <div class="container-fluid d-flex align-items-center gap-2 px-3 py-2">
       <a class="navbar-brand p-0 me-0 flex-shrink-0" href="/">
         <img src="/images/logo.production.png" alt="OpenECPDS" width="140" height="24" style="display:block;">
       </a>
@@ -214,7 +236,7 @@
       </div>
     </div>
     <div class="w-100 location_simple">
-      <div>Sign in to continue</div>
+      <div></div>
       <button class="btn-about" data-bs-toggle="modal" data-bs-target="#aboutModal"
               title="About OpenECPDS">
         <i class="bi bi-info-circle" style="font-size:0.85rem;"></i>
@@ -240,12 +262,6 @@
             <li><span class="badge bg-info bg-opacity-10 text-info fw-normal px-2">Connect with confidence</span></li>
             <li><span class="badge bg-info bg-opacity-10 text-info fw-normal px-2">Share without limits</span></li>
           </ul>
-          <div class="mt-3">
-            <a href="https://ecmwf.github.io/open-ecpds/" target="_blank" rel="noopener"
-               class="btn btn-sm btn-outline-primary">
-              <i class="bi bi-book me-1"></i>OpenECPDS Documentation
-            </a>
-          </div>
         </div>
       </div>
     </div>
@@ -265,8 +281,8 @@
 
       <div id="login-header">
         <div id="login-logo"><i class="bi bi-cloud-arrow-up-fill"></i></div>
-        <h1 id="login-title">${title}</h1>
-        <p id="login-subtitle">Secure Login</p>
+        <h1 id="login-title">${nickname}</h1>
+        <p id="login-subtitle">Data Portal</p>
       </div>
 
       <form id="login-form" method="post" action="login" autocomplete="off">
@@ -299,6 +315,15 @@
         </button>
 
       </form>
+
+      <!-- Clear button footer strip -->
+      <div id="login-footer">
+        <button type="button" class="login-icon-btn" id="pass-clear-btn" title="Clear fields" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+        </button>
+      </div>
 
       <!-- Self-service registration link (shown only when portal user has self-service enabled) -->
       <div id="register-strip" class="${registerLinkHidden}"
@@ -422,6 +447,47 @@
       eye.className = 'bi bi-eye';
     }
   });
+
+  // ── Clear button ──────────────────────────────────────────
+  (function() {
+    var clearBtn = document.getElementById('pass-clear-btn');
+    var userInp  = document.getElementById('login-user');
+    var passInp  = document.getElementById('login-pass');
+    if (!clearBtn) return;
+    function updateClear() {
+      clearBtn.disabled = !(
+        (userInp && userInp.value.trim().length > 0) ||
+        (passInp && passInp.value.length > 0)
+      );
+    }
+    if (userInp) userInp.addEventListener('input', updateClear);
+    if (passInp) passInp.addEventListener('input', updateClear);
+    clearBtn.addEventListener('click', function() {
+      if (passInp) { passInp.value = ''; passInp.dispatchEvent(new Event('input')); }
+      if (userInp) { userInp.value = ''; userInp.dispatchEvent(new Event('input')); }
+      updateClear();
+      if (userInp) userInp.focus();
+    });
+    updateClear();
+  }());
+
+  // ── Adjust wrap height to actual header/footer sizes ─────
+  (function() {
+    var header = document.getElementById('topheader');
+    var footer = document.getElementById('bottomfooter');
+    var wrap   = document.getElementById('login-wrap');
+    if (!header || !wrap) return;
+    function fixLayout() {
+      var hh = Math.round(header.getBoundingClientRect().height);
+      var fh = footer ? Math.round(footer.getBoundingClientRect().height) : 34;
+      document.body.style.paddingTop = hh + 'px';
+      document.body.style.paddingBottom = fh + 'px';
+      wrap.style.minHeight = 'calc(100svh - ' + hh + 'px - ' + fh + 'px)';
+      wrap.style.paddingBottom = 'calc(1.25rem + ' + fh + 'px)';
+    }
+    fixLayout();
+    window.addEventListener('resize', fixLayout);
+  }());
 
   </script>
 

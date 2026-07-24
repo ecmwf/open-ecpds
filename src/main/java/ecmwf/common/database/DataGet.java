@@ -1328,7 +1328,9 @@ public abstract class DataGet {
      */
     public Host getHostWithOutput(final String name) throws DataBaseException {
         final var host = getHost(name);
-        host.setHostOutput(getHostOutput(host.getHostOutputId()));
+        // Use the null-safe variant so that Proxy hosts (which may not have a
+        // HostOutput row) don't throw DataBaseException when their page is opened.
+        host.setHostOutput(getHostOutputObject(host.getHostOutputId()));
         return host;
     }
 

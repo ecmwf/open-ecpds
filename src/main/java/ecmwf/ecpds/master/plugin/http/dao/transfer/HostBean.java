@@ -207,7 +207,8 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
      * @return the acquisition time
      */
     public Date getAcquisitionTime() {
-        return host.getHostOutput().getAcquisitionTime();
+        final var hostOutput = host.getHostOutput();
+        return hostOutput != null ? hostOutput.getAcquisitionTime() : null;
     }
 
     /**
