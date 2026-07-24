@@ -129,9 +129,9 @@ mosquitto_sub \
 docker logs -f standalone
 
 # Individual service logs
-docker exec standalone tail -f /data/log/master/master.output
-docker exec standalone tail -f /data/log/mover/mover.output
-docker exec standalone tail -f /data/log/monitor/monitor.output
+docker exec standalone tail -f /data/log/master/master.log
+docker exec standalone tail -f /data/log/mover/mover.log
+docker exec standalone tail -f /data/log/monitor/monitor.log
 ```
 
 ---
@@ -201,4 +201,4 @@ This stages the RPMs into `docker/ecpds/standalone/` and builds the `ecpds/stand
 
 ## 📜 License
 
-Copyright 2022–2024 ECMWF. Licensed under the [Apache License 2.0](LICENSE.txt).
+Copyright 2022–2026 ECMWF. Licensed under the [Apache License 2.0](LICENSE.txt).
