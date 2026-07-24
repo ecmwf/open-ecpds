@@ -182,10 +182,10 @@ start-db: ## Build and run the database service for VS Code and Eclipse debuggin
 		fi \
 	fi
 	@cd docker && $(MAKE) build-db
-	@cd run/bin/ecpds && $(MAKE) up container=database
+	@cd run/bin/ecpds && $(MAKE) up svc=database
 
 stop-db: ## Stop the database service
-	@cd run/bin/ecpds && $(MAKE) down container=database
+	@cd run/bin/ecpds && $(MAKE) down svc=database
 
 start-ai: ## Build and run the AI service for VS Code and Eclipse debugging/running
 	@if [ -d "$(AI_DATA_DIR)" ] && find "$(AI_DATA_DIR)" -mindepth 1 -print -quit | grep -q .; then \
@@ -200,10 +200,10 @@ start-ai: ## Build and run the AI service for VS Code and Eclipse debugging/runn
 		fi \
 	fi
 	@cd docker && $(MAKE) build-ai
-	@cd run/bin/ecpds && $(MAKE) up container=ai
+	@cd run/bin/ecpds && $(MAKE) up svc=ai
 
 stop-ai: ## Stop the AI service
-	@cd run/bin/ecpds && $(MAKE) down container=ai
+	@cd run/bin/ecpds && $(MAKE) down svc=ai
 
 start-backend: ## Build and run both database and AI services for VS Code and Eclipse debugging/running
 	@$(MAKE) start-db

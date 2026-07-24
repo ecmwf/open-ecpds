@@ -83,8 +83,8 @@ help: ## Show this help message
 up: check-yaml ## Create and start containers (arg: svc, default: all)
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml up -d $(svc)
 
-down: check-yaml ## Stop and remove containers, networks, images, and volumes
-	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml down
+down: check-yaml ## Stop and remove containers, networks, images, and volumes (arg: svc, default: all)
+	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml down $(svc)
 
 config: check-yaml ## Validate and view the Compose file
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml config

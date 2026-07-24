@@ -75,7 +75,7 @@ make mariadb
 To log in to the master container (use the same for monitor, mover, and database):
 
 ```bash
-make connect container=master
+make connect svc=master
 ```
 
 ## Stopping OpenECPDS
