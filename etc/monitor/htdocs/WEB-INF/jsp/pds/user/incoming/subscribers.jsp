@@ -1,4 +1,4 @@
-<%@ page session="true" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page session="true" contentType="text/html; charset=UTF-8"  %>
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>

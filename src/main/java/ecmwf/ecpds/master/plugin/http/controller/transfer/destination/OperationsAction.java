@@ -274,7 +274,8 @@ public class OperationsAction extends PDSAction {
             try {
                 final var mi = MasterManager.getMI();
                 final var session = Util.getECpdsSessionFromObject(u);
-                mi.copyHost(session, d.getName(), h.getName());
+                final var nickName = request.getParameter("nickName");
+                mi.copyHost(session, d.getName(), h.getName(), nickName);
             } catch (final Throwable t) {
                 log.warn(t);
                 final var e = new ECMWFActionFormException(Format.getMessage(t));

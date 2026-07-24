@@ -345,6 +345,8 @@ public interface ManagementInterface extends Remote {
      *            the destination name
      * @param hostName
      *            the host name
+     * @param nickName
+     *            the optional nickname for the new host (null to inherit)
      *
      * @return the destination cache
      *
@@ -355,8 +357,8 @@ public interface ManagementInterface extends Remote {
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    DestinationCache copyHost(final ECpdsSession session, final String destinationName, final String hostName)
-            throws MasterException, DataBaseException, RemoteException;
+    DestinationCache copyHost(final ECpdsSession session, final String destinationName, final String hostName,
+            final String nickName) throws MasterException, DataBaseException, RemoteException;
 
     /**
      * Clone a host without associating it to any destination.
@@ -365,6 +367,8 @@ public interface ManagementInterface extends Remote {
      *            the session
      * @param hostName
      *            the host name
+     * @param nickName
+     *            the optional nickname for the new host (null to inherit)
      *
      * @return the cloned host name
      *
@@ -375,7 +379,7 @@ public interface ManagementInterface extends Remote {
      * @throws RemoteException
      *             the remote exception
      */
-    String cloneHost(final ECpdsSession session, final String hostName)
+    String cloneHost(final ECpdsSession session, final String hostName, final String nickName)
             throws MasterException, DataBaseException, RemoteException;
 
     /**

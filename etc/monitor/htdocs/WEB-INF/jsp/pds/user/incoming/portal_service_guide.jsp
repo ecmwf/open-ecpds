@@ -1,4 +1,4 @@
-<%@ page pageEncoding="UTF-8" %>
+<%@ page  %>
 
 <%-- Portal Service Guide — offcanvas panel included from data.jsp --%>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="portalServiceGuideOffcanvas"

@@ -1,3 +1,4 @@
+<%@ page  %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
@@ -321,11 +322,15 @@ function ecpdsHostDuplicate(hostId, nickName, hostType) {
     // Dissemination, Acquisition and Proxy all use the ASSOCIATION table and get the picker.
     var noDestTypes = ['Replication', 'Backup', 'Source'];
     if (noDestTypes.indexOf(hostType) !== -1) {
+        var simpleHtml = '<label class="form-label small mb-1">Nickname <span class="text-muted fst-italic">(optional — leave blank to keep current)</span>:</label>'
+            + '<input type="text" id="ecpds-dup-nickname-simple" class="form-control form-control-sm" placeholder="' + nickName + '" autocomplete="off">';
         confirmationDialog({
             title: 'Confirm Host Duplication',
-            message: 'Duplicate <strong>' + hostType + '</strong> host <strong>' + nickName + '</strong>?',
+            message: 'Duplicate <strong>' + hostType + '</strong> host <strong>' + nickName + '</strong>?<br><br>' + simpleHtml,
             onConfirm: function() {
-                window.location.href = '/do/transfer/host/edit/duplicate/' + hostId;
+                var newNick = (document.getElementById('ecpds-dup-nickname-simple').value || '').trim();
+                var nickParam = newNick ? '?nickName=' + encodeURIComponent(newNick) : '';
+                window.location.href = '/do/transfer/host/edit/duplicate/' + hostId + nickParam;
             }
         });
         return;
@@ -333,10 +338,16 @@ function ecpdsHostDuplicate(hostId, nickName, hostType) {
 
     // Build the dialog with a searchable grouped destination picker.
     // Destinations are loaded lazily on first open.
+    var destHints = {
+        'Dissemination': 'Choosing a destination makes the new host immediately available for outbound transfers on that destination. Leaving it blank creates a standalone copy you can assign later.',
+        'Acquisition':   'Choosing a destination activates the new host for data retrieval on that destination. Leaving it blank creates a standalone copy you can assign later.',
+        'Proxy':         'Choosing a destination pre-assigns the duplicated Continental Data Mover to that destination for pre-replication. Leaving it blank creates a standalone copy you can assign later.'
+    };
+    var destHint = destHints[hostType] || 'Optionally assign the duplicate to a destination. Leaving it blank creates a standalone copy you can assign later.';
     var filterHtml =
-        '<p class="small text-muted mb-2">Optionally assign the duplicate to a destination. '
-        + 'Choosing a destination makes the new host immediately available for transfers on that destination. '
-        + 'Leaving it blank creates a standalone copy you can assign later.</p>'
+        '<p class="small text-muted mb-2">' + destHint + '</p>'
+        + '<label class="form-label small mb-1">Nickname <span class="text-muted fst-italic">(optional — leave blank to keep current)</span>:</label>'
+        + '<input type="text" id="ecpds-dup-nickname" class="form-control form-control-sm mb-3" placeholder="' + nickName + '" autocomplete="off">'
         + '<label class="form-label small mb-1">Destination <span class="text-muted fst-italic">(optional)</span>:</label>'
         + '<input type="text" id="ecpds-dup-filter" class="form-control form-control-sm mb-1" placeholder="Type to filter..." autocomplete="off">'
         + '<select id="ecpds-dup-dest" class="form-select form-select-sm" size="6" style="height:auto;min-height:100px;max-height:160px;overflow-y:auto;">'
@@ -350,10 +361,12 @@ function ecpdsHostDuplicate(hostId, nickName, hostType) {
         showLoading: true,
         onConfirm: function() {
             var dest = document.getElementById('ecpds-dup-dest').value;
+            var newNick = (document.getElementById('ecpds-dup-nickname').value || '').trim();
+            var nickParam = newNick ? '?nickName=' + encodeURIComponent(newNick) : '';
             if (!dest) {
-                window.location.href = '/do/transfer/host/edit/duplicate/' + hostId;
+                window.location.href = '/do/transfer/host/edit/duplicate/' + hostId + nickParam;
             } else {
-                window.location.href = '/do/transfer/destination/operations/' + dest + '/duplicateHost/' + hostId;
+                window.location.href = '/do/transfer/destination/operations/' + dest + '/duplicateHost/' + hostId + nickParam;
             }
         }
     });

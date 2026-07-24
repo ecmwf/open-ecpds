@@ -1,4 +1,4 @@
-<%@ page pageEncoding="UTF-8" %>
+<%@ page  %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
 <%-- Acquisition Console - How-it-works & options guide --%>

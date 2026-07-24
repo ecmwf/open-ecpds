@@ -385,14 +385,14 @@ final class ManagementProxy implements ManagementInterface {
      * Copy host.
      */
     @Override
-    public DestinationCache copyHost(final ECpdsSession session, final String destinationName, final String hostName)
-            throws MasterException, DataBaseException, RemoteException {
+    public DestinationCache copyHost(final ECpdsSession session, final String destinationName, final String hostName,
+            final String nickName) throws MasterException, DataBaseException, RemoteException {
         if (session == null || isEmpty(destinationName) || isEmpty(hostName)) {
             throw new MasterException("Invalid parameter(s) for copyHost");
         }
         final var monitor = new MonitorCall(
                 "copyHost(" + session.getWebUser().getName() + "," + destinationName + "," + hostName + ")");
-        final var destinationCache = managementInterface.copyHost(session, destinationName, hostName);
+        final var destinationCache = managementInterface.copyHost(session, destinationName, hostName, nickName);
         MasterManager.insertInCache(destinationCache);
         return monitor.done(destinationCache);
     }
@@ -401,13 +401,13 @@ final class ManagementProxy implements ManagementInterface {
      * {@inheritDoc}
      */
     @Override
-    public String cloneHost(final ECpdsSession session, final String hostName)
+    public String cloneHost(final ECpdsSession session, final String hostName, final String nickName)
             throws MasterException, DataBaseException, RemoteException {
         if (session == null || isEmpty(hostName)) {
             throw new MasterException("Invalid parameter(s) for cloneHost");
         }
         final var monitor = new MonitorCall("cloneHost(" + session.getWebUser().getName() + "," + hostName + ")");
-        return monitor.done(managementInterface.cloneHost(session, hostName));
+        return monitor.done(managementInterface.cloneHost(session, hostName, nickName));
     }
 
     /**

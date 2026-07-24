@@ -70,7 +70,8 @@ public class DuplicateAction extends PDSAction {
             final var mi = MasterManager.getMI();
             final var session = Util.getECpdsSessionFromObject(user);
             final var h = HostHome.findByPrimaryKey(hostId);
-            final var newHostName = mi.cloneHost(session, h.getName());
+            final var nickName = request.getParameter("nickName");
+            final var newHostName = mi.cloneHost(session, h.getName(), nickName);
             return new ActionForward("/do/transfer/host/" + newHostName, true);
         } catch (final Throwable t) {
             log.warn(t);

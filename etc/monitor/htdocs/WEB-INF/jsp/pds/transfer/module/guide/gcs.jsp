@@ -1,5 +1,5 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
-<%@ page pageEncoding="UTF-8" %>
+<%@ page  %>
 <c:set var="_guideId" value="${not empty param.guideId ? param.guideId : 'moduleGuideOffcanvas'}"/>
 
 <%-- GCS Module Configuration Guide - offcanvas panel --%>

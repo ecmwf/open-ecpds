@@ -5529,7 +5529,8 @@ public final class MasterServer extends ECaccessProvider
      * @throws DataBaseException
      *             the data base exception
      */
-    public Host copyHost(final String destinationName, final String hostName) throws DataBaseException {
+    public Host copyHost(final String destinationName, final String hostName, final String nickName)
+            throws DataBaseException {
         final var base = getDataBase(ECpdsBase.class);
         // Look up any existing Association so we can copy its priority. If the source
         // host is not yet attached to this destination (e.g. duplicating a host that
@@ -5539,6 +5540,9 @@ public final class MasterServer extends ECaccessProvider
         // Let's create the new Host!
         final var host = (Host) base.getHost(hostName).clone();
         host.setName(null);
+        if (nickName != null && !nickName.isBlank()) {
+            host.setNickname(nickName.strip());
+        }
         // Remove the acquisition output and the timestamp from
         // the user editing!
         final var setup = HOST_ECTRANS.getECtransSetup(host.getData());
@@ -5591,10 +5595,13 @@ public final class MasterServer extends ECaccessProvider
      * @throws DataBaseException
      *             the data base exception
      */
-    public Host cloneHost(final String hostName) throws DataBaseException {
+    public Host cloneHost(final String hostName, final String nickName) throws DataBaseException {
         final var base = getDataBase(ECpdsBase.class);
         final var host = (Host) base.getHost(hostName).clone();
         host.setName(null);
+        if (nickName != null && !nickName.isBlank()) {
+            host.setNickname(nickName.strip());
+        }
         // If TRG_NAME is stale (transfer group deleted), clear it to avoid FK constraint failure on INSERT.
         if (host.getTransferGroup() == null) {
             host.setTransferGroupName(null);

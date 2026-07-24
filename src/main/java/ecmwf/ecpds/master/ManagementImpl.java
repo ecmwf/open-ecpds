@@ -650,15 +650,15 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      *             the remote exception
      */
     @Override
-    public DestinationCache copyHost(final ECpdsSession session, final String destinationName, final String hostName)
-            throws MasterException, DataBaseException, RemoteException {
+    public DestinationCache copyHost(final ECpdsSession session, final String destinationName, final String hostName,
+            final String nickName) throws MasterException, DataBaseException, RemoteException {
         final var monitor = new MonitorCall(
                 "copyHost(" + session.getWebUser().getName() + "," + destinationName + "," + hostName + ")");
         final var action = master.startECpdsAction(session, "duplicate", base.getHost(hostName));
         Host host = null;
         Exception exception = null;
         try {
-            host = master.copyHost(destinationName, hostName);
+            host = master.copyHost(destinationName, hostName, nickName);
             return monitor.done(master.getDestinationCache(destinationName));
         } catch (final Exception e) {
             exception = e;
@@ -673,14 +673,14 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      * {@inheritDoc}
      */
     @Override
-    public String cloneHost(final ECpdsSession session, final String hostName)
+    public String cloneHost(final ECpdsSession session, final String hostName, final String nickName)
             throws MasterException, DataBaseException, RemoteException {
         final var monitor = new MonitorCall("cloneHost(" + session.getWebUser().getName() + "," + hostName + ")");
         final var action = master.startECpdsAction(session, "duplicate", base.getHost(hostName));
         Host host = null;
         Exception exception = null;
         try {
-            host = master.cloneHost(hostName);
+            host = master.cloneHost(hostName, nickName);
             return monitor.done(host.getName());
         } catch (final Exception e) {
             exception = e;

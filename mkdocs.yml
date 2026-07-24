@@ -92,6 +92,7 @@ nav:
       - Container Registry Release: deployment/release.md
   - Concepts:
       - OpenECPDS Entities: concepts/entities.md
+      - Host Types: concepts/host-types.md
       - Protocols & Connections: concepts/protocols.md
       - Object Storage: concepts/object-storage.md
       - Additional Features: concepts/additional-features.md

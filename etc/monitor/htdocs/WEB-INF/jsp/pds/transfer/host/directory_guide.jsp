@@ -1,4 +1,4 @@
-<%@ page pageEncoding="UTF-8" %>
+<%@ page  %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
 <%-- actionFormName is passed as a jsp:param by the including page;

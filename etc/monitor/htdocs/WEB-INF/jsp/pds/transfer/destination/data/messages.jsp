@@ -1,3 +1,4 @@
+<%@ page  %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
 <c:set var="messages" value="${destinationDetailActionForm.messages}" />
