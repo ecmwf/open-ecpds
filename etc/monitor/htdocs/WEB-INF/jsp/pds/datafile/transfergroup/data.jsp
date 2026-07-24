@@ -5,6 +5,7 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
 <tiles:importAttribute name="isDelete" ignore="true" />
 <c:if test="${not empty isDelete}">
@@ -27,8 +28,18 @@
 			<c:if test="${not empty transfergroup.id}">
 			<a href='<bean:message key="transfergroup.basepath"/>/edit/update_form/${transfergroup.id}'
 			   class="btn btn-sm btn-outline-primary" title="Edit this transfer group"><i class="bi bi-pencil"></i></a>
-			<a href='<bean:message key="transfergroup.basepath"/>/edit/delete_form/${transfergroup.id}'
-			   class="btn btn-sm btn-outline-danger" title="Delete this transfer group"><i class="bi bi-trash"></i></a>
+			<c:choose>
+			  <c:when test="${fn:length(transfergroup.transferServers) > 0}">
+			  <span title="All Data Movers in this group must be deleted before the group itself can be removed"
+			        data-bs-toggle="tooltip" data-bs-placement="bottom" style="cursor:not-allowed;">
+			    <button type="button" class="btn btn-sm btn-outline-danger" disabled style="pointer-events:none;"><i class="bi bi-trash"></i></button>
+			  </span>
+			  </c:when>
+			  <c:otherwise>
+			  <a href='<bean:message key="transfergroup.basepath"/>/edit/delete_form/${transfergroup.id}'
+			     class="btn btn-sm btn-outline-danger" title="Delete this transfer group"><i class="bi bi-trash"></i></a>
+			  </c:otherwise>
+			</c:choose>
 			</c:if>
 		</div>
 		</auth:then>

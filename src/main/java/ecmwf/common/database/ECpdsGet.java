@@ -2762,6 +2762,24 @@ final class ECpdsGet {
     }
 
     /**
+     * Removes the transfer group (nullifies dependent references before deletion).
+     *
+     * @param paramGroupName
+     *            the transfer group name
+     *
+     * @return the int
+     *
+     * @throws SQLException
+     *             the SQL exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    int removeTransferGroup(final String paramGroupName) throws SQLException, IOException {
+        return _database.executeUpdate("ECpdsBase", "removeTransferGroup",
+                new String[] { "groupName=" + paramGroupName });
+    }
+
+    /**
      * Removes the web user.
      *
      * @param paramWebUserId

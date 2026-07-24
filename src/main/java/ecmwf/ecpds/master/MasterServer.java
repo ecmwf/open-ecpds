@@ -5531,8 +5531,11 @@ public final class MasterServer extends ECaccessProvider
      */
     public Host copyHost(final String destinationName, final String hostName) throws DataBaseException {
         final var base = getDataBase(ECpdsBase.class);
-        // Does the Association exists?
-        final var association = base.getAssociation(destinationName, hostName);
+        // Look up any existing Association so we can copy its priority. If the source
+        // host is not yet attached to this destination (e.g. duplicating a host that
+        // was never part of this destination) the association won't exist — use 0.
+        final var existingAssociation = base.getAssociationObject(destinationName, hostName);
+        final var inheritedPriority = existingAssociation != null ? existingAssociation.getPriority() : 0;
         // Let's create the new Host!
         final var host = (Host) base.getHost(hostName).clone();
         host.setName(null);
@@ -5565,7 +5568,7 @@ public final class MasterServer extends ECaccessProvider
             toRemove.add(host);
             // And now the new Association!
             final var newAssociation = new Association(destinationName, host.getName());
-            newAssociation.setPriority(association.getPriority());
+            newAssociation.setPriority(inheritedPriority);
             base.insert(newAssociation, true);
             toRemove.add(newAssociation);
             return host;
@@ -5592,6 +5595,10 @@ public final class MasterServer extends ECaccessProvider
         final var base = getDataBase(ECpdsBase.class);
         final var host = (Host) base.getHost(hostName).clone();
         host.setName(null);
+        // If TRG_NAME is stale (transfer group deleted), clear it to avoid FK constraint failure on INSERT.
+        if (host.getTransferGroup() == null) {
+            host.setTransferGroupName(null);
+        }
         final var setup = HOST_ECTRANS.getECtransSetup(host.getData());
         setup.remove(HOST_ECTRANS_LASTUPDATE);
         host.setData(setup.getData());

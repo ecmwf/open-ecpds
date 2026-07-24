@@ -314,6 +314,23 @@
     </div>
 <script>
 function ecpdsHostDuplicate(hostId, nickName, hostType) {
+    // Types not linked to Destinations via the ASSOCIATION table go straight to cloneHost.
+    // - Replication: internal DataMover replication, no Destination
+    // - Backup: linked to a Transfer Group (HOS_NAME_FOR_BACKUP), not a Destination
+    // - Source: linked to a single Destination via DESTINATION.HOS_NAME_FOR_SOURCE, not ASSOCIATION
+    // Dissemination, Acquisition and Proxy all use the ASSOCIATION table and get the picker.
+    var noDestTypes = ['Replication', 'Backup', 'Source'];
+    if (noDestTypes.indexOf(hostType) !== -1) {
+        confirmationDialog({
+            title: 'Confirm Host Duplication',
+            message: 'Duplicate <strong>' + hostType + '</strong> host <strong>' + nickName + '</strong>?',
+            onConfirm: function() {
+                window.location.href = '/do/transfer/host/edit/duplicate/' + hostId;
+            }
+        });
+        return;
+    }
+
     // Build the dialog with a searchable grouped destination picker.
     // Destinations are loaded lazily on first open.
     var filterHtml =

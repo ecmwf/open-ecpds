@@ -109,12 +109,12 @@
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start examples</p>
-          <pre class="bg-light border rounded p-2 small mb-1"><%-- password auth with keep-alive --%>
+          <pre class="border rounded p-2 small mb-1" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- password auth with keep-alive --%>
 sftp.port = "22"
 sftp.sessionTimeOut = "5m"
 sftp.serverAliveInterval = "30s"
 sftp.serverAliveCountMax = "3"</pre>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- force modern cipher suite --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- force modern cipher suite --%>
 sftp.kex = "ecdh-sha2-nistp521,ecdh-sha2-nistp384"
 sftp.cipher = "aes256-ctr"
 sftp.mac = "hmac-sha2-256"</pre>
@@ -172,10 +172,10 @@ sftp.mac = "hmac-sha2-256"</pre>
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start examples</p>
-          <pre class="bg-light border rounded p-2 small mb-1"><%-- key file auth --%>
+          <pre class="border rounded p-2 small mb-1" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- key file auth --%>
 sftp.privateKeyFile = "/opt/ecpds/.ssh/id_ed25519"
 sftp.preferredAuthentications = "publickey"</pre>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- inline key with fingerprint verification --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- inline key with fingerprint verification --%>
 sftp.privateKey = "-----BEGIN OPENSSH PRIVATE KEY-----
 b3Blb...
 -----END OPENSSH PRIVATE KEY-----"
@@ -231,11 +231,11 @@ sftp.fingerPrint = "SHA256:abc123..."</pre>
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start examples</p>
-          <pre class="bg-light border rounded p-2 small mb-1"><%-- safe upload with permissions --%>
+          <pre class="border rounded p-2 small mb-1" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- safe upload with permissions --%>
 sftp.usetmp = "yes"
 sftp.chmod = "644"
 sftp.bulkRequestNumber = "128"</pre>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- run notification command after upload --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- run notification command after upload --%>
 sftp.execCmd = "/opt/scripts/notify.sh {filename}"
 sftp.execCode = "0"</pre>
         </div>
@@ -289,12 +289,12 @@ sftp.execCode = "0"</pre>
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start examples</p>
-          <pre class="bg-light border rounded p-2 small mb-1"><%-- fast parallel listing --%>
+          <pre class="border rounded p-2 small mb-1" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- fast parallel listing --%>
 sftp.listRecursive = "yes"
 sftp.listMaxThreads = "20"
 sftp.listMaxWaiting = "500"
 sftp.listMaxDirs = "100000"</pre>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- auto-create remote directories --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- auto-create remote directories --%>
 sftp.mkdirs = "yes"
 sftp.ignoreMkdirsCmdErrors = "yes"
 sftp.cwd = "/data/incoming"</pre>

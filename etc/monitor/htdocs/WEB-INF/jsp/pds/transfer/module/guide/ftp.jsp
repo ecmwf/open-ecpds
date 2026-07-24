@@ -123,12 +123,12 @@
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start examples</p>
-          <pre class="bg-light border rounded p-2 small mb-1"><%-- passive FTP --%>
+          <pre class="border rounded p-2 small mb-1" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- passive FTP --%>
 ftp.passive = "yes"
 ftp.port = "21"
 ftp.commTimeOut = "2m"
 ftp.dataTimeOut = "5m"</pre>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- connection caching (reuse for 60 s) --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- connection caching (reuse for 60 s) --%>
 ftp.keepAlive = "60s"
 ftp.useNoop = "30s"</pre>
         </div>
@@ -185,11 +185,11 @@ ftp.useNoop = "30s"</pre>
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start examples</p>
-          <pre class="bg-light border rounded p-2 small mb-1"><%-- safe upload with checksum --%>
+          <pre class="border rounded p-2 small mb-1" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- safe upload with checksum --%>
 ftp.usetmp = "yes"
 ftp.ignoreCheck = "no"
 ftp.deleteOnRename = "yes"</pre>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- parallel streams transfer --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- parallel streams transfer --%>
 ftp.parallelStreams = "4"
 ftp.passive = "yes"</pre>
         </div>
@@ -229,7 +229,7 @@ ftp.passive = "yes"</pre>
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start example</p>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- auto-create remote directories --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- auto-create remote directories --%>
 ftp.mkdirs = "remote"
 ftp.ignoreMkdirsCmdErrors = "yes"
 ftp.cwd = "/data/incoming"</pre>
@@ -293,7 +293,7 @@ ftp.cwd = "/data/incoming"</pre>
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start example</p>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- run a server-side script after each upload --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- run a server-side script after each upload --%>
 ftp.postPutCmd = "SITE EXEC /opt/scripts/notify.sh"</pre>
         </div>
 

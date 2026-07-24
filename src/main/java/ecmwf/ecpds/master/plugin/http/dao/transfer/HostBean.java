@@ -198,7 +198,8 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
      */
     @Override
     public Date getCheckTime() {
-        return host.getHostStats().getCheckTime();
+        final var hostStats = host.getHostStats();
+        return hostStats != null ? hostStats.getCheckTime() : null;
     }
 
     /**
@@ -258,7 +259,8 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
      */
     @Override
     public boolean getValid() {
-        return this.host.getHostStats().getValid();
+        final var hostStats = this.host.getHostStats();
+        return hostStats != null && hostStats.getValid();
     }
 
     /**
@@ -348,7 +350,8 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
      */
     @Override
     public int getConnections() {
-        return this.host.getHostStats().getConnections();
+        final var hostStats = this.host.getHostStats();
+        return hostStats != null ? hostStats.getConnections() : 0;
     }
 
     /**
@@ -915,6 +918,9 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
     @Override
     public long getDuration() {
         final var hostStats = host.getHostStats();
+        if (hostStats == null) {
+            return Cnf.at("HostBean", "duration", 0L);
+        }
         final var duration = hostStats.getDuration();
         final var sent = hostStats.getSent();
         return sent > Cnf.at("HostBean", "minSent", sent) ? duration : Cnf.at("HostBean", "duration", duration);
@@ -937,7 +943,8 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
      */
     @Override
     public long getSent() {
-        final var curSent = host.getHostStats().getSent();
+        final var hostStats = host.getHostStats();
+        final var curSent = hostStats != null ? hostStats.getSent() : 0L;
         final var minSent = Cnf.at("HostBean", "minSent", curSent);
         return curSent > minSent ? curSent : minSent;
     }

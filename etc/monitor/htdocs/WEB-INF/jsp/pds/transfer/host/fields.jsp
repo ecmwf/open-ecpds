@@ -82,6 +82,30 @@ PROCEED ONLY IF YOU ARE CERTAIN OF THE IMPACT!!!!</b>
 <i class="bi bi-tag text-primary"></i>
 <span class="fw-semibold">Identity</span>
 <span id="hostTypeIconBadge" class="ms-1"></span>
+<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0"
+  data-bs-toggle="collapse" data-bs-target="#hostTypeInfoPanel"
+  aria-expanded="false" title="About Host Types">
+  <i class="bi bi-info-circle"></i>
+</button>
+</div>
+<div class="collapse" id="hostTypeInfoPanel">
+<div class="alert alert-info rounded-0 border-0 border-bottom mb-0 py-2 px-3" style="font-size:0.85em">
+  <strong><i class="bi bi-info-circle-fill me-1"></i>Host Types &amp; Destination Relationships</strong>
+  <dl class="mt-2 mb-0 row g-0" style="row-gap:0.5rem">
+    <dt class="col-sm-3"><span class="badge bg-primary"><i class="bi bi-send-fill me-1"></i>Dissemination</span></dt>
+    <dd class="col-sm-9 mb-0 ps-sm-2">Pushes data files to external recipients. Linked to Destinations via the <strong>ASSOCIATION</strong> table — a single host can serve multiple Destinations with configurable priorities.</dd>
+    <dt class="col-sm-3"><span class="badge bg-success"><i class="bi bi-cloud-download-fill me-1"></i>Acquisition</span></dt>
+    <dd class="col-sm-9 mb-0 ps-sm-2">Retrieves data from remote sources on behalf of a Destination. Also linked via the <strong>ASSOCIATION</strong> table. The Directory field holds the listing specification (paths, wildcards, or scripts) used to discover files.</dd>
+    <dt class="col-sm-3"><span class="badge bg-secondary"><i class="bi bi-database-fill me-1"></i>Source</span></dt>
+    <dd class="col-sm-9 mb-0 ps-sm-2">Provides a fallback retrieval path — if a file needs to be resent but is no longer in local storage, this host is contacted to re-fetch it. Linked to a <strong>single Destination</strong> via the Destination's <em>Source Host</em> field (not the ASSOCIATION table).</dd>
+    <dt class="col-sm-3"><span class="badge bg-secondary"><i class="bi bi-copy me-1"></i>Replication</span></dt>
+    <dd class="col-sm-9 mb-0 ps-sm-2">Used internally to replicate data between Data Movers within the platform. <strong>Not associated with any Destination</strong> — managed at the infrastructure level.</dd>
+    <dt class="col-sm-3"><span class="badge bg-secondary"><i class="bi bi-archive-fill me-1"></i>Backup</span></dt>
+    <dd class="col-sm-9 mb-0 ps-sm-2">Secondary storage target within a Transfer Group, used when primary Data Movers are unavailable. Linked to a <strong>Transfer Group</strong> via its <em>Backup Host</em> field — not directly to a Destination.</dd>
+    <dt class="col-sm-3"><span class="badge bg-secondary"><i class="bi bi-arrow-left-right me-1"></i>Proxy</span></dt>
+    <dd class="col-sm-9 mb-0 ps-sm-2">Associates a <strong>Continental Data Mover</strong> with a Destination for pre-replication — data is pushed to the Continental Data Mover ahead of scheduled dissemination to reduce latency for geographically distributed users. Linked to Destinations via the <strong>ASSOCIATION</strong> table, like Dissemination and Acquisition hosts.</dd>
+  </dl>
+</div>
 </div>
 <div class="card-body">
 <div class="row g-3">

@@ -1867,13 +1867,20 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         final var action = master.startECpdsAction(session, "remove", group);
         Exception exception = null;
         try {
-            group.setActive(false);
-            master.getDataBase().update(group);
+            // Refuse deletion if any Data Movers are still assigned to this group.
+            // The operator must delete them individually first.
             for (final TransferServer server : base.getTransferServerArray()) {
-                if (server.getTransferGroupName().equals(group.getName())) {
-                    removeTransferServer(session, server);
+                if (group.getName().equals(server.getTransferGroupName())) {
+                    throw new MasterException("Transfer Group '" + group.getName() + "' still has Data Mover '"
+                            + server.getName() + "' assigned. Please delete all Data Movers belonging to this"
+                            + " group before removing the group.");
                 }
             }
+            group.setActive(false);
+            master.getDataBase().update(group);
+            // Nullify TRG_NAME references in HOST, DESTINATION and DATA_FILE rows
+            // before removing the group, so FK constraints are not violated.
+            base.removeTransferGroup(group);
             base.remove(group);
             monitor.done();
         } catch (MasterException | DataBaseException e) {

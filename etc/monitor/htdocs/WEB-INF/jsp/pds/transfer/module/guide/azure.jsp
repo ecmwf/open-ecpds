@@ -76,10 +76,10 @@
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start examples</p>
-          <pre class="bg-light border rounded p-2 small mb-1"><%-- standard Azure (production) --%>
+          <pre class="border rounded p-2 small mb-1" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- standard Azure (production) --%>
 azure.scheme = "https"
 azure.port = "443"</pre>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- Azurite local emulator --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- Azurite local emulator --%>
 azure.url = "http://127.0.0.1:10000/devstoreaccount1"
 azure.scheme = "http"</pre>
         </div>
@@ -153,10 +153,10 @@ azure.scheme = "http"</pre>
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start examples</p>
-          <pre class="bg-light border rounded p-2 small mb-1"><%-- SAS token via API management gateway --%>
+          <pre class="border rounded p-2 small mb-1" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- SAS token via API management gateway --%>
 azure.sasUrl = "https://apim.example.com/storage/sas"
 azure.sasSubscriptionKey = "abc123key"</pre>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- Managed Identity on an Azure VM --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- Managed Identity on an Azure VM --%>
 azure.userAssignedClientId = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"</pre>
         </div>
 
@@ -198,7 +198,7 @@ azure.userAssignedClientId = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"</pre>
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start example</p>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- fixed container, auto-create if missing --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- fixed container, auto-create if missing --%>
 azure.containerName = "ecpds-data"
 azure.mkContainer = "yes"</pre>
         </div>
@@ -252,12 +252,12 @@ azure.mkContainer = "yes"</pre>
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start examples</p>
-          <pre class="bg-light border rounded p-2 small mb-1"><%-- large-file parallel upload (4 MB blocks, 10 concurrent) --%>
+          <pre class="border rounded p-2 small mb-1" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- large-file parallel upload (4 MB blocks, 10 concurrent) --%>
 azure.multipartSize = "64m"
 azure.blockSize = "4m"
 azure.numBuffers = "10"
 azure.overwrite = "yes"</pre>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- strict integrity checking --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- strict integrity checking --%>
 azure.ignoreDelete = "no"
 azure.ignoreCheck = "no"
 azure.useMD5 = "yes"</pre>

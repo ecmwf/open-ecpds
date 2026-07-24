@@ -90,6 +90,7 @@ $(document).ready(function () {
   <c:otherwise><c:set var="submitIcon" value="bi-check-lg"/></c:otherwise>
 </c:choose>
 
+<c:if test="${empty hideSubmit}">
 <c:choose>
   <c:when test="${operation == 'delete'}">
     <button type="submit" class="btn btn-danger"><i class="bi ${submitIcon} me-1"></i><c:out value="${safeButtonLabel}" /></button>
@@ -98,6 +99,7 @@ $(document).ready(function () {
     <button type="submit" class="btn btn-primary"><i class="bi ${submitIcon} me-1"></i><c:out value="${safeButtonLabel}" /></button>
   </c:otherwise>
 </c:choose>
+</c:if>
 <button type="button" class="btn btn-outline-secondary ms-2"
     <c:choose>
       <c:when test="${not empty cancelUrl}">onclick="window.location='<c:out value="${cancelUrl}"/>';"</c:when>

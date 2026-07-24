@@ -90,10 +90,10 @@
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start examples</p>
-          <pre class="bg-light border rounded p-2 small mb-1"><%-- standard GCS (production) --%>
+          <pre class="border rounded p-2 small mb-1" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- standard GCS (production) --%>
 gcs.sslValidation = "yes"
 gcs.protocol = "TLSv1.3"</pre>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- local emulator (fake-gcs-server) --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- local emulator (fake-gcs-server) --%>
 gcs.url = "http://localhost:4443"
 gcs.scheme = "http"
 gcs.port = "4443"
@@ -134,7 +134,7 @@ gcs.sslValidation = "no"</pre>
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start example</p>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- service account config --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- service account config --%>
 gcs.projectId = "my-gcp-project"
 gcs.clientEmail = "ecpds@my-gcp-project.iam.gserviceaccount.com"
 gcs.clientId = "123456789012345678901"
@@ -197,10 +197,10 @@ MIIEo...
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start examples</p>
-          <pre class="bg-light border rounded p-2 small mb-1"><%-- fixed bucket with prefix --%>
+          <pre class="border rounded p-2 small mb-1" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- fixed bucket with prefix --%>
 gcs.bucketName = "my-data-bucket"
 gcs.prefix = "ecpds/incoming/"</pre>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- auto-create bucket in EU region --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- auto-create bucket in EU region --%>
 gcs.bucketName = "auto-created-bucket"
 gcs.mkBucket = "yes"
 gcs.bucketLocation = "EU"</pre>
@@ -236,9 +236,9 @@ gcs.bucketLocation = "EU"</pre>
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start examples</p>
-          <pre class="bg-light border rounded p-2 small mb-1"><%-- 32 MB chunks for large files --%>
+          <pre class="border rounded p-2 small mb-1" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- 32 MB chunks for large files --%>
 gcs.chunkSize = "32m"</pre>
-          <pre class="bg-light border rounded p-2 small mb-0"><%-- streaming mode (no chunk buffering) - omit chunkSize --%>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- streaming mode (no chunk buffering) - omit chunkSize --%>
 gcs.bucketName = "streaming-bucket"
 gcs.prefix = "live/"</pre>
         </div>

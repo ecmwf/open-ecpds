@@ -5181,6 +5181,26 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Removes the transfer group (nullifies TRG_NAME in DATA_FILE, HOST and DESTINATION before deletion).
+     *
+     * @param group
+     *            the transfer group
+     *
+     * @return the int
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public int removeTransferGroup(final TransferGroup group) throws DataBaseException {
+        try {
+            return ecpds.removeTransferGroup(group.getName());
+        } catch (SQLException | IOException e) {
+            _log.warn("removeTransferGroup", e);
+            throw new DataBaseException("removeTransferGroup", e);
+        }
+    }
+
+    /**
      * Removes the web user.
      *
      * @param user
