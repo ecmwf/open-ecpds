@@ -64,6 +64,7 @@ import org.apache.sshd.common.config.keys.writer.openssh.OpenSSHKeyPairResourceW
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.keyboard.DefaultKeyboardInteractiveAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
+import org.apache.sshd.scp.server.ScpCommandFactory;
 import org.apache.sshd.sftp.server.SftpSubsystemFactory;
 import org.apache.sshd.common.session.Session;
 import org.apache.sshd.common.session.SessionHeartbeatController;
@@ -76,6 +77,7 @@ import ecmwf.common.plugin.PluginThread;
 import ecmwf.common.security.LoginManagement;
 import ecmwf.common.ssh.AuthenticationInfo;
 import ecmwf.common.ssh.MinaFileSystemAccessor;
+import ecmwf.common.ssh.MinaScpFileOpener;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.version.Version;
 import ecmwf.ecpds.mover.MoverServer;
@@ -178,13 +180,12 @@ public final class SshPlugin extends PluginThread {
                 // Duration.ofSeconds(30));
                 // No interactive shell
                 server.setShellFactory(null);
-                // Reject all command execution (e.g., "ssh user@host ls")
-                server.setCommandFactory((_, _) -> {
-                    throw new UnsupportedOperationException("Command execution is not allowed. SFTP only.");
-                });
+                // Enable SCP command execution via ScpCommandFactory backed by the virtual filesystem
+                server.setCommandFactory(
+                        new ScpCommandFactory.Builder().withFileOpener(new MinaScpFileOpener()).build());
                 // By default forwarding is disabled, but we explicitly enforce it
                 server.setForwardingFilter(null);
-                // Only allow SFTP subsystem
+                // Enable SFTP subsystem
                 server.setSubsystemFactories(Collections.singletonList(new SftpSubsystemFactory.Builder()
                         .withFileSystemAccessor(new MinaFileSystemAccessor()).build()));
                 server.start(); // Start SSHD

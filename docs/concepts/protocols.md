@@ -21,12 +21,10 @@ Used by the **Data Acquisition** and **Data Dissemination** services:
 Used by the **Data Portal**:
 
 - FTP
+- SFTP
+- SCP
 - HTTPS
 - S3
-
-!!! note
-    At the moment, **SFTP** and **SCP** for incoming Data Portal connections are
-    available exclusively through a **Commercial API**.
 
 ## Authentication & connection methods
 

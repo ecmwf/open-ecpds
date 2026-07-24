@@ -58,7 +58,7 @@ The **Monitor Server** provides the web-based monitoring and management interfac
 The **Data Portal** is a passive service that provides interactive, incoming access to
 the Dissemination and Acquisition services. Remote sites connect to it using `ftp`,
 `sftp`, `scp`, `s3`, and `wget`/`curl` to push or pull data. Incoming connections
-support FTP, HTTPS, and S3 (SFTP and SCP through a Commercial API). See the
+support FTP, SFTP, SCP, HTTPS, and S3. See the
 [Data Portal use case](../use-cases/data-portal.md).
 
 ## Database

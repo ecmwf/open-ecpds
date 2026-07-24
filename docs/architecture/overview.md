@@ -28,7 +28,7 @@ data on the fly or sends it from the Data Store if it was previously fetched.
 | [Master Server](components.md#master-server) | Central coordinator: authentication, metadata registration, scheduling, and Data Mover allocation. |
 | [Mover Server (Data Mover)](components.md#mover-server-data-mover) | Connects to remote systems via [transfer modules](../transfer-modules/index.md), stores and streams file content. |
 | [Monitor Server](components.md#monitor-server) | Web-based monitoring and management interface. |
-| [Data Portal](components.md#data-portal) | Passive, incoming access (FTP/HTTPS/S3) for remote sites. |
+| [Data Portal](components.md#data-portal) | Passive, incoming access (FTP/SFTP/SCP/HTTPS/S3) for remote sites. |
 | Database | Persists destinations, hosts, transfers, and history. |
 
 See [Components](components.md) for a detailed description of each.
@@ -52,8 +52,7 @@ interacts with a variety of environments and supports multiple standard protocol
 
 - **Outgoing connections** (Data Acquisition & Dissemination): FTP, SFTP, FTPS, HTTP/S,
   Amazon S3, Azure and Google Cloud Storage.
-- **Incoming connections** (Data Portal): FTP, HTTPS, S3 (SFTP and SCP are available
-  exclusively through a Commercial API).
+- **Incoming connections** (Data Portal): FTP, SFTP, SCP, HTTPS, S3.
 
 See [Protocols & Connections](../concepts/protocols.md) and the
 [Transfer Modules](../transfer-modules/index.md) reference for details.
