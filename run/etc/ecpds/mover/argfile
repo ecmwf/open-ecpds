@@ -67,4 +67,4 @@
 --add-opens java.base/java.lang=ALL-UNNAMED
 --add-opens java.base/sun.security.ssl=ALL-UNNAMED
 --enable-native-access=ALL-UNNAMED
--classpath target/classes:lib/*
+-classpath target/classes:ecpds-core/target/classes:lib/*
