@@ -92,6 +92,7 @@ public final class PluginContainer implements MBeanService, MonitorCallback {
      */
     public PluginContainer(final Object caller) {
         _caller = caller;
+        PluginThread.setCaller(caller);
         MonitorThread monitor = null;
         if (MonitorManager.isActivated()) {
             try {

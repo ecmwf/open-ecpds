@@ -43,6 +43,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.http.UriCompliance;
+import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.rewrite.handler.HeaderPatternRule;
 import org.eclipse.jetty.rewrite.handler.RewriteHandler;
 import org.eclipse.jetty.security.ConstraintMapping;
@@ -295,6 +296,11 @@ public final class HttpPlugin extends PluginThread {
             final var handlers = new HandlerList();
             handlers.setHandlers(new Handler[] { dns, rewrite, sh, resource, ecpds, s3proxy, new DefaultHandler() });
             server.setHandler(handlers);
+            // Suppress stack traces from Jetty's default error pages
+            final var errorHandler = new ErrorHandler();
+            errorHandler.setShowStacks(false);
+            errorHandler.setShowMessageInTitle(false);
+            server.setErrorHandler(errorHandler);
             // Create HTTPS listener
             if (httpsPort >= 0) {
                 _log.info("Starting the https server on {}:{}", listenAddress, httpsPort);

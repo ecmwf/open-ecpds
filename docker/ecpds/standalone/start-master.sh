@@ -3,7 +3,7 @@
 export PORT_JMX=9062
 export PORT_CALLBACK=9600
 export PORT_ECPDS=9640
-export PORT_FTP=
+export LOG_LEVEL=debug
 
 echo "[master] Starting..."
 exec /usr/local/ecpds/master/sh/master start

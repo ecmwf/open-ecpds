@@ -9,6 +9,7 @@ export PORT_CALLBACK=8600
 export PORT_HTTPS=8443
 export PORT_MASTER=9600
 export MASTER_ADDRESS=localhost
+export LOG_LEVEL=debug
 
 echo "[monitor] Starting..."
 exec /usr/local/ecpds/monitor/sh/monitor start

@@ -66,6 +66,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.DefaultHandler;
+import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
@@ -318,6 +319,11 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
             statisticsHandler.setHandler(httpServer.getHandler());
             httpServer.setHandler(statisticsHandler);
             httpServer.addBeanToAllConnectors(statisticsHandler);
+            // Suppress stack traces from Jetty error pages
+            final var errorHandler = new ErrorHandler();
+            errorHandler.setShowStacks(false);
+            errorHandler.setShowMessageInTitle(false);
+            httpServer.setErrorHandler(errorHandler);
             // Allow using jsps!
             Configurations.setServerDefault(httpServer).add(new JettyWebXmlConfiguration(),
                     new AnnotationConfiguration());

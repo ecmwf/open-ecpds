@@ -3240,6 +3240,9 @@ public final class RESTServer {
         public void write(final OutputStream out) throws IOException, WebApplicationException {
             try {
                 _copyFromProxy(out, session, proxy, mediaRequest, startTime, fullLength);
+            } catch (final IOException e) {
+                throw new WebApplicationException(e, Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                        .entity("File temporarily unavailable: " + e.getMessage()).type(MediaType.TEXT_PLAIN).build());
             } finally {
                 session.close(true);
             }
@@ -3329,6 +3332,9 @@ public final class RESTServer {
                 // End with multipart boundary.
                 println(out, "");
                 println(out, "--" + MULTIPART_BOUNDARY + "--");
+            } catch (final IOException e) {
+                throw new WebApplicationException(e, Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                        .entity("File temporarily unavailable: " + e.getMessage()).type(MediaType.TEXT_PLAIN).build());
             } finally {
                 session.close(true);
             }

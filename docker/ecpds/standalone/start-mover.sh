@@ -16,6 +16,7 @@ export MASTER_ADDRESS=localhost
 # Must match TRS_NAME in the database; INTERNAL_ADDRESS stays localhost for RMI
 export EXTERNAL_ADDRESS=ecpds-mover
 export INTERNAL_ADDRESS=localhost
+export LOG_LEVEL=debug
 
 echo "[mover] Starting..."
 exec /usr/local/ecpds/mover/sh/mover start

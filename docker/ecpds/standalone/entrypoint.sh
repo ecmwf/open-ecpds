@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# ── Resolve internal hostnames ─────────────────────────────────────────────────
+echo "127.0.0.1 ecpds-mover" >> /etc/hosts
+
 # ── Create all required runtime directories under /data ───────────────────────
 mkdir -p /data/db \
          /data/log/{master,mover,monitor} \
