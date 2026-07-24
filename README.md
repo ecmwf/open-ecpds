@@ -134,6 +134,11 @@ docker exec standalone tail -f /data/log/mover/mover.log
 docker exec standalone tail -f /data/log/monitor/monitor.log
 ```
 
+> **Note:** The standalone image runs with `DEBUG` logging enabled by default. This produces
+> verbose output that is useful for exploring how OpenECPDS processes transfers, connects to
+> data movers, and handles incoming requests. In a production deployment the log level can be
+> controlled via the `LOG_LEVEL` environment variable (e.g. `LOG_LEVEL=warn`).
+
 ---
 
 ## 📖 Documentation
