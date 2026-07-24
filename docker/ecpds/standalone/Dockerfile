@@ -99,6 +99,11 @@ RUN mkdir -p /etc/ecpds/default /usr/local/ecpds/standalone && \
 RUN sed -i 's/^\(\[Server\]\)$/\1\nallowPasswordOn=.*/' \
         /usr/local/ecpds/master/conf/ecmwf.properties
 
+# ── Disable FTP plugin (not needed in standalone) ─────────────────────────────
+RUN sed -i 's/^ftp=ecmwf\.common\.ftpd\.FtpPlugin/#ftp=ecmwf.common.ftpd.FtpPlugin/' \
+        /usr/local/ecpds/master/conf/ecmwf.properties \
+        /usr/local/ecpds/mover/conf/ecmwf.properties
+
 # ── Mover: bind service ports on all interfaces (not loopback only) ───────────
 # Plugin listen addresses default to ${Login[externalAddress]} = 'ecpds-mover'
 # which resolves to the loopback interface inside the container. Replace with
@@ -113,7 +118,7 @@ RUN sed -i \
 
 # ── MariaDB datadir → /data/db ────────────────────────────────────────────────
 RUN mkdir -p /etc/my.cnf.d && \
-    printf '[mysqld]\ndatadir=/data/db\nsocket=/run/mysqld/mysqld.sock\n\n[client]\nsocket=/run/mysqld/mysqld.sock\n' \
+    printf '[mysqld]\ndatadir=/data/db\nsocket=/run/mysqld/mysqld.sock\ncharacter_set_server=utf8mb4\ncollation_server=utf8mb4_unicode_ci\n\n[client]\nsocket=/run/mysqld/mysqld.sock\ndefault_character_set=utf8mb4\n' \
         > /etc/my.cnf.d/zz-ecpds-standalone.cnf
 
 # ── Install self-signed SSL certificates (for standalone/eval use) ─────────────
