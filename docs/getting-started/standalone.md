@@ -73,8 +73,27 @@ All examples use the pre-configured `test / test2021` account.
 Open `https://localhost:7443` in a browser to access the Data Portal UI, or use curl:
 
 ```bash
-# List available destinations
-curl -k -u test:test2021 https://localhost:7443/ecpds/data/
+# List available destinations as JSON
+curl -k -u test:test2021 -H "Accept: application/json" \
+  https://localhost:7443/ecpds/data/list/
+```
+
+Example output:
+
+```json
+[
+  {
+    "name": "hourly_aq",
+    "comment": "Hourly Air Quality data",
+    "userStatus": "ACTIVE"
+  }
+]
+```
+
+```bash
+# List files in a destination
+curl -k -u test:test2021 -H "Accept: application/json" \
+  https://localhost:7443/ecpds/data/list/hourly_aq
 ```
 
 ### SFTP
