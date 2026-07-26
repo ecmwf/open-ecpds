@@ -40,6 +40,11 @@ everything across restarts. Wait about 30 seconds for all services to become ava
 
 ## Access
 
+!!! info "Running on a remote machine?"
+    All URLs below use `localhost`, which assumes the container is running on the same
+    machine as your browser or terminal. If you started the container on a remote server,
+    replace `localhost` with that server's hostname or IP address.
+
 | Service | URL | Credentials |
 |---|---|---|
 | Monitoring UI | `https://localhost:8443` | `admin` / `admin2021` · `monitor` / `monitor2021` |
@@ -186,7 +191,12 @@ docker rm standalone
 
 ## Next steps
 
-- Explore the [Monitoring UI](https://localhost:8443) to see destinations, hosts, and transfer history.
+- Explore the [Monitoring UI](https://localhost:8443) to see destinations, hosts, and
+  transfer history. Two accounts give different perspectives:
+    - **`admin` / `admin2021`** — full administrator view with access to all destinations,
+      hosts, transfer queues, users, and system configuration.
+    - **`monitor` / `monitor2021`** — restricted user view showing only a limited set of
+      destinations and features, as a regular monitoring user would experience it.
 - Read [Data Acquisition](../use-cases/acquisition.md) and [Data Dissemination](../use-cases/dissemination.md) to understand the two active services.
 - Explore the [Data Portal](../use-cases/data-portal.md) for how remote users push and pull data.
 - Ready for a real deployment? See [Installation](installation.md) → [First Run](first-run.md).
