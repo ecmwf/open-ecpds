@@ -263,7 +263,8 @@
         var menu = document.getElementById('_hostActionsMenu');
         if (menu) {
             menu.querySelectorAll('a.dropdown-item').forEach(function(item) {
-                if (!item.href || item.href.indexOf('getOutput/view') === -1) return;
+                var rawHref = item.getAttribute('href') || '';
+                if (rawHref.indexOf('getOutput/view') === -1) return;
                 var eb = item.querySelector('.acq-run-badge-mob');
                 if (eb) eb.remove();
                 if (state) {
