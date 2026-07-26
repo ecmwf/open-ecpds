@@ -73,5 +73,6 @@ Values commonly accept human-friendly notation:
 - [ECtrans Common Options](ectrans.md)
 - [OpenECPDS Entities](../concepts/entities.md)
 - [Protocols & Connections](../concepts/protocols.md)
+- [Plugin Infrastructure](../concepts/plugin-infrastructure.md) — adding new outgoing and incoming protocols
 - [Object Storage](../concepts/object-storage.md)
 - [Host Directory Field](../host-directory/index.md)

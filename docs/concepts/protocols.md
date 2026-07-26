@@ -52,3 +52,4 @@ fine-tune these aspects. See the individual module pages:
 - [OpenECPDS Entities](entities.md) — Transfer Methods and Hosts
 - [Object Storage](object-storage.md)
 - [Transfer Modules](../transfer-modules/index.md)
+- [Plugin Infrastructure](plugin-infrastructure.md) — adding new outgoing and incoming protocols

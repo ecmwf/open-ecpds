@@ -74,8 +74,10 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Why OpenECPDS: why-openecpds.md
   - Getting Started:
       - System Requirements: getting-started/requirements.md
+      - Standalone Container: getting-started/standalone.md
       - Installation: getting-started/installation.md
       - First Run: getting-started/first-run.md
       - IDE Setup: getting-started/ide-setup.md
@@ -94,6 +96,7 @@ nav:
       - OpenECPDS Entities: concepts/entities.md
       - Host Types: concepts/host-types.md
       - Protocols & Connections: concepts/protocols.md
+      - Plugin Infrastructure: concepts/plugin-infrastructure.md
       - Object Storage: concepts/object-storage.md
       - Additional Features: concepts/additional-features.md
       - Destination Options: concepts/destination-options.md
