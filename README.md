@@ -67,12 +67,6 @@ All examples below use the pre-configured `test / test2021` account. The contain
 
 **S3** — using [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html):
 ```bash
-aws s3 ls s3:// \
-  --endpoint-url https://localhost:7443/s3 \
-  --no-verify-ssl \
-  --no-sign-request \
-  --request-payer \
-  # or with credentials:
 aws configure set aws_access_key_id test
 aws configure set aws_secret_access_key test2021
 aws s3 ls s3:// --endpoint-url https://localhost:7443/s3 --no-verify-ssl
