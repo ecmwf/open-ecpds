@@ -5,6 +5,7 @@
 /docker/ecpds/standalone/etc/
 /docker/ecpds/standalone/ecpds.sql
 /etc/master/conf/GeoLite2-City.mmdb
+/docs/javadoc/
 /lib/
 /site/
 
