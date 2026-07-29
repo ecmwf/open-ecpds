@@ -12,6 +12,9 @@ edit_uri: edit/master/docs/
 
 copyright: Copyright &copy; ECMWF — Licensed under the Apache License, Version 2.0
 
+extra_css:
+  - stylesheets/extra.css
+
 theme:
   name: material
   language: en
@@ -102,6 +105,16 @@ nav:
       - Destination Options: concepts/destination-options.md
       - Host Options: concepts/host-options.md
       - Web User Options: concepts/web-user-options.md
+  - Monitor UI:
+      - Overview: monitor-ui/overview.md
+      - Monitoring: monitor-ui/monitoring.md
+      - Destinations: monitor-ui/destinations.md
+      - Transfer Hosts: monitor-ui/hosts.md
+      - Transfer History: monitor-ui/transfer-history.md
+      - Data Files & Infrastructure: monitor-ui/data-files.md
+      - Transfer Methods & Modules: monitor-ui/transfer-methods-modules.md
+      - Users & Access Control: monitor-ui/users.md
+      - Administration: monitor-ui/admin.md
   - Use Cases:
       - ECPDS Command-line Tool: use-cases/ecpds-cli.md
       - Data Portal: use-cases/data-portal.md
