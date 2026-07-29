@@ -26,8 +26,13 @@ RUN dnf install -y yum-utils && \
     dnf install -y python3-pip && \
     dnf clean all
 
-# Install Mkdocs
-RUN python3 -m pip install mkdocs mkdocs-material mkdocs-minify-plugin
+# Install Mkdocs and documentation tools
+RUN python3 -m pip install mkdocs mkdocs-material mkdocs-minify-plugin ghp-import
+
+# Install Playwright + Pillow for Monitor UI screenshot generation (docs-screenshots target)
+RUN python3 -m pip install playwright pillow && \
+    playwright install chromium && \
+    playwright install-deps chromium
 
 # Declare build argument for Ollama model names
 ENV OLLAMA_FAST_MODEL_NAME=qwen2.5:7b-instruct-q4_K_M
