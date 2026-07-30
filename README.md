@@ -101,21 +101,6 @@ mqttx sub \
   -t '#'
 ```
 
-Or using [Mosquitto](https://mosquitto.org/download/) — grab the cert first via openssl (no container access needed):
-```bash
-# Fetch the self-signed cert directly from the broker
-openssl s_client -connect localhost:8883 </dev/null 2>/dev/null \
-  | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /tmp/ecpds.pem
-
-# Subscribe (--insecure skips hostname verification)
-mosquitto_sub \
-  --host localhost --port 8883 \
-  --username test --pw test2021 \
-  --cafile /tmp/ecpds.pem \
-  --insecure \
-  --topic '#' -v
-```
-
 ### Logs
 
 ```bash
