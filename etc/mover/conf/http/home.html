@@ -265,10 +265,10 @@
               <div id="sftpCard" class="card h-100 border-secondary border-opacity-25 opacity-50">
                 <div class="card-header py-2 bg-secondary bg-opacity-10">
                   <i class="bi bi-lock-fill me-1 text-secondary"></i><strong class="small">SFTP</strong>
-                  <span id="sftpBadge" class="badge bg-secondary fw-normal ms-2" style="font-size:0.7rem;">Not yet available</span>
+                  <span id="sftpBadge" class="badge bg-secondary fw-normal ms-2" style="font-size:0.7rem;">Disabled</span>
                 </div>
                 <div id="sftpBody" class="card-body small text-muted">
-                  <p class="mb-0">Secure FTP over SSH will be available in a future release.</p>
+                  <p class="mb-0">Secure FTP over SSH is currently disabled.</p>
                 </div>
               </div>
             </div>
@@ -1025,7 +1025,7 @@
           <div id="help-ep-https" class="mb-1"><i class="bi bi-globe me-1"></i><strong>HTTPS:</strong> <code>${httpsPublicBaseUrl}</code></div>
           <div id="help-ep-s3" class="mb-1"><i class="bi bi-bucket me-1"></i><strong>S3:</strong> <code>${s3PublicEndpointUrl}</code></div>
           <div id="help-ep-ftp" class="mb-1"><i class="bi bi-hdd-network me-1"></i><strong>FTP:</strong> <code>${ftpPublicHost}:${ftpPublicPort}</code></div>
-          <div id="help-ep-sftp" class="mb-1"><i class="bi bi-lock me-1"></i><strong>SFTP:</strong> <code>${sftpPublicHost}:${sftpPublicPort}</code></div>
+          <div id="help-ep-sftp" class="mb-1"><i class="bi bi-lock me-1"></i><strong>SFTP:</strong> <code><span id="help-ep-sftp-addr">${sftpPublicHost}:${sftpPublicPort}</span></code></div>
         </div>
         <script>
           (function(){
@@ -1034,7 +1034,7 @@
             if('${httpsPublicBaseUrl}'==='') hide('help-ep-https');
             if('${s3Enabled}'==='false'||'${s3PublicEndpointUrl}'==='') hide('help-ep-s3');
             if('${ftpEnabled}'==='false'||'${ftpPublicHost}'==='') hide('help-ep-ftp');
-            if('${sftpEnabled}'==='false'||'${sftpPublicHost}'==='') hide('help-ep-sftp');
+            if('${sftpEnabled}'==='false'||('${sftpPublicHost}'===''&&'${sftpPort}'==='')) { hide('help-ep-sftp'); } else if('${sftpPublicHost}'==='') { var sa=document.getElementById('help-ep-sftp-addr'); if(sa) sa.textContent=host+':'+'${sftpPort}'; }
           })();
         </script>
       </div>

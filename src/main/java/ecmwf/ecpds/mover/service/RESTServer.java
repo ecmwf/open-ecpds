@@ -2312,7 +2312,7 @@ public final class RESTServer {
         Format.replaceAll(builder, "${build}", Version.getBuild());
         Format.replaceAll(builder, "${ftpPort}", Cnf.at("FtpPlugin", "port", ""));
         Format.replaceAll(builder, "${s3Path}", Cnf.at("HttpPlugin", "s3ServicePath", "/s3"));
-        Format.replaceAll(builder, "${sftpPort}", Cnf.at("Ssh2Plugin", "port", ""));
+        Format.replaceAll(builder, "${sftpPort}", Cnf.at("SshPlugin", "port", ""));
         Format.replaceAll(builder, "${httpsPublicBaseUrl}", Cnf.at("DataPortal", "httpsPublicBaseUrl", ""));
         Format.replaceAll(builder, "${s3PublicEndpointUrl}", Cnf.at("DataPortal", "s3PublicEndpointUrl", ""));
         Format.replaceAll(builder, "${ftpPublicHost}", Cnf.at("DataPortal", "ftpPublicHost", ""));
