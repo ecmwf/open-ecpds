@@ -312,11 +312,32 @@ public final class SshPlugin extends PluginThread {
                                     "sftp",
                                     (Closeable) () -> session.disconnect(SshConstants.SSH2_DISCONNECT_BY_APPLICATION,
                                             "Close requested")));
+                    // If a previous probe session exists (e.g. from a failed public-key
+                    // attempt before password auth), close it now so only one UserDataSpace
+                    // is active per SSH session at any time.
+                    final var existing = (AuthenticationInfo) session
+                            .getAttribute(AuthenticationInfo.AUTHENTICATION_INFO);
+                    if (existing != null) {
+                        existing.session().close(true);
+                    }
                     session.setAttribute(AuthenticationInfo.AUTHENTICATION_INFO, info);
-                    // Send per-user welcome banner if configured in portal.welcome
+                    // Send per-user welcome banner if configured in portal.welcome.
+                    // Sent as SSH_MSG_USERAUTH_BANNER (RFC 4252 §5.4) while still inside
+                    // verifyPassword — i.e. before SSH_MSG_USERAUTH_SUCCESS is written —
+                    // so it is RFC-compliant and appears right after successful auth.
+                    // The global SshPlugin.banner file is shown earlier at FIRST_AUTHCMD
+                    // (when the password prompt is displayed) via the server-level setting.
                     final var welcome = info.profile().getECtransSetup().get(USER_PORTAL_WELCOME, (String) null);
                     if (welcome != null && !welcome.isBlank()) {
-                        CoreModuleProperties.WELCOME_BANNER.set(session, welcome);
+                        try {
+                            final var buf = session.createBuffer(SshConstants.SSH_MSG_USERAUTH_BANNER,
+                                    welcome.length() + 16);
+                            buf.putString(welcome);
+                            buf.putString("en");
+                            session.writePacket(buf).verify();
+                        } catch (final IOException e) {
+                            _log.warn("Failed to send per-user welcome banner to {}@{}", username, remoteIP, e);
+                        }
                     }
                     // Check ECtransSetup: info.profile().getECtransSetup()
                     CoreModuleProperties.IDLE_TIMEOUT.set(session, Duration.ofMinutes(10));
