@@ -1540,7 +1540,9 @@ public final class TransferServerProvider {
          * </p>
          */
         private static class VolumeStats {
-            final long maxCapacity;
+            // Protected by the enclosing GroupStats.lock — not final so the background
+            // updater can track capacity changes (volume resize, different mover layout).
+            long maxCapacity;
             final LongAdder currentLoad = new LongAdder();
 
             VolumeStats(final long maxCapacity) {
@@ -1595,7 +1597,7 @@ public final class TransferServerProvider {
                 if (gs == null) {
                     return new GroupStats(usedPerVolume, maxCapacityPerVolume);
                 } else {
-                    updateGroupVolumes(gs, usedPerVolume);
+                    updateGroupVolumes(gs, usedPerVolume, maxCapacityPerVolume);
                     return gs;
                 }
             });
@@ -1604,17 +1606,24 @@ public final class TransferServerProvider {
         }
 
         /**
-         * Refreshes load and weight statistics for an existing {@link GroupStats} instance without replacing the
-         * object.
+         * Refreshes load, capacity, and weight statistics for an existing {@link GroupStats} instance without replacing
+         * the object.
          *
          * <p>
          * This method performs the minimal mutation necessary to update:
          * </p>
          * <ul>
+         * <li>{@link VolumeStats#maxCapacity} for each volume (worst-case min-capacity across movers),</li>
          * <li>{@link VolumeStats#currentLoad} for each volume,</li>
          * <li>{@link GroupStats#weights} (weight = max(MIN_WEIGHT, freeSpace)),</li>
          * <li>{@link GroupStats#prefixSums} via {@link GroupStats#rebuildPrefix()}.</li>
          * </ul>
+         *
+         * <p>
+         * Keeping {@code maxCapacity} up-to-date ensures the worst-case dashboard view always reflects the current
+         * binding capacity constraint, and guarantees that with a single Data Mover the worst-case and average views
+         * are identical.
+         * </p>
          *
          * <p>
          * If the incoming {@code used} array length does not match the existing volume count, the update is aborted and
@@ -1629,14 +1638,18 @@ public final class TransferServerProvider {
          *            the mutable {@link GroupStats} instance
          * @param used
          *            array of new used‑space values (per volume)
+         * @param max
+         *            array of new max-capacity values (per volume); for multi-mover groups this is the per-volume
+         *            minimum capacity across all movers
          */
-        private static void updateGroupVolumes(final GroupStats gs, final long[] used) {
+        private static void updateGroupVolumes(final GroupStats gs, final long[] used, final long[] max) {
             if (used.length != gs.volumes.length) {
                 _log.warn("Mismatch in volume count for group");
                 return;
             }
             synchronized (gs.lock) {
                 for (var i = 0; i < used.length; i++) {
+                    gs.volumes[i].maxCapacity = max[i];
                     gs.volumes[i].setLoad(used[i]);
                     gs.weights[i].reset();
                     gs.weights[i].add(Math.max(MIN_WEIGHT, gs.volumes[i].freeSpace()));
