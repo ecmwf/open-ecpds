@@ -5,7 +5,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ---
 
-## open-ecpds 8.0.6-24072026
+## open-ecpds 8.0.6-02082026
 
 - Refactored the Maven build from a single monolithic `pom.xml` into a **multi-module structure** with 7 dedicated modules: `ecpds-core` (Java compilation), `ecpds-native` (C/JNI), `ecpds-common` (shared runtime RPM), `ecpds-master`, `ecpds-monitor`, `ecpds-mover`, and `ecpds-tools`. This separates concerns, reduces rebuild times, and makes the dependency graph explicit. The shared runtime libraries are now packaged once in `ecpds-common` and declared as an RPM dependency by each service module.
 - Added a new **Standalone Docker image** (`docker/ecpds/standalone`) that packages all OpenECPDS services — MariaDB, Master, Data Mover, and Monitor — into a single container. A fully functional OpenECPDS environment can be started with one `docker run` command, making it easy to evaluate, develop against, or demonstrate the platform without any external infrastructure. All runtime data (database, logs, transfer files) is persisted under a single `/data` volume mount. See the project README for build instructions and the full list of exposed ports.
