@@ -260,7 +260,7 @@ Only `mqtt.payload` is strictly required; all other keys are optional overrides.
 ### Full example — WIS2-style GeoJSON notification with multi-protocol links
 
 This example generates a [WIS2](../notifications/wmo-wis2.md)-compatible GeoJSON
-notification that includes direct download links for HTTPS, SFTP, and S3.
+notification that includes direct download links for HTTPS, SFTP, WebDAV, and S3.
 
 **Properties** (in the destination's **Properties** field):
 

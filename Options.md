@@ -26,6 +26,7 @@
 - [Sftp Options](#sftp-options)
 - [Test Options](#test-options)
 - [Upload Options](#upload-options)
+- [Webdav Options](#webdav-options)
 
 ## Acquisition Options
 
@@ -1563,4 +1564,50 @@ Minimum rate allowed for a data transmission.
 
 ### upload.rateThrottling
 Maximum rate allowed for a data transmission.
+
+## Webdav Options
+
+These options help fine-tune the WebDAV transfer module (webdav) and are accessible via the host editor.
+
+### webdav.connectTimeout
+Allow specifying the timeout for establishing a connection to the remote WebDAV server. A value of zero is interpreted as an infinite timeout. The default value is 30 seconds.
+
+### webdav.lockOwner
+Allow specifying the owner string recorded in the WebDAV write lock request (RFC 4918). This value is used to identify the lock requestor and is visible to other clients that inspect the lock. The default value is "ecpds".
+
+### webdav.lockTimeout
+Allow specifying the duration in seconds for which a WebDAV write lock is requested from the server (RFC 4918). A value of zero requests an infinite lock. The effective lock duration may be shorter if the server enforces its own maximum. This option is only relevant when "webdav.useLock" is enabled.
+
+### webdav.mkdirs
+Allow creating the directory named by the target pathname, including any necessary but non-existent parent directories, by issuing MKCOL requests for each missing directory component. When this option is disabled and the target directory does not exist, the upload will fail.
+
+### webdav.password
+Allow setting the password used when authenticating with the remote WebDAV server using HTTP Basic authentication. This is overwriting the password set through the interface.
+
+### webdav.path
+Allow specifying the base path on the WebDAV server to which all file operations are relative (e.g. "/webdav/data"). The path is prepended to every resource URL constructed by the WebDAV client. Defaults to "/".
+
+### webdav.port
+Allow specifying the port number of the remote WebDAV server to connect to. The default is 443 when using HTTPS and 80 when using HTTP.
+
+### webdav.proxy
+Allow specifying an HTTP proxy server through which all WebDAV requests are routed, in the format "host:port" (e.g. "proxy.example.com:3128"). By default no proxy is used.
+
+### webdav.scheme
+Allow specifying the URL scheme used to connect to the remote WebDAV server. Accepted values are "https" (default) and "http". When using HTTPS the "webdav.sslValidation" option controls whether the server certificate is validated.
+
+### webdav.socketTimeout
+Allow specifying the timeout for waiting for data on an established connection to the remote WebDAV server. A value of zero is interpreted as an infinite timeout. The default value is 300 seconds.
+
+### webdav.sslValidation
+When set, the SSL certificate presented by the remote WebDAV server is validated against the trusted certificate store. When not set, certificate validation is disabled and the connection proceeds regardless of the certificate presented. Disabling validation is not recommended in production environments.
+
+### webdav.supportedProtocols
+Allow restricting the TLS protocol versions accepted when connecting to a WebDAV server over HTTPS (e.g. "TLSv1.2,TLSv1.3"). Multiple versions can be specified using the comma separator. By default all supported TLS versions are allowed.
+
+### webdav.useLock
+When enabled, the WebDAV client requests an exclusive write lock (RFC 4918 LOCK request) on the target resource before uploading and releases the lock (UNLOCK request) after the upload completes. This prevents concurrent writes from other clients. The lock duration is controlled by "webdav.lockTimeout" and the recorded owner by "webdav.lockOwner".
+
+### webdav.username
+Allow setting the login used when authenticating with the remote WebDAV server using HTTP Basic authentication. This is overwriting the login set through the interface.
 

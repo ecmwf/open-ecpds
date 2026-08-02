@@ -55,7 +55,7 @@ components: the **MQTT Client**, the **MQTT Broker**, and the **OpenECPDS Data S
   message for a subscribed topic, the Broker forwards it to all Clients that have
   subscribed to that topic. The Client then extracts the file location from the message
   and proceeds to fetch the product using one of the available protocols on the OpenECPDS
-  Portal: **HTTPS, S3, SFTP, or FTP**.
+  Portal: **HTTPS, S3, WebDAV, SFTP, or FTP**.
 
 ## Retained messages and late client connections
 
@@ -103,7 +103,7 @@ any `mqtt.*` option by returning a plain object.
 
 See the [full reference and example](../concepts/destination-options.md#building-the-payload-with-javascript)
 in the Destination Options guide, including a complete WIS2-style GeoJSON notification
-with HTTPS, SFTP and S3 download links.
+with HTTPS, SFTP, WebDAV and S3 download links.
 
 ### Step 3 — Grant subscribe access to a data user
 

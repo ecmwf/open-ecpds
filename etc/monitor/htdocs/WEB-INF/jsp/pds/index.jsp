@@ -19,6 +19,7 @@
                 <span class="badge bg-primary">Amazon S3</span>
                 <span class="badge bg-primary">Azure</span>
                 <span class="badge bg-primary">Google Cloud Storage</span>
+                <span class="badge bg-primary">WebDAV</span>
             </span>
         </span>
     </div>
@@ -36,6 +37,7 @@
                 <span class="badge bg-secondary">SCP</span>
                 <span class="badge bg-secondary">HTTPS</span>
                 <span class="badge bg-secondary">Amazon S3</span>
+                <span class="badge bg-secondary">WebDAV</span>
             </span>
             <span class="d-block mt-1" style="color:var(--bs-secondary-color);">
                 <i class="bi bi-person-badge text-secondary"></i>

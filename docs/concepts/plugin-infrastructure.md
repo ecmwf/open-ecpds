@@ -58,7 +58,7 @@ Built-in server plugins on the Data Mover:
 |---|---|---|
 | `ecmwf.common.ftpd.FtpPlugin` | FTP | configurable (`PORT_FTP`) |
 | `ecmwf.ecpds.mover.plugin.ssh.SshPlugin` | SFTP / SCP | configurable (`PORT_SSH`) |
-| `ecmwf.ecpds.mover.plugin.http.HttpPlugin` | HTTPS / S3 | configurable (`PORT_HTTPS`) |
+| `ecmwf.ecpds.mover.plugin.http.HttpPlugin` | HTTPS / S3 / WebDAV | configurable (`PORT_HTTPS`) |
 | `ecmwf.ecpds.mover.plugin.mqtt.MqttPlugin` | MQTTS | configurable (`PORT_MQTTS`) |
 | `ecmwf.ecpds.mover.plugin.ecproxy.ECproxyPlugin` | ECproxy (internal) | configurable |
 

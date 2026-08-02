@@ -23,6 +23,7 @@ A module is responsible for the low-level operations of a transfer:
 | FTPS | FTP over TLS/SSL | Dissemination & Acquisition | [FTPS](ftps.md) |
 | SFTP | SSH File Transfer Protocol | Dissemination & Acquisition | [SFTP](sftp.md) |
 | HTTP / HTTPS | HyperText Transfer Protocol (with embedded MQTT client) | Dissemination & Acquisition | [HTTP/HTTPS](http.md) |
+| WebDAV | Web Distributed Authoring and Versioning (RFC 4918) | Dissemination & Acquisition (also incoming Data Portal) | [WebDAV](webdav.md) |
 | S3 | Amazon S3 object storage | Dissemination & Acquisition | [Amazon S3](s3.md) |
 | GCS | Google Cloud Storage | Dissemination & Acquisition | [Google Cloud Storage](gcs.md) |
 | Azure | Azure Blob Storage | Dissemination & Acquisition | [Azure Blob Storage](azure.md) |

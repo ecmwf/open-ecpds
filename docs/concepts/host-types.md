@@ -35,7 +35,7 @@ This many-to-many relationship makes it possible to share a common host definiti
 ### Key configuration
 
 - **Transfer Method** — the protocol module used for the connection (FTP, SFTP, FTPS,
-  HTTP/S, S3, Azure, GCS, ECauth …). See [Transfer Modules](../transfer-modules/index.md).
+  HTTP/S, WebDAV, S3, Azure, GCS, ECauth …). See [Transfer Modules](../transfer-modules/index.md).
 - **Login / Password / Key** — credentials for authenticating to the remote server.
 - **Directory** — target-path template applied to every transfer, supporting variable
   substitution and selector syntax. See [Dissemination Directory](../host-directory/dissemination.md).
@@ -203,7 +203,7 @@ multi-mover environments. They are not typically created or edited by end users.
 
 | Scenario | Recommended type |
 |----------|-----------------|
-| Deliver files to an external FTP/SFTP/S3/Azure/GCS site | **Dissemination** |
+| Deliver files to an external FTP/SFTP/WebDAV/S3/Azure/GCS site | **Dissemination** |
 | Pull files from a remote server into the Data Store | **Acquisition** |
 | Speed up delivery to geographically distant users | **Proxy** (with a Continental Data Mover) |
 | Re-fetch lost files from an upstream archive | **Source** |

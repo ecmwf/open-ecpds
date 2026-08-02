@@ -130,6 +130,7 @@ nav:
       - FTPS: transfer-modules/ftps.md
       - SFTP: transfer-modules/sftp.md
       - HTTP / HTTPS: transfer-modules/http.md
+      - WebDAV: transfer-modules/webdav.md
       - Amazon S3: transfer-modules/s3.md
       - Google Cloud Storage: transfer-modules/gcs.md
       - Azure Blob Storage: transfer-modules/azure.md

@@ -28,6 +28,7 @@ package ecmwf.ecpds.mover.plugin.http;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 
 import javax.management.AttributeNotFoundException;
@@ -197,18 +198,23 @@ public final class HttpPlugin extends PluginThread {
             // Statistics
             final var stats = new StatisticsHandler();
             stats.setHandler(server.getHandler());
-            // AmazonS3
-            final var s3ServicePath = Cnf.at("HttpPlugin", "s3ServicePath", "/s3");
-            final var s3proxy = new ContextHandler();
-            s3proxy.setContextPath(s3ServicePath);
-            // Allow requests to exactly /s3 (no trailing slash) to pass through without
-            // Jetty issuing an HTTP redirect — S3 clients cannot follow non-S3 redirects.
-            s3proxy.setAllowNullPathInfo(true);
-            s3proxy.setHandler(new S3ProxyHandlerJetty(
-                    AuthenticationType.fromString(Cnf.at("HttpPlugin", "s3AuthenticationType", "AWS_V2_OR_V4")),
-                    Cnf.at("HttpPlugin", "s3V4MaxNonChunkedRequestSize", 32 * 1024 * 1024),
-                    Cnf.at("HttpPlugin", "s3IgnoreUnknownHeaders", true), new CrossOriginResourceSharing(),
-                    s3ServicePath, Cnf.at("HttpPlugin", "s3MaximumTimeSkew", 15 * 60)));
+            // AmazonS3 proxy – on by default, disable with s3Enabled=false
+            ContextHandler s3proxy = null;
+            final var s3Enabled = Cnf.at("HttpPlugin", "s3Enabled", true);
+            if (s3Enabled) {
+                final var s3ServicePath = Cnf.at("HttpPlugin", "s3ServicePath", "/s3");
+                _log.info("S3 proxy enabled at {}", s3ServicePath);
+                s3proxy = new ContextHandler();
+                s3proxy.setContextPath(s3ServicePath);
+                // Allow requests to exactly /s3 (no trailing slash) to pass through without
+                // Jetty issuing an HTTP redirect — S3 clients cannot follow non-S3 redirects.
+                s3proxy.setAllowNullPathInfo(true);
+                s3proxy.setHandler(new S3ProxyHandlerJetty(
+                        AuthenticationType.fromString(Cnf.at("HttpPlugin", "s3AuthenticationType", "AWS_V2_OR_V4")),
+                        Cnf.at("HttpPlugin", "s3V4MaxNonChunkedRequestSize", 32 * 1024 * 1024),
+                        Cnf.at("HttpPlugin", "s3IgnoreUnknownHeaders", true), new CrossOriginResourceSharing(),
+                        s3ServicePath, Cnf.at("HttpPlugin", "s3MaximumTimeSkew", 15 * 60)));
+            }
             // Add security headers
             final var rewrite = new RewriteHandler();
             rewrite.addRule(getRule("*", "X-XSS-Protection", "1; mode=block"));
@@ -292,9 +298,31 @@ public final class HttpPlugin extends PluginThread {
                     }
                 }
             };
+            // WebDAV (RFC 4918 with locking) – on by default, disable with webdavEnabled=false
+            Handler webdav = null;
+            final var webdavEnabled = Cnf.at("HttpPlugin", "webdavEnabled", true);
+            if (webdavEnabled) {
+                final var webdavPath = Cnf.at("HttpPlugin", "webdavPath", "/webdav");
+                _log.info("WebDAV enabled at {}", webdavPath);
+                final var webdavHandler = new WebDavHandler(webdavPath);
+                webdav = webdavHandler;
+            }
             // Add all the handlers to the server!
             final var handlers = new HandlerList();
-            handlers.setHandlers(new Handler[] { dns, rewrite, sh, resource, ecpds, s3proxy, new DefaultHandler() });
+            final var handlerList = new ArrayList<Handler>();
+            handlerList.add(dns);
+            handlerList.add(rewrite);
+            handlerList.add(sh);
+            handlerList.add(resource);
+            handlerList.add(ecpds);
+            if (s3proxy != null) {
+                handlerList.add(s3proxy);
+            }
+            if (webdav != null) {
+                handlerList.add(webdav);
+            }
+            handlerList.add(new DefaultHandler());
+            handlers.setHandlers(handlerList.toArray(new Handler[0]));
             server.setHandler(handlers);
             // Suppress stack traces from Jetty's default error pages
             final var errorHandler = new ErrorHandler();

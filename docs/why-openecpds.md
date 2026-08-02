@@ -72,14 +72,14 @@ and API access.
 
 | Feature | OpenECPDS | Typical MFT |
 |---|---|---|
-| Secure file transfer | Yes — outgoing via FTP, FTPS, SFTP, HTTPS, S3, and cloud storage modules; incoming portal via FTP, SFTP, SCP, HTTPS and S3 | Yes |
+| Secure file transfer | Yes — outgoing via FTP, FTPS, SFTP, HTTPS, WebDAV, S3, and cloud storage modules; incoming portal via FTP, SFTP, SCP, HTTPS, WebDAV and S3 | Yes |
 | Scheduling | Yes — per-destination scheduler with time windows, delay, lifetime, standby, and duplicate handling | Yes |
 | Automation | Yes — retries, hooks, handlers, event triggers, metadata injection | Yes |
 | Monitoring | Yes — web monitoring UI, history, event logs, transfer statistics | Yes |
 | REST API | Yes — versioned JSON API for users, destinations, metadata, monitoring, and backups | Often yes |
 | High availability patterns | Yes — distributed Data Movers, failover-oriented architecture, proxy/continental mover support | Often yes |
 | Cloud storage support | Yes — Amazon S3, Azure Blob Storage, Google Cloud Storage | Increasingly yes |
-| User-facing portal | Yes — incoming and outgoing access via HTTPS, SFTP, SCP, FTP, and S3-style interfaces | Sometimes |
+| User-facing portal | Yes — incoming and outgoing access via HTTPS, SFTP, SCP, FTP, WebDAV and S3-style interfaces | Sometimes |
 | Fine-grained transfer tuning | Yes — protocol-specific optimisation plus low-level TCP controls | Varies |
 | Event-driven workflows | Yes — embedded MQTT broker/client, per-destination MQTT publishing, MQTT acquisition | Less common |
 
@@ -297,7 +297,7 @@ Typical candidates include:
 - **Organisations consolidating multiple transfer tools** into a single operational platform
 - **Individual researchers or small teams** who want to store local datasets and share them
   with collaborators or the public — the Data Portal provides a self-hosted, multi-protocol
-  file system interface (FTP, SFTP, SCP, HTTPS, S3) without the need for a third-party
+  file system interface (FTP, SFTP, SCP, HTTPS, WebDAV, S3) without the need for a third-party
   storage service
 - **Data publishers** who need to distribute files on a schedule, notify subscribers via
   MQTT when new data arrives, and give end users a simple portal to download at their own
@@ -382,14 +382,14 @@ Recommended path:
 !!! note "Evaluation mindset"
     When comparing OpenECPDS with another MFT product,
     do not stop at the protocol checklist.
-    OpenECPDS ships with modules for FTP, FTPS, SFTP, SCP, HTTP/S, Amazon S3, Azure Blob,
+    OpenECPDS ships with modules for FTP, FTPS, SFTP, SCP, HTTP/S, WebDAV, Amazon S3, Azure Blob,
     Google Cloud Storage, and MQTT — and if a protocol you need is missing, both extension
     points are open:
 
     - **Outgoing (acquisition & dissemination):** the [transfer module framework](transfer-modules/index.md)
       lets you add new protocols without touching the core platform.
     - **Incoming (Data Portal):** the [server plugin framework](concepts/plugin-infrastructure.md)
-      (`SshPlugin`, `FtpPlugin`, `HttpPlugin`, `MqttPlugin`…) provides FTP, SFTP, SCP, HTTPS, S3
+      (`SshPlugin`, `FtpPlugin`, `HttpPlugin`, `MqttPlugin`…) provides FTP, SFTP, SCP, HTTPS, WebDAV, S3
       and MQTT today, and supports the same kind of extension for new incoming protocols.
 
     If you need a protocol that is not yet supported, do not hesitate to

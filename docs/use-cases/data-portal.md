@@ -10,7 +10,7 @@ page examines the workflow for uploading and downloading files using these metho
 In these workflows:
 
 - The **User Data Mover** is the server where the customer connects using FTP, SFTP, SCP,
-  HTTPS or S3 to upload or download a file.
+  HTTPS, WebDAV or S3 to upload or download a file.
 - The **Target Data Mover** is the server where the file is stored.
 
 In a multi-mover setup:
@@ -28,7 +28,7 @@ Thus, the User Data Mover and Target Data Mover may not be the same.
 
 Workflow steps:
 
-1. The client connects to the **User Data Mover** via FTP, SFTP, SCP, HTTPS or S3 and
+1. The client connects to the **User Data Mover** via FTP, SFTP, SCP, HTTPS, WebDAV or S3 and
    uploads a file.
 2. The User Data Mover extracts the target path, filename, and metadata (e.g., user ID)
    and sends a request to the Master Server.
@@ -47,7 +47,7 @@ Workflow steps:
 
 Workflow steps:
 
-1. The client connects to the **User Data Mover** via FTP, SFTP, SCP, HTTPS, or S3 and
+1. The client connects to the **User Data Mover** via FTP, SFTP, SCP, HTTPS, WebDAV, or S3 and
    downloads a file.
 2. The User Data Mover extracts the target path, filename, and metadata (e.g., user ID)
    and sends a request to the Master Server.

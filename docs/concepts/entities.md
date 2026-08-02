@@ -106,7 +106,7 @@ few options. See [Acquisition Directory](../host-directory/acquisition.md).
 
 A host references a **Transfer Method**, which determines the
 [transfer module](../transfer-modules/index.md) (protocol implementation) used for the
-connection — for example FTP, SFTP, FTPS, HTTP/S, Amazon S3, Azure or Google Cloud
+connection — for example FTP, SFTP, FTPS, HTTP/S, WebDAV, Amazon S3, Azure or Google Cloud
 Storage. The selected module exposes a set of configuration options that fine-tune the
 connection. See the [Transfer Modules](../transfer-modules/index.md) reference and
 [Protocols & Connections](protocols.md).

@@ -62,7 +62,7 @@ and optimised through the following key steps:
    the Continental Data Mover instead of the OpenECPDS Data Movers, reducing the load on
    the primary dissemination system and improving delivery speeds. The Continental Data
    Mover is configured to support all required OpenECPDS dissemination protocols (e.g.,
-   FTP, SFTP, HTTPS, S3) to ensure seamless access.
+   FTP, SFTP, HTTPS, WebDAV, S3) to ensure seamless access.
 
 ## Data transfer flows
 

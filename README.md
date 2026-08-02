@@ -14,7 +14,7 @@ OpenECPDS is a mature, production-grade data management platform originally deve
 | **Data Dissemination** | Automatic distribution of data products to remote sites |
 | **Data Portal** | Pull/push access initiated by remote sites, with real-time monitoring |
 
-Built on container technologies, it scales from a laptop to hundreds of systems managing petabytes of data. It supports a wide range of protocols (FTP, SFTP, HTTP/S, S3, GCS, Azure Blob, MQTT/WIS2, …) and integrates with object storage, MQTT brokers, and Kubernetes.
+Built on container technologies, it scales from a laptop to hundreds of systems managing petabytes of data. It supports a wide range of protocols (FTP, SFTP, HTTP/S, WebDAV, S3, GCS, Azure Blob, MQTT/WIS2, …) and integrates with object storage, MQTT brokers, and Kubernetes.
 
 ---
 
@@ -46,6 +46,7 @@ The database initialises automatically on first start. The `/data` volume persis
 | Monitoring UI | `https://localhost:8443` | admin / admin2021 · monitor / monitor2021 |
 | Data Portal (HTTPS) | `https://localhost:7443` | test / test2021 |
 | Data Portal (S3) | `https://localhost:7443/s3` | test / test2021 |
+| Data Portal (WebDAV) | `https://localhost:7443/webdav` | test / test2021 |
 | Data Portal (SFTP) | `sftp://localhost:7022` | test / test2021 |
 | MQTTS broker | `mqtts://localhost:8883` | test / test2021 |
 
@@ -81,6 +82,32 @@ rclone lsd :s3: \
   --s3-secret-access-key=test2021 \
   --no-check-certificate
 ```
+
+**WebDAV** — using [curl](https://curl.se/):
+```bash
+# List root directory (PROPFIND)
+curl -k -u test:test2021 -X PROPFIND https://localhost:7443/webdav/
+```
+
+Or with [rclone](https://rclone.org/):
+```bash
+rclone lsd :webdav: \
+  --webdav-url=https://localhost:7443/webdav \
+  --webdav-vendor=other \
+  --webdav-user=test \
+  --webdav-pass=$(rclone obscure test2021) \
+  --no-check-certificate
+```
+
+Or mount directly from your OS file manager:
+
+- **macOS Finder:** Go → **Connect to Server…** (⌘K), enter `https://localhost:7443/webdav`, click **Connect**, then log in with `test` / `test2021`.
+- **Windows Explorer:** Right-click **This PC → Map network drive**, choose a drive letter, enter `https://localhost:7443/webdav` as the folder, check **Connect using different credentials** and log in with `test` / `test2021`.
+- **Linux (GNOME Files / Nautilus):** Go → **Connect to Server…**, enter `davs://localhost:7443/webdav`, log in with `test` / `test2021`.
+- **Linux (command-line):** mount with `davfs2`: `sudo mount -t davfs https://localhost:7443/webdav /mnt/webdav`
+
+> **Note:** All OS file managers will warn about the self-signed certificate — accept it to proceed.
+> The WebDAV share appears as a network drive alongside your local disks.
 
 **SFTP** — using the `sftp` command-line client:
 ```bash
@@ -131,7 +158,7 @@ Full documentation is published at **[ecmwf.github.io/open-ecpds](https://ecmwf.
 | [Deployment](https://ecmwf.github.io/open-ecpds/deployment/kubernetes/) | Kubernetes, physical infrastructure, container registry, releasing |
 | [Concepts](https://ecmwf.github.io/open-ecpds/concepts/entities/) | Entities, protocols, object storage, destination/host/web-user options, additional features |
 | [Use Cases](https://ecmwf.github.io/open-ecpds/use-cases/ecpds-cli/) | CLI tool, acquisition, dissemination, data portal, data users |
-| [Transfer Modules](https://ecmwf.github.io/open-ecpds/transfer-modules/) | FTP, FTPS, SFTP, HTTP/S, S3, GCS, Azure Blob, ECauth, Portal, Test |
+| [Transfer Modules](https://ecmwf.github.io/open-ecpds/transfer-modules/) | FTP, FTPS, SFTP, HTTP/S, WebDAV, S3, GCS, Azure Blob, ECauth, Portal, Test |
 | [Host Directory](https://ecmwf.github.io/open-ecpds/host-directory/) | Acquisition, dissemination, replication, source, backup, proxy scripts |
 | [Notifications (MQTT)](https://ecmwf.github.io/open-ecpds/notifications/mqtt-overview/) | Real-time dissemination notifications, automated MQTT acquisition, WMO WIS2 |
 | [Monitoring](https://ecmwf.github.io/open-ecpds/monitoring/transfer-statistics/) | Transfer network statistics, per-connection TCP socket metrics |

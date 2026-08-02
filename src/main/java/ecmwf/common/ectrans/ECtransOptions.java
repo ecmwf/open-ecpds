@@ -1696,6 +1696,49 @@ public enum ECtransOptions {
     /** The user portal CORS allow-origin header value for HTTP file serving (e.g. * for public datasets). */
     USER_PORTAL_CORS_ALLOW_ORIGIN("corsAllowOrigin", String.class, STRING_NONE),
 
+    /** The host webdav port. */
+    HOST_WEBDAV_PORT("port", Integer.class, 443),
+
+    /** The host webdav scheme. */
+    HOST_WEBDAV_SCHEME("scheme", String.class, "https", Arrays.asList("https", "http")),
+
+    /** The host webdav username. */
+    HOST_WEBDAV_USERNAME("username", String.class, STRING_NONE),
+
+    /** The host webdav password. */
+    HOST_WEBDAV_PASSWORD("password", String.class, STRING_NONE),
+
+    /** The host webdav path. */
+    HOST_WEBDAV_PATH("path", String.class, "/"),
+
+    /** The host webdav ssl validation. */
+    HOST_WEBDAV_SSL_VALIDATION("sslValidation", Boolean.class, false),
+
+    /** The host webdav proxy (host:port). */
+    HOST_WEBDAV_PROXY("proxy", String.class, STRING_NONE),
+
+    /** The host webdav socket timeout. */
+    HOST_WEBDAV_SOCKET_TIMEOUT("socketTimeout", Duration.class, Duration.ofSeconds(300)),
+
+    /** The host webdav connect timeout. */
+    HOST_WEBDAV_CONNECT_TIMEOUT("connectTimeout", Duration.class, Duration.ofSeconds(30)),
+
+    /** The host webdav lock timeout seconds (0 = infinite). */
+    HOST_WEBDAV_LOCK_TIMEOUT("lockTimeout", Long.class, 300L),
+
+    /** The host webdav lock owner. */
+    HOST_WEBDAV_LOCK_OWNER("lockOwner", String.class, "ecpds"),
+
+    /** The host webdav use lock. */
+    HOST_WEBDAV_USE_LOCK("useLock", Boolean.class, false),
+
+    /** The host webdav mkdir on put (auto-create parent directories). */
+    HOST_WEBDAV_MKDIRS("mkdirs", Boolean.class, true),
+
+    /** The host webdav supported protocols. */
+    HOST_WEBDAV_SUPPORTED_PROTOCOLS("supportedProtocols", String.class,
+            Arrays.asList("TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3")),
+
     /** The web monitor share feedback. */
     WEB_MONITOR_SHARE_FEEDBACK("shareFeedback", Boolean.class, true);
 

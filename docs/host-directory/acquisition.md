@@ -18,7 +18,7 @@ A host is only picked up when its *Acquisition Time* has elapsed since the last 
 
 1. **Read the Directory field.** Each non-empty line is a *listing spec*. If the entire content is wrapped in `$(...)` it is evaluated as a script on a DataMover first; the output of the script is then treated as the listing spec lines.
 2. **Parse each line** — extract inline `[options]`, trailing `{regex}` filename filter, `$date` tokens, and optional wildcard filter — and build the final remote path.
-3. **List the remote directory** via a DataMover using the configured transfer module (FTP, SFTP, S3, HTTP, …). The raw listing output is stored in the *Directory Listings* panel.
+3. **List the remote directory** via a DataMover using the configured transfer module (FTP, SFTP, WebDAV, S3, HTTP, …). The raw listing output is stored in the *Directory Listings* panel.
 4. **Parse each file entry** using an FTP-style parser (`systemKey`, date formats, language code). Each entry is checked against the file selection filters.
 5. **Act on matched entries**: schedule them for retrieval (`action=queue`) or delete them from the remote server (`action=delete`).
 6. **Write progress** to the *Progress* panel (the console log above) after each listing step.

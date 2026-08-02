@@ -16,7 +16,7 @@ Lists all defined transfer methods. Each method has a name (e.g. `SFTP-password`
 
 ## Transfer Modules
 
-Lists the installed ECtrans modules (FTP, FTPS, SFTP, HTTP, S3, Azure, GCS, ECauth, Portal, Test). Each entry shows the module class name and available configuration properties.
+Lists the installed ECtrans modules (FTP, FTPS, SFTP, HTTP, WebDAV, S3, Azure, GCS, ECauth, Portal, Test). Each entry shows the module class name and available configuration properties.
 
 
 ![Transfer Modules](img/transfer-modules.png)

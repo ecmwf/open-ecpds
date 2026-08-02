@@ -218,7 +218,7 @@ active sessions, associated Destinations and Policies, and recent connection his
 
 When Portal Service is **Standard Login** and TOTP is disabled, the standard
 username + password combination is used across all supported protocols (FTP, SFTP, SCP,
-HTTPS, S3).
+WebDAV, HTTPS, S3).
 
 ### TOTP (Two-Factor Authentication)
 

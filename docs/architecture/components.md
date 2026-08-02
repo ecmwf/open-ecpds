@@ -31,7 +31,7 @@ The **Mover Server**, or **Data Mover**, is responsible for moving bytes. It:
 In the Data Portal workflows, two roles are distinguished:
 
 - The **User Data Mover** is the server where the customer connects (FTP, SFTP, SCP,
-  HTTPS or S3) to upload or download a file. In a multi-mover setup it is selected by a
+  HTTPS, WebDAV or S3) to upload or download a file. In a multi-mover setup it is selected by a
   Load Balancer.
 - The **Target Data Mover** is the server where the file is stored. It is allocated by
   the Master Server, considering available storage and system load.
@@ -57,8 +57,8 @@ The **Monitor Server** provides the web-based monitoring and management interfac
 
 The **Data Portal** is a passive service that provides interactive, incoming access to
 the Dissemination and Acquisition services. Remote sites connect to it using `ftp`,
-`sftp`, `scp`, `s3`, and `wget`/`curl` to push or pull data. Incoming connections
-support FTP, SFTP, SCP, HTTPS, and S3. See the
+`sftp`, `scp`, `s3`, `webdav`, and `wget`/`curl` to push or pull data. Incoming connections
+support FTP, SFTP, SCP, HTTPS, WebDAV, and S3. See the
 [Data Portal use case](../use-cases/data-portal.md).
 
 ## Database

@@ -12,7 +12,7 @@ under the **Network Statistics** card, and are stored persistently in the
 At the end of each TCP connection used during a transfer, OpenECPDS reads OS-level socket
 diagnostics — equivalent to the Linux `tcp_info` structure — and persists one row per
 connection in `TRANSFER_STATISTICS`. This happens automatically for every connection
-opened by the transfer module (FTP, SFTP, S3, HTTP, …), requiring no manual
+opened by the transfer module (FTP, SFTP, WebDAV, S3, HTTP, …), requiring no manual
 instrumentation.
 
 The table references `DATA_TRANSFER` via a foreign key on `DAT_ID`, linking each

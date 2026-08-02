@@ -8,7 +8,7 @@ a link is provided.
 | **Data Store** | The multi-purpose repository at the heart of OpenECPDS. It does not necessarily store data physically but works like a search engine, crawling and indexing metadata, while optionally caching content. See [Architecture Overview](architecture/overview.md). |
 | **Data Acquisition** | The active service that automatically discovers and retrieves data from data providers. See [Acquisition](use-cases/acquisition.md). |
 | **Data Dissemination** | The active service that automatically distributes data products to remote sites. See [Dissemination](use-cases/dissemination.md). |
-| **Data Portal** | The passive service that lets remote sites push and pull data (FTP, HTTPS, S3). See [Data Portal](use-cases/data-portal.md). |
+| **Data Portal** | The passive service that lets remote sites push and pull data (FTP, HTTPS, WebDAV, S3). See [Data Portal](use-cases/data-portal.md). |
 | **Data File** | A record of a product stored in the Data Store, with a one-to-one mapping to the product, holding its physical specifications and provider metadata. See [Entities](concepts/entities.md#data-files-and-data-transfers). |
 | **Data Transfer** | A transfer request linked to a unique data file, with schedule, priority, status, rate, errors, and history. See [Entities](concepts/entities.md#data-files-and-data-transfers). |
 | **Data File ID** | A unique identifier allocated by the Master Server for a registered file, used to track it. See [ECPDS command-line Tool](use-cases/ecpds-cli.md). |
@@ -17,7 +17,7 @@ a link is provided.
 | **Dissemination Host** | A host that connects and transmits a data file's content to a target system. See [Entities](concepts/entities.md#dissemination-and-acquisition-hosts). |
 | **Acquisition Host** | A host that discovers and retrieves files from a source system, including file selection rules. See [Entities](concepts/entities.md#dissemination-and-acquisition-hosts). |
 | **Transfer Method** | The configuration on a host that determines which transfer module (protocol) is used. See [Entities](concepts/entities.md#transfer-methods). |
-| **Transfer Module (ECtrans module)** | A pluggable implementation of a protocol or storage backend (FTP, SFTP, S3, etc.). See [Transfer Modules](transfer-modules/index.md). |
+| **Transfer Module (ECtrans module)** | A pluggable implementation of a protocol or storage backend (FTP, SFTP, WebDAV, S3, etc.). See [Transfer Modules](transfer-modules/index.md). |
 | **Master Server** | The central coordinator: authentication, metadata, scheduling, Data Mover allocation. See [Components](architecture/components.md#master-server). |
 | **Mover Server / Data Mover** | The service that moves bytes — connecting to remote systems via transfer modules, storing and streaming content. See [Components](architecture/components.md#mover-server-data-mover). |
 | **User Data Mover** | In Data Portal workflows, the mover the customer connects to. See [Data Portal](use-cases/data-portal.md). |

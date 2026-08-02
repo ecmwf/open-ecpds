@@ -1060,7 +1060,11 @@ public final class MoverProvider extends NativeAuthenticationProvider {
                 default:
                     _checkDestination(rootdir = url.nextElement());
                     final var dfe = _getDataElement(rootdir, url.nextElements(), "");
-                    cache = dfe.set(fileListElement) != null;
+                    // set() returns null when the underlying get() finds no data file for this
+                    // path. In that case the element does not actually exist.
+                    if (dfe.set(fileListElement) == null) {
+                        throw new FileNotFoundException(path);
+                    }
                 }
                 break;
             default:
@@ -1287,11 +1291,31 @@ public final class MoverProvider extends NativeAuthenticationProvider {
                 // Let's check if the path already exists? If it does not then we have to check
                 // if the user is allowed to do an mkdir, as it would be implicitly created!
                 final var dir = target.substring(0, index);
-                if (!_getFileListElement(new FtpURL(_defaultDestination, dir), dir).isDirectory()) {
+                boolean dirExists;
+                try {
+                    dirExists = _getFileListElement(new FtpURL(_defaultDestination, dir), dir).isDirectory();
+                } catch (final FileNotFoundException e) {
+                    dirExists = false; // parent does not exist yet — treat same as non-directory
+                }
+                if (!dirExists) {
                     _profile.checkPermission("mkdir", dir);
                 }
             }
-            final var result = _getFileElement(target, true).getProxySocketOutput(offset, umask);
+            // For uploads the target file may not exist yet (new file). Try to get the
+            // existing element first (preserves DataTransferId for overwrites); if not
+            // found, fall back to a fresh DataFileElement for the new-file case.
+            FileElement fileElement;
+            try {
+                fileElement = _getFileElement(target, true);
+            } catch (final FileNotFoundException e) {
+                final var uploadUrl = new FtpURL(_defaultDestination, target);
+                if (uploadUrl.getType() == FtpURL.TYPE_BY_DATA && uploadUrl.countTokens() >= 2) {
+                    fileElement = _getDataElement(uploadUrl.nextElement(), uploadUrl.nextElements(), "");
+                } else {
+                    throw e;
+                }
+            }
+            final var result = fileElement.getProxySocketOutput(offset, umask);
             result.setSocketConfig(new SocketConfig("ECproxyPlugin"));
             return result;
         }
@@ -1352,7 +1376,15 @@ public final class MoverProvider extends NativeAuthenticationProvider {
         public void mkdir(final String dir) throws EccmdException, IOException {
             _log.debug("mkdir(" + dir + ")");
             _profile.checkPermission("mkdir", dir);
-            _getFileElement(dir, false).mkdir();
+            final var url = new FtpURL(_defaultDestination, dir);
+            if (url.getType() == FtpURL.TYPE_BY_DATA && url.countTokens() >= 2) {
+                // The target does not exist yet (that is the whole point of mkdir), so we
+                // cannot use _getFileElement which requires the element to already exist.
+                // Go directly to DataFileElement.mkdir() using the destination + path.
+                _getDataElement(url.nextElement(), url.nextElements(), "").mkdir();
+            } else {
+                _getFileElement(dir, false).mkdir();
+            }
         }
 
         /**

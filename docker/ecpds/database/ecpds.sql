@@ -991,7 +991,8 @@ INSERT INTO `ECTRANS_MODULE` VALUES
 ('portal','ecmwf.common.ectrans.module.PortalModule','${mover.dir}/lib/ectrans',1),
 ('s3','ecmwf.common.ectrans.module.AmazonS3Module','${mover.dir}/lib/ectrans',1),
 ('sftp','ecmwf.common.ectrans.module.JSftpModule','${mover.dir}/lib/ectrans',1),
-('test','ecmwf.common.ectrans.module.TestModule','${mover.dir}/lib/ectrans',1);
+('test','ecmwf.common.ectrans.module.TestModule','${mover.dir}/lib/ectrans',1),
+('webdav','ecmwf.common.ectrans.module.WebDavModule','${mover.dir}/lib/ectrans',1);
 /*!40000 ALTER TABLE `ECTRANS_MODULE` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1842,7 +1843,8 @@ INSERT INTO `TRANSFER_METHOD` VALUES
 ('genericPortal','portal','$msuser[login]:$msuser[passwd]@$msuser[host]/$msuser[dir]$target',0,1,'Notification only with no data transfer',1,'Notification only with no data transfer'),
 ('genericS3','s3','$msuser[login]:$msuser[passwd]@$msuser[host]/$msuser[dir]$target',0,1,'Amazon S3 protocol implementation (aws-java-sdk-bundle-1.12.547)',1,'Amazon S3 protocol implementation (aws-java-sdk-bundle-1.11.877)'),
 ('genericSftp','sftp','$msuser[login]:$msuser[passwd]@$msuser[host]/$msuser[dir]$target',0,1,'SFTP protocol implementation (jsch-0.2.17)',1,'SFTP protocol implementation (jsch-0.1.38)'),
-('genericTest','test','$msuser[dir]$target',0,1,'Test method to simulate data transfers',1,'Test method to simulate data transfers');
+('genericTest','test','$msuser[dir]$target',0,1,'Test method to simulate data transfers',1,'Test method to simulate data transfers'),
+('genericWebdav','webdav','$msuser[login]:$msuser[passwd]@$msuser[host]/$msuser[dir]$target',0,1,'WebDAV protocol implementation (jackrabbit-webdav-2.22.3)',1,'WebDAV protocol implementation (jackrabbit-webdav-2.22.3)');
 /*!40000 ALTER TABLE `TRANSFER_METHOD` ENABLE KEYS */;
 UNLOCK TABLES;
 

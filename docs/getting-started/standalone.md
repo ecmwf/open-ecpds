@@ -50,6 +50,7 @@ everything across restarts. Wait about 30 seconds for all services to become ava
 | Monitoring UI | `https://localhost:8443` | `admin` / `admin2021` · `monitor` / `monitor2021` |
 | Data Portal (HTTPS) | `https://localhost:7443` | `test` / `test2021` |
 | Data Portal (S3) | `https://localhost:7443/s3` | `test` / `test2021` |
+| Data Portal (WebDAV) | `https://localhost:7443/webdav` | `test` / `test2021` |
 | Data Portal (SFTP) | `sftp://localhost:7022` | `test` / `test2021` |
 | MQTTS broker | `mqtts://localhost:8883` | `test` / `test2021` |
 
@@ -127,6 +128,36 @@ rclone lsd :s3: \
   --s3-access-key-id=test \
   --s3-secret-access-key=test2021 \
   --no-check-certificate
+```
+
+### WebDAV
+
+Using [curl](https://curl.se/):
+
+```bash
+# List root directory (PROPFIND)
+curl -k -u test:test2021 -X PROPFIND https://localhost:7443/webdav/
+```
+
+Using [rclone](https://rclone.org/):
+
+```bash
+rclone lsd :webdav: \
+  --webdav-url=https://localhost:7443/webdav \
+  --webdav-vendor=other \
+  --webdav-user=test \
+  --webdav-pass=$(rclone obscure test2021) \
+  --no-check-certificate
+```
+
+Using [cadaver](https://notroj.github.io/cadaver/) (interactive WebDAV client):
+
+```bash
+# cadaver does not support self-signed certs natively — set SSL_CERT_FILE or
+# configure ~/.cadaverrc: use-ssl-noverify=yes
+cadaver https://localhost:7443/webdav
+# Username: test  Password: test2021
+dav:/webdav/> ls
 ```
 
 ### MQTTS

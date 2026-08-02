@@ -28,7 +28,7 @@ data on the fly or sends it from the Data Store if it was previously fetched.
 | [Master Server](components.md#master-server) | Central coordinator: authentication, metadata registration, scheduling, and Data Mover allocation. |
 | [Mover Server (Data Mover)](components.md#mover-server-data-mover) | Connects to remote systems via [transfer modules](../transfer-modules/index.md), stores and streams file content. |
 | [Monitor Server](components.md#monitor-server) | Web-based monitoring and management interface. |
-| [Data Portal](components.md#data-portal) | Passive, incoming access (FTP/SFTP/SCP/HTTPS/S3) for remote sites. |
+| [Data Portal](components.md#data-portal) | Passive, incoming access (FTP/SFTP/SCP/HTTPS/WebDAV/S3) for remote sites. |
 | Database | Persists destinations, hosts, transfers, and history. |
 
 See [Components](components.md) for a detailed description of each.
@@ -50,9 +50,9 @@ See [Components](components.md) for a detailed description of each.
 The OpenECPDS software is modular, supporting new protocols through extensions. It
 interacts with a variety of environments and supports multiple standard protocols:
 
-- **Outgoing connections** (Data Acquisition & Dissemination): FTP, SFTP, FTPS, HTTP/S,
+- **Outgoing connections** (Data Acquisition & Dissemination): FTP, SFTP, FTPS, HTTP/S, WebDAV,
   Amazon S3, Azure and Google Cloud Storage.
-- **Incoming connections** (Data Portal): FTP, SFTP, SCP, HTTPS, S3.
+- **Incoming connections** (Data Portal): FTP, SFTP, SCP, HTTPS, WebDAV, S3.
 
 See [Protocols & Connections](../concepts/protocols.md) and the
 [Transfer Modules](../transfer-modules/index.md) reference for details.

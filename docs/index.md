@@ -30,7 +30,7 @@ protocols.
 - :material-cloud-sync: **Acquire from anywhere**
 
     Automatically discover and retrieve data from providers over FTP, SFTP, FTPS,
-    HTTP/S, Amazon S3, Azure and Google Cloud Storage.
+    HTTP/S, WebDAV, Amazon S3, Azure and Google Cloud Storage.
 
 - :material-share-variant: **Deliver everywhere**
 
@@ -40,7 +40,7 @@ protocols.
 - :material-web: **Data Portal for all users**
 
     A built-in portal lets anonymous, self-registered, or authorised users push and
-    pull data over FTP, SFTP, SCP, HTTPS and S3 — no custom integration needed.
+    pull data over FTP, SFTP, SCP, HTTPS, WebDAV and S3 — no custom integration needed.
     One platform handles both incoming and outgoing traffic.
 
 - :material-bell-ring: **Real-time notifications**
@@ -85,7 +85,7 @@ protocols.
 | [Master Server](architecture/components.md#master-server) | Central coordinator — authentication, metadata, scheduling, Data Mover allocation. |
 | [Mover Server (Data Mover)](architecture/components.md#mover-server-data-mover) | Moves bytes — connects to remote systems via transfer modules, stores/streams content. |
 | [Monitor Server](architecture/components.md#monitor-server) | Web monitoring interface for destinations, transfers and hosts. |
-| [Data Portal](architecture/components.md#data-portal) | Incoming FTP/HTTPS/S3 access for remote sites to push and pull data. |
+| [Data Portal](architecture/components.md#data-portal) | Incoming FTP/HTTPS/WebDAV/S3 access for remote sites to push and pull data. |
 | Database | Persists metadata, destinations, hosts, transfers and history. |
 
 See the [Architecture Overview](architecture/overview.md) for how these components work
@@ -94,10 +94,10 @@ geographically distributed dissemination.
 
 ## Core capabilities
 
-- **Multiple protocols** — FTP, SFTP, FTPS, SCP, HTTP/S, Amazon S3, Azure Blob and Google
+- **Multiple protocols** — FTP, SFTP, FTPS, SCP, HTTP/S, WebDAV, Amazon S3, Azure Blob and Google
   Cloud Storage. See [Protocols & Connections](concepts/protocols.md).
 - **Data Portal — incoming and outgoing in one platform** — remote users can push
-  data in *and* pull data out over FTP, SFTP, SCP, HTTPS and S3. Access can be
+  data in *and* pull data out over FTP, SFTP, SCP, HTTPS, WebDAV and S3. Access can be
   restricted to authorised users, opened anonymously, or offered as self-service
   registration — all without any custom integration. Dissemination and Acquisition data
   is accessible through the same portal, making OpenECPDS a complete two-way data
