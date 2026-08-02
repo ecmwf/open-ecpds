@@ -67,9 +67,8 @@ protocols.
 
 ## Quick links
 
-- **New here?** Try the [Standalone container](getting-started/standalone.md) first — no build needed.
-  For the full setup: [System Requirements](getting-started/requirements.md) →
-  [Installation](getting-started/installation.md) → [First Run](getting-started/first-run.md).
+- **New here?** Try the [Standalone container](getting-started/standalone.md) — no build needed, up and running in minutes.
+- **Full setup:** [System Requirements](getting-started/requirements.md) → [Installation](getting-started/installation.md) → [First Run](getting-started/first-run.md).
 - **Understand the system:** [Architecture Overview](architecture/overview.md) and
   [Key Concepts](concepts/entities.md).
 - **Configure transfers:** [Transfer Modules](transfer-modules/index.md) and the
