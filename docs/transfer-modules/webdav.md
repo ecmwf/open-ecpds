@@ -45,4 +45,19 @@ webdav.mkdirs = "true"           # auto-create missing parent directories (defau
 
 ## Full option reference
 
-See the [ECtrans Options reference](../options.md#webdav) for all available `webdav.*` options with descriptions and defaults.
+| Option | Description |
+|--------|-------------|
+| `webdav.scheme` | URL scheme: `https` (default) or `http` |
+| `webdav.port` | Remote port — defaults to 443 (HTTPS) or 80 (HTTP) |
+| `webdav.username` | Login for HTTP Basic authentication (overrides host setting) |
+| `webdav.password` | Password for HTTP Basic authentication (overrides host setting) |
+| `webdav.path` | Base path prepended to every resource URL (default: `/`) |
+| `webdav.sslValidation` | When set, validates the server SSL certificate against the trust store |
+| `webdav.supportedProtocols` | Comma-separated TLS versions to accept, e.g. `TLSv1.2,TLSv1.3` |
+| `webdav.proxy` | HTTP proxy in `host:port` format, e.g. `proxy.example.com:3128` |
+| `webdav.connectTimeout` | Connection timeout in seconds (0 = infinite, default: 30) |
+| `webdav.socketTimeout` | Read timeout in seconds (0 = infinite, default: 300) |
+| `webdav.useLock` | Request an exclusive write lock (RFC 4918) before each upload |
+| `webdav.lockTimeout` | Lock duration in seconds (0 = infinite); only used when `webdav.useLock` is set |
+| `webdav.lockOwner` | Owner string recorded in the lock request (default: `ecpds`) |
+| `webdav.mkdirs` | Create missing parent directories via MKCOL before uploading |
