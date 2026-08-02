@@ -160,6 +160,17 @@ cadaver https://localhost:7443/webdav
 dav:/webdav/> ls
 ```
 
+Or mount directly from your OS file manager:
+
+- **macOS Finder:** Go → **Connect to Server…** (⌘K), enter `https://localhost:7443/webdav`, click **Connect**, then log in with `test` / `test2021`.
+- **Windows Explorer:** Right-click **This PC → Map network drive**, choose a drive letter, enter `https://localhost:7443/webdav` as the folder, check **Connect using different credentials** and log in with `test` / `test2021`.
+- **Linux (GNOME Files / Nautilus):** Go → **Connect to Server…**, enter `davs://localhost:7443/webdav`, log in with `test` / `test2021`.
+- **Linux (command-line):** mount with `davfs2`: `sudo mount -t davfs https://localhost:7443/webdav /mnt/webdav`
+
+!!! note
+    All OS file managers will warn about the self-signed certificate — accept it to proceed.
+    The WebDAV share appears as a network drive alongside your local disks.
+
 ### MQTTS
 
 Using [mqttx CLI](https://mqttx.app/cli) (recommended):
