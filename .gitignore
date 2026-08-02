@@ -18,3 +18,7 @@ bin/
 
 # License cache (populated by license-maven-plugin, not committed)
 /licenses-cache/
+
+# Auto-generated TLS keystores (created at startup if missing, never commit)
+**/*.pfx
+**/*.p12
