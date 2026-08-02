@@ -1,6 +1,6 @@
 # OpenECPDS Documentation
 
-![OpenECPDS](img/OpenECPDS.svg){ width="420" }
+![OpenECPDS](img/OpenECPDS.svg){ width="420" .no-box }
 
 > **Our mission with OpenECPDS is to keep data moving.**
 >
@@ -67,7 +67,8 @@ protocols.
 
 ## Quick links
 
-- **New here?** Start with [System Requirements](getting-started/requirements.md) →
+- **New here?** Try the [Standalone container](getting-started/standalone.md) first — no build needed.
+  For the full setup: [System Requirements](getting-started/requirements.md) →
   [Installation](getting-started/installation.md) → [First Run](getting-started/first-run.md).
 - **Understand the system:** [Architecture Overview](architecture/overview.md) and
   [Key Concepts](concepts/entities.md).

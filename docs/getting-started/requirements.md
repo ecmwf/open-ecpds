@@ -80,5 +80,13 @@ The token must be provided via the environment variable `GH_TOKEN` (preferred) o
 
 ## Next steps
 
-Continue to [Installation](installation.md) to download the distribution and build the
-development container.
+**Quick start — try it now:**
+The fastest way to explore OpenECPDS is the all-in-one standalone image — no build required:
+
+→ [Standalone container](standalone.md)
+
+**Full installation — build from source:**
+If you want to run the full multi-container stack, contribute, or build custom images,
+continue with the development container setup:
+
+→ [Installation](installation.md)
