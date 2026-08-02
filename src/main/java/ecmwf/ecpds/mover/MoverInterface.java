@@ -700,4 +700,29 @@ public interface MoverInterface extends ClientInterface {
      *             the remote exception
      */
     long[][] computeVolumeUsage(final int volumeIndexMax) throws RemoteException;
+
+    /**
+     * Deploys a new TLS certificate to this Data Mover. The certificate is provided as a PKCS#12 keystore; it replaces
+     * the current keystore on disk and the HTTPS server is hot-reloaded without dropping active connections.
+     *
+     * @param pkcs12Bytes
+     *            the PKCS#12 keystore bytes
+     * @param keystorePassword
+     *            the password for the keystore and private key
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void deployHttpCertificate(byte[] pkcs12Bytes, String keystorePassword) throws RemoteException;
+
+    /**
+     * Returns a JSON-encoded snapshot of the certificate currently loaded in the Data Mover HTTPS server, or an empty
+     * JSON object {@code {}} if no certificate is loaded.
+     *
+     * @return JSON string with certificate metadata fields
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    String getHttpCertificateJson() throws RemoteException;
 }

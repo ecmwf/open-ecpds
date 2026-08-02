@@ -17,4 +17,6 @@
 		wrappingTags="tr,td"><i class="bi bi-chat-left-text"></i> User Feedback</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/metafields"
 		wrappingTags="tr,td"><i class="bi bi-list-check"></i> Metadata Fields</auth:link>
+	<auth:link basePathKey="admin.basepath" href="/certificates"
+		wrappingTags="tr,td"><i class="bi bi-shield-lock"></i> TLS Certificates</auth:link>
 </table>

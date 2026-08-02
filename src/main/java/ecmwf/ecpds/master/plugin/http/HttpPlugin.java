@@ -85,6 +85,8 @@ import ecmwf.common.mbean.MBeanManager;
 import ecmwf.common.plugin.PluginEvent;
 import ecmwf.common.plugin.PluginThread;
 import ecmwf.common.rmi.SocketConfig;
+import ecmwf.common.security.CertificateManager;
+import ecmwf.common.security.CertificateManager.CertificateInfo;
 import ecmwf.common.security.Tools;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.version.Version;
@@ -118,6 +120,18 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
 
     /** The eventHandler. */
     private EventHandler eventHandler = null;
+
+    /** The active SslContextFactory – kept for certificate hot-reload. */
+    private SslContextFactory.Server sslContextFactory = null;
+
+    /** Path to the keystore currently in use (for reload and info queries). */
+    private String activeKeystorePath = null;
+
+    /** Password for the active keystore. */
+    private String activeKeystorePassword = null;
+
+    /** Type of the active keystore (PKCS12 / JKS). */
+    private String activeKeystoreType = null;
 
     /**
      * Instantiates a new http plugin.
@@ -257,37 +271,48 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
             // Create HTTPS listener
             _log.info("Starting the https server on {}:{}", listenAddress, httpsPort);
             // SSL Context Factory
-            final var sslContextFactory = new SslContextFactory.Server();
+            final var p = Cnf.at("HttpPluginSSL");
+            final String storePath;
+            final String storePassword;
+            final String storeType;
+            if (p != null) {
+                storePath = p.get("keyStorePath");
+                storePassword = p.get("keyStorePassword");
+                storeType = getConf(p, "keyStoreType", "PKCS12");
+            } else {
+                storePath = getConf("keyStore");
+                storePassword = getConf("keyStorePassword");
+                storeType = getConf("keyStoreType", "PKCS12");
+            }
+            // Auto-generate a self-signed certificate if none exists yet
+            try {
+                CertificateManager.ensureSelfSigned(storePath, storePassword,
+                        java.net.InetAddress.getLocalHost().getHostName());
+            } catch (final Exception e) {
+                _log.warn("Could not auto-generate self-signed certificate", e);
+            }
+            sslContextFactory = new SslContextFactory.Server();
             sslContextFactory.setWantClientAuth(Cnf.at("MonitorPlugin", "wantClientAuth", false));
             sslContextFactory.setKeyManagerPassword(null);
             final var includeProtocols = Cnf.stringListAt("MonitorPlugin", "enabledProtocols", "TLSv1.3,TLSv1.2");
             if (includeProtocols.length > 0) {
                 sslContextFactory.setIncludeProtocols(includeProtocols);
             }
-            final var p = Cnf.at("HttpPluginSSL");
+            sslContextFactory.setKeyStorePath(storePath);
+            sslContextFactory.setKeyStorePassword(storePassword);
+            sslContextFactory.setKeyStoreType(storeType);
             if (p != null) {
-                // Using the customized SSL configuration!
-                final var storePath = p.get("keyStorePath");
-                final var storePassword = p.get("keyStorePassword");
-                final var storeType = getConf(p, "keyStoreType", "PKCS12");
-                sslContextFactory.setKeyStorePath(storePath);
-                sslContextFactory.setKeyStorePassword(storePassword);
-                sslContextFactory.setKeyStoreType(storeType);
                 sslContextFactory.setTrustStorePath(getConf(p, "trustStorePath", storePath));
                 sslContextFactory.setTrustStorePassword(getConf(p, "trustStorePassword", storePassword));
                 sslContextFactory.setTrustStoreType(getConf(p, "trustStoreType", storeType));
             } else {
-                // Using the default SSL configuration!
-                final var storePath = getConf("keyStore");
-                final var storePassword = getConf("keyStorePassword");
-                final var storeType = getConf("keyStoreType", "PKCS12");
-                sslContextFactory.setKeyStorePath(storePath);
-                sslContextFactory.setKeyStorePassword(storePassword);
-                sslContextFactory.setKeyStoreType(storeType);
                 sslContextFactory.setTrustStorePath(getConf("trustStorePath", storePath));
                 sslContextFactory.setTrustStorePassword(getConf("trustStorePassword", storePassword));
                 sslContextFactory.setTrustStoreType(getConf("trustStoreType", storeType));
             }
+            activeKeystorePath = storePath;
+            activeKeystorePassword = storePassword;
+            activeKeystoreType = storeType;
             final var excludeCipherSuites = Cnf.stringListAt("MonitorPlugin", "excludeCipherSuites",
                     "SSL_RSA_WITH_DES_CBC_SHA", "SSL_DHE_RSA_WITH_DES_CBC_SHA", "SSL_DHE_DSS_WITH_DES_CBC_SHA",
                     "SSL_RSA_EXPORT_WITH_RC4_40_MD5", "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
@@ -474,6 +499,63 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     private static String getConf(final String keyName, final String defaultValue) {
         return Cnf.at("Security", "SSL" + keyName.substring(0, 1).toUpperCase() + keyName.substring(1),
                 System.getProperty("javax.net.ssl." + keyName, defaultValue));
+    }
+
+    /**
+     * Reloads the TLS certificate from the keystore currently in use without restarting the Jetty server (zero-downtime
+     * hot-reload).
+     *
+     * @throws Exception
+     *             if the reload fails
+     */
+    public synchronized void reloadCertificate() throws Exception {
+        if (sslContextFactory == null) {
+            throw new IllegalStateException("HttpPlugin is not running");
+        }
+        _log.info("Hot-reloading TLS certificate from {}", activeKeystorePath);
+        sslContextFactory.reload(_ -> {
+            // No additional configuration needed – the factory already points
+            // to the keystore file on disk; reload re-reads it.
+        });
+        _log.info("TLS certificate reloaded successfully");
+    }
+
+    /**
+     * Returns metadata about the certificate currently loaded in the Monitor HTTPS server.
+     *
+     * @return a {@link CertificateInfo} snapshot, or {@code null} if the plugin has not been started or no keystore is
+     *         configured
+     */
+    public CertificateInfo getCertificateInfo() {
+        if (activeKeystorePath == null) {
+            return null;
+        }
+        try {
+            return CertificateManager.getCertificateInfo(activeKeystorePath, activeKeystorePassword,
+                    activeKeystoreType != null ? activeKeystoreType : "PKCS12");
+        } catch (final Exception e) {
+            _log.warn("Could not read certificate info from {}", activeKeystorePath, e);
+            return null;
+        }
+    }
+
+    /**
+     * Returns the path to the keystore currently in use by the Monitor HTTPS server, or {@code null} if the plugin has
+     * not been started.
+     *
+     * @return the active keystore path
+     */
+    public String getActiveKeystorePath() {
+        return activeKeystorePath;
+    }
+
+    /**
+     * Returns the password for the keystore currently in use by the Monitor HTTPS server.
+     *
+     * @return the active keystore password
+     */
+    public String getActiveKeystorePassword() {
+        return activeKeystorePassword;
     }
 
     /**

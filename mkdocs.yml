@@ -115,6 +115,8 @@ nav:
       - Transfer Methods & Modules: monitor-ui/transfer-methods-modules.md
       - Users & Access Control: monitor-ui/users.md
       - Administration: monitor-ui/admin.md
+  - Administration:
+      - TLS Certificates: administration/certificates.md
   - Use Cases:
       - ECPDS Command-line Tool: use-cases/ecpds-cli.md
       - Data Portal: use-cases/data-portal.md

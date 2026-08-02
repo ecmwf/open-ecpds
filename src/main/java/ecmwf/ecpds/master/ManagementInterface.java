@@ -1533,4 +1533,40 @@ public interface ManagementInterface extends Remote {
      *             the remote exception
      */
     Map<String, int[]> getDownloadMetrics() throws MasterException, RemoteException;
+
+    /**
+     * Returns a JSON-encoded snapshot of the TLS certificate currently loaded on each connected Data Mover's HTTPS
+     * server. The map key is the Data Mover name; the value is a JSON object with the same fields as
+     * {@link ecmwf.ecpds.mover.MoverInterface#getHttpCertificateJson()}.
+     *
+     * @param session
+     *            the caller's ECpds session
+     *
+     * @return map of mover name to JSON certificate snapshot; movers that are offline return {@code "{}"}
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Map<String, String> getHttpCertificatesJson(ECpdsSession session) throws MasterException, RemoteException;
+
+    /**
+     * Deploys a new TLS certificate to every connected Data Mover. The PKCS#12 bytes are pushed over RMI; each mover
+     * writes the new keystore to disk and hot-reloads its HTTPS server without dropping active connections.
+     *
+     * @param session
+     *            the caller's ECpds session
+     * @param pkcs12Bytes
+     *            the PKCS#12 keystore bytes
+     * @param keystorePassword
+     *            password for the keystore and private key
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void deployHttpCertificateToAllMovers(ECpdsSession session, byte[] pkcs12Bytes, String keystorePassword)
+            throws MasterException, RemoteException;
 }

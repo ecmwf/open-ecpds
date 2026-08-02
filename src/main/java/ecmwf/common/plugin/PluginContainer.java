@@ -119,6 +119,19 @@ public final class PluginContainer implements MBeanService, MonitorCallback {
     }
 
     /**
+     * Returns the {@link PluginThread} registered under the given reference key, or {@code null} if no plugin is
+     * registered with that key.
+     *
+     * @param ref
+     *            the plugin reference (e.g. {@code "http"}, {@code "mqtt"})
+     *
+     * @return the plugin, or {@code null}
+     */
+    public PluginThread getPlugin(final String ref) {
+        return _plugins.get(ref);
+    }
+
+    /**
      * {@inheritDoc}
      *
      * Gets the monitor manager.

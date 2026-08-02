@@ -123,7 +123,6 @@ public final class WebDavModule extends TransferModule {
             + "<D:propfind xmlns:D=\"DAV:\"><D:prop><D:href/><D:displayname/><D:resourcetype/>"
             + "</D:prop></D:propfind>";
 
-    private ECtransSetup currentSetup;
     private CloseableHttpClient httpClient;
     private String host;
     private String scheme;
@@ -137,7 +136,6 @@ public final class WebDavModule extends TransferModule {
 
     @Override
     public void connect(final String location, final ECtransSetup setup) throws IOException {
-        currentSetup = setup;
         host = normalizeHost(location);
         scheme = setup.getString(HOST_WEBDAV_SCHEME);
         port = getPort(setup);
@@ -387,7 +385,7 @@ public final class WebDavModule extends TransferModule {
             final var request = new HttpPut(buildUri(name));
             request.setEntity(
                     new InputStreamEntity(input, size >= 0 ? size : -1, ContentType.APPLICATION_OCTET_STREAM));
-            try (var response = execute(request, HttpStatus.SC_OK, HttpStatus.SC_CREATED, HttpStatus.SC_NO_CONTENT)) {
+            try (var _ = execute(request, HttpStatus.SC_OK, HttpStatus.SC_CREATED, HttpStatus.SC_NO_CONTENT)) {
                 return;
             } catch (final IOException e) {
                 failure = e;

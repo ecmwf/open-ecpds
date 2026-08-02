@@ -49,6 +49,7 @@ import static ecmwf.ecpds.master.DataFilePath.getPath;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.text.SimpleDateFormat;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -69,6 +70,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.TimeZone;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.Deflater;
@@ -165,6 +167,8 @@ import ecmwf.common.text.Format;
 import ecmwf.common.text.Format.DuplicatedChooseScore;
 import ecmwf.common.text.Options;
 import ecmwf.common.version.Version;
+import ecmwf.common.security.CertificateManager;
+import ecmwf.ecpds.mover.plugin.http.HttpPlugin;
 import ecmwf.ecpds.master.DataAccessInterface;
 import ecmwf.ecpds.master.DownloadProgress;
 import ecmwf.ecpds.master.MasterConnection;
@@ -1120,6 +1124,69 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     public String getECproxyAddressAndPort() {
         final var socketConfig = new SocketConfig("ECproxyPlugin");
         return socketConfig.getPublicAddress() + ":" + socketConfig.getPort();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Deploys a new TLS certificate to this Data Mover. The PKCS#12 bytes are written to the keystore path that the
+     * running HttpPlugin already uses, then the SslContextFactory is hot-reloaded without dropping active connections.
+     */
+    @Override
+    public void deployHttpCertificate(final byte[] pkcs12Bytes, final String keystorePassword) throws RemoteException {
+        final var plugin = getPluginContainer().getPlugin("http");
+        if (!(plugin instanceof final HttpPlugin httpPlugin)) {
+            throw new RemoteException("HttpPlugin is not running on this Data Mover");
+        }
+        final var keystorePath = httpPlugin.getActiveKeystorePath();
+        if (keystorePath == null) {
+            throw new RemoteException("HttpPlugin has no active keystore path");
+        }
+        try {
+            CertificateManager.importCertificate(keystorePath, keystorePassword, pkcs12Bytes, keystorePassword);
+            httpPlugin.reloadCertificate();
+        } catch (final Exception e) {
+            _log.error("deployHttpCertificate", e);
+            throw new RemoteException("Certificate deployment failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns a JSON-encoded snapshot of the certificate currently loaded in the Data Mover HTTPS server.
+     */
+    @Override
+    public String getHttpCertificateJson() throws RemoteException {
+        final var plugin = getPluginContainer().getPlugin("http");
+        if (!(plugin instanceof final HttpPlugin httpPlugin)) {
+            return "{}";
+        }
+        final var info = httpPlugin.getCertificateInfo();
+        if (info == null) {
+            return "{}";
+        }
+        final var utc = TimeZone.getTimeZone("UTC");
+        final var fmtDate = new SimpleDateFormat("yyyy-MM-dd");
+        fmtDate.setTimeZone(utc);
+        final var fmtTime = new SimpleDateFormat("HH:mm:ss");
+        fmtTime.setTimeZone(utc);
+        return "{\"subject\":\"" + esc(info.subject()) + "\"" + ",\"issuer\":\"" + esc(info.issuer()) + "\""
+                + ",\"serialNumber\":\"" + esc(info.serialNumber()) + "\"" + ",\"notBefore\":\""
+                + fmtDate.format(info.notBefore()) + "\"" + ",\"notBeforeTime\":\"" + fmtTime.format(info.notBefore())
+                + "\"" + ",\"notAfter\":\"" + fmtDate.format(info.notAfter()) + "\"" + ",\"notAfterTime\":\""
+                + fmtTime.format(info.notAfter()) + "\"" + ",\"fingerprintSha256\":\"" + esc(info.fingerprintSha256())
+                + "\"" + ",\"keyAlgorithm\":\"" + esc(info.keyAlgorithm()) + "\"" + ",\"keySize\":" + info.keySize()
+                + ",\"selfSigned\":" + info.selfSigned() + ",\"expired\":" + info.expired() + ",\"expiringSoon\":"
+                + info.expiringSoon() + "}";
+    }
+
+    /** Escapes a string for embedding in a JSON value. */
+    private static String esc(final String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     /**

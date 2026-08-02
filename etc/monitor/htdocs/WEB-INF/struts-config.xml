@@ -42,6 +42,8 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.UploadActionForm" />
 		<form-bean name="filterActionForm"
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.FilterActionForm" />
+		<form-bean name="certificatesActionForm"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.CertificatesActionForm" />
 	</form-beans>
 
 	<!-- ========== Global Forward Definitions ============================== -->
@@ -1337,6 +1339,13 @@
 		<action path="/admin"
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.AdminFormAction">
 			<forward name="success" path=".pds.admin.index" />
+		</action>
+		<action path="/admin/certificates"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.CertificatesAction"
+			name="certificatesActionForm"
+			scope="request"
+			input=".pds.admin.certificates">
+			<forward name="success" path=".pds.admin.certificates" />
 		</action>
 		<action path="/admin/metafields"
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.MetaFieldsAction">

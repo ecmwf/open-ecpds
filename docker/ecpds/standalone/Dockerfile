@@ -121,11 +121,6 @@ RUN mkdir -p /etc/my.cnf.d && \
     printf '[mysqld]\ndatadir=/data/db\nsocket=/run/mysqld/mysqld.sock\ncharacter_set_server=utf8mb4\ncollation_server=utf8mb4_unicode_ci\n\n[client]\nsocket=/run/mysqld/mysqld.sock\ndefault_character_set=utf8mb4\n' \
         > /etc/my.cnf.d/zz-ecpds-standalone.cnf
 
-# ── Install self-signed SSL certificates (for standalone/eval use) ─────────────
-# Real deployments: mount your own certs over /etc/ecpds/{mover,monitor}/
-COPY etc/mover/ecpds-mover.pfx /etc/ecpds/mover/ecpds-mover.pfx
-COPY etc/monitor/ecpds-monitor.pfx /etc/ecpds/monitor/ecpds-monitor.pfx
-
 # ── Configuration and startup scripts ─────────────────────────────────────────
 COPY ecpds.sql /ecpds-init.sql
 COPY supervisord.conf /etc/supervisord.conf

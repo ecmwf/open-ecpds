@@ -1364,4 +1364,27 @@ final class ManagementProxy implements ManagementInterface {
         final var monitor = new MonitorCall("getDownloadMetrics()");
         return monitor.done(managementInterface.getDownloadMetrics());
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns a JSON-encoded certificate snapshot for every connected Data Mover.
+     */
+    @Override
+    public Map<String, String> getHttpCertificatesJson(final ECpdsSession session)
+            throws MasterException, RemoteException {
+        final var monitor = new MonitorCall("getHttpCertificatesJson(" + session.getWebUser().getName() + ")");
+        return monitor.done(managementInterface.getHttpCertificatesJson(session));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Deploys a new TLS certificate to every connected Data Mover.
+     */
+    @Override
+    public void deployHttpCertificateToAllMovers(final ECpdsSession session, final byte[] pkcs12Bytes,
+            final String keystorePassword) throws MasterException, RemoteException {
+        managementInterface.deployHttpCertificateToAllMovers(session, pkcs12Bytes, keystorePassword);
+    }
 }

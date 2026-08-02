@@ -111,8 +111,6 @@ get-standalone: ## Copy RPMs, SQL, and certs into standalone build context
 	cp -f ecpds/mover/rpms/ecpds-mover-*.rpm ecpds/standalone/rpms/
 	cp -f ecpds/monitor/rpms/ecpds-monitor-*.noarch.rpm ecpds/standalone/rpms/
 	cp -f ecpds/database/ecpds.sql ecpds/standalone/.
-	cp -f ../run/etc/ecpds/mover/ecpds-mover.pfx ecpds/standalone/etc/mover/
-	cp -f ../run/etc/ecpds/monitor/ecpds-monitor.pfx ecpds/standalone/etc/monitor/
 
 build-standalone: .https-access get-standalone ## Build the standalone all-in-one image
 	@$(MAKE) .build app=standalone tag=$(TAG)

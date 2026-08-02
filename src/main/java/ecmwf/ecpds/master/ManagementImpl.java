@@ -3213,4 +3213,61 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         final var monitor = new MonitorCall("getDownloadMetrics()");
         return monitor.done(TransferScheduler.getDownloadMetricsSnapshot());
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns a JSON-encoded certificate snapshot for every connected Data Mover.
+     */
+    @Override
+    public Map<String, String> getHttpCertificatesJson(final ECpdsSession session) throws MasterException {
+        final var monitor = new MonitorCall("getHttpCertificatesJson(" + session.getWebUser().getName() + ")");
+        final var result = new java.util.LinkedHashMap<String, String>();
+        try {
+            for (final TransferServer server : base.getTransferServerArray()) {
+                final var name = server.getName();
+                final var mover = master.getDataMoverInterface(name);
+                String json = "{}";
+                if (mover != null) {
+                    try {
+                        json = mover.getHttpCertificateJson();
+                    } catch (final Exception e) {
+                        _log.warn("getHttpCertificatesJson: mover {} unreachable: {}", name, e.getMessage());
+                    }
+                }
+                result.put(name, json);
+            }
+        } catch (final Exception e) {
+            _log.warn("getHttpCertificatesJson failed", e);
+        }
+        return monitor.done(result);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Deploys a new TLS certificate to every connected Data Mover.
+     */
+    @Override
+    public void deployHttpCertificateToAllMovers(final ECpdsSession session, final byte[] pkcs12Bytes,
+            final String keystorePassword) throws MasterException {
+        final var monitor = new MonitorCall("deployHttpCertificateToAllMovers(" + session.getWebUser().getName() + ")");
+        try {
+            for (final TransferServer server : base.getTransferServerArray()) {
+                final var name = server.getName();
+                final var mover = master.getDataMoverInterface(name);
+                if (mover != null) {
+                    try {
+                        mover.deployHttpCertificate(pkcs12Bytes, keystorePassword);
+                        _log.info("Deployed TLS certificate to Data Mover {}", name);
+                    } catch (final Exception e) {
+                        _log.warn("deployHttpCertificateToAllMovers: mover {} failed: {}", name, e.getMessage());
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            _log.warn("deployHttpCertificateToAllMovers failed", e);
+        }
+        monitor.done();
+    }
 }

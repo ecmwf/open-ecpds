@@ -1307,6 +1307,10 @@
 		<put name="content" value="/WEB-INF/jsp/pds/admin/index.jsp" />
 	</definition>
 
+	<definition name=".pds.admin.certificates" extends=".pds.admin">
+		<put name="content" value="/WEB-INF/jsp/pds/admin/certificates/index.jsp" />
+	</definition>
+
 	<definition name=".pds.admin.metafields" extends=".pds.admin">
 		<put name="title" value="Metadata Field Definitions" />
 		<put name="content" value="/WEB-INF/jsp/pds/admin/metadata_fields.jsp" />

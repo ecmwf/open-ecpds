@@ -189,13 +189,11 @@ public final class WebDavHandler extends AbstractHandler {
     private static final class WebDavServlet extends AbstractWebdavServlet {
         private static final long serialVersionUID = 1L;
 
-        private final String contextPath;
         private final DavSessionProvider sessionProvider = new EcpdsDavSessionProvider();
         private final DavLocatorFactory locatorFactory;
         private final DavResourceFactory resourceFactory;
 
         WebDavServlet(final String contextPath) {
-            this.contextPath = contextPath;
             locatorFactory = new EcpdsDavLocatorFactory(contextPath);
             resourceFactory = new EcpdsDavResourceFactory();
         }
