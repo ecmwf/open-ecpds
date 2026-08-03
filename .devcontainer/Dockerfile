@@ -31,8 +31,7 @@ RUN python3 -m pip install mkdocs mkdocs-material mkdocs-minify-plugin ghp-impor
 
 # Install Playwright + Pillow for Monitor UI screenshot generation (docs-screenshots target)
 RUN python3 -m pip install playwright pillow && \
-    playwright install chromium && \
-    playwright install-deps chromium
+    playwright install chromium
 
 # Declare build argument for Ollama model names
 ENV OLLAMA_FAST_MODEL_NAME=qwen2.5:7b-instruct-q4_K_M
