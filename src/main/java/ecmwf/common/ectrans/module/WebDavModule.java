@@ -26,6 +26,21 @@ package ecmwf.common.ectrans.module;
  * @since 2024-07-01
  */
 
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_SOCKET_STATISTICS;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_SO_MAX_PACING_RATE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_CONGESTION_CONTROL;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_KEEP_ALIVE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_KEEP_ALIVE_INTERVAL;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_KEEP_ALIVE_PROBES;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_KEEP_ALIVE_TIME;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_LINGER_ENABLE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_LINGER_TIME;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_MAX_SEGMENT;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_NO_DELAY;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_QUICK_ACK;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_TIME_STAMP;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_USER_TIMEOUT;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_WINDOW_CLAMP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_WEBDAV_CONNECT_TIMEOUT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_WEBDAV_LOCK_OWNER;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_WEBDAV_LOCK_TIMEOUT;
@@ -101,7 +116,9 @@ import org.w3c.dom.NodeList;
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.TransferModule;
 import ecmwf.common.rmi.ClientSocketFactory;
+import ecmwf.common.rmi.ClientSocketStatistics;
 import ecmwf.common.rmi.SocketConfig;
+import ecmwf.common.rmi.SSLClientSocketFactory;
 import ecmwf.common.technical.PipedInputStream;
 import ecmwf.common.technical.PipedOutputStream;
 import ecmwf.common.technical.StreamPlugThread;
@@ -124,6 +141,8 @@ public final class WebDavModule extends TransferModule {
             + "</D:prop></D:propfind>";
 
     private CloseableHttpClient httpClient;
+    private ClientSocketFactory socketFactory = null;
+    private SSLClientSocketFactory sslSocketFactory = null;
     private String host;
     private String scheme;
     private int port;
@@ -133,6 +152,16 @@ public final class WebDavModule extends TransferModule {
     private long lockTimeout;
     private String lockOwner;
     private volatile boolean closed;
+
+    @Override
+    public void updateSocketStatistics() throws IOException {
+        if (socketFactory != null) {
+            socketFactory.updateStatistics();
+        }
+        if (sslSocketFactory != null) {
+            sslSocketFactory.updateStatistics();
+        }
+    }
 
     @Override
     public void connect(final String location, final ECtransSetup setup) throws IOException {
@@ -146,16 +175,37 @@ public final class WebDavModule extends TransferModule {
         lockOwner = setup.getString(HOST_WEBDAV_LOCK_OWNER);
         final var username = setup.getString(HOST_WEBDAV_USERNAME);
         final var password = setup.getString(HOST_WEBDAV_PASSWORD);
-        final var socketConfig = new SocketConfig("WebDavModule");
-        final var plain = new ClientSocketFactory(socketConfig);
-        final javax.net.ssl.SSLSocketFactory sslSocketFactory;
+        final ClientSocketStatistics statistics;
+        if (setup.getBoolean(HOST_ECTRANS_SOCKET_STATISTICS) && getAttribute("connectOptions") != null) {
+            _log.debug("Activating Socket Statistics");
+            statistics = new ClientSocketStatistics();
+            setAttribute(statistics);
+        } else {
+            statistics = null;
+        }
+        final var socketConfig = new SocketConfig(statistics, "WebDavModule", getDebug());
+        setup.setBooleanIfPresent(HOST_ECTRANS_TCP_NO_DELAY, socketConfig::setTcpNoDelay);
+        setup.setBooleanIfPresent(HOST_ECTRANS_TCP_KEEP_ALIVE, socketConfig::setKeepAlive);
+        setup.setBooleanIfPresent(HOST_ECTRANS_TCP_TIME_STAMP, socketConfig::setTCPTimeStamp);
+        setup.setBooleanIfPresent(HOST_ECTRANS_TCP_QUICK_ACK, socketConfig::setTCPQuickAck);
+        setup.setStringIfPresent(HOST_ECTRANS_TCP_CONGESTION_CONTROL, socketConfig::setTCPCongestion);
+        setup.setByteSizeIfPresent(HOST_ECTRANS_SO_MAX_PACING_RATE, socketConfig::setSOMaxPacingRate);
+        setup.setIntegerIfPresent(HOST_ECTRANS_TCP_MAX_SEGMENT, socketConfig::setTCPMaxSegment);
+        setup.setIntegerIfPresent(HOST_ECTRANS_TCP_WINDOW_CLAMP, socketConfig::setTCPWindowClamp);
+        setup.setIntegerIfPresent(HOST_ECTRANS_TCP_KEEP_ALIVE_TIME, socketConfig::setTCPKeepAliveTime);
+        setup.setIntegerIfPresent(HOST_ECTRANS_TCP_KEEP_ALIVE_INTERVAL, socketConfig::setTCPKeepAliveInterval);
+        setup.setIntegerIfPresent(HOST_ECTRANS_TCP_KEEP_ALIVE_PROBES, socketConfig::setTCPKeepAliveProbes);
+        setup.setIntegerIfPresent(HOST_ECTRANS_TCP_USER_TIMEOUT, socketConfig::setTCPUserTimeout);
+        setup.setBooleanIfPresent(HOST_ECTRANS_TCP_LINGER_ENABLE, enable -> setup
+                .setIntegerIfPresent(HOST_ECTRANS_TCP_LINGER_TIME, time -> socketConfig.setTCPLinger(enable, time)));
+        socketFactory = new ClientSocketFactory(socketConfig);
         try {
             sslSocketFactory = socketConfig.getSSLSocketFactory("TLS", setup.getBoolean(HOST_WEBDAV_SSL_VALIDATION));
         } catch (final Exception e) {
             throw new IOException("Unable to initialize WebDAV TLS support", e);
         }
         final var cm = new PoolingHttpClientConnectionManager(RegistryBuilder.<ConnectionSocketFactory> create()
-                .register("http", new ConfigConnectionSocketFactory(plain))
+                .register("http", new ConfigConnectionSocketFactory(socketFactory))
                 .register("https",
                         new SSLConnectionSocketFactory(sslSocketFactory,
                                 setup.getStringList(HOST_WEBDAV_SUPPORTED_PROTOCOLS).toArray(new String[0]), null,
