@@ -53,6 +53,7 @@ concurrently — they are fully independent:
 ```bash
 make push-native      # service images
 make push-sa-native   # standalone image (if needed)
+make push-cli-native  # CLI image (if needed)
 ```
 
 Each machine builds the RPMs via Maven, constructs the Docker images, and pushes them
@@ -83,12 +84,26 @@ No local images are required, so it can be run from either machine.
 
 | Scenario | Commands |
 |---|---|
-| Single-arch (already built) | `make cr-login` → `make push` / `make push-sa` |
+| Single-arch (already built) | `make cr-login` → `make push` / `make push-sa` / `make push-cli` |
 | Multi-arch service images | `make cr-login` → `make push-native` (both machines) → `make manifest` |
 | Multi-arch standalone image | `make cr-login` → `make push-sa-native` (both machines) → `make sa-manifest` |
+| Multi-arch CLI image | `make cr-login` → `make push-cli-native` (both machines) → `make cli-manifest` |
+
+## CLI binary release assets
+
+In addition to Docker images, the `ecpds` binary is published as a plain file on the
+GitHub Releases page (`ecpds-amd64` / `ecpds-arm64`) so that users can download and run
+it without Docker. To produce the correctly named binary for the current machine:
+
+```bash
+make release-tools   # produces release/ecpds-amd64 or release/ecpds-arm64
+```
+
+Run this on each machine and upload both files as assets to the GitHub Release.
 
 ## Related
 
 - [Installation](../getting-started/installation.md) — building the images
 - [Standalone](../getting-started/standalone.md) — standalone all-in-one image
+- [Getting the ecpds CLI](../getting-started/ecpds-cli.md) — downloading and using the CLI
 - [Deploying on Kubernetes](kubernetes.md)

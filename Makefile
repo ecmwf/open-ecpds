@@ -112,7 +112,7 @@ dev-container-exists = \
 
 # Conditional targets based on the environment
 .PHONY: help dev .dev-cntnr .run login rm-dev \
-        get-geodb get-licenses build build-sa cr-login push push-sa push-native push-sa-native manifest sa-manifest \
+        get-geodb get-licenses build build-sa build-cli cr-login push push-sa push-cli push-native push-sa-native push-cli-native manifest sa-manifest cli-manifest release-tools \
         start-db stop-db start-ai stop-ai start-backend stop-backend \
         docs docs-screenshots docs-preview docs-publish \
         clean info
@@ -192,6 +192,19 @@ build-sa: ## Build the standalone all-in-one Docker image (**)
 	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
 	@cd docker && $(MAKE) get-rpms get-licenses build-java build-sa
 
+build-cli: ## Build the ecpds CLI Docker image (**)
+	@$(call is-dev-container,"",inside)
+	@echo -n "$(TAG)" > VERSION
+	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
+	@cd docker && $(MAKE) get-rpms build-cli
+
+release-tools: ## Copy native ecpds binary to release/ with arch suffix for GitHub Release upload (**)
+	@$(call is-dev-container,"",inside)
+	$(eval NATIVE_ARCH := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/'))
+	@mkdir -p release
+	@cp ecpds-native/target/ecpds release/ecpds-$(NATIVE_ARCH)
+	@echo "release/ecpds-$(NATIVE_ARCH) ready for upload to GitHub Releases"
+
 cr-login: ## Log in to the CR registry (according to '.settings/.cr-credential')
 	@cd docker && $(MAKE) login
 
@@ -200,6 +213,9 @@ push: ## Push locally-built service images to CR as single-arch (no manifest)
 
 push-sa: ## Push locally-built standalone image to CR as single-arch (no manifest)
 	@cd docker && $(MAKE) push-sa
+
+push-cli: ## Push locally-built CLI image to CR as single-arch (no manifest)
+	@cd docker && $(MAKE) push-cli
 
 push-native: ## Build and push native arch image to CR with arch suffix — run on each machine (**)
 	@$(call is-dev-container,"",inside)
@@ -213,11 +229,20 @@ push-sa-native: ## Build and push native arch standalone image with arch suffix 
 	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
 	@cd docker && $(MAKE) get-rpms get-licenses build-java push-sa-native
 
+push-cli-native: ## Build and push native arch CLI image with arch suffix — run on each machine (**)
+	@$(call is-dev-container,"",inside)
+	@echo -n "$(TAG)" > VERSION
+	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
+	@cd docker && $(MAKE) get-rpms push-cli-native
+
 manifest: ## Combine arch images into a multi-arch manifest on CR — run after push-native on both machines (**)
 	@cd docker && $(MAKE) manifest
 
 sa-manifest: ## Combine arch standalone images into a multi-arch manifest on CR — run after push-sa-native on both machines (**)
 	@cd docker && $(MAKE) sa-manifest
+
+cli-manifest: ## Combine arch CLI images into a multi-arch manifest on CR — run after push-cli-native on both machines (**)
+	@cd docker && $(MAKE) cli-manifest
 
 # ─── Local services (database + AI) ───────────────────────────────────────────
 start-db: ## Build and start the database service (~)

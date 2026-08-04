@@ -58,7 +58,8 @@ RUN yum install -d1 -y \
         /tmp/rpms/ecpds-common-*.noarch.rpm \
         /tmp/rpms/ecpds-master-*.rpm \
         /tmp/rpms/ecpds-mover-*.rpm \
-        /tmp/rpms/ecpds-monitor-*.noarch.rpm && \
+        /tmp/rpms/ecpds-monitor-*.noarch.rpm \
+        /tmp/rpms/ecpds-tools-*.rpm && \
     yum clean all && rm -rf /tmp/rpms
 
 # ── Redirect all runtime data to /data (single mountable volume) ──────────────

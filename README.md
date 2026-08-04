@@ -128,6 +128,49 @@ mqttx sub \
   -t '#'
 ```
 
+### Submitting files with the ecpds CLI
+
+The `ecpds` command-line client submits files directly to the Master Server (port **9640**).
+It is included in the standalone image — no separate installation needed:
+
+```bash
+docker exec standalone ecpds \
+  -host localhost -port 9640 \
+  -user test -pass test2021 \
+  -dest TEST \
+  /path/to/myfile.dat
+```
+
+Alternatively, pull the dedicated CLI image and point it at the container:
+
+```bash
+# Pull the CLI image
+docker pull ghcr.io/ecmwf/open-ecpds/cli:latest
+
+# Submit a file (Linux — use --network host to reach the standalone container)
+docker run --rm --network host \
+  -v /path/to/myfile.dat:/myfile.dat \
+  ghcr.io/ecmwf/open-ecpds/cli:latest \
+  -host localhost -port 9640 \
+  -user test -pass test2021 \
+  -dest TEST \
+  /myfile.dat
+```
+
+Or download a pre-compiled binary from the
+[GitHub Releases page](https://github.com/ecmwf/open-ecpds/releases) (`ecpds-amd64` /
+`ecpds-arm64`) and run it directly — the binary only requires OpenSSL:
+
+```bash
+curl -Lo /usr/local/bin/ecpds \
+  https://github.com/ecmwf/open-ecpds/releases/latest/download/ecpds-amd64
+chmod +x /usr/local/bin/ecpds
+ecpds -host localhost -port 9640 -user test -pass test2021 -dest TEST /path/to/myfile.dat
+```
+
+See [Getting the ecpds CLI](https://ecmwf.github.io/open-ecpds/getting-started/ecpds-cli/)
+for the full list of options and installation methods.
+
 ### Logs
 
 ```bash
@@ -202,11 +245,11 @@ See [Getting Started](https://ecmwf.github.io/open-ecpds/getting-started/require
 ### Building the standalone image locally
 
 ```bash
-# Inside the development container, after 'make build':
-make build-standalone
+# Inside the development container:
+make build-sa
 ```
 
-This stages the RPMs into `docker/ecpds/standalone/` and builds the `ecpds/standalone:<tag>` image locally.
+This stages the RPMs (including the `ecpds` CLI binary) into `docker/ecpds/standalone/` and builds the `ecpds/standalone:<tag>` image locally.
 
 ---
 

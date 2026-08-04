@@ -46,7 +46,7 @@ NATIVE_ARCH := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
 HTTPS_ACCESS := $(shell curl -s --max-time 2 -I https://google.com | sed 's/^[^ ]*  *\([0-9]\).*/\1/; 1q')
 
 # Output the help for each task
-.PHONY: help all get-rpms get-licenses build-db build-ai build-backend build build-sa get-sa images bk-images rm-images clean .clean login push push-sa push-native push-sa-native manifest sa-manifest info
+.PHONY: help all get-rpms get-licenses build-db build-ai build-backend build build-sa get-sa get-cli build-cli images bk-images rm-images clean .clean login push push-sa push-cli push-native push-sa-native push-cli-native manifest sa-manifest cli-manifest info
 
 # Display help by default
 .DEFAULT_GOAL := help
@@ -78,6 +78,7 @@ get-rpms: ## Get RPMs from the source RPM directories
 	@$(MAKE) .get-rpm app=master rpm=common arch=noarch
 	@$(MAKE) .get-rpm app=monitor rpm=monitor arch=noarch
 	@$(MAKE) .get-rpm app=monitor rpm=common arch=noarch
+	@$(MAKE) .get-rpm app=tools rpm=tools arch=$(shell uname -m)
 
 .get-rpm: # Create the target directory and get the specified RPM (args: app, rpm, arch)
 	mkdir -p ecpds/$(app)/rpms && cp -f ../ecpds-$(rpm)/target/rpm/ecpds-$(rpm)/RPMS/$(arch)/ecpds-$(rpm)-$(TAG).$(arch).rpm ecpds/$(app)/rpms/.
@@ -113,10 +114,21 @@ get-sa: ## Copy RPMs, SQL, and certs into standalone build context
 	cp -f ecpds/master/rpms/ecpds-master-*.noarch.rpm ecpds/standalone/rpms/
 	cp -f ecpds/mover/rpms/ecpds-mover-*.rpm ecpds/standalone/rpms/
 	cp -f ecpds/monitor/rpms/ecpds-monitor-*.noarch.rpm ecpds/standalone/rpms/
+	cp -f ecpds/tools/rpms/ecpds-tools-*.rpm ecpds/standalone/rpms/
 	cp -f ecpds/database/ecpds.sql ecpds/standalone/.
+
+get-cli: ## Copy ecpds-tools RPM into CLI image build context
+	@if ! ls ecpds/tools/rpms/ecpds-tools-*.rpm >/dev/null 2>&1; then \
+		printf "$(RED)** RPMs not staged — run 'make get-rpms' first **$(RESET)\n" && exit 1; \
+	fi
+	mkdir -p ecpds/cli/rpms
+	cp -f ecpds/tools/rpms/ecpds-tools-*.rpm ecpds/cli/rpms/
 
 build-sa: .https-access get-sa ## Build the standalone all-in-one image
 	@$(MAKE) .build app=standalone tag=$(TAG)
+
+build-cli: .https-access get-cli ## Build the ecpds CLI image
+	@$(MAKE) .build app=cli tag=$(TAG)
 
 .build: # Build the image (args: app, tag)
 	$(DOCKER) build $(BUILD_OPTS) \
@@ -169,6 +181,9 @@ push: .checkcr ## Push locally-built service images to CR as single-arch (no man
 push-sa: .checkcr ## Push locally-built standalone image to CR as single-arch (no manifest)
 	@$(MAKE) .push app=standalone tag=$(TAG)
 
+push-cli: .checkcr ## Push locally-built CLI image to CR as single-arch (no manifest)
+	@$(MAKE) .push app=cli tag=$(TAG)
+
 push-native: .https-access .checkcr get-rpms ## Build and push native arch image to CR with arch suffix (step 1 of 2-machine multi-arch workflow)
 	@$(MAKE) .push-native app=database tag=$(TAG)
 	@$(MAKE) .push-native app=ai tag=$(TAG)
@@ -180,6 +195,9 @@ push-native: .https-access .checkcr get-rpms ## Build and push native arch image
 push-sa-native: .https-access .checkcr get-sa ## Build and push native arch standalone image with arch suffix (step 1 of 2-machine multi-arch workflow)
 	@$(MAKE) .push-native app=standalone tag=$(TAG)
 
+push-cli-native: .https-access .checkcr get-cli ## Build and push native arch CLI image with arch suffix (step 1 of 2-machine multi-arch workflow)
+	@$(MAKE) .push-native app=cli tag=$(TAG)
+
 manifest: .checkcr ## Combine arch-specific images into a multi-arch manifest on CR (step 2 of 2-machine multi-arch workflow)
 	@$(MAKE) .manifest app=database tag=$(TAG)
 	@$(MAKE) .manifest app=ai tag=$(TAG)
@@ -190,6 +208,9 @@ manifest: .checkcr ## Combine arch-specific images into a multi-arch manifest on
 
 sa-manifest: .checkcr ## Combine arch-specific standalone images into a multi-arch manifest on CR (step 2 of 2-machine multi-arch workflow)
 	@$(MAKE) .manifest app=standalone tag=$(TAG)
+
+cli-manifest: .checkcr ## Combine arch-specific CLI images into a multi-arch manifest on CR (step 2 of 2-machine multi-arch workflow)
+	@$(MAKE) .manifest app=cli tag=$(TAG)
 
 .push: # Push locally-built image and tag as latest (args: app, tag)
 	$(DOCKER) tag ecpds/$(app):$(tag) $(CR_URL)/$(app):$(tag)

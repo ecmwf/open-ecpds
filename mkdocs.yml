@@ -84,6 +84,7 @@ nav:
       - Installation: getting-started/installation.md
       - First Run: getting-started/first-run.md
       - IDE Setup: getting-started/ide-setup.md
+      - ECPDS CLI: getting-started/ecpds-cli.md
   - Architecture:
       - Overview: architecture/overview.md
       - Components: architecture/components.md
