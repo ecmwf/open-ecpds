@@ -1,40 +1,94 @@
 # Releasing OpenECPDS to a Container Registry
 
-To deploy the built container images to a container registry, go to the `docker`
-directory, which contains a dedicated `Makefile` for building and publishing images:
-
-```bash
-cd docker
-```
+All release commands are run from the **repository root** using the top-level `Makefile`.
+There is no need to `cd` into the `docker/` directory.
 
 ## Configure credentials
 
-This is an example configuration for pushing OpenECPDS container images to a container
-registry (in this case the GitHub Container Registry, GHCR). The credentials are stored
-in the `.settings/.cr-credentials` file. The same configuration can be adapted for other
-container registries by updating `CR_URL` and, if necessary, the authentication
-credentials (`CR_UID` and `CR_PWD`).
-
-The file should follow this format:
+Store your container registry credentials in `.settings/.cr-credential`:
 
 ```bash
-CR_UID=<GITHUB_USERNAME>
-CR_PWD=<GITHUB_PERSONAL_ACCESS_TOKEN>
+CR_UID=<USERNAME>
+CR_PWD=<PERSONAL_ACCESS_TOKEN>
 CR_URL=ghcr.io/ecmwf/open-ecpds
 ```
 
+This example targets the GitHub Container Registry (GHCR). The same format works for
+any OCI-compatible registry — just update `CR_URL` and the credentials accordingly.
+
 !!! warning
-    `CR_PWD` must be a GitHub Personal Access Token (PAT), not your GitHub password.
+    Use a Personal Access Token (PAT) for `CR_PWD`, not your account password.
 
-## Push the images
+## Log in to the registry
 
-Once the credentials are set, you can push the images to the container registry with:
+Before pushing, authenticate with the registry:
 
 ```bash
-make push
+make cr-login
 ```
+
+## Single-arch push
+
+If you are pushing from a single machine (images are already built locally), use:
+
+```bash
+make push       # push service images (master, mover, monitor, …)
+make push-sa    # push the standalone all-in-one image
+```
+
+These targets assume the images have already been built with `make build` or
+`make build-sa`. They do not trigger a Maven build.
+
+## Multi-arch push (two machines)
+
+Because the `ecpds-mover` image contains a native shared library
+(`libsocketoptions.so`) compiled for the host architecture, true multi-arch images
+require building on each target platform separately.
+
+### Step 1 — Build and push from each machine (run in parallel)
+
+Run the following on **each machine** (x86\_64 and aarch64). The two runs can proceed
+concurrently — they are fully independent:
+
+```bash
+make push-native      # service images
+make push-sa-native   # standalone image (if needed)
+```
+
+Each machine builds the RPMs via Maven, constructs the Docker images, and pushes them
+to the registry with an architecture-specific tag (e.g. `:tag-amd64`, `:tag-arm64`).
+
+!!! note
+    These targets must be run **inside the development container** (i.e. after
+    `make dev`) because they invoke `mvn package`, which compiles the native library.
+
+### Step 2 — Create the multi-arch manifest (run once, on either machine)
+
+Once **both** `push-native` (or `push-sa-native`) runs have completed successfully:
+
+```bash
+make manifest      # combine service arch images into a multi-arch manifest
+make sa-manifest   # combine standalone arch images into a multi-arch manifest
+```
+
+This step uses `docker buildx imagetools create` to merge the two arch-specific images
+already in the registry into a single multi-arch manifest (`:tag` and `:latest`).
+No local images are required, so it can be run from either machine.
+
+!!! warning
+    `make manifest` will fail if either architecture image is missing from the registry.
+    Always ensure both `push-native` runs have completed before running this step.
+
+## Summary
+
+| Scenario | Commands |
+|---|---|
+| Single-arch (already built) | `make cr-login` → `make push` / `make push-sa` |
+| Multi-arch service images | `make cr-login` → `make push-native` (both machines) → `make manifest` |
+| Multi-arch standalone image | `make cr-login` → `make push-sa-native` (both machines) → `make sa-manifest` |
 
 ## Related
 
 - [Installation](../getting-started/installation.md) — building the images
+- [Standalone](../getting-started/standalone.md) — standalone all-in-one image
 - [Deploying on Kubernetes](kubernetes.md)
