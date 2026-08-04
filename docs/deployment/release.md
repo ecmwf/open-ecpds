@@ -104,14 +104,69 @@ the GitHub Release:
 make release-tools   # produces release/ecpds-amd64 or release/ecpds-arm64
 ```
 
-## Summary
+## Multi-arch push (single machine with QEMU emulation)
+
+If only one machine is available, QEMU user-space emulation allows the other
+architecture to be built and pushed from the same host. Docker runs a second development
+container under emulation — `gcc` inside it produces binaries for the emulated
+architecture, so `libsocketoptions.so` and the `ecpds` binary come out correctly.
+
+This works symmetrically:
+
+- **`amd64` host** — emulate `arm64` for the second container
+- **`arm64` host** — emulate `amd64` for the second container
+
+### One-time host setup
+
+Install the QEMU `binfmt` handlers for the architecture you want to emulate:
+
+=== "On an amd64 host (emulate arm64)"
+    ```bash
+    docker run --privileged --rm tonistiigi/binfmt --install arm64
+    ```
+
+=== "On an arm64 host (emulate amd64)"
+    ```bash
+    docker run --privileged --rm tonistiigi/binfmt --install amd64
+    ```
+
+### Build and push both architectures
+
+Run the native dev container as usual (`make dev`), do the native push, then start a
+second dev container with `--platform` set to the other architecture and repeat:
+
+```bash
+# Step 1a — native arch (fast)
+make cr-login
+make push-native      # (or push-sa-native / push-cli-native)
+
+# Step 1b — emulated arch (slower — 3–5× due to QEMU)
+# Start a second dev container with the opposite platform, then inside it:
+make cr-login
+make push-native      # (or push-sa-native / push-cli-native)
+
+# Step 2 — manifest (from either container, once both pushes are done)
+make manifest
+make sa-manifest
+make cli-manifest
+```
+
+!!! warning
+    The emulated build is significantly slower than native. Maven compilation and `gcc`
+    under QEMU typically take 3–5× longer. For frequent CI releases, two real machines
+    are preferable. For occasional releases, single-machine QEMU is a practical option.
+
+!!! note
+    If a package download or JDK install fails inside the emulated container, retry —
+    QEMU occasionally has transient issues with network-intensive setup steps.
+
+
 
 | Scenario | Commands |
 |---|---|
 | Single-arch (already built) | `make cr-login` → `make push` / `make push-sa` / `make push-cli` |
-| Multi-arch service images | `make cr-login` → `make push-native` (both machines) → `make manifest` |
-| Multi-arch standalone image | `make cr-login` → `make push-sa-native` (both machines) → `make sa-manifest` |
-| Multi-arch CLI image | `make cr-login` → `make push-cli-native` (both machines) → `make cli-manifest` |
+| Multi-arch — two machines | `make push-native` on each → `make manifest` (and `sa-manifest` / `cli-manifest`) |
+| Multi-arch — one machine + QEMU | native dev container + emulated dev container → `make push-native` in each → `make manifest` |
 
 ## Related
 
