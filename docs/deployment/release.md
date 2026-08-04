@@ -65,11 +65,12 @@ to the registry with an architecture-specific tag (e.g. `:tag-amd64`, `:tag-arm6
 
 ### Step 2 — Create the multi-arch manifest (run once, on either machine)
 
-Once **both** `push-native` (or `push-sa-native`) runs have completed successfully:
+Once **both** step 1 runs have completed successfully:
 
 ```bash
 make manifest      # combine service arch images into a multi-arch manifest
 make sa-manifest   # combine standalone arch images into a multi-arch manifest
+make cli-manifest  # combine CLI arch images into a multi-arch manifest
 ```
 
 This step uses `docker buildx imagetools create` to merge the two arch-specific images
@@ -77,8 +78,18 @@ already in the registry into a single multi-arch manifest (`:tag` and `:latest`)
 No local images are required, so it can be run from either machine.
 
 !!! warning
-    `make manifest` will fail if either architecture image is missing from the registry.
-    Always ensure both `push-native` runs have completed before running this step.
+    Each manifest target will fail if either architecture image is missing from the registry.
+    Always ensure both step 1 runs have completed before running this step.
+
+### Step 3 — Publish CLI binaries as GitHub Release assets (optional)
+
+In addition to the CLI Docker image, standalone `ecpds` binaries can be published for
+users who prefer a direct download. Run on **each machine** then upload both files to
+the GitHub Release:
+
+```bash
+make release-tools   # produces release/ecpds-amd64 or release/ecpds-arm64
+```
 
 ## Summary
 
@@ -88,18 +99,6 @@ No local images are required, so it can be run from either machine.
 | Multi-arch service images | `make cr-login` → `make push-native` (both machines) → `make manifest` |
 | Multi-arch standalone image | `make cr-login` → `make push-sa-native` (both machines) → `make sa-manifest` |
 | Multi-arch CLI image | `make cr-login` → `make push-cli-native` (both machines) → `make cli-manifest` |
-
-## CLI binary release assets
-
-In addition to Docker images, the `ecpds` binary is published as a plain file on the
-GitHub Releases page (`ecpds-amd64` / `ecpds-arm64`) so that users can download and run
-it without Docker. To produce the correctly named binary for the current machine:
-
-```bash
-make release-tools   # produces release/ecpds-amd64 or release/ecpds-arm64
-```
-
-Run this on each machine and upload both files as assets to the GitHub Release.
 
 ## Related
 

@@ -4,6 +4,9 @@
 /docker/ecpds/standalone/rpms/
 /docker/ecpds/standalone/etc/
 /docker/ecpds/standalone/ecpds.sql
+/docker/ecpds/tools/rpms/
+/docker/ecpds/cli/rpms/
+/release/
 /etc/master/conf/GeoLite2-City.mmdb
 /docs/javadoc/
 /lib/
