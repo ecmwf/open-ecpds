@@ -112,7 +112,7 @@ dev-container-exists = \
 
 # Conditional targets based on the environment
 .PHONY: help dev .dev-cntnr .run login rm-dev \
-        get-geodb get-licenses build build-standalone \
+        get-geodb get-licenses build build-sa cr-login push push-sa push-native push-sa-native manifest sa-manifest \
         start-db stop-db start-ai stop-ai start-backend stop-backend \
         docs docs-screenshots docs-preview docs-publish \
         clean info
@@ -186,11 +186,38 @@ build: ## Compile java sources into JARs, create RPMs and Docker images (**)
 	@mvn package
 	@cd docker && $(MAKE) all
 
-build-standalone: ## Build the standalone all-in-one Docker image (**)
+build-sa: ## Build the standalone all-in-one Docker image (**)
 	@$(call is-dev-container,"",inside)
 	@echo -n "$(TAG)" > VERSION
 	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
-	@cd docker && $(MAKE) get-rpms get-licenses build-java build-standalone
+	@cd docker && $(MAKE) get-rpms get-licenses build-java build-sa
+
+cr-login: ## Log in to the CR registry (according to '.settings/.cr-credential')
+	@cd docker && $(MAKE) login
+
+push: ## Push locally-built service images to CR as single-arch (no manifest)
+	@cd docker && $(MAKE) push
+
+push-sa: ## Push locally-built standalone image to CR as single-arch (no manifest)
+	@cd docker && $(MAKE) push-sa
+
+push-native: ## Build and push native arch image to CR with arch suffix — run on each machine (**)
+	@$(call is-dev-container,"",inside)
+	@echo -n "$(TAG)" > VERSION
+	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
+	@cd docker && $(MAKE) get-rpms get-licenses build-java push-native
+
+push-sa-native: ## Build and push native arch standalone image with arch suffix — run on each machine (**)
+	@$(call is-dev-container,"",inside)
+	@echo -n "$(TAG)" > VERSION
+	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
+	@cd docker && $(MAKE) get-rpms get-licenses build-java push-sa-native
+
+manifest: ## Combine arch images into a multi-arch manifest on CR — run after push-native on both machines (**)
+	@cd docker && $(MAKE) manifest
+
+sa-manifest: ## Combine arch standalone images into a multi-arch manifest on CR — run after push-sa-native on both machines (**)
+	@cd docker && $(MAKE) sa-manifest
 
 # ─── Local services (database + AI) ───────────────────────────────────────────
 start-db: ## Build and start the database service (~)

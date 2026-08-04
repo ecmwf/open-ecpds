@@ -39,11 +39,14 @@ endif
 # Set the docker or podman version
 DOCKER_VERSION := $(shell $(DOCKER) --version)
 
+# Map native uname -m to Docker arch suffix (x86_64→amd64, aarch64→arm64)
+NATIVE_ARCH := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+
 # Check HTTPS access (required to build images)
 HTTPS_ACCESS := $(shell curl -s --max-time 2 -I https://google.com | sed 's/^[^ ]*  *\([0-9]\).*/\1/; 1q')
 
 # Output the help for each task
-.PHONY: help all get-rpms get-licenses build-db build-ai build-backend build build-standalone get-standalone images bk-images rm-images clean .clean info
+.PHONY: help all get-rpms get-licenses build-db build-ai build-backend build build-sa get-sa images bk-images rm-images clean .clean login push push-sa push-native push-sa-native manifest sa-manifest info
 
 # Display help by default
 .DEFAULT_GOAL := help
@@ -101,7 +104,7 @@ build: build-db build-ai ## Build database, AI, Java, and service images
 	@$(MAKE) .build app=master tag=$(TAG)
 	@$(MAKE) .build app=monitor tag=$(TAG)
 
-get-standalone: ## Copy RPMs, SQL, and certs into standalone build context
+get-sa: ## Copy RPMs, SQL, and certs into standalone build context
 	@if ! ls ecpds/mover/rpms/ecpds-mover-*.rpm >/dev/null 2>&1; then \
 		printf "$(RED)** RPMs not staged — run 'make get-rpms' first **$(RESET)\n" && exit 1; \
 	fi
@@ -112,7 +115,7 @@ get-standalone: ## Copy RPMs, SQL, and certs into standalone build context
 	cp -f ecpds/monitor/rpms/ecpds-monitor-*.noarch.rpm ecpds/standalone/rpms/
 	cp -f ecpds/database/ecpds.sql ecpds/standalone/.
 
-build-standalone: .https-access get-standalone ## Build the standalone all-in-one image
+build-sa: .https-access get-sa ## Build the standalone all-in-one image
 	@$(MAKE) .build app=standalone tag=$(TAG)
 
 .build: # Build the image (args: app, tag)
@@ -156,21 +159,64 @@ rm-images: ## Remove images (args: app, tag)
 login: .checkcr ## Log in to the CR registry (according to '../.settings/.cr-credential')
 	@echo -n '$(CR_PWD)' | $(DOCKER) login -u '$(CR_UID)' --password-stdin $(CR_URL);
 
-push: .checkcr ## Push images to CR
+push: .checkcr ## Push locally-built service images to CR as single-arch (no manifest)
 	@$(MAKE) .push app=database tag=$(TAG)
 	@$(MAKE) .push app=ai tag=$(TAG)
 	@$(MAKE) .push app=mover tag=$(TAG)
 	@$(MAKE) .push app=master tag=$(TAG)
 	@$(MAKE) .push app=monitor tag=$(TAG)
 
-push-standalone: .checkcr ## Push standalone image to CR
+push-sa: .checkcr ## Push locally-built standalone image to CR as single-arch (no manifest)
 	@$(MAKE) .push app=standalone tag=$(TAG)
 
-.push: ## Push image and tag as latest (args: from, to, app, tag)
+push-native: .https-access .checkcr get-rpms ## Build and push native arch image to CR with arch suffix (step 1 of 2-machine multi-arch workflow)
+	@$(MAKE) .push-native app=database tag=$(TAG)
+	@$(MAKE) .push-native app=ai tag=$(TAG)
+	@$(MAKE) .push-native app=java tag=graalvm
+	@$(MAKE) .push-native app=mover tag=$(TAG)
+	@$(MAKE) .push-native app=master tag=$(TAG)
+	@$(MAKE) .push-native app=monitor tag=$(TAG)
+
+push-sa-native: .https-access .checkcr get-sa ## Build and push native arch standalone image with arch suffix (step 1 of 2-machine multi-arch workflow)
+	@$(MAKE) .push-native app=standalone tag=$(TAG)
+
+manifest: .checkcr ## Combine arch-specific images into a multi-arch manifest on CR (step 2 of 2-machine multi-arch workflow)
+	@$(MAKE) .manifest app=database tag=$(TAG)
+	@$(MAKE) .manifest app=ai tag=$(TAG)
+	@$(MAKE) .manifest app=java tag=graalvm
+	@$(MAKE) .manifest app=mover tag=$(TAG)
+	@$(MAKE) .manifest app=master tag=$(TAG)
+	@$(MAKE) .manifest app=monitor tag=$(TAG)
+
+sa-manifest: .checkcr ## Combine arch-specific standalone images into a multi-arch manifest on CR (step 2 of 2-machine multi-arch workflow)
+	@$(MAKE) .manifest app=standalone tag=$(TAG)
+
+.push: # Push locally-built image and tag as latest (args: app, tag)
 	$(DOCKER) tag ecpds/$(app):$(tag) $(CR_URL)/$(app):$(tag)
-	$(DOCKER) tag ecpds/$(app):$(tag) $(CR_URL)/$(app)
+	$(DOCKER) tag ecpds/$(app):$(tag) $(CR_URL)/$(app):latest
 	$(DOCKER) push $(CR_URL)/$(app):$(tag)
-	$(DOCKER) push $(CR_URL)/$(app)
+	$(DOCKER) push $(CR_URL)/$(app):latest
+
+.push-native: # Build and push native-arch image with arch suffix tag to CR (args: app, tag)
+	$(DOCKER) build $(BUILD_OPTS) \
+		--build-arg SDKMAN_JDK=$(SDKMAN_JDK) \
+		--build-arg OLLAMA_FAST_MODEL_NAME=$(OLLAMA_FAST_MODEL_NAME) \
+		--build-arg OLLAMA_DEEP_MODEL_NAME=$(OLLAMA_DEEP_MODEL_NAME) \
+		--build-arg OLLAMA_EMBD_MODEL_NAME=$(OLLAMA_EMBD_MODEL_NAME) \
+		--build-arg TAG=$(tag) \
+		--label "app=$(app)" \
+		--label "tag=$(tag)" \
+		-t $(CR_URL)/$(app):$(tag)-$(NATIVE_ARCH) \
+		--push ecpds/$(app)
+
+.manifest: # Combine amd64+arm64 arch-suffixed images into a multi-arch manifest on CR (args: app, tag)
+	$(DOCKER) buildx imagetools create \
+		-t $(CR_URL)/$(app):$(tag) \
+		-t $(CR_URL)/$(app):latest \
+		$(CR_URL)/$(app):$(tag)-amd64 \
+		$(CR_URL)/$(app):$(tag)-arm64
+
+
 
 # ─── Maintenance ──────────────────────────────────────────────────────────────
 
