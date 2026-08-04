@@ -196,10 +196,12 @@ Full documentation is published at **[ecmwf.github.io/open-ecpds](https://ecmwf.
 
 | Section | Description |
 |---|---|
-| [Getting Started](https://ecmwf.github.io/open-ecpds/getting-started/requirements/) | Requirements, installation, first run, IDE setup |
+| [Getting Started](https://ecmwf.github.io/open-ecpds/getting-started/requirements/) | Requirements, standalone container, installation, first run, IDE setup, ECPDS CLI |
 | [Architecture](https://ecmwf.github.io/open-ecpds/architecture/overview/) | Components, failover, data transfer lifecycle, continental data movers |
 | [Deployment](https://ecmwf.github.io/open-ecpds/deployment/kubernetes/) | Kubernetes, physical infrastructure, container registry, releasing |
 | [Concepts](https://ecmwf.github.io/open-ecpds/concepts/entities/) | Entities, protocols, object storage, destination/host/web-user options, additional features |
+| [Monitor UI](https://ecmwf.github.io/open-ecpds/monitor-ui/overview/) | Monitoring, destinations, hosts, transfer history, data files, users, administration |
+| [Administration](https://ecmwf.github.io/open-ecpds/administration/certificates/) | TLS certificate management |
 | [Use Cases](https://ecmwf.github.io/open-ecpds/use-cases/ecpds-cli/) | CLI tool, acquisition, dissemination, data portal, data users |
 | [Transfer Modules](https://ecmwf.github.io/open-ecpds/transfer-modules/) | FTP, FTPS, SFTP, HTTP/S, WebDAV, S3, GCS, Azure Blob, ECauth, Portal, Test |
 | [Host Directory](https://ecmwf.github.io/open-ecpds/host-directory/) | Acquisition, dissemination, replication, source, backup, proxy scripts |

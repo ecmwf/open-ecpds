@@ -220,6 +220,7 @@ cli-manifest: .checkcr ## Combine arch-specific CLI images into a multi-arch man
 
 .push-native: # Build and push native-arch image with arch suffix tag to CR (args: app, tag)
 	$(DOCKER) build $(BUILD_OPTS) \
+		--provenance=false \
 		--build-arg SDKMAN_JDK=$(SDKMAN_JDK) \
 		--build-arg OLLAMA_FAST_MODEL_NAME=$(OLLAMA_FAST_MODEL_NAME) \
 		--build-arg OLLAMA_DEEP_MODEL_NAME=$(OLLAMA_DEEP_MODEL_NAME) \
