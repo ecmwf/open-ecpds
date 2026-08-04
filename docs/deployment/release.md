@@ -34,10 +34,23 @@ If you are pushing from a single machine (images are already built locally), use
 ```bash
 make push       # push service images (master, mover, monitor, …)
 make push-sa    # push the standalone all-in-one image
+make push-cli   # push the ecpds CLI image
 ```
 
-These targets assume the images have already been built with `make build` or
-`make build-sa`. They do not trigger a Maven build.
+These targets assume the images have already been built with `make build`, `make build-sa`,
+or `make build-cli`. They do not trigger a Maven build — they just tag and push the
+existing local images to the registry.
+
+**When to use these:**
+
+- You have already built locally and want to push without rebuilding (saves time during
+  iteration)
+- Only one machine is available and a single-arch image is acceptable (e.g. a personal
+  or development registry)
+- You want to share a quick snapshot with a colleague for testing
+
+**When NOT to use these:** for production releases, always use the multi-arch workflow
+below so that the published images work on both `amd64` and `arm64` hosts.
 
 ## Multi-arch push (two machines)
 
