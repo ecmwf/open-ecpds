@@ -76,6 +76,7 @@ import ecmwf.common.database.MetadataValue;
 import ecmwf.common.database.MonitoringValue;
 import ecmwf.common.database.ProductStatus;
 import ecmwf.common.database.TransferServer;
+import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.plugin.SimplePlugin;
 import ecmwf.common.technical.Cnf;
@@ -88,6 +89,7 @@ import ecmwf.common.text.Format;
 import ecmwf.common.version.Version;
 import ecmwf.ecpds.master.AttachmentAccessTicket;
 import ecmwf.ecpds.master.DataTransferEvent;
+import ecmwf.ecpds.master.IncomingProfile;
 import ecmwf.ecpds.master.MasterServer;
 import ecmwf.ecpds.master.MasterServer.DownloadScheduler;
 import ecmwf.ecpds.master.MoverAccessTicket;
@@ -188,6 +190,12 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
 
     /** The userName. */
     private String userName = null;
+
+    /** The incomingPassword (set when client sends PASS before USER). */
+    private String incomingPassword = null;
+
+    /** The incomingProfile (set after successful IncomingUser authentication). */
+    private IncomingProfile incomingProfile = null;
 
     /** The remoteIp. */
     private String remoteIp = null;
@@ -701,6 +709,22 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
+     * Pass req. Stores the password sent by the client before the USER command. When a password is provided,
+     * authentication is performed in userReq() via getIncomingProfile() instead of the privileged-port check.
+     *
+     * @param parameters
+     *            the parameters
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     * @throws ParameterException
+     *             the parameter exception
+     */
+    public void passReq(final String[] parameters) throws IOException, ParameterException {
+        incomingPassword = getParameter(parameters);
+    }
+
+    /**
      * User req.
      *
      * @param parameters
@@ -712,20 +736,37 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
      *             the parameter exception
      */
     public void userReq(final String[] parameters) throws IOException, ParameterException {
-        final var port = getSocket().getPort();
-        if (port > 1023) {
-            _log.debug("Not a privileged IP port: {}", port);
-            if (Cnf.at("ECpdsPlugin", "checkPort", true)) {
-                stopAndError("Not a privileged IP port (connection refused by server)");
-                return;
-            }
-        }
         userName = getParameter(parameters);
         remoteIp = getRemoteHost();
         if (from == null) {
             // Can we extract from the version?
             final var m = Pattern.compile("cmd=(.*?),").matcher(version);
             from = "From the " + (m.find() ? m.group(1) : "ecpds") + " command at " + remoteIp;
+        }
+        if (incomingPassword != null) {
+            // Authenticate as an IncomingUser (data user). The privileged-port check
+            // is skipped because IncomingUsers are not privileged Unix accounts.
+            try {
+                incomingProfile = MASTER.getIncomingProfile(userName, incomingPassword, from);
+            } catch (final Exception e) {
+                stopAndError("Authentication failed for user " + userName);
+                return;
+            }
+            if (incomingProfile == null) {
+                stopAndError("Authentication failed for user " + userName);
+                return;
+            }
+            _log.debug("IncomingUser authenticated: {}", userName);
+        } else {
+            // Legacy ECUSER path: authentication is based on privileged port only.
+            final var port = getSocket().getPort();
+            if (port > 1023) {
+                _log.debug("Not a privileged IP port: {}", port);
+                if (Cnf.at("ECpdsPlugin", "checkPort", true)) {
+                    stopAndError("Not a privileged IP port (connection refused by server)");
+                    return;
+                }
+            }
         }
         if (processMetadata) {
             // This is NOT the acquisition so we need the target, stream and time to be
@@ -2348,6 +2389,33 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                             // The Destination is not authorized for this
                             // time critical user!
                             stopAndError("Access denied to Destination " + name + " (not an authorised user)");
+                            return;
+                        }
+                    }
+                    // If authenticated as an IncomingUser (data user), verify the target
+                    // destination is in the list of destinations allowed for that user,
+                    // and that the user has the required permission for the target path.
+                    if (incomingProfile != null) {
+                        var allowed = false;
+                        for (final Destination d : incomingProfile.getDestinations()) {
+                            if (name.equals(d.getName())) {
+                                allowed = true;
+                                break;
+                            }
+                        }
+                        if (!allowed) {
+                            stopAndError("Access denied to Destination " + name + " (not allowed for user " + userName
+                                    + ")");
+                            return;
+                        }
+                        // For a purge the operation is a delete; for any other request
+                        // (new submission, requeue, force) it is a put.
+                        final var operation = purge ? "delete" : "put";
+                        try {
+                            incomingProfile.checkPermission(operation, currentTarget);
+                        } catch (final EccmdException e) {
+                            stopAndError("Permission denied: cannot " + operation + " " + currentTarget + " ("
+                                    + e.getMessage() + ")");
                             return;
                         }
                     }

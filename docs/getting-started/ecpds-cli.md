@@ -42,10 +42,10 @@ Use it as a one-shot command (mount the files you want to submit):
 docker run --rm \
   -v /path/to/data:/data \
   ghcr.io/ecmwf/open-ecpds/cli:latest \
-  -host master.example.com -port 9640 \
-  -user myuser -pass mypass \
-  -dest MY_DESTINATION \
-  /data/myfile.dat
+  -echost master.example.com -ecport 9640 \
+  -user mylogin -pass mypassword \
+  -destination MY_DESTINATION \
+  -source /data/myfile.dat
 ```
 
 ### Option C — Extract from the standalone container
@@ -76,10 +76,10 @@ on port **9640** for `ecpds` CLI connections. The default credentials are
 
 ```bash
 ecpds \
-  -host localhost -port 9640 \
+  -echost localhost -ecport 9640 \
   -user test -pass test2021 \
-  -dest TEST \
-  /path/to/myfile.dat
+  -destination TEST \
+  -source /path/to/myfile.dat
 ```
 
 Or using the CLI Docker image:
@@ -88,10 +88,10 @@ Or using the CLI Docker image:
 docker run --rm \
   -v /path/to/myfile.dat:/myfile.dat \
   ghcr.io/ecmwf/open-ecpds/cli:latest \
-  -host host.docker.internal -port 9640 \
+  -echost host.docker.internal -ecport 9640 \
   -user test -pass test2021 \
-  -dest TEST \
-  /myfile.dat
+  -destination TEST \
+  -source /myfile.dat
 ```
 
 !!! note
@@ -102,10 +102,10 @@ Or directly inside the container (no network configuration needed):
 
 ```bash
 docker exec standalone ecpds \
-  -host localhost -port 9640 \
+  -echost localhost -ecport 9640 \
   -user test -pass test2021 \
-  -dest TEST \
-  /path/to/myfile.dat
+  -destination TEST \
+  -source /path/to/myfile.dat
 ```
 
 ## Related

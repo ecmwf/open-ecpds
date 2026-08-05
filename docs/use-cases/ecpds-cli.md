@@ -83,6 +83,83 @@ Data submission requests to OpenECPDS are grouped under a specific name. At the 
 batch submission, an `ecpds` command is executed to track the retrieval of all files in
 the group. Once all files have been successfully retrieved, the `ecpds` command returns.
 
+## Authentication
+
+The `ecpds` CLI supports two authentication modes.
+
+### IncomingUser authentication (recommended)
+
+Use the `-user` and `-pass` options to authenticate as an [IncomingUser](../concepts/entities.md#incoming-users)
+(also called a *data user*). The server:
+
+1. Validates the credentials against the OpenECPDS user database.
+2. Checks that the user is allowed to write to the requested **destination**.
+3. Checks that the user has the required **permission** for the target path, applying any
+   path-regex filters configured in the user's properties:
+    - **`put`** permission for a normal submission or requeue (`-source`).
+    - **`delete`** permission when purging a DataFile (`-purge`).
+
+```bash
+ecpds \
+  -echost master.example.com \
+  -user mylogin -pass mypassword \
+  -destination MY_DESTINATION \
+  -source /path/to/myfile.dat
+```
+
+This mode does **not** require a privileged (< 1024) source port, making it suitable for
+use from containers, CI pipelines, or any unprivileged environment.
+
+!!! warning "Password security"
+    Passing a password directly on the command line may expose it in shell history or
+    process listings. Consider setting it via an environment variable or reading from a
+    secrets manager and passing it programmatically.
+
+### ECUSER / privileged-port authentication (legacy)
+
+When `-user`/`-pass` are **not** provided, the CLI falls back to the legacy mode: the
+server identifies the caller by their Unix username (obtained from `getpwuid`) and
+verifies that the connection originated from a **privileged port** (< 1024). This mode
+is only available to privileged processes (typically those running as `root` on a trusted
+host). It is the original ECMWF production mode and requires no password.
+
+```bash
+# Must be run as root or with CAP_NET_BIND_SERVICE on a trusted host
+ecpds \
+  -echost master.example.com \
+  -destination MY_DESTINATION \
+  -source /path/to/myfile.dat
+```
+
+The privileged-port check can be disabled server-side by setting
+`ECpdsPlugin.checkPort=false` in `ecmwf.properties` (useful for local development).
+
+## Command-line reference
+
+Run `ecpds -help` for the full option list. The most commonly used options are:
+
+| Option | Description |
+|--------|-------------|
+| `-echost <host>` | DNS name or IP of the Master Server (default: `localhost,host.docker.internal`) |
+| `-ecport <port>` | Master Server port (default: `2640`) |
+| `-user <login>` | IncomingUser login for authentication |
+| `-pass <password>` | IncomingUser password for authentication |
+| `-destination <name>` | Target destination name (**required** for file push) |
+| `-source <file>` | Local file to submit (default: stdin) |
+| `-target <name>` | Remote filename or directory (default: source filename) |
+| `-priority <0–99>` | Transmission priority (default: `99`) |
+| `-lifetime <duration>` | Lifetime of the data file (e.g. `2d`, `6h`) |
+| `-delay <duration>` | Transmission delay before the file is dispatched |
+| `-at <datetime>` | Scheduled dispatch time (format: `yyyyMMddHHmmss`) |
+| `-metadata <k=v,...>` | Metadata key/value pairs |
+| `-groupby <name>` | Organise transfers into a named group |
+| `-standby` | Spool the file only (do not trigger dispatch) |
+| `-asap` | Send as soon as all files in the group are retrieved |
+| `-force` | Force re-registration when a duplicate DataFile is found |
+| `-requeue` | Requeue a DataFile and reset related transfers |
+| `-purge` | Remove a DataFile and all related transfers |
+| `-verbose` | Print verbose connection and transfer information |
+
 ## Related
 
 - [Data Portal](data-portal.md)

@@ -950,6 +950,8 @@ int usage(void) {
                   "requeue/purge option\n");
   fprintf(stdout, " -groupby     {arg} - organise transfers by groups\n");
   fprintf(stdout, " -echost      {arg} - dns name of the Master\n");
+  fprintf(stdout, " -user        {arg} - data user login for authentication\n");
+  fprintf(stdout, " -pass        {arg} - data user password for authentication\n");
   fprintf(stdout, " -streams     {arg} - maximum number of retrieval streams "
                   "(scheduler/check)\n");
   fprintf(stdout, " -timeout     {arg} - timeout for each retrieval stream "
@@ -1059,7 +1061,8 @@ int main(int argc, char *argv[]) {
       stop = 0, asap = 0, event = 0, check = 0, noretrieval = 0,
       buffsize = BUFFSIZE;
   char *caller = NULL, *echost = NULL, *originalechost = NULL, *ecport = NULL,
-       *ecuser = NULL, *resolved = NULL, *format = NULL, *group = NULL,
+       *ecuser = NULL, *incomingUser = NULL, *incomingPass = NULL,
+       *resolved = NULL, *format = NULL, *group = NULL,
        *reqid = NULL, *destination = NULL, *delay = NULL, *tmp = NULL,
        *priority = NULL, *lifetime = NULL, *at = NULL, *metadata = NULL,
        *original = NULL, *target = NULL, *version = NULL, *identity = NULL,
@@ -1120,6 +1123,14 @@ int main(int argc, char *argv[]) {
       if (--argc < 1)
         return usage();
       identity = *(++argv);
+    } else if (strcmp(*argv, "-user") == 0) {
+      if (--argc < 1)
+        return usage();
+      incomingUser = *(++argv);
+    } else if (strcmp(*argv, "-pass") == 0) {
+      if (--argc < 1)
+        return usage();
+      incomingPass = *(++argv);
     } else if (strcmp(*argv, "-format") == 0) {
       if (--argc < 1)
         return usage();
@@ -1472,6 +1483,9 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "[%.19s] INFO: echost=%s\n", getTime(), echost);
     fprintf(stderr, "[%.19s] INFO: ecport=%s\n", getTime(), ecport);
     fprintf(stderr, "[%.19s] INFO: ecuser=%s\n", getTime(), ecuser);
+    if (incomingUser != NULL) {
+      fprintf(stderr, "[%.19s] INFO: incomingUser=%s\n", getTime(), incomingUser);
+    }
     if (caller != NULL) {
       fprintf(stderr, "[%.19s] INFO: caller=%s\n", getTime(), caller);
     }
@@ -1660,10 +1674,12 @@ int main(int argc, char *argv[]) {
   /* Let's open the connection to the master and authenticate */
   char versionAndPid[512];
   sprintf(versionAndPid, "%s (cmd=ecpds,node=%s,user=%s,pid=%d,req=%s)",
-          VERSION, getHostName(), ecuser, getpid(), originalechost);
+          VERSION, getHostName(), incomingUser != NULL ? incomingUser : ecuser,
+          getpid(), originalechost);
   if ((sd = tryConnection(echost, ecport, CONNECT_TIMEOUT_IN_SECONDS)) == -1 ||
       sendCommand(sd, "VERSION", versionAndPid) == -1 ||
-      sendCommand(sd, "USER", ecuser) == -1 ||
+      (incomingPass != NULL && sendCommand(sd, "PASS", incomingPass) == -1) ||
+      sendCommand(sd, "USER", incomingUser != NULL ? incomingUser : ecuser) == -1 ||
       sendCommand(sd, "OPTS", opts) == -1 ||
       sendCommand(sd, "CALLER", caller) == -1 ||
       receiveCommand(sd, "MESSAGE", message, 512) == -1) {
