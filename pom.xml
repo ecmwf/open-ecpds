@@ -344,7 +344,7 @@
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-http</artifactId>
-					<version>10.0.26</version>
+					<version>12.0.33</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
@@ -359,12 +359,12 @@
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-security</artifactId>
-					<version>10.0.26</version>
+					<version>12.0.36</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-server</artifactId>
-					<version>10.0.26</version>
+					<version>12.0.36</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
@@ -567,7 +567,7 @@
 				<dependency>
 					<groupId>org.jsoup</groupId>
 					<artifactId>jsoup</artifactId>
-					<version>1.20.1</version>
+					<version>1.23.1</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.paho</groupId>
