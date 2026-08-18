@@ -179,9 +179,10 @@ public final class CertificateManager {
         // Basic constraints – this is an end-entity certificate
         certBuilder.addExtension(Extension.basicConstraints, false, new BasicConstraints(false));
 
-        // Subject Alternative Names: DNS + IP 127.0.0.1 for local access
+        // Subject Alternative Names: DNS hostname + localhost + loopback IPs for local access
         final var san = new GeneralNames(new GeneralName[] { new GeneralName(GeneralName.dNSName, hostname),
-                new GeneralName(GeneralName.iPAddress, "127.0.0.1") });
+                new GeneralName(GeneralName.dNSName, "localhost"), new GeneralName(GeneralName.iPAddress, "127.0.0.1"),
+                new GeneralName(GeneralName.iPAddress, "::1") });
         certBuilder.addExtension(Extension.subjectAlternativeName, false, san);
 
         final ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA")

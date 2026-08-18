@@ -198,7 +198,7 @@ case "$1" in
     fi
     $ulimit unlimited
     $echo "Cleaning tmp directory"
-    $rm -fr $dir_tmp/jetty-*-ecpds_war-* $dir_tmp/sftp.*.tmp
+    $rm -fr $dir_tmp/sftp.*.tmp
     if [ -z "$CONTAINER" ]; then
       $echo "Starting the mover daemon"
       $echo $JAVA_OPTS -cp "$STARTERPATH" ecmwf.common.starter.Starter > $dir_tmp/mover.ini

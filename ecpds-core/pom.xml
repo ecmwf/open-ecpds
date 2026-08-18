@@ -352,6 +352,11 @@
 			<version>2.20.0</version>
 		</dependency>
 		<dependency>
+			<groupId>commons-lang</groupId>
+			<artifactId>commons-lang</artifactId>
+			<version>2.6</version>
+		</dependency>
+		<dependency>
 			<groupId>commons-net</groupId>
 			<artifactId>commons-net</artifactId>
 			<version>3.11.1</version>
@@ -367,20 +372,24 @@
 			<version>[1.8.1,)</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.wink</groupId>
-			<artifactId>wink-client</artifactId>
-			<version>1.4</version>
-			<exclusions>
-				<exclusion>
-					<groupId>javax.xml.stream</groupId>
-					<artifactId>stax-api</artifactId>
-				</exclusion>
-			</exclusions>
+			<groupId>org.glassfish.jersey.containers</groupId>
+			<artifactId>jersey-container-servlet</artifactId>
+			<version>3.1.10</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.wink</groupId>
-			<artifactId>wink-json4j</artifactId>
-			<version>1.4</version>
+			<groupId>org.glassfish.jersey.inject</groupId>
+			<artifactId>jersey-hk2</artifactId>
+			<version>3.1.10</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.media</groupId>
+			<artifactId>jersey-media-json-jackson</artifactId>
+			<version>3.1.10</version>
+		</dependency>
+		<dependency>
+			<groupId>jakarta.annotation</groupId>
+			<artifactId>jakarta.annotation-api</artifactId>
+			<version>2.1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>ecaccess</groupId>
@@ -393,80 +402,99 @@
 			<version>1.0.0</version>
 		</dependency>
 		<dependency>
-			<groupId>org.eclipse.jetty</groupId>
-			<artifactId>apache-jsp</artifactId>
-			<version>10.0.26</version>
-		</dependency>
-		<dependency>
-			<groupId>org.eclipse.jetty</groupId>
-			<artifactId>apache-jstl</artifactId>
-			<version>10.0.26</version>
-			<type>pom</type>
+			<groupId>org.eclipse.jetty.ee8</groupId>
+			<artifactId>jetty-ee8-apache-jsp</artifactId>
+			<version>12.1.12</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-deploy</artifactId>
-			<version>10.0.26</version>
+			<version>12.1.12</version>
 		</dependency>
 		<dependency>
-			<groupId>org.eclipse.jetty</groupId>
-			<artifactId>jetty-annotations</artifactId>
-			<version>10.0.26</version>
+			<groupId>org.eclipse.jetty.ee8</groupId>
+			<artifactId>jetty-ee8-annotations</artifactId>
+			<version>12.1.12</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-http</artifactId>
-			<version>10.0.26</version>
+			<version>12.1.12</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-io</artifactId>
-			<version>10.0.26</version>
+			<version>12.1.12</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-rewrite</artifactId>
-			<version>10.0.26</version>
+			<version>12.1.12</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-security</artifactId>
-			<version>10.0.26</version>
+			<version>12.1.12</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-server</artifactId>
-			<version>10.0.26</version>
+			<version>12.1.12</version>
 		</dependency>
 		<dependency>
-			<groupId>org.eclipse.jetty</groupId>
-			<artifactId>jetty-servlet</artifactId>
-			<version>10.0.26</version>
+			<groupId>org.eclipse.jetty.compression</groupId>
+			<artifactId>jetty-compression-server</artifactId>
+			<version>12.1.12</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty.compression</groupId>
+			<artifactId>jetty-compression-gzip</artifactId>
+			<version>12.1.12</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty.compression</groupId>
+			<artifactId>jetty-compression-common</artifactId>
+			<version>12.1.12</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty.ee10</groupId>
+			<artifactId>jetty-ee10-servlet</artifactId>
+			<version>12.1.12</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty.ee10</groupId>
+			<artifactId>jetty-ee10-webapp</artifactId>
+			<version>12.1.12</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty.ee8</groupId>
+			<artifactId>jetty-ee8-servlet</artifactId>
+			<version>12.1.12</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-util</artifactId>
-			<version>10.0.26</version>
+			<version>12.1.12</version>
 		</dependency>
 		<dependency>
-			<groupId>org.eclipse.jetty</groupId>
-			<artifactId>jetty-webapp</artifactId>
-			<version>10.0.26</version>
+			<groupId>org.eclipse.jetty.ee8</groupId>
+			<artifactId>jetty-ee8-webapp</artifactId>
+			<version>12.1.12</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty.ee8.websocket</groupId>
+			<artifactId>jetty-ee8-websocket-jetty-server</artifactId>
+			<version>12.1.12</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty.websocket</groupId>
-			<artifactId>websocket-jetty-server</artifactId>
-			<version>10.0.26</version>
+			<artifactId>jetty-websocket-jetty-api</artifactId>
+			<version>12.1.12</version>
 		</dependency>
 		<dependency>
-			<groupId>org.eclipse.jetty.websocket</groupId>
-			<artifactId>websocket-jetty-api</artifactId>
-			<version>10.0.26</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.wink</groupId>
-			<artifactId>wink-server</artifactId>
-			<version>1.4</version>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>4.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.ehcache</groupId>
@@ -482,6 +510,23 @@
 					<artifactId>jetty-server</artifactId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+		<!-- Provides javax.xml.bind.* API classes required by ehcache 3.x XML config
+		     parsing (removed from JDK 9+). The full jaxb-runtime from ehcache is
+		     excluded above because it references broken snapshot repositories.
+		     jaxb-impl provides the JAXB 2.x implementation (javax namespace) and
+		     coexists with Hibernate's jaxb-runtime 4.x (jakarta namespace). -->
+		<dependency>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>2.3.1</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-impl</artifactId>
+			<version>2.3.9</version>
+			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.maxmind.geoip2</groupId>
@@ -571,27 +616,27 @@
 		<dependency>
 			<groupId>com.azure</groupId>
 			<artifactId>azure-core</artifactId>
-			<version>1.55.4</version>
+			<!-- version managed by parent -->
 		</dependency>
 		<dependency>
 			<groupId>com.azure</groupId>
 			<artifactId>azure-core-http-netty</artifactId>
-			<version>1.15.12</version>
+			<!-- version managed by parent -->
 		</dependency>
 		<dependency>
 			<groupId>com.azure</groupId>
 			<artifactId>azure-storage-blob</artifactId>
-			<version>12.30.1</version>
+			<!-- version managed by parent -->
 		</dependency>
 		<dependency>
 			<groupId>com.azure</groupId>
 			<artifactId>azure-storage-common</artifactId>
-			<version>12.29.1</version>
+			<!-- version managed by parent -->
 		</dependency>
 		<dependency>
 			<groupId>com.azure</groupId>
 			<artifactId>azure-identity</artifactId>
-			<version>1.16.2</version>
+			<!-- version managed by parent -->
 		</dependency>
 		<dependency>
 			<groupId>com.google.cloud</groupId>
@@ -606,12 +651,7 @@
 		<dependency>
 			<groupId>org.apache.jackrabbit</groupId>
 			<artifactId>jackrabbit-webdav</artifactId>
-			<version>2.22.3</version>
-		</dependency>
-		<dependency>
-			<groupId>org.codehaus.jackson</groupId>
-			<artifactId>jackson-all</artifactId>
-			<version>1.9.11</version>
+			<!-- version managed by parent -->
 		</dependency>
 		<dependency>
 			<groupId>com.hivemq</groupId>

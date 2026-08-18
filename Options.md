@@ -1507,7 +1507,7 @@ Adds a private key to be used for public-key authentication. The private key sho
 Adds a private key to be used for public-key authentication. The private key should be in the PEM format in a file accessible from the ECaccess Gateway (the file permissions should be set accordingly). This option contains the name of the file (e.g. "/home/uid/.ssh/mykey.pem"). If both options, "sftp.privateKeyFile" and "sftp.privateKey" are defined, then the latest will be ignored.
 
 ### sftp.properties
-Allow setting options for the HTTP client used to interact with the Web service defined in the context of the "sftp.allocate" and "sftp.commit" options (e.g. "wink.client.readTimeout=600000;wink.client.connectTimeout=60000").
+Allow setting options for the HTTP client used to interact with the Web service defined in the context of the "sftp.allocate" and "sftp.commit" options. Supported keys: "connectTimeout" (ms, used for both connect and request timeout, e.g. "connectTimeout=60000"), "proxyHost", "proxyPort", "bypassHostnameVerification" (true/false). Example: "connectTimeout=60000;proxyHost=proxy.example.com;proxyPort=8080".
 
 ### sftp.serverAliveCountMax
 Used to set the maximum number of server-alive messages that can be sent without a reply from the server. This method is related to the SSH protocol keep-alive mechanism.

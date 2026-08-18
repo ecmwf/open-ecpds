@@ -214,7 +214,8 @@ public abstract class ServerPlugin extends PluginThread {
                 } catch (final SocketTimeoutException e) {
                     continue;
                 } catch (InterruptedIOException | SocketException e) {
-                    _log.warn("Accepting a connection", e);
+                    if (_run)
+                        _log.warn("Accepting a connection", e);
                     continue;
                 } catch (final Exception e) {
                     _log.warn("Accepting a connection", e);

@@ -1740,8 +1740,8 @@ public final class MoverProvider extends NativeAuthenticationProvider {
             @Override
             public void delete(final boolean force) throws EccmdException, IOException {
                 try {
-                    _mover.getDataFileAccessInterface().delete(_destination.getName(), getDataTransferIdOrPath(),
-                            force);
+                    _mover.getDataFileAccessInterface().delete(_destination.getName(), getDataTransferIdOrPath(), force,
+                            "by DataUser=" + getUser() + " via " + _protocol);
                 } catch (final MasterException e) {
                     throw new EccmdException(e.getMessage());
                 }
@@ -1846,7 +1846,8 @@ public final class MoverProvider extends NativeAuthenticationProvider {
             @Override
             public void move(final String target) throws EccmdException, IOException {
                 try {
-                    _mover.getDataFileAccessInterface().move(_destination.getName(), getDataTransferIdOrPath(), target);
+                    _mover.getDataFileAccessInterface().move(_destination.getName(), getDataTransferIdOrPath(), target,
+                            "by DataUser=" + getUser() + " via " + _protocol);
                 } catch (final MasterException e) {
                     throw new EccmdException(e.getMessage());
                 }

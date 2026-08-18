@@ -45,6 +45,7 @@ import java.util.Set;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
@@ -83,20 +84,20 @@ import org.apache.jackrabbit.webdav.property.PropEntry;
 import org.apache.jackrabbit.webdav.server.AbstractWebdavServlet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-
 import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.common.ecaccess.NativeAuthenticationProvider;
 import ecmwf.common.ecaccess.UserSession;
 import ecmwf.common.technical.Cnf;
+import ecmwf.common.technical.ProxyEvent;
 import ecmwf.common.technical.ProxySocket;
 
 /**
- * Jetty handler exposing the ECPDS virtual file system as WebDAV.
+ * Jetty servlet exposing the ECPDS virtual file system as WebDAV.
  */
-public final class WebDavHandler extends AbstractHandler {
+public final class WebDavHandler extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
     /** The logger. */
     private static final Logger _log = LogManager.getLogger(WebDavHandler.class);
 
@@ -123,12 +124,9 @@ public final class WebDavHandler extends AbstractHandler {
     }
 
     @Override
-    public void handle(final String target, final Request baseRequest, final HttpServletRequest request,
-            final HttpServletResponse response) throws IOException, ServletException {
-        if (!target.startsWith(contextPath)) {
-            return;
-        }
-        _log.debug("WebDAV {} {}", request.getMethod(), target);
+    protected void service(final HttpServletRequest request, final HttpServletResponse response)
+            throws IOException, ServletException {
+        _log.debug("WebDAV {} {}", request.getMethod(), request.getRequestURI());
         // Jackrabbit builds hrefPrefix as getContextPath() + getServletPath().
         // Outside a proper servlet container both return null, so we wrap the request
         // to supply the fixed values Jackrabbit needs to strip the prefix from URIs.
@@ -144,8 +142,7 @@ public final class WebDavHandler extends AbstractHandler {
             }
         };
         servlet.service(wrapped, response);
-        _log.debug("WebDAV {} {} -> {}", request.getMethod(), target, response.getStatus());
-        baseRequest.setHandled(true);
+        _log.debug("WebDAV {} {} -> {}", request.getMethod(), request.getRequestURI(), response.getStatus());
     }
 
     private static String normalizeContextPath(final String value) {
@@ -272,7 +269,7 @@ public final class WebDavHandler extends AbstractHandler {
                         .getUserSession(request.getRemoteAddr(), username, password, "webdav", () -> {
                         });
                 _log.debug("WebDAV session attached for user={} from={}", username, request.getRemoteAddr());
-                request.setDavSession(new EcpdsDavSession(userSession, username));
+                request.setDavSession(new EcpdsDavSession(userSession, username, request.getRemoteAddr()));
                 return true;
             } catch (final Exception e) {
                 _log.debug("WebDAV authentication failed", e);
@@ -295,12 +292,14 @@ public final class WebDavHandler extends AbstractHandler {
     private static final class EcpdsDavSession implements DavSession {
         private final UserSession userSession;
         private final String username;
+        private final String remoteAddr;
         private final Set<String> lockTokens = Collections.synchronizedSet(new HashSet<>());
         private final Set<Object> references = Collections.synchronizedSet(new HashSet<>());
 
-        EcpdsDavSession(final UserSession userSession, final String username) {
+        EcpdsDavSession(final UserSession userSession, final String username, final String remoteAddr) {
             this.userSession = userSession;
             this.username = username;
+            this.remoteAddr = remoteAddr;
         }
 
         UserSession getUserSession() {
@@ -309,6 +308,10 @@ public final class WebDavHandler extends AbstractHandler {
 
         String getUsername() {
             return username;
+        }
+
+        String getRemoteAddr() {
+            return remoteAddr;
         }
 
         @Override
@@ -570,6 +573,11 @@ public final class WebDavHandler extends AbstractHandler {
             ProxySocket proxy = null;
             try {
                 proxy = session.getUserSession().getProxySocketInput(toFtpPath(getResourcePath()), 0);
+                final var event = new ProxyEvent(proxy);
+                event.setProtocol("webdav");
+                event.setRemoteHost(session.getRemoteAddr());
+                event.setUserType(ProxyEvent.UserType.DATA_USER);
+                event.setUserName(session.getUserSession().getUser());
                 try (InputStream in = proxy.getDataInputStream(); OutputStream out = outputContext.getOutputStream()) {
                     in.transferTo(out);
                 }
@@ -677,6 +685,12 @@ public final class WebDavHandler extends AbstractHandler {
                 ProxySocket proxy = null;
                 try {
                     proxy = session.getUserSession().getProxySocketOutput(toFtpPath(targetPath), 0, 0640);
+                    final var event = new ProxyEvent(proxy);
+                    event.setProtocol("webdav");
+                    event.setRemoteHost(session.getRemoteAddr());
+                    event.setUserType(ProxyEvent.UserType.DATA_USER);
+                    event.setUserName(session.getUserSession().getUser());
+                    event.setUpload(true);
                     try (InputStream in = inputContext.getInputStream();
                             OutputStream out = proxy.getDataOutputStream()) {
                         in.transferTo(out);

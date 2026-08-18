@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
@@ -356,8 +357,8 @@ public class GetHostListJsonAction extends PDSAction {
         for (final Host host : hostList) {
             final var propErr = hasPropertyErrors(host);
             final var dirNonEmpty = host.getDir() != null && !host.getDir().isBlank();
-            final var jsData = host.getData();
-            final var jsSepIdx = jsData != null ? jsData.indexOf(ECtransSetup.SEPARATOR) : -1;
+            final var jsData = Objects.requireNonNullElse(host.getData(), "");
+            final var jsSepIdx = jsData.indexOf(ECtransSetup.SEPARATOR);
             final var jsContent = jsSepIdx >= 0 ? jsData.substring(jsSepIdx + ECtransSetup.SEPARATOR.length()).trim()
                     : "";
             final var jsNonEmpty = !jsContent.isEmpty();

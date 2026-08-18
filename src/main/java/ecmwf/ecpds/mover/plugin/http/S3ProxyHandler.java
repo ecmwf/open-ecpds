@@ -37,6 +37,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
@@ -44,15 +45,15 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -359,7 +360,7 @@ public class S3ProxyHandler {
             var haveDate = true;
 
             final AuthenticationType finalAuthType;
-            if (authHeader.authenticationType == AuthenticationType.AWS_V2
+            if (Objects.requireNonNull(authHeader).authenticationType == AuthenticationType.AWS_V2
                     && (authenticationType == AuthenticationType.AWS_V2
                             || authenticationType == AuthenticationType.AWS_V2_OR_V4)) {
                 finalAuthType = AuthenticationType.AWS_V2;
@@ -444,7 +445,7 @@ public class S3ProxyHandler {
                 }
 
                 // The aim ?
-                switch (authHeader.authenticationType) {
+                switch (Objects.requireNonNull(authHeader).authenticationType) {
                 case AWS_V2:
                     switch (authenticationType) {
                     case AWS_V2, AWS_V2_OR_V4:
@@ -507,7 +508,8 @@ public class S3ProxyHandler {
                             // a lot of dup code with aws sign code.
                             final var md = MessageDigest.getInstance(authHeader.hashAlgorithm);
                             final var hash = md.digest(payload);
-                            if (!contentSha256.equals(BaseEncoding.base16().lowerCase().encode(hash))) {
+                            if (contentSha256 != null
+                                    && !contentSha256.equals(BaseEncoding.base16().lowerCase().encode(hash))) {
                                 throw new S3Exception(S3ErrorCode.X_AMZ_CONTENT_S_H_A_256_MISMATCH);
                             }
                             is = new ByteArrayInputStream(payload);

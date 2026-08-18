@@ -37,22 +37,22 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import org.codehaus.jackson.annotate.JsonProperty;
-import org.codehaus.jackson.annotate.JsonSetter;
-import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
-import org.codehaus.jackson.map.exc.UnrecognizedPropertyException;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJsonProvider;
 
 import ecmwf.common.database.Alias;
 import ecmwf.common.database.Association;
@@ -88,13 +88,12 @@ public final class ECpdsApplication extends Application {
      *
      * Gets the singletons.
      */
-    @SuppressWarnings("deprecation")
     @Override
     public Set<Object> getSingletons() {
         final Set<Object> s = new HashSet<>();
         final var jaxbProvider = new JacksonProvider();
         final var mapper = new ObjectMapper();
-        mapper.getSerializationConfig().set(SerializationConfig.Feature.INDENT_OUTPUT, true);
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
         addMixInAnnotations(mapper, Destination.class, DestinationMixIn.class);
         addMixInAnnotations(mapper, IncomingUser.class, IncomingUserMixIn.class);
         addMixInAnnotations(mapper, Association.class, AssociationMixIn.class);
@@ -119,8 +118,7 @@ public final class ECpdsApplication extends Application {
      *            the mixin source
      */
     private void addMixInAnnotations(final ObjectMapper mapper, final Class<?> target, final Class<?> mixinSource) {
-        mapper.getSerializationConfig().addMixInAnnotations(target, mixinSource);
-        mapper.getDeserializationConfig().addMixInAnnotations(target, mixinSource);
+        mapper.addMixIn(target, mixinSource);
     }
 
     /**
@@ -951,8 +949,16 @@ public final class ECpdsApplication extends Application {
     /**
      * The Class JacksonProvider. Allow catching the parsing errors and send an appropriate exception to the container.
      */
-    @javax.ws.rs.ext.Provider
-    public static final class JacksonProvider extends JacksonJaxbJsonProvider {
+    @jakarta.ws.rs.ext.Provider
+    public static final class JacksonProvider extends JacksonJsonProvider {
+        public JacksonProvider() {
+            super();
+        }
+
+        public JacksonProvider(final ObjectMapper mapper) {
+            super(mapper);
+        }
+
         /**
          * Gets the throwable message.
          *

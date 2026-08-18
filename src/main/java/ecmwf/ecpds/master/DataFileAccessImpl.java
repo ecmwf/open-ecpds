@@ -27,6 +27,7 @@ package ecmwf.ecpds.master;
  */
 
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_INCOMING;
+import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_SCHEDULER;
 import static ecmwf.common.ectrans.ECtransGroups.Module.USER_PORTAL;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_INCOMING_DOWNLOAD_PERIOD;
@@ -547,11 +548,20 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     @Override
     public void delete(final String destinationName, final String source, final boolean force)
             throws MasterException, IOException {
+        delete(destinationName, source, force, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void delete(final String destinationName, final String source, final boolean force, final String byAndFrom)
+            throws MasterException, IOException {
         final var monitor = new MonitorCall("delete(" + destinationName + "," + source + "," + force + ")");
         try {
             master.removeDataFileAndDataTransfers(
                     getDataTransfer(getDestination(destinationName), source).getDataFile(), null,
-                    "from the incoming connection");
+                    isNotEmpty(byAndFrom) ? byAndFrom : "from the incoming connection");
         } catch (final DataBaseException e) {
             throw new MasterException("DataBase error");
         }
@@ -1014,6 +1024,15 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     @Override
     public void move(final String destinationName, final String source, final String target)
             throws MasterException, IOException {
+        move(destinationName, source, target, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void move(final String destinationName, final String source, final String target, final String byAndFrom)
+            throws MasterException, IOException {
         final var monitor = new MonitorCall("move(" + destinationName + "," + source + "," + target + ")");
         final var destination = getDestination(destinationName);
         try {
@@ -1086,14 +1105,16 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                     transfer.setStatusCode(status);
                     transfer.setComment(
                             "Renamed from " + oldTarget + " to " + newTarget + " and scheduled for no sooner than "
-                                    + Format.formatTime("MMM dd HH:mm:ss", transfer.getScheduledTime().getTime()));
+                                    + Format.formatTime("MMM dd HH:mm:ss", transfer.getScheduledTime().getTime())
+                                    + (isNotEmpty(byAndFrom) ? " " + byAndFrom : ""));
                     _log.debug("DataTransfer {} renamed from {} to {} and queued", transfer.getId(), oldTarget,
                             newTarget);
                 } else {
                     // It was not a temporary file or the new name is still a
                     // temporary file or the DataTransfer is not in Standby so
                     // there is nothing to do!
-                    transfer.setComment("Renamed from " + oldTarget + " to " + newTarget);
+                    transfer.setComment("Renamed from " + oldTarget + " to " + newTarget
+                            + (isNotEmpty(byAndFrom) ? " " + byAndFrom : ""));
                     _log.debug("DataTransfer {} renamed from {} to {}", transfer.getId(), oldTarget, newTarget);
                 }
                 dataBase.update(transfer);

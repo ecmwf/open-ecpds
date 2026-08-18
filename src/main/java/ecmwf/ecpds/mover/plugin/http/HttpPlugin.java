@@ -26,7 +26,6 @@ package ecmwf.ecpds.mover.plugin.http;
  * @since 2024-07-01
  */
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
@@ -36,39 +35,32 @@ import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.compression.gzip.GzipCompression;
+import org.eclipse.jetty.compression.server.CompressionConfig;
+import org.eclipse.jetty.compression.server.CompressionHandler;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.http.UriCompliance;
-import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.rewrite.handler.HeaderPatternRule;
 import org.eclipse.jetty.rewrite.handler.RewriteHandler;
-import org.eclipse.jetty.security.ConstraintMapping;
-import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.server.Handler;
-
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.server.handler.ContextHandler;
-import org.eclipse.jetty.server.handler.DefaultHandler;
-import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
-import org.eclipse.jetty.util.MultiException;
-import org.eclipse.jetty.util.security.Constraint;
+import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.eclipse.jetty.webapp.WebAppContext;
 
 import ecmwf.common.mbean.MBeanManager;
 import ecmwf.common.plugin.PluginThread;
@@ -188,46 +180,60 @@ public final class HttpPlugin extends PluginThread {
             httpConfig.setSendServerVersion(false);
             httpConfig.setSendDateHeader(false);
             httpConfig.setSendXPoweredBy(false);
-            // War deployer for ecpds
-            final var ecpds = new WebAppContext();
-            ecpds.setContextPath("/ecpds");
-            ecpds.setExtractWAR(true);
-            ecpds.setParentLoaderPriority(false);
-            ecpds.setAllowDuplicateFragmentNames(false);
-            final var ecpdsFile = new File(jettyHome + "/webapps/ecpds.war");
-            ecpds.setWar(ecpdsFile.getAbsolutePath());
-            // Security
-            final var constraint = new Constraint();
-            constraint.setDataConstraint(Constraint.DC_CONFIDENTIAL);
-            final var cm = new ConstraintMapping();
-            cm.setConstraint(constraint);
-            cm.setPathSpec("/*");
-            final var sh = new ConstraintSecurityHandler();
-            sh.setConstraintMappings(new ConstraintMapping[] { cm });
+            // REST API (Jersey, EE10)
+            final var restApplication = new ecmwf.ecpds.mover.service.RESTApplication();
+            final var jerseyConfig = new org.glassfish.jersey.server.ResourceConfig();
+            restApplication.getClasses().forEach(jerseyConfig::register);
+            restApplication.getSingletons().forEach(jerseyConfig::register);
+            final var rest = new ServletContextHandler("/ecpds", ServletContextHandler.NO_SESSIONS);
+            rest.addServlet(new ServletHolder(new org.glassfish.jersey.servlet.ServletContainer(jerseyConfig)), "/*");
+            // Security: redirect HTTP to HTTPS when both ports are configured.
+            // Use a plain Handler.Abstract instead of SecurityHandler.PathMapped — the
+            // SecurityHandler approach triggers an UnsupportedOperationException in Jetty 12
+            // when attempting Response.sendRedirect() on an HTTP request body.
+            final Handler sh;
+            if (httpPort >= 0 && httpsPort >= 0) {
+                final int targetHttpsPort = httpsPort;
+                sh = new Handler.Abstract() {
+                    @Override
+                    public boolean handle(final Request request, final Response response, final Callback callback)
+                            throws Exception {
+                        if (!request.isSecure()) {
+                            final var uri = request.getHttpURI();
+                            final var httpsUrl = "https://" + uri.getHost() + ":" + targetHttpsPort
+                                    + uri.getPathQuery();
+                            Response.sendRedirect(request, response, callback, httpsUrl);
+                            return true;
+                        }
+                        return false;
+                    }
+                };
+            } else {
+                sh = new Handler.Abstract() {
+                    @Override
+                    public boolean handle(final Request request, final Response response, final Callback callback) {
+                        return false;
+                    }
+                };
+            }
             // Resources
             final var resource = new ResourceHandler();
-            resource.setDirectoriesListed(false);
+            resource.setDirAllowed(false);
             resource.setWelcomeFiles(new String[] { "index.html" });
-            resource.setResourceBase(jettyHome + "/resources");
-            // Statistics
-            final var stats = new StatisticsHandler();
-            stats.setHandler(server.getHandler());
+            resource.setBaseResourceAsString(jettyHome + "/resources");
             // AmazonS3 proxy – on by default, disable with s3Enabled=false
-            ContextHandler s3proxy = null;
+            ServletContextHandler s3proxy = null;
             final var s3Enabled = Cnf.at("HttpPlugin", "s3Enabled", true);
             if (s3Enabled) {
                 final var s3ServicePath = Cnf.at("HttpPlugin", "s3ServicePath", "/s3");
                 _log.info("S3 proxy enabled at {}", s3ServicePath);
-                s3proxy = new ContextHandler();
-                s3proxy.setContextPath(s3ServicePath);
-                // Allow requests to exactly /s3 (no trailing slash) to pass through without
-                // Jetty issuing an HTTP redirect — S3 clients cannot follow non-S3 redirects.
-                s3proxy.setAllowNullPathInfo(true);
-                s3proxy.setHandler(new S3ProxyHandlerJetty(
+                s3proxy = new ServletContextHandler(s3ServicePath, ServletContextHandler.NO_SESSIONS);
+                s3proxy.setAllowNullPathInContext(true);
+                s3proxy.addServlet(new S3ProxyHandlerJetty(
                         AuthenticationType.fromString(Cnf.at("HttpPlugin", "s3AuthenticationType", "AWS_V2_OR_V4")),
                         Cnf.at("HttpPlugin", "s3V4MaxNonChunkedRequestSize", 32 * 1024 * 1024),
                         Cnf.at("HttpPlugin", "s3IgnoreUnknownHeaders", true), new CrossOriginResourceSharing(),
-                        s3ServicePath, Cnf.at("HttpPlugin", "s3MaximumTimeSkew", 15 * 60)));
+                        s3ServicePath, Cnf.at("HttpPlugin", "s3MaximumTimeSkew", 15 * 60)), "/*");
             }
             // Add security headers
             final var rewrite = new RewriteHandler();
@@ -244,21 +250,25 @@ public final class HttpPlugin extends PluginThread {
             if (!globalCorsAllowOrigin.isEmpty()) {
                 _log.info("Global CORS fallback enabled: Access-Control-Allow-Origin: {}", globalCorsAllowOrigin);
             }
-            // Handling requests with a server name mapping to a data user
-            final Handler dns = new AbstractHandler() {
+            // Handling requests with a server name mapping to a data user.
+            // Use a plain Handler.Abstract (not a ServletContextHandler) so that unmatched
+            // requests fall through to the next handler in the sequence rather than getting
+            // consumed with a 404 by the servlet context.
+            final var dns = new Handler.Abstract() {
                 @Override
-                public void handle(final String target, final Request jettyRequest, final HttpServletRequest request,
-                        final HttpServletResponse response) throws IOException, ServletException {
+                public boolean handle(final Request request, final Response response, final Callback callback)
+                        throws Exception {
+                    final var target = request.getHttpURI().getPath();
                     for (final String dnsPath : Cnf.listAt("HttpPlugin", "dnsPathList")) {
-                        final var dnsAndPath = dnsPath.split("="); // e.g, opendata=forecasts
+                        final var dnsAndPath = dnsPath.split("="); // e.g. opendata=forecasts
                         if (dnsAndPath.length == 2) {
-                            final var dns = dnsAndPath[0]; // must map a data user!
+                            final var dnsName = dnsAndPath[0]; // must map a data user!
                             // When behind a load balancer, the original public hostname is carried in
                             // X-Forwarded-Host; fall back to the direct server name for plain connections.
-                            final var xForwardedHost = request.getHeader("X-Forwarded-Host");
+                            final var xForwardedHost = request.getHeaders().get("X-Forwarded-Host");
                             final var effectiveHost = xForwardedHost != null && !xForwardedHost.isBlank()
-                                    ? xForwardedHost.split(",")[0].trim() : request.getServerName();
-                            if (dns.equals(effectiveHost)) {
+                                    ? xForwardedHost.split(",")[0].trim() : request.getHttpURI().getHost();
+                            if (dnsName.equals(effectiveHost)) {
                                 final var path = dnsAndPath[1];
                                 final var url = "/".equals(target) ? "/" + path + "/" : target;
                                 if (url.startsWith("/" + path + "/")) {
@@ -269,7 +279,7 @@ public final class HttpPlugin extends PluginThread {
                                         final var mover = StarterServer.getInstance(MoverServer.class);
                                         if (mover != null) {
                                             final var profile = mover.getMasterInterface()
-                                                    .getIncomingProfileNoAuth(dns);
+                                                    .getIncomingProfileNoAuth(dnsName);
                                             if (profile != null) {
                                                 final var perUser = profile.getECtransSetup()
                                                         .getString(ECtransOptions.USER_PORTAL_CORS_ALLOW_ORIGIN);
@@ -279,37 +289,35 @@ public final class HttpPlugin extends PluginThread {
                                             }
                                         }
                                     } catch (final Exception e) {
-                                        _log.debug("CORS: could not resolve IncomingUser {}: {}", dns, e.getMessage());
+                                        _log.debug("CORS: could not resolve IncomingUser {}: {}", dnsName,
+                                                e.getMessage());
                                     }
-                                    // Add CORS headers before the forward so they survive servlet dispatch.
-                                    // For OPTIONS preflight, short-circuit immediately with 204.
-                                    if (!corsAllowOrigin.isEmpty() && request.getHeader("Origin") != null) {
-                                        response.addHeader("Access-Control-Allow-Origin", corsAllowOrigin);
-                                        response.addHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-                                        response.addHeader("Access-Control-Allow-Headers",
+                                    // Add CORS headers. For OPTIONS preflight, short-circuit with 204.
+                                    if (!corsAllowOrigin.isEmpty() && request.getHeaders().get("Origin") != null) {
+                                        response.getHeaders().add("Access-Control-Allow-Origin", corsAllowOrigin);
+                                        response.getHeaders().add("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+                                        response.getHeaders().add("Access-Control-Allow-Headers",
                                                 "Range, Content-Type, Authorization");
-                                        response.addHeader("Access-Control-Expose-Headers",
+                                        response.getHeaders().add("Access-Control-Expose-Headers",
                                                 "Content-Range, Content-Length, Accept-Ranges, ETag, Last-Modified");
                                         if ("OPTIONS".equals(request.getMethod())) {
-                                            response.addHeader("Access-Control-Max-Age", "86400");
-                                            response.setStatus(HttpServletResponse.SC_NO_CONTENT);
-                                            jettyRequest.setHandled(true);
-                                            break;
+                                            response.getHeaders().add("Access-Control-Max-Age", "86400");
+                                            response.setStatus(204);
+                                            callback.succeeded();
+                                            return true;
                                         }
                                     }
-                                    request.setAttribute("original-target", "/" + path);
-                                    ecpds.getServletContext()
-                                            .getRequestDispatcher(
-                                                    url.replaceFirst("^/" + path + "/", "/home/" + dns + "/"))
-                                            .forward(request, response);
-                                    jettyRequest.setHandled(true);
-                                    break;
+                                    final var redirectUrl = url.replaceFirst("^/" + path + "/",
+                                            "/home/" + dnsName + "/");
+                                    Response.sendRedirect(request, response, callback, redirectUrl);
+                                    return true;
                                 }
                             }
                         } else {
                             _log.warn("Malformed element for dnsPathList: {}", dnsPath);
                         }
                     }
+                    return false;
                 }
             };
             // WebDAV (RFC 4918 with locking) – on by default, disable with webdavEnabled=false
@@ -318,26 +326,58 @@ public final class HttpPlugin extends PluginThread {
             if (webdavEnabled) {
                 final var webdavPath = Cnf.at("HttpPlugin", "webdavPath", "/webdav");
                 _log.info("WebDAV enabled at {}", webdavPath);
-                final var webdavHandler = new WebDavHandler(webdavPath);
-                webdav = webdavHandler;
+                final var webdavContext = new org.eclipse.jetty.ee8.servlet.ServletContextHandler(
+                        org.eclipse.jetty.ee8.servlet.ServletContextHandler.NO_SESSIONS);
+                webdavContext.setContextPath(webdavPath);
+                webdavContext.setAllowNullPathInfo(true);
+                webdavContext.addServlet(new org.eclipse.jetty.ee8.servlet.ServletHolder(new WebDavHandler(webdavPath)),
+                        "/*");
+                webdav = webdavContext.get();
             }
             // Add all the handlers to the server!
-            final var handlers = new HandlerList();
             final var handlerList = new ArrayList<Handler>();
+            handlerList.add(sh); // HTTP→HTTPS redirect (no-op when already secure or only one port)
             handlerList.add(dns);
-            handlerList.add(rewrite);
-            handlerList.add(sh);
-            handlerList.add(resource);
-            handlerList.add(ecpds);
+            // All service handlers must come BEFORE the static ResourceHandler.
+            // In Jetty 12, ResourceHandler intercepts OPTIONS for ALL paths (returning a plain
+            // Allow: GET,HEAD,OPTIONS with no DAV: or JAX-RS methods), which breaks WebDAV
+            // discovery (Finder) and CORS preflight on REST/S3 endpoints. Service handlers are
+            // path-scoped so they only consume requests they own; unmatched requests fall through
+            // to ResourceHandler which serves static assets from the htdocs/resources directory.
+            if (webdav != null) {
+                // Jetty 12 quirk: the EE8 ContextHandler needs the request URI canonical path
+                // to have been accessed at least once before dispatch (lazy field population).
+                handlerList.add(new Handler.Abstract() {
+                    @Override
+                    public boolean handle(final Request request, final Response response, final Callback callback) {
+                        request.getHttpURI().getCanonicalPath(); // pre-populate lazy URI state for EE8
+                        return false;
+                    }
+                });
+                handlerList.add(webdav);
+            }
+            handlerList.add(rest);
             if (s3proxy != null) {
                 handlerList.add(s3proxy);
             }
-            if (webdav != null) {
-                handlerList.add(webdav);
+            handlerList.add(resource); // fallback: static assets only
+            Handler handlers = new Handler.Sequence(handlerList);
+            // Enable on-the-fly compression for REST and static content.
+            // S3 and WebDAV paths are excluded because they transfer binary/already-compressed
+            // data and clients manage their own Content-Encoding for those protocols.
+            if (Cnf.at("HttpPlugin", "compression", true)) {
+                final var s3Path = Cnf.at("HttpPlugin", "s3ServicePath", "/s3");
+                final var webdavPath = Cnf.at("HttpPlugin", "webdavPath", "/webdav");
+                final var compressionConfig = CompressionConfig.builder().compressExcludePath(s3Path + "/*")
+                        .compressExcludePath(webdavPath + "/*").build();
+                final var compression = new CompressionHandler();
+                compression.putCompression(new GzipCompression());
+                compression.putConfiguration("/*", compressionConfig);
+                compression.setHandler(handlers);
+                handlers = compression;
             }
-            handlerList.add(new DefaultHandler());
-            handlers.setHandlers(handlerList.toArray(new Handler[0]));
-            server.setHandler(handlers);
+            rewrite.setHandler(handlers);
+            server.setHandler(rewrite);
             // Suppress stack traces from Jetty's default error pages
             final var errorHandler = new ErrorHandler();
             errorHandler.setShowStacks(false);
@@ -420,10 +460,6 @@ public final class HttpPlugin extends PluginThread {
             // Starting the server
             server.start();
             return true;
-        } catch (final MultiException e) {
-            for (final Throwable t : e.getThrowables()) {
-                _log.error("Starting the plugin", t);
-            }
         } catch (final Exception e) {
             _log.error("Starting the plugin", e);
         } finally {
@@ -447,8 +483,8 @@ public final class HttpPlugin extends PluginThread {
     private static HeaderPatternRule getRule(final String pattern, final String name, final String value) {
         final var headerRule = new HeaderPatternRule();
         headerRule.setPattern(pattern);
-        headerRule.setName(name);
-        headerRule.setValue(value);
+        headerRule.setHeaderName(name);
+        headerRule.setHeaderValue(value);
         return headerRule;
     }
 
@@ -668,7 +704,7 @@ public final class HttpPlugin extends PluginThread {
         try {
             if ("statsReset".equals(operationName)) {
                 if (statsHandler != null) {
-                    statsHandler.statsReset();
+                    statsHandler.reset();
                 }
                 return Boolean.TRUE;
             }

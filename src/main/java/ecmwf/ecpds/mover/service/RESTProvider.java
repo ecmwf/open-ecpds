@@ -31,19 +31,19 @@ import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import org.codehaus.jackson.annotate.JsonProperty;
-import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.exc.UnrecognizedPropertyException;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJsonProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 
 import ecmwf.common.database.DataFile;
 import ecmwf.common.database.DataTransfer;
@@ -63,8 +63,16 @@ final class RESTProvider {
     /**
      * The Class JacksonProvider. Allow catching the parsing errors and send an appropriate exception to the container.
      */
-    @javax.ws.rs.ext.Provider
-    public static final class JacksonProvider extends JacksonJaxbJsonProvider {
+    @jakarta.ws.rs.ext.Provider
+    public static final class JacksonProvider extends JacksonJsonProvider {
+        public JacksonProvider() {
+            super();
+        }
+
+        public JacksonProvider(final ObjectMapper mapper) {
+            super(mapper);
+        }
+
         /**
          * Gets the throwable message.
          *
@@ -130,18 +138,15 @@ final class RESTProvider {
      * @return the jackson provider
      */
     public static JacksonProvider getJacksonProvider() {
-        final var jaxbProvider = new JacksonProvider();
         final var mapper = new ObjectMapper();
-        final var d = mapper.getDeserializationConfig();
-        d.addMixInAnnotations(DataTransfer.class, DataTransferMixIn.class);
-        d.addMixInAnnotations(DataFile.class, DataFileMixIn.class);
-        d.addMixInAnnotations(ECUser.class, ECUserMixIn.class);
-        d.addMixInAnnotations(HostLocation.class, HostLocationMixIn.class);
-        d.addMixInAnnotations(Host.class, HostMixIn.class);
-        d.addMixInAnnotations(TransferMethod.class, TransferMethodMixIn.class);
-        d.addMixInAnnotations(ECtransModule.class, ECtransModuleMixIn.class);
-        jaxbProvider.setMapper(mapper);
-        return jaxbProvider;
+        mapper.addMixIn(DataTransfer.class, DataTransferMixIn.class);
+        mapper.addMixIn(DataFile.class, DataFileMixIn.class);
+        mapper.addMixIn(ECUser.class, ECUserMixIn.class);
+        mapper.addMixIn(HostLocation.class, HostLocationMixIn.class);
+        mapper.addMixIn(Host.class, HostMixIn.class);
+        mapper.addMixIn(TransferMethod.class, TransferMethodMixIn.class);
+        mapper.addMixIn(ECtransModule.class, ECtransModuleMixIn.class);
+        return new JacksonProvider(mapper);
     }
 
     /**

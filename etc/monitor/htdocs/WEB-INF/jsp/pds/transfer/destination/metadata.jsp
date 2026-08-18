@@ -86,7 +86,7 @@
           <div class="dmf-field-label">
             ${field.label}
             <c:if test="${not empty field.tooltip}">
-              <i class="bi bi-question-circle text-muted ms-1" title="${field.tooltip}" style="font-weight:normal;font-size:0.8rem"></i>
+              <i class="bi bi-question-circle text-muted ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="${field.tooltip}" style="font-weight:normal;font-size:0.8rem"></i>
             </c:if>
           </div>
           <div id="dmf-values-${field.id}">

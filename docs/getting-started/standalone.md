@@ -48,6 +48,7 @@ everything across restarts. Wait about 30 seconds for all services to become ava
 | Service | URL | Credentials |
 |---|---|---|
 | Monitoring UI | `https://localhost:8443` | `admin` / `admin2021` · `monitor` / `monitor2021` |
+| REST API | `https://localhost:8443/ecpds/v1/` | `api` / `api2021` |
 | Data Portal (HTTPS) | `https://localhost:7443` | `test` / `test2021` |
 | Data Portal (S3) | `https://localhost:7443/s3` | `test` / `test2021` |
 | Data Portal (WebDAV) | `https://localhost:7443/webdav` | `test` / `test2021` |
@@ -183,6 +184,75 @@ mqttx sub \
   --insecure \
   -t '#'
 ```
+
+### REST API
+
+The REST API is served by the Monitor on port `8443`. All examples use the pre-configured
+`api / api2021` super-user (full permissions). See the [REST API Reference](../rest-api.md)
+for the complete endpoint list.
+
+```bash
+# Check server version (no auth required)
+curl -k https://localhost:8443/ecpds/v1/version
+```
+
+```json
+{ "status": "ok", "version": "6.7.7-20240701" }
+```
+
+```bash
+# List all destinations
+curl -k -u api:api2021 https://localhost:8443/ecpds/v1/destination/list
+```
+
+```bash
+# Get details for a specific destination
+curl -k -u api:api2021 https://localhost:8443/ecpds/v1/destination/hourly_aq
+```
+
+```bash
+# List all incoming (data) users
+curl -k -u api:api2021 https://localhost:8443/ecpds/v1/incoming/user/list
+```
+
+```bash
+# Create a new incoming user
+curl -k -u api:api2021 -X POST \
+  "https://localhost:8443/ecpds/v1/incoming/user/add?id=newuser&pass=secret&email=newuser@example.com&iso=gb"
+```
+
+```bash
+# Associate a user with a destination
+curl -k -u api:api2021 -X POST \
+  "https://localhost:8443/ecpds/v1/incoming/association/add?id=newuser&destination=hourly_aq"
+```
+
+```bash
+# List a user's destination associations
+curl -k -u api:api2021 \
+  "https://localhost:8443/ecpds/v1/incoming/association/list?id=newuser"
+```
+
+```bash
+# Remove a user–destination association
+curl -k -u api:api2021 -X DELETE \
+  "https://localhost:8443/ecpds/v1/incoming/association/del?id=newuser&destination=hourly_aq"
+```
+
+```bash
+# Deactivate a user
+curl -k -u api:api2021 -X DELETE \
+  https://localhost:8443/ecpds/v1/incoming/user/del/newuser
+```
+
+!!! tip "Pretty-print JSON responses"
+    Pipe any `curl` output through `| python3 -m json.tool` or `| jq .` for
+    readable formatting.
+
+!!! note "Permission configuration"
+    The `api` user is pre-configured in the standalone container with the `.*` permission
+    pattern, granting access to all API operations. In production, restrict permissions
+    per the [REST API Reference — Permission Configuration](../rest-api.md#permission-configuration).
 
 ## Logs
 

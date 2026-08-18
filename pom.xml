@@ -105,6 +105,31 @@
 				<artifactId>jackrabbit-webdav</artifactId>
 				<version>2.22.3</version>
 			</dependency>
+			<dependency>
+				<groupId>com.azure</groupId>
+				<artifactId>azure-core</artifactId>
+				<version>1.55.4</version>
+			</dependency>
+			<dependency>
+				<groupId>com.azure</groupId>
+				<artifactId>azure-core-http-netty</artifactId>
+				<version>1.15.12</version>
+			</dependency>
+			<dependency>
+				<groupId>com.azure</groupId>
+				<artifactId>azure-storage-blob</artifactId>
+				<version>12.30.1</version>
+			</dependency>
+			<dependency>
+				<groupId>com.azure</groupId>
+				<artifactId>azure-storage-common</artifactId>
+				<version>12.29.1</version>
+			</dependency>
+			<dependency>
+				<groupId>com.azure</groupId>
+				<artifactId>azure-identity</artifactId>
+				<version>1.16.2</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -280,6 +305,11 @@
 					<version>2.20.0</version>
 				</dependency>
 				<dependency>
+					<groupId>commons-lang</groupId>
+					<artifactId>commons-lang</artifactId>
+					<version>2.6</version>
+				</dependency>
+				<dependency>
 					<groupId>commons-net</groupId>
 					<artifactId>commons-net</artifactId>
 					<version>3.11.1</version>
@@ -295,22 +325,6 @@
 					<version>[1.8.1,)</version>
 				</dependency>
 				<dependency>
-					<groupId>org.apache.wink</groupId>
-					<artifactId>wink-client</artifactId>
-					<version>1.4</version>
-					<exclusions>
-						<exclusion>
-							<groupId>javax.xml.stream</groupId>
-							<artifactId>stax-api</artifactId>
-						</exclusion>
-					</exclusions>
-				</dependency>
-				<dependency>
-					<groupId>org.apache.wink</groupId>
-					<artifactId>wink-json4j</artifactId>
-					<version>1.4</version>
-				</dependency>
-				<dependency>
 					<groupId>ecaccess</groupId>
 					<artifactId>ecmwf-webgrp</artifactId>
 					<version>1.0.0</version>
@@ -321,80 +335,119 @@
 					<version>1.0.0</version>
 				</dependency>
 				<dependency>
-					<groupId>org.eclipse.jetty</groupId>
-					<artifactId>apache-jsp</artifactId>
-					<version>10.0.26</version>
-				</dependency>
-				<dependency>
-					<groupId>org.eclipse.jetty</groupId>
-					<artifactId>apache-jstl</artifactId>
-					<version>10.0.26</version>
-					<type>pom</type>
+					<groupId>org.eclipse.jetty.ee8</groupId>
+					<artifactId>jetty-ee8-apache-jsp</artifactId>
+					<version>12.1.12</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-deploy</artifactId>
-					<version>10.0.26</version>
+					<version>12.1.12</version>
 				</dependency>
 				<dependency>
-					<groupId>org.eclipse.jetty</groupId>
-					<artifactId>jetty-annotations</artifactId>
-					<version>10.0.26</version>
+					<groupId>org.eclipse.jetty.ee8</groupId>
+					<artifactId>jetty-ee8-annotations</artifactId>
+					<version>12.1.12</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-http</artifactId>
-					<version>10.0.26</version>
+					<version>12.1.12</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-io</artifactId>
-					<version>10.0.26</version>
+					<version>12.1.12</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-rewrite</artifactId>
-					<version>10.0.26</version>
+					<version>12.1.12</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-security</artifactId>
-					<version>10.0.26</version>
+					<version>12.1.12</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-server</artifactId>
-					<version>10.0.26</version>
+					<version>12.1.12</version>
 				</dependency>
 				<dependency>
-					<groupId>org.eclipse.jetty</groupId>
-					<artifactId>jetty-servlet</artifactId>
-					<version>10.0.26</version>
+					<groupId>org.eclipse.jetty.compression</groupId>
+					<artifactId>jetty-compression-server</artifactId>
+					<version>12.1.12</version>
+				</dependency>
+				<dependency>
+					<groupId>org.eclipse.jetty.compression</groupId>
+					<artifactId>jetty-compression-gzip</artifactId>
+					<version>12.1.12</version>
+				</dependency>
+				<dependency>
+					<groupId>org.eclipse.jetty.compression</groupId>
+					<artifactId>jetty-compression-common</artifactId>
+					<version>12.1.12</version>
+				</dependency>
+				<dependency>
+					<groupId>org.eclipse.jetty.ee10</groupId>
+					<artifactId>jetty-ee10-servlet</artifactId>
+					<version>12.1.12</version>
+				</dependency>
+				<dependency>
+					<groupId>org.glassfish.jersey.containers</groupId>
+					<artifactId>jersey-container-servlet</artifactId>
+					<version>3.1.10</version>
+				</dependency>
+				<dependency>
+					<groupId>org.glassfish.jersey.inject</groupId>
+					<artifactId>jersey-hk2</artifactId>
+					<version>3.1.10</version>
+				</dependency>
+				<dependency>
+					<groupId>org.glassfish.jersey.media</groupId>
+					<artifactId>jersey-media-json-jackson</artifactId>
+					<version>3.1.10</version>
+				</dependency>
+				<dependency>
+					<groupId>jakarta.annotation</groupId>
+					<artifactId>jakarta.annotation-api</artifactId>
+					<version>2.1.1</version>
+				</dependency>
+				<dependency>
+					<groupId>org.eclipse.jetty.ee10</groupId>
+					<artifactId>jetty-ee10-webapp</artifactId>
+					<version>12.1.12</version>
+				</dependency>
+				<dependency>
+					<groupId>org.eclipse.jetty.ee8</groupId>
+					<artifactId>jetty-ee8-servlet</artifactId>
+					<version>12.1.12</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-util</artifactId>
-					<version>10.0.26</version>
+					<version>12.1.12</version>
 				</dependency>
 				<dependency>
-					<groupId>org.eclipse.jetty</groupId>
-					<artifactId>jetty-webapp</artifactId>
-					<version>10.0.26</version>
+					<groupId>org.eclipse.jetty.ee8</groupId>
+					<artifactId>jetty-ee8-webapp</artifactId>
+					<version>12.1.12</version>
+				</dependency>
+				<dependency>
+					<groupId>org.eclipse.jetty.ee8.websocket</groupId>
+					<artifactId>jetty-ee8-websocket-jetty-server</artifactId>
+					<version>12.1.12</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty.websocket</groupId>
-					<artifactId>websocket-jetty-server</artifactId>
-					<version>10.0.26</version>
+					<artifactId>jetty-websocket-jetty-api</artifactId>
+					<version>12.1.12</version>
 				</dependency>
 				<dependency>
-					<groupId>org.eclipse.jetty.websocket</groupId>
-					<artifactId>websocket-jetty-api</artifactId>
-					<version>10.0.26</version>
-				</dependency>
-				<dependency>
-					<groupId>org.apache.wink</groupId>
-					<artifactId>wink-server</artifactId>
-					<version>1.4</version>
+					<groupId>javax.servlet</groupId>
+					<artifactId>javax.servlet-api</artifactId>
+					<version>4.0.1</version>
 				</dependency>
 				<dependency>
 					<groupId>org.ehcache</groupId>
@@ -499,27 +552,27 @@
 				<dependency>
 					<groupId>com.azure</groupId>
 					<artifactId>azure-core</artifactId>
-					<version>1.55.4</version>
+					<!-- version managed by parent dependencyManagement -->
 				</dependency>
 				<dependency>
 					<groupId>com.azure</groupId>
 					<artifactId>azure-core-http-netty</artifactId>
-					<version>1.15.12</version>
+					<!-- version managed by parent dependencyManagement -->
 				</dependency>
 				<dependency>
 					<groupId>com.azure</groupId>
 					<artifactId>azure-storage-blob</artifactId>
-					<version>12.30.1</version>
+					<!-- version managed by parent dependencyManagement -->
 				</dependency>
 				<dependency>
 					<groupId>com.azure</groupId>
 					<artifactId>azure-storage-common</artifactId>
-					<version>12.29.1</version>
+					<!-- version managed by parent dependencyManagement -->
 				</dependency>
 				<dependency>
 					<groupId>com.azure</groupId>
 					<artifactId>azure-identity</artifactId>
-					<version>1.16.2</version>
+					<!-- version managed by parent dependencyManagement -->
 				</dependency>
 				<dependency>
 					<groupId>com.google.cloud</groupId>
@@ -534,11 +587,6 @@
 					<groupId>org.apache.jackrabbit</groupId>
 					<artifactId>jackrabbit-webdav</artifactId>
 					</dependency>
-				<dependency>
-					<groupId>org.codehaus.jackson</groupId>
-					<artifactId>jackson-all</artifactId>
-					<version>1.9.11</version>
-				</dependency>
 				<dependency>
 					<groupId>com.hivemq</groupId>
 					<artifactId>hivemq-community-edition-embedded</artifactId>

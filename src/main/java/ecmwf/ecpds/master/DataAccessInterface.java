@@ -171,6 +171,14 @@ public interface DataAccessInterface extends Remote {
     void delete(String destinationNameOrType, String source, boolean force) throws MasterException, IOException;
 
     /**
+     * Delete with attribution. Default implementation delegates to the 3-arg form; override to record who/how.
+     */
+    default void delete(String destinationNameOrType, String source, boolean force, String byAndFrom)
+            throws MasterException, IOException {
+        delete(destinationNameOrType, source, force);
+    }
+
+    /**
      * Mkdir.
      *
      * @param destinationNameOrType
@@ -255,6 +263,14 @@ public interface DataAccessInterface extends Remote {
      *             Signals that an I/O exception has occurred.
      */
     void move(String destinationNameOrType, String source, String target) throws MasterException, IOException;
+
+    /**
+     * Move with attribution. Default implementation delegates to the 3-arg form; override to record who/how.
+     */
+    default void move(String destinationNameOrType, String source, String target, String byAndFrom)
+            throws MasterException, IOException {
+        move(destinationNameOrType, source, target);
+    }
 
     /**
      * Check.

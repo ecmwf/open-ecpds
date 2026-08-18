@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.security.cert.X509Certificate;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
@@ -39,6 +40,7 @@ import javax.management.MBeanException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.timer.Timer;
+import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -46,18 +48,17 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.jetty.annotations.AnnotationConfiguration;
+import org.eclipse.jetty.ee8.servlet.FilterHolder;
+import org.eclipse.jetty.ee8.webapp.WebAppContext;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.ee8.websocket.server.config.JettyWebSocketServletContainerInitializer;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.rewrite.handler.HeaderPatternRule;
 import org.eclipse.jetty.rewrite.handler.RewriteHandler;
 import org.eclipse.jetty.rewrite.handler.Rule;
-import org.eclipse.jetty.security.ConstraintMapping;
-import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -65,21 +66,14 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.server.handler.DefaultHandler;
+import org.eclipse.jetty.compression.gzip.GzipCompression;
+import org.eclipse.jetty.compression.server.CompressionHandler;
 import org.eclipse.jetty.server.handler.ErrorHandler;
-import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
-import org.eclipse.jetty.server.handler.gzip.GzipHandler;
-import org.eclipse.jetty.servlet.FilterHolder;
-import org.eclipse.jetty.util.MultiException;
-import org.eclipse.jetty.util.security.Constraint;
+import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.eclipse.jetty.webapp.Configurations;
-import org.eclipse.jetty.webapp.JettyWebXmlConfiguration;
-import org.eclipse.jetty.webapp.WebAppContext;
-import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
 
 import ecmwf.common.mbean.MBeanManager;
 import ecmwf.common.plugin.PluginEvent;
@@ -203,14 +197,13 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
             httpConfig.setSendServerVersion(false);
             httpConfig.setSendDateHeader(false);
             httpConfig.setSendXPoweredBy(false);
-            // War deployer for ecpds
-            final var ecpds = new WebAppContext();
-            ecpds.setContextPath("/ecpds/");
-            ecpds.setExtractWAR(true);
-            ecpds.setParentLoaderPriority(false);
-            ecpds.setAllowDuplicateFragmentNames(false);
-            final var ecpdsFile = new File(jettyHome + "/webapps/ecpds.war");
-            ecpds.setWar(ecpdsFile.getAbsolutePath());
+            // REST API (Jersey, EE10)
+            final var ecpdsApplication = new ecmwf.ecpds.master.plugin.service.ECpdsApplication();
+            final var jerseyConfig = new org.glassfish.jersey.server.ResourceConfig();
+            ecpdsApplication.getClasses().forEach(jerseyConfig::register);
+            ecpdsApplication.getSingletons().forEach(jerseyConfig::register);
+            final var ecpds = new ServletContextHandler("/ecpds", ServletContextHandler.NO_SESSIONS);
+            ecpds.addServlet(new ServletHolder(new org.glassfish.jersey.servlet.ServletContainer(jerseyConfig)), "/*");
             // War deployer for monitor
             final var monitor = new WebAppContext();
             monitor.setContextPath("/");
@@ -219,7 +212,8 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
             monitor.setAttribute("ecpds.HttpPlugin", this);
             monitor.setWar(new File(jettyHome).getAbsolutePath());
             monitor.setExtractWAR(false);
-            monitor.addFilter(new FilterHolder(new AccessRestrictionFilter()), "/*", null);
+            monitor.addFilter(new FilterHolder(new AccessRestrictionFilter()), "/*",
+                    EnumSet.of(DispatcherType.REQUEST));
             JettyWebSocketServletContainerInitializer.configure(monitor, (_, wsContainer) -> {
                 _log.debug("Configuring WebSocket container");
                 wsContainer.setMaxTextMessageSize(1_048_576); // 1 MB
@@ -240,20 +234,16 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
             cookieconfig.setHttpOnly(true);
             cookieconfig.setSecure(true);
             cookieconfig.setMaxAge(-1);
-            cookieconfig.setComment("__SAME_SITE_STRICT__");
-            // Security
-            final var constraint = new Constraint();
-            constraint.setDataConstraint(Constraint.DC_CONFIDENTIAL);
-            final var cm = new ConstraintMapping();
-            cm.setConstraint(constraint);
-            cm.setPathSpec("/*");
-            final var sh = new ConstraintSecurityHandler();
-            sh.setConstraintMappings(new ConstraintMapping[] { cm });
-            // Resources
+            // Resources (static assets from htdocs/resources/ — served before the monitor
+            // WebAppContext so that /assets/*, /bootstrap/*, etc. are found here rather than
+            // causing a 404 from the DefaultServlet (which looks in htdocs/ docroot only).
+            // ResourceHandler returns false when no file matches, so the monitor WebAppContext
+            // handles all /do/* and *.jsp requests after a ResourceHandler miss. The ecpds
+            // REST context is first so that OPTIONS requests to /ecpds/* are not intercepted.
             final var resource = new ResourceHandler();
-            resource.setDirectoriesListed(false);
+            resource.setDirAllowed(false);
             resource.setWelcomeFiles(new String[] { "index.html" });
-            resource.setResourceBase(jettyHome + "/resources");
+            resource.setBaseResourceAsString(jettyHome + "/resources");
             // Take care of certificate and environment parameters!
             final var rewrite = new RewriteHandler();
             rewrite.addRule(new SessionRule());
@@ -264,10 +254,9 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
                     "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline';"));
             rewrite.addRule(getRule("*", "X-Frame-Options", "SAMEORIGIN"));
             rewrite.addRule(getRule("*", "Strict-Transport-Security", "max-age=31536000;includeSubDomains"));
-            // Add all the handlers to the server!
-            final var handlers = new HandlerList();
-            handlers.setHandlers(new Handler[] { rewrite, sh, resource, ecpds, monitor, new DefaultHandler() });
-            httpServer.setHandler(handlers);
+            final var handlers = new Handler.Sequence(List.of(ecpds, resource, monitor.get()));
+            rewrite.setHandler(handlers);
+            httpServer.setHandler(rewrite);
             // Create HTTPS listener
             _log.info("Starting the https server on {}:{}", listenAddress, httpsPort);
             // SSL Context Factory
@@ -335,9 +324,10 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
             httpServer.addConnector(sslConnector);
             // Enable compression on the fly if requested
             if (Cnf.at("MonitorPlugin", "compression", true)) {
-                final var gzipHandler = new GzipHandler();
-                gzipHandler.setHandler(httpServer.getHandler());
-                httpServer.setHandler(gzipHandler);
+                final var compression = new CompressionHandler();
+                compression.putCompression(new GzipCompression());
+                compression.setHandler(httpServer.getHandler());
+                httpServer.setHandler(compression);
             }
             // Statistics
             statisticsHandler = new StatisticsHandler();
@@ -349,9 +339,6 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
             errorHandler.setShowStacks(false);
             errorHandler.setShowMessageInTitle(false);
             httpServer.setErrorHandler(errorHandler);
-            // Allow using jsps!
-            Configurations.setServerDefault(httpServer).add(new JettyWebXmlConfiguration(),
-                    new AnnotationConfiguration());
             // If using the cache, this is starting the cache management thread!
             try {
                 MasterManager.getMI();
@@ -363,11 +350,6 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
             // Now we can wait
             waitForMasterConnection(Cnf.at("MonitorPlugin", "initialiseEventHandler", true));
             started = true;
-        } catch (final MultiException e) {
-            final List<?> list = e.getThrowables();
-            for (final Object element : list) {
-                _log.error("Starting the plugin", (Exception) element);
-            }
         } catch (final Throwable t) {
             _log.error("Starting the plugin", t);
         } finally {
@@ -417,14 +399,6 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
         @Override
         public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain)
                 throws IOException, ServletException {
-            final var httpRequest = (HttpServletRequest) request;
-            final var httpResponse = (HttpServletResponse) response;
-            final var requestURI = httpRequest.getRequestURI();
-            // Check if the request URI starts with /webapps
-            if (requestURI.startsWith("/webapps/")) {
-                httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Access to this directory is forbidden.");
-                return;
-            }
             chain.doFilter(request, response);
         }
 
@@ -452,8 +426,8 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
     private static HeaderPatternRule getRule(final String pattern, final String name, final String value) {
         final var headerRule = new HeaderPatternRule();
         headerRule.setPattern(pattern);
-        headerRule.setName(name);
-        headerRule.setValue(value);
+        headerRule.setHeaderName(name);
+        headerRule.setHeaderValue(value);
         return headerRule;
     }
 
@@ -656,7 +630,7 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
             // Check for a recognized attribute_name and call the corresponding
             // getter
             if ("Requests".equals(attributeName)) {
-                return httpServer == null ? 0 : statisticsHandler.getRequests();
+                return httpServer == null ? 0 : statisticsHandler.getRequestTotal();
             }
             if ("RequestsActive".equals(attributeName)) {
                 return httpServer == null ? 0 : statisticsHandler.getRequestsActive();
@@ -752,7 +726,7 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
         try {
             if ("statsReset".equals(operationName)) {
                 if (statisticsHandler != null) {
-                    statisticsHandler.statsReset();
+                    statisticsHandler.reset();
                 }
                 return Boolean.TRUE;
             }
@@ -815,43 +789,34 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
             return null;
         }
 
-        /**
-         * Match and apply.
-         *
-         * @param target
-         *            the target
-         * @param request
-         *            the request
-         * @param response
-         *            the response
-         *
-         * @return the string
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
         @Override
-        public String matchAndApply(final String target, final HttpServletRequest request,
-                final HttpServletResponse response) throws IOException {
-            if (request.isSecure()) {
-                try {
-                    final var certs = (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
-                    if (certs != null && certs.length > 0) {
-                        final var domain = certs[0].getSubjectX500Principal().getName();
-                        final var userId = getUserNameFromDomain(domain);
-                        if (userId != null && userId.length() <= 8) {
-                            _log.debug("Certificate detected (uid: {})", userId);
-                            request.setAttribute("ECPDS-NAME", userId);
-                            request.setAttribute("ECPDS-CERT", Tools.toPEM(certs[0]));
-                        } else {
-                            _log.warn("Certificate not recognized: {}", domain);
-                        }
-                    }
-                } catch (final Exception e) {
-                    _log.warn("customizeRequest", e);
-                }
+        public Rule.Handler matchAndApply(final Rule.Handler input) throws IOException {
+            if (!input.isSecure()) {
+                return null;
             }
-            return null;
+            return new Rule.Handler(input) {
+                @Override
+                protected boolean handle(final org.eclipse.jetty.server.Response response, final Callback callback)
+                        throws Exception {
+                    try {
+                        final var certs = (X509Certificate[]) getAttribute("jakarta.servlet.request.X509Certificate");
+                        if (certs != null && certs.length > 0) {
+                            final var domain = certs[0].getSubjectX500Principal().getName();
+                            final var userId = getUserNameFromDomain(domain);
+                            if (userId != null && userId.length() <= 8) {
+                                _log.debug("Certificate detected (uid: {})", userId);
+                                setAttribute("ECPDS-NAME", userId);
+                                setAttribute("ECPDS-CERT", Tools.toPEM(certs[0]));
+                            } else {
+                                _log.warn("Certificate not recognized: {}", domain);
+                            }
+                        }
+                    } catch (final Exception e) {
+                        _log.warn("customizeRequest", e);
+                    }
+                    return super.handle(response, callback);
+                }
+            };
         }
     }
 }

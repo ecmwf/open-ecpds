@@ -41,12 +41,12 @@
 
   <servlet>
     <servlet-name>default</servlet-name>
-    <servlet-class>org.eclipse.jetty.servlet.DefaultServlet</servlet-class>
+    <servlet-class>org.eclipse.jetty.ee8.servlet.DefaultServlet</servlet-class>
   </servlet>
 
  <servlet>
     <servlet-name>jsp</servlet-name>
-    <servlet-class>org.eclipse.jetty.jsp.JettyJspServlet</servlet-class>
+    <servlet-class>org.eclipse.jetty.ee8.jsp.JettyJspServlet</servlet-class>
     <init-param>
       <param-name>fork</param-name>
       <param-value>false</param-value>
@@ -80,7 +80,7 @@
 
   <servlet-mapping>
     <servlet-name>default</servlet-name>
-    <url-pattern>/*</url-pattern>
+    <url-pattern>/</url-pattern>
   </servlet-mapping>
 
   <error-page>

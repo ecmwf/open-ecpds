@@ -40,11 +40,12 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.websocket.api.Callback;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketOpen;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -152,7 +153,7 @@ public class AssistantWebSocket {
      * @param session
      *            the connected WebSocket session
      */
-    @OnWebSocketConnect
+    @OnWebSocketOpen
     public void onConnect(final Session session) {
         this.session = session;
         session.setIdleTimeout(Duration.ofMinutes(2));
@@ -163,7 +164,7 @@ public class AssistantWebSocket {
         wsPingTask = HEARTBEAT_POOL.scheduleAtFixedRate(() -> {
             if (session != null && session.isOpen()) {
                 try {
-                    session.getRemote().sendPing(ByteBuffer.wrap(new byte[] { 1, 2, 3, 4 }));
+                    session.sendPing(ByteBuffer.wrap(new byte[] { 1, 2, 3, 4 }), Callback.NOOP);
                 } catch (final Exception e) {
                     LOG.debug("WS ping failed: {}", e.toString());
                 }
@@ -210,7 +211,7 @@ public class AssistantWebSocket {
                 if (session != null && session.isOpen()) {
                     final var cancelNode = JSON.createObjectNode();
                     cancelNode.put("type", "done"); // signal client the response is stopped
-                    session.getRemote().sendString(JSON.writeValueAsString(cancelNode));
+                    session.sendText(JSON.writeValueAsString(cancelNode), Callback.NOOP);
                 }
                 return; // done processing this cancel message
             }
@@ -356,7 +357,7 @@ public class AssistantWebSocket {
             final var node = JSON.createObjectNode();
             node.put("type", "token");
             node.put("text", toSend);
-            session.getRemote().sendString(JSON.writeValueAsString(node));
+            session.sendText(JSON.writeValueAsString(node), Callback.NOOP);
         } catch (final Exception e) {
             LOG.warn("Failed to flush tokens", e);
         }
@@ -382,7 +383,7 @@ public class AssistantWebSocket {
         try {
             final var node = JSON.createObjectNode();
             node.put("type", "done");
-            session.getRemote().sendString(JSON.writeValueAsString(node));
+            session.sendText(JSON.writeValueAsString(node), Callback.NOOP);
         } catch (final Exception e) {
             LOG.warn("END failed", e);
         }
@@ -413,7 +414,7 @@ public class AssistantWebSocket {
             final var node = JSON.createObjectNode();
             node.put("type", "error");
             node.put("message", msg);
-            session.getRemote().sendString(JSON.writeValueAsString(node));
+            session.sendText(JSON.writeValueAsString(node), Callback.NOOP);
         } catch (final Exception e) {
             LOG.warn("Error message failed", e);
         }
@@ -438,7 +439,7 @@ public class AssistantWebSocket {
         try {
             final var node = JSON.createObjectNode();
             node.put("type", "ping");
-            session.getRemote().sendString(JSON.writeValueAsString(node));
+            session.sendText(JSON.writeValueAsString(node), Callback.NOOP);
         } catch (final Exception e) {
             LOG.warn("PING failed", e);
         }

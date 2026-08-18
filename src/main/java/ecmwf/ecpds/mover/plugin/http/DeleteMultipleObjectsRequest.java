@@ -18,8 +18,8 @@ package ecmwf.ecpds.mover.plugin.http;
 
 import java.util.Collection;
 
-import org.codehaus.jackson.annotate.JsonProperty;
-import org.codehaus.jackson.annotate.JsonUnwrapped;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 /**
  * The Class DeleteMultipleObjectsRequest.

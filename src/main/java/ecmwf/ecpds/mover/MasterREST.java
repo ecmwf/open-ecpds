@@ -32,7 +32,6 @@ import javax.management.timer.Timer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.wink.common.RestException;
 
 import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.Destination;
@@ -117,7 +116,7 @@ final class MasterREST implements MasterProxy {
      */
     @Override
     public DownloadProgress[] updateDownloadProgress(final DownloadProgress[] progress) throws Exception {
-        throw new RestException("No implemented");
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     /**
@@ -176,7 +175,7 @@ final class MasterREST implements MasterProxy {
      */
     @Override
     public DataAccessInterface getDataFileAccessInterface() throws Exception {
-        throw new RestException("No implemented");
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     /**
@@ -186,7 +185,7 @@ final class MasterREST implements MasterProxy {
      */
     @Override
     public Destination getDestination(final String name) throws Exception {
-        throw new RestException("No implemented");
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     /**
@@ -207,27 +206,27 @@ final class MasterREST implements MasterProxy {
     @Override
     public IncomingProfile getIncomingProfile(final String incomingUser, final String incomingPassword,
             final String from) throws Exception {
-        throw new RestException("No implemented");
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
     public IncomingProfile getIncomingProfileNoAuth(final String incomingUser) throws Exception {
-        throw new RestException("Not implemented");
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
     public boolean isSubscriberActive(final long psbId) throws Exception {
-        throw new RestException("Not implemented");
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
     public long findSubscriberIdByPassword(final String inuId, final String password) throws Exception {
-        throw new RestException("Not implemented");
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
     public String getPortalSubscriberEmail(final long psbId) throws Exception {
-        throw new RestException("Not implemented");
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override

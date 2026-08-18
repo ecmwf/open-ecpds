@@ -18,7 +18,7 @@ package ecmwf.ecpds.mover.plugin.http;
 
 import static java.util.Objects.requireNonNull;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import com.google.common.base.CaseFormat;
 

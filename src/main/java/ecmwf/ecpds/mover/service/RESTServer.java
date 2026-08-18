@@ -51,34 +51,34 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.HEAD;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.StreamingOutput;
-import javax.ws.rs.core.UriInfo;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HEAD;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
+import jakarta.ws.rs.core.StreamingOutput;
+import jakarta.ws.rs.core.UriInfo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ecmwf.common.database.DataFile;
 import ecmwf.common.database.DataTransfer;
@@ -1023,20 +1023,20 @@ public final class RESTServer {
             return builder.entity(output).lastModified(new Date(getBiggerIndexes(elements)[3])).build();
         } catch (final WebApplicationException w) {
             _log.warn("fileGet - {}", describe(w));
-            throw w;
+            throw _toBrowserError(request, w);
         } catch (final FileNotFoundException e) {
             _log.warn("fileGet", e);
-            throw newException(e, 404, "Not Found: " + e.getMessage());
+            throw _toBrowserError(request, newException(e, 404, "Not Found: " + e.getMessage()));
         } catch (final EccmdException e) {
             _log.warn("fileGet", e);
             final var message = e.getMessage();
             if (message.contains("File not found") || message.contains("Destination not found")) {
-                throw newException(e, 404, "Not Found: " + message);
+                throw _toBrowserError(request, newException(e, 404, "Not Found: " + message));
             }
-            throw newException(e, 500, message);
+            throw _toBrowserError(request, newException(e, 500, message));
         } catch (final Throwable t) {
             _log.warn("fileGet", t);
-            throw newException(t, 500, "Internal server error");
+            throw _toBrowserError(request, newException(t, 500, "Internal server error"));
         } finally {
             if (!sessionTransferred && session != null) {
                 session.close(true);
@@ -1878,13 +1878,12 @@ public final class RESTServer {
                 if ("portal_session".equals(cookie.getName())) {
                     final var user = MoverProvider.getUserForPortalSession(cookie.getValue());
                     if (user != null) {
-                        return Response.seeOther(URI.create("/data/list/")).build();
+                        return Response.seeOther(URI.create("/ecpds/data/list/")).build();
                     }
                 }
             }
         }
         // Check whether the prefilled user is a self-service user so we can show
-        // the registration link at the bottom of the login card.
         var canRegister = false;
         if (prefillUser != null && !prefillUser.isEmpty()) {
             try {
@@ -1923,7 +1922,7 @@ public final class RESTServer {
             setPortalSessionCookie(response, session.getToken());
             setPortalModeCookie(response);
             session.close(true);
-            return Response.seeOther(URI.create("/data/list/")).build();
+            return Response.seeOther(URI.create("/ecpds/data/list/")).build();
         } catch (final Throwable t) {
             _log.debug("Browser login failed for {}", username);
             // Re-show the login form with the attempted username pre-filled and,
@@ -2056,7 +2055,7 @@ public final class RESTServer {
             }
         }
         clearPortalSessionCookie(response);
-        return Response.seeOther(URI.create("/login")).build();
+        return Response.seeOther(URI.create("/ecpds/login")).build();
     }
 
     /**
@@ -2583,16 +2582,16 @@ public final class RESTServer {
             return builder.entity(streamer).build();
         } catch (final WebApplicationException w) {
             _log.warn("serveDataFile - {}", describe(w));
-            throw w;
+            throw _toBrowserError(request, w);
         } catch (final FileNotFoundException e) {
             _log.warn("serveDataFile", e);
-            throw newException(e, 404, "Not Found: " + e.getMessage());
+            throw _toBrowserError(request, newException(e, 404, "Not Found: " + e.getMessage()));
         } catch (final EccmdException e) {
             _log.warn("serveDataFile", e);
-            throw _mapEccmdException(e);
+            throw _toBrowserError(request, _mapEccmdException(e));
         } catch (final Throwable t) {
             _log.warn("serveDataFile", t);
-            throw newException(t, 500, Format.getMessage(t));
+            throw _toBrowserError(request, newException(t, 500, Format.getMessage(t)));
         } finally {
             if (!success && session != null) {
                 session.close(true);
@@ -2869,7 +2868,7 @@ public final class RESTServer {
                     }
                 }
             }
-            throw new WebApplicationException(Response.seeOther(URI.create("/login")).build());
+            throw new WebApplicationException(Response.seeOther(URI.create("/ecpds/login")).build());
         }
         return authenticateBasic(authString, request, response);
     }
@@ -2962,6 +2961,130 @@ public final class RESTServer {
             }
         }
         return false;
+    }
+
+    /**
+     * Rewrites a {@link WebApplicationException} to return a styled HTML error page when the request originates from a
+     * browser (detected via {@link #isBrowserMode}). For non-browser clients the original exception is returned
+     * unchanged so plain-text responses continue to work for {@code curl}, {@code wget}, and programmatic callers.
+     *
+     * @param request
+     *            the originating HTTP request
+     * @param w
+     *            the exception whose status and entity message will be preserved
+     *
+     * @return an exception whose response carries {@code text/html} content for browsers, or {@code w} unchanged for
+     *         other clients
+     */
+    private static WebApplicationException _toBrowserError(final HttpServletRequest request,
+            final WebApplicationException w) {
+        if (!isBrowserMode(request)) {
+            return w;
+        }
+        final var resp = w.getResponse();
+        final int status = resp.getStatus();
+        final var entity = resp.getEntity();
+        final var message = entity instanceof String s ? s
+                : w.getMessage() != null ? w.getMessage() : "Unexpected error";
+        return new WebApplicationException(w, Response.status(status).type(MediaType.TEXT_HTML)
+                .entity(_buildBrowserErrorPage(status, message)).build());
+    }
+
+    /**
+     * Builds a self-contained Bootstrap HTML error page that matches the portal look-and-feel. The page title, icon,
+     * and status badge adapt to the HTTP status code.
+     *
+     * @param status
+     *            the HTTP status code (e.g. 404, 503)
+     * @param message
+     *            the human-readable error detail
+     *
+     * @return a complete {@code <!DOCTYPE html>} string ready to send as a {@code text/html} response body
+     */
+    private static String _buildBrowserErrorPage(final int status, final String message) {
+        final var color = System.getProperty("mover.color", "#000000");
+        final var footer = System.getProperty("mover.footer",
+                "Powered by <a href=\"https://github.com/ecmwf/open-ecpds\" target=\"_blank\">OpenECPDS</a>");
+        final String icon;
+        final String title;
+        if (status == 404) {
+            icon = "bi-file-earmark-x";
+            title = "File Not Found";
+        } else if (status == 503) {
+            icon = "bi-hourglass-split";
+            title = "File Temporarily Unavailable";
+        } else if (status == 403) {
+            icon = "bi-shield-lock";
+            title = "Access Denied";
+        } else if (status == 429) {
+            icon = "bi-speedometer2";
+            title = "Too Many Requests";
+        } else if (status == 401) {
+            icon = "bi-person-lock";
+            title = "Unauthorised";
+        } else {
+            icon = "bi-exclamation-triangle";
+            title = "Error";
+        }
+        // Escape message for safe HTML embedding
+        final var safeMessage = message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+        return """
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1">
+                  <script>(function(){var t=localStorage.getItem('ecpds-theme');if(t)document.documentElement.setAttribute('data-bs-theme',t);}());</script>
+                  <title>%s</title>
+                  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+                  <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+                  <link rel="stylesheet" href="/bootstrap-icons/bootstrap-icons.min.css">
+                  <style>
+                    body { padding-top: 68px; padding-bottom: 44px; min-height: 100vh; }
+                    .topheader { position:fixed; z-index:1030; top:0; left:0; width:100%%; box-shadow:0 2px 8px rgba(0,0,0,.30); }
+                    .bottomfooter { position:fixed; z-index:1030; bottom:0; left:0; width:100%%; }
+                    .footer_simple_title { font-size:.78rem; color:rgba(255,255,255,.85); }
+                    .footer_simple_title a { color:#fff; text-decoration:none; font-weight:600; }
+                    .error-icon { font-size:3.5rem; opacity:.75; }
+                  </style>
+                </head>
+                <body>
+                  <!-- header -->
+                  <nav id="topheader" class="topheader navbar py-0" style="background-color:%s;">
+                    <div class="container-fluid px-3 py-1 d-flex align-items-center gap-2">
+                      <a class="navbar-brand p-0 me-0 flex-shrink-0" href="/">
+                        <img src="/images/logo.production.png" alt="OpenECPDS" width="140" height="24" style="display:block;">
+                      </a>
+                    </div>
+                  </nav>
+                  <!-- content -->
+                  <div class="container py-5">
+                    <div class="row justify-content-center">
+                      <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+                        <div class="card shadow-sm border-0">
+                          <div class="card-body text-center p-5">
+                            <div class="error-icon text-danger mb-3"><i class="bi %s"></i></div>
+                            <h4 class="mb-2">%s</h4>
+                            <p class="text-muted small mb-3"><span class="badge bg-secondary me-1">HTTP %d</span></p>
+                            <p class="text-muted" style="word-break:break-word;">%s</p>
+                            <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm mt-2">
+                              <i class="bi bi-arrow-left me-1"></i>Go back
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- footer -->
+                  <div id="bottomfooter" class="bottomfooter d-flex align-items-center px-3 py-1 text-white"
+                       style="background-color:%s;">
+                    <div class="footer_simple_title">%s</div>
+                  </div>
+                  <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+                </body>
+                </html>
+                """
+                .formatted(title, color, icon, title, status, safeMessage, color, footer);
     }
 
     /**

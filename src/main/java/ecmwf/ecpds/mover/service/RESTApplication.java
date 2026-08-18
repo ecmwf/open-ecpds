@@ -29,7 +29,7 @@ package ecmwf.ecpds.mover.service;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.ws.rs.core.Application;
+import jakarta.ws.rs.core.Application;
 
 import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.ecpds.mover.MoverServer;

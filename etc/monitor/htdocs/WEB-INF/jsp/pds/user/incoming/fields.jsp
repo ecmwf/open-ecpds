@@ -32,8 +32,13 @@
 </script>
 
 <div class="row g-3">
-  <%-- Column 1: Edit Data User form --%>
-  <div class="col-lg-6">
+  <%-- Column 1: Data User form.
+       On insert: full width (col-12), 2-column responsive grid inside the card (col-lg-6 collapses at <992px).
+       On edit:   half width (col-lg-6), single-column layout (side-by-side label+input). --%>
+  <c:choose>
+    <c:when test="${isInsert == 'true'}"><div class="col-12"></c:when>
+    <c:otherwise><div class="col-lg-6"></c:otherwise>
+  </c:choose>
     <div class="card">
       <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
         <i class="bi bi-person-plus text-primary"></i>
@@ -45,34 +50,128 @@
         </span>
       </div>
       <div class="card-body">
-        <div class="d-flex flex-column gap-2">
-          <c:if test="${isInsert != 'true'}">
-            <div class="row g-2 align-items-center">
-              <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Data Login</label></div>
-              <div class="col-sm-8">${incomingUserActionForm.id}<html:hidden property="id" /></div>
+
+      <c:choose>
+      <%-- ── INSERT: responsive 2-column grid, stacked label then input ── --%>
+      <c:when test="${isInsert == 'true'}">
+        <div class="row g-3">
+
+          <%-- Data Login --%>
+          <div class="col-12 col-md-6">
+            <label class="form-label form-label-sm fw-semibold text-muted mb-1">Data Login
+              <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em"
+                 data-bs-toggle="popover" data-bs-placement="top"
+                 data-bs-content="Login name for this Data User. Use letters, digits, '_' and '.' only (e.g. john.doe_1)"
+                 tabindex="0"></i>
+            </label>
+            <div class="d-flex align-items-center gap-2">
+              <input id="id" name="id" type="text" required class="form-control form-control-sm"
+                pattern="[a-zA-Z0-9._]+"
+                oninput="validatePatternInput(this, 'id-feedback'); _checkLoginExists(this.value, 'id-exists-msg', 'incoming')">
+              <span id="id-feedback"></span>
             </div>
-          </c:if>
-          <c:if test="${isInsert == 'true'}">
-            <div class="row g-2 align-items-center">
-              <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Data Login <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Login name for this Data User. Use letters, digits, '_' and '.' only (e.g. john.doe_1)" tabindex="0"></i></label></div>
-              <div class="col-sm-8">
+            <div id="id-exists-msg" style="display:none" class="small mt-1"></div>
+          </div>
+
+          <%-- Portal Service --%>
+          <div class="col-12 col-md-6" style="overflow:hidden;min-width:0">
+            <label class="form-label form-label-sm fw-semibold text-muted mb-1">Portal Service
+              <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em"
+                 data-bs-toggle="popover" data-bs-placement="top"
+                 data-bs-content="Controls how users access the data portal. Standard Login: requires pre-configured credentials. Open Access: anyone can access without credentials. Self-Service: visitors register with their email and receive generated credentials."
+                 tabindex="0"></i>
+            </label>
+            <html:select property="portalService" styleClass="form-select form-select-sm" style="width:100%;min-width:0;overflow:hidden">
+              <html:option value="standard-login">Standard Login</html:option>
+              <html:option value="open-access">Open Access</html:option>
+              <html:option value="self-service">Self-Service</html:option>
+            </html:select>
+          </div>
+
+          <%-- Comment --%>
+          <div class="col-12 col-md-6">
+            <label class="form-label form-label-sm fw-semibold text-muted mb-1">Comment
+              <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em"
+                 data-bs-toggle="popover" data-bs-placement="top"
+                 data-bs-content="A short description or note for this user."
+                 tabindex="0"></i>
+            </label>
+            <html:text property="comment" styleClass="form-control form-control-sm" />
+          </div>
+
+          <%-- Country --%>
+          <div class="col-12 col-md-6" style="overflow:hidden;min-width:0">
+            <label class="form-label form-label-sm fw-semibold text-muted mb-1">Country
+              <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em"
+                 data-bs-toggle="popover" data-bs-placement="top"
+                 data-bs-content="Country associated with this user (used to display the corresponding flag)."
+                 tabindex="0"></i>
+            </label>
+            <div class="d-flex align-items-center gap-2" style="min-width:0">
+              <c:set var="countries" value="${incomingUserActionForm.countryOptions}" />
+              <html:select property="countryIso" styleId="incomingCountryIso" styleClass="form-select form-select-sm" style="flex:1 1 0;min-width:0">
+                <html:options collection="countries" property="iso" labelProperty="name" />
+              </html:select>
+            </div>
+          </div>
+
+          <%-- TOTP + Password (standard-login only, shown/hidden by JS) --%>
+          <div id="standardLoginFields" class="col-12">
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label form-label-sm fw-semibold text-muted mb-1">TOTP authentication
+                  <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em"
+                     data-bs-toggle="popover" data-bs-placement="top"
+                     data-bs-content="Enable Time-based One-Time Password (TOTP) authentication. When enabled, the password field is not used."
+                     tabindex="0"></i>
+                </label>
+                <div class="form-check form-switch mb-0"><html:checkbox property="isSynchronized" styleId="isSynchronized" onclick="handleTOTPClick(this)" styleClass="form-check-input" /></div>
+              </div>
+              <div class="col-12 col-md-6" id="passwordRow">
+                <label class="form-label form-label-sm fw-semibold text-muted mb-1">Or password
+                  <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em"
+                     data-bs-toggle="popover" data-bs-placement="top"
+                     data-bs-content="Password for authentication when TOTP is disabled. Use 'Generate' to create a secure random password."
+                     tabindex="0"></i>
+                </label>
                 <div class="d-flex align-items-center gap-2">
-                  <input id="id" name="id" type="text" required class="form-control form-control-sm"
-                    pattern="[a-zA-Z0-9._]+"
-                    oninput="validatePatternInput(this, 'id-feedback'); _checkLoginExists(this.value, 'id-exists-msg', 'incoming')">
-                  <span id="id-feedback"></span>
+                  <input type="password" id="password" name="password" class="form-control form-control-sm"
+                    value="${incomingUserActionForm.password}" />
+                  <button type="button" id="buttonPassword" name="buttonPassword"
+                    class="btn btn-sm btn-outline-secondary" onclick="generatePassword(); return false">Generate</button>
                 </div>
-                <div id="id-exists-msg" style="display:none" class="small mt-1"></div>
+              </div>
+              <%-- Enabled: sits as 3rd col-md-6 in this row. When passwordRow is hidden (TOTP on),
+                   it automatically slots into the vacated 2nd column. When passwordRow is visible,
+                   it wraps to the start of a new row. --%>
+              <div class="col-12 col-md-6">
+                <label class="form-label form-label-sm fw-semibold text-muted mb-1">Enabled
+                  <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em"
+                     data-bs-toggle="popover" data-bs-placement="top"
+                     data-bs-content="When disabled, this user cannot connect."
+                     tabindex="0"></i>
+                </label>
+                <div class="form-check form-switch mb-0"><html:checkbox property="active" styleClass="form-check-input" /></div>
               </div>
             </div>
-          </c:if>
+          </div><%-- /standardLoginFields (insert) --%>
+
+        </div>
+      </c:when>
+      <%-- ── EDIT: single-column, side-by-side label + input (unchanged) ── --%>
+      <c:otherwise>
+        <div class="d-flex flex-column gap-2">
+          <div class="row g-2 align-items-center">
+            <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Data Login</label></div>
+            <div class="col-sm-8">${incomingUserActionForm.id}<html:hidden property="id" /></div>
+          </div>
           <div class="row g-2 align-items-center">
             <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Portal Service <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Controls how users access the data portal. Standard Login: requires pre-configured credentials. Open Access: anyone can access without credentials. Self-Service: visitors register with their email and receive generated credentials." tabindex="0"></i></label></div>
-            <div class="col-sm-8">
-              <html:select property="portalService" styleClass="form-select form-select-sm">
-                <html:option value="standard-login">Standard Login - pre-configured credentials required</html:option>
-                <html:option value="open-access">Open Access - no credentials needed (anonymous)</html:option>
-                <html:option value="self-service">Self-Service - visitors register via email</html:option>
+            <div class="col-sm-8" style="min-width:0;overflow:hidden">
+              <html:select property="portalService" styleClass="form-select form-select-sm" style="width:100%;min-width:0">
+                <html:option value="standard-login">Standard Login</html:option>
+                <html:option value="open-access">Open Access</html:option>
+                <html:option value="self-service">Self-Service</html:option>
               </html:select>
             </div>
           </div>
@@ -83,13 +182,9 @@
           <div class="row g-2 align-items-center">
             <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Country <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Country associated with this user (used to display the corresponding flag)." tabindex="0"></i></label></div>
             <div class="col-sm-8"><c:set var="countries" value="${incomingUserActionForm.countryOptions}" />
-              <div class="d-flex align-items-center gap-2"><html:select property="countryIso" styleId="incomingCountryIso" styleClass="form-select form-select-sm flex-grow-1" style="min-width:0">
+              <div class="d-flex align-items-center gap-2" style="min-width:0;overflow:hidden"><html:select property="countryIso" styleId="incomingCountryIso" styleClass="form-select form-select-sm" style="flex:1 1 0;min-width:0">
                 <html:options collection="countries" property="iso" labelProperty="name" />
               </html:select></div></div>
-          </div>
-          <div class="row g-2 align-items-center">
-            <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Enabled <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When disabled, this user cannot connect." tabindex="0"></i></label></div>
-            <div class="col-sm-8"><div class="form-check form-switch mb-0"><html:checkbox property="active" styleClass="form-check-input" /></div></div>
           </div>
           <div id="standardLoginFields">
           <div class="row g-2 align-items-center">
@@ -107,11 +202,18 @@
               </div>
             </div>
           </div>
-          </div><%-- /standardLoginFields --%>
+          </div><%-- /standardLoginFields (edit) --%>
+          <div class="row g-2 align-items-center">
+            <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Enabled <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When disabled, this user cannot connect." tabindex="0"></i></label></div>
+            <div class="col-sm-8"><div class="form-check form-switch mb-0"><html:checkbox property="active" styleClass="form-check-input" /></div></div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
+      </c:otherwise>
+      </c:choose>
+
+      </div><%-- /card-body --%>
+    </div><%-- /card --%>
+  </div><%-- /col --%>
 
   <%-- Column 2: Associations (update only) --%>
   <c:if test="${isInsert != 'true'}">
