@@ -45,7 +45,7 @@ ETC_ECPDS_MOVER_SIZE=50Mi
 SHELL=/bin/bash
 
 # Extract the version and build number from the Maven file
-VERSION=$(shell grep '<version>' ../../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
+VERSION=$(shell grep '<revision>' ../../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
 BUILD=$(shell grep '<build.number>' ../../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
 
 # Set the TAG (export to be available in the compose file)

@@ -13,7 +13,7 @@ SHELL=/bin/bash
 -include ../.settings/.cr-credentials
 
 # Extract the tag number from the Maven file
-VERSION=$(shell grep '<version>' ../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
+VERSION=$(shell grep '<revision>' ../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
 BUILD=$(shell grep '<build.number>' ../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
 TAG="$(VERSION)-$(BUILD)"
 

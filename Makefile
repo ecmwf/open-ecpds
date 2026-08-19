@@ -30,7 +30,7 @@ JAVADOC_SRC := ecpds-core/target/site/apidocs
 SITE_DIR    := site
 
 # Extract the tag number from the Maven file
-VERSION=$(shell grep '<version>' pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
+VERSION=$(shell grep '<revision>' pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
 BUILD=$(shell grep '<build.number>' pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
 TAG="$(VERSION)-$(BUILD)"
 
@@ -165,6 +165,9 @@ rm-dev: ## Stop the development container, then remove both its container and im
 		read -p "Delete them too? (y/N) " answer; \
 		if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
 			rm -rf "$(DOCKER_HOST_WORKSPACE)/$(DB_DATA_DIR)" "$(DOCKER_HOST_WORKSPACE)/$(AI_DATA_DIR)"; \
+			mkdir -p "$(DOCKER_HOST_WORKSPACE)/$(DB_DATA_DIR)"; \
+			printf '# Ignore everything in this directory\n*\n# Except this file\n!.gitignore\n' \
+				> "$(DOCKER_HOST_WORKSPACE)/$(DB_DATA_DIR)/.gitignore"; \
 			echo "Data directories removed."; \
 		else \
 			echo "Data directories kept. They will be reused if you run 'make dev' again."; \

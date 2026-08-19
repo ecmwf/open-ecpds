@@ -25,3 +25,6 @@ bin/
 # Auto-generated TLS keystores (created at startup if missing, never commit)
 **/*.pfx
 **/*.p12
+
+# flatten-maven-plugin: resolved POM generated during build, removed by mvn clean
+**/.flattened-pom.xml

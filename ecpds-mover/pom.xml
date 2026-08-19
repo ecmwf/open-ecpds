@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>ecmwf</groupId>
 		<artifactId>open-ecpds</artifactId>
-		<version>8.0.6</version>
+		<version>${revision}</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 

@@ -396,8 +396,11 @@ public final class HttpPlugin extends PluginThread {
                     storePassword = p.get("keyStorePassword");
                     storeType = getConf(p, "keyStoreType", "PKCS12");
                 } else {
-                    storePath = getConf("keyStore");
-                    storePassword = getConf("keyStorePassword");
+                    // Fall back to [Security] SSLKeyStore if not set in [HttpPlugin] section
+                    final var localPath = getConf("keyStore");
+                    storePath = localPath != null ? localPath : Cnf.at("Security", "SSLKeyStore");
+                    final var localPassword = getConf("keyStorePassword");
+                    storePassword = localPassword != null ? localPassword : Cnf.at("Security", "SSLKeyStorePassword");
                     storeType = getConf("keyStoreType", "PKCS12");
                 }
                 // Auto-generate a self-signed certificate if none exists yet

@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>ecmwf</groupId>
 	<artifactId>open-ecpds</artifactId>
-	<version>8.0.6</version>
+	<version>${revision}</version>
 	<packaging>pom</packaging>
 	<name>Product Data Store (OpenECPDS)</name>
 	<description>Product Data Store for Acquisition and Dissemination activities</description>
@@ -22,15 +22,16 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<revision>8.1.0</revision>
 		<maven.compiler.target>25</maven.compiler.target>
 		<maven.compiler.source>25</maven.compiler.source>
 		<java.home>${env.JAVA_HOME}</java.home>
-		<graalvm.version>25.0.3</graalvm.version>
+		<graalvm.version>25.2.4</graalvm.version>
 		<packager.id>syi</packager.id>
 		<packager.name>Laurent Gougeon</packager.name>
 		<packager.email>laurent.gougeon@ecmwf.int</packager.email>
 		<packager.distribution>OpenECPDS</packager.distribution>
-		<build.number>02082026</build.number>
+		<build.number>19082026</build.number>
 	</properties>
 
 	<licenses>
@@ -183,11 +184,38 @@
 				</plugin>
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>flatten-maven-plugin</artifactId>
+					<version>1.6.0</version>
+					<configuration>
+						<updatePomFile>true</updatePomFile>
+						<flattenMode>resolveCiFriendliesOnly</flattenMode>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>rpm-maven-plugin</artifactId>
 					<version>2.3.0</version>
 				</plugin>
 			</plugins>
 		</pluginManagement>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>flatten</id>
+						<phase>process-resources</phase>
+						<goals><goal>flatten</goal></goals>
+					</execution>
+					<execution>
+						<id>flatten.clean</id>
+						<phase>clean</phase>
+						<goals><goal>clean</goal></goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
 	</build>
 
 	<!-- Eclipse/M2E profile: activated automatically by M2E so the root Eclipse

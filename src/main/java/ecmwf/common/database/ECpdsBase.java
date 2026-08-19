@@ -3487,10 +3487,27 @@ public final class ECpdsBase extends DataBase {
                     root.getAbsolutePath());
             return result;
         }
-        // Build field name → id map
+        // Build field name → id map; auto-create any fields referenced by the tag mappings
+        // that do not yet exist in the database so imported values are never silently dropped.
         final var fieldMap = new java.util.HashMap<String, Integer>();
         for (final DestinationMetaField f : getDestinationMetaFields()) {
             fieldMap.put(f.getName(), f.getId());
+        }
+        final var knownFieldNames = new java.util.HashSet<>(_META_TAG_TO_FIELD.values());
+        for (final String fieldName : knownFieldNames) {
+            if (!fieldMap.containsKey(fieldName)) {
+                final var newField = new DestinationMetaField();
+                newField.setName(fieldName);
+                newField.setLabel(_camelToLabel(fieldName));
+                newField.setType(_META_CONTACT_TAGS.contains(fieldName) ? "contact" : "text");
+                newField.setCategory(_defaultCategory(fieldName));
+                newField.setMaxOccurs(_META_CONTACT_TAGS.contains(fieldName) ? -1 : 1);
+                newField.setActive(true);
+                saveDestinationMetaField(newField);
+                fieldMap.put(fieldName, newField.getId());
+                _log.info("scanMetadataAttachments: auto-created missing field '{}' (id={})", fieldName,
+                        newField.getId());
+            }
         }
         // Build set of existing destination names to skip stale attachment directories
         final var existingDestinations = new java.util.HashSet<String>();
@@ -3529,8 +3546,9 @@ public final class ECpdsBase extends DataBase {
             final var entries = new java.util.ArrayList<java.util.Map<String, Object>>();
             for (final java.io.File xmlFile : xmlFiles) {
                 try {
-                    final var doc = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder()
-                            .parse(xmlFile);
+                    final var dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+                    dbf.setNamespaceAware(true);
+                    final var doc = dbf.newDocumentBuilder().parse(xmlFile);
                     doc.getDocumentElement().normalize();
                     _extractMetaXmlValues(doc.getDocumentElement(), fieldMap, new java.util.HashMap<>(), entries);
                 } catch (final Exception e) {
@@ -3557,7 +3575,9 @@ public final class ECpdsBase extends DataBase {
     // rather than plain text. These are the XML element names that may contain sub-elements.
     private static final java.util.Set<String> _META_CONTACT_TAGS = java.util.Set.of("computerOperations",
             "mainOperationalContact", "telecomOperators", "meteorologists", "ecpdsContact", "ecmwfContact",
-            "technicalContact", "meteorologicalContact", "contactInformation", "switchboard", "mailGroup");
+            "technicalContact", "meteorologicalContact", "contactInformation", "ContactInformations", "switchboard",
+            "mailGroup", "mainTechnicalContact", "mainTechnicalContactprimary", "mainTechnicalContactsecondary",
+            "TechnicalContact", "Technical_contact_primary", "other");
 
     static {
         _META_TAG_TO_FIELD = new java.util.HashMap<>();
@@ -3568,16 +3588,25 @@ public final class ECpdsBase extends DataBase {
         _META_TAG_TO_FIELD.put("generalComments", "generalComments");
         _META_TAG_TO_FIELD.put("disseminationChartsComments", "disseminationChartsComments");
         _META_TAG_TO_FIELD.put("agency", "agency");
+        _META_TAG_TO_FIELD.put("AgencyOrOrganizationOfOrigin", "agency");
         _META_TAG_TO_FIELD.put("centreOfOrigin", "centreOfOrigin");
+        _META_TAG_TO_FIELD.put("CentreOfOrigin", "centreOfOrigin");
         _META_TAG_TO_FIELD.put("agencyWebPage", "agencyWebPage");
+        _META_TAG_TO_FIELD.put("AgencyOrOrganizationOfOriginWebPage", "agencyWebPage");
         _META_TAG_TO_FIELD.put("sadNumber", "sadNumber");
         _META_TAG_TO_FIELD.put("dataFormat", "dataFormat");
+        _META_TAG_TO_FIELD.put("DataFormat", "dataFormat");
         _META_TAG_TO_FIELD.put("dataDescription", "dataDescription");
+        _META_TAG_TO_FIELD.put("DataDescription", "dataDescription");
         _META_TAG_TO_FIELD.put("typeOfObservation", "typeOfObservation");
+        _META_TAG_TO_FIELD.put("TypeOfObservation", "typeOfObservation");
         _META_TAG_TO_FIELD.put("importanceOfDataTypeForAssimilation", "importanceForAssimilation");
+        _META_TAG_TO_FIELD.put("ImportanceOfDataTypeForAssimilation", "importanceForAssimilation");
         _META_TAG_TO_FIELD.put("importanceForAssimilation", "importanceForAssimilation");
         _META_TAG_TO_FIELD.put("instrument", "instrument");
+        _META_TAG_TO_FIELD.put("Instrument", "instrument");
         _META_TAG_TO_FIELD.put("instrumentChannels", "instrumentChannels");
+        _META_TAG_TO_FIELD.put("InstrumentChannels", "instrumentChannels");
         _META_TAG_TO_FIELD.put("ECFSPath", "ecfsPath");
         _META_TAG_TO_FIELD.put("ecfsPath", "ecfsPath");
         _META_TAG_TO_FIELD.put("OnLineBackup", "onLineBackup");
@@ -3586,12 +3615,21 @@ public final class ECpdsBase extends DataBase {
         _META_TAG_TO_FIELD.put("WarningInfo", "warningInfo");
         _META_TAG_TO_FIELD.put("metappsSystemChange", "metappsSystemChange");
         _META_TAG_TO_FIELD.put("shiftProcedure", "shiftProcedure");
+        _META_TAG_TO_FIELD.put("ShiftProcedure", "shiftProcedure");
         _META_TAG_TO_FIELD.put("analystProcedure", "analystProcedure");
+        _META_TAG_TO_FIELD.put("AnalystProcedure", "analystProcedure");
         _META_TAG_TO_FIELD.put("opsProcedure", "shiftProcedure"); // legacy XML tag → shiftProcedure
         _META_TAG_TO_FIELD.put("documentationUrl", "documentationUrl");
+        _META_TAG_TO_FIELD.put("OpsProcedureWebPage", "documentationUrl");
+        _META_TAG_TO_FIELD.put("URL", "documentationUrl");
         _META_TAG_TO_FIELD.put("documentationTechDoc", "documentationTechDoc");
+        _META_TAG_TO_FIELD.put("TechDoc", "documentationTechDoc");
         _META_TAG_TO_FIELD.put("phoneNumber", "phoneNumber");
+        _META_TAG_TO_FIELD.put("PhoneNumber", "phoneNumber");
         _META_TAG_TO_FIELD.put("comments", "comments");
+        _META_TAG_TO_FIELD.put("Comments", "comments");
+        _META_TAG_TO_FIELD.put("general", "generalComments");
+        _META_TAG_TO_FIELD.put("rmdcnTechnicalPage", "documentationUrl");
         // Contact / structured fields (values stored as JSON by _buildContactJson)
         _META_TAG_TO_FIELD.put("computingRepresentative", "computingRepresentative");
         _META_TAG_TO_FIELD.put("mainOperationalContact", "mainOperationalContact");
@@ -3605,6 +3643,21 @@ public final class ECpdsBase extends DataBase {
         _META_TAG_TO_FIELD.put("switchboard", "switchboard");
         _META_TAG_TO_FIELD.put("mailGroup", "mailGroup");
         _META_TAG_TO_FIELD.put("contactInformation", "contactInformation");
+        _META_TAG_TO_FIELD.put("ContactInformations", "contactInformation");
+        // Variant technical contact tags → technicalContact
+        _META_TAG_TO_FIELD.put("mainTechnicalContact", "technicalContact");
+        _META_TAG_TO_FIELD.put("mainTechnicalContactprimary", "technicalContact");
+        _META_TAG_TO_FIELD.put("mainTechnicalContactsecondary", "technicalContact");
+        _META_TAG_TO_FIELD.put("TechnicalContact", "technicalContact");
+        _META_TAG_TO_FIELD.put("Technical_contact_primary", "technicalContact");
+        _META_TAG_TO_FIELD.put("other", "technicalContact");
+        // Variant mail group tag (lowercase)
+        _META_TAG_TO_FIELD.put("mailgroup", "mailGroup");
+        // Scalar fields from additional XML formats
+        _META_TAG_TO_FIELD.put("opsImportantNote", "documentationUrl");
+        _META_TAG_TO_FIELD.put("Address", "generalComments");
+        _META_TAG_TO_FIELD.put("organisation", "agency");
+        _META_TAG_TO_FIELD.put("disseminationCharts", "disseminationChartsComments");
     }
 
     /**
@@ -3630,6 +3683,7 @@ public final class ECpdsBase extends DataBase {
             case "email" -> obj.put("email", val);
             case "telephoneNumber" -> obj.put("phone", val);
             case "faxNumber" -> obj.put("fax", val);
+            case "url" -> obj.put("url", val);
             default -> {
                 /* ignore unknown sub-tags */ }
             }
@@ -3657,6 +3711,50 @@ public final class ECpdsBase extends DataBase {
         }
         sb.append('}');
         return sb.toString();
+    }
+
+    /**
+     * Converts a camelCase field name to a human-readable title label. E.g. "shiftProcedure" → "Shift Procedure",
+     * "ECFSPath" → "ECFS Path".
+     */
+    private static String _camelToLabel(final String name) {
+        // Insert a space before each uppercase letter that follows a lowercase letter,
+        // and also before each run of lowercase letters that follows an uppercase run.
+        final var spaced = name.replaceAll("([a-z])([A-Z])", "$1 $2").replaceAll("([A-Z]+)([A-Z][a-z])", "$1 $2")
+                .replace('_', ' ');
+        final var trimmed = spaced.replaceAll("\\s+", " ").trim();
+        return trimmed.isEmpty() ? name : Character.toUpperCase(trimmed.charAt(0)) + trimmed.substring(1);
+    }
+
+    /** Returns an appropriate category for a field name based on known naming conventions. */
+    private static String _defaultCategory(final String fieldName) {
+        if (fieldName == null) {
+            return "General";
+        }
+        final var lower = fieldName.toLowerCase();
+        if (lower.contains("contact") || lower.contains("operator") || lower.contains("meteorologist")
+                || lower.contains("switchboard") || lower.contains("mailgroup") || lower.contains("mail group")
+                || lower.contains("phone") || lower.contains("representative")) {
+            return "Contacts";
+        }
+        if (lower.contains("procedure") || lower.contains("shift") || lower.contains("analyst")) {
+            return "Procedures";
+        }
+        if (lower.contains("documentation") || lower.contains("techDoc") || lower.contains("url")
+                || lower.contains("webpage") || lower.contains("opsnote")) {
+            return "Documentation";
+        }
+        if (lower.contains("observation") || lower.contains("instrument") || lower.contains("assimilation")
+                || lower.contains("dataformat") || lower.contains("dataformat")) {
+            return "Data";
+        }
+        if (lower.contains("ecfs") || lower.contains("backup") || lower.contains("storage")) {
+            return "Storage";
+        }
+        if (lower.contains("warning") || lower.contains("metapps") || lower.contains("alert")) {
+            return "Alerts";
+        }
+        return "General";
     }
 
     /** Minimal JSON string quoting (escapes backslash, double-quote, and control characters). */

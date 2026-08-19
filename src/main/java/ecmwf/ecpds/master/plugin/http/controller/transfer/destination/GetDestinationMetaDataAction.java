@@ -38,6 +38,7 @@ import ecmwf.ecpds.master.plugin.http.model.transfer.DestinationMetaData;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.web.controller.ECMWFActionForm;
 import ecmwf.web.controller.ECMWFActionFormException;
+import ecmwf.web.model.users.Category;
 import ecmwf.web.model.users.User;
 
 /**
@@ -46,6 +47,9 @@ import ecmwf.web.model.users.User;
  * @author root
  */
 public class GetDestinationMetaDataAction extends PDSAction {
+
+    /** Categories that may edit destination metadata (in addition to admin path access). */
+    private static final java.util.Set<String> _META_EDIT_CATEGORIES = java.util.Set.of("operations", "operator");
 
     /**
      * {@inheritDoc}
@@ -65,6 +69,24 @@ public class GetDestinationMetaDataAction extends PDSAction {
                 request.setAttribute("destPropErrors", GetDestinationListJsonAction.hasPropertyErrors(destination));
             } catch (final Exception ignored) {
             }
+            // Determine if user may edit metadata: admin path access OR allowed category
+            var canEditMeta = false;
+            try {
+                canEditMeta = user.hasAccess("/do/admin/metafields");
+            } catch (final Exception ignored) {
+            }
+            if (!canEditMeta) {
+                try {
+                    for (final Object c : user.getCategories()) {
+                        if (c instanceof Category cat && _META_EDIT_CATEGORIES.contains(cat.getName())) {
+                            canEditMeta = true;
+                            break;
+                        }
+                    }
+                } catch (final Exception ignored) {
+                }
+            }
+            request.setAttribute("canEditMeta", canEditMeta);
             // Load metadata fields (filter by destination DES_TYPE via junction table) and existing values
             try {
                 final var db = MasterManager.getDB();

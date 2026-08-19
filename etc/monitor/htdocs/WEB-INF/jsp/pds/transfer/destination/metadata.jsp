@@ -1,6 +1,5 @@
 <%@ page session="true" contentType="text/html;charset=UTF-8"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
-<%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
 
 <jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
@@ -23,8 +22,7 @@
     <span class="fw-semibold">Destination Metadata</span>
     <div class="ms-auto d-flex flex-wrap gap-2 align-items-center">
       <span id="dmfSaveStatus" class="dmf-save-status text-muted"></span>
-      <auth:if basePathKey="admin.basepath" paths="/metafields">
-      <auth:then>
+      <c:if test="${canEditMeta}">
       <button type="button" class="btn btn-sm btn-primary" id="dmfSaveBtn" onclick="dmfSave()">
         <i class="bi bi-floppy me-1"></i>Save
       </button>
@@ -35,13 +33,12 @@
          class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-upload me-1"></i>Import XML
       </a>
-      </auth:then>
-      <auth:else>
+      </c:if>
+      <c:if test="${not canEditMeta}">
       <button type="button" class="btn btn-sm btn-outline-secondary" onclick="dmfDownloadJson()" title="Download metadata as JSON">
         <i class="bi bi-download me-1"></i>JSON
       </button>
-      </auth:else>
-      </auth:if>
+      </c:if>
     </div>
   </div>
 
@@ -50,14 +47,14 @@
       <div class="alert alert-info d-flex align-items-center gap-2 mb-0">
         <i class="bi bi-info-circle-fill"></i>
         <span>No metadata fields are configured for this destination type.
-          <auth:if basePathKey="admin.basepath" paths="/metafields">
-          <auth:then>
-            <a href="<bean:message key='admin.basepath'/>/metafields" class="alert-link">Configure fields in the Metadata Fields admin page.</a>
-          </auth:then>
-          <auth:else>
-            Contact your administrator.
-          </auth:else>
-          </auth:if>
+          <c:choose>
+            <c:when test="${canEditMeta}">
+              <a href="<bean:message key='admin.basepath'/>/metafields" class="alert-link">Configure fields in the Metadata Fields admin page.</a>
+            </c:when>
+            <c:otherwise>
+              Contact your administrator.
+            </c:otherwise>
+          </c:choose>
         </span>
       </div>
     </c:if>
@@ -92,16 +89,14 @@
           <div id="dmf-values-${field.id}">
             <%-- Values rendered via JS from dmfData --%>
           </div>
-          <auth:if basePathKey="admin.basepath" paths="/metafields">
-          <auth:then>
+          <c:if test="${canEditMeta}">
           <c:if test="${field.maxOccurs == -1 || field.maxOccurs > 1}">
             <button type="button" class="btn btn-link btn-sm p-0 dmf-add mt-1"
                     onclick="dmfAddValue(${field.id}, '${field.type}')">
               <i class="bi bi-plus-circle me-1"></i>Add ${field.label}
             </button>
           </c:if>
-          </auth:then>
-          </auth:if>
+          </c:if>
         </div>
 
       </c:forEach>
@@ -117,7 +112,7 @@
 <script>
 // Existing values map: fieldId -> [{id, value, position}, ...]
 var dmfData = {};
-var dmfCanEdit = <auth:if basePathKey="admin.basepath" paths="/metafields"><auth:then>true</auth:then><auth:else>false</auth:else></auth:if>;
+var dmfCanEdit = ${canEditMeta};
 <c:forEach var="val" items="${metaValues}"><%
   ecmwf.common.database.DestinationMetaValue _v =
       (ecmwf.common.database.DestinationMetaValue) pageContext.getAttribute("val");
