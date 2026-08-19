@@ -1387,4 +1387,41 @@ final class ManagementProxy implements ManagementInterface {
             final String keystorePassword) throws MasterException, RemoteException {
         managementInterface.deployHttpCertificateToAllMovers(session, pkcs12Bytes, keystorePassword);
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns a JSON-encoded certificate snapshot for every connected Monitor daemon.
+     */
+    @Override
+    public Map<String, String> getMonitorCertificatesJson(final ECpdsSession session)
+            throws MasterException, RemoteException {
+        final var monitor = new MonitorCall("getMonitorCertificatesJson(" + session.getWebUser().getName() + ")");
+        return monitor.done(managementInterface.getMonitorCertificatesJson(session));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Deploys a new TLS certificate to every connected Monitor daemon.
+     */
+    @Override
+    public void deployHttpCertificateToAllMonitors(final ECpdsSession session, final byte[] pkcs12Bytes,
+            final String keystorePassword) throws MasterException, RemoteException {
+        managementInterface.deployHttpCertificateToAllMonitors(session, pkcs12Bytes, keystorePassword);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void deployHttpCertificateToMover(final ECpdsSession session, final String moverName,
+            final byte[] pkcs12Bytes, final String keystorePassword) throws MasterException, RemoteException {
+        managementInterface.deployHttpCertificateToMover(session, moverName, pkcs12Bytes, keystorePassword);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void deployHttpCertificateToMonitor(final ECpdsSession session, final String monitorName,
+            final byte[] pkcs12Bytes, final String keystorePassword) throws MasterException, RemoteException {
+        managementInterface.deployHttpCertificateToMonitor(session, monitorName, pkcs12Bytes, keystorePassword);
+    }
 }

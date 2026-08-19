@@ -68,7 +68,7 @@ import ecmwf.common.security.CertificateManager;
 import ecmwf.common.security.CertificateManager.CertificateInfo;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.version.Version;
-import ecmwf.ecpds.mover.HttpCertificateProvider;
+import ecmwf.common.security.HttpCertificateProvider;
 import ecmwf.ecpds.mover.MoverServer;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.ecaccess.StarterServer;

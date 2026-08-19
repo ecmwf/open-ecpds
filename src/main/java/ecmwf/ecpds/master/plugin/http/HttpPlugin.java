@@ -81,6 +81,7 @@ import ecmwf.common.plugin.PluginThread;
 import ecmwf.common.rmi.SocketConfig;
 import ecmwf.common.security.CertificateManager;
 import ecmwf.common.security.CertificateManager.CertificateInfo;
+import ecmwf.common.security.HttpCertificateProvider;
 import ecmwf.common.security.Tools;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.version.Version;
@@ -96,7 +97,7 @@ import ecmwf.ecpds.master.transfer.DestinationOption;
 /**
  * The Class HttpPlugin.
  */
-public final class HttpPlugin extends PluginThread implements HandlerReceiver {
+public final class HttpPlugin extends PluginThread implements HandlerReceiver, HttpCertificateProvider {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(HttpPlugin.class);
 
@@ -521,6 +522,49 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver {
      */
     public String getActiveKeystorePath() {
         return activeKeystorePath;
+    }
+
+    // -------------------------------------------------------------------------
+    // HttpCertificateProvider
+    // -------------------------------------------------------------------------
+
+    /** {@inheritDoc} */
+    @Override
+    public String buildCertificateJson() {
+        final var info = getCertificateInfo();
+        if (info == null) {
+            return "{}";
+        }
+        final var utc = java.util.TimeZone.getTimeZone("UTC");
+        final var fmtDate = new java.text.SimpleDateFormat("yyyy-MM-dd");
+        fmtDate.setTimeZone(utc);
+        final var fmtTime = new java.text.SimpleDateFormat("HH:mm:ss");
+        fmtTime.setTimeZone(utc);
+        return "{\"subject\":\"" + _esc(info.subject()) + "\"" + ",\"issuer\":\"" + _esc(info.issuer()) + "\""
+                + ",\"serialNumber\":\"" + _esc(info.serialNumber()) + "\"" + ",\"notBefore\":\""
+                + fmtDate.format(info.notBefore()) + "\"" + ",\"notBeforeTime\":\"" + fmtTime.format(info.notBefore())
+                + "\"" + ",\"notAfter\":\"" + fmtDate.format(info.notAfter()) + "\"" + ",\"notAfterTime\":\""
+                + fmtTime.format(info.notAfter()) + "\"" + ",\"fingerprintSha256\":\"" + _esc(info.fingerprintSha256())
+                + "\"" + ",\"keyAlgorithm\":\"" + _esc(info.keyAlgorithm()) + "\"" + ",\"keySize\":" + info.keySize()
+                + ",\"selfSigned\":" + info.selfSigned() + ",\"expired\":" + info.expired() + ",\"expiringSoon\":"
+                + info.expiringSoon() + "}";
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void deployCertificate(final byte[] pkcs12Bytes, final String keystorePassword) throws Exception {
+        if (activeKeystorePath == null) {
+            throw new IllegalStateException("HttpPlugin has no active keystore path");
+        }
+        CertificateManager.importCertificate(activeKeystorePath, activeKeystorePassword, pkcs12Bytes, keystorePassword);
+        reloadCertificate();
+    }
+
+    private static String _esc(final String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     /**

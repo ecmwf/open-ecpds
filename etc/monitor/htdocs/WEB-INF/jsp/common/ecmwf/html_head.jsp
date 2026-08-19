@@ -372,7 +372,11 @@ function validatePatternInput(input, feedbackId) {
     var val = input.value.trim();
     if (val === '') {
         fb.innerHTML = '';
-    } else if (input.validity.valid) {
+        return;
+    }
+    var valid = false;
+    try { valid = input.validity.valid; } catch(e) { valid = true; } // guard against v-flag regex SyntaxError
+    if (valid) {
         fb.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
     } else {
         fb.innerHTML = '<i class="bi bi-x-circle-fill text-danger" title="' + (input.title || 'Invalid value') + '"></i>';

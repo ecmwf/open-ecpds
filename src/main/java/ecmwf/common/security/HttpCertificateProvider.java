@@ -16,13 +16,24 @@
  * nor does it submit to any jurisdiction.
  */
 
-package ecmwf.ecpds.mover;
+package ecmwf.common.security;
 
 /**
- * Implemented by plugins that expose an HTTPS server and can report on or replace the active TLS certificate. Keeping
- * this interface in the main mover package (rather than in the plugin sub-package) ensures it is loaded by the
- * application class loader and is therefore visible to RMI server threads, which cannot reach classes loaded by the
- * plugin's isolated class loader.
+ * ECMWF Product Data Store (OpenECPDS) Project
+ *
+ * Implemented by plugins (and remote-interface bridge objects) that expose an HTTPS server and can report on or replace
+ * the active TLS certificate.
+ *
+ * <p>
+ * Placing this interface in the {@code ecmwf.common.security} package (rather than in a plugin sub-package) ensures it
+ * is loaded by the application class loader and is therefore visible to RMI server threads and other components that
+ * cannot reach classes loaded by an isolated plugin class loader.
+ *
+ * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
+ *
+ * @version 6.7.7
+ *
+ * @since 2024-07-01
  */
 public interface HttpCertificateProvider {
 
@@ -36,7 +47,7 @@ public interface HttpCertificateProvider {
 
     /**
      * Deploys a new PKCS#12 keystore to this plugin's HTTPS server and hot-reloads the certificate without restarting
-     * the server.
+     * the server (where supported).
      *
      * @param pkcs12Bytes
      *            the PKCS#12 keystore bytes

@@ -45,6 +45,9 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.security.CertificateManager;
 import ecmwf.common.security.CertificateManager.CertificateInfo;
+import ecmwf.common.ecaccess.ClientInterface;
+import ecmwf.common.ecaccess.StarterServer;
+import ecmwf.common.technical.Singletons;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.HttpPlugin;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
@@ -101,6 +104,10 @@ public class CertificatesAction extends PDSAction {
                     return handleDownload(request, response, httpPlugin);
                 case "deploy":
                     return handleDeploy(mapping, request, user, httpPlugin);
+                case "deployMonitors":
+                    return handleDeployMonitors(mapping, request, user, httpPlugin);
+                case "deploySingle":
+                    return handleDeploySingle(mapping, request, user, httpPlugin);
                 default:
                     request.setAttribute("errorMessage", "Unknown action: " + action);
                 }
@@ -226,6 +233,64 @@ public class CertificatesAction extends PDSAction {
         return mapping.findForward("success");
     }
 
+    private ActionForward handleDeployMonitors(final ActionMapping mapping, final HttpServletRequest request,
+            final User user, final HttpPlugin httpPlugin) throws Exception {
+        final var path = httpPlugin.getActiveKeystorePath();
+        final var password = httpPlugin.getActiveKeystorePassword();
+        if (path == null || password == null) {
+            throw new ECMWFException("HttpPlugin is not running or has no keystore configured");
+        }
+        final var ksFile = new java.io.File(path);
+        final byte[] pkcs12Bytes;
+        try (final var fis = new java.io.FileInputStream(ksFile)) {
+            pkcs12Bytes = fis.readAllBytes();
+        }
+        final var session = Util.getECpdsSessionFromObject(user);
+        MasterManager.getMI().deployHttpCertificateToAllMonitors(session, pkcs12Bytes, password);
+        _log.info("Deployed Monitor certificate to all other Monitors by user {}", user.getName());
+        request.setAttribute("successMessage", "Certificate deployed to all connected Monitors successfully.");
+        populateCertificateInfo(request, httpPlugin, user);
+        return mapping.findForward("success");
+    }
+
+    private ActionForward handleDeploySingle(final ActionMapping mapping, final HttpServletRequest request,
+            final User user, final HttpPlugin httpPlugin) throws Exception {
+        final var path = httpPlugin.getActiveKeystorePath();
+        final var password = httpPlugin.getActiveKeystorePassword();
+        if (path == null || password == null) {
+            throw new ECMWFException("HttpPlugin is not running or has no keystore configured");
+        }
+        final var targetType = request.getParameter("targetType");
+        final var targetName = request.getParameter("targetName");
+        if (targetType == null || targetName == null || targetName.isBlank()) {
+            throw new ECMWFException("Missing targetType or targetName parameter");
+        }
+        final var ksFile = new java.io.File(path);
+        final byte[] pkcs12Bytes;
+        try (final var fis = new java.io.FileInputStream(ksFile)) {
+            pkcs12Bytes = fis.readAllBytes();
+        }
+        final var session = Util.getECpdsSessionFromObject(user);
+        switch (targetType) {
+        case "mover":
+            MasterManager.getMI().deployHttpCertificateToMover(session, targetName, pkcs12Bytes, password);
+            _log.info("Deployed certificate to Data Mover {} by user {}", targetName, user.getName());
+            request.setAttribute("successMessage",
+                    "Certificate deployed to Data Mover '" + targetName + "' successfully.");
+            break;
+        case "monitor":
+            MasterManager.getMI().deployHttpCertificateToMonitor(session, targetName, pkcs12Bytes, password);
+            _log.info("Deployed certificate to Monitor {} by user {}", targetName, user.getName());
+            request.setAttribute("successMessage",
+                    "Certificate deployed to Monitor '" + targetName + "' successfully.");
+            break;
+        default:
+            throw new ECMWFException("Unknown targetType: " + targetType);
+        }
+        populateCertificateInfo(request, httpPlugin, user);
+        return mapping.findForward("success");
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
@@ -267,6 +332,32 @@ public class CertificatesAction extends PDSAction {
             request.setAttribute("moverCerts", moverList);
         } catch (final Exception e) {
             _log.warn("Could not fetch mover certificate info", e);
+        }
+        // Per-monitor certificate snapshots (exclude this monitor — shown at top)
+        try {
+            final var session = Util.getECpdsSessionFromObject(user);
+            final var server = Singletons.get(StarterServer.class);
+            String localRoot = null;
+            if (server instanceof final ClientInterface ci) {
+                try {
+                    localRoot = ci.getRoot();
+                } catch (final Exception ignored) {
+                }
+            }
+            final var monitors = MasterManager.getMI().getMonitorCertificatesJson(session);
+            final List<Map<String, Object>> monitorList = new ArrayList<>();
+            for (final var entry : monitors.entrySet()) {
+                if (localRoot != null && entry.getKey().equalsIgnoreCase(localRoot)) {
+                    continue; // already shown in the Monitor Certificate card at the top
+                }
+                final var m = new LinkedHashMap<String, Object>();
+                m.put("name", entry.getKey());
+                m.put("json", entry.getValue());
+                monitorList.add(m);
+            }
+            request.setAttribute("monitorCerts", monitorList);
+        } catch (final Exception e) {
+            _log.warn("Could not fetch monitor certificate info", e);
         }
     }
 

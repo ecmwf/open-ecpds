@@ -12,6 +12,8 @@
     final String keystorePath = (String) request.getAttribute("monitorKeystorePath");
     @SuppressWarnings("unchecked")
     final List<Map<String,Object>> moverCerts = (List<Map<String,Object>>) request.getAttribute("moverCerts");
+    @SuppressWarnings("unchecked")
+    final List<Map<String,Object>> monitorCerts = (List<Map<String,Object>>) request.getAttribute("monitorCerts");
     final String successMessage = (String) request.getAttribute("successMessage");
     final String errorMessage   = (String) request.getAttribute("errorMessage");
     final boolean isSelfSigned  = Boolean.TRUE.equals(selfSigned);
@@ -75,6 +77,16 @@
       <li><strong>Download</strong> &mdash; exports the public certificate (PEM) for installation in browsers or MQTT clients.</li>
     </ul>
     <p class="mb-0">All changes are applied without restarting the server (hot reload).</p>
+    <hr class="my-2"/>
+    <strong class="d-block mb-1"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Certificate DNS coverage</strong>
+    <p class="mb-1">This certificate secures HTTPS access to the <strong>Monitor UI</strong>. When deployed to Data Movers (via <em>Deploy to All Movers</em>), the same certificate also secures the <strong>Data Portal UI</strong> (HTTPS) and the <strong>MQTT service</strong> (TLS) on each mover. Because all these services may be reached from multiple hostnames, the certificate's <strong>Subject Alternative Names (SAN)</strong> should include <em>every</em> DNS name (and optionally IP address) under which this Monitor or any Data Mover is accessed. Typical names to cover:</p>
+    <ul class="mb-1 ps-3">
+      <li>The short hostname and fully-qualified domain name (FQDN) of this Monitor server.</li>
+      <li>Any load-balancer or virtual hostname that routes traffic to this Monitor.</li>
+      <li>Hostnames of all connected <strong>Data Movers</strong> if they also use this certificate (e.g. when the Monitor certificate is deployed to movers via <em>Deploy to All Movers</em>).</li>
+      <li>Hostnames of all other <strong>Monitor daemons</strong> if the same certificate is shared across them.</li>
+    </ul>
+    <p class="mb-0">A mismatch between the certificate's SAN list and the hostname used by a client will cause TLS handshake failures. When in doubt, generate a CSR and request a multi-SAN certificate from your CA, or use a wildcard certificate covering your domain.</p>
   </div>
 </div>
 
@@ -154,6 +166,122 @@
 </div><%-- /Monitor Certificate card --%>
 
 <%-- ============================================================
+     Monitor Certificates Card
+     ============================================================ --%>
+<% if (monitorCerts != null && !monitorCerts.isEmpty()) { %>
+<div class="card border-0 shadow-sm mt-3">
+<div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+  <i class="bi bi-display text-primary"></i>
+  <span class="fw-semibold">Monitor Certificates</span>
+  <button class="btn btn-link btn-sm text-muted p-0" type="button"
+      data-bs-toggle="collapse" data-bs-target="#certMonitorListInfo"
+      aria-expanded="false" title="About this section">
+    <i class="bi bi-info-circle"></i>
+  </button>
+  <div class="ms-auto">
+    <% if (hasCert) { %>
+    <form id="deployMonitorsForm" method="post" action="/do/admin/certificates" style="display:contents">
+      <input type="hidden" name="action" value="deployMonitors"/>
+      <button type="button" class="btn btn-sm btn-outline-primary"
+              onclick="confirmationDialog({
+                title:       'Deploy Certificate to Monitors',
+                message:     'Deploy the current Monitor certificate to all connected Monitors?<br><small class=\'text-muted\'>Certificates will be reloaded; a brief HTTPS interruption may occur on each target Monitor.</small>',
+                confirmText: 'Deploy',
+                onConfirm:   function(){ document.getElementById('deployMonitorsForm').submit(); }
+              })">
+        <i class="bi bi-cloud-upload me-1"></i>Deploy to All Monitors
+      </button>
+    </form>
+    <% } else { %>
+    <button class="btn btn-sm btn-outline-primary" disabled title="No certificate to deploy">
+      <i class="bi bi-cloud-upload me-1"></i>Deploy to All Monitors
+    </button>
+    <% } %>
+  </div>
+</div>
+
+<div class="collapse" id="certMonitorListInfo">
+  <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+    <strong class="d-block mb-1">Monitor Certificates &mdash; overview</strong>
+    <p class="mb-0">Shows the TLS certificate currently active on each connected Monitor daemon. Use <strong>Deploy to All Monitors</strong> to push the current Monitor certificate to every Monitor in one operation.</p>
+  </div>
+</div>
+
+<div class="card-body p-0">
+<div class="table-responsive">
+<table class="table table-sm table-hover table-striped align-middle mb-0" style="font-size:0.82rem;">
+  <thead class="table-warning">
+    <tr>
+      <th>Monitor</th>
+      <th>Subject</th>
+      <th title="Valid Until (UTC)">Valid Until</th>
+      <th>Type</th>
+      <th>SHA-256 Fingerprint</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%
+    for (final Map<String,Object> mon : monitorCerts) {
+        final String monName = (String) mon.get("name");
+        final String json = (String) mon.get("json");
+        if (json == null || "{}".equals(json)) {
+%>
+    <tr>
+      <td><strong><%=monName%></strong></td>
+      <td colspan="4" class="text-muted fst-italic">Offline or no certificate data available</td>
+      <td></td>
+    </tr>
+<%
+        } else {
+            final String subj          = jsonField(json, "subject");
+            final String notAfter      = jsonField(json, "notAfter");
+            final String notAfterTime  = jsonField(json, "notAfterTime");
+            final boolean expired  = "true".equals(jsonField(json, "expired"));
+            final boolean expSoon  = "true".equals(jsonField(json, "expiringSoon"));
+            final boolean mSelf    = "true".equals(jsonField(json, "selfSigned"));
+            final String fp        = jsonField(json, "fingerprintSha256");
+%>
+    <tr>
+      <td><strong><%=monName%></strong></td>
+      <td style="font-family:monospace; font-size:.78rem;"><%=subj != null ? subj : "–"%></td>
+      <td>
+        <%=notAfter != null ? notAfter : "–"%>
+        <% if (notAfterTime != null) { %><br><small class="text-muted"><%=notAfterTime%></small><% } %>
+        <% if (expired) { %><span class="badge bg-danger ms-1">EXPIRED</span>
+        <% } else if (expSoon) { %><span class="badge bg-warning text-dark ms-1">EXPIRING SOON</span><% } %>
+      </td>
+      <td>
+        <% if (mSelf) { %><span class="badge bg-info text-dark">Self-Signed</span>
+        <% } else { %><span class="badge bg-success">CA-Signed</span><% } %>
+      </td>
+      <td style="font-family:monospace; font-size:.75rem; word-break:break-all; max-width:260px;"><%=fp != null ? fp : "–"%></td>
+      <td class="text-end">
+        <% if (hasCert) { %>
+        <button type="button" class="btn btn-sm btn-outline-secondary py-0"
+            onclick="confirmationDialog({
+              title:       'Deploy Certificate',
+              message:     'Deploy the current Monitor certificate to Monitor <strong><%=monName%></strong>?<br><small class=\'text-muted\'>The certificate will be reloaded; a brief HTTPS interruption may occur.</small>',
+              confirmText: 'Deploy',
+              onConfirm:   function(){ deploySingle('monitor','<%=monName%>'); }
+            })" title="Deploy certificate to this Monitor">
+          <i class="bi bi-cloud-upload"></i>
+        </button>
+        <% } %>
+      </td>
+    </tr>
+<%
+        }
+    }
+%>
+  </tbody>
+</table>
+</div>
+</div>
+</div><%-- /Monitor Certificates card --%>
+<% } %>
+
+<%-- ============================================================
      Data Mover Certificates Card
      ============================================================ --%>
 <% if (moverCerts != null && !moverCerts.isEmpty()) { %>
@@ -205,6 +333,7 @@
       <th title="Valid Until (UTC)">Valid Until</th>
       <th>Type</th>
       <th>SHA-256 Fingerprint</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -217,6 +346,7 @@
     <tr>
       <td><strong><a href="/do/datafile/transferserver/<%=moverName%>"><%=moverName%></a></strong></td>
       <td colspan="4" class="text-muted fst-italic">Offline or no certificate data available</td>
+      <td></td>
     </tr>
 <%
         } else {
@@ -242,6 +372,19 @@
         <% } else { %><span class="badge bg-success">CA-Signed</span><% } %>
       </td>
       <td style="font-family:monospace; font-size:.75rem; word-break:break-all; max-width:260px;"><%=fp != null ? fp : "–"%></td>
+      <td class="text-end">
+        <% if (hasCert) { %>
+        <button type="button" class="btn btn-sm btn-outline-secondary py-0"
+            onclick="confirmationDialog({
+              title:       'Deploy Certificate',
+              message:     'Deploy the current Monitor certificate to Data Mover <strong><%=moverName%></strong>?<br><small class=\'text-muted\'>The certificate will be hot-reloaded without restarting the HTTPS server.</small>',
+              confirmText: 'Deploy',
+              onConfirm:   function(){ deploySingle('mover','<%=moverName%>'); }
+            })" title="Deploy certificate to this Data Mover">
+          <i class="bi bi-cloud-upload"></i>
+        </button>
+        <% } %>
+      </td>
     </tr>
 <%
         }
@@ -253,6 +396,20 @@
 </div>
 </div><%-- /Data Mover Certificates card --%>
 <% } %>
+
+<%-- Shared form for per-row single-target certificate deploy --%>
+<form id="deploySingleForm" method="post" action="/do/admin/certificates" style="display:none">
+  <input type="hidden" name="action"     value="deploySingle"/>
+  <input type="hidden" name="targetType" id="deploySingleType"/>
+  <input type="hidden" name="targetName" id="deploySingleName"/>
+</form>
+<script>
+function deploySingle(type, name) {
+  document.getElementById('deploySingleType').value = type;
+  document.getElementById('deploySingleName').value = name;
+  document.getElementById('deploySingleForm').submit();
+}
+</script>
 
 <%-- ============================================================
      Generate CSR Modal

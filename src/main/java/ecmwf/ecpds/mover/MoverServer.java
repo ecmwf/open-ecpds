@@ -173,6 +173,7 @@ import ecmwf.ecpds.master.MasterInterface;
 import ecmwf.ecpds.master.transfer.HostOption;
 import ecmwf.ecpds.master.transfer.StatusFactory;
 import ecmwf.ecpds.master.transfer.TransferComparator;
+import ecmwf.common.security.HttpCertificateProvider;
 
 /**
  * The Class MoverServer.

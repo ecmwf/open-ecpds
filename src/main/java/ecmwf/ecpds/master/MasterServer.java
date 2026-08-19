@@ -3533,6 +3533,19 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * Gets the monitor interface for the connected ECpds Monitor identified by {@code name} (the hostname / root of
+     * that monitor).
+     *
+     * @param name
+     *            the monitor hostname / root
+     *
+     * @return the handler interface, or {@code null} if the monitor is not connected
+     */
+    public HandlerInterface getMonitorInterface(final String name) {
+        return getClientInterface(name, "ECpdsMonitor", HandlerInterface.class);
+    }
+
+    /**
      * _close data transfer.
      *
      * @param transfer

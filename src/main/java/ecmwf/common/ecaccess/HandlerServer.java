@@ -27,6 +27,7 @@ package ecmwf.common.ecaccess;
  */
 
 import java.io.IOException;
+import java.rmi.RemoteException;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
@@ -37,6 +38,7 @@ import javax.management.NotCompliantMBeanException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.security.HttpCertificateProvider;
 import ecmwf.common.starter.Starter;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.version.Version;
@@ -121,5 +123,53 @@ public final class HandlerServer extends StarterServer implements HandlerInterfa
     @Override
     public String getService() {
         return Cnf.at("Login", "service", "HandlerServer");
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns a JSON-encoded snapshot of the TLS certificate currently loaded by this handler's HTTPS server. Delegates
+     * to the {@code http} plugin via the {@link HttpCertificateProvider} interface. Returns {@code "{}"} if the plugin
+     * is not available or does not implement the interface.
+     */
+    @Override
+    public String getHttpCertificateJson() throws RemoteException {
+        final var container = getPluginContainer();
+        if (container != null) {
+            final var plugin = container.getPlugin("http");
+            if (plugin instanceof final HttpCertificateProvider provider) {
+                try {
+                    return provider.buildCertificateJson();
+                } catch (final Exception e) {
+                    _log.warn("getHttpCertificateJson: failed to build certificate JSON", e);
+                }
+            }
+        }
+        return "{}";
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Deploys a new PKCS#12 keystore to this handler's HTTPS server. Delegates to the {@code http} plugin via the
+     * {@link HttpCertificateProvider} interface. No-op if the plugin is not available or does not implement the
+     * interface.
+     */
+    @Override
+    public void deployHttpCertificate(final byte[] pkcs12Bytes, final String keystorePassword) throws RemoteException {
+        final var container = getPluginContainer();
+        if (container != null) {
+            final var plugin = container.getPlugin("http");
+            if (plugin instanceof final HttpCertificateProvider provider) {
+                try {
+                    provider.deployCertificate(pkcs12Bytes, keystorePassword);
+                } catch (final Exception e) {
+                    _log.warn("deployHttpCertificate: failed to deploy certificate", e);
+                    throw new RemoteException("Certificate deployment failed", e);
+                }
+            } else {
+                _log.warn("deployHttpCertificate: http plugin not found or not an HttpCertificateProvider");
+            }
+        }
     }
 }

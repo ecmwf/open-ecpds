@@ -1569,4 +1569,79 @@ public interface ManagementInterface extends Remote {
      */
     void deployHttpCertificateToAllMovers(ECpdsSession session, byte[] pkcs12Bytes, String keystorePassword)
             throws MasterException, RemoteException;
+
+    /**
+     * Returns a JSON-encoded certificate snapshot for every connected Monitor daemon. The key is the monitor hostname
+     * and the value is the JSON-encoded certificate (or {@code "{}"} if unreachable / no certificate).
+     *
+     * @param session
+     *            the caller's ECpds session
+     *
+     * @return map from monitor hostname to certificate JSON
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Map<String, String> getMonitorCertificatesJson(ECpdsSession session) throws MasterException, RemoteException;
+
+    /**
+     * Deploys a new TLS certificate to every connected Monitor daemon. The PKCS#12 bytes are pushed over RMI; each
+     * monitor writes the new keystore to disk and hot-reloads its HTTPS server without dropping active connections.
+     *
+     * @param session
+     *            the caller's ECpds session
+     * @param pkcs12Bytes
+     *            the PKCS#12 keystore bytes
+     * @param keystorePassword
+     *            password for the keystore and private key
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void deployHttpCertificateToAllMonitors(ECpdsSession session, byte[] pkcs12Bytes, String keystorePassword)
+            throws MasterException, RemoteException;
+
+    /**
+     * Deploys a new TLS certificate to a single named Data Mover.
+     *
+     * @param session
+     *            the caller's ECpds session
+     * @param moverName
+     *            the name of the target Data Mover
+     * @param pkcs12Bytes
+     *            the PKCS#12 keystore bytes
+     * @param keystorePassword
+     *            password for the keystore and private key
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void deployHttpCertificateToMover(ECpdsSession session, String moverName, byte[] pkcs12Bytes,
+            String keystorePassword) throws MasterException, RemoteException;
+
+    /**
+     * Deploys a new TLS certificate to a single named Monitor daemon.
+     *
+     * @param session
+     *            the caller's ECpds session
+     * @param monitorName
+     *            the hostname of the target Monitor
+     * @param pkcs12Bytes
+     *            the PKCS#12 keystore bytes
+     * @param keystorePassword
+     *            password for the keystore and private key
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void deployHttpCertificateToMonitor(ECpdsSession session, String monitorName, byte[] pkcs12Bytes,
+            String keystorePassword) throws MasterException, RemoteException;
 }

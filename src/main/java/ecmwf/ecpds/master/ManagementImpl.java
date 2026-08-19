@@ -3270,4 +3270,122 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         }
         monitor.done();
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns a JSON-encoded certificate snapshot for every connected Monitor daemon.
+     */
+    @Override
+    public Map<String, String> getMonitorCertificatesJson(final ECpdsSession session) throws MasterException {
+        final var monitor = new MonitorCall("getMonitorCertificatesJson(" + session.getWebUser().getName() + ")");
+        final var result = new java.util.LinkedHashMap<String, String>();
+        try {
+            for (final String root : master.getClientRoots()) {
+                if (!root.startsWith("ECpdsMonitor/")) {
+                    continue;
+                }
+                final var monitorName = root.substring("ECpdsMonitor/".length());
+                final var handler = master.getMonitorInterface(monitorName);
+                String json = "{}";
+                if (handler != null) {
+                    try {
+                        json = handler.getHttpCertificateJson();
+                    } catch (final Exception e) {
+                        _log.warn("getMonitorCertificatesJson: monitor {} unreachable: {}", monitorName,
+                                e.getMessage());
+                    }
+                }
+                result.put(monitorName, json);
+            }
+        } catch (final Exception e) {
+            _log.warn("getMonitorCertificatesJson failed", e);
+        }
+        return monitor.done(result);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Deploys a new TLS certificate to every connected Monitor daemon.
+     */
+    @Override
+    public void deployHttpCertificateToAllMonitors(final ECpdsSession session, final byte[] pkcs12Bytes,
+            final String keystorePassword) throws MasterException {
+        final var monitor = new MonitorCall(
+                "deployHttpCertificateToAllMonitors(" + session.getWebUser().getName() + ")");
+        try {
+            for (final String root : master.getClientRoots()) {
+                if (!root.startsWith("ECpdsMonitor/")) {
+                    continue;
+                }
+                final var monitorName = root.substring("ECpdsMonitor/".length());
+                final var handler = master.getMonitorInterface(monitorName);
+                if (handler != null) {
+                    try {
+                        handler.deployHttpCertificate(pkcs12Bytes, keystorePassword);
+                        _log.info("Deployed TLS certificate to Monitor {}", monitorName);
+                    } catch (final Exception e) {
+                        _log.warn("deployHttpCertificateToAllMonitors: monitor {} failed: {}", monitorName,
+                                e.getMessage());
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            _log.warn("deployHttpCertificateToAllMonitors failed", e);
+        }
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Deploys a new TLS certificate to a single named Data Mover.
+     */
+    @Override
+    public void deployHttpCertificateToMover(final ECpdsSession session, final String moverName,
+            final byte[] pkcs12Bytes, final String keystorePassword) throws MasterException {
+        final var monitor = new MonitorCall(
+                "deployHttpCertificateToMover(" + session.getWebUser().getName() + "," + moverName + ")");
+        try {
+            final var mover = master.getDataMoverInterface(moverName);
+            if (mover == null) {
+                throw new MasterException("Data Mover '" + moverName + "' is not connected");
+            }
+            mover.deployHttpCertificate(pkcs12Bytes, keystorePassword);
+            _log.info("Deployed TLS certificate to Data Mover {} by user {}", moverName,
+                    session.getWebUser().getName());
+        } catch (final MasterException e) {
+            throw e;
+        } catch (final Exception e) {
+            throw new MasterException("deployHttpCertificateToMover failed for " + moverName + ": " + e.getMessage());
+        }
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Deploys a new TLS certificate to a single named Monitor daemon.
+     */
+    @Override
+    public void deployHttpCertificateToMonitor(final ECpdsSession session, final String monitorName,
+            final byte[] pkcs12Bytes, final String keystorePassword) throws MasterException {
+        final var monitor = new MonitorCall(
+                "deployHttpCertificateToMonitor(" + session.getWebUser().getName() + "," + monitorName + ")");
+        try {
+            final var handler = master.getMonitorInterface(monitorName);
+            if (handler == null) {
+                throw new MasterException("Monitor '" + monitorName + "' is not connected");
+            }
+            handler.deployHttpCertificate(pkcs12Bytes, keystorePassword);
+            _log.info("Deployed TLS certificate to Monitor {} by user {}", monitorName, session.getWebUser().getName());
+        } catch (final MasterException e) {
+            throw e;
+        } catch (final Exception e) {
+            throw new MasterException(
+                    "deployHttpCertificateToMonitor failed for " + monitorName + ": " + e.getMessage());
+        }
+        monitor.done();
+    }
 }

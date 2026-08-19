@@ -89,6 +89,26 @@ public class GetDestinationAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
+        // Lightweight existence check: returns {"exists":true/false} without loading the full destination.
+        if ("checkId".equals(request.getParameter("json"))) {
+            final var pathParams = ECMWFActionForm.getPathParameters(mapping, request);
+            final var id = !pathParams.isEmpty() ? pathParams.get(0).toString() : request.getParameter("id");
+            boolean exists = false;
+            if (id != null && !id.isBlank()) {
+                try {
+                    DestinationHome.findByPrimaryKey(id);
+                    exists = true;
+                } catch (final Exception ignored) {
+                }
+            }
+            try {
+                response.setContentType("application/json; charset=UTF-8");
+                response.getWriter().write("{\"exists\":" + exists + "}");
+                response.flushBuffer();
+            } catch (final java.io.IOException ignored) {
+            }
+            return null;
+        }
         final ArrayList<?> pathParameters = ECMWFActionForm.getPathParameters(mapping, request);
         if (pathParameters.isEmpty()) {
             // There are no Destination specified so we are requested to list

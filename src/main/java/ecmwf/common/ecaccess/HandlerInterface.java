@@ -55,4 +55,33 @@ public interface HandlerInterface extends ClientInterface {
      *             the remote exception
      */
     void handle(PluginEvent<?> event) throws RemoteException;
+
+    /**
+     * Returns a JSON-encoded snapshot of the TLS certificate currently loaded by this handler's HTTPS server, or
+     * {@code "{}"} if no certificate is available. The default implementation returns {@code "{}"}.
+     *
+     * @return JSON string; never {@code null}
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    default String getHttpCertificateJson() throws RemoteException {
+        return "{}";
+    }
+
+    /**
+     * Deploys a new PKCS#12 keystore to this handler's HTTPS server and reloads the certificate. The default
+     * implementation is a no-op.
+     *
+     * @param pkcs12Bytes
+     *            the PKCS#12 keystore bytes
+     * @param keystorePassword
+     *            password for the keystore and private key
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    default void deployHttpCertificate(final byte[] pkcs12Bytes, final String keystorePassword) throws RemoteException {
+        // no-op default – implementors override to support certificate deployment
+    }
 }

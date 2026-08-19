@@ -146,7 +146,7 @@
 						<div class="col-12"><small class="text-muted">Select a source destination and provide a name for the new copy.</small></div>
 					</div>
 					<script>document.addEventListener('DOMContentLoaded',function(){
-					var s=document.getElementById('fromDestination');if(s)s.required=true;
+					var s=document.getElementById('fromDestination');if(s){s.required=true;if(s.options.length>0&&!s.value)s.options[0].selected=true;}
 					if(new URLSearchParams(window.location.search).get('fromDestination')){var t=document.getElementById('toDestination');if(t)t.focus();}
 				});</script>
 					<div class="row g-2 mb-2">
@@ -172,7 +172,7 @@
 								<input id="toDestination" name="toDestination" type="text"
 									class="form-control form-control-sm"
 									maxlength="32"
-									pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
+									pattern="[a-zA-Z0-9]+([-_][a-zA-Z0-9]+)*"
 									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination). Maximum 32 characters."
 									oninput="validatePatternInput(this, 'toDestination-feedback'); var n=document.getElementById('name');if(n)n.value=this.value;"
 									<c:if test="${not empty destinationActionForm.fromDestinationOptions}">required</c:if>>
@@ -216,7 +216,7 @@
 								<input id="exportToName" name="exportToName" type="text"
 									class="form-control form-control-sm"
 									maxlength="32"
-									pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
+									pattern="[a-zA-Z0-9]+([-_][a-zA-Z0-9]+)*"
 									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination). Maximum 32 characters."
 									oninput="validatePatternInput(this, 'exportToName-feedback')">
 								<span id="exportToName-feedback"></span>
@@ -252,7 +252,7 @@
 								<input id="name" name="name" type="text"
 									class="form-control form-control-sm"
 									maxlength="32"
-									pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
+									pattern="[a-zA-Z0-9]+([-_][a-zA-Z0-9]+)*"
 									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination). Maximum 32 characters."
 										oninput="validatePatternInput(this, 'name-feedback'); _checkDestNameExists(this.value)"
 									<c:if test="${empty destinationActionForm.fromDestinationOptions}">required</c:if>>
@@ -275,7 +275,7 @@
 				  $submit.prop('disabled', false);
 				  if (!value || value.length < 1) return;
 				  _checkDestNameTimer = setTimeout(function() {
-				    $.getJSON('/do/transfer/destination/list?json=checkId&id=' + encodeURIComponent(value), function(data) {
+				    $.getJSON('/do/transfer/destination/' + encodeURIComponent(value) + '?json=checkId', function(data) {
 				      if (data.exists) {
 				        $msg.html('<i class="bi bi-x-circle-fill text-danger me-1"></i><span class="text-danger">Destination <strong>' + $('<span>').text(value).html() + '</strong> already exists.</span>').show();
 				        $submit.prop('disabled', true);

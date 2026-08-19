@@ -45,7 +45,7 @@ import ecmwf.common.plugin.PluginThread;
 import ecmwf.common.security.CertificateManager;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.version.Version;
-import ecmwf.ecpds.mover.HttpCertificateProvider;
+import ecmwf.common.security.HttpCertificateProvider;
 import ecmwf.ecpds.mover.MoverServer;
 
 /**
