@@ -1,1 +1,1 @@
-/root/.sdkman/candidates/java/25.0.3-graal/bin/javadoc -J-Duser.language= -J-Duser.country= @options @packages
+/root/.sdkman/candidates/java/25.2.4-graalce/bin/javadoc -J-Duser.language= -J-Duser.country= @options @packages
