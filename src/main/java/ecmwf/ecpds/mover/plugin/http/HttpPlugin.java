@@ -68,6 +68,7 @@ import ecmwf.common.security.CertificateManager;
 import ecmwf.common.security.CertificateManager.CertificateInfo;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.version.Version;
+import ecmwf.ecpds.mover.HttpCertificateProvider;
 import ecmwf.ecpds.mover.MoverServer;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.ecaccess.StarterServer;
@@ -75,7 +76,7 @@ import ecmwf.common.ecaccess.StarterServer;
 /**
  * The Class HttpPlugin.
  */
-public final class HttpPlugin extends PluginThread {
+public final class HttpPlugin extends PluginThread implements HttpCertificateProvider {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(HttpPlugin.class);
 
@@ -395,6 +396,7 @@ public final class HttpPlugin extends PluginThread {
                     storePath = p.get("keyStorePath");
                     storePassword = p.get("keyStorePassword");
                     storeType = getConf(p, "keyStoreType", "PKCS12");
+                    _log.info("HttpPlugin SSL: using [HttpPluginSSL] keyStorePath={}", storePath);
                 } else {
                     // Fall back to [Security] SSLKeyStore if not set in [HttpPlugin] section
                     final var localPath = getConf("keyStore");
@@ -402,6 +404,9 @@ public final class HttpPlugin extends PluginThread {
                     final var localPassword = getConf("keyStorePassword");
                     storePassword = localPassword != null ? localPassword : Cnf.at("Security", "SSLKeyStorePassword");
                     storeType = getConf("keyStoreType", "PKCS12");
+                    _log.info(
+                            "HttpPlugin SSL: keyStore from [HttpPlugin]={}, fallback [Security].SSLKeyStore={} → using {}",
+                            localPath, Cnf.at("Security", "SSLKeyStore"), storePath);
                 }
                 // Auto-generate a self-signed certificate if none exists yet
                 try {
@@ -561,16 +566,72 @@ public final class HttpPlugin extends PluginThread {
      */
     public CertificateInfo getCertificateInfo() {
         if (activeKeystorePath == null) {
+            _log.debug(
+                    "getCertificateInfo: activeKeystorePath is null — HttpPlugin started without SSL or keystore not resolved");
             return null;
         }
+        _log.debug("getCertificateInfo: reading certificate from {}", activeKeystorePath);
         try {
-            return CertificateManager.getCertificateInfo(activeKeystorePath, activeKeystorePassword,
+            final var info = CertificateManager.getCertificateInfo(activeKeystorePath, activeKeystorePassword,
                     activeKeystoreType != null ? activeKeystoreType : "PKCS12");
+            if (info == null) {
+                _log.warn("getCertificateInfo: CertificateManager returned null for {}", activeKeystorePath);
+            } else {
+                _log.debug("getCertificateInfo: subject={}, expires={}", info.subject(), info.notAfter());
+            }
+            return info;
         } catch (final Exception e) {
             _log.warn("Could not read certificate info from {}", activeKeystorePath, e);
             return null;
         }
     }
+
+    // -------------------------------------------------------------------------
+    // HttpCertificateProvider
+    // -------------------------------------------------------------------------
+
+    /** {@inheritDoc} */
+    @Override
+    public String buildCertificateJson() {
+        final var info = getCertificateInfo();
+        if (info == null) {
+            return "{}";
+        }
+        final var utc = java.util.TimeZone.getTimeZone("UTC");
+        final var fmtDate = new java.text.SimpleDateFormat("yyyy-MM-dd");
+        fmtDate.setTimeZone(utc);
+        final var fmtTime = new java.text.SimpleDateFormat("HH:mm:ss");
+        fmtTime.setTimeZone(utc);
+        return "{\"subject\":\"" + _esc(info.subject()) + "\"" + ",\"issuer\":\"" + _esc(info.issuer()) + "\""
+                + ",\"serialNumber\":\"" + _esc(info.serialNumber()) + "\"" + ",\"notBefore\":\""
+                + fmtDate.format(info.notBefore()) + "\"" + ",\"notBeforeTime\":\"" + fmtTime.format(info.notBefore())
+                + "\"" + ",\"notAfter\":\"" + fmtDate.format(info.notAfter()) + "\"" + ",\"notAfterTime\":\""
+                + fmtTime.format(info.notAfter()) + "\"" + ",\"fingerprintSha256\":\"" + _esc(info.fingerprintSha256())
+                + "\"" + ",\"keyAlgorithm\":\"" + _esc(info.keyAlgorithm()) + "\"" + ",\"keySize\":" + info.keySize()
+                + ",\"selfSigned\":" + info.selfSigned() + ",\"expired\":" + info.expired() + ",\"expiringSoon\":"
+                + info.expiringSoon() + "}";
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void deployCertificate(final byte[] pkcs12Bytes, final String keystorePassword) throws Exception {
+        if (activeKeystorePath == null) {
+            throw new IllegalStateException("HttpPlugin has no active keystore path");
+        }
+        CertificateManager.importCertificate(activeKeystorePath, activeKeystorePassword, pkcs12Bytes, keystorePassword);
+        reloadCertificate();
+    }
+
+    private static String _esc(final String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    // -------------------------------------------------------------------------
+    // Accessors
+    // -------------------------------------------------------------------------
 
     /**
      * Returns the path to the keystore currently in use by the Data Mover HTTPS server, or {@code null} if the plugin

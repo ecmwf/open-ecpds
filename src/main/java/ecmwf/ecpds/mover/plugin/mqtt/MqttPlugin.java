@@ -42,14 +42,16 @@ import com.hivemq.embedded.EmbeddedHiveMQ;
 import com.hivemq.embedded.EmbeddedHiveMQBuilder;
 
 import ecmwf.common.plugin.PluginThread;
+import ecmwf.common.security.CertificateManager;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.version.Version;
+import ecmwf.ecpds.mover.HttpCertificateProvider;
 import ecmwf.ecpds.mover.MoverServer;
 
 /**
  * The Class MqttPlugin.
  */
-public class MqttPlugin extends PluginThread {
+public class MqttPlugin extends PluginThread implements HttpCertificateProvider {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(MqttPlugin.class);
 
@@ -197,5 +199,68 @@ public class MqttPlugin extends PluginThread {
                 server = null;
             }
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // HttpCertificateProvider — same keystore file as HttpPlugin
+    // -------------------------------------------------------------------------
+
+    /** {@inheritDoc} */
+    @Override
+    public String buildCertificateJson() {
+        final var keystorePath = getConf("keyStore", null);
+        final var keystorePassword = getConf("keyStorePassword", null);
+        if (keystorePath == null) {
+            return "{}";
+        }
+        try {
+            final var info = CertificateManager.getCertificateInfo(keystorePath, keystorePassword, "PKCS12");
+            if (info == null) {
+                return "{}";
+            }
+            final var utc = java.util.TimeZone.getTimeZone("UTC");
+            final var fmtDate = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            fmtDate.setTimeZone(utc);
+            final var fmtTime = new java.text.SimpleDateFormat("HH:mm:ss");
+            fmtTime.setTimeZone(utc);
+            return "{\"subject\":\"" + _esc(info.subject()) + "\"" + ",\"issuer\":\"" + _esc(info.issuer()) + "\""
+                    + ",\"serialNumber\":\"" + _esc(info.serialNumber()) + "\"" + ",\"notBefore\":\""
+                    + fmtDate.format(info.notBefore()) + "\"" + ",\"notBeforeTime\":\""
+                    + fmtTime.format(info.notBefore()) + "\"" + ",\"notAfter\":\"" + fmtDate.format(info.notAfter())
+                    + "\"" + ",\"notAfterTime\":\"" + fmtTime.format(info.notAfter()) + "\""
+                    + ",\"fingerprintSha256\":\"" + _esc(info.fingerprintSha256()) + "\"" + ",\"keyAlgorithm\":\""
+                    + _esc(info.keyAlgorithm()) + "\"" + ",\"keySize\":" + info.keySize() + ",\"selfSigned\":"
+                    + info.selfSigned() + ",\"expired\":" + info.expired() + ",\"expiringSoon\":" + info.expiringSoon()
+                    + "}";
+        } catch (final Exception e) {
+            _log.warn("buildCertificateJson: could not read certificate info", e);
+            return "{}";
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public synchronized void deployCertificate(final byte[] pkcs12Bytes, final String keystorePassword)
+            throws Exception {
+        final var keystorePath = getConf("keyStore", null);
+        if (keystorePath == null) {
+            throw new IllegalStateException("MqttPlugin has no keystore path configured");
+        }
+        _log.info("deployCertificate: writing new certificate to {} and restarting MQTT server", keystorePath);
+        CertificateManager.importCertificate(keystorePath, getConf("keyStorePassword", keystorePassword), pkcs12Bytes,
+                keystorePassword);
+        // HiveMQ has no hot-reload API — restart to pick up the new keystore
+        stop();
+        if (!start()) {
+            throw new IllegalStateException("MqttPlugin failed to restart after certificate deployment");
+        }
+        _log.info("deployCertificate: MQTT server restarted with new certificate");
+    }
+
+    private static String _esc(final String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

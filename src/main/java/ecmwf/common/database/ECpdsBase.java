@@ -3487,15 +3487,16 @@ public final class ECpdsBase extends DataBase {
                     root.getAbsolutePath());
             return result;
         }
-        // Build field name → id map; auto-create any fields referenced by the tag mappings
-        // that do not yet exist in the database so imported values are never silently dropped.
+        // Build field name → id map (case-insensitive: keyed by lower-case name).
+        // MariaDB's DMF_NAME_UQ unique constraint uses the default case-insensitive collation,
+        // so "SADNumber" and "sadNumber" are the same row — match them the same way in Java.
         final var fieldMap = new java.util.HashMap<String, Integer>();
         for (final DestinationMetaField f : getDestinationMetaFields()) {
-            fieldMap.put(f.getName(), f.getId());
+            fieldMap.put(f.getName().toLowerCase(), f.getId());
         }
         final var knownFieldNames = new java.util.HashSet<>(_META_TAG_TO_FIELD.values());
         for (final String fieldName : knownFieldNames) {
-            if (!fieldMap.containsKey(fieldName)) {
+            if (!fieldMap.containsKey(fieldName.toLowerCase())) {
                 final var newField = new DestinationMetaField();
                 newField.setName(fieldName);
                 newField.setLabel(_camelToLabel(fieldName));
@@ -3504,7 +3505,7 @@ public final class ECpdsBase extends DataBase {
                 newField.setMaxOccurs(_META_CONTACT_TAGS.contains(fieldName) ? -1 : 1);
                 newField.setActive(true);
                 saveDestinationMetaField(newField);
-                fieldMap.put(fieldName, newField.getId());
+                fieldMap.put(fieldName.toLowerCase(), newField.getId());
                 _log.info("scanMetadataAttachments: auto-created missing field '{}' (id={})", fieldName,
                         newField.getId());
             }
@@ -3791,7 +3792,7 @@ public final class ECpdsBase extends DataBase {
             }
             final var tagName = child.getLocalName() != null ? child.getLocalName() : child.getTagName();
             final var fieldName = _META_TAG_TO_FIELD.get(tagName);
-            if (fieldName != null && fieldMap.containsKey(fieldName)) {
+            if (fieldName != null && fieldMap.containsKey(fieldName.toLowerCase())) {
                 final String value;
                 if (_META_CONTACT_TAGS.contains(tagName)) {
                     value = _buildContactJson(child);
@@ -3804,7 +3805,7 @@ public final class ECpdsBase extends DataBase {
                     posCounters.put(fieldName, pos + 1);
                     final var entry = new java.util.HashMap<String, Object>();
                     entry.put("fieldName", fieldName);
-                    entry.put("fieldId", fieldMap.get(fieldName));
+                    entry.put("fieldId", fieldMap.get(fieldName.toLowerCase()));
                     entry.put("value", value);
                     entry.put("position", pos);
                     entries.add(entry);
