@@ -489,6 +489,8 @@ public final class WebDavHandler extends HttpServlet {
         private final EcpdsDavResourceFactory factory;
         private final EcpdsDavSession session;
         private LockManager lockManager;
+        /** Pre-populated metadata from a parent directory listing — avoids a per-file network round-trip. */
+        private ResourceMetadata cachedMetadata = null;
 
         EcpdsDavResource(final DavResourceLocator locator, final EcpdsDavResourceFactory factory,
                 final EcpdsDavSession session, final LockManager lockManager) {
@@ -496,6 +498,12 @@ public final class WebDavHandler extends HttpServlet {
             this.factory = factory;
             this.session = session;
             this.lockManager = lockManager;
+        }
+
+        EcpdsDavResource(final DavResourceLocator locator, final EcpdsDavResourceFactory factory,
+                final EcpdsDavSession session, final LockManager lockManager, final ResourceMetadata prefetched) {
+            this(locator, factory, session, lockManager);
+            this.cachedMetadata = prefetched;
         }
 
         /**
@@ -718,8 +726,13 @@ public final class WebDavHandler extends HttpServlet {
                 final List<DavResource> resources = new ArrayList<>();
                 for (final FileListElement child : children) {
                     final var childPath = childPath(getResourcePath(), child.getName());
-                    resources.add(factory.createResource(
-                            locator.getFactory().createResourceLocator(locator.getPrefix(), "", childPath), session));
+                    final var size = parseSize(child.getSize());
+                    final var prefetched = new ResourceMetadata(true, child.isDirectory(),
+                            child.isDirectory() ? 0L : size,
+                            child.getTime() > 0 ? child.getTime() : System.currentTimeMillis());
+                    resources.add(new EcpdsDavResource(
+                            locator.getFactory().createResourceLocator(locator.getPrefix(), "", childPath), factory,
+                            session, lockManager, prefetched));
                 }
                 return new DavResourceIteratorImpl(resources);
             } catch (final Exception e) {
@@ -864,6 +877,9 @@ public final class WebDavHandler extends HttpServlet {
         }
 
         private ResourceMetadata readMetadata(final boolean strict) {
+            if (cachedMetadata != null) {
+                return cachedMetadata;
+            }
             return readMetadata(getResourcePath(), strict);
         }
 
