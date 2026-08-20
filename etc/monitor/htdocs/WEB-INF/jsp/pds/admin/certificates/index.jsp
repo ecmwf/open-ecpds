@@ -258,7 +258,7 @@
       <td style="font-family:monospace; font-size:.75rem; word-break:break-all; max-width:260px;"><%=fp != null ? fp : "–"%></td>
       <td class="text-end">
         <% if (hasCert) { %>
-        <button type="button" class="btn btn-sm btn-outline-secondary py-0"
+        <button type="button" class="btn btn-sm btn-outline-primary"
             onclick="confirmationDialog({
               title:       'Deploy Certificate',
               message:     'Deploy the current Monitor certificate to Monitor <strong><%=monName%></strong>?<br><small class=\'text-muted\'>The certificate will be reloaded; a brief HTTPS interruption may occur.</small>',
@@ -374,7 +374,7 @@
       <td style="font-family:monospace; font-size:.75rem; word-break:break-all; max-width:260px;"><%=fp != null ? fp : "–"%></td>
       <td class="text-end">
         <% if (hasCert) { %>
-        <button type="button" class="btn btn-sm btn-outline-secondary py-0"
+        <button type="button" class="btn btn-sm btn-outline-primary"
             onclick="confirmationDialog({
               title:       'Deploy Certificate',
               message:     'Deploy the current Monitor certificate to Data Mover <strong><%=moverName%></strong>?<br><small class=\'text-muted\'>The certificate will be hot-reloaded without restarting the HTTPS server.</small>',
