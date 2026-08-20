@@ -150,7 +150,7 @@ import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
-import software.amazon.awssdk.core.retry.RetryPolicy;
+import software.amazon.awssdk.awscore.retry.AwsRetryStrategy;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -1452,7 +1452,7 @@ public final class AmazonS3Module extends TransferModule {
             // that may return responses the SDK considers retryable.
             final var overrideCfgBuilder = ClientOverrideConfiguration.builder();
             if (disableSdkRetries) {
-                overrideCfgBuilder.retryPolicy(RetryPolicy.none());
+                overrideCfgBuilder.retryStrategy(AwsRetryStrategy.doNotRetry());
                 _log.debug("SDK-level retries disabled (s3.disableSdkRetries=yes)");
             }
             if (debug) {
