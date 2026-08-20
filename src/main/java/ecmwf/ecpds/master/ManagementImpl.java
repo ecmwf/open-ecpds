@@ -3291,10 +3291,15 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                 if (handler != null) {
                     try {
                         json = handler.getHttpCertificateJson();
+                        if ("{}".equals(json)) {
+                            _log.warn("getMonitorCertificatesJson: monitor {} returned empty cert JSON", monitorName);
+                        }
                     } catch (final Exception e) {
                         _log.warn("getMonitorCertificatesJson: monitor {} unreachable: {}", monitorName,
                                 e.getMessage());
                     }
+                } else {
+                    _log.warn("getMonitorCertificatesJson: no HandlerInterface for monitor {}", monitorName);
                 }
                 result.put(monitorName, json);
             }
