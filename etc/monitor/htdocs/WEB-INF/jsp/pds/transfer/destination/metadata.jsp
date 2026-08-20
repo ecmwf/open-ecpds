@@ -83,7 +83,7 @@
           <div class="dmf-field-label">
             ${field.label}
             <c:if test="${not empty field.tooltip}">
-              <i class="bi bi-question-circle text-muted ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="${field.tooltip}" style="font-weight:normal;font-size:0.8rem"></i>
+              <i class="bi bi-question-circle text-muted ms-1 dmf-tip-icon" data-tip="${field.tooltip}" onclick="dmfTipToggle(this);event.stopPropagation();" style="cursor:pointer;font-weight:normal;font-size:0.8rem" tabindex="0"></i>
             </c:if>
           </div>
           <div id="dmf-values-${field.id}">
@@ -302,6 +302,51 @@ function dmfSave() {
 }
 
 // Initial render
+// Lightweight click-tooltip for metadata field ? icons
+(function() {
+  var tip = null;
+  var currentIcon = null;
+  function getTip() {
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'dmfFieldTip';
+      tip.style.cssText = 'position:absolute;background:#333;color:#fff;padding:5px 10px;border-radius:4px;'
+        + 'font-size:0.8rem;line-height:1.4;z-index:9999;max-width:280px;pointer-events:none;'
+        + 'box-shadow:0 2px 8px rgba(0,0,0,.35);';
+      document.body.appendChild(tip);
+    }
+    return tip;
+  }
+  window.dmfTipToggle = function(icon) {
+    var t = getTip();
+    if (currentIcon === icon && t.style.display !== 'none') {
+      t.style.display = 'none';
+      currentIcon = null;
+      return;
+    }
+    t.textContent = icon.dataset.tip || '';
+    t.style.display = 'block';
+    currentIcon = icon;
+    var rect = icon.getBoundingClientRect();
+    var scrollX = window.scrollX || window.pageXOffset;
+    var scrollY = window.scrollY || window.pageYOffset;
+    t.style.left = (rect.left + scrollX) + 'px';
+    t.style.top  = (rect.bottom + scrollY + 4) + 'px';
+    // Clamp to viewport width
+    var tipW = t.offsetWidth;
+    var vw = document.documentElement.clientWidth;
+    if (rect.left + tipW > vw - 8) {
+      t.style.left = Math.max(4, vw - tipW - 8 + scrollX) + 'px';
+    }
+  };
+  document.addEventListener('click', function(e) {
+    if (tip && tip.style.display !== 'none' && !e.target.classList.contains('dmf-tip-icon')) {
+      tip.style.display = 'none';
+      currentIcon = null;
+    }
+  });
+}());
+
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('[id^="dmf-group-"]').forEach(function(group) {
     var fieldId = parseInt(group.id.replace('dmf-group-',''));

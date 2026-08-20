@@ -551,7 +551,12 @@
         <script>
         (function(){
           if('${trafficStats}'!=='false' && '${maxconnections}'!=='') {
-            document.write('<button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="portalTrafficBtn" data-bs-toggle="modal" data-bs-target="#portalTrafficModal"><i class="bi bi-graph-up-arrow me-1"></i>Traffic</button>');
+            var _hasTraffic = (${trafficData}).length > 0;
+            if (_hasTraffic) {
+              document.write('<button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="portalTrafficBtn" data-bs-toggle="modal" data-bs-target="#portalTrafficModal"><i class="bi bi-graph-up-arrow me-1"></i>Traffic</button>');
+            } else {
+              document.write('<button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="portalTrafficBtn" disabled title="No traffic data available yet."><i class="bi bi-graph-up-arrow me-1"></i>Traffic</button>');
+            }
           }
         })();
         </script>
