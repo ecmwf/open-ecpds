@@ -40,6 +40,7 @@ import org.apache.logging.log4j.Logger;
 import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.ecaccess.NativeAuthenticationProvider;
 import ecmwf.common.ecaccess.UserSession;
+import ecmwf.common.ectrans.ECtransOptions;
 
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ThreadService;
@@ -128,6 +129,22 @@ final class PASS {
             currentContext.user = null;
             currentContext.authName = null; // This has not been authorised, kill it!
             return;
+        }
+        // Check if FTP protocol is disabled for this user via portal.disabledProtocols
+        final var ftpSetup = _session.getECtransSetup();
+        if (ftpSetup != null) {
+            final var disabled = ftpSetup.getString(ECtransOptions.USER_PORTAL_DISABLED_PROTOCOLS);
+            if (disabled != null && java.util.Arrays.stream(disabled.split(",")).map(String::trim)
+                    .anyMatch("ftp"::equalsIgnoreCase)) {
+                _log.info("User " + user + " NOT logged in from " + currentContext.remoteSite
+                        + " (FTP protocol disabled for this account)");
+                currentContext.respond(530, "FTP access is not enabled for this account");
+                _session.close(true);
+                _session = null;
+                currentContext.user = null;
+                currentContext.authName = null;
+                return;
+            }
         }
         // Logged in.
         ThreadService.setCookie(currentContext.user);

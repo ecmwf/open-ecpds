@@ -82,6 +82,7 @@ import ecmwf.common.technical.Cnf;
 import ecmwf.common.version.Version;
 import ecmwf.ecpds.mover.MoverServer;
 import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_WELCOME;
+import static ecmwf.common.ectrans.ECtransOptions.USER_PORTAL_DISABLED_PROTOCOLS;
 
 /**
  * The Class SshPlugin.
@@ -339,7 +340,17 @@ public final class SshPlugin extends PluginThread {
                             _log.warn("Failed to send per-user welcome banner to {}@{}", username, remoteIP, e);
                         }
                     }
-                    // Check ECtransSetup: info.profile().getECtransSetup()
+                    // Check if SFTP protocol is disabled for this user via portal.disabledProtocols
+                    final var sftpSetup = info.profile().getECtransSetup();
+                    if (sftpSetup != null) {
+                        final var disabled = sftpSetup.getString(USER_PORTAL_DISABLED_PROTOCOLS);
+                        if (disabled != null && java.util.Arrays.stream(disabled.split(",")).map(String::trim)
+                                .anyMatch("sftp"::equalsIgnoreCase)) {
+                            _log.info("{}@{}: SFTP protocol disabled for this account", username, remoteIP);
+                            info.session().close(true);
+                            return null;
+                        }
+                    }
                     CoreModuleProperties.IDLE_TIMEOUT.set(session, Duration.ofMinutes(10));
                     session.getProperties().put(CoreModuleProperties.AUTH_TIMEOUT.getName(),
                             Duration.ofSeconds(30).toMillis());
