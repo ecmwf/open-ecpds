@@ -1397,4 +1397,30 @@
 			value="/WEB-INF/jsp/pds/transfer/destination/metadata/success.jsp" />
 	</definition>
 
+	<definition name=".pds.user.api" extends=".pds.user.base">
+		<put name="title" value="API Clients" />
+		<put name="content" value="/WEB-INF/jsp/pds/user/api/clients.jsp" />
+	</definition>
+
+	<definition name=".pds.user.api.detail" extends=".pds.user.base">
+		<put name="title" value="API Client" />
+		<put name="content" value="/WEB-INF/jsp/pds/user/api/detail.jsp" />
+	</definition>
+
+	<definition name=".pds.user.api.insert" extends=".pds.user.base">
+		<put name="title" value="New API Client" />
+		<put name="content" value="/WEB-INF/jsp/pds/user/api/fields.jsp" />
+	</definition>
+
+	<definition name=".pds.user.api.update" extends=".pds.user.base">
+		<put name="title" value="Edit API Client" />
+		<put name="content" value="/WEB-INF/jsp/pds/user/api/fields.jsp" />
+	</definition>
+
+	<definition name=".pds.user.api.events" extends=".pds.user.base">
+		<put name="title" value="API Events Log" />
+		<put name="date.select" value="/WEB-INF/jsp/pds/common/date_select.jsp" />
+		<put name="content" value="/WEB-INF/jsp/pds/user/api/events.jsp" />
+	</definition>
+
 </tiles-definitions>

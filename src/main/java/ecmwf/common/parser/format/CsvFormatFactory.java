@@ -26,6 +26,6 @@ public final class CsvFormatFactory {
             builder.setTrim(true);
         }
 
-        return builder.build();
+        return builder.get();
     }
 }

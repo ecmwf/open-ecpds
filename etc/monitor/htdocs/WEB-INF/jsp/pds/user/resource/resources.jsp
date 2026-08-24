@@ -69,7 +69,7 @@ $(document).ready(function() {
         searching:  true,
         ordering:   true,
         info:       true,
-        language:   { emptyTable: 'No Web Resources found.' },
+        language:   { emptyTable: 'No matching records found.' },
         columnDefs: [{ orderable: false, targets: -1 }],
         dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
     });

@@ -199,7 +199,7 @@ $('#requeueBtn, #deleteBtn').prop('disabled', total === 0);
 language: {
 info: 'Showing _START_-_END_ of _TOTAL_',
 processing: 'Loading...',
-emptyTable: 'No outstanding transfers found'
+emptyTable: 'No matching records found.'
 }
 });
 $('#unsuccessfulSearch').on('keyup', function() { _table.search(this.value).draw(); });

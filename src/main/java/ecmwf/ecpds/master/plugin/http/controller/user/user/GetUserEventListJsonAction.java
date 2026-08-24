@@ -53,6 +53,8 @@ public class GetUserEventListJsonAction extends PDSAction {
     private static final String HOST_BASE_PATH = "/do/transfer/host";
     private static final String TRANSFERSERVER_BASE_PATH = "/do/datafile/transferserver";
     private static final String TRANSFERGROUP_BASE_PATH = "/do/datafile/transfergroup";
+    private static final String APICLIENT_BASE_PATH = "/do/user/api";
+    private static final String INCOMINGUSER_BASE_PATH = "/do/user/incoming";
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Override
@@ -72,8 +74,8 @@ public class GetUserEventListJsonAction extends PDSAction {
         Collection<Event> history;
         String queryError = null;
         try {
-            history = MasterManager.getDB().getECuserEvents(null, iso.parse(date), request.getParameter("search"),
-                    cursor);
+            history = MasterManager.getDB().getECuserEvents(request.getParameter("webuser"), iso.parse(date),
+                    request.getParameter("search"), cursor);
         } catch (final Exception e) {
             history = new ArrayList<>(0);
             queryError = e.getMessage();
@@ -96,10 +98,10 @@ public class GetUserEventListJsonAction extends PDSAction {
             row.add(formatDateTime(event.getDate(), event.getTime()));
             row.add(buildUserHtml(event));
             row.add(escapeHtml(event.getAction()));
-            row.add(escapeHtml(event.getComment()));
-            row.add(escapeHtml(event.getName()));
-            row.add(escapeHtml(event.getFileName()));
-            row.add(buildLinkHtml(type, event.getLinkId()));
+            row.add(buildCommentHtml(event.getComment()));
+            row.add(buildEntityHtml(type, event.getLinkId(), event.getName()));
+            row.add(buildDetailHtml(event.getFileName()));
+            row.add(buildLinkHtml(type, event.getLinkId(), event.getName()));
         }
 
         try {
@@ -121,6 +123,43 @@ public class GetUserEventListJsonAction extends PDSAction {
         return out;
     }
 
+    private static String buildEntityHtml(final String type, final String linkId, final String name) {
+        if (name == null || name.isBlank()) {
+            return "";
+        }
+        if (!"lost".equals(type)) {
+            final var basePath = getBasePath(type);
+            if (basePath != null && linkId != null && !linkId.isBlank()) {
+                return "<a href=\"" + basePath + "/" + escapeHtml(linkId) + "\">" + escapeHtml(name) + "</a>";
+            }
+        }
+        return escapeHtml(name);
+    }
+
+    private static String buildDetailHtml(final String detail) {
+        if (detail == null || detail.isBlank() || "N/A".equals(detail)) {
+            return "<span class=\"text-muted\">—</span>";
+        }
+        return escapeHtml(detail);
+    }
+
+    private static String buildCommentHtml(final String comment) {
+        if (comment == null || comment.isBlank()) {
+            return "";
+        }
+        final var trimmed = comment.trim();
+        if (trimmed.equals("SUCCESSFUL")) {
+            return "<i class=\"bi bi-check-circle-fill text-success\" title=\"SUCCESSFUL\"></i>";
+        }
+        if (trimmed.startsWith("NOT-SUCCESSFUL")) {
+            final var rest = trimmed.substring("NOT-SUCCESSFUL".length()).trim();
+            final var detail = rest.startsWith("<-") ? rest.substring(2).trim() : rest;
+            final var icon = "<i class=\"bi bi-x-circle-fill text-danger\" title=\"NOT-SUCCESSFUL\"></i>";
+            return detail.isEmpty() ? icon : icon + " <span class=\"text-danger\">" + escapeHtml(detail) + "</span>";
+        }
+        return escapeHtml(trimmed);
+    }
+
     private static String buildUserHtml(final PresentationEvent event) {
         if (event.getActivity() == null || event.getActivity().getECUser() == null) {
             return "";
@@ -131,12 +170,12 @@ public class GetUserEventListJsonAction extends PDSAction {
         return "<a href=\"" + EVENT_BASE_PATH + "/" + name + "\"" + title + ">" + name + "</a>";
     }
 
-    private static String buildLinkHtml(final String type, final String linkId) {
+    private static String buildLinkHtml(final String type, final String linkId, final String name) {
         if (type == null || type.isBlank() || "(none)".equals(type)) {
             return "";
         }
         if ("lost".equals(type)) {
-            return "<i class=\"bi bi-dash text-muted\" title=\"No related object\"></i>";
+            return escapeHtml(name != null && !name.isBlank() ? name : linkId);
         }
         final var basePath = getBasePath(type);
         if (basePath == null || linkId == null || linkId.isBlank()) {
@@ -164,6 +203,12 @@ public class GetUserEventListJsonAction extends PDSAction {
         }
         if ("transfergroup".equals(type)) {
             return TRANSFERGROUP_BASE_PATH;
+        }
+        if ("apiclient".equals(type)) {
+            return APICLIENT_BASE_PATH;
+        }
+        if ("incominguser".equals(type)) {
+            return INCOMINGUSER_BASE_PATH;
         }
         return null;
     }

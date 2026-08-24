@@ -67,6 +67,7 @@
             <div class="d-flex align-items-center gap-2">
               <input id="id" name="id" type="text" required class="form-control form-control-sm"
                 pattern="[a-zA-Z0-9._]+"
+                data-char-filter="a-zA-Z0-9._"
                 oninput="validatePatternInput(this, 'id-feedback'); _checkLoginExists(this.value, 'id-exists-msg', 'incoming')">
               <span id="id-feedback"></span>
             </div>

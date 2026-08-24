@@ -254,6 +254,7 @@
 									maxlength="32"
 									pattern="[a-zA-Z0-9]+([-_][a-zA-Z0-9]+)*"
 									title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. my-destination). Maximum 32 characters."
+									data-char-filter="a-zA-Z0-9_-"
 										oninput="validatePatternInput(this, 'name-feedback'); _checkDestNameExists(this.value)"
 									<c:if test="${empty destinationActionForm.fromDestinationOptions}">required</c:if>>
 								<span id="name-feedback"></span>

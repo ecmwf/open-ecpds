@@ -11,5 +11,7 @@
 <auth:link basePathKey="incoming.basepath" href="" wrappingTags="tr,td"><i class="bi bi-person-badge"></i> Data Users</auth:link>
 <auth:link basePathKey="policy.basepath" href="" wrappingTags="tr,td"><i class="bi bi-shield-check"></i> Data Policies</auth:link>
 <auth:link basePathKey="history.basepath" href="" wrappingTags="tr,td"><i class="bi bi-list-ul"></i> Data Events Log</auth:link>
+<auth:link basePathKey="apiclient.basepath" href="" wrappingTags="tr,td"><i class="bi bi-key"></i> API Clients</auth:link>
+<auth:link basePathKey="apievent.basepath" href="" wrappingTags="tr,td"><i class="bi bi-journal-code"></i> API Events Log</auth:link>
 
 </table>

@@ -402,6 +402,13 @@ INSERT INTO `CAT_URL` VALUES
 (1002,'/do/user'),
 (103,'/do/user/'),
 (1002,'/do/user/'),
+(103,'/do/user/api'),
+(1002,'/do/user/api'),
+(103,'/do/user/api/'),
+(1002,'/do/user/api/'),
+(103,'/do/user/api/events'),
+(1002,'/do/user/api/events'),
+(104,'/do/user/api/edit/'),
 (104,'/do/user/category/edit/'),
 (104,'/do/user/event/edit/'),
 (104,'/do/user/resource/edit/'),
@@ -1044,6 +1051,7 @@ CREATE TABLE `EVENT` (
   `EVE_ERROR` smallint(6) NOT NULL DEFAULT 0,
   PRIMARY KEY (`EVE_ID`),
   KEY `ACT_ID` (`ACT_ID`),
+  KEY `EVE_DATE_ACT_ID` (`EVE_DATE`,`ACT_ID`),
   CONSTRAINT `EVENT_ibfk_1` FOREIGN KEY (`ACT_ID`) REFERENCES `ACTIVITY` (`ACT_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -2032,6 +2040,10 @@ INSERT INTO `URL` VALUES
 ('/do/transfer/module/'),
 ('/do/user'),
 ('/do/user/'),
+('/do/user/api'),
+('/do/user/api/'),
+('/do/user/api/events'),
+('/do/user/api/edit/'),
 ('/do/user/category/edit/'),
 ('/do/user/event/edit/'),
 ('/do/user/resource/edit/'),
@@ -2195,8 +2207,6 @@ CREATE TABLE IF NOT EXISTS `DESTINATION_META_FIELD_TYPE` (
   CONSTRAINT `DMFT_DMF_FK` FOREIGN KEY (`DMF_ID`) REFERENCES `DESTINATION_META_FIELD` (`DMF_ID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-SET FOREIGN_KEY_CHECKS = 1;
-
 -- Metadata field definitions (dissemination + acquisition)
 INSERT IGNORE INTO `DESTINATION_META_FIELD` (`DMF_NAME`,`DMF_LABEL`,`DMF_TYPE`,`DMF_CATEGORY`,`DMF_TOOLTIP`,`DMF_MAX_OCCURS`,`DMF_POSITION`,`DMF_ACTIVE`) VALUES
 ('organisationWebPage','Organisation Web Page','url','General','URL of the organisation web page',1,10,1),
@@ -2252,3 +2262,42 @@ SELECT DMF_ID, 0 FROM DESTINATION_META_FIELD WHERE DMF_NAME IN (
   'ecfsPath','onLineBackup','opsProcedureWebPage','shiftProcedure','analystProcedure',
   'warningInfo','metappsSystemChange','phoneNumber','contactInformation','comments');
 
+-- API access tables
+
+DROP TABLE IF EXISTS `API_EVENT`;
+DROP TABLE IF EXISTS `API_PERMISSION`;
+DROP TABLE IF EXISTS `API_CLIENT`;
+
+CREATE TABLE `API_CLIENT` (
+  `APU_ID` varchar(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+  `APU_SECRET_HASH` varchar(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+  `APU_COMMENT` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `APU_ACTIVE` smallint(6) NOT NULL DEFAULT 1,
+  `APU_CREATED` decimal(20,0) NOT NULL DEFAULT 0,
+  `APU_LAST_USED` decimal(20,0) DEFAULT NULL,
+  `APU_LAST_USED_HOST` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `COU_ISO` char(2) DEFAULT NULL,
+  PRIMARY KEY (`APU_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+CREATE TABLE `API_PERMISSION` (
+  `APU_ID` varchar(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+  `APP_PATTERN` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  PRIMARY KEY (`APU_ID`,`APP_PATTERN`),
+  CONSTRAINT `API_PERMISSION_ibfk_1` FOREIGN KEY (`APU_ID`) REFERENCES `API_CLIENT` (`APU_ID`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `API_EVENT` (
+  `APE_ID` bigint(20) NOT NULL AUTO_INCREMENT,
+  `APU_ID` varchar(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+  `APE_SERVICE` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `APE_HOST` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `APE_DATE` decimal(20,0) NOT NULL DEFAULT 0,
+  `APE_SUCCESS` smallint(6) NOT NULL DEFAULT 0,
+  `APE_MESSAGE` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`APE_ID`),
+  KEY `apiEventClientDate` (`APU_ID`,`APE_DATE`),
+  CONSTRAINT `API_EVENT_ibfk_1` FOREIGN KEY (`APU_ID`) REFERENCES `API_CLIENT` (`APU_ID`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+SET FOREIGN_KEY_CHECKS = 1;

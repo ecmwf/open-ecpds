@@ -192,7 +192,7 @@ public class MqttPlugin extends PluginThread implements HttpCertificateProvider 
         if (server != null) {
             try {
                 mover.setMQTTInterface(null);
-                server.stop();
+                server.stop().join(); // wait for full shutdown before releasing the lock
             } catch (final Exception e) {
                 _log.warn(e);
             } finally {
@@ -249,8 +249,15 @@ public class MqttPlugin extends PluginThread implements HttpCertificateProvider 
         _log.info("deployCertificate: writing new certificate to {} and restarting MQTT server", keystorePath);
         CertificateManager.importCertificate(keystorePath, getConf("keyStorePassword", keystorePassword), pkcs12Bytes,
                 keystorePassword);
-        // HiveMQ has no hot-reload API — restart to pick up the new keystore
+        // HiveMQ has no hot-reload API — stop (with join) then start to pick up the new keystore.
+        // The join() in stop() ensures the old instance fully releases its data-folder lock before
+        // we attempt to start a new one. A short sleep gives the OS time to flush file handles.
         stop();
+        try {
+            Thread.sleep(500);
+        } catch (final InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
         if (!start()) {
             throw new IllegalStateException("MqttPlugin failed to restart after certificate deployment");
         }

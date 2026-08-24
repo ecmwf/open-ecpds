@@ -86,8 +86,10 @@
             </td>
             <td>${policy.comment}</td>
             <td class="buttons text-center">
-                <auth:link styleClass="menuitem" href="/do/user/policy/edit/update_form/${policy.id}" imageKey="icon.small.update"/>
-                <auth:link styleClass="menuitem" href="/do/user/policy/edit/delete_form/${policy.id}" imageKey="icon.small.delete"/>
+                <a href="/do/user/policy/edit/update_form/${policy.id}"
+                   class="btn btn-sm btn-outline-primary" title="Edit this data policy"><i class="bi bi-pencil"></i></a>
+                <a href="/do/user/policy/edit/delete_form/${policy.id}"
+                   class="btn btn-sm btn-outline-danger" title="Delete this data policy"><i class="bi bi-trash"></i></a>
             </td>
         </tr>
     </c:forEach>

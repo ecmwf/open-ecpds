@@ -53,6 +53,7 @@
 									<input id="uid" name="uid" type="text" class="form-control form-control-sm"
 										pattern="[A-Za-z0-9]+(\.[A-Za-z0-9]+)*"
 										title="Only letters and digits, optionally separated by a single '.'"
+										data-char-filter="A-Za-z0-9."
 										oninput="validatePatternInput(this, 'uid-feedback'); _checkLoginExists(this.value, 'uid-exists-msg', 'user')">
 									<span id="uid-feedback"></span>
 								</div>

@@ -177,7 +177,7 @@ $(document).ready(function() {
     columnDefs: [{ orderable: false, targets: [3, 6, 7, 9] }],
     language: {
       info:       'Showing _START_-_END_ of _TOTAL_ entries',
-      emptyTable: 'No feedback yet'
+      emptyTable: 'No matching records found.'
     }
   });
 

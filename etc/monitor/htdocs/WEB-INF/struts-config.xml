@@ -32,6 +32,8 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.user.user.UserActionForm" />
 		<form-bean name="incomingUserActionForm"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.incoming.IncomingUserActionForm" />
+		<form-bean name="apiClientActionForm"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.api.ApiClientActionForm" />
 		<form-bean name="incomingPolicyActionForm"
 			type="ecmwf.ecpds.master.plugin.http.controller.user.policy.IncomingPolicyActionForm" />
 		<form-bean name="categoryActionForm"
@@ -1270,6 +1272,7 @@
 				redirect="true" />
 			<forward name="cancel" path="/do/user/resource"
 				redirect="true" />
+			<forward name="input" path=".pds.user.resource.insert" />
 		</action>
 
 		<!-- *** Monitoring ******************************************************************************************************* -->
@@ -1398,6 +1401,71 @@
 		<action path="/feedback/submit"
 			type="ecmwf.ecpds.master.plugin.http.controller.feedback.SubmitFeedbackAction">
 		</action>
+		<action path="/user/api/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.api.GetApiClientListJsonAction">
+		</action>
+		<action path="/user/api"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.api.GetApiClientAction">
+			<forward name="success" path=".pds.user.api" />
+		</action>
+		<action path="/user/api/edit/insert_form"
+			name="apiClientActionForm" scope="request"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.api.InsertApiClientFormAction">
+			<forward name="success" path=".pds.user.api.insert" />
+		</action>
+		<action path="/user/api/edit/insert"
+			name="apiClientActionForm"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.api.InsertApiClientAction">
+			<forward name="success" path=".pds.user.api.detail" />
+			<forward name="cancel" path=".pds.user.api" />
+			<forward name="input" path=".pds.user.api.insert" />
+		</action>
+		<action path="/user/api/*/edit/update_form"
+			parameter="{1}"
+			name="apiClientActionForm"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.api.GetApiClientUpdateFormAction"
+			scope="request">
+			<forward name="success" path=".pds.user.api.update" />
+		</action>
+		<action path="/user/api/*/edit/update"
+			parameter="{1}"
+			name="apiClientActionForm"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.api.UpdateApiClientAction"
+			scope="request">
+			<set-property property="cancellable" value="true" />
+			<forward name="success" path="/do/user/api/{1}" redirect="true" />
+			<forward name="cancel" path="/do/user/api/{1}" redirect="true" />
+		</action>
+		<action path="/user/api/events"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.api.GetApiEventsAction">
+			<forward name="success" path=".pds.user.api.events" />
+		</action>
+		<action path="/user/api/events/list"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.api.GetApiEventsListJsonAction">
+		</action>
+		<action path="/user/api/*/edit/delete"
+			parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.api.DeleteApiClientAction">
+		</action>
+		<action path="/user/api/*/edit/reset_secret"
+			parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.api.ResetApiSecretAction">
+			<forward name="success" path=".pds.user.api.detail" />
+		</action>
+		<action path="/user/api/*/edit/add_permission"
+			parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.api.AddApiPermissionAction">
+		</action>
+		<action path="/user/api/*/edit/delete_permission/*"
+			parameter="{1}|{2}"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.api.DeleteApiPermissionAction">
+		</action>
+		<action path="/user/api/*"
+			parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.user.api.GetApiClientAction">
+			<forward name="success" path=".pds.user.api.detail" />
+		</action>
+
 	</action-mappings>
 
 	<!-- ========== Resources ========================== -->

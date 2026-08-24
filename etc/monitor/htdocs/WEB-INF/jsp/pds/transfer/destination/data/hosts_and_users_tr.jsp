@@ -100,7 +100,7 @@
 				order:        [[1, 'asc']],
 				dom:          'tp',
 				columnDefs:   [{ type: 'num', targets: 1 }<c:if test="${not empty ecpdsCanHandleHosts}">, { orderable: false, targets: -1 }</c:if>],
-				language:     { emptyTable: 'No hosts assigned' }
+				language:     { emptyTable: 'No matching records found.' }
 			});
 		});
 		</script>
@@ -222,7 +222,7 @@
 					order:        [[1, 'asc']],
 					dom:          'tp',
 					columnDefs:   [{ type: 'num', targets: 1 }<c:if test="${not empty ecpdsCanHandleHosts}">, { orderable: false, targets: -1 }</c:if>],
-					language:     { emptyTable: 'No hosts assigned' }
+					language:     { emptyTable: 'No matching records found.' }
 				});
 
 				function _applyAcqRunning(hostId, running) {

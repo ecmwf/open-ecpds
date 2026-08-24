@@ -1366,6 +1366,9 @@ public final class RESTServer {
                     setup != null ? setup.get(ECtransOptions.USER_PORTAL_MSG_DOWN, msgDown) : msgDown);
             final var accessGuide = setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_ACCESS_GUIDE);
             Format.replaceAll(sb, "${accessGuide}", String.valueOf(accessGuide));
+            final var disabledProtocols = setup != null ? setup.getString(ECtransOptions.USER_PORTAL_DISABLED_PROTOCOLS)
+                    : "";
+            Format.replaceAll(sb, "${disabledProtocols}", disabledProtocols != null ? disabledProtocols : "");
             final var loginButton = setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_LOGIN_BUTTON);
             Format.replaceAll(sb, "${loginButtonHidden}", loginButton ? "" : "d-none");
             final var registrationEnabled = "self-service".equals(session.getPortalService());
@@ -1911,6 +1914,17 @@ public final class RESTServer {
                     });
             // Do not create sessions for open-access users — show an informational message instead.
             final var setup = session.getECtransSetup();
+            // Check if HTTPS/portal access is disabled for this user via portal.disabledProtocols
+            if (setup != null) {
+                final var disabled = setup.getString(ECtransOptions.USER_PORTAL_DISABLED_PROTOCOLS);
+                if (disabled != null && java.util.Arrays.stream(disabled.split(",")).map(String::trim)
+                        .anyMatch("https"::equalsIgnoreCase)) {
+                    _log.info("HTTPS/portal access disabled for user={} from={}", username, request.getRemoteAddr());
+                    session.close(true);
+                    return buildLoginResponse(username, false, "Web portal access is not enabled for this account",
+                            Response.Status.UNAUTHORIZED);
+                }
+            }
             if (setup != null && "open-access".equals(session.getPortalService())) {
                 session.close(true);
                 final var dataUrl = "/ecpds/home/" + username;
@@ -2311,6 +2325,7 @@ public final class RESTServer {
         Format.replaceAll(builder, "${build}", Version.getBuild());
         Format.replaceAll(builder, "${ftpPort}", Cnf.at("FtpPlugin", "port", ""));
         Format.replaceAll(builder, "${s3Path}", Cnf.at("HttpPlugin", "s3ServicePath", "/s3"));
+        Format.replaceAll(builder, "${davPath}", Cnf.at("HttpPlugin", "webdavPath", "/webdav"));
         Format.replaceAll(builder, "${sftpPort}", Cnf.at("SshPlugin", "port", ""));
         Format.replaceAll(builder, "${httpsPublicBaseUrl}", Cnf.at("DataPortal", "httpsPublicBaseUrl", ""));
         Format.replaceAll(builder, "${s3PublicEndpointUrl}", Cnf.at("DataPortal", "s3PublicEndpointUrl", ""));
@@ -2321,6 +2336,7 @@ public final class RESTServer {
         Format.replaceAll(builder, "${s3Enabled}", Cnf.at("DataPortal", "s3Enabled", true));
         Format.replaceAll(builder, "${ftpEnabled}", Cnf.at("DataPortal", "ftpEnabled", true));
         Format.replaceAll(builder, "${sftpEnabled}", Cnf.at("DataPortal", "sftpEnabled", true));
+        Format.replaceAll(builder, "${davEnabled}", Cnf.at("HttpPlugin", "webdavEnabled", true));
     }
 
     /**

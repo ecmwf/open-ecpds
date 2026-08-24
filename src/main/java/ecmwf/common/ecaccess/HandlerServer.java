@@ -135,15 +135,32 @@ public final class HandlerServer extends StarterServer implements HandlerInterfa
     @Override
     public String getHttpCertificateJson() throws RemoteException {
         final var container = getPluginContainer();
-        if (container != null) {
-            final var plugin = container.getPlugin("http");
-            if (plugin instanceof final HttpCertificateProvider provider) {
-                try {
-                    return provider.buildCertificateJson();
-                } catch (final Exception e) {
-                    _log.warn("getHttpCertificateJson: failed to build certificate JSON", e);
-                }
+        if (container == null) {
+            _log.warn("getHttpCertificateJson: no plugin container");
+            return "{}";
+        }
+        final var plugin = container.getPlugin("http");
+        if (plugin == null) {
+            _log.warn("getHttpCertificateJson: 'http' plugin not found in container");
+            return "{}";
+        }
+        // Use reflection to avoid classloader-isolation failures when the plugin is
+        // loaded from a separate plugin classloader (instanceof would silently return
+        // false even when the plugin does implement HttpCertificateProvider).
+        try {
+            final var method = plugin.getClass().getMethod("buildCertificateJson");
+            final var json = (String) method.invoke(plugin);
+            if (json == null || "{}".equals(json)) {
+                _log.warn(
+                        "getHttpCertificateJson: buildCertificateJson() returned empty — activeKeystorePath may be null");
+                return "{}";
             }
+            return json;
+        } catch (final NoSuchMethodException e) {
+            _log.warn("getHttpCertificateJson: 'http' plugin ({}) does not have buildCertificateJson()",
+                    plugin.getClass().getName());
+        } catch (final Exception e) {
+            _log.warn("getHttpCertificateJson: failed to build certificate JSON", e);
         }
         return "{}";
     }
@@ -158,18 +175,28 @@ public final class HandlerServer extends StarterServer implements HandlerInterfa
     @Override
     public void deployHttpCertificate(final byte[] pkcs12Bytes, final String keystorePassword) throws RemoteException {
         final var container = getPluginContainer();
-        if (container != null) {
-            final var plugin = container.getPlugin("http");
-            if (plugin instanceof final HttpCertificateProvider provider) {
-                try {
-                    provider.deployCertificate(pkcs12Bytes, keystorePassword);
-                } catch (final Exception e) {
-                    _log.warn("deployHttpCertificate: failed to deploy certificate", e);
-                    throw new RemoteException("Certificate deployment failed", e);
-                }
-            } else {
-                _log.warn("deployHttpCertificate: http plugin not found or not an HttpCertificateProvider");
-            }
+        if (container == null) {
+            _log.warn("deployHttpCertificate: no plugin container");
+            return;
+        }
+        final var plugin = container.getPlugin("http");
+        if (plugin == null) {
+            _log.warn("deployHttpCertificate: 'http' plugin not found in container");
+            return;
+        }
+        try {
+            final var method = plugin.getClass().getMethod("deployCertificate", byte[].class, String.class);
+            method.invoke(plugin, pkcs12Bytes, keystorePassword);
+        } catch (final NoSuchMethodException e) {
+            _log.warn("deployHttpCertificate: 'http' plugin ({}) does not have deployCertificate(byte[],String)",
+                    plugin.getClass().getName());
+        } catch (final java.lang.reflect.InvocationTargetException e) {
+            final var cause = e.getCause() != null ? e.getCause() : e;
+            _log.warn("deployHttpCertificate: failed to deploy certificate", cause);
+            throw new RemoteException("Certificate deployment failed", cause);
+        } catch (final Exception e) {
+            _log.warn("deployHttpCertificate: failed to deploy certificate", e);
+            throw new RemoteException("Certificate deployment failed", e);
         }
     }
 }

@@ -680,7 +680,7 @@ public final class HttpPlugin extends PluginThread implements HttpCertificatePro
         try {
             // Check for a recognised attribute_name and call the corresponding getter
             if ("Requests".equals(attributeName)) {
-                return server == null ? 0 : statsHandler.getRequests();
+                return server == null ? 0 : statsHandler.getRequestTotal();
             }
             if ("RequestsActive".equals(attributeName)) {
                 return server == null ? 0 : statsHandler.getRequestsActive();

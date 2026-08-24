@@ -271,7 +271,7 @@
             searching: true,
             ordering:  true,
             info:      true,
-            language:  { emptyTable: 'No subscribers found.' },
+            language:  { emptyTable: 'No matching records found.' },
             columnDefs: [
                 { orderable: false, targets: 'no-sort' },
                 { orderData: [6], targets: [3] },

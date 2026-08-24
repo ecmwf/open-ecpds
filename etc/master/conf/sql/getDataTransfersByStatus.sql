@@ -18,5 +18,5 @@ SELECT DATA_TRANSFER.*
 FROM 
   DATA_TRANSFER
 WHERE 
-  DAT_TARGET COLLATE latin1_general_cs like '%$search%'
+  DAT_TARGET like '%$search%'
   AND STA_CODE = '$id'

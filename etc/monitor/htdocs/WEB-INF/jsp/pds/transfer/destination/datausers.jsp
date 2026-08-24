@@ -122,7 +122,7 @@ $(document).ready(function() {
         searching:  true,
         ordering:   true,
         info:       true,
-        language:   { emptyTable: 'No data users found.' },
+        language:   { emptyTable: 'No matching records found.' },
         columnDefs: [
             { orderData: [5], targets: [3] },
             { visible: false, targets: [5] }

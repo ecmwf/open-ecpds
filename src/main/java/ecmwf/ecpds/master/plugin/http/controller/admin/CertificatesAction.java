@@ -229,6 +229,7 @@ public class CertificatesAction extends PDSAction {
         MasterManager.getMI().deployHttpCertificateToAllMovers(session, pkcs12Bytes, password);
         _log.info("Deployed Monitor certificate to all Data Movers by user {}", user.getName());
         request.setAttribute("successMessage", "Certificate deployed to all connected Data Movers successfully.");
+        request.setAttribute("successMessageTarget", "movers");
         populateCertificateInfo(request, httpPlugin, user);
         return mapping.findForward("success");
     }
@@ -249,6 +250,7 @@ public class CertificatesAction extends PDSAction {
         MasterManager.getMI().deployHttpCertificateToAllMonitors(session, pkcs12Bytes, password);
         _log.info("Deployed Monitor certificate to all other Monitors by user {}", user.getName());
         request.setAttribute("successMessage", "Certificate deployed to all connected Monitors successfully.");
+        request.setAttribute("successMessageTarget", "monitors");
         populateCertificateInfo(request, httpPlugin, user);
         return mapping.findForward("success");
     }
@@ -277,12 +279,14 @@ public class CertificatesAction extends PDSAction {
             _log.info("Deployed certificate to Data Mover {} by user {}", targetName, user.getName());
             request.setAttribute("successMessage",
                     "Certificate deployed to Data Mover '" + targetName + "' successfully.");
+            request.setAttribute("successMessageTarget", "movers");
             break;
         case "monitor":
             MasterManager.getMI().deployHttpCertificateToMonitor(session, targetName, pkcs12Bytes, password);
             _log.info("Deployed certificate to Monitor {} by user {}", targetName, user.getName());
             request.setAttribute("successMessage",
                     "Certificate deployed to Monitor '" + targetName + "' successfully.");
+            request.setAttribute("successMessageTarget", "monitors");
             break;
         default:
             throw new ECMWFException("Unknown targetType: " + targetType);

@@ -27,6 +27,7 @@ package ecmwf.common.database;
  */
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -101,6 +102,127 @@ public abstract class DataGet {
         } catch (final DataBaseException e) {
             return null;
         }
+    }
+
+    public ApiClient getApiClient(final String id) throws DataBaseException {
+        return get(new ApiClient(id));
+    }
+
+    public ApiClient getApiClientObject(final String id) {
+        try {
+            return getApiClient(id);
+        } catch (final DataBaseException e) {
+            return null;
+        }
+    }
+
+    public ApiClient[] getApiClientArray() {
+        final List<ApiClient> list = new ArrayList<>();
+        try (var iterator = getAll(ApiClient.class)) {
+            iterator.forEachRemaining(list::add);
+        }
+        logSqlRequest("getApiClientArray", list.size());
+        return list.toArray(new ApiClient[0]);
+    }
+
+    public ApiPermission[] getApiPermissionsForClient(final String clientId) {
+        final List<ApiPermission> list = new ArrayList<>();
+        try (var iterator = getAll(ApiPermission.class)) {
+            iterator.forEachRemaining(p -> {
+                if (clientId.equals(p.getClientId())) {
+                    list.add(p);
+                }
+            });
+        }
+        logSqlRequest("getApiPermissionsForClient", list.size());
+        return list.toArray(new ApiPermission[0]);
+    }
+
+    public ApiEvent[] getApiEventsForClient(final String clientId, final int maxRows) {
+        final List<ApiEvent> list = new ArrayList<>();
+        try (var iterator = getAll(ApiEvent.class)) {
+            iterator.forEachRemaining(e -> {
+                if (clientId.equals(e.getClientId()) && list.size() < maxRows) {
+                    list.add(e);
+                }
+            });
+        }
+        logSqlRequest("getApiEventsForClient", list.size());
+        return list.toArray(new ApiEvent[0]);
+    }
+
+    public Collection<ApiEvent> getApiEventsFiltered(final String clientId, final java.util.Date date,
+            final String search, final DataBaseCursor cursor) {
+        // Collect all matching events first (no SQL paging available, so in-memory)
+        final String dayPrefix = date == null ? null : new java.text.SimpleDateFormat("yyyy-MM-dd").format(date);
+        final List<ApiEvent> all = new ArrayList<>();
+        try (var iterator = getAll(ApiEvent.class)) {
+            iterator.forEachRemaining(e -> {
+                if (clientId != null && !clientId.isBlank() && !clientId.equals(e.getClientId())) {
+                    return;
+                }
+                if (dayPrefix != null && e.getDate() != null) {
+                    final var eDay = new java.text.SimpleDateFormat("yyyy-MM-dd").format(e.getDate());
+                    if (!dayPrefix.equals(eDay)) {
+                        return;
+                    }
+                }
+                if (search != null && !search.isBlank()) {
+                    final var q = search.toLowerCase();
+                    final var matchClient = e.getClientId() != null && e.getClientId().toLowerCase().contains(q);
+                    final var matchService = e.getService() != null && e.getService().toLowerCase().contains(q);
+                    final var matchHost = e.getHost() != null && e.getHost().toLowerCase().contains(q);
+                    final var matchMsg = e.getMessage() != null && e.getMessage().toLowerCase().contains(q);
+                    if (!matchClient && !matchService && !matchHost && !matchMsg) {
+                        return;
+                    }
+                }
+                all.add(e);
+            });
+        }
+        // Sort: cursor sort column → 0=date, 1=clientId, 2=service, 3=host, 4=result, 5=message
+        final Comparator<ApiEvent> cmp;
+        try {
+            cmp = switch (Integer.parseInt(cursor.getSort())) {
+            case 1 -> Comparator.comparing((ApiEvent e) -> e.getClientId() == null ? "" : e.getClientId());
+            case 2 -> Comparator.comparing((ApiEvent e) -> e.getService() == null ? "" : e.getService());
+            case 3 -> Comparator.comparing((ApiEvent e) -> e.getHost() == null ? "" : e.getHost());
+            default -> Comparator.comparingLong((ApiEvent e) -> e.getDate() == null ? 0L : e.getDate().getTime());
+            };
+        } catch (final NumberFormatException _) {
+            // keep natural order
+            Collections.sort(all, Comparator.comparingLong(e -> e.getDate() == null ? 0L : e.getDate().getTime()));
+            logSqlRequest("getApiEventsFiltered", all.size());
+            return paginate(all, cursor);
+        }
+        final boolean asc = "1".equals(cursor.getOrder());
+        all.sort(asc ? cmp : cmp.reversed());
+        logSqlRequest("getApiEventsFiltered", all.size());
+        return paginate(all, cursor);
+    }
+
+    private static Collection<ApiEvent> paginate(final List<ApiEvent> all, final DataBaseCursor cursor) {
+        final int total = all.size();
+        final int start = Math.max(0, cursor.getStart());
+        final int end = Math.min(total, cursor.getEnd());
+        final List<ApiEvent> page = start >= total ? new ArrayList<>() : new ArrayList<>(all.subList(start, end));
+        if (!page.isEmpty()) {
+            page.get(0).setCollectionSize(total);
+        }
+        return page;
+    }
+
+    public ApiEvent[] getApiEventsAll(final int maxRows) {
+        final List<ApiEvent> list = new ArrayList<>();
+        try (var iterator = getAll(ApiEvent.class)) {
+            iterator.forEachRemaining(e -> {
+                if (list.size() < maxRows) {
+                    list.add(e);
+                }
+            });
+        }
+        logSqlRequest("getApiEventsAll", list.size());
+        return list.toArray(new ApiEvent[0]);
     }
 
     /**

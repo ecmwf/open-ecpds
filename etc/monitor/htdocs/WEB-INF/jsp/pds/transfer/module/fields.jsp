@@ -31,6 +31,7 @@
               class="form-control form-control-sm"
               pattern="[a-zA-Z0-9]+"
               title="Letters and digits only (e.g. FtpModule)"
+              data-char-filter="a-zA-Z0-9"
               required
               oninput="validatePatternInput(this, 'name-feedback'); _checkNameExists(this.value)">
             <span id="name-feedback"></span>

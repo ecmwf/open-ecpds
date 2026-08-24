@@ -427,9 +427,18 @@ public final class Util {
         } catch (final Throwable _) {
             // Ignored
         }
+        var sort = defaultSort;
+        try {
+            final var col = request.getParameter("order[0][column]");
+            if (col != null && !col.isBlank()) {
+                sort = Integer.parseInt(col);
+            }
+        } catch (final Throwable _) {
+            // Ignored
+        }
         final var dir = request.getParameter("order[0][dir]");
         final var order = "asc".equalsIgnoreCase(dir) ? "1" : (descending ? "2" : "1");
-        return new DataBaseCursor(String.valueOf(defaultSort), order, start, start + length);
+        return new DataBaseCursor(String.valueOf(sort), order, start, start + length);
     }
 
     /**

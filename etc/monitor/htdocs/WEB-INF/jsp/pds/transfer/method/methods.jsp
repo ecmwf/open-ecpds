@@ -55,7 +55,7 @@
             <th class="text-center">Restrict</th>
             <th class="text-center">Resolve</th>
             <th class="text-center">Enabled</th>
-            <th class="text-center">Actions</th>
+            <th class="text-center no-sort">Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -84,17 +84,17 @@
             <td class="buttons text-center">
                 <c:choose>
                     <c:when test="${not empty row.moduleGuide}">
-                        <button class="btn btn-sm btn-outline-info p-0 px-1" type="button"
+                        <button class="btn btn-sm btn-outline-info" type="button"
                                 data-bs-toggle="offcanvas" data-bs-target="#mgoc-${row.id}"
                                 title="Configuration Guide"><i class="bi bi-book"></i></button>
                     </c:when>
                     <c:otherwise>
-                        <button class="btn btn-sm btn-outline-secondary p-0 px-1" type="button"
+                        <button class="btn btn-sm btn-outline-secondary" type="button"
                                 title="No configuration guide available" disabled><i class="bi bi-book"></i></button>
                     </c:otherwise>
                 </c:choose>
-                <auth:link styleClass="menuitem" href="/do/transfer/method/edit/update_form/${row.id}" imageKey="icon.small.update"/>
-                <auth:link styleClass="menuitem" href="/do/transfer/method/edit/delete_form/${row.id}" imageKey="icon.small.delete"/>
+                <auth:link styleClass="btn btn-sm btn-outline-primary me-1" href="/do/transfer/method/edit/update_form/${row.id}"><i class="bi bi-pencil"></i></auth:link>
+                <auth:link styleClass="btn btn-sm btn-outline-danger" href="/do/transfer/method/edit/delete_form/${row.id}"><i class="bi bi-trash"></i></auth:link>
             </td>
         </tr>
         </c:forEach>

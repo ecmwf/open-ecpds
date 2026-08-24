@@ -53,7 +53,7 @@
             <th>Class Name</th>
             <th>Class Path</th>
             <th class="text-center">Enabled</th>
-            <th class="text-center">Actions</th>
+            <th class="text-center no-sort">Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -76,17 +76,17 @@
             <td class="buttons text-center">
                 <c:choose>
                     <c:when test="${not empty row.guide}">
-                        <button class="btn btn-sm btn-outline-info p-0 px-1" type="button"
+                        <button class="btn btn-sm btn-outline-info" type="button"
                                 data-bs-toggle="offcanvas" data-bs-target="#mgoc-${row.id}"
                                 title="Configuration Guide"><i class="bi bi-book"></i></button>
                     </c:when>
                     <c:otherwise>
-                        <button class="btn btn-sm btn-outline-secondary p-0 px-1" type="button"
+                        <button class="btn btn-sm btn-outline-secondary" type="button"
                                 title="No configuration guide available" disabled><i class="bi bi-book"></i></button>
                     </c:otherwise>
                 </c:choose>
-                <auth:link styleClass="menuitem" basePathKey="module.basepath" href="/edit/update_form/${row.id}" imageKey="icon.small.update"/>
-                <auth:link styleClass="menuitem" basePathKey="module.basepath" href="/edit/delete_form/${row.id}" imageKey="icon.small.delete"/>
+                <auth:link styleClass="btn btn-sm btn-outline-primary me-1" basePathKey="module.basepath" href="/edit/update_form/${row.id}"><i class="bi bi-pencil"></i></auth:link>
+                <auth:link styleClass="btn btn-sm btn-outline-danger" basePathKey="module.basepath" href="/edit/delete_form/${row.id}"><i class="bi bi-trash"></i></auth:link>
             </td>
         </tr>
         </c:forEach>
@@ -177,9 +177,11 @@ $(document).ready(function() {
 <%-- Guide offcanvases for modules that have documentation --%>
 <c:forEach var="row" items="${ectransmodules}">
     <c:if test="${not empty row.guide}">
-        <jsp:include page="${row.guide}">
-            <jsp:param name="guideId" value="mgoc-${row.id}"/>
-        </jsp:include>
+        <c:catch var="guideIncludeEx">
+            <jsp:include page="${row.guide}">
+                <jsp:param name="guideId" value="mgoc-${row.id}"/>
+            </jsp:include>
+        </c:catch>
     </c:if>
 </c:forEach>
 

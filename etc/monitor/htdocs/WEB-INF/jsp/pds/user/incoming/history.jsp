@@ -18,7 +18,6 @@
                     title="Search is performed against the File Name (case-sensitive)"
                     style="width:160px;min-width:80px"
                     value="${param['search']}">
-                <button id="incomingHistorySearchBtn" class="btn btn-outline-secondary btn-sm" type="button">Search</button>
             </div>
             <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
                 <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
@@ -117,7 +116,7 @@ $(function() {
         language: {
             info: 'Showing _START_-_END_ of _TOTAL_',
             processing: 'Loading...',
-            emptyTable: 'No Data Events found based on these criteria!'
+            emptyTable: 'No matching records found.'
         }
     });
     $('#incomingHistPageLen').val(_ihPageLen).on('change', function() {
@@ -125,7 +124,6 @@ $(function() {
         try { localStorage.setItem('incomingHistPageLen', len); } catch(e) {}
         _incomingHistoryTable.page.len(len).draw();
     });
-    $('#incomingHistorySearchBtn').on('click', function() { incomingHistoryTableReload(); });
     $('#incomingHistorySearch').on('keydown', function(e) {
         if (e.key === 'Enter') { e.preventDefault(); incomingHistoryTableReload(); }
     });

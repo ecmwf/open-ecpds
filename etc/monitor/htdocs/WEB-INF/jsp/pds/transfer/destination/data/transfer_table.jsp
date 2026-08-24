@@ -196,7 +196,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
         dom: "t<'d-flex align-items-start mt-2'i<'ms-auto'p>>",
         language: {
             processing: '<span class="spinner-border spinner-border-sm me-1"></span> Loading&hellip;',
-            emptyTable: 'No Data Transfers found based on these criteria.'
+            emptyTable: 'No matching records found.'
         },
         drawCallback: function (settings) {
             // Restore session-selected transfers from JSON into the JS selectedTransfers map

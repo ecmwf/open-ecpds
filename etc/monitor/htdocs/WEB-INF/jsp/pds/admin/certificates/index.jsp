@@ -16,6 +16,7 @@
     final List<Map<String,Object>> monitorCerts = (List<Map<String,Object>>) request.getAttribute("monitorCerts");
     final String successMessage = (String) request.getAttribute("successMessage");
     final String errorMessage   = (String) request.getAttribute("errorMessage");
+    final String successMessageTarget = (String) request.getAttribute("successMessageTarget");
     final boolean isSelfSigned  = Boolean.TRUE.equals(selfSigned);
     final boolean hasCert       = (monitorCert != null);
 %>
@@ -90,7 +91,7 @@
   </div>
 </div>
 
-<% if (successMessage != null) { %>
+<% if (successMessage != null && successMessageTarget == null) { %>
 <div id="certSuccessWrapper" class="card-body py-2 px-3">
   <div id="certSuccessAlert" class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 mb-0" role="alert">
     <i class="bi bi-check-circle-fill flex-shrink-0"></i>
@@ -207,6 +208,20 @@
   </div>
 </div>
 
+<% if (successMessage != null && "monitors".equals(successMessageTarget)) { %>
+<div id="certMonitorsSuccessAlert" class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 mb-0 rounded-0 border-start-0 border-end-0 border-top-0" role="alert" style="margin-top:0">
+  <i class="bi bi-check-circle-fill flex-shrink-0 ms-3"></i>
+  <span><%=successMessage%></span>
+  <button type="button" class="btn-close ms-auto me-2" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+<script>
+  setTimeout(function() {
+    var el = document.getElementById('certMonitorsSuccessAlert');
+    if (el) { bootstrap.Alert.getOrCreateInstance(el).close(); }
+  }, 4000);
+</script>
+<% } %>
+
 <div class="card-body p-0">
 <div class="table-responsive">
 <table class="table table-sm table-hover table-striped align-middle mb-0" style="font-size:0.82rem;">
@@ -322,6 +337,20 @@
     <p class="mb-0">Shows the TLS certificate currently active on each connected Data Mover. Use <strong>Deploy to All Movers</strong> to push the current Monitor certificate to every Data Mover in one operation. Certificates are reloaded without restarting the service.</p>
   </div>
 </div>
+
+<% if (successMessage != null && "movers".equals(successMessageTarget)) { %>
+<div id="certMoversSuccessAlert" class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 mb-0 rounded-0 border-start-0 border-end-0 border-top-0" role="alert" style="margin-top:0">
+  <i class="bi bi-check-circle-fill flex-shrink-0 ms-3"></i>
+  <span><%=successMessage%></span>
+  <button type="button" class="btn-close ms-auto me-2" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+<script>
+  setTimeout(function() {
+    var el = document.getElementById('certMoversSuccessAlert');
+    if (el) { bootstrap.Alert.getOrCreateInstance(el).close(); }
+  }, 4000);
+</script>
+<% } %>
 
 <div class="card-body p-0">
 <div class="table-responsive">

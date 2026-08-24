@@ -272,6 +272,19 @@
                 </div>
               </div>
             </div>
+            <div id="connectDavCol" class="col-md-6">
+              <div class="card h-100 border-info border-opacity-25">
+                <div class="card-header py-2 bg-info bg-opacity-10">
+                  <i class="bi bi-folder2-open me-1 text-info"></i><strong class="small">WebDAV</strong>
+                </div>
+                <div class="card-body small">
+                  <p class="text-muted mb-2">Mount or access files via any WebDAV-compatible client (e.g. cadaver, rclone, Windows/macOS native mount).</p>
+                  <div class="text-muted mb-1">Base URL</div>
+                  <code id="connectDavUrl" class="d-block bg-body-secondary rounded px-2 py-1 mb-2 user-select-all"></code>
+                  <div id="connectDavExamples"></div>
+                </div>
+              </div>
+            </div>
             <div id="connectInfoCol" class="col-12">
               <div class="alert alert-secondary d-flex align-items-start gap-2 py-2 px-3 mb-0 small" role="alert" style="font-size:0.78rem;">
                 <i class="bi bi-person-lock flex-shrink-0 mt-1"></i>
@@ -294,6 +307,9 @@
     data-s3-enabled="${s3Enabled}"
     data-ftp-enabled="${ftpEnabled}"
     data-sftp-enabled="${sftpEnabled}"
+    data-dav-path="${davPath}"
+    data-dav-enabled="${davEnabled}"
+    data-disabled-protocols="${disabledProtocols}"
     data-s3-can-write="${s3CanWrite}"
     data-s3-can-delete="${s3CanDelete}"></div>
   <script>
@@ -336,6 +352,13 @@
     if (cfg.s3Enabled === 'false') { var el = document.getElementById('connectS3Col'); if (el) el.remove(); }
     if (cfg.ftpEnabled === 'false') { var el = document.getElementById('connectFtpCol'); if (el) el.remove(); }
     if (cfg.sftpEnabled === 'false') { var el = document.getElementById('connectSftpCol'); if (el) el.remove(); }
+    if (cfg.davEnabled === 'false') { var el = document.getElementById('connectDavCol'); if (el) el.remove(); }
+    // Per-user disabled protocols (portal.disabledProtocols option): comma-separated list e.g. "ftp,sftp"
+    var _dpMap = { s3: 'connectS3Col', ftp: 'connectFtpCol', sftp: 'connectSftpCol', dav: 'connectDavCol' };
+    (cfg.disabledProtocols || '').split(',').forEach(function(p) {
+      var id = _dpMap[p.trim().toLowerCase()];
+      if (id) { var el = document.getElementById(id); if (el) el.remove(); }
+    });
     // Widen HTTPS card when it is the only visible protocol
     var siblingsVisible = ['connectS3Col','connectFtpCol','connectSftpCol'].some(function(id){ return !!document.getElementById(id); });
     if (!siblingsVisible) { var hc = document.getElementById('connectHttpsCol'); if (hc) { hc.classList.remove('col-md-6'); hc.classList.add('col-12'); } var ic = document.getElementById('connectInfoCol'); if (ic) { ic.classList.add('col-12'); } }
@@ -442,6 +465,18 @@
         '<div class="mb-1"><span class="text-muted">Username: </span><code>${userid}</code></div>' +
         '<div class="mb-0"><span class="text-muted">Password: </span>any valid email address (e.g. <code>user@example.com</code>)</div>';
       document.getElementById('connectSftpHost').textContent = sftpHost;
+    }
+    // WebDAV card
+    var davPath = cfg.davPath || '${davPath}';
+    var davUrlEl = document.getElementById('connectDavUrl');
+    if (davUrlEl) {
+      var davBase = origin + davPath;
+      davUrlEl.textContent = davBase;
+      var davEx = document.getElementById('connectDavExamples');
+      if (davEx) {
+        copyBlock(davEx, ['# Mount with rclone', 'rclone mount :webdav,url=' + davBase + ' ./mnt/ \\', '  --webdav-user ${userid} --webdav-pass YOUR_PASSWORD']);
+        copyBlock(davEx, ['# Access with cadaver', 'cadaver ' + davBase], true);
+      }
     }
   }());
   </script>
@@ -557,7 +592,7 @@
             if (_hasTraffic) {
               document.write('<button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="portalTrafficBtn" data-bs-toggle="modal" data-bs-target="#portalTrafficModal"><i class="bi bi-graph-up-arrow me-1"></i>Traffic</button>');
             } else {
-              document.write('<button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="portalTrafficBtn" disabled title="No traffic data available yet."><i class="bi bi-graph-up-arrow me-1"></i>Traffic</button>');
+              document.write('<span data-bs-toggle="tooltip" data-bs-placement="bottom" title="No traffic recorded yet for this directory." class="ms-1 d-inline-block"><button type="button" class="btn btn-sm btn-outline-secondary" id="portalTrafficBtn" disabled style="pointer-events:none;"><i class="bi bi-graph-up-arrow me-1"></i>Traffic</button></span>');
             }
           }
         })();
@@ -752,6 +787,11 @@
     // Popovers
     document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
       new bootstrap.Popover(el);
+    });
+
+    // Tooltips (used e.g. on disabled buttons wrapped in a span)
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+      new bootstrap.Tooltip(el);
     });
 
 

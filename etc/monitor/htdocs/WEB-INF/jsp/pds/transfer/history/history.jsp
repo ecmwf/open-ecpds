@@ -148,7 +148,7 @@ $(function() {
         dom: 't<"d-flex align-items-start mt-2"i<"ms-auto"p>>',
         language: {
             processing: '<span class="spinner-border spinner-border-sm me-1"></span> Loading&hellip;',
-            emptyTable: 'No transfer history available for the selected criteria.'
+            emptyTable: 'No matching records found.'
         }
     });
     $('#histPageLen').val((function() { try { var v = parseInt(localStorage.getItem('histPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })());

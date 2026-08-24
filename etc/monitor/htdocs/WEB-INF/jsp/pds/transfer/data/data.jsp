@@ -111,7 +111,7 @@ columns: [
 dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>',
 language: {
     processing: '<span class="spinner-border spinner-border-sm me-1"></span> Loading&hellip;',
-    emptyTable: 'No Transfer History available for this Data Transfer.'
+    emptyTable: 'No matching records found.'
 }
 });
 $('#dtHistPageLen').val(_dtHistLen);

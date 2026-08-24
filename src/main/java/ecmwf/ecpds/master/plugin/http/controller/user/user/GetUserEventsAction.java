@@ -85,6 +85,7 @@ public class GetUserEventsAction extends PDSAction {
         final String userName;
         if (parameters.size() > 0) {
             request.setAttribute("user", UserHome.findByPrimaryKey(userName = parameters.get(0).toString()));
+            request.setAttribute("webUserFilter", userName);
         } else {
             userName = null;
         }

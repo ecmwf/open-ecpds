@@ -539,6 +539,7 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
     public String buildCertificateJson() {
         final var info = getCertificateInfo();
         if (info == null) {
+            _log.warn("buildCertificateJson: returning empty — activeKeystorePath={}", activeKeystorePath);
             return "{}";
         }
         final var utc = java.util.TimeZone.getTimeZone("UTC");

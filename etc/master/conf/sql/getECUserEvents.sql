@@ -31,9 +31,8 @@ WHERE
 	AND NOT (EVE_ACTION = 'login')
 	AND NOT (EVE_ACTION = 'logout')
 #if ('$search' != '%')
-  AND (ECUSER.ECU_NAME COLLATE latin1_general_cs like '%$search%'
-  	OR EVE_ACTION COLLATE latin1_general_cs like '%$search%'
-  	OR EVE_COMMENT COLLATE latin1_general_cs like '%$search%')
+  AND (EVE_ACTION like '%$search%'
+  	OR EVE_COMMENT like '%$search%')
 #fi
 #if ('$sort' == '0')
 	ORDER BY (EVE_TIME IS NULL), EVE_TIME

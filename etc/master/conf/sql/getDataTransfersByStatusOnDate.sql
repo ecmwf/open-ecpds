@@ -24,7 +24,7 @@ WHERE
   DAT_TIME_BASE >= '$fromDate'
   AND DAT_TIME_BASE < '$toDate'
 #if ('$search' != '%')
-  AND DAT_TARGET COLLATE latin1_general_cs like '%$search%'
+  AND DAT_TARGET like '%$search%'
 #fi
 #if ('$id' != 'All')
   AND STA_CODE = '$id'

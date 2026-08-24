@@ -1734,4 +1734,68 @@
 		</many-to-one>
 	</class>
 
+	<class name="ApiClient" table="API_CLIENT" dynamic-update="true">
+		<id name="APU_ID" type="java.lang.String">
+			<column name="APU_ID" length="64" />
+			<generator class="assigned" />
+		</id>
+		<property name="APU_SECRET_HASH" type="java.lang.String">
+			<column name="APU_SECRET_HASH" />
+		</property>
+		<property name="APU_COMMENT" type="java.lang.String">
+			<column name="APU_COMMENT" />
+		</property>
+		<property name="APU_ACTIVE" type="boolean">
+			<column name="APU_ACTIVE" />
+		</property>
+		<property name="APU_CREATED" type="java.math.BigDecimal">
+			<column name="APU_CREATED" />
+		</property>
+		<property name="APU_LAST_USED" type="java.math.BigDecimal">
+			<column name="APU_LAST_USED" />
+		</property>
+		<property name="APU_LAST_USED_HOST" type="java.lang.String">
+			<column name="APU_LAST_USED_HOST" />
+		</property>
+		<property name="COU_ISO" type="java.lang.String">
+			<column name="COU_ISO" />
+		</property>
+	</class>
+
+	<class name="ApiPermission" table="API_PERMISSION">
+		<composite-id>
+			<key-property name="APU_ID" type="java.lang.String">
+				<column name="APU_ID" length="64" />
+			</key-property>
+			<key-property name="APP_PATTERN" type="java.lang.String">
+				<column name="APP_PATTERN" length="256" />
+			</key-property>
+		</composite-id>
+	</class>
+
+	<class name="ApiEvent" table="API_EVENT">
+		<id name="APE_ID" type="java.lang.Long">
+			<column name="APE_ID" />
+			<generator class="native" />
+		</id>
+		<property name="APU_ID" type="java.lang.String">
+			<column name="APU_ID" />
+		</property>
+		<property name="APE_SERVICE" type="java.lang.String">
+			<column name="APE_SERVICE" />
+		</property>
+		<property name="APE_HOST" type="java.lang.String">
+			<column name="APE_HOST" />
+		</property>
+		<property name="APE_DATE" type="java.math.BigDecimal">
+			<column name="APE_DATE" />
+		</property>
+		<property name="APE_SUCCESS" type="boolean">
+			<column name="APE_SUCCESS" />
+		</property>
+		<property name="APE_MESSAGE" type="java.lang.String">
+			<column name="APE_MESSAGE" />
+		</property>
+	</class>
+
 </hibernate-mapping>

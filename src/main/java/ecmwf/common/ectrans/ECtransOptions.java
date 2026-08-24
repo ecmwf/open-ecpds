@@ -1564,6 +1564,9 @@ public enum ECtransOptions {
     /** The user portal access guide. */
     USER_PORTAL_ACCESS_GUIDE("accessGuide", Boolean.class, true),
 
+    /** The user portal disabled protocols. */
+    USER_PORTAL_DISABLED_PROTOCOLS("disabledProtocols", String.class, STRING_NONE),
+
     /** The user portal login button. */
     USER_PORTAL_LOGIN_BUTTON("loginButton", Boolean.class, true),
 

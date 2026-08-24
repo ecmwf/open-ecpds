@@ -37,6 +37,7 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.ecaccess.NativeAuthenticationProvider;
 import ecmwf.common.ecaccess.StarterServer;
+import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.ecpds.mover.MoverServer;
 
 /**
@@ -96,9 +97,22 @@ public class BlobStoreLocator {
                 // verifications are completed)
                 final var remoteAddr = request.getRemoteAddr();
                 try {
-                    return blobStore = new BlobStore(remoteAddr, NativeAuthenticationProvider.getInstance()
-                            .getUserSession(remoteAddr, identity, incomingUserHash, "s3", (Closeable) () -> response
-                                    .sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Interrupted by server")));
+                    final var userSession = NativeAuthenticationProvider.getInstance().getUserSession(remoteAddr,
+                            identity, incomingUserHash, "s3", (Closeable) () -> response
+                                    .sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Interrupted by server"));
+                    // Check if S3 protocol is disabled for this user via portal.disabledProtocols
+                    final var s3Setup = userSession.getECtransSetup();
+                    if (s3Setup != null) {
+                        final var disabled = s3Setup.getString(ECtransOptions.USER_PORTAL_DISABLED_PROTOCOLS);
+                        if (disabled != null && java.util.Arrays.stream(disabled.split(",")).map(String::trim)
+                                .anyMatch("s3"::equalsIgnoreCase)) {
+                            logger.info("S3 protocol disabled for user={} from={}", identity, remoteAddr);
+                            userSession.close(true);
+                            throw new RuntimeException(new S3Exception(S3ErrorCode.ACCESS_DENIED,
+                                    "S3 access is not enabled for this account"));
+                        }
+                    }
+                    return blobStore = new BlobStore(remoteAddr, userSession);
                 } catch (final Throwable t) {
                     final var msg = t.getMessage();
                     if (msg != null && msg.contains("Maximum number of connections")) {
@@ -168,10 +182,22 @@ public class BlobStoreLocator {
                 try {
                     // Pass an empty string as the credential — MasterServer skips password
                     // verification when USER_PORTAL_ANONYMOUS is true for this user.
-                    return blobStore = new BlobStore(remoteAddr,
-                            NativeAuthenticationProvider.getInstance().getUserSession(remoteAddr, identity, "", "s3",
-                                    (Closeable) () -> response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
-                                            "Interrupted by server")));
+                    final var userSession = NativeAuthenticationProvider.getInstance().getUserSession(remoteAddr,
+                            identity, "", "s3", (Closeable) () -> response
+                                    .sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Interrupted by server"));
+                    // Check if S3 protocol is disabled for this user via portal.disabledProtocols
+                    final var s3Setup = userSession.getECtransSetup();
+                    if (s3Setup != null) {
+                        final var disabled = s3Setup.getString(ECtransOptions.USER_PORTAL_DISABLED_PROTOCOLS);
+                        if (disabled != null && java.util.Arrays.stream(disabled.split(",")).map(String::trim)
+                                .anyMatch("s3"::equalsIgnoreCase)) {
+                            logger.info("S3 protocol disabled for user={} from={}", identity, remoteAddr);
+                            userSession.close(true);
+                            throw new RuntimeException(new S3Exception(S3ErrorCode.ACCESS_DENIED,
+                                    "S3 access is not enabled for this account"));
+                        }
+                    }
+                    return blobStore = new BlobStore(remoteAddr, userSession);
                 } catch (final Throwable t) {
                     final var msg = t.getMessage();
                     if (msg != null && msg.contains("Maximum number of connections")) {

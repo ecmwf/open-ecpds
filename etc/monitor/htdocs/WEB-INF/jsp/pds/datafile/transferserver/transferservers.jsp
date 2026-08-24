@@ -58,7 +58,7 @@
                 <th class="text-center">Check</th>
                 <th title="Last Update (UTC)">Last Update</th>
                 <th class="text-center">Disk Usage</th>
-                <th class="text-end">Actions</th>
+                <th class="text-center no-sort">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -102,11 +102,11 @@
                     <td class="text-center" style="min-width:110px">
                         <div class="ts-disk-usage-cell" data-mover="${server.name}" style="font-size:0.7rem;color:#6c757d;">-</div>
                     </td>
-                    <td class="text-end" style="white-space:nowrap">
+                    <td class="text-center" style="white-space:nowrap">
                         <auth:link href="/do/datafile/transferserver/edit/update_form/${server.id}"
-                                   imageKey="icon.small.update" styleClass="menuitem"/>
+                                   styleClass="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></auth:link>
                         <auth:link href="/do/datafile/transferserver/edit/delete_form/${server.id}"
-                                   imageKey="icon.small.delete" styleClass="menuitem"/>
+                                   styleClass="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></auth:link>
                     </td>
                 </tr>
             </c:forEach>

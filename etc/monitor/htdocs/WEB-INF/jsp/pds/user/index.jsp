@@ -7,7 +7,8 @@
             <strong><%=System.getProperty("monitor.nickName")%></strong> maintains two user types:
             <strong>Web Users</strong> (access to this monitoring interface, governed by Categories and Resources)
             and <strong>Data Users</strong> (access to the Data Portal, governed by Policies).
-            Event logs are available for both user types for auditing and troubleshooting.
+            <strong>REST API Clients</strong> can also be managed here with per-service permissions.
+            Event logs are available for all access types for auditing and troubleshooting.
         </span>
     </div>
 </div>
@@ -112,6 +113,40 @@
             <span class="tool-title">Data Events Log</span>
             <p class="tool-desc">Audit log of Data Portal access events, including downloads and authentication
             attempts. Useful for usage tracking and investigating access anomalies.</p>
+        </div>
+    </div>
+    </auth:link>
+    </div>
+
+</div>
+
+<%-- REST API Access group --%>
+<h6 class="text-muted fw-semibold mb-2 mt-4 d-flex align-items-center gap-2">
+    <i class="bi bi-plug"></i> REST API Access
+</h6>
+<div class="row row-cols-1 row-cols-md-2 g-3">
+
+    <div class="col">
+    <auth:link basePathKey="apiclient.basepath" href="">
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
+        <i class="bi bi-key text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title">API Clients</span>
+            <p class="tool-desc">Manage applications and credentials used to access the REST API.
+            Create client IDs with hashed secrets and assign service permissions per client.</p>
+        </div>
+    </div>
+    </auth:link>
+    </div>
+
+    <div class="col">
+    <auth:link basePathKey="apievent.basepath" href="">
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
+        <i class="bi bi-journal-code text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title">API Events Log</span>
+            <p class="tool-desc">Audit log of all REST API authentication attempts, including client ID,
+            service requested, result, and timestamp. Useful for security monitoring.</p>
         </div>
     </div>
     </auth:link>

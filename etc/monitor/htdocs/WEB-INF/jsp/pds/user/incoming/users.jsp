@@ -333,13 +333,14 @@ $(document).ready(function() {
         searching:  true,
         ordering:   true,
         info:       true,
-        language:   { emptyTable: 'No Data Users found.' },
+        language:   { emptyTable: 'No matching records found.' },
         columnDefs: [
             { orderable: false, targets: 'no-sort' },
             { orderData: [8],  targets: [3] },
             { orderData: [9],  targets: [4] },
             { orderData: [10], targets: [5] },
-            { visible: false,  targets: [8, 9, 10] }
+            { visible: false,  targets: [8, 9, 10] },
+            { className: 'text-center', targets: [3, 4, 5, 7] }
         ],
         drawCallback: function() { _updateDeleteAllBtn(); _setFilterLoading($('#incomingUnassignedBtn'), false); },
         dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
@@ -368,7 +369,17 @@ $(document).ready(function() {
         try { localStorage.setItem('incomingPageLen', len); } catch(e) {}
         table.page.len(len).draw();
     });
-    $('#incomingSearch').on('input', function() { table.column(0).search(this.value).draw(); });
+    var _incomingSearchVal = '';
+    /* Search across username (col 0) and comment (col 1) with OR logic */
+    $.fn.dataTable.ext.search.push(function(settings, data) {
+        if (!settings.nTable || settings.nTable.id !== 'usersTable') return true;
+        if (!_incomingSearchVal) return true;
+        var q = _incomingSearchVal.toLowerCase();
+        var id = $('<span>').html(data[0]).text().toLowerCase();
+        var comment = (data[1] || '').toLowerCase();
+        return id.indexOf(q) !== -1 || comment.indexOf(q) !== -1;
+    });
+    $('#incomingSearch').on('input', function() { _incomingSearchVal = this.value; table.draw(); });
 
     function _setFilterLoading($btn, loading) {
         if (loading) {

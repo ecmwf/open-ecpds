@@ -32,7 +32,7 @@ WHERE
 	INH_START_TIME >= $fromDate AND
 	INH_START_TIME <= $toDate
 #if ('$search' != '%')
-  AND INH_FILE_NAME COLLATE latin1_general_cs like '%$search%'
+  AND INH_FILE_NAME like '%$search%'
 #fi
 #if ('$sort' == '0')
 	ORDER BY (INH_USER_NAME IS NULL), INH_USER_NAME

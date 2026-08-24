@@ -233,12 +233,13 @@ $(document).ready(function() {
         searching:  true,
         ordering:   true,
         info:       true,
-        language:   { emptyTable: 'No Web Users found.' },
+        language:   { emptyTable: 'No matching records found.' },
         columnDefs: [
             { orderable: false, targets: [5] },
             { orderData: [6], targets: [2] },
             { orderData: [7], targets: [4] },
-            { visible: false, targets: [6, 7] }
+            { visible: false, targets: [6, 7] },
+            { className: 'text-center', targets: [2, 5] }
         ],
         drawCallback: function() { _updateDeleteAllBtn(); _setFilterLoading($('#webUserMonitorNoDestBtn'), false); },
         dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'

@@ -21,24 +21,30 @@
     <i class="bi bi-tags text-primary"></i>
     <span class="fw-semibold">Destination Metadata</span>
     <div class="ms-auto d-flex flex-wrap gap-2 align-items-center">
-      <span id="dmfSaveStatus" class="dmf-save-status text-muted"></span>
-      <c:if test="${canEditMeta}">
-      <button type="button" class="btn btn-sm btn-primary" id="dmfSaveBtn" onclick="dmfSave()">
-        <i class="bi bi-floppy me-1"></i>Save
-      </button>
-      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="dmfDownloadJson()" title="Download metadata as JSON">
-        <i class="bi bi-download me-1"></i>JSON
-      </button>
-      <a href="<c:url value='/do/transfer/destination/metadata/import/${destination.name}'/>"
-         class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-upload me-1"></i>Import XML
-      </a>
-      </c:if>
       <c:if test="${not canEditMeta}">
       <button type="button" class="btn btn-sm btn-outline-secondary" onclick="dmfDownloadJson()" title="Download metadata as JSON">
         <i class="bi bi-download me-1"></i>JSON
       </button>
       </c:if>
+      <span id="dmfSaveStatus" class="dmf-save-status text-muted"></span>
+      <c:if test="${canEditMeta}">
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-primary" id="dmfSaveBtn" onclick="dmfSave()" disabled>
+          <i class="bi bi-floppy me-1"></i>Save
+        </button>
+        <button type="button" class="btn btn-outline-secondary" onclick="dmfDownloadJson()" title="Download metadata as JSON">
+          <i class="bi bi-download me-1"></i>JSON
+        </button>
+        <a href="<c:url value='/do/transfer/destination/metadata/import/${destination.name}'/>"
+           class="btn btn-outline-secondary">
+          <i class="bi bi-upload me-1"></i>Import XML
+        </a>
+      </div>
+      </c:if>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="dmfHideEmptyBtn"
+              onclick="dmfToggleEmpty()" title="Toggle visibility of empty fields and cards">
+        <i class="bi bi-eye-slash me-1" id="dmfHideEmptyIcon"></i><span id="dmfHideEmptyLabel">Hide empty</span>
+      </button>
     </div>
   </div>
 
@@ -249,10 +255,12 @@ function dmfAddValue(fieldId, fieldType) {
   if (!dmfData[fieldId]) dmfData[fieldId] = [];
   dmfData[fieldId].push({id:0, value:'', position: dmfData[fieldId].length});
   dmfRenderGroup(fieldId, fieldType, -1);
+  dmfSetDirty();
 }
 
 function dmfRemoveRow(btn) {
   btn.closest('.dmf-row').remove();
+  dmfSetDirty();
 }
 
 function dmfCollect() {
@@ -286,14 +294,16 @@ function dmfSave() {
   }).then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.success) {
+        dmfClearDirty();
         status.textContent = 'Saved \u2713';
         status.className = 'dmf-save-status text-success';
+        if (_dmfHideEmpty) { dmfMarkEmpty(); dmfApplyHideEmpty(true); }
+        setTimeout(function(){ status.textContent=''; }, 4000);
       } else {
         status.textContent = 'Error: ' + (data.error || 'unknown');
         status.className = 'dmf-save-status text-danger';
+        btn.disabled = false;
       }
-      btn.disabled = false;
-      setTimeout(function(){ status.textContent=''; }, 4000);
     }).catch(function(e) {
       status.textContent = 'Network error';
       status.className = 'dmf-save-status text-danger';
@@ -347,6 +357,120 @@ function dmfSave() {
   });
 }());
 
+var _dmfDirty = false;
+
+function dmfSetDirty() {
+  if (_dmfDirty) return;
+  _dmfDirty = true;
+  var btn = document.getElementById('dmfSaveBtn');
+  if (btn) {
+    btn.disabled = false;
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-warning');
+    btn.title = 'You have unsaved changes';
+  }
+  var status = document.getElementById('dmfSaveStatus');
+  if (status) {
+    status.textContent = 'Unsaved changes';
+    status.className = 'dmf-save-status text-warning fw-semibold';
+  }
+}
+
+function dmfClearDirty() {
+  _dmfDirty = false;
+  var btn = document.getElementById('dmfSaveBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.remove('btn-warning');
+    btn.classList.add('btn-primary');
+    btn.title = '';
+  }
+}
+
+// Intercept all anchor navigation when there are unsaved changes
+document.addEventListener('click', function(e) {
+  if (!_dmfDirty) return;
+  var anchor = e.target.closest('a[href]');
+  if (!anchor) return;
+  var href = anchor.getAttribute('href');
+  if (!href || href === '#' || href.startsWith('javascript:') || href.startsWith('mailto:')) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  var target = href; // capture for closure
+  confirmationDialog({
+    title: '<i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Unsaved Changes',
+    message: 'You have unsaved metadata changes. If you leave now, your changes will be lost.',
+    confirmText: 'Leave without saving',
+    cancelText: 'Stay and save',
+    showLoading: false,
+    onConfirm: function() { window.location.href = target; }
+  });
+}, true);
+
+var _dmfHideEmpty = false;
+
+function dmfIsFieldEmpty(fieldId) {
+  // In edit mode, check actual live input values in the DOM
+  if (dmfCanEdit) {
+    var container = document.getElementById('dmf-values-' + fieldId);
+    if (!container) return true;
+    var inputs = container.querySelectorAll('input, textarea');
+    if (inputs.length === 0) return true;
+    return Array.from(inputs).every(function(el) { return !el.value || !el.value.trim(); });
+  }
+  // In read-only mode, check server-loaded data
+  var vals = dmfData[fieldId] || [];
+  return vals.length === 0 || vals.every(function(v) { return !v.value || !v.value.trim(); });
+}
+
+function dmfMarkEmpty() {
+  document.querySelectorAll('[id^="dmf-group-"]').forEach(function(group) {
+    var fieldId = parseInt(group.id.replace('dmf-group-',''));
+    group.dataset.empty = dmfIsFieldEmpty(fieldId) ? 'true' : 'false';
+  });
+}
+
+function dmfApplyHideEmpty(hide) {
+  // Toggle individual empty fields
+  document.querySelectorAll('[id^="dmf-group-"]').forEach(function(group) {
+    if (group.dataset.empty === 'true') {
+      group.dataset.dmfHidden = hide ? 'true' : 'false';
+      group.style.display = hide ? 'none' : '';
+    }
+  });
+  // Toggle category cards that have no visible (non-empty) fields
+  document.querySelectorAll('.card.border.shadow-sm').forEach(function(card) {
+    var hasVisible = Array.from(card.querySelectorAll('[id^="dmf-group-"]'))
+      .some(function(g) { return g.dataset.empty !== 'true' || !hide; });
+    card.style.display = (!hasVisible && hide) ? 'none' : '';
+  });
+}
+
+function dmfUpdateHideBtn() {
+  var icon = document.getElementById('dmfHideEmptyIcon');
+  var label = document.getElementById('dmfHideEmptyLabel');
+  var btn = document.getElementById('dmfHideEmptyBtn');
+  if (_dmfHideEmpty) {
+    icon.className = 'bi bi-eye me-1';
+    label.textContent = 'Show all';
+    btn.classList.remove('btn-outline-secondary');
+    btn.classList.add('btn-outline-primary');
+  } else {
+    icon.className = 'bi bi-eye-slash me-1';
+    label.textContent = 'Hide empty';
+    btn.classList.remove('btn-outline-primary');
+    btn.classList.add('btn-outline-secondary');
+  }
+}
+
+function dmfToggleEmpty() {
+  _dmfHideEmpty = !_dmfHideEmpty;
+  try { localStorage.setItem('dmfHideEmpty', _dmfHideEmpty); } catch(e) {}
+  dmfMarkEmpty(); // re-evaluate from live DOM before applying
+  dmfApplyHideEmpty(_dmfHideEmpty);
+  dmfUpdateHideBtn();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('[id^="dmf-group-"]').forEach(function(group) {
     var fieldId = parseInt(group.id.replace('dmf-group-',''));
@@ -354,6 +478,16 @@ document.addEventListener('DOMContentLoaded', function() {
     var maxOccurs = parseInt(group.dataset.maxOccurs || '1');
     dmfRenderGroup(fieldId, fieldType, maxOccurs);
   });
+  // Detect any input/change in the form and mark dirty
+  if (dmfCanEdit) {
+    document.getElementById('dmfForm').addEventListener('input', dmfSetDirty);
+    document.getElementById('dmfForm').addEventListener('change', dmfSetDirty);
+  }
+  // Mark empty fields and restore hide-empty state
+  dmfMarkEmpty();
+  var hideEmpty = false;
+  try { hideEmpty = localStorage.getItem('dmfHideEmpty') === 'true'; } catch(e) {}
+  if (hideEmpty) { dmfApplyHideEmpty(true); _dmfHideEmpty = true; dmfUpdateHideBtn(); }
 });
 
 // Field definitions index (populated from JSTL below)

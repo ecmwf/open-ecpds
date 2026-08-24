@@ -46,6 +46,7 @@
             required
             pattern="[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*"
             title="Must start and end with a letter or digit; '_' or '-' allowed as single separators (e.g. group-1)"
+            data-char-filter="a-zA-Z0-9_-"
             oninput="validatePatternInput(this, 'name-feedback'); _checkNameExists(this.value, '/do/datafile/transfergroup')">
           <div id="name-feedback" class="form-text"></div>
           <div id="name-exists-msg" style="display:none" class="small mt-1"></div>

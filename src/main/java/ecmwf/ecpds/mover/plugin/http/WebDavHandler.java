@@ -88,6 +88,7 @@ import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.common.ecaccess.NativeAuthenticationProvider;
 import ecmwf.common.ecaccess.UserSession;
+import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ProxyEvent;
 import ecmwf.common.technical.ProxySocket;
@@ -268,6 +269,18 @@ public final class WebDavHandler extends HttpServlet {
                 final var userSession = NativeAuthenticationProvider.getInstance()
                         .getUserSession(request.getRemoteAddr(), username, password, "webdav", () -> {
                         });
+                // Check if WebDAV protocol is disabled for this user via portal.disabledProtocols
+                final var davSetup = userSession.getECtransSetup();
+                if (davSetup != null) {
+                    final var disabled = davSetup.getString(ECtransOptions.USER_PORTAL_DISABLED_PROTOCOLS);
+                    if (disabled != null && java.util.Arrays.stream(disabled.split(",")).map(String::trim)
+                            .anyMatch("dav"::equalsIgnoreCase)) {
+                        _log.info("WebDAV protocol disabled for user={} from={}", username, request.getRemoteAddr());
+                        userSession.close(true);
+                        throw new DavException(DavServletResponse.SC_FORBIDDEN,
+                                "WebDAV access is not enabled for this account");
+                    }
+                }
                 _log.debug("WebDAV session attached for user={} from={}", username, request.getRemoteAddr());
                 request.setDavSession(new EcpdsDavSession(userSession, username, request.getRemoteAddr()));
                 return true;

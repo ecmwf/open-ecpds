@@ -367,6 +367,21 @@ function validateMailInput(input) {
 }
 
 function validatePatternInput(input, feedbackId) {
+    // Strip characters that don't match the allowed set, if data-char-filter is set
+    var filter = input.getAttribute('data-char-filter');
+    if (filter) {
+        try {
+            var re = new RegExp('[^' + filter + ']', 'g');
+            var before = input.value;
+            var after = before.replace(re, '');
+            if (before !== after) {
+                var pos = input.selectionStart || 0;
+                var removedBefore = (before.substring(0, pos).match(re) || []).length;
+                input.value = after;
+                try { input.setSelectionRange(pos - removedBefore, pos - removedBefore); } catch(e2) {}
+            }
+        } catch(e) {}
+    }
     var fb = document.getElementById(feedbackId);
     if (!fb) return;
     var val = input.value.trim();
@@ -377,7 +392,11 @@ function validatePatternInput(input, feedbackId) {
     var valid = false;
     try { valid = input.validity.valid; } catch(e) { valid = true; } // guard against v-flag regex SyntaxError
     if (valid) {
-        fb.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
+        if (!filter) {
+            fb.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
+        } else {
+            fb.innerHTML = ''; // char filter prevents invalid input — green tick redundant
+        }
     } else {
         fb.innerHTML = '<i class="bi bi-x-circle-fill text-danger" title="' + (input.title || 'Invalid value') + '"></i>';
     }

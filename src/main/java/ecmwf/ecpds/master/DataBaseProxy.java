@@ -88,6 +88,9 @@ import ecmwf.common.database.TransferMethod;
 import ecmwf.common.database.TransferServer;
 import ecmwf.common.database.TransferStatistics;
 import ecmwf.common.database.Url;
+import ecmwf.common.database.ApiClient;
+import ecmwf.common.database.ApiEvent;
+import ecmwf.common.database.ApiPermission;
 import ecmwf.common.database.WebUser;
 import ecmwf.common.database.WeuCat;
 import ecmwf.ecpds.master.transfer.DestinationComparator;
@@ -2484,6 +2487,57 @@ final class DataBaseProxy implements DataBaseInterface {
         } catch (final RemoteException e) {
             throw new DataBaseException("getTransferStatisticsByDataTransferId", e);
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public ApiClient getApiClient(final String id) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getApiClient(" + id + ")");
+        return monitor.done(dataBaseInterface.getApiClient(id));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public ApiClient[] getApiClientArray() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getApiClientArray()");
+        return monitor.done(dataBaseInterface.getApiClientArray());
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public ApiPermission[] getApiPermissionsForClient(final String clientId) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getApiPermissionsForClient(" + clientId + ")");
+        return monitor.done(dataBaseInterface.getApiPermissionsForClient(clientId));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void addApiEvent(final ApiEvent event) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("addApiEvent()");
+        dataBaseInterface.addApiEvent(event);
+        monitor.done();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public ApiEvent[] getApiEventsForClient(final String clientId, final int maxRows)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getApiEventsForClient(" + clientId + ")");
+        return monitor.done(dataBaseInterface.getApiEventsForClient(clientId, maxRows));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public ApiEvent[] getApiEventsAll(final int maxRows) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getApiEventsAll()");
+        return monitor.done(dataBaseInterface.getApiEventsAll(maxRows));
+    }
+
+    @Override
+    public Collection<ApiEvent> getApiEventsFiltered(final String clientId, final java.util.Date date,
+            final String search, final DataBaseCursor cursor) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getApiEventsFiltered()");
+        return monitor.done(dataBaseInterface.getApiEventsFiltered(clientId, date, search, cursor));
     }
 
     /**

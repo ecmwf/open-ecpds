@@ -29,7 +29,7 @@ public class S3InventoryParser implements RemoteListingParser {
     public FtpParser.FileEntry[] parse(String input, ParserConfig config) throws Exception {
 
         CSVFormat format = CSVFormat.DEFAULT.builder().setTrim(true).setIgnoreEmptyLines(true).setHeader()
-                .setSkipHeaderRecord(true).build();
+                .setSkipHeaderRecord(true).get();
 
         CSVParser parser = CSVParser.parse(input, format);
 

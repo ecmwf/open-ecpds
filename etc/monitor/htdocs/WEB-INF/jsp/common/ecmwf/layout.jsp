@@ -612,15 +612,16 @@ function confirmationDialog(arg1, arg2, arg3) {
     var cancelText  = opts.cancelText  || "Cancel";
     var showLoading = (opts.showLoading !== false);
     var allowHtml   = (opts.allowHtml  !== false);
+    var hideCancelBtn = (opts.cancelText === null || opts.cancelText === false);
 
-    $("#confirmationModalLabel").text(title);
+    $("#confirmationModalLabel").html(title);
     if (allowHtml) {
         $("#confirmationDialogMessage").html(message);
     } else {
         $("#confirmationDialogMessage").text(message);
     }
     $("#confirmationModalConfirmBtn").text(confirmText);
-    $("#confirmationModalCancelBtn").text(cancelText);
+    $("#confirmationModalCancelBtn").text(cancelText).toggle(!hideCancelBtn);
 
     var $modal = $("#confirmationModal");
     var bsModal = bootstrap.Modal.getOrCreateInstance($modal[0]);

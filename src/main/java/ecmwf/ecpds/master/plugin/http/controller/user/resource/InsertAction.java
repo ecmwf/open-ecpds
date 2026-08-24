@@ -33,6 +33,10 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
+
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebResource;
 import ecmwf.web.ECMWFException;
@@ -58,6 +62,17 @@ public class InsertAction extends PDSAction {
             return mapping.findForward("cancel");
         }
         final var resourceActionForm = (ResourceActionForm) form;
+        final var path = resourceActionForm.getPath().trim();
+
+        if (path.isEmpty() || !path.matches("/[a-zA-Z0-9_./-]*")) {
+            final var errors = new ActionErrors();
+            errors.add(ActionMessages.GLOBAL_MESSAGE,
+                    new ActionMessage("errors.detail", path.isEmpty() ? "Path is required."
+                            : "Path must start with '/' and contain only letters, digits, '_', '-', '.' and '/'."));
+            saveErrors(request, errors);
+            return mapping.findForward("input");
+        }
+
         final var resource = ResourceHome.create();
         if (resource instanceof final WebResource webRessource) {
             resourceActionForm.populateResource(webRessource);

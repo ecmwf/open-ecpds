@@ -46,8 +46,10 @@
 <div class="col-sm-8">
 	<div class="d-flex align-items-center gap-2">
 		<input id="path" name="path" type="text" class="form-control form-control-sm"
+			required
 			pattern="/[a-zA-Z0-9_./-]*"
 			title="Path must start with '/' and contain only letters, digits, '_', '-', '.' and '/' (e.g. /do/transfer/destination/edit/)"
+			data-char-filter="a-zA-Z0-9_./-"
 			oninput="validatePatternInput(this, 'path-feedback'); _checkResourceExists(this.value)">
 		<span id="path-feedback"></span>
 	</div>

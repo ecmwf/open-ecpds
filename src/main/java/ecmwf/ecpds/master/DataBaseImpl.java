@@ -58,6 +58,9 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.callback.CallBackObject;
 import ecmwf.common.database.Alias;
+import ecmwf.common.database.ApiClient;
+import ecmwf.common.database.ApiEvent;
+import ecmwf.common.database.ApiPermission;
 import ecmwf.common.database.Association;
 import ecmwf.common.database.CatUrl;
 import ecmwf.common.database.Category;
@@ -177,6 +180,11 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     DataBaseImpl(final MasterServer master, final ECpdsBase ecpds) throws RemoteException {
         this.master = master;
         this.ecpds = ecpds;
+        final var migrationThread = new Thread(() -> {
+            migrateApiClientsFromCnf();
+        }, "ApiClient-cnf-migration");
+        migrationThread.setDaemon(true);
+        migrationThread.start();
         final var t = new Thread(() -> {
             try {
                 Thread.sleep(30_000);
@@ -2372,6 +2380,51 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         return monitor.done(withIncomingConnections(ecpds.getIncomingUserArray()));
     }
 
+    @Override
+    public ApiClient getApiClient(final String id) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getApiClient(" + id + ")");
+        return monitor.done(ecpds.getApiClient(id));
+    }
+
+    @Override
+    public ApiClient[] getApiClientArray() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getApiClientArray()");
+        return monitor.done(ecpds.getApiClientArray());
+    }
+
+    @Override
+    public ApiPermission[] getApiPermissionsForClient(final String clientId) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getApiPermissionsForClient(" + clientId + ")");
+        return monitor.done(ecpds.getApiPermissionsForClient(clientId));
+    }
+
+    @Override
+    public void addApiEvent(final ApiEvent event) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("addApiEvent()");
+        ecpds.insert(event, false);
+        monitor.done();
+    }
+
+    @Override
+    public ApiEvent[] getApiEventsForClient(final String clientId, final int maxRows)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getApiEventsForClient(" + clientId + ")");
+        return monitor.done(ecpds.getApiEventsForClient(clientId, maxRows));
+    }
+
+    @Override
+    public ApiEvent[] getApiEventsAll(final int maxRows) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getApiEventsAll()");
+        return monitor.done(ecpds.getApiEventsAll(maxRows));
+    }
+
+    @Override
+    public Collection<ApiEvent> getApiEventsFiltered(final String clientId, final java.util.Date date,
+            final String search, final DataBaseCursor cursor) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getApiEventsFiltered()");
+        return monitor.done(ecpds.getApiEventsFiltered(clientId, date, search, cursor));
+    }
+
     /**
      * Gets the operation array.
      *
@@ -3313,11 +3366,133 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      * @throws DataBaseException
      *             the data base exception
      */
-    private static void checkUser(final String userNameAndPassword, final String service) throws DataBaseException {
+    public static String sha256Hex(final String input) {
+        return ApiClient.sha256Hex(input);
+    }
+
+    public static String generateSecret() {
+        return ApiClient.generateSecret();
+    }
+
+    /**
+     * On startup, reads all entries from the [API] Cnf group and inserts any that are not already present in the
+     * database. The Cnf format is: clientId = plainSecret:permissionPattern After migration each client is managed
+     * exclusively through the database; the Cnf entries are kept for reference but are no longer authoritative.
+     */
+    private void migrateApiClientsFromCnf() {
+        final var keys = Cnf.keysAt("API");
+        if (keys.isEmpty()) {
+            return;
+        }
+        _log.info("ApiClient Cnf migration: {} entry/entries found in [API]", keys.size());
+        var migrated = 0;
+        for (final var clientId : keys) {
+            final var value = Cnf.at("API", clientId, "").split(":", 2);
+            if (value.length != 2 || value[0].isBlank() || value[1].isBlank()) {
+                _log.warn("ApiClient Cnf migration: skipping malformed entry for '{}' (expected secret:pattern)",
+                        clientId);
+                continue;
+            }
+            final var plainSecret = value[0];
+            final var pattern = value[1];
+            try {
+                final var existing = ecpds.getApiClientObject(clientId);
+                if (existing != null) {
+                    _log.debug("ApiClient Cnf migration: '{}' already in DB – skipping", clientId);
+                    continue;
+                }
+                // Insert the client
+                final var client = new ApiClient();
+                client.setId(clientId);
+                client.setSecretHash(ApiClient.sha256Hex(plainSecret));
+                client.setComment("Migrated from Cnf [API] on startup");
+                client.setActive(true);
+                client.setCreated(new java.sql.Timestamp(System.currentTimeMillis()));
+                ecpds.insert(client, true);
+                // Insert the permission
+                final var perm = new ApiPermission();
+                perm.setClientId(clientId);
+                perm.setPattern(pattern);
+                ecpds.insert(perm, false);
+                _log.info("ApiClient Cnf migration: inserted client '{}' with permission pattern '{}'", clientId,
+                        pattern);
+                migrated++;
+            } catch (final Exception e) {
+                _log.warn("ApiClient Cnf migration: failed to migrate '{}': {}", clientId, e.getMessage(), e);
+            }
+        }
+        if (migrated > 0) {
+            _log.info("ApiClient Cnf migration: {} client(s) migrated to DB. "
+                    + "Consider removing them from [API] in the Cnf file.", migrated);
+        } else {
+            _log.info("ApiClient Cnf migration: all [API] entries already present in DB – nothing to do.");
+        }
+    }
+
+    private void checkUser(final String userNameAndPassword, final String service) throws DataBaseException {
         final var credentials = userNameAndPassword.split(":");
         if (service != null && credentials.length == 2) {
-            final var permissions = Cnf.at("API", credentials[0], "").split(":");
-            if (permissions.length == 2 && permissions[0].equals(credentials[1])) {
+            final var clientId = credentials[0];
+            final var secret = credentials[1];
+            try {
+                final var client = ecpds.getApiClientObject(clientId);
+                if (client != null) {
+                    final var event = new ApiEvent();
+                    event.setClientId(clientId);
+                    event.setService(service);
+                    event.setDate(new java.sql.Timestamp(System.currentTimeMillis()));
+                    boolean authorized = false;
+                    String message = null;
+                    if (!client.getActive()) {
+                        message = "Client disabled";
+                    } else if (!sha256Hex(secret).equals(client.getSecretHash())) {
+                        message = "Invalid credentials";
+                    } else {
+                        final var perms = ecpds.getApiPermissionsForClient(clientId);
+                        for (final var p : perms) {
+                            try {
+                                if (service.matches(p.getPattern())) {
+                                    authorized = true;
+                                    break;
+                                }
+                            } catch (final PatternSyntaxException e) {
+                                _log.warn("Pattern matching {} -> {}", service, p.getPattern(), e);
+                            }
+                        }
+                        if (!authorized) {
+                            message = "Service not permitted";
+                        }
+                    }
+                    event.setSuccess(authorized);
+                    event.setMessage(message);
+                    try {
+                        ecpds.insert(event, false);
+                    } catch (final Exception logEx) {
+                        _log.warn("Failed to log API event", logEx);
+                    }
+                    if (authorized) {
+                        try {
+                            client.setLastUsed(new java.sql.Timestamp(System.currentTimeMillis()));
+                            ecpds.update(client);
+                        } catch (final Exception updateEx) {
+                            _log.warn("Failed to update ApiClient last used", updateEx);
+                        }
+                        return;
+                    }
+                    throw new DataBaseException("User not authorized: " + (message != null ? message : "denied"));
+                }
+            } catch (final DataBaseException rethrow) {
+                throw rethrow;
+            } catch (final Exception dbEx) {
+                _log.warn("DB lookup failed for API client {}, falling back to Cnf", clientId, dbEx);
+            }
+            // Legacy fallback: check Cnf [API] section.
+            // This path is only reached when the DB lookup fails (e.g. DB unreachable)
+            // or the client was never migrated. Entries are migrated to DB at startup.
+            final var permissions = Cnf.at("API", clientId, "").split(":");
+            if (permissions.length == 2 && permissions[0].equals(secret)) {
+                _log.warn("ApiClient '{}' authenticated via Cnf fallback – entry should be in DB, not in [API] config",
+                        clientId);
                 try {
                     if (service.matches(permissions[1])) {
                         return;

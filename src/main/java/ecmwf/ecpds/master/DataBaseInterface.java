@@ -36,6 +36,9 @@ import java.util.Map;
 import java.util.Set;
 
 import ecmwf.common.database.Alias;
+import ecmwf.common.database.ApiPermission;
+import ecmwf.common.database.ApiEvent;
+import ecmwf.common.database.ApiClient;
 import ecmwf.common.database.Association;
 import ecmwf.common.database.CatUrl;
 import ecmwf.common.database.Category;
@@ -1875,6 +1878,21 @@ public interface DataBaseInterface extends Remote {
      *             the remote exception
      */
     IncomingUser[] getIncomingUserArray() throws DataBaseException, RemoteException;
+
+    ApiClient getApiClient(String id) throws DataBaseException, RemoteException;
+
+    ApiClient[] getApiClientArray() throws DataBaseException, RemoteException;
+
+    ApiPermission[] getApiPermissionsForClient(String clientId) throws DataBaseException, RemoteException;
+
+    void addApiEvent(ApiEvent event) throws DataBaseException, RemoteException;
+
+    ApiEvent[] getApiEventsForClient(String clientId, int maxRows) throws DataBaseException, RemoteException;
+
+    ApiEvent[] getApiEventsAll(int maxRows) throws DataBaseException, RemoteException;
+
+    Collection<ApiEvent> getApiEventsFiltered(String clientId, java.util.Date date, String search,
+            DataBaseCursor cursor) throws DataBaseException, RemoteException;
 
     /**
      * Gets the destination.

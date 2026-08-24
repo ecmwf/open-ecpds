@@ -37,15 +37,18 @@ import ecmwf.common.database.Event;
 import ecmwf.ecpds.master.plugin.http.home.datafile.DataFileHome;
 import ecmwf.ecpds.master.plugin.http.home.datafile.TransferGroupHome;
 import ecmwf.ecpds.master.plugin.http.home.datafile.TransferServerHome;
+import ecmwf.ecpds.master.plugin.http.home.ecuser.ApiClientHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.HostHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingUserHome;
 import ecmwf.ecpds.master.plugin.http.model.datafile.DataFile;
 import ecmwf.ecpds.master.plugin.http.model.datafile.TransferGroup;
 import ecmwf.ecpds.master.plugin.http.model.datafile.TransferServer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Host;
+import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUser;
 
 /**
  * The Class PresentationEvent.
@@ -255,6 +258,44 @@ public class PresentationEvent {
                     relatedObject = TransferGroupHome.findByPrimaryKey(this.linkId);
                     this.name = ((TransferGroup) relatedObject).getName();
                     this.fileName = "N/A";
+                } else if ((pos = comment.indexOf("ApiClient(")) > 0 && (par = comment.indexOf(")", pos)) > 0) {
+                    type = "apiclient";
+                    this.linkId = comment.substring(pos + "ApiClient(".length(), par);
+                    this.fileName = "N/A";
+                    try {
+                        relatedObject = ApiClientHome.findByPrimaryKey(this.linkId);
+                        this.name = this.linkId;
+                    } catch (final Throwable t) {
+                        type = "lost";
+                        this.name = this.linkId;
+                    }
+                } else if ((pos = comment.indexOf("IncomingUser(")) > 0 && (par = comment.indexOf(")", pos)) > 0) {
+                    type = "incominguser";
+                    this.linkId = comment.substring(pos + "IncomingUser(".length(), par);
+                    this.fileName = "N/A";
+                    try {
+                        relatedObject = IncomingUserHome.findByPrimaryKey(this.linkId);
+                        this.name = ((IncomingUser) relatedObject).getId();
+                    } catch (final Throwable t) {
+                        type = "lost";
+                        this.name = this.linkId;
+                    }
+                } else if ((pos = comment.indexOf("ApiPermission(")) > 0 && (par = comment.indexOf(")", pos)) > 0) {
+                    final var raw = comment.substring(pos + "ApiPermission(".length(), par);
+                    final var comma = raw.indexOf(',');
+                    // Primary keys come as (pattern,clientId) per broker ordering
+                    final var clientId = comma >= 0 ? raw.substring(comma + 1) : raw;
+                    final var pattern = comma >= 0 ? raw.substring(0, comma) : "";
+                    type = "apiclient";
+                    this.linkId = clientId;
+                    this.fileName = pattern;
+                    try {
+                        relatedObject = ApiClientHome.findByPrimaryKey(clientId);
+                        this.name = clientId;
+                    } catch (final Throwable t) {
+                        type = "lost";
+                        this.name = clientId;
+                    }
                 }
             } catch (final Throwable t) {
                 log.warn("Could not get type for: " + comment, t);

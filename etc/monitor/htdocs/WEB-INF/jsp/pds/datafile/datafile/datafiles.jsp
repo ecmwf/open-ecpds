@@ -105,7 +105,7 @@
             pageLength: (function() { try { var v = parseInt(localStorage.getItem('datafilePageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
             lengthMenu: [[10, 25, 50, 100, 250], [10, 25, 50, 100, 250]],
             language: {
-                emptyTable:     'No Data Files found for the selected date and metadata.',
+                emptyTable: 'No matching records found.',
                 loadingRecords: 'Loading&hellip;',
                 processing:     '<i class="bi bi-hourglass-split"></i> Loading&hellip;'
             },
