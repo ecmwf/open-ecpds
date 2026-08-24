@@ -3286,20 +3286,21 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                     continue;
                 }
                 final var monitorName = root.substring("ECpdsMonitor/".length());
-                final var handler = master.getMonitorInterface(monitorName);
+                final var monitorInterface = master.getMonitorInterface(monitorName);
                 String json = "{}";
-                if (handler != null) {
+                if (monitorInterface != null) {
                     try {
-                        json = handler.getHttpCertificateJson();
-                        if ("{}".equals(json)) {
-                            _log.warn("getMonitorCertificatesJson: monitor {} returned empty cert JSON", monitorName);
-                        }
+                        json = monitorInterface.getHttpCertificateJson();
                     } catch (final Exception e) {
-                        _log.warn("getMonitorCertificatesJson: monitor {} unreachable: {}", monitorName,
+                        _log.warn("getMonitorCertificatesJson: monitor {} threw exception: {}", monitorName,
                                 e.getMessage());
                     }
                 } else {
-                    _log.warn("getMonitorCertificatesJson: no HandlerInterface for monitor {}", monitorName);
+                    _log.warn("getMonitorCertificatesJson: monitor {} is not a MonitorServer "
+                            + "(still running legacy HandlerServer?)", monitorName);
+                }
+                if ("{}".equals(json)) {
+                    _log.warn("getMonitorCertificatesJson: monitor {} returned empty cert JSON", monitorName);
                 }
                 result.put(monitorName, json);
             }
@@ -3307,39 +3308,6 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
             _log.warn("getMonitorCertificatesJson failed", e);
         }
         return monitor.done(result);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Deploys a new TLS certificate to every connected Monitor daemon.
-     */
-    @Override
-    public void deployHttpCertificateToAllMonitors(final ECpdsSession session, final byte[] pkcs12Bytes,
-            final String keystorePassword) throws MasterException {
-        final var monitor = new MonitorCall(
-                "deployHttpCertificateToAllMonitors(" + session.getWebUser().getName() + ")");
-        try {
-            for (final String root : master.getClientRoots()) {
-                if (!root.startsWith("ECpdsMonitor/")) {
-                    continue;
-                }
-                final var monitorName = root.substring("ECpdsMonitor/".length());
-                final var handler = master.getMonitorInterface(monitorName);
-                if (handler != null) {
-                    try {
-                        handler.deployHttpCertificate(pkcs12Bytes, keystorePassword);
-                        _log.info("Deployed TLS certificate to Monitor {}", monitorName);
-                    } catch (final Exception e) {
-                        _log.warn("deployHttpCertificateToAllMonitors: monitor {} failed: {}", monitorName,
-                                e.getMessage());
-                    }
-                }
-            }
-        } catch (final Exception e) {
-            _log.warn("deployHttpCertificateToAllMonitors failed", e);
-        }
-        monitor.done();
     }
 
     /**
@@ -3371,7 +3339,46 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     /**
      * {@inheritDoc}
      *
-     * Deploys a new TLS certificate to a single named Monitor daemon.
+     * Deploys a new TLS certificate to every connected Monitor daemon via direct RMI calls to
+     * {@link ecmwf.ecpds.monitor.MonitorInterface#deployHttpCertificate}.
+     */
+    @Override
+    public void deployHttpCertificateToAllMonitors(final ECpdsSession session, final byte[] pkcs12Bytes,
+            final String keystorePassword) throws MasterException {
+        final var monitor = new MonitorCall(
+                "deployHttpCertificateToAllMonitors(" + session.getWebUser().getName() + ")");
+        try {
+            for (final String root : master.getClientRoots()) {
+                if (!root.startsWith("ECpdsMonitor/")) {
+                    continue;
+                }
+                final var monitorName = root.substring("ECpdsMonitor/".length());
+                final var monitorInterface = master.getMonitorInterface(monitorName);
+                if (monitorInterface != null) {
+                    try {
+                        monitorInterface.deployHttpCertificate(pkcs12Bytes, keystorePassword);
+                        _log.info("Deployed TLS certificate to Monitor {} by user {}", monitorName,
+                                session.getWebUser().getName());
+                    } catch (final Exception e) {
+                        _log.warn("deployHttpCertificateToAllMonitors: monitor {} failed: {}", monitorName,
+                                e.getMessage());
+                    }
+                } else {
+                    _log.warn("deployHttpCertificateToAllMonitors: monitor {} is not a MonitorServer "
+                            + "(still running legacy HandlerServer?)", monitorName);
+                }
+            }
+        } catch (final Exception e) {
+            _log.warn("deployHttpCertificateToAllMonitors failed", e);
+        }
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Deploys a new TLS certificate to a single named Monitor daemon via a direct RMI call to
+     * {@link ecmwf.ecpds.monitor.MonitorInterface#deployHttpCertificate}.
      */
     @Override
     public void deployHttpCertificateToMonitor(final ECpdsSession session, final String monitorName,
@@ -3379,11 +3386,12 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         final var monitor = new MonitorCall(
                 "deployHttpCertificateToMonitor(" + session.getWebUser().getName() + "," + monitorName + ")");
         try {
-            final var handler = master.getMonitorInterface(monitorName);
-            if (handler == null) {
-                throw new MasterException("Monitor '" + monitorName + "' is not connected");
+            final var monitorInterface = master.getMonitorInterface(monitorName);
+            if (monitorInterface == null) {
+                throw new MasterException(
+                        "Monitor '" + monitorName + "' is not connected or is not running MonitorServer");
             }
-            handler.deployHttpCertificate(pkcs12Bytes, keystorePassword);
+            monitorInterface.deployHttpCertificate(pkcs12Bytes, keystorePassword);
             _log.info("Deployed TLS certificate to Monitor {} by user {}", monitorName, session.getWebUser().getName());
         } catch (final MasterException e) {
             throw e;

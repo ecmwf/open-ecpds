@@ -45,7 +45,7 @@
 -Dstarter.properties='etc/monitor/conf/starter.properties'
 -Dstarter.listenAddress='0.0.0.0'
 -Dstarter.port='3062'
--Dstarter.name=ecmwf.common.ecaccess.HandlerServer
+-Dstarter.name=ecmwf.ecpds.monitor.MonitorServer
 -Dstarter.domain=ECpdsMonitor
 -Dstarter.conf='etc/monitor/conf'
 -Dstarter.ext='lib'

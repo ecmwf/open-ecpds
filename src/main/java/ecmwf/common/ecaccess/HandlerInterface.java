@@ -61,26 +61,34 @@ public interface HandlerInterface extends ClientInterface {
      * {@code "{}"} if no certificate is available.
      *
      * <p>
-     * <strong>Note:</strong> this method must NOT be a {@code default} method. Java RMI's
+     * <strong>Note:</strong> this is intentionally a {@code default} method returning {@code "{}"}. Java RMI's
      * {@code RemoteObjectInvocationHandler} (Java 9+) invokes default interface methods locally on the caller JVM
-     * rather than forwarding the call to the remote object, which would silently return {@code "{}"} instead of
-     * querying the actual remote server.
-     * </p>
+     * rather than forwarding the call to the remote object. The pre-compiled {@code HandlerServer_Stub} in
+     * {@code ecaccess-stubs.jar} was generated before this method existed and has no entry for it.
+     *
+     * <p>
+     * Monitors running as {@link ecmwf.ecpds.monitor.MonitorServer} instead of the legacy {@code HandlerServer}
+     * implement {@link ecmwf.ecpds.monitor.MonitorInterface}, which re-declares this method as {@code abstract}. Since
+     * {@code MonitorInterface} has no pre-compiled stub, RMI uses a dynamic proxy that properly forwards the call to
+     * the remote {@code MonitorServer}. The {@code default} here preserves backward compatibility for legacy clients
+     * that still present a {@code HandlerServer_Stub}.
      *
      * @return JSON string; never {@code null}
      *
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    String getHttpCertificateJson() throws RemoteException;
+    default String getHttpCertificateJson() throws RemoteException {
+        return "{}";
+    }
 
     /**
      * Deploys a new PKCS#12 keystore to this handler's HTTPS server and reloads the certificate.
      *
      * <p>
-     * <strong>Note:</strong> this method must NOT be a {@code default} method — see {@link #getHttpCertificateJson()}
-     * for the rationale.
-     * </p>
+     * <strong>Note:</strong> this is intentionally a {@code default} no-op — see {@link #getHttpCertificateJson()} for
+     * the rationale. Monitors running as {@link ecmwf.ecpds.monitor.MonitorServer} override this method via
+     * {@link ecmwf.ecpds.monitor.MonitorInterface} and receive the call over the direct RMI channel.
      *
      * @param pkcs12Bytes
      *            the PKCS#12 keystore bytes
@@ -90,5 +98,7 @@ public interface HandlerInterface extends ClientInterface {
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    void deployHttpCertificate(final byte[] pkcs12Bytes, final String keystorePassword) throws RemoteException;
+    default void deployHttpCertificate(final byte[] pkcs12Bytes, final String keystorePassword) throws RemoteException {
+        // no-op: only effective on MonitorServer (MonitorInterface overrides this as abstract)
+    }
 }

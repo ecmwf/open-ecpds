@@ -3541,8 +3541,8 @@ public final class MasterServer extends ECaccessProvider
      *
      * @return the handler interface, or {@code null} if the monitor is not connected
      */
-    public HandlerInterface getMonitorInterface(final String name) {
-        return getClientInterface(name, "ECpdsMonitor", HandlerInterface.class);
+    public ecmwf.ecpds.monitor.MonitorInterface getMonitorInterface(final String name) {
+        return getClientInterface(name, "ECpdsMonitor", ecmwf.ecpds.monitor.MonitorInterface.class);
     }
 
     /**
@@ -6690,26 +6690,6 @@ public final class MasterServer extends ECaccessProvider
     @Override
     public String getService() {
         return "MasterServer";
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * The MasterServer does not expose an HTTP certificate; returns {@code "{}"}.
-     */
-    @Override
-    public String getHttpCertificateJson() {
-        return "{}";
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * The MasterServer does not manage an HTTPS keystore; this is a no-op.
-     */
-    @Override
-    public void deployHttpCertificate(final byte[] pkcs12Bytes, final String keystorePassword) {
-        // no-op – the MasterServer does not host an HTTPS server
     }
 
     /**
@@ -10213,9 +10193,14 @@ public final class MasterServer extends ECaccessProvider
                         _transfer.setProxyHostName(rr.hostForBackup.getName());
                         _transfer.setProxyHost(rr.hostForBackup);
                     }
-                    if (fromCache == null) { // Not updated in the scheduler so we have to do it now
-                        base.update(_transfer);
-                    }
+                    // Always persist HOS_NAME_PROXY and DAT_PROXY_TIME to DB.
+                    // When fromCache != null, _transfer IS the theTransferRepository object.
+                    // Only updating the in-memory object is not enough: the SQL queries
+                    // getDestinationExts and getPendingDataTransfers test HOS_NAME_PROXY IS
+                    // NOT NULL against the DB. If the write is skipped here, the
+                    // DestinationThread will never see the transfer as ready and it will
+                    // remain stuck in WAIT indefinitely for force-proxy destinations.
+                    base.update(_transfer);
                     complete = rr.complete;
                     if (complete) {
                         // Add a new history to inform about the successful
@@ -12963,6 +12948,13 @@ public final class MasterServer extends ECaccessProvider
                             transfer.setSize(dr.dataFile.getSize());
                             transfer.setDataFile(dataFile);
                             transfer.setDataFileId(dataFileId);
+                            // For ASAP transfers set to WAIT, ensure retryTime is in the
+                            // past. If not reset here, a stale future retryTime (e.g. from
+                            // a previous RETR cycle) would cause _reload() to silently skip
+                            // the transfer until the retryTime expires.
+                            if (transfer.getAsap() && StatusFactory.WAIT.equals(transfer.getStatusCode())) {
+                                transfer.setRetryTime(new Timestamp(System.currentTimeMillis()));
+                            }
                             if (StatusFactory.RETR.equals(currentStatus)) {
                                 // The update does not write an history if the
                                 // status is RETR.
