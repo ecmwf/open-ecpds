@@ -33,6 +33,7 @@ ecmwf.ecpds.master.plugin.http.controller.transfer.method
 ecmwf.ecpds.master.plugin.http.controller.user.category
 ecmwf.ecpds.master.plugin.http.controller.user
 ecmwf.ecpds.master.plugin.http.controller.user.user
+ecmwf.ecpds.master.plugin.http.controller.user.api
 ecmwf.ecpds.master.plugin.http.controller.user.incoming
 ecmwf.ecpds.master.plugin.http.controller.user.resource
 ecmwf.ecpds.master.plugin.http.controller.user.policy
