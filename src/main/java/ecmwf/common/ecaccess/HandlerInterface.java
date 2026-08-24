@@ -58,20 +58,29 @@ public interface HandlerInterface extends ClientInterface {
 
     /**
      * Returns a JSON-encoded snapshot of the TLS certificate currently loaded by this handler's HTTPS server, or
-     * {@code "{}"} if no certificate is available. The default implementation returns {@code "{}"}.
+     * {@code "{}"} if no certificate is available.
+     *
+     * <p>
+     * <strong>Note:</strong> this method must NOT be a {@code default} method. Java RMI's
+     * {@code RemoteObjectInvocationHandler} (Java 9+) invokes default interface methods locally on the caller JVM
+     * rather than forwarding the call to the remote object, which would silently return {@code "{}"} instead of
+     * querying the actual remote server.
+     * </p>
      *
      * @return JSON string; never {@code null}
      *
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    default String getHttpCertificateJson() throws RemoteException {
-        return "{}";
-    }
+    String getHttpCertificateJson() throws RemoteException;
 
     /**
-     * Deploys a new PKCS#12 keystore to this handler's HTTPS server and reloads the certificate. The default
-     * implementation is a no-op.
+     * Deploys a new PKCS#12 keystore to this handler's HTTPS server and reloads the certificate.
+     *
+     * <p>
+     * <strong>Note:</strong> this method must NOT be a {@code default} method — see {@link #getHttpCertificateJson()}
+     * for the rationale.
+     * </p>
      *
      * @param pkcs12Bytes
      *            the PKCS#12 keystore bytes
@@ -81,7 +90,5 @@ public interface HandlerInterface extends ClientInterface {
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    default void deployHttpCertificate(final byte[] pkcs12Bytes, final String keystorePassword) throws RemoteException {
-        // no-op default – implementors override to support certificate deployment
-    }
+    void deployHttpCertificate(final byte[] pkcs12Bytes, final String keystorePassword) throws RemoteException;
 }

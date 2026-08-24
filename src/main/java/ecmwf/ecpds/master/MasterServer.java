@@ -6693,6 +6693,26 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * The MasterServer does not expose an HTTP certificate; returns {@code "{}"}.
+     */
+    @Override
+    public String getHttpCertificateJson() {
+        return "{}";
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * The MasterServer does not manage an HTTPS keystore; this is a no-op.
+     */
+    @Override
+    public void deployHttpCertificate(final byte[] pkcs12Bytes, final String keystorePassword) {
+        // no-op – the MasterServer does not host an HTTPS server
+    }
+
+    /**
      * Gets the password.
      *
      * @return the password
