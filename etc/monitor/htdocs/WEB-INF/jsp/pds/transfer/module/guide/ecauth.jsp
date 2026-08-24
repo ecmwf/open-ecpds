@@ -48,8 +48,8 @@
               <tr><td><code>ecauth.cwd</code></td><td><em>from host</em></td><td>Initial working directory after login. Defaults to the user's home directory from the ECauth session.</td></tr>
               <tr><td><code>ecauth.connectTimeOut</code></td><td><code>30s</code></td><td>TCP connection timeout</td></tr>
               <tr><td><code>ecauth.sessionTimeOut</code></td><td><em>none</em></td><td>Maximum lifetime of an interactive session before it is recycled</td></tr>
-              <tr><td><code>ecauth.keepAlive</code></td><td><code>0</code></td><td>Send keep-alive command every N ms (0 = disabled)</td></tr>
-              <tr><td><code>ecauth.useNoop</code></td><td><code>0</code></td><td>Send NOOP every N ms to keep the session alive (0 = disabled)</td></tr>
+              <tr><td><code>ecauth.keepAlive</code></td><td><code>0</code></td><td>Interval between keep-alive commands (0 = disabled); accepts duration notation, e.g. <code>30s</code>, <code>1m</code></td></tr>
+              <tr><td><code>ecauth.useNoop</code></td><td><code>0</code></td><td>Interval between NOOP commands to keep the session alive (0 = disabled); accepts duration notation, e.g. <code>30s</code></td></tr>
             </tbody>
           </table>
         </div>

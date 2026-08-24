@@ -19,8 +19,8 @@
 | `ftps.connectionTimeOut` | `1m` | Socket connection timeout |
 | `ftps.readTimeOut` | `1m` | Socket read timeout |
 | `ftps.closeTimeOut` | `1m` | Graceful close timeout |
-| `ftps.keepAlive` | `0` | Send keep-alive command every N ms (0 = disabled) |
-| `ftps.useNoop` | `0` | Send NOOP command every N ms to keep control channel alive (0 = disabled) |
+| `ftps.keepAlive` | `0` | Interval between keep-alive commands (0 = disabled); accepts duration notation, e.g. `30s`, `1m` |
+| `ftps.useNoop` | `0` | Interval between NOOP commands to keep the control channel alive (0 = disabled); accepts duration notation, e.g. `30s` |
 | `ftps.sendBuffSize` | *OS default* | TCP send buffer size (e.g. `256KB`) |
 | `ftps.receiveBuffSize` | *OS default* | TCP receive buffer size |
 

@@ -45,8 +45,8 @@
           </tr>
           <tr>
             <td><code>test.delay</code></td>
-            <td><code>500ms</code></td>
-            <td>Fixed delay injected before every operation (connect, del, put, copy, size, close). Accepts duration notation, e.g. <code>1s</code>, <code>200ms</code>.</td>
+            <td><code>PT0.5S</code></td>
+            <td>Fixed delay injected before every operation (connect, del, put, copy, size, close). Accepts duration notation, e.g. <code>1s</code>, <code>PT0.2S</code>.</td>
           </tr>
           <tr>
             <td><code>test.errorsFrequency</code></td>
@@ -65,7 +65,7 @@ test.delay=1s
 test.errorsFrequency=0</pre>
       <pre class="small p-2 rounded mb-0" style="background:var(--bs-secondary-bg);white-space:pre-wrap;"># Fast throughput test with occasional errors (1 in every 50 ops)
 test.bytesPerSec=500MB
-test.delay=0ms
+test.delay=0s
 test.errorsFrequency=50</pre>
     </div>
 

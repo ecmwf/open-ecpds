@@ -48,8 +48,8 @@
               <tr><td><code>ftps.connectionTimeOut</code></td><td><code>1m</code></td><td>Socket connection timeout</td></tr>
               <tr><td><code>ftps.readTimeOut</code></td><td><code>1m</code></td><td>Socket read timeout</td></tr>
               <tr><td><code>ftps.closeTimeOut</code></td><td><code>1m</code></td><td>Graceful close timeout</td></tr>
-              <tr><td><code>ftps.keepAlive</code></td><td><code>0</code></td><td>Send keep-alive command every N ms (0 = disabled)</td></tr>
-              <tr><td><code>ftps.useNoop</code></td><td><code>0</code></td><td>Send NOOP command every N ms to keep control channel alive (0 = disabled)</td></tr>
+              <tr><td><code>ftps.keepAlive</code></td><td><code>0</code></td><td>Interval between keep-alive commands (0 = disabled); accepts duration notation, e.g. <code>30s</code>, <code>1m</code></td></tr>
+              <tr><td><code>ftps.useNoop</code></td><td><code>0</code></td><td>Interval between NOOP commands to keep the control channel alive (0 = disabled); accepts duration notation, e.g. <code>30s</code></td></tr>
               <tr><td><code>ftps.sendBuffSize</code></td><td><em>OS default</em></td><td>TCP send buffer size (e.g. <code>256KB</code>)</td></tr>
               <tr><td><code>ftps.receiveBuffSize</code></td><td><em>OS default</em></td><td>TCP receive buffer size</td></tr>
             </tbody>

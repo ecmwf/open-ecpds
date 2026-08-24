@@ -22,7 +22,7 @@
 | Option | Default | Description |
 |--------|---------|-------------|
 | `test.bytesPerSec` | `10MB` | Simulated transfer rate. Controls how quickly bytes are consumed by the null stream and how long a copy operation sleeps. Accepts byte-size notation, e.g. `50MB`, `1GB`. |
-| `test.delay` | `500ms` | Fixed delay injected before every operation (connect, del, put, copy, size, close). Accepts duration notation, e.g. `1s`, `200ms`. |
+| `test.delay` | `PT0.5S` | Fixed delay injected before every operation (connect, del, put, copy, size, close). Accepts duration notation, e.g. `1s`, `PT0.2S`. |
 | `test.errorsFrequency` | `1000` | Inject a simulated `IOException` once every N status-changing operations. Set to `0` to disable error injection entirely. Useful for testing retry and error-handling behaviour. |
 
 ## Examples
@@ -41,7 +41,7 @@ Fast throughput test with occasional errors (1 in every 50 ops):
 ```properties
 # Fast throughput test with occasional errors (1 in every 50 ops)
 test.bytesPerSec = "500MB"
-test.delay = "0ms"
+test.delay = "0s"
 test.errorsFrequency = "50"
 ```
 

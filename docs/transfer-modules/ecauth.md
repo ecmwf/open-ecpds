@@ -20,8 +20,8 @@
 | `ecauth.cwd` | *from host* | Initial working directory after login. Defaults to the user's home directory from the ECauth session. |
 | `ecauth.connectTimeOut` | `30s` | TCP connection timeout |
 | `ecauth.sessionTimeOut` | *none* | Maximum lifetime of an interactive session before it is recycled |
-| `ecauth.keepAlive` | `0` | Send keep-alive command every N ms (0 = disabled) |
-| `ecauth.useNoop` | `0` | Send NOOP every N ms to keep the session alive (0 = disabled) |
+| `ecauth.keepAlive` | `0` | Interval between keep-alive commands (0 = disabled); accepts duration notation, e.g. `30s`, `1m` |
+| `ecauth.useNoop` | `0` | Interval between NOOP commands to keep the session alive (0 = disabled); accepts duration notation, e.g. `30s` |
 
 ## SSH / Auth
 

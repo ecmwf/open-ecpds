@@ -245,7 +245,7 @@ If a file already exists in the database, the scheduler evaluates whether it sho
 
 | Option | Default | Description |
 |---|---|---|
-| `acquisition.maximumDuration` | *server default (10 min)* | Per-host maximum run time. If the AcquisitionThread runs longer than this it is automatically interrupted. Overrides the server-wide `Scheduler.maximumDurationAcquisitionThread` setting for this host. |
+| `acquisition.maximumDuration` | *server default (`10m`)* | Per-host maximum run time. If the AcquisitionThread runs longer than this it is automatically interrupted. Overrides the server-wide `Scheduler.maximumDurationAcquisitionThread` setting for this host. |
 | `acquisition.interruptSlow` | *server default* | Override the server-wide `Scheduler.interruptSlowAcquisitionThread` flag for this host. Set to `false` to allow this host to exceed the maximum duration without being killed. |
 
 ### Pattern matching

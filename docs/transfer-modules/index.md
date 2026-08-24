@@ -56,7 +56,7 @@ sftp.cipher = "aes128-ctr"
 Values commonly accept human-friendly notation:
 
 - **Byte sizes** — e.g. `10MB`, `1GB`.
-- **Durations** — e.g. `500ms`, `1s`, `5min`.
+- **Durations** — e.g. `30s`, `5m`, `PT1H30M`. Accepts shorthand suffixes (`s`=seconds, `m`=minutes, `h`=hours, `d`=days, `w`=weeks, `y`=years) or full ISO-8601 notation (e.g. `PT30S`, `PT0.5S`).
 - **Booleans** — `yes`/`no` or `true`/`false` (see each module page for specifics).
 
 ## Where modules fit
