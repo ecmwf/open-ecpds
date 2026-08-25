@@ -33,6 +33,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import ecmwf.common.security.TOTP;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingUserHome;
 import ecmwf.web.ECMWFException;
@@ -58,6 +59,7 @@ public class UpdateFormAction extends PDSAction {
             final var haf = (IncomingUserActionForm) form;
             final var h = IncomingUserHome.findByPrimaryKey(id);
             haf.populateFromUser(h);
+            request.setAttribute("totpActive", TOTP.ACTIVE);
             return mapping.findForward("success");
         }
         return mapping.findForward("cancel");

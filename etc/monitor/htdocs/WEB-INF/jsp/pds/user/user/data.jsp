@@ -18,6 +18,11 @@
 				<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 					<i class="bi bi-person text-primary"></i>
 					<span class="fw-semibold">Web User: <c:out value="${user.uid}" /></span>
+					<button class="btn btn-link btn-sm text-muted p-0 ms-1" type="button"
+							data-bs-toggle="collapse" data-bs-target="#webUserViewInfo"
+							aria-expanded="false" title="About Web Users">
+						<i class="bi bi-info-circle"></i>
+					</button>
 					<auth:if basePathKey="user.basepath" paths="/edit/insert_form">
 					<auth:then>
 					<div class="d-flex gap-1 ms-auto flex-shrink-0 align-items-center">
@@ -35,6 +40,18 @@
 					</div>
 					</auth:then>
 					</auth:if>
+				</div>
+				<div class="collapse" id="webUserViewInfo">
+					<div class="px-3 py-2 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+						<strong class="d-block mb-1">Web User &mdash; overview</strong>
+						<p class="mb-1">A <em>Web User</em> is an account that can log in to the <strong>OpenECPDS Monitoring UI</strong>. Access to individual sections of the UI is controlled by the <strong>Web Categories</strong> assigned to the account.</p>
+						<ul class="mb-0 ps-3">
+							<li><strong>Web Login</strong> &mdash; the unique username used to log in.</li>
+							<li><strong>Comment</strong> &mdash; a free-text label to identify the account (e.g. full name or team).</li>
+							<li><strong>Enabled</strong> &mdash; when disabled, the user cannot log in regardless of authentication mode.</li>
+							<li><strong>Password</strong> &mdash; used for authentication only when TOTP is not active globally. When TOTP is active, the password is ignored at login time but can be pre-set as a fallback.</li>
+						</ul>
+					</div>
 				</div>
 				<div class="card-body py-0">
 					<div class="field-grid">

@@ -302,7 +302,7 @@
 %>
     <tr>
       <td><strong><%=monName%></strong></td>
-      <td style="font-family:monospace; font-size:.78rem;"><%=subj != null ? subj : "–"%></td>
+      <td style="font-family:monospace; font-size:.78rem; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="<%=subj != null ? subj : ""%>"><%=subj != null ? subj : "–"%></td>
       <td style="font-size:.78rem; max-width:200px;">
         <% if (monSanList.isEmpty()) { %>–<% } else {
              final int monShow = Math.min(3, monSanList.size());
@@ -473,7 +473,7 @@
 %>
     <tr>
       <td><strong><a href="/do/datafile/transferserver/<%=moverName%>"><%=moverName%></a></strong></td>
-      <td style="font-family:monospace; font-size:.78rem;"><%=subj != null ? subj : "–"%></td>
+      <td style="font-family:monospace; font-size:.78rem; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="<%=subj != null ? subj : ""%>"><%=subj != null ? subj : "–"%></td>
       <td style="font-size:.78rem; max-width:200px;">
         <% if (moverSanList.isEmpty()) { %>–<% } else {
              final int mvShow = Math.min(3, moverSanList.size());

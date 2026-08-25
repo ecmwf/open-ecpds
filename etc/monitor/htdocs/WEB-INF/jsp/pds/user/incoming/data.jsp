@@ -29,10 +29,17 @@
 			<div class="card">
 				<div class="card-header d-flex align-items-center gap-2 flex-wrap" style="background:var(--bs-secondary-bg)">
 					<i class="bi bi-person-fill-gear text-primary flex-shrink-0"></i>
-					<span class="fw-semibold text-truncate" style="min-width:0;flex:1 1 auto">Data User: <c:out value="${incoming.id}" /></span>
-					<a href="#" class="btn btn-sm btn-outline-info ms-1 flex-shrink-0"
-					   onclick="var el=document.getElementById('portalServiceGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"
-					   title="Open Portal Service Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Portal Service </span>Guide</a>
+					<div class="d-flex align-items-center gap-2 flex-grow-1 flex-shrink-1" style="min-width:0">
+						<span class="fw-semibold text-truncate" style="min-width:0">Data User: <c:out value="${incoming.id}" /></span>
+						<button class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" type="button"
+								data-bs-toggle="collapse" data-bs-target="#dataUserViewInfo"
+								aria-expanded="false" title="About Data Users">
+							<i class="bi bi-info-circle"></i>
+						</button>
+						<a href="#" class="btn btn-sm btn-outline-info flex-shrink-0"
+						   onclick="var el=document.getElementById('portalServiceGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"
+						   title="Open Portal Service Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Portal Service </span>Guide</a>
+					</div>
 					<auth:if basePathKey="incoming.basepath" paths="/edit/insert_form">
 					<auth:then>
 					<div class="d-flex gap-1 ms-auto flex-shrink-0 align-items-center">
@@ -57,6 +64,19 @@
 					</div>
 					</auth:then>
 					</auth:if>
+				</div>
+				<div class="collapse" id="dataUserViewInfo">
+					<div class="px-3 py-2 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+						<strong class="d-block mb-1">Data User &mdash; overview</strong>
+						<p class="mb-1">A <em>Data User</em> is an account that can connect to the <strong>OpenECPDS Data Portal</strong> (HTTPS, SFTP, FTP, WebDAV…) to push or pull data files. Access is controlled by the <strong>Data Policies</strong> and <strong>Destinations</strong> assigned to the account.</p>
+						<ul class="mb-1 ps-3">
+							<li><strong>Data Login</strong> &mdash; unique username used to authenticate against the Data Portal.</li>
+							<li><strong>Portal Service</strong> &mdash; <em>Standard Login</em> requires credentials (TOTP or password); <em>Open Access</em> allows anyone without credentials; <em>Self-Service</em> lets visitors register with their e-mail and receive generated credentials automatically.</li>
+							<li><strong>TOTP authentication</strong> &mdash; when enabled, this user authenticates via an external Time-based One-Time Password provider. The password field is ignored. Note: enabling TOTP when it is not active globally on the server will lock the user out.</li>
+							<li><strong>Enabled</strong> &mdash; when disabled, the user cannot connect regardless of authentication mode.</li>
+						</ul>
+						<p class="mb-0">Use <strong>Portal Service Guide</strong> for a detailed walkthrough of each service mode and its configuration requirements.</p>
+					</div>
 				</div>
 				<div class="card-body py-0">
 					<div class="field-grid">

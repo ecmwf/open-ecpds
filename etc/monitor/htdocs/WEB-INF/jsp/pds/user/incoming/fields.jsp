@@ -48,6 +48,35 @@
             <c:otherwise>Edit Data User</c:otherwise>
           </c:choose>
         </span>
+        <button class="btn btn-link btn-sm text-muted p-0 ms-1" type="button"
+                data-bs-toggle="collapse" data-bs-target="#dataUserCardInfo"
+                aria-expanded="false" title="About this section">
+          <i class="bi bi-info-circle"></i>
+        </button>
+        <a href="#" class="btn btn-sm btn-outline-info ms-1"
+           onclick="var el=document.getElementById('portalServiceGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"
+           title="Open Portal Service Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Portal Service </span>Guide</a>
+      </div>
+      <div class="collapse" id="dataUserCardInfo">
+        <div class="px-3 py-2 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+          <strong class="d-block mb-1">Data User &mdash; overview</strong>
+          <p class="mb-1">A <em>Data User</em> is an account that can connect to the <strong>OpenECPDS Data Portal</strong> (HTTPS, SFTP, FTP, WebDAV…) to push or pull data files. Each Data User belongs to one or more <em>Destinations</em> that control what data they can access.</p>
+          <ul class="mb-1 ps-3">
+            <li><strong>Data Login</strong> &mdash; unique username used to authenticate against the Data Portal.</li>
+            <li><strong>Portal Service</strong> &mdash; controls how access is granted:
+              <ul class="ps-3 mb-0">
+                <li><em>Standard Login</em> — credentials (TOTP or password) are required.</li>
+                <li><em>Open Access</em> — anyone can connect without credentials.</li>
+                <li><em>Self-Service</em> — visitors register with their e-mail and receive generated credentials automatically.</li>
+              </ul>
+            </li>
+            <li><strong>Comment</strong> &mdash; a free-text label to identify the account (e.g. organisation or contact name).</li>
+            <li><strong>Country</strong> &mdash; country associated with this user, used to display the corresponding flag in the UI.</li>
+            <li><strong>TOTP authentication</strong> &mdash; when enabled, this user authenticates via Time-based One-Time Password (external provider). The password field is ignored while TOTP is active for this user. <strong>Note:</strong> if TOTP is not active globally on the server, enabling this toggle will effectively lock the user out (equivalent to disabling the account) until the server is restarted with TOTP activated.</li>
+            <li><strong>Or password</strong> &mdash; local password used for authentication when TOTP is disabled for this user. Use <em>Generate</em> to create a secure random password.</li>
+            <li><strong>Enabled</strong> &mdash; when disabled, the user cannot connect regardless of authentication mode.</li>
+          </ul>
+        </div>
       </div>
       <div class="card-body">
 
@@ -127,6 +156,12 @@
                      tabindex="0"></i>
                 </label>
                 <div class="form-check form-switch mb-0"><html:checkbox property="isSynchronized" styleId="isSynchronized" onclick="handleTOTPClick(this)" styleClass="form-check-input" /></div>
+                <c:if test="${!totpActive}">
+                <div class="d-flex align-items-start gap-2 mt-2 p-2 rounded" style="background:var(--bs-warning-bg-subtle,#fff3cd); border:1px solid var(--bs-warning-border-subtle,#ffc107); font-size:0.78rem;">
+                  <i class="bi bi-exclamation-triangle-fill text-warning mt-1 flex-shrink-0"></i>
+                  <span><strong>TOTP is not active globally.</strong> Enabling this will <strong>lock out</strong> the user — TOTP authentication will fail and the password field is bypassed. This is equivalent to disabling the account, unless the server is restarted with TOTP activated.</span>
+                </div>
+                </c:if>
               </div>
               <div class="col-12 col-md-6" id="passwordRow">
                 <label class="form-label form-label-sm fw-semibold text-muted mb-1">Or password
@@ -187,10 +222,18 @@
                 <html:options collection="countries" property="iso" labelProperty="name" />
               </html:select></div></div>
           </div>
-          <div id="standardLoginFields">
-          <div class="row g-2 align-items-center">
+          <div id="standardLoginFields" class="d-flex flex-column gap-2">
+          <div class="row g-2 align-items-start">
             <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">TOTP authentication <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Enable Time-based One-Time Password (TOTP) authentication. When enabled, the password field is not used." tabindex="0"></i></label></div>
-            <div class="col-sm-8"><div class="form-check form-switch mb-0"><html:checkbox property="isSynchronized" styleId="isSynchronized" onclick="handleTOTPClick(this)" styleClass="form-check-input" /></div></div>
+            <div class="col-sm-8">
+              <div class="form-check form-switch mb-0"><html:checkbox property="isSynchronized" styleId="isSynchronized" onclick="handleTOTPClick(this)" styleClass="form-check-input" /></div>
+              <c:if test="${!totpActive}">
+              <div class="d-flex align-items-start gap-2 mt-2 p-2 rounded" style="background:var(--bs-warning-bg-subtle,#fff3cd); border:1px solid var(--bs-warning-border-subtle,#ffc107); font-size:0.78rem;">
+                <i class="bi bi-exclamation-triangle-fill text-warning mt-1 flex-shrink-0"></i>
+                <span><strong>TOTP is not active globally.</strong> If enabled here, the user will <strong>not be able to log in</strong> — TOTP authentication will fail and the password field is bypassed. This is equivalent to disabling the account, unless the server is restarted with TOTP activated.</span>
+              </div>
+              </c:if>
+            </div>
           </div>
           <div class="row g-2 align-items-center" id="passwordRow">
             <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Or password <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Password for authentication when TOTP is disabled. Use 'Generate' to create a secure random password." tabindex="0"></i></label></div>
@@ -798,3 +841,5 @@
         }, 400);
     }
 </script>
+<%-- Portal Service Guide offcanvas --%>
+<jsp:include page="/WEB-INF/jsp/pds/user/incoming/portal_service_guide.jsp"/>

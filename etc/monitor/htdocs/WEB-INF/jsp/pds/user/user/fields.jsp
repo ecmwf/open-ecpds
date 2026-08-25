@@ -36,6 +36,23 @@
 						<c:otherwise>Edit Web User</c:otherwise>
 					</c:choose>
 				</span>
+				<button class="btn btn-link btn-sm text-muted p-0 ms-1" type="button"
+						data-bs-toggle="collapse" data-bs-target="#webUserCardInfo"
+						aria-expanded="false" title="About this section">
+					<i class="bi bi-info-circle"></i>
+				</button>
+			</div>
+			<div class="collapse" id="webUserCardInfo">
+				<div class="px-3 py-2 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+					<strong class="d-block mb-1">Web User &mdash; overview</strong>
+					<p class="mb-1">A <em>Web User</em> is an account that can log in to the <strong>OpenECPDS Monitoring UI</strong>. Access is controlled by the <strong>Web Categories</strong> assigned to the account.</p>
+					<ul class="mb-1 ps-3">
+						<li><strong>Web Login</strong> &mdash; the unique username used to log in.</li>
+						<li><strong>Password</strong> &mdash; the fallback password stored locally in the database. Used for authentication <em>only</em> when TOTP is <strong>not</strong> active globally. When TOTP is active, this password is ignored at login time but can still be pre-set as a safety fallback. The current TOTP state is always shown as a note below the password field.</li>
+						<li><strong>Comment</strong> &mdash; a free-text label to identify the account (e.g. full name or team).</li>
+						<li><strong>Enabled</strong> &mdash; when disabled, the user cannot log in regardless of authentication mode.</li>
+					</ul>
+				</div>
 			</div>
 			<div class="card-body">
 				<div class="d-flex flex-column gap-2">
@@ -64,7 +81,7 @@
 							</div>
 						</div>
 					</c:if>
-					<div class="row g-2 align-items-center">
+					<div class="row g-2 align-items-start">
 						<div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Password</label></div>
 						<div class="col-sm-8">
 							<div class="d-flex align-items-center gap-2">
@@ -73,6 +90,18 @@
 								<button type="button" id="buttonPassword" name="buttonPassword"
 									class="btn btn-sm btn-outline-secondary" onclick="generatePassword(); return false">Generate</button>
 							</div>
+							<c:if test="${totpActive}">
+							<div class="d-flex align-items-start gap-2 mt-2 p-2 rounded" style="background:var(--bs-warning-bg-subtle,#fff3cd); border:1px solid var(--bs-warning-border-subtle,#ffc107); font-size:0.8rem;">
+								<i class="bi bi-exclamation-triangle-fill text-warning mt-1 flex-shrink-0"></i>
+								<span><strong>TOTP authentication is active.</strong> This password is currently <strong>not used</strong> for login — authentication is handled externally via TOTP. The password can still be set here as a fallback for use if TOTP is ever deactivated.</span>
+							</div>
+							</c:if>
+							<c:if test="${!totpActive}">
+							<div class="d-flex align-items-start gap-2 mt-2 p-2 rounded" style="background:var(--bs-info-bg-subtle,#cff4fc); border:1px solid var(--bs-info-border-subtle,#9eeaf9); font-size:0.8rem;">
+								<i class="bi bi-info-circle-fill text-info mt-1 flex-shrink-0"></i>
+								<span><strong>TOTP is not active.</strong> This password is currently <strong>used for login</strong>. If TOTP is activated on the server, this password will be ignored and authentication will be handled externally.</span>
+							</div>
+							</c:if>
 						</div>
 					</div>
 					<div class="row g-2 align-items-center">
