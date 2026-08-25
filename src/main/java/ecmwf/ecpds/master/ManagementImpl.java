@@ -100,6 +100,7 @@ import ecmwf.ecpds.master.transfer.HostOption;
 import ecmwf.ecpds.master.transfer.StatusFactory;
 import ecmwf.ecpds.master.transfer.TransferScheduler;
 import ecmwf.ecpds.master.transfer.TransferServerProvider;
+import ecmwf.common.security.TOTP;
 
 /**
  * The Class ManagementImpl.
@@ -2900,6 +2901,11 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         } finally {
             master.logECpdsAction(action, null, exception);
         }
+    }
+
+    @Override
+    public boolean isTotpActive() {
+        return TOTP.ACTIVE;
     }
 
     /**

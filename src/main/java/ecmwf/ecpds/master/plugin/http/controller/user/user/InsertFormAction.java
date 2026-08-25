@@ -33,7 +33,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
-import ecmwf.common.security.TOTP;
+import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.model.users.User;
@@ -52,7 +52,12 @@ public class InsertFormAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
-        request.setAttribute("totpActive", TOTP.ACTIVE);
+        boolean totpActive = false;
+        try {
+            totpActive = MasterManager.getMI().isTotpActive();
+        } catch (Exception ignored) {
+        }
+        request.setAttribute("totpActive", totpActive);
         return mapping.findForward("success");
     }
 }

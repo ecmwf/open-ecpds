@@ -565,6 +565,17 @@ final class ManagementProxy implements ManagementInterface {
     /**
      * {@inheritDoc}
      *
+     * Checks if TOTP authentication is active on the MasterServer.
+     */
+    @Override
+    public boolean isTotpActive() throws RemoteException {
+        final var monitor = new MonitorCall("isTotpActive()");
+        return monitor.done(managementInterface.isTotpActive());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Transfer status update allowed.
      */
     @Override

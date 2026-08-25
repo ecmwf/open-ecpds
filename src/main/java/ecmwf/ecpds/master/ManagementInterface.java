@@ -541,6 +541,16 @@ public interface ManagementInterface extends Remote {
     void holdAllDestinations(ECpdsSession session, boolean graceful) throws MasterException, RemoteException;
 
     /**
+     * Checks if TOTP authentication is active on the MasterServer.
+     *
+     * @return true, if TOTP is active
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    boolean isTotpActive() throws RemoteException;
+
+    /**
      * Transfer status update allowed.
      *
      * @param id
