@@ -326,8 +326,9 @@
         <% } else { %><span class="badge bg-success">CA-Signed</span><% } %>
       </td>
       <td style="font-family:monospace; font-size:.75rem; word-break:break-all; max-width:260px;"><%=fp != null ? fp : "–"%></td>
-      <td class="text-end">
+      <td class="text-end" style="white-space:nowrap">
         <% if (hasCert) { %>
+        <div class="d-inline-flex gap-1">
         <button type="button" class="btn btn-sm btn-outline-primary"
             onclick="confirmationDialog({
               title:       'Deploy Certificate',
@@ -346,6 +347,7 @@
             })" title="Reload certificate from disk on this Monitor">
           <i class="bi bi-arrow-clockwise"></i>
         </button>
+        </div>
         <% } %>
       </td>
     </tr>
@@ -495,8 +497,9 @@
         <% } else { %><span class="badge bg-success">CA-Signed</span><% } %>
       </td>
       <td style="font-family:monospace; font-size:.75rem; word-break:break-all; max-width:260px;"><%=fp != null ? fp : "–"%></td>
-      <td class="text-end">
+      <td class="text-end" style="white-space:nowrap">
         <% if (hasCert) { %>
+        <div class="d-inline-flex gap-1">
         <button type="button" class="btn btn-sm btn-outline-primary"
             onclick="confirmationDialog({
               title:       'Deploy Certificate',
@@ -515,6 +518,7 @@
             })" title="Reload certificate from disk on this Data Mover">
           <i class="bi bi-arrow-clockwise"></i>
         </button>
+        </div>
         <% } %>
       </td>
     </tr>
