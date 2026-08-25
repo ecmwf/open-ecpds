@@ -3401,4 +3401,120 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         }
         monitor.done();
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Triggers a certificate hot-reload from disk on every connected Data Mover.
+     */
+    @Override
+    public void reloadHttpCertificateOnAllMovers(final ECpdsSession session) throws MasterException {
+        final var monitor = new MonitorCall("reloadHttpCertificateOnAllMovers(" + session.getWebUser().getName() + ")");
+        try {
+            for (final TransferServer server : base.getTransferServerArray()) {
+                final var name = server.getName();
+                final var mover = master.getDataMoverInterface(name);
+                if (mover != null) {
+                    try {
+                        mover.reloadHttpCertificate();
+                        _log.info("Reloaded TLS certificate from disk on Data Mover {}", name);
+                    } catch (final Exception e) {
+                        _log.warn("reloadHttpCertificateOnAllMovers: mover {} failed: {}", name, e.getMessage());
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            _log.warn("reloadHttpCertificateOnAllMovers failed", e);
+        }
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Triggers a certificate hot-reload from disk on every connected Monitor daemon.
+     */
+    @Override
+    public void reloadHttpCertificateOnAllMonitors(final ECpdsSession session) throws MasterException {
+        final var monitor = new MonitorCall(
+                "reloadHttpCertificateOnAllMonitors(" + session.getWebUser().getName() + ")");
+        try {
+            for (final String root : master.getClientRoots()) {
+                if (!root.startsWith("ECpdsMonitor/")) {
+                    continue;
+                }
+                final var monitorName = root.substring("ECpdsMonitor/".length());
+                final var monitorInterface = master.getMonitorInterface(monitorName);
+                if (monitorInterface != null) {
+                    try {
+                        monitorInterface.reloadHttpCertificate();
+                        _log.info("Reloaded TLS certificate from disk on Monitor {}", monitorName);
+                    } catch (final Exception e) {
+                        _log.warn("reloadHttpCertificateOnAllMonitors: monitor {} failed: {}", monitorName,
+                                e.getMessage());
+                    }
+                } else {
+                    _log.warn("reloadHttpCertificateOnAllMonitors: monitor {} is not a MonitorServer "
+                            + "(still running legacy HandlerServer?)", monitorName);
+                }
+            }
+        } catch (final Exception e) {
+            _log.warn("reloadHttpCertificateOnAllMonitors failed", e);
+        }
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Triggers a certificate hot-reload from disk on a single named Data Mover.
+     */
+    @Override
+    public void reloadHttpCertificateOnMover(final ECpdsSession session, final String moverName)
+            throws MasterException {
+        final var monitor = new MonitorCall(
+                "reloadHttpCertificateOnMover(" + session.getWebUser().getName() + "," + moverName + ")");
+        try {
+            final var mover = master.getDataMoverInterface(moverName);
+            if (mover == null) {
+                throw new MasterException("Data Mover '" + moverName + "' is not connected");
+            }
+            mover.reloadHttpCertificate();
+            _log.info("Reloaded TLS certificate from disk on Data Mover {} by user {}", moverName,
+                    session.getWebUser().getName());
+        } catch (final MasterException e) {
+            throw e;
+        } catch (final Exception e) {
+            throw new MasterException("reloadHttpCertificateOnMover failed for " + moverName + ": " + e.getMessage());
+        }
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Triggers a certificate hot-reload from disk on a single named Monitor daemon.
+     */
+    @Override
+    public void reloadHttpCertificateOnMonitor(final ECpdsSession session, final String monitorName)
+            throws MasterException {
+        final var monitor = new MonitorCall(
+                "reloadHttpCertificateOnMonitor(" + session.getWebUser().getName() + "," + monitorName + ")");
+        try {
+            final var monitorInterface = master.getMonitorInterface(monitorName);
+            if (monitorInterface == null) {
+                throw new MasterException(
+                        "Monitor '" + monitorName + "' is not connected or is not running MonitorServer");
+            }
+            monitorInterface.reloadHttpCertificate();
+            _log.info("Reloaded TLS certificate from disk on Monitor {} by user {}", monitorName,
+                    session.getWebUser().getName());
+        } catch (final MasterException e) {
+            throw e;
+        } catch (final Exception e) {
+            throw new MasterException(
+                    "reloadHttpCertificateOnMonitor failed for " + monitorName + ": " + e.getMessage());
+        }
+        monitor.done();
+    }
 }

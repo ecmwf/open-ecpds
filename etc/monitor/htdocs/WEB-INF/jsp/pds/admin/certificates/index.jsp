@@ -59,9 +59,25 @@
         <i class="bi bi-download me-1"></i>Download
       </button>
     </form>
+    <form method="post" action="/do/admin/certificates" id="reloadLocalForm" style="display:contents">
+      <input type="hidden" name="action" value="reload"/>
+      <button type="button" class="btn btn-sm btn-outline-secondary"
+              title="Hot-reload the certificate on this Monitor only, from the keystore file currently on disk — does not affect other Monitors or Data Movers"
+              onclick="confirmationDialog({
+                title:       'Reload Certificate from Disk',
+                message:     'Reload the TLS certificate on <strong>this Monitor only</strong> from the keystore file currently on disk?<br><small class=\'text-muted\'>No certificate is pushed to other Monitors or Data Movers. Each of those has its own Reload from Disk action in the tables below.</small>',
+                confirmText: 'Reload',
+                onConfirm:   function(){ document.getElementById('reloadLocalForm').submit(); }
+              })">
+        <i class="bi bi-arrow-clockwise me-1"></i>Reload from Disk
+      </button>
+    </form>
     <% } else { %>
     <button class="btn btn-sm btn-outline-secondary" disabled title="No certificate loaded">
       <i class="bi bi-download me-1"></i>Download
+    </button>
+    <button class="btn btn-sm btn-outline-secondary" disabled title="No certificate loaded">
+      <i class="bi bi-arrow-clockwise me-1"></i>Reload from Disk
     </button>
     <% } %>
   </div>
@@ -76,6 +92,7 @@
       <li><strong>Generate CSR</strong> &mdash; creates a Certificate Signing Request to submit to a Certificate Authority (CA).</li>
       <li><strong>Import</strong> &mdash; replaces the current certificate with a PEM, PKCS#12, or JKS file.</li>
       <li><strong>Download</strong> &mdash; exports the public certificate (PEM) for installation in browsers or MQTT clients.</li>
+      <li><strong>Reload from Disk</strong> &mdash; hot-reloads the certificate on <strong>this Monitor only</strong> from the keystore file currently on disk. Use this after replacing the keystore file manually (e.g. via automation or a secrets manager) to activate the new certificate without restarting the daemon. To reload on other Monitors or Data Movers, use the <em>Reload from Disk</em> actions in the tables below.</li>
     </ul>
     <p class="mb-0">All changes are applied without restarting the server (hot reload).</p>
     <hr class="my-2"/>
@@ -92,25 +109,17 @@
 </div>
 
 <% if (successMessage != null && successMessageTarget == null) { %>
-<div id="certSuccessWrapper" class="card-body py-2 px-3">
-  <div id="certSuccessAlert" class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 mb-0" role="alert">
-    <i class="bi bi-check-circle-fill flex-shrink-0"></i>
-    <span><%=successMessage%></span>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div>
-  <script>
-    setTimeout(function() {
-      var el = document.getElementById('certSuccessAlert');
-      if (el) {
-        el.addEventListener('closed.bs.alert', function() {
-          var wrapper = document.getElementById('certSuccessWrapper');
-          if (wrapper) wrapper.style.display = 'none';
-        });
-        bootstrap.Alert.getOrCreateInstance(el).close();
-      }
-    }, 4000);
-  </script>
+<div id="certSuccessAlert" class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 mb-0 rounded-0 border-start-0 border-end-0 border-top-0" role="alert" style="margin-top:0">
+  <i class="bi bi-check-circle-fill flex-shrink-0 ms-3"></i>
+  <span><%=successMessage%></span>
+  <button type="button" class="btn-close ms-auto me-2" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
+<script>
+  setTimeout(function() {
+    var el = document.getElementById('certSuccessAlert');
+    if (el) { bootstrap.Alert.getOrCreateInstance(el).close(); }
+  }, 4000);
+</script>
 <% } %>
 <% if (errorMessage != null) { %>
 <div class="card-body py-2 px-3">
@@ -195,7 +204,7 @@
       aria-expanded="false" title="About this section">
     <i class="bi bi-info-circle"></i>
   </button>
-  <div class="ms-auto">
+  <div class="ms-auto d-flex flex-wrap gap-2">
     <% if (hasCert) { %>
     <form id="deployMonitorsForm" method="post" action="/do/admin/certificates" style="display:contents">
       <input type="hidden" name="action" value="deployMonitors"/>
@@ -209,9 +218,25 @@
         <i class="bi bi-cloud-upload me-1"></i>Deploy to All Monitors
       </button>
     </form>
+    <form id="reloadMonitorsForm" method="post" action="/do/admin/certificates" style="display:contents">
+      <input type="hidden" name="action" value="reloadMonitors"/>
+      <button type="button" class="btn btn-sm btn-outline-secondary"
+              onclick="confirmationDialog({
+                title:       'Reload Certificate from Disk on All Monitors',
+                message:     'Trigger a certificate hot-reload from the keystore file on disk on all connected Monitors?<br><small class=\'text-muted\'>Each Monitor will re-read its own keystore file. No certificate is pushed from this server.</small>',
+                confirmText: 'Reload',
+                onConfirm:   function(){ document.getElementById('reloadMonitorsForm').submit(); }
+              })"
+              title="Hot-reload the certificate from disk on every connected Monitor">
+        <i class="bi bi-arrow-clockwise me-1"></i>Reload from Disk
+      </button>
+    </form>
     <% } else { %>
     <button class="btn btn-sm btn-outline-primary" disabled title="No certificate to deploy">
       <i class="bi bi-cloud-upload me-1"></i>Deploy to All Monitors
+    </button>
+    <button class="btn btn-sm btn-outline-secondary" disabled title="No certificate loaded">
+      <i class="bi bi-arrow-clockwise me-1"></i>Reload from Disk
     </button>
     <% } %>
   </div>
@@ -220,7 +245,7 @@
 <div class="collapse" id="certMonitorListInfo">
   <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
     <strong class="d-block mb-1">Monitor Certificates &mdash; overview</strong>
-    <p class="mb-0">Shows the TLS certificate currently active on each connected Monitor daemon. Use <strong>Deploy to All Monitors</strong> to push the current Monitor certificate to every Monitor in one operation.</p>
+    <p class="mb-0">Shows the TLS certificate currently active on each connected Monitor daemon. Use <strong>Deploy to All Monitors</strong> to push the current Monitor certificate to every Monitor in one operation. Use <strong>Reload from Disk</strong> to instruct every Monitor to hot-reload its own keystore file from disk (useful after updating keystore files externally).</p>
   </div>
 </div>
 
@@ -312,6 +337,15 @@
             })" title="Deploy certificate to this Monitor">
           <i class="bi bi-cloud-upload"></i>
         </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+            onclick="confirmationDialog({
+              title:       'Reload Certificate from Disk',
+              message:     'Instruct Monitor <strong><%=monName%></strong> to hot-reload its certificate from its own keystore file on disk?<br><small class=\'text-muted\'>No certificate is pushed from this server. The monitor re-reads its local keystore file.</small>',
+              confirmText: 'Reload',
+              onConfirm:   function(){ reloadSingle('monitor','<%=monName%>'); }
+            })" title="Reload certificate from disk on this Monitor">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
         <% } %>
       </td>
     </tr>
@@ -339,7 +373,7 @@
       aria-expanded="false" title="About this section">
     <i class="bi bi-info-circle"></i>
   </button>
-  <div class="ms-auto">
+  <div class="ms-auto d-flex flex-wrap gap-2">
     <% if (hasCert) { %>
     <form id="deployForm" method="post" action="/do/admin/certificates" style="display:contents">
       <input type="hidden" name="action" value="deploy"/>
@@ -353,9 +387,25 @@
         <i class="bi bi-cloud-upload me-1"></i>Deploy to All Movers
       </button>
     </form>
+    <form id="reloadMoversForm" method="post" action="/do/admin/certificates" style="display:contents">
+      <input type="hidden" name="action" value="reloadMovers"/>
+      <button type="button" class="btn btn-sm btn-outline-secondary"
+              onclick="confirmationDialog({
+                title:       'Reload Certificate from Disk on All Movers',
+                message:     'Trigger a certificate hot-reload from the keystore file on disk on all connected Data Movers?<br><small class=\'text-muted\'>Each Mover will re-read its own keystore file. No certificate is pushed from this server.</small>',
+                confirmText: 'Reload',
+                onConfirm:   function(){ document.getElementById('reloadMoversForm').submit(); }
+              })"
+              title="Hot-reload the certificate from disk on every connected Data Mover">
+        <i class="bi bi-arrow-clockwise me-1"></i>Reload from Disk
+      </button>
+    </form>
     <% } else { %>
     <button class="btn btn-sm btn-outline-primary" disabled title="No certificate to deploy">
       <i class="bi bi-cloud-upload me-1"></i>Deploy to All Movers
+    </button>
+    <button class="btn btn-sm btn-outline-secondary" disabled title="No certificate loaded">
+      <i class="bi bi-arrow-clockwise me-1"></i>Reload from Disk
     </button>
     <% } %>
   </div>
@@ -364,7 +414,7 @@
 <div class="collapse" id="certMoverInfo">
   <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
     <strong class="d-block mb-1">Data Mover Certificates &mdash; overview</strong>
-    <p class="mb-0">Shows the TLS certificate currently active on each connected Data Mover. Use <strong>Deploy to All Movers</strong> to push the current Monitor certificate to every Data Mover in one operation. Certificates are reloaded without restarting the service.</p>
+    <p class="mb-0">Shows the TLS certificate currently active on each connected Data Mover. Use <strong>Deploy to All Movers</strong> to push the current Monitor certificate to every Data Mover in one operation. Use <strong>Reload from Disk</strong> to instruct every Data Mover to hot-reload its own keystore file from disk (useful after updating keystore files externally). Certificates are reloaded without restarting the service.</p>
   </div>
 </div>
 
@@ -456,6 +506,15 @@
             })" title="Deploy certificate to this Data Mover">
           <i class="bi bi-cloud-upload"></i>
         </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+            onclick="confirmationDialog({
+              title:       'Reload Certificate from Disk',
+              message:     'Instruct Data Mover <strong><%=moverName%></strong> to hot-reload its certificate from its own keystore file on disk?<br><small class=\'text-muted\'>No certificate is pushed from this server. The mover re-reads its local keystore file.</small>',
+              confirmText: 'Reload',
+              onConfirm:   function(){ reloadSingle('mover','<%=moverName%>'); }
+            })" title="Reload certificate from disk on this Data Mover">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
         <% } %>
       </td>
     </tr>
@@ -476,11 +535,22 @@
   <input type="hidden" name="targetType" id="deploySingleType"/>
   <input type="hidden" name="targetName" id="deploySingleName"/>
 </form>
+<%-- Shared form for per-row single-target certificate reload from disk --%>
+<form id="reloadSingleForm" method="post" action="/do/admin/certificates" style="display:none">
+  <input type="hidden" name="action"     value="reloadSingle"/>
+  <input type="hidden" name="targetType" id="reloadSingleType"/>
+  <input type="hidden" name="targetName" id="reloadSingleName"/>
+</form>
 <script>
 function deploySingle(type, name) {
   document.getElementById('deploySingleType').value = type;
   document.getElementById('deploySingleName').value = name;
   document.getElementById('deploySingleForm').submit();
+}
+function reloadSingle(type, name) {
+  document.getElementById('reloadSingleType').value = type;
+  document.getElementById('reloadSingleName').value = name;
+  document.getElementById('reloadSingleForm').submit();
 }
 // Re-initialize SAN "more" popovers with html:true (global init uses html:false)
 $(document).ready(function() {

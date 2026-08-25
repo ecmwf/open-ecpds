@@ -1644,4 +1644,61 @@ public interface ManagementInterface extends Remote {
      */
     void deployHttpCertificateToMonitor(ECpdsSession session, String monitorName, byte[] pkcs12Bytes,
             String keystorePassword) throws MasterException, RemoteException;
+
+    /**
+     * Triggers a certificate hot-reload from disk on every connected Data Mover.
+     *
+     * @param session
+     *            the session
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void reloadHttpCertificateOnAllMovers(ECpdsSession session) throws MasterException, RemoteException;
+
+    /**
+     * Triggers a certificate hot-reload from disk on every connected Monitor daemon.
+     *
+     * @param session
+     *            the session
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void reloadHttpCertificateOnAllMonitors(ECpdsSession session) throws MasterException, RemoteException;
+
+    /**
+     * Triggers a certificate hot-reload from disk on a single named Data Mover.
+     *
+     * @param session
+     *            the session
+     * @param moverName
+     *            the mover name
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void reloadHttpCertificateOnMover(ECpdsSession session, String moverName) throws MasterException, RemoteException;
+
+    /**
+     * Triggers a certificate hot-reload from disk on a single named Monitor daemon.
+     *
+     * @param session
+     *            the session
+     * @param monitorName
+     *            the monitor name
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void reloadHttpCertificateOnMonitor(ECpdsSession session, String monitorName)
+            throws MasterException, RemoteException;
 }

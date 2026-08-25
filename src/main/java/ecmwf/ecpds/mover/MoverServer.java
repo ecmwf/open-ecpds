@@ -1159,6 +1159,36 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     /**
      * {@inheritDoc}
      *
+     * Hot-reloads the TLS certificate from the keystore file currently on disk on this Data Mover. Also reloads the
+     * MQTT plugin if present.
+     */
+    @Override
+    public void reloadHttpCertificate() throws RemoteException {
+        reload(getPluginContainer().getPlugin("http"), "http");
+        final var mqtt = getPluginContainer().getPlugin("mqtt");
+        if (mqtt != null) {
+            try {
+                reload(mqtt, "mqtt");
+            } catch (final RemoteException e) {
+                _log.warn("reloadHttpCertificate: mqtt plugin reload failed (non-fatal): {}", e.getMessage());
+            }
+        }
+    }
+
+    private static void reload(final Object plugin, final String ref) throws RemoteException {
+        if (!(plugin instanceof final HttpCertificateProvider provider)) {
+            throw new RemoteException("Plugin '" + ref + "' is not running or does not support certificate reload");
+        }
+        try {
+            provider.reloadCertificate();
+        } catch (final Exception e) {
+            throw new RemoteException("Certificate reload failed on '" + ref + "': " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Returns a JSON-encoded snapshot of the certificate currently loaded in the Data Mover HTTPS server.
      */
     @Override

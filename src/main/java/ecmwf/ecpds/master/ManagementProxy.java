@@ -1424,4 +1424,26 @@ final class ManagementProxy implements ManagementInterface {
             final byte[] pkcs12Bytes, final String keystorePassword) throws MasterException, RemoteException {
         managementInterface.deployHttpCertificateToMonitor(session, monitorName, pkcs12Bytes, keystorePassword);
     }
+
+    @Override
+    public void reloadHttpCertificateOnAllMovers(final ECpdsSession session) throws MasterException, RemoteException {
+        managementInterface.reloadHttpCertificateOnAllMovers(session);
+    }
+
+    @Override
+    public void reloadHttpCertificateOnAllMonitors(final ECpdsSession session) throws MasterException, RemoteException {
+        managementInterface.reloadHttpCertificateOnAllMonitors(session);
+    }
+
+    @Override
+    public void reloadHttpCertificateOnMover(final ECpdsSession session, final String moverName)
+            throws MasterException, RemoteException {
+        managementInterface.reloadHttpCertificateOnMover(session, moverName);
+    }
+
+    @Override
+    public void reloadHttpCertificateOnMonitor(final ECpdsSession session, final String monitorName)
+            throws MasterException, RemoteException {
+        managementInterface.reloadHttpCertificateOnMonitor(session, monitorName);
+    }
 }

@@ -264,6 +264,21 @@ public class MqttPlugin extends PluginThread implements HttpCertificateProvider 
         _log.info("deployCertificate: MQTT server restarted with new certificate");
     }
 
+    @Override
+    public synchronized void reloadCertificate() throws Exception {
+        _log.info("reloadCertificate: stopping and restarting MQTT server to reload keystore from disk");
+        stop();
+        try {
+            Thread.sleep(500);
+        } catch (final InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
+        if (!start()) {
+            throw new IllegalStateException("MqttPlugin failed to restart after certificate reload");
+        }
+        _log.info("reloadCertificate: MQTT server restarted with updated certificate from disk");
+    }
+
     private static String _esc(final String s) {
         if (s == null) {
             return "";

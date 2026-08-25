@@ -94,6 +94,14 @@ public class CertificatesAction extends PDSAction {
         try {
             if (action != null) {
                 switch (action) {
+                case "reload":
+                    return handleReload(mapping, request, user, httpPlugin);
+                case "reloadMovers":
+                    return handleReloadMovers(mapping, request, user);
+                case "reloadMonitors":
+                    return handleReloadMonitors(mapping, request, user);
+                case "reloadSingle":
+                    return handleReloadSingle(mapping, request, user);
                 case "generate":
                     return handleGenerate(mapping, request, response, user, httpPlugin);
                 case "csr":
@@ -125,6 +133,64 @@ public class CertificatesAction extends PDSAction {
     // -------------------------------------------------------------------------
     // Action handlers
     // -------------------------------------------------------------------------
+
+    private ActionForward handleReload(final ActionMapping mapping, final HttpServletRequest request, final User user,
+            final HttpPlugin httpPlugin) throws Exception {
+        final var path = httpPlugin.getActiveKeystorePath();
+        if (path == null) {
+            throw new ECMWFException("HttpPlugin is not running or has no keystore configured");
+        }
+        httpPlugin.reloadCertificate();
+        _log.info("Certificate hot-reloaded from disk ('{}') by user {}", path, user.getName());
+        request.setAttribute("successMessage", "Certificate reloaded from disk and activated: " + path);
+        populateCertificateInfo(request, httpPlugin, user);
+        return mapping.findForward("success");
+    }
+
+    private ActionForward handleReloadMovers(final ActionMapping mapping, final HttpServletRequest request,
+            final User user) throws Exception {
+        final var session = Util.getECpdsSessionFromObject(user);
+        MasterManager.getMI().reloadHttpCertificateOnAllMovers(session);
+        _log.info("Certificate reload from disk triggered on all Data Movers by user {}", user.getName());
+        request.setAttribute("successMessage", "Certificate reload from disk triggered on all connected Data Movers.");
+        request.setAttribute("successMessageTarget", "movers");
+        populateCertificateInfo(request, getHttpPlugin(request), user);
+        return mapping.findForward("success");
+    }
+
+    private ActionForward handleReloadMonitors(final ActionMapping mapping, final HttpServletRequest request,
+            final User user) throws Exception {
+        final var session = Util.getECpdsSessionFromObject(user);
+        MasterManager.getMI().reloadHttpCertificateOnAllMonitors(session);
+        _log.info("Certificate reload from disk triggered on all Monitors by user {}", user.getName());
+        request.setAttribute("successMessage", "Certificate reload from disk triggered on all connected Monitors.");
+        request.setAttribute("successMessageTarget", "monitors");
+        populateCertificateInfo(request, getHttpPlugin(request), user);
+        return mapping.findForward("success");
+    }
+
+    private ActionForward handleReloadSingle(final ActionMapping mapping, final HttpServletRequest request,
+            final User user) throws Exception {
+        final var targetName = request.getParameter("targetName");
+        final var targetType = request.getParameter("targetType");
+        if (targetName == null || targetName.isBlank()) {
+            throw new ECMWFException("Missing targetName parameter");
+        }
+        final var session = Util.getECpdsSessionFromObject(user);
+        if ("monitor".equals(targetType)) {
+            MasterManager.getMI().reloadHttpCertificateOnMonitor(session, targetName);
+            _log.info("Certificate reload from disk triggered on Monitor {} by user {}", targetName, user.getName());
+            request.setAttribute("successMessage", "Certificate reloaded from disk on Monitor: " + targetName);
+            request.setAttribute("successMessageTarget", "monitors");
+        } else {
+            MasterManager.getMI().reloadHttpCertificateOnMover(session, targetName);
+            _log.info("Certificate reload from disk triggered on Data Mover {} by user {}", targetName, user.getName());
+            request.setAttribute("successMessage", "Certificate reloaded from disk on Data Mover: " + targetName);
+            request.setAttribute("successMessageTarget", "movers");
+        }
+        populateCertificateInfo(request, getHttpPlugin(request), user);
+        return mapping.findForward("success");
+    }
 
     private ActionForward handleGenerate(final ActionMapping mapping, final HttpServletRequest request,
             final HttpServletResponse response, final User user, final HttpPlugin httpPlugin) throws Exception {

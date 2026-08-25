@@ -231,10 +231,6 @@ public final class WebDavHandler extends HttpServlet {
             throw new UnsupportedOperationException("Static resource factory");
         }
 
-        public LockManager getLockManager() {
-            return LOCK_MANAGER;
-        }
-
         @Override
         protected boolean isCreateAbsoluteURI() {
             return false;

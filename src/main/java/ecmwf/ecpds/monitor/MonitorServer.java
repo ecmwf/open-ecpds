@@ -190,6 +190,40 @@ public final class MonitorServer extends StarterServer implements MonitorInterfa
     /**
      * {@inheritDoc}
      *
+     * Hot-reloads the TLS certificate from the keystore file currently on disk on this Monitor. Delegates to the
+     * {@code http} plugin via reflection to avoid classloader-isolation issues.
+     */
+    @Override
+    public void reloadHttpCertificate() throws RemoteException {
+        final var container = getPluginContainer();
+        if (container == null) {
+            _log.warn("reloadHttpCertificate: no plugin container");
+            return;
+        }
+        final var plugin = container.getPlugin("http");
+        if (plugin == null) {
+            _log.warn("reloadHttpCertificate: 'http' plugin not found in container");
+            return;
+        }
+        try {
+            final var method = plugin.getClass().getMethod("reloadCertificate");
+            method.invoke(plugin);
+        } catch (final NoSuchMethodException e) {
+            _log.warn("reloadHttpCertificate: 'http' plugin ({}) does not have reloadCertificate()",
+                    plugin.getClass().getName());
+        } catch (final java.lang.reflect.InvocationTargetException e) {
+            final var cause = e.getCause() != null ? e.getCause() : e;
+            _log.warn("reloadHttpCertificate: failed to reload certificate", cause);
+            throw new RemoteException("Certificate reload failed", cause);
+        } catch (final Exception e) {
+            _log.warn("reloadHttpCertificate: failed to reload certificate", e);
+            throw new RemoteException("Certificate reload failed", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Deploys a new PKCS#12 keystore to this monitor's HTTPS server. Delegates to the {@code http} plugin via
      * reflection to avoid classloader-isolation issues.
      */

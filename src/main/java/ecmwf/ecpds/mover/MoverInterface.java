@@ -716,6 +716,16 @@ public interface MoverInterface extends ClientInterface {
     void deployHttpCertificate(byte[] pkcs12Bytes, String keystorePassword) throws RemoteException;
 
     /**
+     * Hot-reloads the TLS certificate from the keystore file currently on disk on this Data Mover, without requiring a
+     * new keystore to be uploaded. Use this after the keystore file has been replaced externally (e.g. via automation
+     * or a secrets manager).
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void reloadHttpCertificate() throws RemoteException;
+
+    /**
      * Returns a JSON-encoded snapshot of the certificate currently loaded in the Data Mover HTTPS server, or an empty
      * JSON object {@code {}} if no certificate is loaded.
      *

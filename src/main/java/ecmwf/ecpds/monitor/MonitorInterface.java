@@ -87,4 +87,15 @@ public interface MonitorInterface extends HandlerInterface {
      */
     @Override
     void deployHttpCertificate(byte[] pkcs12Bytes, String keystorePassword) throws RemoteException;
+
+    /**
+     * Hot-reloads the TLS certificate from the keystore file currently on disk on the remote Monitor. Re-declares the
+     * {@code default} no-op from {@link HandlerInterface} as {@code abstract} so that Java RMI's dynamic proxy forwards
+     * the call to the remote {@link MonitorServer}.
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    @Override
+    void reloadHttpCertificate() throws RemoteException;
 }

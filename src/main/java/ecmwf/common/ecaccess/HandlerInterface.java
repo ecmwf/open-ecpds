@@ -101,4 +101,16 @@ public interface HandlerInterface extends ClientInterface {
     default void deployHttpCertificate(final byte[] pkcs12Bytes, final String keystorePassword) throws RemoteException {
         // no-op: only effective on MonitorServer (MonitorInterface overrides this as abstract)
     }
+
+    /**
+     * Hot-reloads the TLS certificate from the keystore file currently on disk. This is a {@code default} no-op; the
+     * actual reload is performed on {@link ecmwf.ecpds.monitor.MonitorServer} via the abstract override in
+     * {@link ecmwf.ecpds.monitor.MonitorInterface}.
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    default void reloadHttpCertificate() throws RemoteException {
+        // no-op: only effective on MonitorServer (MonitorInterface overrides this as abstract)
+    }
 }

@@ -58,4 +58,13 @@ public interface HttpCertificateProvider {
      *             if the deployment or reload fails
      */
     void deployCertificate(byte[] pkcs12Bytes, String keystorePassword) throws Exception;
+
+    /**
+     * Hot-reloads the TLS certificate from the keystore file currently on disk, without requiring a new keystore to be
+     * uploaded. Use this after replacing the keystore file via automation or a secrets manager.
+     *
+     * @throws Exception
+     *             if the reload fails
+     */
+    void reloadCertificate() throws Exception;
 }
