@@ -4,6 +4,7 @@ ecmwf.ecpds.mover.plugin.ecproxy
 ecmwf.ecpds.mover.plugin.http
 ecmwf.ecpds.mover.plugin.mqtt
 ecmwf.ecpds.mover.service
+ecmwf.ecpds.monitor
 ecmwf.ecpds.master
 ecmwf.ecpds.master.plugin.ecpds
 ecmwf.ecpds.master.plugin.ecpds.request

@@ -83,6 +83,7 @@ ecmwf.ecpds.master.plugin.http.model.monitoring
 ecmwf.ecpds.master.plugin.http.model.transfer
 ecmwf.ecpds.master.plugin.service
 ecmwf.ecpds.master.transfer
+ecmwf.ecpds.monitor
 ecmwf.ecpds.mover
 ecmwf.ecpds.mover.plugin.ecproxy
 ecmwf.ecpds.mover.plugin.http
