@@ -431,11 +431,44 @@ public final class WebDavHandler extends HttpServlet {
 
         @Override
         public String getHref(final boolean isCollection) {
-            final var path = prefix + ("/".equals(resourcePath) ? "" : resourcePath);
+            final var encoded = encodeHrefPath(resourcePath);
+            final var path = prefix + ("/".equals(resourcePath) ? "" : encoded);
             if (isCollection && !path.endsWith("/")) {
                 return path + "/";
             }
             return path.isEmpty() ? "/" : path;
+        }
+
+        /**
+         * Percent-encodes a decoded resource path for use in WebDAV HREF responses. Keeps {@code /} as the path
+         * separator and encodes all other characters that are not RFC 3986 unreserved (A-Z a-z 0-9 {@code - . _ ~}).
+         * This deliberately encodes sub-delimiters such as {@code +} (as {@code %2B}) and {@code :} (as {@code %3A}) to
+         * avoid misinterpretation by WebDAV clients: macOS Finder maps a literal {@code :} in a filename to {@code /}
+         * (HFS+ path-separator limitation) and some clients decode {@code +} as a space.
+         */
+        private static String encodeHrefPath(final String rawPath) {
+            if (rawPath == null || rawPath.isEmpty()) {
+                return rawPath;
+            }
+            final var sb = new StringBuilder(rawPath.length() * 2);
+            for (final char c : rawPath.toCharArray()) {
+                if (c == '/') {
+                    sb.append('/');
+                } else if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-'
+                        || c == '.' || c == '_' || c == '~') {
+                    sb.append(c);
+                } else {
+                    // Percent-encode as UTF-8 bytes
+                    for (final byte b : String.valueOf(c).getBytes(StandardCharsets.UTF_8)) {
+                        sb.append('%');
+                        final int hi = (b >> 4) & 0xF;
+                        final int lo = b & 0xF;
+                        sb.append((char) (hi < 10 ? '0' + hi : 'A' + hi - 10));
+                        sb.append((char) (lo < 10 ? '0' + lo : 'A' + lo - 10));
+                    }
+                }
+            }
+            return sb.toString();
         }
 
         @Override
@@ -980,7 +1013,7 @@ public final class WebDavHandler extends HttpServlet {
         if (value.length() > 1 && value.endsWith("/")) {
             value = value.substring(0, value.length() - 1);
         }
-        return URLDecoder.decode(value, StandardCharsets.UTF_8);
+        return URLDecoder.decode(value.replace("+", "%2B"), StandardCharsets.UTF_8);
     }
 
     private static String parentPath(final String path) {
