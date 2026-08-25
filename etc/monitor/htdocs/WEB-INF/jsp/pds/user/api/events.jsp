@@ -50,7 +50,7 @@
           <li><a class="dropdown-item" href="#" data-ae-mode="custom"><strong>Custom</strong><small class="d-block text-muted ms-0">Choose individual columns</small></a></li>
           <li id="aeCustomColChkPanel" style="display:none;">
             <div class="px-3 py-2 d-flex flex-column gap-1" style="min-width:160px;">
-              <div class="form-check mb-0"><input class="form-check-input ae-col-chk" type="checkbox" id="aechk-0" data-col="0" checked disabled><label class="form-check-label text-muted" for="aechk-0">Date <small>(required)</small></label></div>
+              <div class="form-check mb-0"><input class="form-check-input ae-col-chk" type="checkbox" id="aechk-0" data-col="0" checked disabled><label class="form-check-label text-muted" for="aechk-0">Time <small>(required)</small></label></div>
               <div class="form-check mb-0"><input class="form-check-input ae-col-chk" type="checkbox" id="aechk-1" data-col="1" checked><label class="form-check-label" for="aechk-1">Client</label></div>
               <div class="form-check mb-0"><input class="form-check-input ae-col-chk" type="checkbox" id="aechk-2" data-col="2" checked disabled><label class="form-check-label text-muted" for="aechk-2">Service <small>(required)</small></label></div>
               <div class="form-check mb-0"><input class="form-check-input ae-col-chk" type="checkbox" id="aechk-3" data-col="3" checked><label class="form-check-label" for="aechk-3">Host</label></div>
@@ -81,7 +81,7 @@
       <table id="apiEventsTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
         <thead class="table-warning">
           <tr>
-            <th title="Date/time (UTC)">Date</th>
+            <th title="Time (UTC) &mdash; date shown in selector above">Time</th>
             <th>Client</th>
             <th>Service</th>
             <th>Host</th>

@@ -56,7 +56,7 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
 <table id="fbkTable" class="table table-sm table-hover mb-0 align-middle" style="font-size:0.82rem;">
   <thead class="table-secondary">
     <tr>
-      <th>Date</th>
+      <th title="Date &amp; Time (UTC)">Date</th>
       <th>Rating</th>
       <th>User</th>
       <th>Comment / One Thing / Contact</th>

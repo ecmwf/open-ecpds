@@ -211,7 +211,7 @@
 								<th>Remote IP</th>
 								<th>Data Mover</th>
 								<c:if test="${incoming.portalService eq 'self-service'}"><th>Subscriber</th></c:if>
-								<th>Start Time (UTC)</th>
+								<th title="Start Time (UTC)">Start Time (UTC)</th>
 								<th>Duration</th>
 								<auth:if basePathKey="incoming.basepath" paths="/edit/update">
 								<auth:then><th class="text-center no-sort">Action</th></auth:then>

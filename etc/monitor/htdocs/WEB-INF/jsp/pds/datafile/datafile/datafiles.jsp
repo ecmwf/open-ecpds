@@ -67,7 +67,7 @@
     <thead class="table-primary">
         <tr>
             <th>Original</th>
-            <th title="Product Time (UTC)">Product Time</th>
+            <th title="Product Time (UTC) &mdash; date shown in selector above">Product Time</th>
             <th>Size</th>
             <th>TS</th>
         </tr>

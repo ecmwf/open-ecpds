@@ -25,7 +25,7 @@
   <form id="userEventSearchForm" class="m-0">
     <div class="input-group input-group-sm">
       <span class="input-group-text"><i class="bi bi-search"></i></span>
-      <input id="userEventSearch" class="form-control" name="search" type="text" placeholder="Search action, comment, entity ..." title="Search is performed across the Action and Comment (entity IDs are part of the comment)" value="${param['search']}" style="min-width:180px">
+      <input id="userEventSearch" class="form-control" name="search" type="text" placeholder="Search action, status, entity ..." title="Search is performed across the Action and Status (entity IDs are part of the status)" value="${param['search']}" style="min-width:180px">
     </div>
   </form>
   <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
@@ -46,7 +46,7 @@
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="ueColModeBtn">
                         <li><a class="dropdown-item" href="#" data-ue-mode="auto"><strong>Auto</strong><br><small class="text-muted">Hides columns based on screen width</small></a></li>
                         <li><a class="dropdown-item" href="#" data-ue-mode="all"><strong>All</strong><br><small class="text-muted">Shows all columns</small></a></li>
-                        <li><a class="dropdown-item" href="#" data-ue-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides: Comment, Entity, Detail, Ref</small></a></li>
+                        <li><a class="dropdown-item" href="#" data-ue-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides: Status, Entity, Detail, Ref</small></a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="#" data-ue-mode="custom"><strong>Custom</strong><br><small class="text-muted">Choose individual columns</small></a></li>
                         <li id="ueCustomColChkPanel" style="display:none;">
@@ -54,7 +54,7 @@
             <div class="form-check mb-0"><input class="form-check-input ue-col-chk" type="checkbox" id="uechk-0" data-col="0" checked disabled><label class="form-check-label text-muted" for="uechk-0">Time <small>(required)</small></label></div>
             <div class="form-check mb-0"><input class="form-check-input ue-col-chk" type="checkbox" id="uechk-1" data-col="1" checked><label class="form-check-label" for="uechk-1">Web User</label></div>
             <div class="form-check mb-0"><input class="form-check-input ue-col-chk" type="checkbox" id="uechk-2" data-col="2" checked disabled><label class="form-check-label text-muted" for="uechk-2">Action <small>(required)</small></label></div>
-            <div class="form-check mb-0"><input class="form-check-input ue-col-chk" type="checkbox" id="uechk-3" data-col="3" checked><label class="form-check-label" for="uechk-3">Comment</label></div>
+            <div class="form-check mb-0"><input class="form-check-input ue-col-chk" type="checkbox" id="uechk-3" data-col="3" checked><label class="form-check-label" for="uechk-3">Status</label></div>
             <div class="form-check mb-0"><input class="form-check-input ue-col-chk" type="checkbox" id="uechk-4" data-col="4" checked><label class="form-check-label" for="uechk-4">Entity</label></div>
             <div class="form-check mb-0"><input class="form-check-input ue-col-chk" type="checkbox" id="uechk-5" data-col="5" checked><label class="form-check-label" for="uechk-5">Detail</label></div>
             <div class="form-check mb-0"><input class="form-check-input ue-col-chk" type="checkbox" id="uechk-6" data-col="6" checked><label class="form-check-label" for="uechk-6">Ref</label></div>
@@ -72,9 +72,9 @@
             <li><strong>Entity</strong> &mdash; the name or identifier of the object affected (e.g. destination, host, API client, incoming user). Clickable when the object still exists.</li>
             <li><strong>Detail</strong> &mdash; additional context depending on the action type: filename for data transfer events, permission pattern for API permission events.</li>
             <li><strong>Ref</strong> &mdash; a link to the affected object, or its identifier as plain text if the object has since been deleted.</li>
-            <li><strong>Comment</strong> &mdash; <i class="bi bi-check-circle-fill text-success"></i> indicates the action completed successfully; <i class="bi bi-x-circle-fill text-danger"></i> indicates a failure, with the error detail shown alongside.</li>
+            <li><strong>Status</strong> &mdash; <i class="bi bi-check-circle-fill text-success"></i> indicates the action completed successfully; <i class="bi bi-x-circle-fill text-danger"></i> indicates a failure, with the error detail shown alongside.</li>
         </ul>
-        <div class="text-muted">Use the <strong>Web User</strong> filter to focus on a specific user. Use the search box to filter by Action, Comment, or Entity ID (entity IDs are embedded in the comment field, e.g. <code>updateApiClient(api)</code>). Use the date selector above to navigate between days.</div>
+        <div class="text-muted">Use the <strong>Web User</strong> filter to focus on a specific user. Use the search box to filter by Action, Status, or Entity ID (entity IDs are embedded in the status field, e.g. <code>updateApiClient(api)</code>). Use the date selector above to navigate between days.</div>
     </div>
 </div>
 <div class="card-body p-0">
@@ -85,7 +85,7 @@
             <th title="Time (UTC) &mdash; date shown in selector above">Time</th>
             <th>Web User</th>
             <th>Action</th>
-            <th>Comment</th>
+            <th class="text-start">Status</th>
             <th>Entity</th>
             <th>Detail</th>
             <th>Ref</th>
@@ -125,7 +125,7 @@ $(function() {
             { orderable: true,  data: 0 , render: function(d) { return d || ''; } },
             { orderable: true,  data: 1 , render: function(d) { return d || ''; } },
             { orderable: true,  data: 2 , render: function(d) { return d || ''; } },
-            { orderable: false, data: 3 , render: function(d) { return d || ''; } },
+            { orderable: false, data: 3 , className: 'text-start', render: function(d) { return d || ''; } },
             { orderable: false, data: 4 , render: function(d) { return d || ''; } },
             { orderable: false, data: 5 , render: function(d) { return d || ''; } },
             { orderable: false, data: 6, width: '48px' , render: function(d) { return d || ''; } }

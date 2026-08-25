@@ -105,9 +105,9 @@
     <tr>
       <th>Err</th>
       <th>Host</th>
-      <th title="Scheduled Time (UTC)">Sched. Time</th>
-      <th title="Start Time (UTC)">Start Time</th>
-      <th title="Finish Time (UTC)">Finish Time</th>
+      <th title="Scheduled Time (UTC) &mdash; date shown in selector above">Sched. Time</th>
+      <th title="Start Time (UTC) &mdash; date shown in selector above">Start Time</th>
+      <th title="Finish Time (UTC) &mdash; date shown in selector above">Finish Time</th>
       <th style="min-width:120px;">Target</th>
       <th>TS</th>
       <th>%</th>

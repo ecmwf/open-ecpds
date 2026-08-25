@@ -189,7 +189,7 @@ public class GetDataTransferListJsonAction extends PDSAction {
 
     private static String buildScheduledTimeHtml(final DataTransfer dt) {
         final var t = dt.getScheduledTime();
-        return t != null ? Format.formatTime("MMM dd HH:mm:ss", t.getTime()) : "";
+        return t != null ? Format.formatTime("HH:mm:ss", t.getTime()) : "";
     }
 
     private static String buildTargetHtml(final DataTransfer dt) {

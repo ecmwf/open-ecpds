@@ -565,7 +565,7 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
         <tr>
             <th>Destination</th>
             <th>Transfer Host</th>
-            <th title="Scheduled Time (UTC)">Sched. Time</th>
+            <th title="Scheduled Time (UTC) &mdash; date shown in selector above">Sched. Time</th>
             <th>Target</th>
             <th>%</th>
             <th>Mbits/s</th>

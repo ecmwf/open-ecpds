@@ -140,7 +140,7 @@ public class GetDataFileListJsonAction extends PDSAction {
             final var row = data.addArray();
             row.add(buildOriginalHtml(df));
             final var pt = df.getProductTime();
-            row.add(pt != null ? Format.formatTime("MMM dd HH:mm:ss", pt.getTime()) : "");
+            row.add(pt != null ? Format.formatTime("HH:mm:ss", pt.getTime()) : "");
             row.add(Format.formatSize(df.getSize()));
             row.add(String.valueOf(df.getTimeStep()));
         }

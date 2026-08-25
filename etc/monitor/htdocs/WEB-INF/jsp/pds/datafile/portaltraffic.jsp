@@ -329,7 +329,7 @@ function ptSetView(v) {
                id="ptDataTable" style="font-size:0.82rem; white-space:nowrap;">
           <thead class="table-primary">
             <tr>
-              <th onclick="ptSortTable(0)" style="cursor:pointer;" data-order="desc">Date <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+              <th onclick="ptSortTable(0)" style="cursor:pointer;" data-order="desc" title="Date (UTC)">Date <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
               <th onclick="ptSortTable(1)" style="cursor:pointer;" data-order="asc">Connections <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
               <th onclick="ptSortTable(2)" style="cursor:pointer;" data-order="asc">Uploaded <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
               <th onclick="ptSortTable(3)" style="cursor:pointer;" data-order="asc">Downloaded <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>

@@ -118,7 +118,7 @@ public class GetApiEventsListJsonAction extends PDSAction {
     }
 
     private static String formatDateTime(final java.sql.Timestamp ts) {
-        return ts == null ? "" : new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(ts);
+        return ts == null ? "" : new SimpleDateFormat("HH:mm:ss").format(ts);
     }
 
     private static String escapeHtml(final String s) {

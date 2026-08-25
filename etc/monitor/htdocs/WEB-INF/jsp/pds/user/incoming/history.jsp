@@ -65,8 +65,8 @@
                         <th>Transfer Server</th>
                         <th>Protocol</th>
                         <th>File Name</th>
-                        <th title="Start Time (UTC)">Start Time</th>
-                        <th title="Finish Time (UTC)">Finish Time</th>
+                        <th title="Start Time (UTC) &mdash; date shown in selector above">Start Time</th>
+                        <th title="Finish Time (UTC) &mdash; date shown in selector above">Finish Time</th>
                         <th>Mbits/s</th>
                         <th>Action</th>
                     </tr>

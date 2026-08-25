@@ -148,7 +148,7 @@ public class GetIncomingHistoryListJsonAction extends PDSAction {
     }
 
     private static String formatDateTime(final Date date) {
-        return date == null ? "" : new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
+        return date == null ? "" : new SimpleDateFormat("HH:mm:ss").format(date);
     }
 
     private static String escapeHtml(final String s) {

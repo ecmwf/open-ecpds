@@ -463,7 +463,7 @@
 								<th>Protocol</th>
 								<th>Remote IP</th>
 								<th>Data Mover</th>
-								<th>Start Time (UTC)</th>
+								<th title="Start Time (UTC)">Start Time (UTC)</th>
 								<th>Duration</th>
 								<th class="text-center no-sort">Action</th>
 							</tr>
