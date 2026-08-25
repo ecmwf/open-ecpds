@@ -52,8 +52,10 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -110,7 +112,7 @@ public final class CertificateManager {
      */
     public record CertificateInfo(String subject, String issuer, String serialNumber, Date notBefore, Date notAfter,
             String fingerprintSha256, String keyAlgorithm, int keySize, boolean selfSigned, boolean expired,
-            boolean expiringSoon) {
+            boolean expiringSoon, List<String> sans) {
     }
 
     // -------------------------------------------------------------------------
@@ -433,10 +435,27 @@ public final class CertificateManager {
         // Expiring within 30 days
         final boolean expiringSoon = !expired
                 && cert.getNotAfter().getTime() - System.currentTimeMillis() < 30L * 86_400_000L;
+        // Extract Subject Alternative Names
+        final var sans = new ArrayList<String>();
+        try {
+            final var sanCollection = cert.getSubjectAlternativeNames();
+            if (sanCollection != null) {
+                for (final var sanEntry : sanCollection) {
+                    final int type = (Integer) sanEntry.get(0);
+                    final Object value = sanEntry.get(1);
+                    if (type == 2) { // dNSName
+                        sans.add("DNS:" + value);
+                    } else if (type == 7) { // iPAddress
+                        sans.add("IP:" + value);
+                    }
+                }
+            }
+        } catch (final Exception ignored) {
+        }
         return new CertificateInfo(cert.getSubjectX500Principal().getName(), cert.getIssuerX500Principal().getName(),
                 cert.getSerialNumber().toString(16).toUpperCase(), cert.getNotBefore(), cert.getNotAfter(),
                 sha256Fingerprint(cert), cert.getPublicKey().getAlgorithm(), keySize(cert), selfSigned, expired,
-                expiringSoon);
+                expiringSoon, java.util.Collections.unmodifiableList(sans));
     }
 
     private static String sha256Fingerprint(final X509Certificate cert) throws Exception {

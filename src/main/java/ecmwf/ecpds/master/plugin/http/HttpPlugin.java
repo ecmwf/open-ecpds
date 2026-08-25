@@ -554,7 +554,7 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
                 + fmtTime.format(info.notAfter()) + "\"" + ",\"fingerprintSha256\":\"" + _esc(info.fingerprintSha256())
                 + "\"" + ",\"keyAlgorithm\":\"" + _esc(info.keyAlgorithm()) + "\"" + ",\"keySize\":" + info.keySize()
                 + ",\"selfSigned\":" + info.selfSigned() + ",\"expired\":" + info.expired() + ",\"expiringSoon\":"
-                + info.expiringSoon() + "}";
+                + info.expiringSoon() + ",\"sans\":" + _sansJson(info.sans()) + "}";
     }
 
     /** {@inheritDoc} */
@@ -572,6 +572,20 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
             return "";
         }
         return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    private static String _sansJson(final java.util.List<String> sans) {
+        if (sans == null || sans.isEmpty()) {
+            return "[]";
+        }
+        final var sb = new StringBuilder("[");
+        for (int i = 0; i < sans.size(); i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append('"').append(_esc(sans.get(i))).append('"');
+        }
+        return sb.append(']').toString();
     }
 
     /**

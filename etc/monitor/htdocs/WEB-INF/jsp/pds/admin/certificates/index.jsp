@@ -161,6 +161,22 @@
     <% if (keystorePath != null) { %>
     <div class="field-row"><div class="field-label">Keystore Path</div><div class="field-value"><span class="val-code"><%=keystorePath%></span></div></div>
     <% } %>
+    <%
+        final java.util.List<String> monSans = (java.util.List<String>) request.getAttribute("monitorCertSans");
+        if (monSans != null && !monSans.isEmpty()) {
+    %>
+    <div class="field-row">
+      <div class="field-label">Subject&nbsp;Alt&nbsp;Names</div>
+      <div class="field-value">
+        <div style="max-height:8em; overflow-y:auto; padding:2px 0;">
+        <% for (final String san : monSans) { %>
+        <span class="val-code d-inline-block me-1 mb-1" style="font-size:.78rem;"><%=san%></span>
+        <% } %>
+        </div>
+        <small class="text-muted"><%=monSans.size()%> name<%=monSans.size() == 1 ? "" : "s"%></small>
+      </div>
+    </div>
+    <% } %>
   </div>
 <% } %>
 </div>
@@ -229,6 +245,7 @@
     <tr>
       <th>Monitor</th>
       <th>Subject</th>
+      <th>Subject Alt Names</th>
       <th title="Valid Until (UTC)">Valid Until</th>
       <th>Type</th>
       <th>SHA-256 Fingerprint</th>
@@ -244,7 +261,7 @@
 %>
     <tr>
       <td><strong><%=monName%></strong></td>
-      <td colspan="4" class="text-muted fst-italic">Offline or no certificate data available</td>
+      <td colspan="5" class="text-muted fst-italic">Offline or no certificate data available</td>
       <td></td>
     </tr>
 <%
@@ -256,10 +273,23 @@
             final boolean expSoon  = "true".equals(jsonField(json, "expiringSoon"));
             final boolean mSelf    = "true".equals(jsonField(json, "selfSigned"));
             final String fp        = jsonField(json, "fingerprintSha256");
+            final java.util.List<String> monSanList = jsonArrayField(json, "sans");
 %>
     <tr>
       <td><strong><%=monName%></strong></td>
       <td style="font-family:monospace; font-size:.78rem;"><%=subj != null ? subj : "–"%></td>
+      <td style="font-size:.78rem; max-width:200px;">
+        <% if (monSanList.isEmpty()) { %>–<% } else {
+             final int monShow = Math.min(3, monSanList.size());
+             for (int si = 0; si < monShow; si++) { %>
+        <span class="d-block" style="font-family:monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="<%=monSanList.get(si)%>"><%=monSanList.get(si)%></span>
+        <% } if (monSanList.size() > 3) { %>
+        <a href="#" class="text-muted sans-more-popover" style="font-size:.75rem;"
+           data-bs-toggle="popover" data-bs-trigger="focus" data-bs-placement="left" data-bs-html="true"
+           data-bs-content="<div style='font-family:monospace;font-size:.78rem;max-height:12em;overflow-y:auto;'><%for(int si2=0;si2<monSanList.size();si2++){%><%=monSanList.get(si2)%><br><%}%></div>"
+           tabindex="0">+<%=monSanList.size()-3%> more</a>
+        <% } } %>
+      </td>
       <td>
         <%=notAfter != null ? notAfter : "–"%>
         <% if (notAfterTime != null) { %><br><small class="text-muted"><%=notAfterTime%></small><% } %>
@@ -359,6 +389,7 @@
     <tr>
       <th>Mover</th>
       <th>Subject</th>
+      <th>Subject Alt Names</th>
       <th title="Valid Until (UTC)">Valid Until</th>
       <th>Type</th>
       <th>SHA-256 Fingerprint</th>
@@ -374,7 +405,7 @@
 %>
     <tr>
       <td><strong><a href="/do/datafile/transferserver/<%=moverName%>"><%=moverName%></a></strong></td>
-      <td colspan="4" class="text-muted fst-italic">Offline or no certificate data available</td>
+      <td colspan="5" class="text-muted fst-italic">Offline or no certificate data available</td>
       <td></td>
     </tr>
 <%
@@ -386,10 +417,23 @@
             final boolean expSoon  = "true".equals(jsonField(json, "expiringSoon"));
             final boolean mSelf    = "true".equals(jsonField(json, "selfSigned"));
             final String fp        = jsonField(json, "fingerprintSha256");
+            final java.util.List<String> moverSanList = jsonArrayField(json, "sans");
 %>
     <tr>
       <td><strong><a href="/do/datafile/transferserver/<%=moverName%>"><%=moverName%></a></strong></td>
       <td style="font-family:monospace; font-size:.78rem;"><%=subj != null ? subj : "–"%></td>
+      <td style="font-size:.78rem; max-width:200px;">
+        <% if (moverSanList.isEmpty()) { %>–<% } else {
+             final int mvShow = Math.min(3, moverSanList.size());
+             for (int si = 0; si < mvShow; si++) { %>
+        <span class="d-block" style="font-family:monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="<%=moverSanList.get(si)%>"><%=moverSanList.get(si)%></span>
+        <% } if (moverSanList.size() > 3) { %>
+        <a href="#" class="text-muted sans-more-popover" style="font-size:.75rem;"
+           data-bs-toggle="popover" data-bs-trigger="focus" data-bs-placement="left" data-bs-html="true"
+           data-bs-content="<div style='font-family:monospace;font-size:.78rem;max-height:12em;overflow-y:auto;'><%for(int si2=0;si2<moverSanList.size();si2++){%><%=moverSanList.get(si2)%><br><%}%></div>"
+           tabindex="0">+<%=moverSanList.size()-3%> more</a>
+        <% } } %>
+      </td>
       <td>
         <%=notAfter != null ? notAfter : "–"%>
         <% if (notAfterTime != null) { %><br><small class="text-muted"><%=notAfterTime%></small><% } %>
@@ -438,6 +482,14 @@ function deploySingle(type, name) {
   document.getElementById('deploySingleName').value = name;
   document.getElementById('deploySingleForm').submit();
 }
+// Re-initialize SAN "more" popovers with html:true (global init uses html:false)
+$(document).ready(function() {
+  $('.sans-more-popover').each(function() {
+    var existing = bootstrap.Popover.getInstance(this);
+    if (existing) existing.dispose();
+    new bootstrap.Popover(this, { trigger: 'focus', html: true });
+  });
+});
 </script>
 
 <%-- ============================================================
@@ -569,5 +621,28 @@ function deploySingle(type, name) {
             while (end < len && json.charAt(end) != ',' && json.charAt(end) != '}') end++;
             return json.substring(si, end).trim();
         }
+    }
+
+    /** Extracts a flat JSON string array for the given key, e.g. ["DNS:a","IP:b"]. Returns empty list if absent. */
+    private static java.util.List<String> jsonArrayField(final String json, final String key) {
+        final java.util.List<String> result = new java.util.ArrayList<>();
+        if (json == null) return result;
+        final String search = "\"" + key + "\"";
+        final int ki = json.indexOf(search);
+        if (ki < 0) return result;
+        final int ci = json.indexOf(':', ki + search.length());
+        if (ci < 0) return result;
+        final int arrStart = json.indexOf('[', ci + 1);
+        final int arrEnd   = json.indexOf(']', arrStart + 1);
+        if (arrStart < 0 || arrEnd < 0) return result;
+        final String inner = json.substring(arrStart + 1, arrEnd).trim();
+        if (inner.isEmpty()) return result;
+        for (final String token : inner.split(",")) {
+            final String t = token.trim();
+            if (t.startsWith("\"") && t.endsWith("\"") && t.length() > 1) {
+                result.add(t.substring(1, t.length() - 1).replace("\\\"", "\"").replace("\\\\", "\\"));
+            }
+        }
+        return result;
     }
 %>

@@ -320,6 +320,7 @@ public class CertificatesAction extends PDSAction {
                 request.setAttribute("monitorCert", formatInfo(info));
                 request.setAttribute("monitorCertSelfSigned", info.selfSigned());
                 request.setAttribute("monitorKeystorePath", httpPlugin.getActiveKeystorePath());
+                request.setAttribute("monitorCertSans", info.sans());
             }
         }
         // Per-mover certificate snapshots

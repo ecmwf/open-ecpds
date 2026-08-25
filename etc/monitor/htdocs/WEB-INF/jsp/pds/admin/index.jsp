@@ -13,8 +13,8 @@
 
 <div class="row row-cols-1 row-cols-md-2 g-3">
 
-    <div class="col">
     <auth:link basePathKey="admin.basepath" href="/filter">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-file-zip text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -23,11 +23,11 @@
             to live data flows. Allows verifying file patterns and compression ratios without affecting production.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="admin.basepath" href="/requeue">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-hourglass-split text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -36,11 +36,11 @@
             to identify stuck or failed transfers matching a given file pattern, and requeue them for processing.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="admin.basepath" href="/upload">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-upload text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -49,11 +49,11 @@
             Useful for deploying scripts, property files or other assets to remote hosts without manual intervention.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="admin.feedback.basepath" href="">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-chat-left-text text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -62,11 +62,11 @@
             Includes ratings, comments, feature requests and contact information where provided.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="admin.basepath" href="/metafields">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-list-check text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -75,11 +75,11 @@
             auto-generated metadata forms on each destination page. Add new fields without any code changes.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="admin.basepath" href="/certificates">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-shield-lock text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -88,7 +88,7 @@
             Generate, import, and deploy certificates from a single location without service interruption.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
 </div>

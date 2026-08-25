@@ -1593,6 +1593,7 @@ public final class RESTServer {
             Format.replaceAll(sb, "${color}", color);
             Format.replaceAll(sb, "${version}", Version.getVersion());
             Format.replaceAll(sb, "${build}", Version.getBuild());
+            Format.replaceAll(sb, "${java}", System.getProperty("java.version", ""));
             return Response.ok(sb.toString(), MediaType.TEXT_HTML).build();
         } catch (final Exception e) {
             _log.warn("registerGet", e);
@@ -2014,6 +2015,7 @@ public final class RESTServer {
             Format.replaceAll(sb, "${color}", color);
             Format.replaceAll(sb, "${version}", Version.getVersion());
             Format.replaceAll(sb, "${build}", Version.getBuild());
+            Format.replaceAll(sb, "${java}", System.getProperty("java.version", ""));
             Format.replaceAll(sb, "${message}", message != null ? message : "");
             Format.replaceAll(sb, "${messageType}", messageType != null ? messageType : "error");
             Format.replaceAll(sb, "${dataLink}", dataLink != null ? dataLink : "");
@@ -2323,6 +2325,7 @@ public final class RESTServer {
         }
         Format.replaceAll(builder, "${version}", Version.getVersion());
         Format.replaceAll(builder, "${build}", Version.getBuild());
+        Format.replaceAll(builder, "${java}", System.getProperty("java.version", ""));
         Format.replaceAll(builder, "${ftpPort}", Cnf.at("FtpPlugin", "port", ""));
         Format.replaceAll(builder, "${s3Path}", Cnf.at("HttpPlugin", "s3ServicePath", "/s3"));
         Format.replaceAll(builder, "${davPath}", Cnf.at("HttpPlugin", "webdavPath", "/webdav"));

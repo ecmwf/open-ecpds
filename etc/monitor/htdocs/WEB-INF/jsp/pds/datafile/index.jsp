@@ -13,8 +13,8 @@
 
 <div class="row row-cols-1 row-cols-md-2 g-3">
 
-    <div class="col">
     <auth:link basePathKey="datafile.basepath" href="">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-file-earmark-text text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -23,11 +23,11 @@
             replication status, and storage location within Transfer Groups.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="metadata.basepath" href="">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-tags text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -36,11 +36,11 @@
             Metadata is used to describe, classify, and route files through the dissemination system.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="transfergroup.basepath" href="">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-collection text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -49,11 +49,11 @@
             Transfer Groups are organised into Clusters connected by a common network.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="transferserver.basepath" href="">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-server text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -62,11 +62,11 @@
             active connections, and certificate information for each mover in the cluster.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="retrievalmonitoring.basepath" href="">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-speedometer2 text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -75,11 +75,11 @@
             latency to help identify bottlenecks in data access and delivery.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="moverdownloads.basepath" href="">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-grid-3x3 text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -88,11 +88,11 @@
             Useful for spotting uneven load distribution or saturated movers.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="datarates.basepath" href="">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-bar-chart-line text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -101,11 +101,11 @@
             Helps with capacity planning and identifying periods of high or low activity.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="portaltraffic.basepath" href="">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-graph-up-arrow text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -114,7 +114,7 @@
             Tracks request volumes, user activity, and bandwidth usage over time.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
 </div>

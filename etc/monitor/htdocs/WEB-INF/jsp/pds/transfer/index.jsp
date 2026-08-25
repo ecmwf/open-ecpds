@@ -14,8 +14,8 @@
 
 <div class="row row-cols-1 row-cols-md-2 g-3">
 
-    <div class="col">
     <auth:link basePathKey="transfer.basepath" href="/data">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-arrow-left-right text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -24,11 +24,11 @@
             status, or date, and inspect transfer details, retry history, and error messages.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="transfer.basepath" href="/destination">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-geo-alt text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -37,11 +37,11 @@
             scheduler, retry logic, priorities, and the transfer hosts used for delivery.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="transfer.basepath" href="/host">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-pc-display text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -50,11 +50,11 @@
             credentials, target directory, and connection parameters for each delivery endpoint.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="transfer.basepath" href="/history">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-clock-history text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -63,11 +63,11 @@
             auditing deliveries and investigating past failures or retries.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="transfer.basepath" href="/method">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-diagram-3 text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -76,11 +76,11 @@
             parameters. Methods are reused across multiple Transfer Hosts to avoid duplication.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
-    <div class="col">
     <auth:link basePathKey="transfer.basepath" href="/module">
+    <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-puzzle text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -89,7 +89,7 @@
             Modules implement the actual transfer logic used by Transfer Methods and Hosts.</p>
         </div>
     </div>
-    </auth:link>
     </div>
+    </auth:link>
 
 </div>
