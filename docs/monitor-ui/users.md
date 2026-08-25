@@ -30,6 +30,8 @@ The detail page shows the user's current portal settings, associated destination
 
 Lists all monitoring interface users. Each user belongs to one or more categories that determine which destinations they can see and which management actions they can perform.
 
+For a full reference including authentication options and access-control details, see [Web Users](../use-cases/web-users.md).
+
 
 ![Web Users](img/web-users.png)
 

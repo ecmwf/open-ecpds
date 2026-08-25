@@ -249,3 +249,5 @@ without any credentials.
 - [REST API — Destination Metadata](../rest-api.md#destination-metadata) — programmatic metadata access
 - [INH event fields](../event-logging/inh-fields.md) — incoming connection history records
 - [DEA event fields](../event-logging/dea-fields.md) — denied access records
+- [Web Users](web-users.md) — the Monitoring UI counterpart to Data Users
+- [TOTP Authentication](../administration/totp.md) — configuring TOTP for Data Users and Web Users
