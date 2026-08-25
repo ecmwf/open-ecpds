@@ -60,4 +60,17 @@ Resources map URL path patterns to access-control entries. They are assigned to 
 
 ![Resources](img/resources.png)
 
+---
+
+## TOTP Authentication
+
+OpenECPDS supports **Time-based One-time Password (TOTP)** authentication for both Web Users and Data Users, delegating credential validation to an external TOTP-compatible server (e.g. Keycloak).
+
+- **Web Users** — TOTP is a global switch (`TOTP.active`). When enabled, the locally stored password is ignored for all Web Users; all logins go through the TOTP endpoint.
+- **Data Users** — TOTP is controlled per-user via the **TOTP Authentication** toggle on the user edit page, in combination with the global `TOTP.active` setting.
+
+OpenECPDS auto-detects whether the supplied credential is a **one-time passcode** (exactly 6 or 8 digits) or a **password** and routes to the appropriate TOTP client.
+
+For full configuration details and a behaviour reference table, see the [TOTP Authentication](../administration/totp.md) administration page.
+
 

@@ -119,6 +119,7 @@ nav:
       - Administration: monitor-ui/admin.md
   - Administration:
       - TLS Certificates: administration/certificates.md
+      - TOTP Authentication: administration/totp.md
   - Use Cases:
       - ECPDS Command-line Tool: use-cases/ecpds-cli.md
       - Data Portal: use-cases/data-portal.md
