@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
+import java.net.Socket;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -42,8 +43,9 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -580,13 +582,34 @@ public final class RESTClient implements RESTInterface {
     }
 
     private static SSLContext newTrustAllSslContext() throws NoSuchAlgorithmException, KeyManagementException {
-        final var trustAllCerts = new TrustManager[] { new X509TrustManager() {
+        // X509ExtendedTrustManager is used directly by JSSE without wrapping, so
+        // it bypasses the AbstractTrustManagerWrapper that would otherwise enforce
+        // endpoint identification (hostname/SAN checks) regardless of SSLParameters.
+        final var trustAllCerts = new TrustManager[] { new X509ExtendedTrustManager() {
             @Override
             public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
             }
 
             @Override
             public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
+            }
+
+            @Override
+            public void checkClientTrusted(final X509Certificate[] chain, final String authType, final Socket socket) {
+            }
+
+            @Override
+            public void checkServerTrusted(final X509Certificate[] chain, final String authType, final Socket socket) {
+            }
+
+            @Override
+            public void checkClientTrusted(final X509Certificate[] chain, final String authType,
+                    final SSLEngine engine) {
+            }
+
+            @Override
+            public void checkServerTrusted(final X509Certificate[] chain, final String authType,
+                    final SSLEngine engine) {
             }
 
             @Override
