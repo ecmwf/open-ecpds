@@ -468,22 +468,21 @@ public class GetIncomingUserListJsonAction extends PDSAction {
     private static String buildActions(final String id, final int connectionCount, final boolean canEdit) {
         final var escaped = escapeHtml(id);
         final var sb = new StringBuilder();
-        sb.append("<a href=\"").append(INCOMING_BASE_PATH).append("/edit/update_form/").append(escaped).append(
-                "\" class=\"btn btn-sm btn-outline-primary me-1\" title=\"Edit\"><i class=\"bi bi-pencil\"></i></a>")
+        sb.append("<div class=\"d-inline-flex gap-1\">").append("<a href=\"").append(INCOMING_BASE_PATH)
+                .append("/edit/update_form/").append(escaped)
+                .append("\" class=\"btn btn-sm btn-outline-primary\" title=\"Edit\"><i class=\"bi bi-pencil\"></i></a>")
                 .append("<a href=\"").append(INCOMING_BASE_PATH).append("/edit/delete_form/").append(escaped)
-                .append("\" class=\"btn btn-sm btn-outline-danger me-1\" title=\"Delete\"><i class=\"bi bi-trash\"></i></a>");
-        if (canEdit) {
-            if (connectionCount > 0) {
-                final var closeUrl = INCOMING_BASE_PATH + "/edit/update/" + escaped + "/closeAllSessions/all";
-                sb.append("<a href=\"javascript:confirmCloseAll('").append(closeUrl).append("',")
-                        .append(connectionCount)
-                        .append(")\" class=\"btn btn-sm btn-outline-warning\" title=\"Close all sessions (")
-                        .append(connectionCount).append(")\"><i class=\"bi bi-plug-fill\"></i></a>");
-            } else {
-                sb.append(
-                        "<button type=\"button\" class=\"btn btn-sm btn-outline-warning\" disabled title=\"No active sessions\"><i class=\"bi bi-plug\"></i></button>");
-            }
+                .append("\" class=\"btn btn-sm btn-outline-danger\" title=\"Delete\"><i class=\"bi bi-trash\"></i></a>");
+        if (canEdit && connectionCount > 0) {
+            final var closeUrl = INCOMING_BASE_PATH + "/edit/update/" + escaped + "/closeAllSessions/all";
+            sb.append("<a href=\"javascript:confirmCloseAll('").append(closeUrl).append("',").append(connectionCount)
+                    .append(")\" class=\"btn btn-sm btn-outline-warning\" title=\"Close all sessions (")
+                    .append(connectionCount).append(")\"><i class=\"bi bi-plug-fill\"></i></a>");
+        } else {
+            sb.append(
+                    "<button type=\"button\" class=\"btn btn-sm btn-outline-warning\" disabled title=\"No active sessions\"><i class=\"bi bi-plug\"></i></button>");
         }
+        sb.append("</div>");
         return sb.toString();
     }
 

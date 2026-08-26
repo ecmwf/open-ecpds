@@ -485,9 +485,9 @@
 			<strong>Current Sessions</strong>
 			<span class="badge rounded-pill ${sessionCount > 0 ? 'bg-success' : 'bg-secondary'}" title="${sessionCount} active session${sessionCount != 1 ? 's' : ''}">${sessionCount}</span>
 			<c:if test="${not empty incomingUserActionForm.incomingUser.incomingConnections}">
-			<button type="button" class="btn btn-sm btn-outline-danger ms-auto"
+			<button type="button" class="btn btn-sm btn-outline-warning ms-auto"
 			        onclick="confirmCloseAll('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incomingUserActionForm.id}"/>/closeAllSessions/all', ${sessionCount})">
-			  <i class="bi bi-x-circle"></i> Close All
+			  <i class="bi bi-plug-fill"></i> Close All
 			</button>
 			</c:if>
 		</div>
@@ -522,8 +522,8 @@
 									<td>${mySession.formatedDuration}</td>
 									<td class="text-center">
 										<a href="javascript:validate('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incomingUserActionForm.id}"/>/closeSession/<c:out value="${mySession.id}"/>','<bean:message key="ecpds.incoming.disconnectOperation.warning" arg0="${mySession.login}" arg1="${mySession.dataMoverName}"/>')"
-										   class="btn btn-sm btn-outline-danger py-0 px-1" title="Disconnect session">
-											<i class="bi bi-x-lg"></i>
+										   class="btn btn-sm btn-outline-warning" title="Disconnect session">
+											<i class="bi bi-plug"></i>
 										</a>
 									</td>
 								</tr>

@@ -207,9 +207,9 @@
 			<auth:if basePathKey="incoming.basepath" paths="/edit/update">
 			<auth:then>
 			<c:if test="${not empty incoming.incomingConnections}">
-			<button type="button" class="btn btn-sm btn-outline-danger ms-auto"
+			<button type="button" class="btn btn-sm btn-outline-warning ms-auto"
 			        onclick="confirmCloseAll('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incoming.id}"/>/closeAllSessions/all', ${sessionCount})">
-			  <i class="bi bi-x-circle"></i> Close All
+			  <i class="bi bi-plug-fill"></i> Close All
 			</button>
 			</c:if>
 			</auth:then>
@@ -261,8 +261,8 @@
 									<auth:then>
 									<td class="text-center">
 										<a href="javascript:validate('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incoming.id}"/>/closeSession/<c:out value="${s.id}"/>','<bean:message key="ecpds.incoming.disconnectOperation.warning" arg0="${s.login}" arg1="${s.dataMoverName}"/>')"
-										   class="btn btn-sm btn-outline-danger py-0 px-1" title="Disconnect session">
-											<i class="bi bi-x-lg"></i>
+										   class="btn btn-sm btn-outline-warning" title="Disconnect session">
+											<i class="bi bi-plug"></i>
 										</a>
 									</td>
 									</auth:then>
