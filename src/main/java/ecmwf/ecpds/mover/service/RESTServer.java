@@ -922,7 +922,12 @@ public final class RESTServer {
      */
     private Response selfServiceLoginRedirect(final String user, final HttpServletRequest request,
             final HttpServletResponse response) {
-        if (getPortalSession(request, response) != null) {
+        final var existingSession = getPortalSession(request, response);
+        if (existingSession != null) {
+            // A portal session exists — no redirect needed. Close it immediately so this
+            // existence-check does not consume a connection slot; the caller will create
+            // its own session for the actual request handling.
+            existingSession.close(true);
             return null;
         }
         try {
@@ -1006,8 +1011,10 @@ public final class RESTServer {
             // Let's treat it as a list request!
             final var setup = session.getECtransSetup();
             if (setup != null && !setup.getBoolean(ECtransOptions.USER_PORTAL_SIMPLE_LIST)) {
-                // Send the full html page (or negotiated format)
-                return dataListGet(ui, authString, request, response, headers, filename);
+                // Reuse the existing session instead of creating a second one.
+                // _dataListGet takes ownership of session (closes it in its finally block).
+                sessionTransferred = true;
+                return _dataListGet(session, request, headers, filename);
             }
             // Only send a simple text list
             final var builder = Response.ok();
@@ -1315,6 +1322,29 @@ public final class RESTServer {
         _log.debug("REST received request: dataListGet({})", filename);
         checkIsControlChannel(ui);
         final var session = getUserSession(authString, request, response);
+        // Delegate to shared implementation; session lifecycle is owned by _dataListGet.
+        return _dataListGet(session, request, headers, filename);
+    }
+
+    /**
+     * Shared implementation for directory listing responses. Accepts a pre-authenticated session so that callers
+     * (fileGet, dataListGet) can reuse an existing session instead of creating a second one per request.
+     * <p>
+     * Session lifecycle: this method always closes {@code session} in its {@code finally} block.
+     *
+     * @param session
+     *            the authenticated user session (may be null if authentication failed upstream)
+     * @param request
+     *            the HTTP servlet request
+     * @param headers
+     *            the HTTP request headers (used for content-negotiation)
+     * @param filename
+     *            the directory path to list
+     *
+     * @return the directory listing response
+     */
+    private Response _dataListGet(final UserSession session, final HttpServletRequest request,
+            final HttpHeaders headers, final String filename) {
         try {
             final var path = getFilename(session, filename);
             // Check if the file or directory exists?
