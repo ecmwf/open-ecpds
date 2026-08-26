@@ -42,7 +42,6 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
@@ -541,9 +540,15 @@ public final class RESTClient implements RESTInterface {
                 }
             }
             if (TRUST_ALL_CERTS) {
-                final var parameters = new SSLParameters();
+                final var sslContext = newTrustAllSslContext();
+                // Set the SSL context first so the HttpClient picks it up, then override
+                // the SSLParameters to disable endpoint identification (hostname/SAN checks).
+                // The empty string disables the default "HTTPS" algorithm; must be applied
+                // AFTER sslContext() so it is not reset by the context's default parameters.
+                builder.sslContext(sslContext);
+                final var parameters = sslContext.getDefaultSSLParameters();
                 parameters.setEndpointIdentificationAlgorithm("");
-                builder.sslParameters(parameters).sslContext(newTrustAllSslContext());
+                builder.sslParameters(parameters);
             }
             return builder.build();
         } catch (final NoSuchAlgorithmException | KeyManagementException e) {
