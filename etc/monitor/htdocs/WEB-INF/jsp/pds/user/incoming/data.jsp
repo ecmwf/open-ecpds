@@ -204,6 +204,11 @@
 			<i class="bi bi-plug text-secondary"></i>
 			<strong>Current Sessions</strong>
 			<span class="badge rounded-pill ${sessionCount > 0 ? 'bg-success' : 'bg-secondary'}" title="${sessionCount} active session${sessionCount != 1 ? 's' : ''}">${sessionCount}</span>
+			<button class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" type="button"
+			        data-bs-toggle="collapse" data-bs-target="#sessionsHelp"
+			        aria-expanded="false" title="Column descriptions">
+			  <i class="bi bi-info-circle"></i>
+			</button>
 			<c:if test="${not empty incoming.incomingConnections}">
 			<button id="btn-show-stuck" class="btn btn-sm btn-outline-secondary ms-auto" type="button"
 			        title="Show only suspected-stuck sessions (open > 30 s with zero bytes transferred)">
@@ -220,6 +225,35 @@
 			</c:if>
 			</auth:then>
 			</auth:if>
+		</div>
+		<div class="collapse" id="sessionsHelp">
+			<div class="px-3 py-2 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+				<strong class="d-block mb-1">Current Sessions &mdash; column guide</strong>
+				<dl class="row mb-0" style="font-size:inherit">
+					<dt class="col-sm-3">Session ID</dt>
+					<dd class="col-sm-9">Internal session identifier assigned when the connection is opened.</dd>
+					<dt class="col-sm-3">Protocol</dt>
+					<dd class="col-sm-9">Connection protocol: <code>https</code>, <code>sftp</code>, <code>ftp</code>, <code>webdav</code>, <code>s3</code>, <code>mqtt</code>, etc.</dd>
+					<dt class="col-sm-3">Remote IP</dt>
+					<dd class="col-sm-9">Client IP address.</dd>
+					<dt class="col-sm-3">Data Mover</dt>
+					<dd class="col-sm-9">Data Mover node serving this session.</dd>
+					<dt class="col-sm-3">Start Time (UTC)</dt>
+					<dd class="col-sm-9">When the session was opened (UTC).</dd>
+					<dt class="col-sm-3">Duration</dt>
+					<dd class="col-sm-9">Time elapsed since the session started.</dd>
+					<dt class="col-sm-3">Downloads</dt>
+					<dd class="col-sm-9">Download stream counts in <em>active/total</em> format. The active count is highlighted in blue when non-zero. Tracked for HTTPS, SFTP, FTP, WebDAV and S3.</dd>
+					<dt class="col-sm-3">Uploads</dt>
+					<dd class="col-sm-9">Upload stream counts in <em>active/total</em> format. Same protocols as Downloads.</dd>
+					<dt class="col-sm-3">Bytes In</dt>
+					<dd class="col-sm-9">Cumulative bytes received from the client (uploads). Updated in real time as data arrives.</dd>
+					<dt class="col-sm-3">Bytes Out</dt>
+					<dd class="col-sm-9">Cumulative bytes sent to the client (downloads). Updated in real time as data is served.</dd>
+					<dt class="col-sm-3"><i class="bi bi-exclamation-triangle text-warning"></i> Show Stuck</dt>
+					<dd class="col-sm-9">Filters to HTTPS/HTTP sessions open for more than 30 seconds that have never started any transfer stream — the clearest signal of a genuinely stuck connection. Non-HTTP protocols are excluded since idle long-lived connections are normal for SFTP/FTP/MQTT.</dd>
+				</dl>
+			</div>
 		</div>
 		<c:choose>
 			<c:when test="${empty incoming.incomingConnections}">
