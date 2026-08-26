@@ -72,7 +72,7 @@ public class DataFilePath {
             return getDir(dataFile.getFileSystem(), dataFile.getArrivedTime().getTime()) + File.separator
                     + Format.formatValue(dataFile.getTimeStep(), 10) + File.separator
                     + Format.formatValue(dataFile.getId(), 10) + (originalName.length() > 245 ? "data" : originalName)
-                    + (instance != null ? "_" + instance.intValue() : "");
+                    + (instance != null && instance != 0 ? "_" + instance.intValue() : "");
         } catch (final NullPointerException e) {
             _log.warn("Cannot process path for DataFile: {}", dataFile, e);
             throw e;

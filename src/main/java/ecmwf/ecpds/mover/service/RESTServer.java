@@ -93,6 +93,7 @@ import ecmwf.common.ecaccess.UserSession;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.MonitoredInputStream;
+import ecmwf.common.technical.MonitoredOutputStream;
 import ecmwf.common.technical.ProxyEvent;
 import ecmwf.common.technical.ProxySocket;
 import ecmwf.common.technical.StreamPlugThread;
@@ -938,7 +939,13 @@ public final class RESTServer {
                 return Response.seeOther(URI.create(loginUrl)).build();
             }
         } catch (final Exception e) {
-            _log.debug("Unable to check portal service for '{}' in selfServiceLoginRedirect", user, e);
+            // "Login failed" means the user doesn't exist or is inactive in the
+            // IncomingUser table — expected for open-access users (e.g. "opendata")
+            // who are never self-service users. Only log unexpected errors.
+            final var msg = e.getMessage();
+            if (msg == null || !msg.contains("Login failed")) {
+                _log.debug("Unable to check portal service for '{}' in selfServiceLoginRedirect", user, e);
+            }
         }
         return null;
     }
@@ -1257,8 +1264,24 @@ public final class RESTServer {
             checkParameter("filename", filename);
             final var name = getFilename(session, filename);
             proxy = session.getProxySocketOutput(name, 0, 640);
-            plug = new StreamPlugThread(in, out = proxy.getDataOutputStream());
-            plug.configurableRun();
+            final var rawOut = proxy.getDataOutputStream();
+            final var mon = new MonitoredOutputStream(rawOut) {
+                @Override
+                public void write(final byte[] b, final int off, final int len) throws IOException {
+                    super.write(b, off, len);
+                    // Update bytes-in incrementally so the session monitor reflects
+                    // progress even if the transfer stalls before completion.
+                    session.addBytesIn(len);
+                }
+            };
+            session.startStreamIn();
+            plug = new StreamPlugThread(in, mon);
+            try {
+                plug.configurableRun();
+            } finally {
+                session.endStreamIn();
+            }
+            out = rawOut;
             final var message = plug.getMessage();
             plug.close();
             out.close();
@@ -3613,6 +3636,22 @@ public final class RESTServer {
             final MediaRequest mediaRequest, final long startTime, final long fullLength)
             throws IOException, WebApplicationException {
         final InputStream in = new MonitoredInputStream(proxy.getDataInputStream()) {
+            {
+                // Count this as an active download stream for the session monitor.
+                session.startStreamOut();
+            }
+
+            @Override
+            public int read(final byte[] b, final int off, final int len) throws IOException {
+                final var r = super.read(b, off, len);
+                // Update bytes-out incrementally so the session monitor reflects
+                // progress even if the transfer stalls before close() is called.
+                if (r > 0) {
+                    session.addBytesOut(r);
+                }
+                return r;
+            }
+
             @Override
             public void close() throws IOException {
                 try {
@@ -3643,6 +3682,8 @@ public final class RESTServer {
                     } catch (final EccmdException e) {
                         throw newException(e, 500, e.getMessage());
                     }
+                    // Bytes already added incrementally in read(); no addBytesOut here.
+                    session.endStreamOut();
                 }
             }
         };

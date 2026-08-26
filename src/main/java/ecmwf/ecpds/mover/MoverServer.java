@@ -3875,11 +3875,22 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 lengthOk = !StreamManager.NONE.equals(inputFilter);
             }
             if (OPERATIONAL && (!exists || !lengthOk || !readable)) {
-                _log.debug("DataFile {} not found locally", dataFile.getId());
+                final var path = file != null ? file.getAbsolutePath() : "(no filesystem)";
+                if (!exists) {
+                    _log.debug("DataFile {} not found locally (path={}, exists=false)", dataFile.getId(), path);
+                } else if (!readable) {
+                    _log.debug("DataFile {} not found locally (path={}, exists=true, readable=false)", dataFile.getId(),
+                            path);
+                } else {
+                    _log.debug("DataFile {} not found locally (path={}, exists=true, size={}, expected={})",
+                            dataFile.getId(), path, file.length(), size);
+                }
                 _local = false;
                 if (hostsForSource == null || hostsForSource.length == 0) {
                     throw new SourceNotAvailableException("DataFile " + dataFile.getId() + " not found on " + getRoot()
-                            + (exists && !lengthOk ? " (incorrect file size)" : ""));
+                            + (!exists ? " (path not found: " + path + ")"
+                                    : !readable ? " (not readable: " + path + ")" : " (size mismatch: actual="
+                                            + file.length() + ", expected=" + size + ", path=" + path + ")"));
                 }
             }
             _hostsForSource = hostsForSource;
@@ -4400,7 +4411,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     }
                     comment = "Sent" + compression + " from " + from + source + " to "
                             + (isNotEmpty(hostName) ? hostName + " at " : "") + targetName
-                            + (rate == -1 ? "" : " (" + rate + " Mbits/s)");
+                            + (rate == -1 ? "" : " (" + rate + " Mbits/s)")
+                            + (module.getAttribute("s3.discoveredRegion") instanceof final String r
+                                    ? " [s3.region=" + r + "]" : "");
                 }
             }
             final var statisticsString = statistics != null && !statistics.isEmpty() ? statistics.toString() : null;

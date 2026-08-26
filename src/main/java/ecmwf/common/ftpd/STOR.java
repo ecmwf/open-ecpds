@@ -136,6 +136,7 @@ final class STOR {
                 } else {
                     event = null;
                 }
+                currentContext.session.startStreamIn();
                 if (currentContext.transferType == CurrentContext.ATYPE) {
                     // ASCII file transfers are going to be a bit slow 'cause we
                     // have to read
@@ -171,6 +172,7 @@ final class STOR {
                             throw ioe;
                         }
                         byteCount += baos.size();
+                        currentContext.session.addBytesIn(baos.size());
                         baos.reset();
                     }
                 } else {
@@ -181,6 +183,7 @@ final class STOR {
                     int amount;
                     while ((amount = StreamPlugThread.readFully(ins, buffer, 0, currentContext.buffer)) > 0) {
                         byteCount += amount;
+                        currentContext.session.addBytesIn(amount);
                         try {
                             os.write(buffer, 0, amount);
                         } catch (final IOException ioe) {
@@ -239,6 +242,7 @@ final class STOR {
                 }
             }
         } finally {
+            currentContext.session.endStreamIn();
             StreamPlugThread.closeQuietly(os);
             try {
                 if (proxy != null) {

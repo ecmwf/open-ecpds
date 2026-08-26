@@ -109,6 +109,7 @@ final class RETR {
                 final var size = posn;
                 final var startTime = System.currentTimeMillis();
                 final var data = new byte[currentContext.buffer];
+                currentContext.session.startStreamOut();
                 if (currentContext.transferType == CurrentContext.ATYPE) {
                     // ASCII file transfers are going to be a bit slow 'cause we
                     // have to read them a byte at a time to convert possible
@@ -117,6 +118,7 @@ final class RETR {
                     final var outs = new BufferedOutputStream(out);
                     while ((count = ios.read(data, 0, currentContext.buffer)) > 0) {
                         posn += count;
+                        currentContext.session.addBytesOut(count);
                         for (var i = 0; i < count; i++) {
                             final var c = data[i];
                             if (c == Util.CRLFb[0]) {
@@ -135,6 +137,7 @@ final class RETR {
                     while ((count = ios.read(data, 0, currentContext.buffer)) > 0) {
                         out.write(data, 0, count);
                         posn += count;
+                        currentContext.session.addBytesOut(count);
                     }
                 }
                 out.close();
@@ -184,6 +187,7 @@ final class RETR {
                 }
             }
         } finally {
+            currentContext.session.endStreamOut();
             try {
                 if (ios != null) {
                     ios.close();

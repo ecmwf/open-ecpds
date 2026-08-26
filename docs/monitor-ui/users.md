@@ -25,6 +25,31 @@ The detail page shows the user's current portal settings, associated destination
 ![Data User Detail](img/incoming-detail.png)
 
 
+### Current Sessions
+
+The Data User detail page includes a **Current Sessions** table showing all live portal connections for that user, updated each time the page is loaded.
+
+| Column | Description |
+|--------|-------------|
+| **Session ID** | Internal session identifier |
+| **Protocol** | Connection protocol: `https`, `sftp`, `ftp`, `mqtt`, `webdav`, etc. |
+| **Remote IP** | Client IP address |
+| **Data Mover** | Which Data Mover is serving the session |
+| **Start Time** | When the session was opened (UTC) |
+| **Duration** | Time elapsed since the session started |
+| **Downloads** | Active and total download stream counts in `active/total` format (e.g. `1/5`). The active count is shown in blue when non-zero. Only tracked for HTTPS sessions. |
+| **Uploads** | Active and total upload stream counts (same format). Only tracked for HTTPS sessions. |
+| **Bytes In** | Accumulated bytes received from the client (uploads) |
+| **Bytes Out** | Accumulated bytes sent to the client (downloads) |
+| **Action** | Disconnect button (for users with edit permission) |
+
+#### Show Stuck filter
+
+The **Show Stuck** button filters the table to show only sessions that are suspected to be stuck: HTTPS/HTTP sessions open for more than 30 seconds that have **never started any transfer stream**. Sessions with non-zero stream counts or non-HTTP protocols are never flagged.
+
+!!! note
+    Bytes and stream counts are tracked for **HTTPS/HTTP**, **SFTP**, **FTP**, **WebDAV**, and **S3** (incoming API) sessions. MQTT and other protocol sessions show zero.
+
 
 ## Web Users
 
@@ -74,5 +99,4 @@ OpenECPDS supports **Time-based One-time Password (TOTP)** authentication for bo
 OpenECPDS auto-detects whether the supplied credential is a **one-time passcode** (exactly 6 or 8 digits) or a **password** and routes to the appropriate TOTP client.
 
 For full configuration details and a behaviour reference table, see the [TOTP Authentication](../administration/totp.md) administration page.
-
 

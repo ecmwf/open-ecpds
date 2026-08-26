@@ -370,6 +370,13 @@ public final class AmazonS3Module extends TransferModule {
                     setup.getString(HOST_S3_REQUEST_CHECKSUM_CALCULATION),
                     setup.getString(HOST_S3_RESPONSE_CHECKSUM_VALIDATION),
                     setup.getBoolean(HOST_S3_DISABLE_SDK_RETRIES), getDebug());
+            // Surface the discovered region in the transfer comment so operators can see what
+            // value to configure in s3.region. Only set when "auto" was used or when
+            // crossRegionAccess corrected a wrong explicit region.
+            final var discoveredRegion = Session.getCachedRegion(bucketName);
+            if (discoveredRegion != null && ("auto".equalsIgnoreCase(region) || !discoveredRegion.equals(region))) {
+                setAttribute("s3.discoveredRegion", discoveredRegion);
+            }
             connected = true;
         } catch (final S3Exception e) {
             _log.error("Connection failed to {}", url, e);
@@ -1244,6 +1251,17 @@ public final class AmazonS3Module extends TransferModule {
      */
     private static class Session {
 
+        /**
+         * Cache of bucket-name → AWS region, populated on first connection. Bucket regions never change, so this cache
+         * is permanent and shared across all sessions.
+         */
+        private static final java.util.concurrent.ConcurrentHashMap<String, String> _bucketRegionCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+        /** Returns the cached region for a bucket, or null if not yet discovered. */
+        static String getCachedRegion(final String bucketName) {
+            return isNotEmpty(bucketName) ? _bucketRegionCache.get(bucketName) : null;
+        }
+
         /** The S3 client. */
         private final S3Client s3Client;
 
@@ -1418,12 +1436,31 @@ public final class AmazonS3Module extends TransferModule {
                 clientBuilder
                         .responseChecksumValidation(ResponseChecksumValidation.fromValue(responseChecksumValidation));
             }
-            // Resolve the effective region: explicit config wins; otherwise auto-discover from bucket.
-            var resolvedRegion = isNotEmpty(region) ? region : null;
-            if (resolvedRegion == null && isNotEmpty(bucketName)) {
-                resolvedRegion = discoverBucketRegion(creds, bucketName);
-                if (resolvedRegion != null) {
-                    _log.info("Auto-discovered region '{}' for bucket '{}'", resolvedRegion, bucketName);
+            // Resolve the effective region: always discover upfront when crossRegionAccess is enabled
+            // (to avoid 301 PermanentRedirect stream-replay errors on non-resettable ECpds streams),
+            // or discover when no region is explicitly configured, or when s3.region="auto".
+            var resolvedRegion = isNotEmpty(region) && !"auto".equalsIgnoreCase(region) ? region : null;
+            if (resolvedRegion == null && "auto".equalsIgnoreCase(region)) {
+                _log.debug("s3.region=auto: will auto-discover region for bucket '{}'", bucketName);
+            }
+            if (isNotEmpty(bucketName) && (resolvedRegion == null || crossRegionAccess)) {
+                final var cached = _bucketRegionCache.get(bucketName);
+                final var discovered = cached != null ? cached : discoverBucketRegion(creds, bucketName);
+                if (discovered != null) {
+                    if (cached == null) {
+                        _bucketRegionCache.put(bucketName, discovered);
+                    }
+                    if (resolvedRegion != null && !resolvedRegion.equals(discovered)) {
+                        _log.warn(
+                                "s3.region '{}' differs from actual bucket region '{}' for bucket '{}'; "
+                                        + "using discovered region to avoid 301 stream-replay errors",
+                                resolvedRegion, discovered, bucketName);
+                    } else if (cached == null) {
+                        _log.info("Auto-discovered region '{}' for bucket '{}'", discovered, bucketName);
+                    } else {
+                        _log.debug("Using cached region '{}' for bucket '{}'", discovered, bucketName);
+                    }
+                    resolvedRegion = discovered;
                 }
             }
             if (resolvedRegion == null) {
@@ -1855,6 +1892,10 @@ public final class AmazonS3Module extends TransferModule {
         final var cause = e.getCause();
         if (cause != null) {
             sb.append(", Cause=").append(cause.getClass().getSimpleName()).append(":").append(cause.getMessage());
+        }
+        if (e.statusCode() == 301 && details != null && "PermanentRedirect".equals(details.errorCode())) {
+            sb.append(
+                    " [Hint: bucket is in a different region than s3.region; set s3.crossRegionAccess=yes or correct s3.region]");
         }
         return sb.toString();
     }

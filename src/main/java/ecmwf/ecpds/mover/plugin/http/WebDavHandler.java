@@ -628,8 +628,22 @@ public final class WebDavHandler extends HttpServlet {
                 event.setRemoteHost(session.getRemoteAddr());
                 event.setUserType(ProxyEvent.UserType.DATA_USER);
                 event.setUserName(session.getUserSession().getUser());
+                final var us = session.getUserSession();
+                us.startStreamOut();
                 try (InputStream in = proxy.getDataInputStream(); OutputStream out = outputContext.getOutputStream()) {
-                    in.transferTo(out);
+                    final var wrapped = new java.io.FilterInputStream(in) {
+                        @Override
+                        public int read(final byte[] b, final int off, final int len) throws IOException {
+                            final int n = super.read(b, off, len);
+                            if (n > 0) {
+                                us.addBytesOut(n);
+                            }
+                            return n;
+                        }
+                    };
+                    wrapped.transferTo(out);
+                } finally {
+                    us.endStreamOut();
                 }
                 session.getUserSession().check(proxy);
             } catch (final EccmdException e) {
@@ -741,9 +755,23 @@ public final class WebDavHandler extends HttpServlet {
                     event.setUserType(ProxyEvent.UserType.DATA_USER);
                     event.setUserName(session.getUserSession().getUser());
                     event.setUpload(true);
+                    final var us = session.getUserSession();
+                    us.startStreamIn();
                     try (InputStream in = inputContext.getInputStream();
                             OutputStream out = proxy.getDataOutputStream()) {
-                        in.transferTo(out);
+                        final var wrapped = new java.io.FilterInputStream(in) {
+                            @Override
+                            public int read(final byte[] b, final int off, final int len) throws IOException {
+                                final int n = super.read(b, off, len);
+                                if (n > 0) {
+                                    us.addBytesIn(n);
+                                }
+                                return n;
+                            }
+                        };
+                        wrapped.transferTo(out);
+                    } finally {
+                        us.endStreamIn();
                     }
                     session.getUserSession().check(proxy);
                 } finally {

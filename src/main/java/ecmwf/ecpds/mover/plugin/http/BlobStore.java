@@ -338,19 +338,24 @@ public class BlobStore implements Closeable {
             @Override
             public int read() throws IOException {
                 final int b = super.read();
-                if (b != -1)
+                if (b != -1) {
                     bytesSent[0]++;
+                    _session.addBytesIn(1);
+                }
                 return b;
             }
 
             @Override
             public int read(final byte[] b, final int off, final int len) throws IOException {
                 final int n = super.read(b, off, len);
-                if (n > 0)
+                if (n > 0) {
                     bytesSent[0] += n;
+                    _session.addBytesIn(n);
+                }
                 return n;
             }
         };
+        _session.startStreamIn();
         try {
             proxy = _session.getProxySocketOutput(path.getValue(), 0, 640);
             plug = new StreamPlugThread(countingIs, out = proxy.getDataOutputStream());
@@ -386,6 +391,7 @@ public class BlobStore implements Closeable {
         } catch (final Throwable t) {
             throw new IOException("putBlob failed: " + Format.getMessage(t), t);
         } finally {
+            _session.endStreamIn();
             StreamPlugThread.closeQuietly(plug);
             StreamPlugThread.closeQuietly(out);
             StreamPlugThread.closeQuietly(proxy);

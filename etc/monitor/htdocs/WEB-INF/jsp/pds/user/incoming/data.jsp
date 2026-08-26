@@ -204,10 +204,16 @@
 			<i class="bi bi-plug text-secondary"></i>
 			<strong>Current Sessions</strong>
 			<span class="badge rounded-pill ${sessionCount > 0 ? 'bg-success' : 'bg-secondary'}" title="${sessionCount} active session${sessionCount != 1 ? 's' : ''}">${sessionCount}</span>
+			<c:if test="${not empty incoming.incomingConnections}">
+			<button id="btn-show-stuck" class="btn btn-sm btn-outline-secondary ms-auto" type="button"
+			        title="Show only suspected-stuck sessions (open > 30 s with zero bytes transferred)">
+			  <i class="bi bi-exclamation-triangle"></i> Show Stuck
+			</button>
+			</c:if>
 			<auth:if basePathKey="incoming.basepath" paths="/edit/update">
 			<auth:then>
 			<c:if test="${not empty incoming.incomingConnections}">
-			<button type="button" class="btn btn-sm btn-outline-warning ms-auto"
+			<button type="button" class="btn btn-sm btn-outline-warning"
 			        onclick="confirmCloseAll('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incoming.id}"/>/closeAllSessions/all', ${sessionCount})">
 			  <i class="bi bi-plug-fill"></i> Close All
 			</button>
@@ -223,7 +229,7 @@
 			</c:when>
 			<c:otherwise>
 				<div class="table-responsive">
-					<table id="incomingSessionsTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
+					<table id="sessionsTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
 						<thead class="table-warning">
 							<tr>
 								<th>Session ID</th>
@@ -233,6 +239,10 @@
 								<c:if test="${incoming.portalService eq 'self-service'}"><th>Subscriber</th></c:if>
 								<th title="Start Time (UTC)">Start Time (UTC)</th>
 								<th>Duration</th>
+								<th title="Downloads: active/total streams">Downloads</th>
+								<th title="Uploads: active/total streams">Uploads</th>
+								<th>Bytes In</th>
+								<th>Bytes Out</th>
 								<auth:if basePathKey="incoming.basepath" paths="/edit/update">
 								<auth:then><th class="text-center no-sort">Action</th></auth:then>
 								</auth:if>
@@ -240,7 +250,7 @@
 						</thead>
 						<tbody>
 							<c:forEach var="s" items="${incoming.incomingConnections}">
-								<tr>
+								<tr data-bytes-in="${s.bytesIn}" data-bytes-out="${s.bytesOut}" data-protocol="${s.protocol}" data-total-streams-out="${s.totalStreamsOut}" data-total-streams-in="${s.totalStreamsIn}">
 									<td><code>${s.id}</code></td>
 									<td><span class="badge bg-secondary-subtle text-secondary-emphasis border">${s.protocol}</span></td>
 									<td>${s.remoteIpAddress}</td>
@@ -257,6 +267,20 @@
 									</c:if>
 									<td data-order="${s.startTime}"><span class="ic-ts" data-ts="${s.startTime}">${s.startTime}</span></td>
 									<td>${s.formatedDuration}</td>
+									<td data-order="${s.totalStreamsOut}">
+										<c:choose>
+											<c:when test="${s.activeStreamsOut gt 0}"><span class="text-primary fw-semibold">${s.activeStreamsOut}</span>/<span class="text-muted">${s.totalStreamsOut}</span></c:when>
+											<c:otherwise><span class="text-muted">0/${s.totalStreamsOut}</span></c:otherwise>
+										</c:choose>
+									</td>
+									<td data-order="${s.totalStreamsIn}">
+										<c:choose>
+											<c:when test="${s.activeStreamsIn gt 0}"><span class="text-primary fw-semibold">${s.activeStreamsIn}</span>/<span class="text-muted">${s.totalStreamsIn}</span></c:when>
+											<c:otherwise><span class="text-muted">0/${s.totalStreamsIn}</span></c:otherwise>
+										</c:choose>
+									</td>
+									<td data-order="${s.bytesIn}">${s.formatedBytesIn}</td>
+									<td data-order="${s.bytesOut}">${s.formatedBytesOut}</td>
 									<auth:if basePathKey="incoming.basepath" paths="/edit/update">
 									<auth:then>
 									<td class="text-center">
@@ -278,13 +302,47 @@
 						var ts = parseInt(el.getAttribute('data-ts'), 10);
 						if (ts) el.textContent = new Date(ts).toISOString().replace('T', ' ').substring(0, 19);
 					});
+					var btnShowStuck = document.getElementById('btn-show-stuck');
+					if (btnShowStuck) {
+						btnShowStuck.addEventListener('click', function() {
+							const active = this.classList.toggle('active');
+							const now = Date.now();
+							document.querySelectorAll('#sessionsTable tbody tr').forEach(function(row) {
+								const tsEl = row.querySelector('.ic-ts');
+								const ts = tsEl ? parseInt(tsEl.getAttribute('data-ts'), 10) : 0;
+								const duration = ts ? now - ts : 0;
+								const bytesIn = parseInt(row.getAttribute('data-bytes-in') || '0', 10);
+								const bytesOut = parseInt(row.getAttribute('data-bytes-out') || '0', 10);
+								const totalStreamsOut = parseInt(row.getAttribute('data-total-streams-out') || '0', 10);
+								const totalStreamsIn = parseInt(row.getAttribute('data-total-streams-in') || '0', 10);
+								const protocol = (row.getAttribute('data-protocol') || '').toLowerCase();
+								const isHttp = protocol === 'http' || protocol === 'https';
+								// Flag HTTP/HTTPS sessions open >30 s that never started any stream.
+								// totalStreams===0 means no transfer (upload or download) was ever initiated.
+								const stuck = isHttp && duration > 30000 && totalStreamsOut === 0 && totalStreamsIn === 0;
+								if (active) {
+									row.style.display = stuck ? '' : 'none';
+								} else {
+									row.style.display = '';
+								}
+							});
+							this.textContent = '';
+							this.appendChild(document.createElement('i')).className = 'bi bi-exclamation-triangle';
+							this.appendChild(document.createTextNode(active ? ' Hide Stuck' : ' Show Stuck'));
+						});
+					}
 					if ($.fn.DataTable) {
-						$('#incomingSessionsTable').DataTable({
+						var table = $('#sessionsTable');
+						var startTimeIndex = table.find('thead th[title="Start Time (UTC)"]').index();
+						table.DataTable({
 							paging: false, searching: false, ordering: true,
-							order: [[4, 'desc']],
+							order: [[startTimeIndex, 'desc']],
 							scrollY: '220px', scrollCollapse: true,
 							dom: 't',
-							columnDefs: [{ orderable: false, targets: [0, 6] }]
+							columnDefs: [
+								{ orderable: false, targets: 0 },
+								{ orderable: false, targets: 'no-sort' }
+							]
 						});
 					}
 				});

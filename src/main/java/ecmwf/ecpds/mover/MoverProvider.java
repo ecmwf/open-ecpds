@@ -42,6 +42,7 @@ import java.util.ConcurrentModificationException;
 import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.timer.Timer;
 
@@ -714,6 +715,26 @@ public final class MoverProvider extends NativeAuthenticationProvider {
         /** The _welcome. */
         private final long _start = System.currentTimeMillis();
 
+        /** The bytes received from the client. */
+        private final AtomicLong _bytesIn = new AtomicLong(0);
+
+        /** The bytes sent to the client. */
+        private final AtomicLong _bytesOut = new AtomicLong(0);
+
+        /** Currently active download streams. */
+        private final java.util.concurrent.atomic.AtomicInteger _activeStreamsOut = new java.util.concurrent.atomic.AtomicInteger(
+                0);
+
+        /** Currently active upload streams. */
+        private final java.util.concurrent.atomic.AtomicInteger _activeStreamsIn = new java.util.concurrent.atomic.AtomicInteger(
+                0);
+
+        /** Accumulated download stream count since session start. */
+        private final AtomicLong _totalStreamsOut = new AtomicLong(0);
+
+        /** Accumulated upload stream count since session start. */
+        private final AtomicLong _totalStreamsIn = new AtomicLong(0);
+
         /** The _welcome. */
         private final String _id;
 
@@ -778,6 +799,50 @@ public final class MoverProvider extends NativeAuthenticationProvider {
         }
 
         /**
+         * Adds bytes sent to the client.
+         *
+         * @param n
+         *            the number of bytes
+         */
+        @Override
+        public void addBytesOut(final long n) {
+            _bytesOut.addAndGet(n);
+        }
+
+        /**
+         * Adds bytes received from the client.
+         *
+         * @param n
+         *            the number of bytes
+         */
+        @Override
+        public void addBytesIn(final long n) {
+            _bytesIn.addAndGet(n);
+        }
+
+        @Override
+        public void startStreamOut() {
+            _activeStreamsOut.incrementAndGet();
+            _totalStreamsOut.incrementAndGet();
+        }
+
+        @Override
+        public void endStreamOut() {
+            _activeStreamsOut.decrementAndGet();
+        }
+
+        @Override
+        public void startStreamIn() {
+            _activeStreamsIn.incrementAndGet();
+            _totalStreamsIn.incrementAndGet();
+        }
+
+        @Override
+        public void endStreamIn() {
+            _activeStreamsIn.decrementAndGet();
+        }
+
+        /**
          * Gets the id.
          *
          * @return the id
@@ -809,6 +874,12 @@ public final class MoverProvider extends NativeAuthenticationProvider {
             connection.setProtocol(_protocol);
             connection.setRemoteIpAddress(_host);
             connection.setStartTime(_start);
+            connection.setBytesIn(_bytesIn.get());
+            connection.setBytesOut(_bytesOut.get());
+            connection.setActiveStreamsOut(_activeStreamsOut.get());
+            connection.setActiveStreamsIn(_activeStreamsIn.get());
+            connection.setTotalStreamsOut(_totalStreamsOut.get());
+            connection.setTotalStreamsIn(_totalStreamsIn.get());
             final var entry = _portalSessions.get(getToken());
             if (entry != null && !entry.subscriberEmail.isEmpty()) {
                 connection.setSubscriberEmail(entry.subscriberEmail);

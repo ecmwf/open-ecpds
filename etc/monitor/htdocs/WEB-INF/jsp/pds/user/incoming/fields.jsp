@@ -485,7 +485,11 @@
 			<strong>Current Sessions</strong>
 			<span class="badge rounded-pill ${sessionCount > 0 ? 'bg-success' : 'bg-secondary'}" title="${sessionCount} active session${sessionCount != 1 ? 's' : ''}">${sessionCount}</span>
 			<c:if test="${not empty incomingUserActionForm.incomingUser.incomingConnections}">
-			<button type="button" class="btn btn-sm btn-outline-warning ms-auto"
+			<button id="btn-show-stuck-edit" class="btn btn-sm btn-outline-secondary ms-auto" type="button"
+			        title="Show only suspected-stuck sessions (open > 30 s with zero bytes transferred)">
+			  <i class="bi bi-exclamation-triangle"></i> Show Stuck
+			</button>
+			<button type="button" class="btn btn-sm btn-outline-warning"
 			        onclick="confirmCloseAll('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incomingUserActionForm.id}"/>/closeAllSessions/all', ${sessionCount})">
 			  <i class="bi bi-plug-fill"></i> Close All
 			</button>
@@ -499,7 +503,7 @@
 			</c:when>
 			<c:otherwise>
 				<div class="table-responsive">
-					<table id="incomingSessionsEditTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
+					<table id="sessionsTableEdit" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
 						<thead class="table-warning">
 							<tr>
 								<th>Session ID</th>
@@ -508,18 +512,36 @@
 								<th>Data Mover</th>
 								<th title="Start Time (UTC)">Start Time (UTC)</th>
 								<th>Duration</th>
+								<th title="Downloads: active/total streams">Downloads</th>
+								<th title="Uploads: active/total streams">Uploads</th>
+								<th>Bytes In</th>
+								<th>Bytes Out</th>
 								<th class="text-center no-sort">Action</th>
 							</tr>
 						</thead>
 						<tbody>
 							<c:forEach var="mySession" items="${incomingUserActionForm.incomingUser.incomingConnections}">
-								<tr>
+								<tr data-bytes-in="${mySession.bytesIn}" data-bytes-out="${mySession.bytesOut}" data-protocol="${mySession.protocol}" data-total-streams-out="${mySession.totalStreamsOut}" data-total-streams-in="${mySession.totalStreamsIn}">
 									<td><code>${mySession.id}</code></td>
 									<td><span class="badge bg-secondary-subtle text-secondary-emphasis border">${mySession.protocol}</span></td>
 									<td>${mySession.remoteIpAddress}</td>
 									<td>${mySession.dataMoverName}</td>
 									<td data-order="${mySession.startTime}"><span class="ic-ts" data-ts="${mySession.startTime}">${mySession.startTime}</span></td>
 									<td>${mySession.formatedDuration}</td>
+									<td data-order="${mySession.totalStreamsOut}">
+										<c:choose>
+											<c:when test="${mySession.activeStreamsOut gt 0}"><span class="text-primary fw-semibold">${mySession.activeStreamsOut}</span>/<span class="text-muted">${mySession.totalStreamsOut}</span></c:when>
+											<c:otherwise><span class="text-muted">0/${mySession.totalStreamsOut}</span></c:otherwise>
+										</c:choose>
+									</td>
+									<td data-order="${mySession.totalStreamsIn}">
+										<c:choose>
+											<c:when test="${mySession.activeStreamsIn gt 0}"><span class="text-primary fw-semibold">${mySession.activeStreamsIn}</span>/<span class="text-muted">${mySession.totalStreamsIn}</span></c:when>
+											<c:otherwise><span class="text-muted">0/${mySession.totalStreamsIn}</span></c:otherwise>
+										</c:choose>
+									</td>
+									<td data-order="${mySession.bytesIn}">${mySession.formatedBytesIn}</td>
+									<td data-order="${mySession.bytesOut}">${mySession.formatedBytesOut}</td>
 									<td class="text-center">
 										<a href="javascript:validate('<bean:message key="incoming.basepath"/>/edit/update/<c:out value="${incomingUserActionForm.id}"/>/closeSession/<c:out value="${mySession.id}"/>','<bean:message key="ecpds.incoming.disconnectOperation.warning" arg0="${mySession.login}" arg1="${mySession.dataMoverName}"/>')"
 										   class="btn btn-sm btn-outline-warning" title="Disconnect session">
@@ -533,17 +555,51 @@
 				</div>
 				<script>
 				$(function() {
-					document.querySelectorAll('#incomingSessionsEditTable .ic-ts').forEach(function(el) {
+					document.querySelectorAll('#sessionsTableEdit .ic-ts').forEach(function(el) {
 						var ts = parseInt(el.getAttribute('data-ts'), 10);
 						if (ts) el.textContent = new Date(ts).toISOString().replace('T', ' ').substring(0, 19);
 					});
+					var btnShowStuckEdit = document.getElementById('btn-show-stuck-edit');
+					if (btnShowStuckEdit) {
+						btnShowStuckEdit.addEventListener('click', function() {
+							const active = this.classList.toggle('active');
+							const now = Date.now();
+							document.querySelectorAll('#sessionsTableEdit tbody tr').forEach(function(row) {
+								const tsEl = row.querySelector('.ic-ts');
+								const ts = tsEl ? parseInt(tsEl.getAttribute('data-ts'), 10) : 0;
+								const duration = ts ? now - ts : 0;
+								const bytesIn = parseInt(row.getAttribute('data-bytes-in') || '0', 10);
+								const bytesOut = parseInt(row.getAttribute('data-bytes-out') || '0', 10);
+								const totalStreamsOut = parseInt(row.getAttribute('data-total-streams-out') || '0', 10);
+								const totalStreamsIn = parseInt(row.getAttribute('data-total-streams-in') || '0', 10);
+								const protocol = (row.getAttribute('data-protocol') || '').toLowerCase();
+								const isHttp = protocol === 'http' || protocol === 'https';
+								// Flag HTTP/HTTPS sessions open >30 s that never started any stream.
+								// totalStreams===0 means no transfer (upload or download) was ever initiated.
+								const stuck = isHttp && duration > 30000 && totalStreamsOut === 0 && totalStreamsIn === 0;
+								if (active) {
+									row.style.display = stuck ? '' : 'none';
+								} else {
+									row.style.display = '';
+								}
+							});
+							this.textContent = '';
+							this.appendChild(document.createElement('i')).className = 'bi bi-exclamation-triangle';
+							this.appendChild(document.createTextNode(active ? ' Hide Stuck' : ' Show Stuck'));
+						});
+					}
 					if ($.fn.DataTable) {
-						$('#incomingSessionsEditTable').DataTable({
+						var table = $('#sessionsTableEdit');
+						var startTimeIndex = table.find('thead th[title="Start Time (UTC)"]').index();
+						table.DataTable({
 							paging: false, searching: false, ordering: true,
-							order: [[4, 'desc']],
+							order: [[startTimeIndex, 'desc']],
 							scrollY: '220px', scrollCollapse: true,
 							dom: 't',
-							columnDefs: [{ orderable: false, targets: [0, 6] }]
+							columnDefs: [
+								{ orderable: false, targets: 0 },
+								{ orderable: false, targets: 'no-sort' }
+							]
 						});
 					}
 				});

@@ -394,6 +394,48 @@ public abstract class UserSession {
     public abstract void check(ProxySocket proxy) throws IOException, EccmdException;
 
     /**
+     * Adds bytes sent to the client for this session.
+     *
+     * @param n
+     *            the number of bytes
+     */
+    public void addBytesOut(final long n) {
+    }
+
+    /**
+     * Adds bytes received from the client for this session.
+     *
+     * @param n
+     *            the number of bytes
+     */
+    public void addBytesIn(final long n) {
+    }
+
+    /**
+     * Signals that a download stream has started for this session.
+     */
+    public void startStreamOut() {
+    }
+
+    /**
+     * Signals that a download stream has ended for this session.
+     */
+    public void endStreamOut() {
+    }
+
+    /**
+     * Signals that an upload stream has started for this session.
+     */
+    public void startStreamIn() {
+    }
+
+    /**
+     * Signals that an upload stream has ended for this session.
+     */
+    public void endStreamIn() {
+    }
+
+    /**
      * Close.
      *
      * @param remove

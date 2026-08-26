@@ -163,13 +163,24 @@ public class Blob {
         logger.debug("OpenStream: " + _offset + "[" + _contentLength + "]");
         try {
             final var proxy = _session.getProxySocketInput(_metadata.getPath(), _offset, _contentLength);
+            _session.startStreamOut();
             // Setting the event for the transfer history!
             return new MonitoredInputStream(proxy.getDataInputStream()) {
+                @Override
+                public int read(final byte[] b, final int off, final int len) throws IOException {
+                    final int n = super.read(b, off, len);
+                    if (n > 0) {
+                        _session.addBytesOut(n);
+                    }
+                    return n;
+                }
+
                 @Override
                 public void close() throws IOException {
                     try {
                         super.close();
                     } finally {
+                        _session.endStreamOut();
                         final var setup = _session.getECtransSetup();
                         if (setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_TRIGGER_EVENT)) {
                             // Populating with the transfer rate informations!

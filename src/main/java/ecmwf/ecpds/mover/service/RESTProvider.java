@@ -39,6 +39,7 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJsonProvider;
@@ -485,6 +486,10 @@ final class RESTProvider {
         @JsonProperty("fileInstance")
         void setFileInstance(Integer param);
 
+        /** Prevents Jackson from selecting the primitive int overload, which would silently coerce null → 0. */
+        @JsonIgnore
+        void setFileInstance(int param);
+
         /**
          * Sets the file system.
          *
@@ -493,6 +498,10 @@ final class RESTProvider {
          */
         @JsonProperty("fileSystem")
         void setFileSystem(Integer param);
+
+        /** Prevents Jackson from selecting the primitive int overload, which would silently coerce null → 0. */
+        @JsonIgnore
+        void setFileSystem(int param);
     }
 
     /**

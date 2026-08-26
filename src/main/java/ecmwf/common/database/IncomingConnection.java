@@ -59,6 +59,24 @@ public class IncomingConnection implements Serializable {
     /** The start time. */
     private long _startTime;
 
+    /** The bytes received from the client (upload). */
+    private long _bytesIn;
+
+    /** The bytes sent to the client (download). */
+    private long _bytesOut;
+
+    /** Currently active download streams. */
+    private int _activeStreamsOut;
+
+    /** Currently active upload streams. */
+    private int _activeStreamsIn;
+
+    /** Accumulated download stream count since session start. */
+    private long _totalStreamsOut;
+
+    /** Accumulated upload stream count since session start. */
+    private long _totalStreamsIn;
+
     /**
      * Gets the session id.
      *
@@ -202,13 +220,146 @@ public class IncomingConnection implements Serializable {
     }
 
     /**
+     * Gets the bytes received from the client.
+     *
+     * @return the bytes in
+     */
+    public long getBytesIn() {
+        return _bytesIn;
+    }
+
+    /**
+     * Sets the bytes received from the client.
+     *
+     * @param bytesIn
+     *            the bytes in
+     */
+    public void setBytesIn(final long bytesIn) {
+        _bytesIn = bytesIn;
+    }
+
+    /**
+     * Gets the bytes sent to the client.
+     *
+     * @return the bytes out
+     */
+    public long getBytesOut() {
+        return _bytesOut;
+    }
+
+    /**
+     * Sets the bytes sent to the client.
+     *
+     * @param bytesOut
+     *            the bytes out
+     */
+    public void setBytesOut(final long bytesOut) {
+        _bytesOut = bytesOut;
+    }
+
+    /**
+     * Gets the formatted bytes received from the client.
+     *
+     * @return the formatted bytes in
+     */
+    public String getFormatedBytesIn() {
+        return Format.formatSize(_bytesIn);
+    }
+
+    /**
+     * Gets the formatted bytes sent to the client.
+     *
+     * @return the formatted bytes out
+     */
+    public String getFormatedBytesOut() {
+        return Format.formatSize(_bytesOut);
+    }
+
+    /**
+     * Gets the currently active download streams.
+     *
+     * @return the active streams out
+     */
+    public int getActiveStreamsOut() {
+        return _activeStreamsOut;
+    }
+
+    /**
+     * Sets the currently active download streams.
+     *
+     * @param activeStreamsOut
+     *            the active streams out
+     */
+    public void setActiveStreamsOut(final int activeStreamsOut) {
+        _activeStreamsOut = activeStreamsOut;
+    }
+
+    /**
+     * Gets the currently active upload streams.
+     *
+     * @return the active streams in
+     */
+    public int getActiveStreamsIn() {
+        return _activeStreamsIn;
+    }
+
+    /**
+     * Sets the currently active upload streams.
+     *
+     * @param activeStreamsIn
+     *            the active streams in
+     */
+    public void setActiveStreamsIn(final int activeStreamsIn) {
+        _activeStreamsIn = activeStreamsIn;
+    }
+
+    /**
+     * Gets the accumulated download stream count.
+     *
+     * @return the total streams out
+     */
+    public long getTotalStreamsOut() {
+        return _totalStreamsOut;
+    }
+
+    /**
+     * Sets the accumulated download stream count.
+     *
+     * @param totalStreamsOut
+     *            the total streams out
+     */
+    public void setTotalStreamsOut(final long totalStreamsOut) {
+        _totalStreamsOut = totalStreamsOut;
+    }
+
+    /**
+     * Gets the accumulated upload stream count.
+     *
+     * @return the total streams in
+     */
+    public long getTotalStreamsIn() {
+        return _totalStreamsIn;
+    }
+
+    /**
+     * Sets the accumulated upload stream count.
+     *
+     * @param totalStreamsIn
+     *            the total streams in
+     */
+    public void setTotalStreamsIn(final long totalStreamsIn) {
+        _totalStreamsIn = totalStreamsIn;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * Hash code.
      */
     @Override
     public int hashCode() {
-        return Objects.hash(_dataMoverName, _id, _login, _protocol, _remoteIpAddress, _startTime);
+        return Objects.hash(_activeStreamsIn, _activeStreamsOut, _bytesIn, _bytesOut, _dataMoverName, _id, _login,
+                _protocol, _remoteIpAddress, _startTime, _totalStreamsIn, _totalStreamsOut);
     }
 
     /**
@@ -238,6 +389,24 @@ public class IncomingConnection implements Serializable {
             return false;
         }
         if (!Objects.equals(_remoteIpAddress, other._remoteIpAddress)) {
+            return false;
+        }
+        if (_bytesIn != other._bytesIn) {
+            return false;
+        }
+        if (_bytesOut != other._bytesOut) {
+            return false;
+        }
+        if (_activeStreamsOut != other._activeStreamsOut) {
+            return false;
+        }
+        if (_activeStreamsIn != other._activeStreamsIn) {
+            return false;
+        }
+        if (_totalStreamsOut != other._totalStreamsOut) {
+            return false;
+        }
+        if (_totalStreamsIn != other._totalStreamsIn) {
             return false;
         }
         if (_startTime != other._startTime) {

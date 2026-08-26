@@ -72,6 +72,7 @@ import org.apache.sshd.sftp.server.SftpSubsystemProxy;
 import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.common.ecaccess.StarterServer;
+import ecmwf.common.ecaccess.UserSession;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ProxyEvent;
 import ecmwf.common.technical.ProxySocket;
@@ -241,6 +242,9 @@ public class MinaFileSystemAccessor implements SftpFileSystemAccessor {
         /** The start. */
         private long start = 0;
 
+        /** Cached session reference for incremental byte/stream tracking. */
+        private UserSession _userSession = null;
+
         /** Current position in the backend stream. */
         private long pos = 0;
 
@@ -287,6 +291,8 @@ public class MinaFileSystemAccessor implements SftpFileSystemAccessor {
                 // Record start time only once, regardless of any re-opens for seeking.
                 if (start == 0L) {
                     start = System.currentTimeMillis();
+                    _userSession = getAuthenticationInfo(getSftpSubsystemProxy()).session();
+                    _userSession.startStreamOut();
                 }
             }
         }
@@ -340,6 +346,9 @@ public class MinaFileSystemAccessor implements SftpFileSystemAccessor {
             if (n > 0) {
                 pos += n;
                 bytesCount += n;
+                if (_userSession != null) {
+                    _userSession.addBytesOut(n);
+                }
             }
             return n;
         }
@@ -360,6 +369,9 @@ public class MinaFileSystemAccessor implements SftpFileSystemAccessor {
             _log.debug("Closing ReadFile");
             closeQuietly(proxy);
             closeQuietly(in);
+            if (_userSession != null) {
+                _userSession.endStreamOut();
+            }
             try {
                 if (proxy != null) {
                     final var info = getAuthenticationInfo(getSftpSubsystemProxy());
@@ -403,6 +415,9 @@ public class MinaFileSystemAccessor implements SftpFileSystemAccessor {
         /** The start. */
         long start = 0;
 
+        /** Cached session reference for incremental byte/stream tracking. */
+        private UserSession _userSession = null;
+
         /** The proxy. */
         ProxySocket proxy = null;
 
@@ -440,6 +455,8 @@ public class MinaFileSystemAccessor implements SftpFileSystemAccessor {
                 throw new IOException(e.getMessage());
             } finally {
                 start = System.currentTimeMillis();
+                _userSession = getAuthenticationInfo(getSftpSubsystemProxy()).session();
+                _userSession.startStreamIn();
             }
         }
 
@@ -470,6 +487,9 @@ public class MinaFileSystemAccessor implements SftpFileSystemAccessor {
             index += len;
             out.write(buffer, off, len);
             bytesCount += len;
+            if (_userSession != null) {
+                _userSession.addBytesIn(len);
+            }
         }
 
         /**
@@ -488,6 +508,9 @@ public class MinaFileSystemAccessor implements SftpFileSystemAccessor {
             _log.debug("Closing WriteFile");
             closeQuietly(proxy);
             closeQuietly(out);
+            if (_userSession != null) {
+                _userSession.endStreamIn();
+            }
             try {
                 if (proxy != null) {
                     final var info = getAuthenticationInfo(getSftpSubsystemProxy());
