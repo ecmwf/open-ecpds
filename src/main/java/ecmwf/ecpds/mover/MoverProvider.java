@@ -528,14 +528,19 @@ public final class MoverProvider extends NativeAuthenticationProvider {
                     }
                 }
             }
-            // Issue a fresh session token with the subscriber ID for subsequent active checks
+            // Issue a fresh session token with the subscriber ID for subsequent active checks.
+            // Skip portal-session creation for open-access users: they never receive a cookie, so
+            // storing a token they cannot present is pure overhead that causes _portalSessions to
+            // grow without bound (one entry per request, 60-minute TTL).
             sessionToken = UUID.randomUUID().toString();
-            _portalSessions.put(sessionToken, new PortalSessionEntry(user, subscriberId, subscriberEmail));
-            // Prune expired sessions opportunistically (avoid unbounded growth)
-            try {
-                _portalSessions.entrySet().removeIf(e -> e.getValue().expiry < System.currentTimeMillis());
-            } catch (final ConcurrentModificationException ignored) {
-                // Safe to ignore — pruning is best-effort
+            if (!"open-access".equals(incomingProfile.getIncomingUser().getPortalService())) {
+                _portalSessions.put(sessionToken, new PortalSessionEntry(user, subscriberId, subscriberEmail));
+                // Prune expired sessions opportunistically (avoid unbounded growth)
+                try {
+                    _portalSessions.entrySet().removeIf(e -> e.getValue().expiry < System.currentTimeMillis());
+                } catch (final ConcurrentModificationException ignored) {
+                    // Safe to ignore — pruning is best-effort
+                }
             }
         }
         return new UserDataSpace(incomingProfile, sessionToken, from, profile, host, closeable);
