@@ -5,7 +5,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ---
 
-## open-ecpds 8.1.1-26082026
+## open-ecpds 8.1.0-26082026
 
 - **S3 improvements**: Added `s3.region = "auto"` to auto-discover the bucket region via `GetBucketLocation` (cached per JVM; discovered region shown as `[s3.region=eu-west-2]` in the transfer comment). When `s3.crossRegionAccess = "yes"` is set, the region is now always discovered upfront — even if `s3.region` is explicit — preventing stream-replay errors on `301 PermanentRedirect` responses. A `WARN` is logged when configured and actual regions differ. `PermanentRedirect` error messages now include a plain-English hint.
 - **Session monitoring**: The Current Sessions table on the Data User detail page now shows per-session **Bytes In/Out**, **Downloads** and **Uploads** (active/total stream counts), and a **Protocol** column. Bytes are counted incrementally per buffer chunk, so stuck mid-transfer sessions show partial progress. A new **Show Stuck** button filters to HTTPS sessions open >30 s with no streams started.
