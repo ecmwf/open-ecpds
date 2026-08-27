@@ -971,11 +971,8 @@ public final class MasterServer extends ECaccessProvider
     public void releaseConnectionSlot(final String incomingUser) throws RemoteException {
         synchronized (_connLockFor(incomingUser)) {
             final var deque = _pendingConnections.get(incomingUser);
-            if (deque != null && !deque.isEmpty()) {
+            if (deque != null) {
                 deque.pollFirst();
-                if (_log.isDebugEnabled())
-                    _log.debug("releaseConnectionSlot for {}: pending={} confirmed={}", incomingUser, deque.size(),
-                            _getIncomingConnectionCountFor(incomingUser));
             }
         }
     }
@@ -998,7 +995,6 @@ public final class MasterServer extends ECaccessProvider
     @Override
     public IncomingProfile getIncomingProfile(final String incomingUser, final String incomingPassword,
             final String from) throws RemoteException {
-        final var _t0 = System.currentTimeMillis();
         try {
             // Is it a valid user?
             final var base = getECpdsBase();
@@ -1115,8 +1111,7 @@ public final class MasterServer extends ECaccessProvider
                 final var pending = _countPendingFor(incomingUser);
                 final var count = confirmed + pending;
                 if (count >= maxConnections) {
-                    final var message = "Maximum number of connections exceeded (" + count + ") [confirmed="
-                            + confirmed + ",pending=" + pending + "]";
+                    final var message = "Maximum number of connections exceeded (" + count + ")";
                     if (_splunk.isInfoEnabled())
                         _splunk.info("DEA;{};UserId={};Message={};Context={}",
                                 "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, message, from);
@@ -1127,9 +1122,6 @@ public final class MasterServer extends ECaccessProvider
                 // or will expire automatically after PENDING_CONNECTION_TTL_MS if the mover dies first
                 _pendingConnections.computeIfAbsent(incomingUser, _ -> new LinkedList<>())
                         .addLast(System.currentTimeMillis());
-                if (_log.isDebugEnabled())
-                    _log.debug("getIncomingProfile slot reserved for {}: confirmed={} pending={} (now {})", incomingUser,
-                            confirmed, pending + 1, count + 1);
                 final var minuteKey = incomingUser + "|"
                         + new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(new java.util.Date());
                 DataFileAccessImpl.PORTAL_TRAFFIC_BUFFER.computeIfAbsent(minuteKey, _ -> {
@@ -1213,10 +1205,6 @@ public final class MasterServer extends ECaccessProvider
             }
             // Let's pass the data from data policies to the mover!
             user.setData(setup.getData());
-            final var elapsed = System.currentTimeMillis() - _t0;
-            if (elapsed > 100)
-                _log.warn("getIncomingProfile for {} took {}ms (confirmed={} from={})", incomingUser, elapsed,
-                        _getIncomingConnectionCountFor(incomingUser), from);
             return new IncomingProfile(user, permissions, destinations);
         } catch (final Throwable t) {
             throw Format.getRemoteException("MasterServer=" + getRoot(), t);
@@ -2624,16 +2612,11 @@ public final class MasterServer extends ECaccessProvider
                     final var deque = _pendingConnections.get(uid);
                     if (deque != null) {
                         synchronized (_connLockFor(uid)) {
-                            var released = 0;
                             for (var i = 0; i < gained; i++) {
                                 if (deque.isEmpty())
                                     break;
                                 deque.pollFirst();
-                                released++;
                             }
-                            if (released > 0 && _log.isDebugEnabled())
-                                _log.debug("updateIncomingConnectionIds[{}]: gained={} released={} pending={} for {}",
-                                        serverName, gained, released, deque.size(), uid);
                         }
                     }
                 }
@@ -3134,13 +3117,9 @@ public final class MasterServer extends ECaccessProvider
         // Timestamps are always added in ascending order (addLast), so expired entries
         // are always at the front. Drain only from the front — O(k) not O(n).
         final var cutoff = System.currentTimeMillis() - PENDING_CONNECTION_TTL_MS;
-        var expired = 0;
         while (!list.isEmpty() && list.peekFirst() < cutoff) {
             list.pollFirst();
-            expired++;
         }
-        if (expired > 0 && _log.isDebugEnabled())
-            _log.debug("_countPendingFor {}: expired {} TTL slots, {} remaining", uid, expired, list.size());
         return list.size(); // O(1) for LinkedList
     }
 
