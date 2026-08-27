@@ -40,6 +40,9 @@ final class CLNT {
     public CLNT(final CurrentContext currentContext, String parameter) {
         if ((parameter = Util.parseParameter(currentContext, CLNT.class, parameter)) != null) {
             currentContext.clientName = parameter;
+            if (currentContext.session != null) {
+                currentContext.session.setClientAgent(parameter);
+            }
         }
         currentContext.respond(200, "CLNT command successful");
     }

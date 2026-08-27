@@ -532,7 +532,9 @@ public final class MoverProvider extends NativeAuthenticationProvider {
             // Issue a fresh session token with the subscriber ID for subsequent active checks.
             // Skip portal-session creation for open-access users: they never receive a cookie, so
             // storing a token they cannot present is pure overhead that causes _portalSessions to
-            // grow without bound (one entry per request, 60-minute TTL).
+            // grow without bound (one entry per request, 60-minute TTL). At high request rates
+            // (millions per hour) this would exhaust memory. Open-access clients that need lower
+            // master-auth overhead should use a bearer token or API key instead.
             sessionToken = UUID.randomUUID().toString();
             if (!"open-access".equals(incomingProfile.getIncomingUser().getPortalService())) {
                 _portalSessions.put(sessionToken, new PortalSessionEntry(user, subscriberId, subscriberEmail));
@@ -741,6 +743,9 @@ public final class MoverProvider extends NativeAuthenticationProvider {
         /** The setup. */
         private final ECtransSetup _setup;
 
+        /** The client agent string (User-Agent for HTTP/WebDAV/S3, SSH client version, FTP CLNT name). */
+        private volatile String _clientAgent;
+
         /**
          * Instantiates a new user data space.
          *
@@ -796,6 +801,17 @@ public final class MoverProvider extends NativeAuthenticationProvider {
             } catch (final Throwable t) {
                 _log.warn("releaseConnectionSlot for {}", getUser(), t);
             }
+        }
+
+        /**
+         * Records the client agent string for this session.
+         *
+         * @param clientAgent
+         *            the client agent string
+         */
+        @Override
+        public void setClientAgent(final String clientAgent) {
+            _clientAgent = clientAgent;
         }
 
         /**
@@ -880,6 +896,9 @@ public final class MoverProvider extends NativeAuthenticationProvider {
             connection.setActiveStreamsIn(_activeStreamsIn.get());
             connection.setTotalStreamsOut(_totalStreamsOut.get());
             connection.setTotalStreamsIn(_totalStreamsIn.get());
+            if (_clientAgent != null && !_clientAgent.isBlank()) {
+                connection.setClientAgent(_clientAgent);
+            }
             final var entry = _portalSessions.get(getToken());
             if (entry != null && !entry.subscriberEmail.isEmpty()) {
                 connection.setSubscriberEmail(entry.subscriberEmail);

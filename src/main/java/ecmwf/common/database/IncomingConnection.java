@@ -56,6 +56,9 @@ public class IncomingConnection implements Serializable {
     /** The subscriber email (populated for self-service portal sessions only). */
     private String _subscriberEmail;
 
+    /** The client agent string (User-Agent for HTTP/WebDAV/S3, client version for SFTP, CLNT for FTP). */
+    private String _clientAgent;
+
     /** The start time. */
     private long _startTime;
 
@@ -189,6 +192,25 @@ public class IncomingConnection implements Serializable {
      */
     public void setSubscriberEmail(final String subscriberEmail) {
         _subscriberEmail = subscriberEmail;
+    }
+
+    /**
+     * Gets the client agent string (User-Agent for HTTPS/WebDAV/S3, client version for SFTP, CLNT for FTP).
+     *
+     * @return the client agent, or null if not reported
+     */
+    public String getClientAgent() {
+        return _clientAgent;
+    }
+
+    /**
+     * Sets the client agent string.
+     *
+     * @param clientAgent
+     *            the client agent
+     */
+    public void setClientAgent(final String clientAgent) {
+        _clientAgent = clientAgent;
     }
 
     /**

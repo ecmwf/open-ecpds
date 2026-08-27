@@ -100,6 +100,10 @@ public class BlobStoreLocator {
                     final var userSession = NativeAuthenticationProvider.getInstance().getUserSession(remoteAddr,
                             identity, incomingUserHash, "s3", (Closeable) () -> response
                                     .sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Interrupted by server"));
+                    final var s3UserAgent = request.getHeader("User-Agent");
+                    if (s3UserAgent != null && !s3UserAgent.isBlank()) {
+                        userSession.setClientAgent(s3UserAgent);
+                    }
                     // Check if S3 protocol is disabled for this user via portal.disabledProtocols
                     final var s3Setup = userSession.getECtransSetup();
                     if (s3Setup != null) {
@@ -185,6 +189,10 @@ public class BlobStoreLocator {
                     final var userSession = NativeAuthenticationProvider.getInstance().getUserSession(remoteAddr,
                             identity, "", "s3", (Closeable) () -> response
                                     .sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Interrupted by server"));
+                    final var anonUserAgent = request.getHeader("User-Agent");
+                    if (anonUserAgent != null && !anonUserAgent.isBlank()) {
+                        userSession.setClientAgent(anonUserAgent);
+                    }
                     // Check if S3 protocol is disabled for this user via portal.disabledProtocols
                     final var s3Setup = userSession.getECtransSetup();
                     if (s3Setup != null) {

@@ -313,6 +313,7 @@ public final class SshPlugin extends PluginThread {
                                     "sftp",
                                     (Closeable) () -> session.disconnect(SshConstants.SSH2_DISCONNECT_BY_APPLICATION,
                                             "Close requested")));
+                    info.session().setClientAgent(session.getClientVersion());
                     // If a previous probe session exists (e.g. from a failed public-key
                     // attempt before password auth), close it now so only one UserDataSpace
                     // is active per SSH session at any time.

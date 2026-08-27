@@ -378,6 +378,15 @@ public final class MasterServer extends ECaccessProvider
     private final transient Map<String, List<IncomingConnection>> incomingConnectionIds = new ConcurrentHashMap<>();
 
     /**
+     * Pre-computed per-user confirmed connection count, updated atomically on each heartbeat snapshot. Allows O(1)
+     * lookup in {@code _getIncomingConnectionCountFor} instead of O(servers × connections). Written by
+     * {@link #updateIncomingConnectionIds} (heartbeat thread, ~2/sec per server); read by {@link #getIncomingProfile}
+     * (every client request, up to thousands/sec). The volatile reference ensures readers always see a fully-populated
+     * map.
+     */
+    private volatile Map<String, Integer> _confirmedConnectionCounts = new ConcurrentHashMap<>();
+
+    /**
      * Pending connection reservations: login approved but not yet confirmed by poll snapshot. Each entry is the
      * System.currentTimeMillis() at reservation time. Entries older than PENDING_CONNECTION_TTL_MS are treated as
      * expired (e.g. the mover died before the snapshot could confirm the connection) so a leaked slot cannot
@@ -2612,6 +2621,9 @@ public final class MasterServer extends ECaccessProvider
                 }
             }
         }
+        // Rebuild the O(1) confirmed-count snapshot from all server snapshots.
+        // This runs on the heartbeat thread (~2/sec per server), NOT on every client request.
+        _rebuildConfirmedConnectionCounts();
     }
 
     /**
@@ -2640,6 +2652,7 @@ public final class MasterServer extends ECaccessProvider
                 } else {
                     // Just to make sure we don't keep some old data!
                     incomingConnectionIds.remove(serverName);
+                    _rebuildConfirmedConnectionCounts();
                 }
             }
         }
@@ -2908,6 +2921,7 @@ public final class MasterServer extends ECaccessProvider
                 } else {
                     // Just to make sure we don't keep some old data!
                     incomingConnectionIds.remove(serverName);
+                    _rebuildConfirmedConnectionCounts();
                 }
             }
         }
@@ -3099,38 +3113,39 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Get the number of connections for the specified user-id.
+     * Rebuild the per-user confirmed connection count snapshot from all server snapshots. Called on the heartbeat
+     * thread after each {@link #updateIncomingConnectionIds} or when a server is removed. O(total active connections),
+     * but only runs ~2/sec per server — never on the client request path.
+     * <p>
+     * Also evicts entries for any MoverServer that is no longer connected, so that a disconnected server's stale
+     * connection list does not permanently inflate the per-user counts.
+     */
+    private void _rebuildConfirmedConnectionCounts() {
+        // Evict stale entries for servers that have disconnected since their last heartbeat.
+        incomingConnectionIds.keySet().removeIf(serverName -> getDataMoverInterface(serverName) == null);
+        final var totals = new HashMap<String, Integer>();
+        for (final var list : incomingConnectionIds.values()) {
+            if (isNotEmpty(list)) {
+                for (final var conn : list) {
+                    totals.merge(conn.getLogin(), 1, Integer::sum);
+                }
+            }
+        }
+        // Atomic volatile reference swap — readers see either the old or the new complete map.
+        _confirmedConnectionCounts = new ConcurrentHashMap<>(totals);
+    }
+
+    /**
+     * Get the number of confirmed connections for the specified user-id. Returns O(1) from the pre-computed snapshot
+     * maintained by {@link #_rebuildConfirmedConnectionCounts}.
      *
      * @param uid
      *            the uid
      *
-     * @return the incoming connection count for
-     *
-     * @throws DataBaseException
-     *             the data base exception
+     * @return the confirmed incoming connection count
      */
-    private int _getIncomingConnectionCountFor(final String uid) throws DataBaseException {
-        var count = 0;
-        for (final TransferGroup group : getECpdsBase().getTransferGroupArray()) {
-            for (final TransferServer server : getECpdsBase().getTransferServers(group.getName())) {
-                final var serverName = server.getName();
-                // Is it still connected?
-                if (getDataMoverInterface(serverName) != null) {
-                    final var incomingConnections = incomingConnectionIds.get(serverName);
-                    if (isNotEmpty(incomingConnections)) {
-                        for (final IncomingConnection incomingConnection : incomingConnections) {
-                            if (uid.equals(incomingConnection.getLogin())) {
-                                count++;
-                            }
-                        }
-                    }
-                } else {
-                    // Just to make sure we don't keep some old data!
-                    incomingConnectionIds.remove(serverName);
-                }
-            }
-        }
-        return count;
+    private int _getIncomingConnectionCountFor(final String uid) {
+        return _confirmedConnectionCounts.getOrDefault(uid, 0);
     }
 
     /**

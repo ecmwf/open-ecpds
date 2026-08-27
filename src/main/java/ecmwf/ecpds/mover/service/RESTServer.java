@@ -2803,11 +2803,15 @@ public final class RESTServer {
                             } catch (IOException ignored) {
                             }
                         });
-                // Refresh the cookie only for non-anonymous users.
+                // Refresh the cookie only for non-open-access users (open-access does not use cookies).
                 final var setup = session.getECtransSetup();
                 if (setup == null || !"open-access".equals(session.getPortalService())) {
                     _log.debug("Refresh cookie");
                     setPortalSessionCookie(response, session.getToken());
+                }
+                final var portalUserAgent = request.getHeader("User-Agent");
+                if (portalUserAgent != null && !portalUserAgent.isBlank()) {
+                    session.setClientAgent(portalUserAgent);
                 }
                 _log.debug("Return sessionfor user: " + session.getUser());
                 return session;
@@ -2837,11 +2841,15 @@ public final class RESTServer {
         try {
             final var session = NativeAuthenticationProvider.getInstance().getUserSession(request.getRemoteAddr(),
                     credentials[0], credentials[1], "https", (Closeable) () -> response.sendError(-1));
+            final var httpsUserAgent = request.getHeader("User-Agent");
+            if (httpsUserAgent != null && !httpsUserAgent.isBlank()) {
+                session.setClientAgent(httpsUserAgent);
+            }
             // Successful authentication.
             // Issue/refresh the portal session cookie so browser requests do not
             // need to re-authenticate (especially important for TOTP users).
-            // Skip anonymous users ("open-access") as they do not require a
-            // server-side portal session.
+            // Skip open-access users: at millions of requests per hour from non-cookie
+            // clients (curl, wget) issuing cookies would fill _portalSessions unboundedly.
             if (!"open-access".equals(session.getPortalService())) {
                 setPortalSessionCookie(response, session.getToken());
             }

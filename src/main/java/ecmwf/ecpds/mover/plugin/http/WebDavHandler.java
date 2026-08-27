@@ -278,6 +278,10 @@ public final class WebDavHandler extends HttpServlet {
                     }
                 }
                 _log.debug("WebDAV session attached for user={} from={}", username, request.getRemoteAddr());
+                final var userAgent = request.getHeader("User-Agent");
+                if (userAgent != null && !userAgent.isBlank()) {
+                    userSession.setClientAgent(userAgent);
+                }
                 request.setDavSession(new EcpdsDavSession(userSession, username, request.getRemoteAddr()));
                 return true;
             } catch (final Exception e) {

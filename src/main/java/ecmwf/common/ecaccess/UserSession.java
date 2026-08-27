@@ -100,6 +100,17 @@ public abstract class UserSession {
     }
 
     /**
+     * Sets the client agent string for this session (e.g. HTTP User-Agent, SSH client version, FTP CLNT name). Default
+     * implementation is a no-op; overridden by data-portal sessions.
+     *
+     * @param clientAgent
+     *            the client agent string
+     */
+    public void setClientAgent(final String clientAgent) {
+        // no-op by default
+    }
+
+    /**
      * Gets the portal service mode for this session. Returns "standard-login" by default; overridden by data-portal
      * sessions.
      *

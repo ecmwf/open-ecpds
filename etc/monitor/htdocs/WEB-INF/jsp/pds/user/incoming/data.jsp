@@ -250,6 +250,8 @@
 					<dd class="col-sm-9">Cumulative bytes received from the client (uploads). Updated in real time as data arrives.</dd>
 					<dt class="col-sm-3">Bytes Out</dt>
 					<dd class="col-sm-9">Cumulative bytes sent to the client (downloads). Updated in real time as data is served.</dd>
+					<dt class="col-sm-3">Client</dt>
+					<dd class="col-sm-9">Client software reported by the connection: <code>User-Agent</code> for HTTPS/WebDAV/S3, SSH client version string for SFTP (e.g. <code>SSH-2.0-OpenSSH_9.6</code>), and the optional <code>CLNT</code> command value for FTP. Click the <i class="bi bi-laptop"></i> icon to see the full string. Shown as &mdash; when not reported.</dd>
 					<dt class="col-sm-3"><i class="bi bi-exclamation-triangle text-warning"></i> Show Stuck</dt>
 					<dd class="col-sm-9">Filters to HTTPS/HTTP sessions open for more than 30 seconds that have never started any transfer stream — the clearest signal of a genuinely stuck connection. Non-HTTP protocols are excluded since idle long-lived connections are normal for SFTP/FTP/MQTT.</dd>
 				</dl>
@@ -277,6 +279,7 @@
 								<th title="Uploads: active/total streams">Uploads</th>
 								<th>Bytes In</th>
 								<th>Bytes Out</th>
+								<th title="Client software reported by the remote connection" class="text-center no-sort">Client</th>
 								<auth:if basePathKey="incoming.basepath" paths="/edit/update">
 								<auth:then><th class="text-center no-sort">Action</th></auth:then>
 								</auth:if>
@@ -315,6 +318,19 @@
 									</td>
 									<td data-order="${s.bytesIn}">${s.formatedBytesIn}</td>
 									<td data-order="${s.bytesOut}">${s.formatedBytesOut}</td>
+									<td class="text-center">
+										<c:choose>
+											<c:when test="${not empty s.clientAgent}">
+												<button type="button" class="btn btn-link btn-sm p-0 text-secondary ic-agent-btn"
+												        data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="left"
+												        data-bs-content="${fn:escapeXml(s.clientAgent)}"
+												        title="Client agent">
+													<i class="bi bi-laptop"></i>
+												</button>
+											</c:when>
+											<c:otherwise><span class="text-muted">—</span></c:otherwise>
+										</c:choose>
+									</td>
 									<auth:if basePathKey="incoming.basepath" paths="/edit/update">
 									<auth:then>
 									<td class="text-center">
@@ -379,6 +395,9 @@
 							]
 						});
 					}
+					document.querySelectorAll('#sessionsTable .ic-agent-btn').forEach(function(el) {
+						new bootstrap.Popover(el, { container: 'body', html: false });
+					});
 				});
 				</script>
 			</c:otherwise>
