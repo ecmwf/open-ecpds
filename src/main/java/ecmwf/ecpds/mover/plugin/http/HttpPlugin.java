@@ -164,9 +164,11 @@ public final class HttpPlugin extends PluginThread implements HttpCertificatePro
             final var listenAddress = Cnf.at("HttpPlugin", "listenAddress", "0.0.0.0");
             // Home?
             final var jettyHome = Cnf.at("HttpPlugin", "htdocs");
-            // Thread pooling mechanism
+            // Thread pooling mechanism. Note: idleThreadsTimeout is in milliseconds (Jetty API).
+            // Default was historically 120 (120ms) which caused constant thread churn — threads died
+            // between request bursts forcing the pool to create new ones continuously. 60_000ms = 60s.
             final var threadPool = new QueuedThreadPool(Cnf.at("HttpPlugin", "maxThreads", 400),
-                    Cnf.at("HttpPlugin", "minThreads", 40), Cnf.at("HttpPlugin", "idleThreadsTimeout", 120));
+                    Cnf.at("HttpPlugin", "minThreads", 40), Cnf.at("HttpPlugin", "idleThreadsTimeout", 60_000));
             // Create the server
             server = new Server(threadPool);
             server.manage(threadPool);
