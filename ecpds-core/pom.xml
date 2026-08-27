@@ -437,6 +437,21 @@
 			<version>12.1.12</version>
 		</dependency>
 		<dependency>
+			<groupId>org.eclipse.jetty.http2</groupId>
+			<artifactId>jetty-http2-server</artifactId>
+			<version>12.1.12</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-alpn-server</artifactId>
+			<version>12.1.12</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-alpn-java-server</artifactId>
+			<version>12.1.12</version>
+		</dependency>
+		<dependency>
 			<groupId>org.eclipse.jetty.compression</groupId>
 			<artifactId>jetty-compression-server</artifactId>
 			<version>12.1.12</version>

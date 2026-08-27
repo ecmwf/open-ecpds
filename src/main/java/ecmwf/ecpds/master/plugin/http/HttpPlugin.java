@@ -56,6 +56,8 @@ import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.ee8.websocket.server.config.JettyWebSocketServletContainerInitializer;
 import org.eclipse.jetty.http.HttpVersion;
+import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
+import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.rewrite.handler.HeaderPatternRule;
 import org.eclipse.jetty.rewrite.handler.RewriteHandler;
 import org.eclipse.jetty.rewrite.handler.Rule;
@@ -323,11 +325,22 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
             secureRequestCustomizer.setSniHostCheck(false); // Allow using localhost
             final var httpsConfig = new HttpConfiguration(httpConfig);
             httpsConfig.addCustomizer(secureRequestCustomizer);
-            // SSL Connector
+            // SSL Connector: HTTP/2 + HTTP/1.1 fallback via ALPN by default.
+            // Set HttpPlugin.http2Enabled=false to revert to HTTP/1.1 only.
             _log.debug("Starting HTTPS server on {}:{}", listenAddress, httpsPort);
-            final var sslConnector = new ServerConnector(httpServer,
-                    new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),
-                    new HttpConnectionFactory(httpsConfig));
+            final ServerConnector sslConnector;
+            if (Cnf.at("HttpPlugin", "http2Enabled", true)) {
+                final var http2 = new HTTP2ServerConnectionFactory(httpsConfig);
+                final var alpn = new ALPNServerConnectionFactory();
+                alpn.setDefaultProtocol(HttpVersion.HTTP_1_1.asString()); // fallback if client sends no ALPN
+                sslConnector = new ServerConnector(httpServer,
+                        new SslConnectionFactory(sslContextFactory, alpn.getProtocol()), alpn, http2,
+                        new HttpConnectionFactory(httpsConfig));
+            } else {
+                sslConnector = new ServerConnector(httpServer,
+                        new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),
+                        new HttpConnectionFactory(httpsConfig));
+            }
             sslConnector.setPort(httpsPort);
             sslConnector.setHost(listenAddress);
             httpServer.addConnector(sslConnector);
