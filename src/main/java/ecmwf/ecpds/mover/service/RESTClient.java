@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javax.net.ssl.SSLContext;
@@ -96,6 +97,12 @@ public final class RESTClient implements RESTInterface {
 
     /** Whether to trust all certificates. */
     private static final boolean TRUST_ALL_CERTS = Cnf.at("MoverProxy", "trustAllCerts", true);
+
+    /**
+     * Cache of reusable HttpClient instances keyed by "proxy|connectTimeout". HttpClient is thread-safe and designed
+     * for long-lived reuse — creating one per call leaks a SelectorManager thread per instance.
+     */
+    private static final ConcurrentHashMap<String, HttpClient> HTTP_CLIENT_CACHE = new ConcurrentHashMap<>();
 
     static {
         if (TRUST_ALL_CERTS) {
@@ -502,7 +509,14 @@ public final class RESTClient implements RESTInterface {
     private static CloseableClientResponse send(final String proxy, final String url, final int connectTimeout,
             final String method, final Object body, final Map<String, String> query) throws RestException {
         try {
-            final var client = newHttpClient(proxy, connectTimeout);
+            final var cacheKey = (proxy != null ? proxy : "") + "|" + connectTimeout;
+            final var client = HTTP_CLIENT_CACHE.computeIfAbsent(cacheKey, _ -> {
+                try {
+                    return newHttpClient(proxy, connectTimeout);
+                } catch (final RestException e) {
+                    throw new RuntimeException(e);
+                }
+            });
             _log.debug("REST connection: {} (proxy={},connectTimeout={})", url, proxy, connectTimeout);
             final var builder = HttpRequest.newBuilder(buildUri(url, query)).header("Accept", "application/json")
                     .header("Accept-Charset", "iso-8859-1");
@@ -523,6 +537,12 @@ public final class RESTClient implements RESTInterface {
             throw new RestException("Calling " + url, e);
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
+            throw new RestException("Calling " + url, e);
+        } catch (final RuntimeException e) {
+            // Unwrap RestException thrown from the HttpClient cache factory lambda
+            if (e.getCause() instanceof RestException re) {
+                throw re;
+            }
             throw new RestException("Calling " + url, e);
         }
     }

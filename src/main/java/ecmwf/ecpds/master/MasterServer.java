@@ -147,6 +147,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -394,7 +395,7 @@ public final class MasterServer extends ECaccessProvider
      */
     private static final long PENDING_CONNECTION_TTL_MS = 30_000L;
 
-    private final transient ConcurrentHashMap<String, ConcurrentLinkedDeque<Long>> _pendingConnections = new ConcurrentHashMap<>();
+    private final transient ConcurrentHashMap<String, LinkedList<Long>> _pendingConnections = new ConcurrentHashMap<>();
 
     /** Per-user interned locks used to make the check-and-reserve atomic. */
     private final transient ConcurrentHashMap<String, Object> _connLocks = new ConcurrentHashMap<>();
@@ -1119,7 +1120,7 @@ public final class MasterServer extends ECaccessProvider
                 }
                 // Reserve a slot — will be released when the session appears in the next poll snapshot,
                 // or will expire automatically after PENDING_CONNECTION_TTL_MS if the mover dies first
-                _pendingConnections.computeIfAbsent(incomingUser, _ -> new ConcurrentLinkedDeque<>())
+                _pendingConnections.computeIfAbsent(incomingUser, _ -> new LinkedList<>())
                         .addLast(System.currentTimeMillis());
                 final var minuteKey = incomingUser + "|"
                         + new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(new java.util.Date());
@@ -3110,12 +3111,16 @@ public final class MasterServer extends ECaccessProvider
      * @return the number of live pending slots
      */
     private int _countPendingFor(final String uid) {
-        final var deque = _pendingConnections.get(uid);
-        if (deque == null || deque.isEmpty())
+        final var list = _pendingConnections.get(uid);
+        if (list == null || list.isEmpty())
             return 0;
+        // Timestamps are always added in ascending order (addLast), so expired entries
+        // are always at the front. Drain only from the front — O(k) not O(n).
         final var cutoff = System.currentTimeMillis() - PENDING_CONNECTION_TTL_MS;
-        deque.removeIf(ts -> ts < cutoff);
-        return deque.size();
+        while (!list.isEmpty() && list.peekFirst() < cutoff) {
+            list.pollFirst();
+        }
+        return list.size(); // O(1) for LinkedList
     }
 
     /**
