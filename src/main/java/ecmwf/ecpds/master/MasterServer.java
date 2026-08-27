@@ -2641,13 +2641,16 @@ public final class MasterServer extends ECaccessProvider
                 final var serverName = server.getName();
                 // Is it still connected?
                 if (getDataMoverInterface(serverName) != null) {
-                    for (final IncomingConnection incomingConnection : incomingConnectionIds.get(serverName)) {
-                        final var login = incomingConnection.getLogin();
-                        var current = result.get(login);
-                        if (current == null) {
-                            result.put(login, current = new ArrayList<>());
+                    final var list = incomingConnectionIds.get(serverName);
+                    if (list != null) {
+                        for (final IncomingConnection incomingConnection : list) {
+                            final var login = incomingConnection.getLogin();
+                            var current = result.get(login);
+                            if (current == null) {
+                                result.put(login, current = new ArrayList<>());
+                            }
+                            current.add(incomingConnection);
                         }
-                        current.add(incomingConnection);
                     }
                 } else {
                     // Just to make sure we don't keep some old data!
@@ -2912,11 +2915,14 @@ public final class MasterServer extends ECaccessProvider
                 final var serverName = server.getName();
                 // Is it still connected?
                 if (getDataMoverInterface(serverName) != null) {
-                    for (final IncomingConnection incomingConnection : incomingConnectionIds.get(serverName)) {
-                        result.append(!result.isEmpty() ? "\n" : "").append(incomingConnection.getId()).append("=")
-                                .append(incomingConnection.getProtocol()).append(":")
-                                .append(incomingConnection.getLogin()).append("@")
-                                .append(incomingConnection.getRemoteIpAddress());
+                    final var list = incomingConnectionIds.get(serverName);
+                    if (list != null) {
+                        for (final IncomingConnection incomingConnection : list) {
+                            result.append(!result.isEmpty() ? "\n" : "").append(incomingConnection.getId()).append("=")
+                                    .append(incomingConnection.getProtocol()).append(":")
+                                    .append(incomingConnection.getLogin()).append("@")
+                                    .append(incomingConnection.getRemoteIpAddress());
+                        }
                     }
                 } else {
                     // Just to make sure we don't keep some old data!

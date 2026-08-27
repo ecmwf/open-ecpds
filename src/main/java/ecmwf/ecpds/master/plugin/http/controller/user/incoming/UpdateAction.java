@@ -211,7 +211,11 @@ public class UpdateAction extends PDSAction {
             iu.closeSession(u, subActionParameter);
         } else if (CLOSE_ALL_SESSIONS.equals(subAction)) {
             for (final var conn : iu.getIncomingConnections()) {
-                iu.closeSession(u, conn.getId());
+                try {
+                    iu.closeSession(u, conn.getId());
+                } catch (final Exception e) {
+                    _log.warn("Could not close session {} for user {}: {}", conn.getId(), iu.getId(), e.getMessage());
+                }
             }
         } else {
             throw new ECMWFException(
