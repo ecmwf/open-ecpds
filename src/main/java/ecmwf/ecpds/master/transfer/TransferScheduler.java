@@ -1110,7 +1110,12 @@ public final class TransferScheduler extends MBeanScheduler {
             _log.warn(e.getMessage());
             throw new MasterException(e.getMessage());
         } catch (final Throwable t) {
-            _log.warn("Get for DataTransfer-" + transfer.getId() + " on " + moverName, t);
+            final var getMsg = "Get for DataTransfer-" + transfer.getId() + " on " + moverName;
+            if (Format.isRemoteException(t)) {
+                _log.warn("{} - {}", getMsg, Format.getMessage(t));
+            } else {
+                _log.warn(getMsg, t);
+            }
             throw new MasterException(t.getMessage());
         }
     }
@@ -1456,7 +1461,11 @@ public final class TransferScheduler extends MBeanScheduler {
                     _log.warn("{} interrupted", message);
                     break;
                 }
-                _log.warn(message, t);
+                if (Format.isRemoteException(t)) {
+                    _log.warn("{} - {}", message, Format.getMessage(t));
+                } else {
+                    _log.warn(message, t);
+                }
                 continue;
             } finally {
                 _log.info("DataFile {}{} {} on DataMover {} (count {})", dataFile.getId(),
@@ -1620,7 +1629,11 @@ public final class TransferScheduler extends MBeanScheduler {
                             break;
                         } else {
                             rr.message = message;
-                            _log.warn(rr.message, t);
+                            if (Format.isRemoteException(t)) {
+                                _log.warn("{} - {}", rr.message, Format.getMessage(t));
+                            } else {
+                                _log.warn(rr.message, t);
+                            }
                             continue;
                         }
                     } finally {
@@ -1752,7 +1765,11 @@ public final class TransferScheduler extends MBeanScheduler {
                                 + hostForBackup.getName() + " (" + hostForBackup.getNickname() + "): "
                                 + Format.getMessage(t);
                     }
-                    _log.warn(rr.message, t);
+                    if (Format.isRemoteException(t)) {
+                        _log.warn(rr.message);
+                    } else {
+                        _log.warn(rr.message, t);
+                    }
                 }
             }
         } else {
@@ -2236,7 +2253,11 @@ public final class TransferScheduler extends MBeanScheduler {
                             _log.warn(message + " interrupted");
                             break;
                         } else {
-                            _log.warn(message, t);
+                            if (Format.isRemoteException(t)) {
+                                _log.warn("{} - {}", message, Format.getMessage(t));
+                            } else {
+                                _log.warn(message, t);
+                            }
                             continue;
                         }
                     } finally {

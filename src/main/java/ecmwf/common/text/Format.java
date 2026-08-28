@@ -1390,6 +1390,28 @@ public final class Format {
     }
 
     /**
+     * Checks whether the throwable (or any cause in its chain) is an intentional ECPDS {@link java.rmi.RemoteException}
+     * created via {@link #getRemoteException}. Such exceptions have their stack trace explicitly cleared to empty, so
+     * the formatted message already contains the full diagnostic. Infrastructure RMI failures
+     * ({@link java.rmi.ConnectException}, {@link java.rmi.MarshalException}, etc.) retain a non-empty stack trace and
+     * will return {@code false}, preserving full stack-trace logging for those cases.
+     *
+     * @param t
+     *            the throwable to inspect
+     *
+     * @return {@code true} if {@code t} or any cause is a {@link java.rmi.RemoteException} with an empty stack trace
+     */
+    public static boolean isRemoteException(Throwable t) {
+        while (t != null) {
+            if (t instanceof java.rmi.RemoteException && t.getStackTrace().length == 0) {
+                return true;
+            }
+            t = t.getCause();
+        }
+        return false;
+    }
+
+    /**
      * Creates a {@link RemoteException} containing a concise message and the local hostname, intended for use across
      * RMI boundaries. The stack trace is explicitly cleared to reduce native memory usage and minimize data transfer
      * during remote exception serialization.

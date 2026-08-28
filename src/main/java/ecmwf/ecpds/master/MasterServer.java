@@ -1716,7 +1716,11 @@ public final class MasterServer extends ECaccessProvider
                 TransferScheduler.purge(base.getTransferServers(proxyHost.getTransferGroupName()), proxyHost,
                         directories);
             } catch (final Throwable t) {
-                _log.warn("Purging ProxyHost {}", proxyHostName, t);
+                if (Format.isRemoteException(t)) {
+                    _log.warn("Purging ProxyHost {} - {}", proxyHostName, Format.getMessage(t));
+                } else {
+                    _log.warn("Purging ProxyHost {}", proxyHostName, t);
+                }
             }
         }
     }
@@ -1828,7 +1832,11 @@ public final class MasterServer extends ECaccessProvider
                         count += countFromMover;
                     }
                 } catch (final Throwable t) {
-                    _log.warn("Getting MQTT clients count on DataMover {}", moverName, t);
+                    if (Format.isRemoteException(t)) {
+                        _log.warn("Getting MQTT clients count on DataMover {} - {}", moverName, Format.getMessage(t));
+                    } else {
+                        _log.warn("Getting MQTT clients count on DataMover {}", moverName, t);
+                    }
                 }
             }
         }
@@ -1858,7 +1866,11 @@ public final class MasterServer extends ECaccessProvider
                                     moverName, directories.size());
                             mover.purge(directories);
                         } catch (final Throwable t) {
-                            _log.warn("Starting purge on DataMover {}", moverName, t);
+                            if (Format.isRemoteException(t)) {
+                                _log.warn("Starting purge on DataMover {} - {}", moverName, Format.getMessage(t));
+                            } else {
+                                _log.warn("Starting purge on DataMover {}", moverName, t);
+                            }
                         }
                     }
                 }
