@@ -587,7 +587,11 @@ public final class WebDavHandler extends HttpServlet {
             }
             final var path = locator.getResourcePath();
             final var slash = path.lastIndexOf('/');
-            return slash >= 0 ? path.substring(slash + 1) : path;
+            final var name = slash >= 0 ? path.substring(slash + 1) : path;
+            // macOS Finder maps ':' to '/' (HFS+ path-separator limitation). Replace ':' with
+            // the Unicode Fullwidth Colon (U+FF1A) in the display name so clients show the
+            // visually identical character without triggering the HFS+ substitution.
+            return name.replace(':', '\uFF1A');
         }
 
         @Override
