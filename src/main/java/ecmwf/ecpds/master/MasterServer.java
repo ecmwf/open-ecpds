@@ -13094,10 +13094,9 @@ public final class MasterServer extends ECaccessProvider
                                     }
                                     currentStatus = standby ? StatusFactory.FAIL : StatusFactory.RETR;
                                 }
-                            } else if (Cnf.at("Other", "dontRetryDownloads", false)) {
-                                // We don't want to retry the download of the
-                                // files which are not on the super computer any
-                                // more (this is for the Dissemination only)!
+                            } else if (dr.noSuchFile && Cnf.at("Scheduler", "failOnMissingSourceFile", false)) {
+                                // The file does not exist on the source host; retrying will never
+                                // succeed. Set to FAIL immediately for dissemination mode.
                                 currentStatus = StatusFactory.FAIL;
                             } else {
                                 // Let's put it back to SCHE so that the

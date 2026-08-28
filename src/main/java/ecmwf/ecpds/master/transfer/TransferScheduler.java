@@ -2015,6 +2015,12 @@ public final class TransferScheduler extends MBeanScheduler {
 
         /** The complete. */
         public boolean complete = false;
+
+        /**
+         * Set to true when the failure is definitively "file not found" on the source host (e.g. stat64: No such file
+         * or directory). Retrying will never succeed — the caller should set the transfer to FAIL immediately.
+         */
+        public boolean noSuchFile = false;
     }
 
     /**
@@ -2159,6 +2165,26 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
+     * Returns {@code true} when the formatted error message indicates the source file definitively does not exist on
+     * the remote host (e.g. {@code stat64: No such file or directory}, {@code No such file or directory},
+     * {@code FileNotFoundException}). Such failures will never succeed on retry, so the transfer should be set to FAIL
+     * immediately.
+     *
+     * @param errorMessage
+     *            the formatted exception message from {@link ecmwf.common.text.Format#getMessage(Throwable)}
+     *
+     * @return {@code true} if the error represents a permanent "file not found" condition
+     */
+    private static boolean isFileNotFoundException(final String errorMessage) {
+        if (errorMessage == null) {
+            return false;
+        }
+        final var lower = errorMessage.toLowerCase();
+        return lower.contains("no such file or directory") || lower.contains("filenotfoundexception")
+                || lower.contains("file not found");
+    }
+
+    /**
      * Download.
      *
      * @param transfer
@@ -2241,11 +2267,12 @@ public final class TransferScheduler extends MBeanScheduler {
                     } catch (final Throwable t) {
                         final var interrupted = Thread.interrupted();
                         dr.message = null;
+                        final var errorMsg = Format.getMessage(t);
                         // Add some information in the transfer history concerning the issue!
                         for (final DataTransfer related : relatedTransfers) {
                             MASTER.addTransferHistory(related, hostForSource, related.getStatusCode(),
                                     "Retrieval " + (interrupted ? "interrupted" : "failed") + " on DataMover="
-                                            + moverName + (interrupted ? "" : " - " + Format.getMessage(t)),
+                                            + moverName + (interrupted ? "" : " - " + errorMsg),
                                     true);
                         }
                         final var message = "Downloading DataTransfer " + transfer.getId() + " on " + moverName;
@@ -2253,8 +2280,20 @@ public final class TransferScheduler extends MBeanScheduler {
                             _log.warn(message + " interrupted");
                             break;
                         } else {
+                            // If the error definitively indicates the source file does not exist,
+                            // there is no point retrying on other movers — mark it and stop.
+                            if (isFileNotFoundException(errorMsg)) {
+                                dr.message = message + " - " + errorMsg;
+                                dr.noSuchFile = true;
+                                if (Format.isRemoteException(t)) {
+                                    _log.warn("{} - {} (will not retry: file not found on source)", message, errorMsg);
+                                } else {
+                                    _log.warn(message + " (will not retry: file not found on source)", t);
+                                }
+                                break;
+                            }
                             if (Format.isRemoteException(t)) {
-                                _log.warn("{} - {}", message, Format.getMessage(t));
+                                _log.warn("{} - {}", message, errorMsg);
                             } else {
                                 _log.warn(message, t);
                             }
