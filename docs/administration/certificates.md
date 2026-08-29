@@ -4,6 +4,20 @@ OpenECPDS exposes all its HTTPS endpoints — the Monitoring UI and the Data Por
 
 ---
 
+## Certificate Status Indicator
+
+The **TLS Certificates** entry in the Admin Tasks card, the left-hand navigation menu, and the start-page quick-links shows a live status based on the health of all certificates across every connected Monitor and Data Mover:
+
+| Colour | Meaning |
+|---|---|
+| 🔴 **Red** — *Expired* badge | At least one certificate has already passed its expiry date. |
+| 🟡 **Yellow** — *Attention* badge | At least one certificate is self-signed or expires within 30 days. |
+| Default grey | All certificates are CA-signed and not close to expiry. |
+
+The status is computed by the MasterServer, cached for up to one hour, and **immediately invalidated** after any certificate is deployed or reloaded through the UI — so all Monitor instances always see the same up-to-date value without requiring a restart or manual refresh.
+
+---
+
 ## First Startup
 
 On first startup, if no keystore file is found at the path configured in `ecmwf.properties`, OpenECPDS automatically generates a unique **self-signed RSA-2048 certificate** and stores it as a PKCS#12 keystore. This happens for both the Monitor and each Data Mover independently, so each component gets its own certificate with the server's hostname as the Common Name (CN) and Subject Alternative Name (SAN).
