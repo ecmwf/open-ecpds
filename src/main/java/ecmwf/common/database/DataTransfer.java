@@ -163,6 +163,9 @@ public class DataTransfer extends DataBaseObject {
     /** The event. */
     protected boolean DAT_EVENT;
 
+    /** The group by (denormalized from DataFile for efficient scheduling queries). */
+    protected String DAT_GROUP_BY;
+
     /** The original transfer server. */
     protected TransferServer originalTransferServer;
 
@@ -499,6 +502,25 @@ public class DataTransfer extends DataBaseObject {
      */
     public void setEvent(final String param) {
         DAT_EVENT = Boolean.parseBoolean(param);
+    }
+
+    /**
+     * Gets the group by.
+     *
+     * @return the group by
+     */
+    public String getGroupBy() {
+        return DAT_GROUP_BY;
+    }
+
+    /**
+     * Sets the group by.
+     *
+     * @param param
+     *            the new group by
+     */
+    public void setGroupBy(final String param) {
+        DAT_GROUP_BY = strim(param, 64);
     }
 
     /**

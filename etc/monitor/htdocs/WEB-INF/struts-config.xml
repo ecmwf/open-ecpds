@@ -1390,6 +1390,16 @@
 			<forward name="list" path=".pds.admin.requeue.list" />
 			<forward name="success" path=".pds.admin.requeue.success" />
 		</action>
+		<action path="/admin/purge"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.PurgeAllDataAction">
+			<forward name="form" path=".pds.admin.purge.index" />
+			<forward name="confirm2" path=".pds.admin.purge.confirm2" />
+			<forward name="done" path=".pds.admin.purge.done" />
+		</action>
+		<action path="/admin/criticalpassword"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.CriticalPasswordAction">
+			<forward name="form" path=".pds.admin.criticalpassword" />
+		</action>
 		<action path="/admin/feedback"
 			type="ecmwf.ecpds.master.plugin.http.controller.feedback.GetFeedbackAction">
 			<forward name="success" path=".pds.admin.feedback" />

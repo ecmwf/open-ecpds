@@ -2671,4 +2671,122 @@ public interface DataBaseInterface extends Remote {
      */
     List<TransferStatistics> getTransferStatisticsByDataTransferId(long dataTransferId)
             throws DataBaseException, RemoteException;
+
+    /**
+     * Marks all non-deleted DATA_TRANSFER rows as deleted and expiry-eligible for the purgeDataBase scheduler. Intended
+     * for test-environment resets only.
+     *
+     * @return the number of rows updated
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    int markAllDataTransfersForPurge() throws DataBaseException, RemoteException;
+
+    /**
+     * Marks all non-deleted DATA_FILE rows as deleted so the ExpiredDataFileScheduler removes files from disk. Intended
+     * for test-environment resets only.
+     *
+     * @return the number of rows updated
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    int markAllDataFilesForPurge() throws DataBaseException, RemoteException;
+
+    /**
+     * Immediately triggers the database cleanup (purgeDataBase SQL script) and wakes up the physical-file purge
+     * scheduler so deletion happens without waiting for the next scheduled cycle. Intended for test-environment resets
+     * only.
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void triggerAllPurge() throws DataBaseException, RemoteException;
+
+    /**
+     * Returns true if a Critical Action Password has been set in the database (SYS_CONFIG table). When true, the UI
+     * must present a password field before allowing any high-consequence admin action.
+     *
+     * @return true if a Critical Action Password is configured
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    boolean hasCriticalActionPassword() throws DataBaseException, RemoteException;
+
+    /**
+     * Validates the supplied password against the stored Critical Action Password hash. The actual password hash is
+     * never sent to the caller — only a boolean result is returned.
+     *
+     * @param attempt
+     *            the plaintext password supplied by the user
+     *
+     * @return true if the attempt matches the stored password hash
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    boolean validateCriticalActionPassword(String attempt) throws DataBaseException, RemoteException;
+
+    /**
+     * Stores a new Critical Action Password hash in the database (SYS_CONFIG table). The caller is responsible for
+     * hashing the password before passing it here. The hash replaces any previously stored value.
+     *
+     * @param hash
+     *            the hex-encoded SHA-256 hash of the new password
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void setCriticalActionPasswordHash(String hash) throws DataBaseException, RemoteException;
+
+    /**
+     * Hard-deletes all DATA_TRANSFER, TRANSFER_HISTORY and DATA_FILE records from the database immediately, without
+     * waiting for the scheduled purge cycle. Handles FK dependencies (TRANSFER_STATISTICS, TRANSFER_HISTORY,
+     * PUBLICATION, METADATA_VALUE) in the correct order.
+     *
+     * @return the number of rows affected
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    int deleteAllDataImmediately() throws DataBaseException, RemoteException;
+
+    /**
+     * Hard-deletes all DATA_TRANSFER, TRANSFER_HISTORY and DATA_FILE records from the database in a background thread,
+     * then triggers a full disk scan on every data mover. Returns immediately so the caller is not blocked. Progress is
+     * visible in the MasterServer log.
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void deleteAllDataImmediatelyAsync() throws DataBaseException, RemoteException;
+
+    /**
+     * Triggers a full disk scan on every connected data mover. Each mover will remove any files that are no longer
+     * referenced in the database. Intended to be called after {@link #deleteAllDataImmediately()}.
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void triggerAllMoverPurge() throws DataBaseException, RemoteException;
 }

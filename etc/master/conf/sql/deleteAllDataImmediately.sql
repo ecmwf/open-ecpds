@@ -1,0 +1,65 @@
+##
+## References
+##
+#menu "ECpdsBase"
+#name "deleteAllDataImmediately"
+#group "update"
+
+##
+## Hard-delete ALL transfer and file records from the database immediately,
+## without waiting for the scheduled purge cycle. Designed for full system
+## resets where data movers have already been cleared (or are being cleared
+## in the same operation).
+##
+## Deletion order respects foreign-key constraints:
+##   1. Null-out back-references in UPLOAD_HISTORY / INCOMING_HISTORY
+##   2. Delete TRANSFER_STATISTICS (FK → DATA_TRANSFER)
+##   3. Delete TRANSFER_HISTORY   (FK → DATA_TRANSFER)
+##   4. Delete PUBLICATION        (FK → DATA_TRANSFER)
+##   5. Delete DATA_TRANSFER
+##   6. Delete METADATA_VALUE     (FK → DATA_FILE)
+##   7. Delete DATA_FILE
+##
+
+CHUNK 1000 UPDATE UPLOAD_HISTORY SET DAT_ID = NULL
+  WHERE UPH_ID IN (
+    SELECT UPH_ID FROM UPLOAD_HISTORY
+    WHERE DAT_ID IS NOT NULL
+);
+
+CHUNK 1000 UPDATE INCOMING_HISTORY SET DAT_ID = NULL
+  WHERE INH_ID IN (
+    SELECT INH_ID FROM INCOMING_HISTORY
+    WHERE DAT_ID IS NOT NULL
+);
+
+CHUNK 1000 DELETE FROM TRANSFER_STATISTICS
+  WHERE DAT_ID IN (
+    SELECT DAT_ID FROM DATA_TRANSFER
+);
+
+CHUNK 1000 DELETE FROM TRANSFER_HISTORY
+  WHERE TRH_ID IN (
+    SELECT TRH_ID FROM TRANSFER_HISTORY
+);
+
+CHUNK 1000 DELETE FROM PUBLICATION
+  WHERE PUB_ID IN (
+    SELECT PUB_ID FROM PUBLICATION
+    WHERE DAT_ID IS NOT NULL
+);
+
+CHUNK 1000 DELETE FROM DATA_TRANSFER
+  WHERE DAT_ID IN (
+    SELECT DAT_ID FROM DATA_TRANSFER
+);
+
+CHUNK 1000 DELETE FROM METADATA_VALUE
+  WHERE DAF_ID IN (
+    SELECT DAF_ID FROM METADATA_VALUE
+);
+
+CHUNK 1000 DELETE FROM DATA_FILE
+  WHERE DAF_ID IN (
+    SELECT DAF_ID FROM DATA_FILE
+);

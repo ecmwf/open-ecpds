@@ -155,6 +155,7 @@ import java.util.OptionalInt;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -469,6 +470,10 @@ public final class MasterServer extends ECaccessProvider
     private final transient String allowedPasswordOn = Cnf.at("Server", "allowPasswordOn",
             "(" + getRoot() + "|" + Format.getHostAddress(getRoot()) + ")");
 
+    /**
+     * Optional password that must be supplied (in addition to the phrase confirmation) when triggering "Purge All Data"
+     * from the monitoring interface. Null or empty means no extra password is required.
+     */
     /** The local container. */
     private final transient PluginContainer localContainer;
 
@@ -1668,6 +1673,58 @@ public final class MasterServer extends ECaccessProvider
         _purgeDataMovers();
         // And all ProxyHosts!
         _purgeProxyHosts();
+    }
+
+    /**
+     * Immediately triggers both the database cleanup (purgeDataBase) and the physical-file purge scheduler
+     * (PurgeScheduler). Intended to be called after a bulk mark-for-purge operation such as the test-environment reset.
+     */
+    public void triggerAllPurge() {
+        _log.warn("triggerAllPurge: triggering purgeDataBase and PurgeScheduler immediately");
+        purgeDataBase(System.currentTimeMillis());
+        if (thePurgeScheduler != null) {
+            thePurgeScheduler.wakeup();
+        }
+    }
+
+    /**
+     * Triggers a full disk scan on every connected data mover. Each mover will remove any files that are no longer
+     * referenced in the database. Called after a bulk DB deletion so that orphaned files are cleaned up immediately
+     * without waiting for the next scheduled scan cycle.
+     */
+    public void triggerAllMoverPurge() {
+        _log.warn("triggerAllMoverPurge: triggering full disk scan on all data movers");
+        for (final TransferServer server : getECpdsBase().getTransferServerArray()) {
+            final var moverName = server.getName();
+            final var mover = getDataMoverInterface(moverName);
+            if (mover != null) {
+                try {
+                    _log.info("triggerAllMoverPurge: triggering purgeAll on DataMover {}", moverName);
+                    mover.purgeAll();
+                } catch (final Throwable t) {
+                    _log.warn("triggerAllMoverPurge: failed to trigger purgeAll on DataMover {}", moverName, t);
+                }
+            }
+        }
+    }
+
+    /**
+     * Hard-deletes all DATA_TRANSFER, TRANSFER_HISTORY and DATA_FILE records from the database in a background thread,
+     * then triggers a full disk scan on every data mover. Returns immediately so the caller (HTTP request) is not
+     * blocked. Progress is visible in the MasterServer log.
+     */
+    public void deleteAllDataImmediatelyAsync() {
+        _log.warn("deleteAllDataImmediatelyAsync: starting background hard-delete of all data records");
+        CompletableFuture.runAsync(() -> {
+            try {
+                final var rows = getECpdsBase().deleteAllDataImmediately();
+                _log.warn("deleteAllDataImmediatelyAsync: hard-deleted {} row(s) from database", rows);
+                triggerAllMoverPurge();
+                _log.warn("deleteAllDataImmediatelyAsync: completed — all data movers notified");
+            } catch (final Throwable t) {
+                _log.error("deleteAllDataImmediatelyAsync: failed", t);
+            }
+        });
     }
 
     /**
@@ -12614,9 +12671,32 @@ public final class MasterServer extends ECaccessProvider
         public int nextStep() {
             final var start = System.currentTimeMillis();
             var processed = 0;
+            // Flush completed threads before checking capacity to avoid opening a potentially
+            // expensive DB query when the pool is already full.
+            synchronized (_toRemove) {
+                for (final long key : _toRemove) {
+                    final var thread = _downloadThreads.remove(key);
+                    _log.debug("DownloadThread " + key + " removed (" + (thread != null) + ")");
+                }
+                _toRemove.clear();
+            }
+            if (getDownloadThreadsCount() >= _maxDownloadThreads) {
+                return NEXT_STEP_DELAY;
+            }
             try (var it = getDataTransfersToDownloadIterator()) {
                 final var hostsPerDestination = new HashMap<String, Collection<Host>>();
-                while (!_pause && isRunning() && it.hasNext()) {
+                while (!_pause && isRunning()) {
+                    // Check capacity before fetching the next row from the DB cursor so we stop
+                    // consuming the result set the moment the pool is full.
+                    if (getDownloadThreadsCount() >= _maxDownloadThreads) {
+                        if (_debug) {
+                            _log.debug("Maximum number of parallel retrieval reached (" + _maxDownloadThreads + ")");
+                        }
+                        break;
+                    }
+                    if (!it.hasNext()) {
+                        break;
+                    }
                     try {
                         // Let's go through every selected DataTransfer from the database
                         final var transfer = it.next();
@@ -12640,15 +12720,6 @@ public final class MasterServer extends ECaccessProvider
                                 }
                                 continue;
                             }
-                        }
-                        // If we exceed the maximum number of parallel
-                        // retrievals then we stop there!
-                        if (getDownloadThreadsCount() >= _maxDownloadThreads) {
-                            if (_debug) {
-                                _log.debug(
-                                        "Maximum number of parallel retrieval reached (" + _maxDownloadThreads + ")");
-                            }
-                            break;
                         }
                         // If this is the acquisition then we want to check the number of parallel
                         // connections just in case there would be a limit on the Destination?

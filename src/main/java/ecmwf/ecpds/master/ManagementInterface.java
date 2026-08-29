@@ -1711,4 +1711,18 @@ public interface ManagementInterface extends Remote {
      */
     void reloadHttpCertificateOnMonitor(ECpdsSession session, String monitorName)
             throws MasterException, RemoteException;
+
+    /**
+     * Returns the cached overall TLS certificate status across all connected movers and monitors. Refreshed at most
+     * once per hour; immediately invalidated after any certificate deploy or reload. Values: "OK", "WARNING"
+     * (self-signed or expiring within 30 days), "ERROR" (expired), "UNKNOWN" (not yet computed).
+     *
+     * @return the overall certificate status string
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    String getOverallCertStatus() throws MasterException, RemoteException;
 }

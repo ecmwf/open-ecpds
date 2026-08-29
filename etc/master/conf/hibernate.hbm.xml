@@ -464,6 +464,9 @@
 		<property name="DAT_EVENT" type="boolean">
 			<column name="DAT_EVENT" />
 		</property>
+		<property name="DAT_GROUP_BY" type="java.lang.String">
+			<column name="DAT_GROUP_BY" />
+		</property>
 		<property name="DAT_REPLICATE_TIME"
 			type="java.math.BigDecimal">
 			<column name="DAT_REPLICATE_TIME" />

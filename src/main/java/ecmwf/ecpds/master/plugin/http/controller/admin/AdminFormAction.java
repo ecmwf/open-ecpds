@@ -33,6 +33,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.model.users.User;
@@ -51,6 +52,16 @@ public class AdminFormAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
+        try {
+            request.setAttribute("certStatus", MasterManager.getMI().getOverallCertStatus());
+        } catch (final Exception e) {
+            request.setAttribute("certStatus", "UNKNOWN");
+        }
+        try {
+            request.setAttribute("criticalPasswordNotSet", !MasterManager.getDB().hasCriticalActionPassword());
+        } catch (final Exception e) {
+            request.setAttribute("criticalPasswordNotSet", Boolean.FALSE);
+        }
         return mapping.findForward("success");
     }
 }

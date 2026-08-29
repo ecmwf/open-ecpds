@@ -134,6 +134,22 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     /** The Constant METADATA_RELOAD. */
     private static final transient long METADATA_RELOAD = Cnf.durationAt("MetaData", "reload", 24 * Timer.ONE_HOUR);
 
+    /**
+     * How long the cached overall certificate status is considered fresh. After this interval the next call to
+     * {@link #getOverallCertStatus()} will trigger a fresh RMI fan-out to all movers and monitors.
+     */
+    private static final transient long CERT_STATUS_TTL = Timer.ONE_HOUR;
+
+    /**
+     * Cached overall certificate status: "OK", "WARNING" (self-signed or expiring soon), or "ERROR" (expired). Volatile
+     * so that reads from different threads always see the latest value without requiring synchronisation on the read
+     * path.
+     */
+    private volatile String certStatusCache = "UNKNOWN";
+
+    /** Timestamp (ms) of the last {@link #certStatusCache} refresh. Zero forces an immediate refresh. */
+    private volatile long certStatusCacheTime = 0L;
+
     /** The Constant METADATA_FILENAME. */
     private static final transient String METADATA_FILENAME = Cnf.at("MetaData", "fileName", ".*(.xml)");
 
@@ -3223,6 +3239,97 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     /**
      * {@inheritDoc}
      *
+     * Returns the cached overall TLS certificate status across all movers and monitors. The cache is refreshed at most
+     * once per hour, and immediately invalidated whenever a certificate is deployed or reloaded via this interface.
+     * Severity levels: "OK" → all certs valid; "WARNING" → at least one is self-signed or expiring within 30 days;
+     * "ERROR" → at least one is expired.
+     */
+    @Override
+    public String getOverallCertStatus() throws MasterException, RemoteException {
+        final var monitor = new MonitorCall("getOverallCertStatus()");
+        if (System.currentTimeMillis() - certStatusCacheTime > CERT_STATUS_TTL) {
+            _refreshCertStatusCache();
+        }
+        return monitor.done(certStatusCache);
+    }
+
+    /**
+     * Scans all connected movers and monitors via RMI, parses each cert JSON snippet, and stores the worst-case status
+     * in {@link #certStatusCache}. Called lazily by {@link #getOverallCertStatus()} and forced (by zeroing
+     * {@code certStatusCacheTime}) after any certificate deployment or reload.
+     */
+    private synchronized void _refreshCertStatusCache() {
+        var worst = "OK";
+        // Movers
+        try {
+            for (final TransferServer server : base.getTransferServerArray()) {
+                final var mover = master.getDataMoverInterface(server.getName());
+                if (mover == null) {
+                    continue;
+                }
+                try {
+                    worst = _worstCertStatus(worst, mover.getHttpCertificateJson());
+                } catch (final Exception e) {
+                    _log.debug("_refreshCertStatusCache: mover {} unreachable: {}", server.getName(), e.getMessage());
+                }
+            }
+        } catch (final Exception e) {
+            _log.debug("_refreshCertStatusCache: error iterating movers", e);
+        }
+        // Monitors
+        try {
+            for (final String root : master.getClientRoots()) {
+                if (!root.startsWith("ECpdsMonitor/")) {
+                    continue;
+                }
+                final var monitorName = root.substring("ECpdsMonitor/".length());
+                final var mi = master.getMonitorInterface(monitorName);
+                if (mi == null) {
+                    continue;
+                }
+                try {
+                    worst = _worstCertStatus(worst, mi.getHttpCertificateJson());
+                } catch (final Exception e) {
+                    _log.debug("_refreshCertStatusCache: monitor {} unreachable: {}", monitorName, e.getMessage());
+                }
+            }
+        } catch (final Exception e) {
+            _log.debug("_refreshCertStatusCache: error iterating monitors", e);
+        }
+        certStatusCache = worst;
+        certStatusCacheTime = System.currentTimeMillis();
+        _log.info("_refreshCertStatusCache: overall certificate status updated to {}", worst);
+    }
+
+    /**
+     * Returns the worse of two certificate status strings. Severity order: ERROR > WARNING > OK > UNKNOWN.
+     *
+     * @param current
+     *            the current worst status so far
+     * @param json
+     *            a cert JSON snippet from a mover or monitor
+     *
+     * @return the new worst status
+     */
+    private static String _worstCertStatus(final String current, final String json) {
+        if (json == null || "{}".equals(json)) {
+            return current;
+        }
+        if (json.contains("\"expired\":true")) {
+            return "ERROR";
+        }
+        if ("ERROR".equals(current)) {
+            return current;
+        }
+        if (json.contains("\"expiringSoon\":true") || json.contains("\"selfSigned\":true")) {
+            return "WARNING";
+        }
+        return current;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Returns a JSON-encoded certificate snapshot for every connected Data Mover.
      */
     @Override
@@ -3274,6 +3381,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         } catch (final Exception e) {
             _log.warn("deployHttpCertificateToAllMovers failed", e);
         }
+        certStatusCacheTime = 0L; // force status refresh on next query
         monitor.done();
     }
 
@@ -3282,6 +3390,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      *
      * Returns a JSON-encoded certificate snapshot for every connected Monitor daemon.
      */
+
     @Override
     public Map<String, String> getMonitorCertificatesJson(final ECpdsSession session) throws MasterException {
         final var monitor = new MonitorCall("getMonitorCertificatesJson(" + session.getWebUser().getName() + ")");
@@ -3339,6 +3448,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         } catch (final Exception e) {
             throw new MasterException("deployHttpCertificateToMover failed for " + moverName + ": " + e.getMessage());
         }
+        certStatusCacheTime = 0L; // force status refresh on next query
         monitor.done();
     }
 
@@ -3348,6 +3458,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      * Deploys a new TLS certificate to every connected Monitor daemon via direct RMI calls to
      * {@link ecmwf.ecpds.monitor.MonitorInterface#deployHttpCertificate}.
      */
+
     @Override
     public void deployHttpCertificateToAllMonitors(final ECpdsSession session, final byte[] pkcs12Bytes,
             final String keystorePassword) throws MasterException {
@@ -3377,6 +3488,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         } catch (final Exception e) {
             _log.warn("deployHttpCertificateToAllMonitors failed", e);
         }
+        certStatusCacheTime = 0L; // force status refresh on next query
         monitor.done();
     }
 
@@ -3386,6 +3498,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      * Deploys a new TLS certificate to a single named Monitor daemon via a direct RMI call to
      * {@link ecmwf.ecpds.monitor.MonitorInterface#deployHttpCertificate}.
      */
+
     @Override
     public void deployHttpCertificateToMonitor(final ECpdsSession session, final String monitorName,
             final byte[] pkcs12Bytes, final String keystorePassword) throws MasterException {
@@ -3405,6 +3518,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
             throw new MasterException(
                     "deployHttpCertificateToMonitor failed for " + monitorName + ": " + e.getMessage());
         }
+        certStatusCacheTime = 0L; // force status refresh on next query
         monitor.done();
     }
 
@@ -3413,6 +3527,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      *
      * Triggers a certificate hot-reload from disk on every connected Data Mover.
      */
+
     @Override
     public void reloadHttpCertificateOnAllMovers(final ECpdsSession session) throws MasterException {
         final var monitor = new MonitorCall("reloadHttpCertificateOnAllMovers(" + session.getWebUser().getName() + ")");
@@ -3432,6 +3547,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         } catch (final Exception e) {
             _log.warn("reloadHttpCertificateOnAllMovers failed", e);
         }
+        certStatusCacheTime = 0L; // force status refresh on next query
         monitor.done();
     }
 
@@ -3440,6 +3556,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      *
      * Triggers a certificate hot-reload from disk on every connected Monitor daemon.
      */
+
     @Override
     public void reloadHttpCertificateOnAllMonitors(final ECpdsSession session) throws MasterException {
         final var monitor = new MonitorCall(
@@ -3467,6 +3584,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         } catch (final Exception e) {
             _log.warn("reloadHttpCertificateOnAllMonitors failed", e);
         }
+        certStatusCacheTime = 0L; // force status refresh on next query
         monitor.done();
     }
 
@@ -3493,6 +3611,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         } catch (final Exception e) {
             throw new MasterException("reloadHttpCertificateOnMover failed for " + moverName + ": " + e.getMessage());
         }
+        certStatusCacheTime = 0L; // force status refresh on next query
         monitor.done();
     }
 
@@ -3521,6 +3640,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
             throw new MasterException(
                     "reloadHttpCertificateOnMonitor failed for " + monitorName + ": " + e.getMessage());
         }
+        certStatusCacheTime = 0L; // force status refresh on next query
         monitor.done();
     }
 }

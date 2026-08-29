@@ -1457,4 +1457,10 @@ final class ManagementProxy implements ManagementInterface {
             throws MasterException, RemoteException {
         managementInterface.reloadHttpCertificateOnMonitor(session, monitorName);
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getOverallCertStatus() throws MasterException, RemoteException {
+        return managementInterface.getOverallCertStatus();
+    }
 }

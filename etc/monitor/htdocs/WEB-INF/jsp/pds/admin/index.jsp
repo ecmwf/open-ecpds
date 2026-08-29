@@ -1,4 +1,33 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
+<%
+    final String certStatus = (String) request.getAttribute("certStatus");
+    final boolean certError   = "ERROR".equals(certStatus);
+    final boolean certWarning = "WARNING".equals(certStatus);
+    final String certIconClass = certError   ? "bi-shield-x text-danger"
+                               : certWarning ? "bi-shield-exclamation text-warning"
+                                             : "bi-shield-lock text-secondary";
+    final String certCardBorder = certError   ? " border border-danger-subtle\" style=\"background:rgba(220,53,69,0.05);"
+                                 : certWarning ? " border border-warning-subtle\" style=\"background:rgba(255,193,7,0.05);"
+                                               : "";
+    final String certTitleClass = certError   ? "tool-title text-danger"
+                                 : certWarning ? "tool-title text-warning"
+                                               : "tool-title";
+    final String certBadge = certError   ? "<span class=\"badge bg-danger ms-2\">Expired</span>"
+                           : certWarning ? "<span class=\"badge bg-warning text-dark ms-2\">Attention</span>"
+                                         : "";
+    final boolean capNotSet = Boolean.TRUE.equals(request.getAttribute("criticalPasswordNotSet"));
+%>
+
+<% if (capNotSet) { %>
+<div class="alert alert-warning d-flex align-items-start gap-3 mb-4" role="alert">
+    <i class="bi bi-key-fill flex-shrink-0 mt-1" style="font-size:1.2rem;"></i>
+    <div>
+        <strong>Critical Action Password not configured.</strong>
+        This password is required to perform irreversible administrative actions such as <em>Purge All Data</em>.
+        <a href="/do/admin/criticalpassword" class="alert-link ms-1">Set it now &rarr;</a>
+    </div>
+</div>
+<% } %>
 
 <div class="mb-4 px-3 py-3 rounded" style="background:rgba(108,117,125,0.07); border-left:4px solid #6c757d; font-size:0.85rem; color:var(--bs-body-color);">
     <div class="d-flex align-items-start gap-2">
@@ -80,12 +109,56 @@
 
     <auth:link basePathKey="admin.basepath" href="/certificates">
     <div class="col">
-    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
-        <i class="bi bi-shield-lock text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3<%= certCardBorder %>">
+        <i class="bi <%= certIconClass %> flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
-            <span class="tool-title">TLS Certificates</span>
+            <span class="<%= certTitleClass %>">TLS Certificates<%=certBadge%></span>
             <p class="tool-desc">Manage TLS certificates for the Monitor HTTPS server and all Data Movers.
             Generate, import, and deploy certificates from a single location without service interruption.</p>
+        </div>
+    </div>
+    </div>
+    </auth:link>
+
+    <auth:link basePathKey="admin.basepath" href="/criticalpassword">
+    <div class="col">
+    <% if (capNotSet) { %>
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3 border border-warning-subtle"
+         style="background:rgba(255,193,7,0.06);">
+        <i class="bi bi-key-fill text-warning flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title text-warning">Critical Action Password <span class="badge bg-warning text-dark ms-1">Not Set</span></span>
+            <p class="tool-desc">Set the Critical Action Password required to authorize irreversible
+            administrative operations. This password is stored as a secure hash and is separate from your login
+            credentials.</p>
+        </div>
+    </div>
+    <% } else { %>
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
+        <i class="bi bi-key-fill text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title">Critical Action Password</span>
+            <p class="tool-desc">Renew the Critical Action Password required to authorize irreversible
+            administrative operations. This password is stored as a secure hash and is separate from your login
+            credentials.</p>
+        </div>
+    </div>
+    <% } %>
+    </div>
+    </auth:link>
+
+    <auth:link basePathKey="admin.basepath" href="/purge">
+    <div class="col">
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3 border border-danger-subtle"
+         style="background:rgba(220,53,69,0.05);">
+        <i class="bi bi-trash3-fill text-danger flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title text-danger">Purge All Data</span>
+            <p class="tool-desc">
+                <strong class="text-danger">Use with extreme caution.</strong>
+                Permanently cancels all pending transfers and removes all files from every data mover's disk.
+                Protected by a two-step confirmation.
+            </p>
         </div>
     </div>
     </div>

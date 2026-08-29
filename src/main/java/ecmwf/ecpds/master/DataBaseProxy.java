@@ -2541,6 +2541,127 @@ final class DataBaseProxy implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int markAllDataTransfersForPurge() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("markAllDataTransfersForPurge()");
+        try {
+            return monitor.done(dataBaseInterface.markAllDataTransfersForPurge());
+        } catch (final RemoteException e) {
+            throw new DataBaseException("markAllDataTransfersForPurge", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int markAllDataFilesForPurge() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("markAllDataFilesForPurge()");
+        try {
+            return monitor.done(dataBaseInterface.markAllDataFilesForPurge());
+        } catch (final RemoteException e) {
+            throw new DataBaseException("markAllDataFilesForPurge", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void triggerAllPurge() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("triggerAllPurge()");
+        try {
+            dataBaseInterface.triggerAllPurge();
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("triggerAllPurge", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean hasCriticalActionPassword() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("hasCriticalActionPassword()");
+        try {
+            return monitor.done(dataBaseInterface.hasCriticalActionPassword());
+        } catch (final RemoteException e) {
+            throw new DataBaseException("hasCriticalActionPassword", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean validateCriticalActionPassword(final String attempt) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("validateCriticalActionPassword()");
+        try {
+            return monitor.done(dataBaseInterface.validateCriticalActionPassword(attempt));
+        } catch (final RemoteException e) {
+            throw new DataBaseException("validateCriticalActionPassword", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setCriticalActionPasswordHash(final String hash) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("setCriticalActionPasswordHash()");
+        try {
+            dataBaseInterface.setCriticalActionPasswordHash(hash);
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("setCriticalActionPasswordHash", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int deleteAllDataImmediately() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteAllDataImmediately()");
+        try {
+            return monitor.done(dataBaseInterface.deleteAllDataImmediately());
+        } catch (final RemoteException e) {
+            throw new DataBaseException("deleteAllDataImmediately", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteAllDataImmediatelyAsync() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteAllDataImmediatelyAsync()");
+        try {
+            dataBaseInterface.deleteAllDataImmediatelyAsync();
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("deleteAllDataImmediatelyAsync", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void triggerAllMoverPurge() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("triggerAllMoverPurge()");
+        try {
+            dataBaseInterface.triggerAllMoverPurge();
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("triggerAllMoverPurge", e);
+        }
+    }
+
+    /**
      * The Class DataTransferCache.
      */
     static final class DataTransferCache {

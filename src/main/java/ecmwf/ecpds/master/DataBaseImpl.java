@@ -4372,4 +4372,95 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         final var monitor = new MonitorCall("getTransferStatisticsByDataTransferId(" + dataTransferId + ")");
         return monitor.done(ecpds.getTransferStatisticsByDataTransferId(dataTransferId));
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int markAllDataTransfersForPurge() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("markAllDataTransfersForPurge()");
+        return monitor.done(ecpds.markAllDataTransfersForPurge());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int markAllDataFilesForPurge() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("markAllDataFilesForPurge()");
+        return monitor.done(ecpds.markAllDataFilesForPurge());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void triggerAllPurge() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("triggerAllPurge()");
+        master.triggerAllPurge();
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean hasCriticalActionPassword() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("hasCriticalActionPassword()");
+        return monitor.done(ecpds.getSysConfigValue("Master", "criticalActionPasswordHash") != null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean validateCriticalActionPassword(final String attempt) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("validateCriticalActionPassword()");
+        final var stored = ecpds.getSysConfigValue("Master", "criticalActionPasswordHash");
+        if (stored == null || attempt == null) {
+            return monitor.done(false);
+        }
+        return monitor.done(stored.equals(sha256Hex(attempt)));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setCriticalActionPasswordHash(final String hash) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("setCriticalActionPasswordHash()");
+        ecpds.setSysConfigValue("Master", "criticalActionPasswordHash", hash);
+        monitor.done();
+    }
+
+    /**
+     * Computes the SHA-256 hex digest of the given plaintext string (UTF-8 encoded).
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    public int deleteAllDataImmediately() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteAllDataImmediately()");
+        return monitor.done(ecpds.deleteAllDataImmediately());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteAllDataImmediatelyAsync() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteAllDataImmediatelyAsync()");
+        master.deleteAllDataImmediatelyAsync();
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void triggerAllMoverPurge() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("triggerAllMoverPurge()");
+        master.triggerAllMoverPurge();
+        monitor.done();
+    }
 }

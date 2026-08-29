@@ -2474,6 +2474,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                 currentTransfer.setEvent(currentEvent);
                 currentTransfer.setTimeStep(timeStep);
                 currentTransfer.setTimeBase(new Timestamp(currentProductDate));
+                currentTransfer.setGroupBy(dataFile.getGroupBy());
                 final List<DataTransfer> transfers = new ArrayList<>();
                 for (final Destination destination : aliases.getDestinations()) {
                     // We only process the statistics for the dissemination destinations which are

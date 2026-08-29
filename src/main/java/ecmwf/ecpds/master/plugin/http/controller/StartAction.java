@@ -33,6 +33,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import ecmwf.ecpds.master.MasterManager;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.model.users.User;
 
@@ -77,6 +78,21 @@ public class StartAction extends PDSAction {
                         || user.hasAccess(getResource(request, "history.basepath")));
 
         request.setAttribute("hasAdmin", user.hasAccess(getResource(request, "admin.basepath")));
+
+        try {
+            request.setAttribute("certStatus", MasterManager.getMI().getOverallCertStatus());
+        } catch (final Exception e) {
+            request.setAttribute("certStatus", "UNKNOWN");
+        }
+
+        final boolean hasAdmin = Boolean.TRUE.equals(request.getAttribute("hasAdmin"));
+        if (hasAdmin) {
+            try {
+                request.setAttribute("criticalPasswordNotSet", !MasterManager.getDB().hasCriticalActionPassword());
+            } catch (final Exception e) {
+                request.setAttribute("criticalPasswordNotSet", Boolean.FALSE);
+            }
+        }
 
         request.setAttribute("title", System.getProperty("monitor.title"));
         return mapping.findForward("success");

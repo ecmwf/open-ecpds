@@ -121,6 +121,15 @@ public interface MoverInterface extends ClientInterface {
     void purge(Host proxyHost, List<ExistingStorageDirectory> directories) throws RemoteException;
 
     /**
+     * Force a full disk scan on this data mover, removing any files that are no longer referenced in the database.
+     * Equivalent to the JMX {@code purge()} operation but accessible via RMI.
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void purgeAll() throws RemoteException;
+
+    /**
      * Puts the.
      *
      * @param hostsForSource

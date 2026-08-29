@@ -1311,6 +1311,11 @@
 		<put name="content" value="/WEB-INF/jsp/pds/admin/certificates/index.jsp" />
 	</definition>
 
+	<definition name=".pds.admin.criticalpassword" extends=".pds.admin">
+		<put name="title" value="Critical Action Password" />
+		<put name="content" value="/WEB-INF/jsp/pds/admin/criticalpassword/index.jsp" />
+	</definition>
+
 	<definition name=".pds.admin.metafields" extends=".pds.admin">
 		<put name="title" value="Metadata Field Definitions" />
 		<put name="content" value="/WEB-INF/jsp/pds/admin/metadata_fields.jsp" />
@@ -1354,6 +1359,21 @@
 	<definition name=".pds.admin.feedback" extends=".pds.admin">
 		<put name="title" value="User Feedback" />
 		<put name="content" value="/WEB-INF/jsp/pds/admin/feedback/index.jsp" />
+	</definition>
+
+	<definition name=".pds.admin.purge.index" extends=".pds.admin">
+		<put name="title" value="Purge All Data — Step 1" />
+		<put name="content" value="/WEB-INF/jsp/pds/admin/purge/index.jsp" />
+	</definition>
+
+	<definition name=".pds.admin.purge.confirm2" extends=".pds.admin">
+		<put name="title" value="Purge All Data — Step 2" />
+		<put name="content" value="/WEB-INF/jsp/pds/admin/purge/confirm2.jsp" />
+	</definition>
+
+	<definition name=".pds.admin.purge.done" extends=".pds.admin">
+		<put name="title" value="Purge All Data — Complete" />
+		<put name="content" value="/WEB-INF/jsp/pds/admin/purge/done.jsp" />
 	</definition>
 
 	<definition name=".pds.datafile.monitoring"

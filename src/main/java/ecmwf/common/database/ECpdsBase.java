@@ -5497,6 +5497,129 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Marks all non-deleted DATA_TRANSFER rows as deleted and eligible for purge (both expiry thresholds satisfied).
+     * Used by the test-environment reset feature to prepare all transfers for removal by purgeDataBase.
+     *
+     * @return the number of rows updated
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public int markAllDataTransfersForPurge() throws DataBaseException {
+        try {
+            return executeUpdate("ECpdsBase", "markAllDataTransfersForPurge");
+        } catch (final Exception e) {
+            _log.warn("markAllDataTransfersForPurge", e);
+            throw new DataBaseException("markAllDataTransfersForPurge", e);
+        }
+    }
+
+    /**
+     * Marks all non-deleted DATA_FILE rows as deleted so the ExpiredDataFileScheduler picks them up and physically
+     * removes files from data mover disks on its next cycle. Used by the test-environment reset feature.
+     *
+     * @return the number of rows updated
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public int markAllDataFilesForPurge() throws DataBaseException {
+        try {
+            return executeUpdate("ECpdsBase", "markAllDataFilesForPurge");
+        } catch (final Exception e) {
+            _log.warn("markAllDataFilesForPurge", e);
+            throw new DataBaseException("markAllDataFilesForPurge", e);
+        }
+    }
+
+    /**
+     * Hard-deletes all DATA_TRANSFER, TRANSFER_HISTORY and DATA_FILE records from the database immediately, without
+     * waiting for the scheduled purge cycle. Intended for full system resets where files have already been (or are
+     * being) removed from the data movers. Handles FK dependencies in the correct order.
+     *
+     * @return the number of rows affected
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public int deleteAllDataImmediately() throws DataBaseException {
+        try {
+            return executeUpdate("ECpdsBase", "deleteAllDataImmediately");
+        } catch (final Exception e) {
+            _log.warn("deleteAllDataImmediately", e);
+            throw new DataBaseException("deleteAllDataImmediately", e);
+        }
+    }
+
+    /**
+     * Retrieves a single string value from the SYS_CONFIG table. Returns {@code null} if no row exists for the given
+     * group and parameter name.
+     *
+     * @param group
+     *            the configuration group (e.g. {@code "Master"})
+     * @param name
+     *            the parameter name (e.g. {@code "criticalActionPasswordHash"})
+     *
+     * @return the stored value, or {@code null} if not found
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public String getSysConfigValue(final String group, final String name) throws DataBaseException {
+        try (var rs = executeSelect("ECpdsBase", "getSysConfigValue",
+                new String[] { "group=" + group, "name=" + name })) {
+            return rs.next() ? rs.getString("SCF_PARAM_VALUE") : null;
+        } catch (final Exception e) {
+            _log.warn("getSysConfigValue({},{})", group, name, e);
+            throw new DataBaseException("getSysConfigValue", e);
+        }
+    }
+
+    /**
+     * Inserts or updates (UPSERT) a value in the SYS_CONFIG table. The {@code SCF_UPDATED_AT} timestamp is set to the
+     * current database time.
+     *
+     * @param group
+     *            the configuration group
+     * @param name
+     *            the parameter name
+     * @param value
+     *            the value to store
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void setSysConfigValue(final String group, final String name, final String value) throws DataBaseException {
+        try {
+            executeUpdate("ECpdsBase", "setSysConfigValue",
+                    new String[] { "group=" + group, "name=" + name, "value=" + value });
+        } catch (final Exception e) {
+            _log.warn("setSysConfigValue({},{})", group, name, e);
+            throw new DataBaseException("setSysConfigValue", e);
+        }
+    }
+
+    /**
+     * Deletes a row from the SYS_CONFIG table. Does nothing if no row exists.
+     *
+     * @param group
+     *            the configuration group
+     * @param name
+     *            the parameter name
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void deleteSysConfigValue(final String group, final String name) throws DataBaseException {
+        try {
+            executeUpdate("ECpdsBase", "deleteSysConfigValue", new String[] { "group=" + group, "name=" + name });
+        } catch (final Exception e) {
+            _log.warn("deleteSysConfigValue({},{})", group, name, e);
+            throw new DataBaseException("deleteSysConfigValue", e);
+        }
+    }
+
+    /**
      * Inserts a TransferStatistics record. Uses auto-increment for the primary key.
      *
      * @param stats

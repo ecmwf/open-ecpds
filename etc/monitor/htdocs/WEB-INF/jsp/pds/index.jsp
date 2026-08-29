@@ -1,5 +1,29 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
+<%
+    final String _certStatus  = (String) request.getAttribute("certStatus");
+    final boolean _certError   = "ERROR".equals(_certStatus);
+    final boolean _certWarning = "WARNING".equals(_certStatus);
+    final String _certIconClass = _certError   ? "bi-shield-x text-danger"
+                                : _certWarning ? "bi-shield-exclamation text-warning"
+                                               : "bi-shield-lock";
+    final String _certTextClass = _certError   ? " text-danger"
+                                : _certWarning ? " text-warning"
+                                               : "";
+    final boolean _capNotSet = Boolean.TRUE.equals(request.getAttribute("criticalPasswordNotSet"));
+%>
+
+<%-- Critical Action Password setup banner (shown to admins only when not yet configured) --%>
+<% if (_capNotSet) { %>
+<div class="alert alert-warning d-flex align-items-start gap-3 mb-4" role="alert">
+    <i class="bi bi-key-fill flex-shrink-0 mt-1" style="font-size:1.2rem;"></i>
+    <div>
+        <strong>Critical Action Password not configured.</strong>
+        This password is required to perform irreversible administrative actions.
+        <a href="/do/admin/criticalpassword" class="alert-link ms-1">Set it now &rarr;</a>
+    </div>
+</div>
+<% } %>
 
 <%-- Page intro: system description + Data Portal + login notice --%>
 <div class="mb-4 px-3 py-3 rounded" style="background:rgba(13,110,253,0.05); border-left:4px solid #0d6efd; font-size:0.85rem; color:var(--bs-body-color);">
@@ -146,7 +170,9 @@
                 <auth:link basePathKey="admin.basepath" href="/upload" wrappingTags="li"><i class="bi bi-upload"></i>Upload Files</auth:link>
                 <auth:link basePathKey="admin.feedback.basepath" href="" wrappingTags="li"><i class="bi bi-chat-left-text"></i>User Feedback</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/metafields" wrappingTags="li"><i class="bi bi-list-check"></i>Metadata Fields</auth:link>
-                <auth:link basePathKey="admin.basepath" href="/certificates" wrappingTags="li"><i class="bi bi-shield-lock"></i>TLS Certificates</auth:link>
+                <auth:link basePathKey="admin.basepath" href="/certificates" wrappingTags="li"><i class="bi <%=_certIconClass%>"></i><span class="<%=_certTextClass%>">TLS Certificates</span></auth:link>
+                <auth:link basePathKey="admin.basepath" href="/criticalpassword" wrappingTags="li"><i class="bi bi-key-fill<%=_capNotSet ? " text-warning" : ""%>"></i><span class="<%=_capNotSet ? "text-warning" : ""%>">Critical Action Password<%=_capNotSet ? " ⚠" : ""%></span></auth:link>
+                <auth:link basePathKey="admin.basepath" href="/purge" wrappingTags="li"><i class="bi bi-trash3-fill text-danger"></i><span class="text-danger">Purge All Data</span></auth:link>
             </ul>
         </div>
     </div>

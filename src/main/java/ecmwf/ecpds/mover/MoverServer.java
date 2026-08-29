@@ -2410,6 +2410,18 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Force a full disk scan, removing any files that are no longer referenced in the database. Called via RMI by the
+     * MasterServer after a bulk database deletion (e.g. Purge All Data admin action).
+     */
+    @Override
+    public void purgeAll() {
+        _log.info("purgeAll: RMI request to force full disk scan on this data mover");
+        purge();
+    }
+
+    /**
      * Del.
      *
      * @param proxyHost
