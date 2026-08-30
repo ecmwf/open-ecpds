@@ -8783,8 +8783,22 @@ public final class MasterServer extends ECaccessProvider
         public int nextStep() {
             final var start = System.currentTimeMillis();
             var processed = 0;
+            // Flush completed threads before checking capacity to avoid opening a potentially
+            // expensive DB query when the pool is already full.
+            synchronized (_toRemove) {
+                for (final long key : _toRemove) {
+                    final var thread = _filterThreads.remove(key);
+                    _log.debug("FilterThread " + key + " removed (" + (thread != null) + ")");
+                }
+                _toRemove.clear();
+            }
+            if (getFilterThreadsCount() >= _maxFilterThreads) {
+                return NEXT_STEP_DELAY;
+            }
             try (var it = getECpdsBase().getDataFilesToFilterIterator(2 * _maxFilterThreads)) {
                 while (isRunning() && it.hasNext()) {
+                    // Check capacity before fetching the next row from the DB cursor so we stop
+                    // consuming the result set the moment the pool is full.
                     if (getFilterThreadsCount() >= _maxFilterThreads) {
                         break;
                     }
@@ -9117,8 +9131,25 @@ public final class MasterServer extends ECaccessProvider
         public int nextStep() {
             final var start = System.currentTimeMillis();
             var processed = 0;
+            // Flush completed threads before checking capacity to avoid opening a potentially
+            // expensive DB query when the pool is already full.
+            synchronized (_toRemove) {
+                for (final long key : _toRemove) {
+                    final var thread = _replicateThreads.remove(key);
+                    _log.debug("ReplicateThread " + key + " removed (" + (thread != null) + ")");
+                }
+                _toRemove.clear();
+            }
+            if (getReplicateThreadsCount() >= _maxReplicateThreads) {
+                return NEXT_STEP_DELAY;
+            }
             try (var it = getECpdsBase().getDataTransfersToReplicateIterator(2 * _maxReplicateThreads)) {
                 while (isRunning() && it.hasNext()) {
+                    // Check capacity before fetching the next row from the DB cursor so we stop
+                    // consuming the result set the moment the pool is full.
+                    if (getReplicateThreadsCount() >= _maxReplicateThreads) {
+                        break;
+                    }
                     try {
                         final var transfer = it.next();
                         if (transfer.getReplicated()) {
@@ -9134,9 +9165,6 @@ public final class MasterServer extends ECaccessProvider
                                         + " (in cache)");
                                 continue;
                             }
-                        }
-                        if (getReplicateThreadsCount() >= _maxReplicateThreads) {
-                            break;
                         }
                         final var sourceMover = TransferScheduler.getTransferServerUsedForRetrieval(transfer);
                         if (getThreadCount(sourceMover) >= _maxReplicateThreadsPerMover) {
@@ -9729,8 +9757,25 @@ public final class MasterServer extends ECaccessProvider
         public int nextStep() {
             final var start = System.currentTimeMillis();
             var processed = 0;
+            // Flush completed threads before checking capacity to avoid opening a potentially
+            // expensive DB query when the pool is already full.
+            synchronized (_toRemove) {
+                for (final long key : _toRemove) {
+                    final var thread = _backupThreads.remove(key);
+                    _log.debug("BackupThread " + key + " removed (" + (thread != null) + ")");
+                }
+                _toRemove.clear();
+            }
+            if (getBackupThreadsCount() >= _maxBackupThreads) {
+                return NEXT_STEP_DELAY;
+            }
             try (var it = getECpdsBase().getDataTransfersToBackupIterator(2 * _maxBackupThreads)) {
                 while (isRunning() && it.hasNext()) {
+                    // Check capacity before fetching the next row from the DB cursor so we stop
+                    // consuming the result set the moment the pool is full.
+                    if (getBackupThreadsCount() >= _maxBackupThreads) {
+                        break;
+                    }
                     try {
                         final var transfer = it.next();
                         if (transfer.getBackupHostName() != null) {
@@ -9746,9 +9791,6 @@ public final class MasterServer extends ECaccessProvider
                                         + " (in cache)");
                                 continue;
                             }
-                        }
-                        if (getBackupThreadsCount() >= _maxBackupThreads) {
-                            break;
                         }
                         final var hostForBackup = transfer.getDataFile().getTransferGroup().getHostForBackup();
                         if (getThreadCount(hostForBackup) >= hostForBackup.getMaxConnections()) {
