@@ -28,3 +28,6 @@ bin/
 
 # flatten-maven-plugin: resolved POM generated during build, removed by mvn clean
 **/.flattened-pom.xml
+
+# Node.js diagnostic reports (generated on fatal errors, e.g. OOM in Copilot CLI)
+report.*.json
