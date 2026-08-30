@@ -1312,7 +1312,7 @@
 	</definition>
 
 	<definition name=".pds.admin.criticalpassword" extends=".pds.admin">
-		<put name="title" value="Critical Action Password" />
+		<put name="title" value="Critical Password" />
 		<put name="content" value="/WEB-INF/jsp/pds/admin/criticalpassword/index.jsp" />
 	</definition>
 

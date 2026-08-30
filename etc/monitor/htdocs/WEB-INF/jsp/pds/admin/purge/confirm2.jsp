@@ -54,14 +54,14 @@
 %>
             <div class="mb-3">
                 <label for="purgePassword" class="form-label fw-semibold">
-                    <i class="bi bi-key-fill text-warning me-1"></i>Critical Action Password
+                    <i class="bi bi-key-fill text-warning me-1"></i>Critical Password
                 </label>
                 <input type="password" class="form-control form-control-lg"
                        id="purgePassword" name="purgePassword" autocomplete="off"
-                       placeholder="Enter the Critical Action Password..." />
+                       placeholder="Enter the Critical Password..." />
                 <div class="form-text text-muted">
                     This password is required to perform irreversible administrative actions. It is different from your
-                    normal administrator password and is managed in <a href="/do/admin/criticalpassword">Admin Tasks → Critical Action Password</a>.
+                    normal administrator password and is managed in <a href="/do/admin/criticalpassword">Admin Tasks → Critical Password</a>.
                 </div>
             </div>
 <% } %>

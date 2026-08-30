@@ -2,6 +2,12 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-left:4px solid #6c757d;">
+<i class="bi bi-list-check text-secondary flex-shrink-0"></i>
+<span>Custom metadata field definitions available for assignment to destinations. Fields can be marked <em>active</em> or <em>inactive</em>, assigned a type and category, and used to extend a destination's configuration with site-specific attributes.</span>
+</div>
+
 <style>
 #mfTable td.td-name  { }
 #mfTable td.td-type  { font-size: 0.82rem; }

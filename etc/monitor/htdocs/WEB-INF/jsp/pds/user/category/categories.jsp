@@ -4,6 +4,12 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+style="background:rgba(255,193,7,0.08); color:var(--bs-body-color); border-left:4px solid #ffc107;">
+<i class="bi bi-folder text-warning flex-shrink-0"></i>
+<span>Web Categories group Web Resources and are assigned to Web Users to control which pages and actions they can access in this Monitor interface.</span>
+</div>
+
 <div class="card border-0 shadow-sm mt-3">
 <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
     <i class="bi bi-collection text-primary"></i>

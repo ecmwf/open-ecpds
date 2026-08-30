@@ -4,6 +4,12 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+style="background:rgba(255,193,7,0.08); color:var(--bs-body-color); border-left:4px solid #ffc107;">
+<i class="bi bi-shield-check text-warning flex-shrink-0"></i>
+<span>Data Policies group Data Users and control their access rights to destinations. A policy defines which users can submit data and under which conditions.</span>
+</div>
+
 <c:if test="${empty policies}">
 <div class="d-flex align-items-center alert alert-info mt-2 gap-2">
     No Data Policies found.

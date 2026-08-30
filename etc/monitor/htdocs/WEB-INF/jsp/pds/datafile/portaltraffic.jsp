@@ -12,7 +12,7 @@
   <i class="bi bi-graph-up-arrow text-primary flex-shrink-0"></i>
   <span>
     <strong>Data Portal Traffic</strong><c:if test="${not empty portalTrafficUser}"> &mdash; <c:out value="${portalTrafficUser}"/></c:if>
-    <c:if test="${empty portalTrafficUser}"> - aggregated portal connections and transfer rates across all users</c:if>
+    <c:if test="${empty portalTrafficUser}"> — aggregated portal connections and transfer rates across all users</c:if>
   </span>
   <button class="btn btn-link btn-sm text-muted p-0 ms-1" type="button"
       data-bs-toggle="collapse" data-bs-target="#ptInfoPanel"

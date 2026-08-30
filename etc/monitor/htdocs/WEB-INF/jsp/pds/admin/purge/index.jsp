@@ -1,3 +1,9 @@
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-left:4px solid #6c757d;">
+<i class="bi bi-trash3 text-secondary flex-shrink-0"></i>
+<span>Permanently remove all transfers and associated files from the system. This is a destructive, irreversible operation intended for full system resets only. A <em>Critical Password</em> is required to proceed.</span>
+</div>
+
 <%-- Step 1: warning + checkbox --%>
 <div class="mb-4 p-3 rounded border border-danger-subtle"
      style="background:rgba(220,53,69,0.07); border-left:4px solid #dc3545 !important;">

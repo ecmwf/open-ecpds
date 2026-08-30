@@ -5,6 +5,12 @@
      Certificate Management — /do/admin/certificates
      ============================================================ --%>
 
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-left:4px solid #6c757d;">
+<i class="bi bi-shield-lock text-secondary flex-shrink-0"></i>
+<span>TLS certificate management for all Monitor Servers and Data Movers in the system. Certificates shown as <em>self-signed</em> or <em>expired</em> should be replaced. Certificates expiring within 30 days are highlighted as a warning.</span>
+</div>
+
 <%
     @SuppressWarnings("unchecked")
     final Map<String,String> monitorCert = (Map<String,String>) request.getAttribute("monitorCert");

@@ -4,6 +4,12 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left:4px solid #0d6efd;">
+<i class="bi bi-collection text-primary flex-shrink-0"></i>
+<span>Transfer groups define how data files are distributed across Data Movers. Each group can be associated with a backup host and configures disk space and connection limits for its members.</span>
+</div>
+
 <c:if test="${empty transfergroups}">
 <div class="d-flex align-items-center alert alert-info mt-2 gap-2">No Transfer Groups found.</div>
 </c:if>

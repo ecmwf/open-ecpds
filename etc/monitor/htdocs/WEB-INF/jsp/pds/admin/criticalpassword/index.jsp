@@ -9,7 +9,7 @@
     <div class="d-flex align-items-start gap-2">
         <i class="bi bi-key-fill text-secondary flex-shrink-0 mt-1"></i>
         <span>
-            The <strong>Critical Action Password</strong> is required to confirm irreversible administrative actions
+            The <strong>Critical Password</strong> is required to confirm irreversible administrative actions
             (such as purging all data). It is separate from your normal administrator password and is stored as a
             secure hash in the database. Only administrators can set or renew it.
         </span>
@@ -33,13 +33,13 @@
 <div class="card shadow-sm mb-4" style="max-width:540px;">
     <div class="card-header fw-semibold">
         <i class="bi bi-key-fill me-2"></i>
-        <% if (hasPassword) { %>Renew Critical Action Password<% } else { %>Set Critical Action Password<% } %>
+        <% if (hasPassword) { %>Renew Critical Password<% } else { %>Set Critical Password<% } %>
     </div>
     <div class="card-body">
         <% if (!hasPassword) { %>
         <div class="alert alert-warning mb-3 py-2 px-3 d-flex gap-2" role="alert">
             <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
-            <span>No Critical Action Password has been configured yet. Please set one before performing any
+            <span>No Critical Password has been configured yet. Please set one before performing any
             irreversible administrative actions.</span>
         </div>
         <% } %>
@@ -51,7 +51,7 @@
                 <label for="currentPassword" class="form-label fw-semibold">Current Password</label>
                 <input type="password" class="form-control" id="currentPassword" name="currentPassword"
                        autocomplete="current-password" required />
-                <div class="form-text text-muted">Enter the existing Critical Action Password to confirm your identity.</div>
+                <div class="form-text text-muted">Enter the existing Critical Password to confirm your identity.</div>
             </div>
             <% } %>
 
@@ -83,7 +83,7 @@
 
 <div class="card shadow-sm" style="max-width:540px; border-color: #dee2e6;">
     <div class="card-header text-muted fw-semibold" style="background:rgba(108,117,125,0.07);">
-        <i class="bi bi-info-circle me-2"></i>About the Critical Action Password
+        <i class="bi bi-info-circle me-2"></i>About the Critical Password
     </div>
     <div class="card-body text-muted" style="font-size:0.85rem;">
         <ul class="mb-0 ps-3">

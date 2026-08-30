@@ -4,6 +4,12 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+style="background:rgba(255,193,7,0.08); color:var(--bs-body-color); border-left:4px solid #ffc107;">
+<i class="bi bi-people text-warning flex-shrink-0"></i>
+<span>Portal Subscribers are Data Users who have subscribed to receive notifications or data via the Data Portal. This view lists their active subscriptions and associated destinations.</span>
+</div>
+
 <div class="card border-0 shadow-sm mt-3">
 <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
     <i class="bi bi-people-fill text-info"></i>

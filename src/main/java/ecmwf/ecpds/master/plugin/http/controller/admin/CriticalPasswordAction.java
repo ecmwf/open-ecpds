@@ -21,7 +21,7 @@ package ecmwf.ecpds.master.plugin.http.controller.admin;
 /**
  * ECMWF Product Data Store (OpenECPDS) Project
  *
- * Handles the "Critical Action Password" admin page. The password is stored as a SHA-256 hex digest in the SYS_CONFIG
+ * Handles the "Critical Password" admin page. The password is stored as a SHA-256 hex digest in the SYS_CONFIG
  * database table (group="Master", name="criticalActionPasswordHash") and is completely separate from the user's normal
  * administrator password.
  *
@@ -126,10 +126,10 @@ public class CriticalPasswordAction extends PDSAction {
         }
         try {
             db.setCriticalActionPasswordHash(hash);
-            log.warn("Critical Action Password {} by user '{}'", hasPassword ? "renewed" : "set for the first time",
+            log.warn("Critical Password {} by user '{}'", hasPassword ? "renewed" : "set for the first time",
                     user.getUid());
-            request.setAttribute("capSuccess", hasPassword ? "Critical Action Password renewed successfully."
-                    : "Critical Action Password set successfully.");
+            request.setAttribute("capSuccess",
+                    hasPassword ? "Critical Password renewed successfully." : "Critical Password set successfully.");
         } catch (final Exception e) {
             log.error("setCriticalActionPasswordHash failed", e);
             request.setAttribute("capError", "Failed to store the password: " + e.getMessage());

@@ -85,7 +85,7 @@
         <i class="bi bi-puzzle text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
             <span class="tool-title">Transfer Modules</span>
-            <p class="tool-desc">View available ECtrans protocol modules (FTP, SFTP, S3, Azure, WebDAV, etc.).
+            <p class="tool-desc">View available ECtrans protocol modules (FTP, SFTP, S3, Azure, Google Cloud, WebDAV, etc.).
             Modules implement the actual transfer logic used by Transfer Methods and Hosts.</p>
         </div>
     </div>

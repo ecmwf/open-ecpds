@@ -5,6 +5,12 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+style="background:rgba(25,135,84,0.06); color:var(--bs-body-color); border-left:4px solid #198754;">
+<i class="bi bi-puzzle text-success flex-shrink-0"></i>
+<span>Transfer Modules are the underlying ECtrans plugins that implement individual transfer protocols (FTP, SFTP, S3, Azure, Google Cloud, WebDAV, etc.). Each module exposes a set of configurable parameters used by the Transfer Methods that reference it.</span>
+</div>
+
 <c:if test="${empty ectransmodules}">
     <div class="d-flex align-items-center alert alert-info mt-2 gap-2">
         No Transfer Modules found.

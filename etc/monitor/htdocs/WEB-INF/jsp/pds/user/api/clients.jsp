@@ -4,6 +4,12 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/fn.tld" prefix="fn" %>
 
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+style="background:rgba(255,193,7,0.08); color:var(--bs-body-color); border-left:4px solid #ffc107;">
+<i class="bi bi-key text-warning flex-shrink-0"></i>
+<span>API Clients are applications or scripts that access OpenECPDS programmatically using token-based authentication. Each client has a unique key and can be granted specific access permissions.</span>
+</div>
+
 <script>
 function validate(path, message) {
     confirmationDialog({

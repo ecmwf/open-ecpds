@@ -3,6 +3,12 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-left:4px solid #6c757d;">
+<i class="bi bi-arrow-repeat text-secondary flex-shrink-0"></i>
+<span>Outstanding transfers that failed or are stuck and can be requeued for re-processing. Select one or more transfers and use the action buttons to requeue them.</span>
+</div>
+
 <div class="card border-0 shadow-sm mt-3">
 <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-exclamation-triangle text-primary"></i>

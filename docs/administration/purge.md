@@ -26,7 +26,7 @@ Three controls are presented:
 | Control | Required | Description |
 |---|---|---|
 | **Confirmation phrase** | Yes | Type `PURGE ALL DATA` exactly (case-sensitive) to enable the submit button. |
-| **Critical Action Password** | Only if set | If a [Critical Action Password](critical-password.md) has been configured, it must be supplied here. If no password has been set yet, this field is not shown — configure one first. |
+| **Critical Password** | Only if set | If a [Critical Password](critical-password.md) has been configured, it must be supplied here. If no password has been set yet, this field is not shown — configure one first. |
 | **Trigger cleanup immediately** | Optional | Wakes the purge and file-expiry schedulers immediately rather than waiting for their next scheduled cycle. Recommended in most cases. |
 | **Also hard-delete all database records immediately** | Optional | See [Immediate database hard-delete](#immediate-database-hard-delete) below. |
 
@@ -82,4 +82,4 @@ The system is ready to accept new transfers immediately.
 ## Prerequisites
 
 - You must have **administrator** access to the Monitoring UI.
-- A [Critical Action Password](critical-password.md) should be configured. If none is set, a warning banner is shown on the Administration page and the form will not ask for it — but it is strongly recommended to set one before using this feature in a production environment.
+- A [Critical Password](critical-password.md) should be configured. If none is set, a warning banner is shown on the Administration page and the form will not ask for it — but it is strongly recommended to set one before using this feature in a production environment.

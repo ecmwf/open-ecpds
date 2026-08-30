@@ -4,6 +4,12 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left:4px solid #0d6efd;">
+<i class="bi bi-server text-primary flex-shrink-0"></i>
+<span>Data Movers are the servers responsible for physically storing and transferring data files. Each mover belongs to a Transfer Group and can be monitored for disk usage and active connections.</span>
+</div>
+
 <c:if test="${empty transferservers}">
 <div class="d-flex align-items-center alert alert-info mt-2 gap-2">No Data Movers found.</div>
 </c:if>

@@ -2711,10 +2711,10 @@ public interface DataBaseInterface extends Remote {
     void triggerAllPurge() throws DataBaseException, RemoteException;
 
     /**
-     * Returns true if a Critical Action Password has been set in the database (SYS_CONFIG table). When true, the UI
-     * must present a password field before allowing any high-consequence admin action.
+     * Returns true if a Critical Password has been set in the database (SYS_CONFIG table). When true, the UI must
+     * present a password field before allowing any high-consequence admin action.
      *
-     * @return true if a Critical Action Password is configured
+     * @return true if a Critical Password is configured
      *
      * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
@@ -2724,8 +2724,8 @@ public interface DataBaseInterface extends Remote {
     boolean hasCriticalActionPassword() throws DataBaseException, RemoteException;
 
     /**
-     * Validates the supplied password against the stored Critical Action Password hash. The actual password hash is
-     * never sent to the caller — only a boolean result is returned.
+     * Validates the supplied password against the stored Critical Password hash. The actual password hash is never sent
+     * to the caller — only a boolean result is returned.
      *
      * @param attempt
      *            the plaintext password supplied by the user
@@ -2740,8 +2740,8 @@ public interface DataBaseInterface extends Remote {
     boolean validateCriticalActionPassword(String attempt) throws DataBaseException, RemoteException;
 
     /**
-     * Stores a new Critical Action Password hash in the database (SYS_CONFIG table). The caller is responsible for
-     * hashing the password before passing it here. The hash replaces any previously stored value.
+     * Stores a new Critical Password hash in the database (SYS_CONFIG table). The caller is responsible for hashing the
+     * password before passing it here. The hash replaces any previously stored value.
      *
      * @param hash
      *            the hex-encoded SHA-256 hash of the new password

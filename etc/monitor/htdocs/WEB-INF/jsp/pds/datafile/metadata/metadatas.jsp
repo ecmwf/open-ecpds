@@ -3,6 +3,12 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left:4px solid #0d6efd;">
+<i class="bi bi-tags text-primary flex-shrink-0"></i>
+<span>Metadata attributes attached to data files and transfers. Each entry records a field name and its associated value for a specific data file.</span>
+</div>
+
 <c:if test="${empty attributes}">
     <div class="alert">No Meta Data found.</div>
 </c:if>
