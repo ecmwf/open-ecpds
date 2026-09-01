@@ -2348,6 +2348,25 @@ final class ECpdsGet {
     }
 
     /**
+     * Gets the retrying data transfers by group by (transfers in RETR/WAIT status that have already been attempted at
+     * least once).
+     *
+     * @param paramGroupBy
+     *            the group by identifier
+     *
+     * @return the retrying data transfers by group by
+     *
+     * @throws SQLException
+     *             the SQL exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    DBResultSet getRetryingDataTransfersByGroupBy(final String paramGroupBy) throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getRetryingDataTransfersByGroupBy",
+                new String[] { "groupBy=" + paramGroupBy });
+    }
+
+    /**
      * Gets the product status.
      *
      * @param paramStream

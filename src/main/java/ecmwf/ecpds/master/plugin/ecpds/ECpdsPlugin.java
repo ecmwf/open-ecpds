@@ -2907,6 +2907,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
         List<Long> dataFileIds;
         final var currentTime = System.currentTimeMillis();
         var lastUpdate = currentTime;
+        var lastRetryUpdate = 0L;
         var found = false;
         int count;
         if (LOG_REQUESTS) {
@@ -2963,6 +2964,35 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                                 header.append("retrieval not started yet");
                             }
                             send(header.toString());
+                        }
+                    }
+                }
+                if (System.currentTimeMillis() - lastRetryUpdate > WAIT_FOR_REFRESH_INTERVAL) {
+                    // Periodically check for transfers that have already been
+                    // attempted but failed and are waiting to be retried — this
+                    // gives operators early visibility of files that may be
+                    // having persistent retrieval problems.
+                    lastRetryUpdate = System.currentTimeMillis();
+                    final var retryingTransfers = DATABASE.getRetryingDataTransfersByGroupBy(group);
+                    if (!retryingTransfers.isEmpty()) {
+                        send(" !! " + retryingTransfers.size() + " DataFile(s) in group " + group
+                                + " are being retried (may need investigation):");
+                        for (final var dt : retryingTransfers) {
+                            final var dataFile = dt.getDataFile();
+                            final var ecauthUser = dataFile.getEcauthUser();
+                            final var ecauthHost = dataFile.getEcauthHost();
+                            final var retry = new StringBuilder(" !! DataFile ").append(dataFile.getId())
+                                    .append(" [failed ").append(dt.getReplicateCount()).append(" time(s)]: ");
+                            if (ecauthUser != null && ecauthHost != null) {
+                                retry.append(ecauthUser).append("@").append(ecauthHost).append("->");
+                            }
+                            retry.append(dataFile.getOriginal()).append(" (")
+                                    .append(Format.formatSize(dataFile.getSize())).append(")");
+                            final var comment = dt.getComment();
+                            if (isNotEmpty(comment)) {
+                                retry.append(" - ").append(comment);
+                            }
+                            send(retry.toString());
                         }
                     }
                 }
