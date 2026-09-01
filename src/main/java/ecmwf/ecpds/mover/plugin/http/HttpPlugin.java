@@ -465,7 +465,7 @@ public final class HttpPlugin extends PluginThread implements HttpCertificatePro
                 }
                 sslConnector.setPort(httpsPort);
                 sslConnector.setHost(listenAddress);
-                sslConnector.setIdleTimeout(Cnf.at("HttpPlugin", "idleTimeout", 30_000L));
+                sslConnector.setIdleTimeout(Cnf.at("HttpPlugin", "idleTimeout", 120_000L));
                 server.addConnector(sslConnector);
             }
             // Create HTTP listener
@@ -474,7 +474,7 @@ public final class HttpPlugin extends PluginThread implements HttpCertificatePro
                 final var connector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
                 connector.setHost(listenAddress);
                 connector.setPort(httpPort);
-                connector.setIdleTimeout(Cnf.at("HttpPlugin", "idleTimeout", 30_000L));
+                connector.setIdleTimeout(Cnf.at("HttpPlugin", "idleTimeout", 120_000L));
                 server.addConnector(connector);
             }
             // Statistics
