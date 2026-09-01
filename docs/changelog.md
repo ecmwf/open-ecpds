@@ -5,7 +5,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ---
 
-## open-ecpds 8.1.0-29082026
+## open-ecpds 8.2.0-01092026
 
 - **Critical Password**: Added a dedicated **Critical Password** stored as a SHA-256 hash in a new generic `SYS_CONFIG` database table (group/name/value, reusable for future DB-backed configuration). The password is completely separate from the normal administrator login, must be at least 12 characters, and is required to confirm irreversible administrative operations. A new admin page (*Admin Tasks → Critical Password*) lets any administrator set or renew it; initial setup is prompted automatically with a yellow banner on the start page and admin landing page whenever no password has been configured yet.
 - **Purge All Data** (admin panel): New multi-step *Purge All Data* action under *Admin Tasks* in the Monitoring UI. Step 1 requires the administrator to explicitly tick a confirmation checkbox; step 2 requires typing the phrase `PURGE ALL DATA` and optionally supplying the Critical Password. Two independent options are available at confirmation time: *Trigger cleanup immediately* (wakes the purge scheduler and ExpiredDataFileScheduler rather than waiting for the next cycle), and *Also hard-delete all database records immediately* (runs chunked hard-deletes of all transfer records, history, and data files in a background task — so the browser does not time out — and then triggers a full disk scan on every Data Mover via a new `purgeAll()` RMI call so orphaned files are removed from disk without delay). The page is mobile-responsive and links back to the Critical Password setup when that password is not yet set.
