@@ -2968,6 +2968,34 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                 }
             }
         }
+        // Before declaring success, check whether any transfers in this group have
+        // failed (e.g. file-not-found on the source host). These would never appear
+        // in the SCHE/FETC queue above, so the loop would exit as if complete while
+        // files were actually never retrieved.
+        final var failedTransfers = DATABASE.getFailedDataTransfersByGroupBy(group);
+        if (!failedTransfers.isEmpty()) {
+            final var msg = new StringBuilder("Group ").append(group).append(" has ").append(failedTransfers.size())
+                    .append(" failed file(s) that could not be retrieved from the source host")
+                    .append(" — please investigate and fix the missing file(s):");
+            for (final var dt : failedTransfers) {
+                final var dataFile = dt.getDataFile();
+                final var ecauthUser = dataFile.getEcauthUser();
+                final var ecauthHost = dataFile.getEcauthHost();
+                msg.append("\n >> DataFile ").append(dataFile.getId()).append(" [").append(dt.getDestinationName())
+                        .append("]: ");
+                if (ecauthUser != null && ecauthHost != null) {
+                    msg.append(ecauthUser).append("@").append(ecauthHost).append("->");
+                }
+                msg.append(dataFile.getOriginal()).append(" (").append(Format.formatSize(dataFile.getSize()))
+                        .append(")");
+                final var comment = dt.getComment();
+                if (isNotEmpty(comment)) {
+                    msg.append(" - ").append(comment);
+                }
+            }
+            stopAndError(msg.toString());
+            return;
+        }
         // Did we found something ever?
         if (!found) {
             // We had nothing, the files might have been retrieved before we had

@@ -1798,6 +1798,45 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Gets the failed data transfers by group by (up to 10 entries). Each returned {@link DataTransfer} has its
+     * {@link DataFile} populated with the original path, size, and ecauth user/host.
+     *
+     * @param groupBy
+     *            the group by identifier
+     *
+     * @return list of failed data transfers (at most 10)
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public List<DataTransfer> getFailedDataTransfersByGroupBy(final String groupBy) throws DataBaseException {
+        try (var rs = ecpds.getFailedDataTransfersByGroupBy(groupBy)) {
+            final List<DataTransfer> list = new ArrayList<>();
+            while (rs.next()) {
+                final var file = new DataFile();
+                file.setId(rs.getLong("DAF_ID"));
+                file.setOriginal(rs.getString("DAF_ORIGINAL"));
+                file.setSize(rs.getLong("DAF_SIZE"));
+                file.setEcauthHost(rs.getString("DAF_ECAUTH_HOST"));
+                file.setEcauthUser(rs.getString("DAF_ECAUTH_USER"));
+                final var transfer = new DataTransfer();
+                transfer.setId(rs.getLong("DAT_ID"));
+                transfer.setDataFileId(file.getId());
+                transfer.setDataFile(file);
+                transfer.setDestinationName(rs.getString("DES_NAME"));
+                transfer.setComment(rs.getString("DAT_COMMENT"));
+                transfer.setStatusCode(rs.getString("STA_CODE"));
+                list.add(transfer);
+            }
+            logSqlRequest("getFailedDataTransfersByGroupBy", list.size());
+            return list;
+        } catch (final Exception e) {
+            _log.warn("getFailedDataTransfersByGroupBy", e);
+            throw new DataBaseException("getFailedDataTransfersByGroupBy", e);
+        }
+    }
+
+    /**
      * Gets the data files by group by count.
      *
      * @param groupBy

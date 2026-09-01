@@ -2330,6 +2330,24 @@ final class ECpdsGet {
     }
 
     /**
+     * Gets the failed data transfers by group by.
+     *
+     * @param paramGroupBy
+     *            the group by identifier
+     *
+     * @return the failed data transfers by group by
+     *
+     * @throws SQLException
+     *             the SQL exception
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    DBResultSet getFailedDataTransfersByGroupBy(final String paramGroupBy) throws SQLException, IOException {
+        return _database.executeSelect("ECpdsBase", "getFailedDataTransfersByGroupBy",
+                new String[] { "groupBy=" + paramGroupBy });
+    }
+
+    /**
      * Gets the product status.
      *
      * @param paramStream

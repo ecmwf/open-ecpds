@@ -1,0 +1,25 @@
+##
+## References
+##
+#menu "ECpdsBase"
+#name "getFailedDataTransfersByGroupBy"
+#group "select"
+
+##
+## Variable(s)
+##
+#prompt "groupBy;Group by;%"
+
+##
+## Request(s)
+##
+SELECT DAT.DAT_ID, DAT.DES_NAME, DAT.DAT_COMMENT, DAT.STA_CODE,
+       DAF.DAF_ID, DAF.DAF_ORIGINAL, DAF.DAF_SIZE, DAF.DAF_ECAUTH_HOST, DAF.DAF_ECAUTH_USER
+  FROM DATA_TRANSFER DAT
+  JOIN DATA_FILE DAF ON DAT.DAF_ID = DAF.DAF_ID
+ WHERE DAF.DAF_GROUP_BY = '$groupBy'
+   AND NOT DAF.DAF_DELETED
+   AND NOT DAF.DAF_DOWNLOADED
+   AND NOT DAT.DAT_DELETED
+   AND DAT.STA_CODE = 'FAIL'
+ LIMIT 10
