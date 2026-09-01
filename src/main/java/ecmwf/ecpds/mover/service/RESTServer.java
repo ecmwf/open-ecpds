@@ -2642,9 +2642,23 @@ public final class RESTServer {
                         throw newException(429, "Too Many Requests: Max ranges allowed exceeded (" + rangeSize + ")");
                     }
                     final var proxies = new java.util.ArrayList<ProxySocket>(rangeSize);
-                    for (final var range : ranges) {
-                        proxies.add(_openProxySocket(session, mediaRequest, range.start, range.length));
+                    try {
+                        for (final var range : ranges) {
+                            proxies.add(_openProxySocket(session, mediaRequest, range.start, range.length));
+                        }
+                    } catch (final Exception e) {
+                        // Close any already-opened proxy sockets to avoid resource leaks
+                        for (final var p : proxies) {
+                            StreamPlugThread.closeQuietly(p);
+                        }
+                        throw e;
                     }
+                    // Remove any Content-Type set by processGet (e.g. from portal.headerRegistry for
+                    // *.grib2 files) before setting the multipart boundary type. Without this,
+                    // Jersey throws HeaderValueException("Too many Content-Type header values") when
+                    // processing the response, which means MultiStreamer.write() is never called and
+                    // the session slot is permanently leaked.
+                    builder.header(CONTENT_TYPE, null);
                     builder.header(CONTENT_TYPE, "multipart/byteranges; boundary=" + MULTIPART_BOUNDARY);
                     streamer = new MultiStreamer(session, proxies, mediaRequest, ranges);
                 }
