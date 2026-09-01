@@ -1631,6 +1631,18 @@ public interface DataBaseInterface extends Remote {
     List<Feedback> getFeedbackList() throws DataBaseException, RemoteException;
 
     /**
+     * Returns true if there is at least one feedback entry that has not been reviewed.
+     *
+     * @return true if unreviewed feedback exists
+     *
+     * @throws ecmwf.ecpds.master.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    boolean hasUnreviewedFeedback() throws DataBaseException, RemoteException;
+
+    /**
      * Inserts a feedback entry.
      *
      * @param feedback

@@ -14,6 +14,10 @@
     final String _capDot = _capNotSet
         ? " <i class=\"bi bi-circle-fill text-warning ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
         : "";
+    final boolean _hasFeedback = Boolean.TRUE.equals(request.getAttribute("hasUnreviewedFeedback"));
+    final String _feedbackDot = _hasFeedback
+        ? " <i class=\"bi bi-circle-fill text-warning ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
+        : "";
 %>
 
 <%-- Critical Password setup banner (shown to admins only when not yet configured) --%>
@@ -192,7 +196,7 @@
                 <auth:link basePathKey="admin.basepath" href="/filter" wrappingTags="li"><i class="bi bi-file-zip"></i>Compress Files</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/requeue" wrappingTags="li"><i class="bi bi-hourglass-split"></i>Outstanding Transfers</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/upload" wrappingTags="li"><i class="bi bi-upload"></i>Upload Files</auth:link>
-                <auth:link basePathKey="admin.feedback.basepath" href="" wrappingTags="li"><i class="bi bi-chat-left-text"></i>User Feedback</auth:link>
+                <auth:link basePathKey="admin.feedback.basepath" href="" wrappingTags="li"><i class="bi bi-chat-left-text"></i>User Feedback<%=_feedbackDot%></auth:link>
                 <auth:link basePathKey="admin.basepath" href="/metafields" wrappingTags="li"><i class="bi bi-list-check"></i>Metadata Fields</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/certificates" wrappingTags="li"><i class="bi <%=_certIconClass%>"></i> TLS Certificates<%=_certDot%></auth:link>
                 <auth:link basePathKey="admin.basepath" href="/criticalpassword" wrappingTags="li"><i class="bi bi-key-fill"></i> Critical Password<%=_capDot%></auth:link>

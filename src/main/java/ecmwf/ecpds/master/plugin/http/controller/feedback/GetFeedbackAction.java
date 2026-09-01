@@ -78,6 +78,11 @@ public class GetFeedbackAction extends PDSAction {
                         }
                     }
                 }
+                // Invalidate the cached unreviewed-feedback flag so the submenu dot updates promptly
+                try {
+                    MasterManager.getMI().invalidateUnreviewedFeedbackCache();
+                } catch (final Exception ignored) {
+                }
                 return mapping.findForward("success");
             }
             request.setAttribute("feedbackList", MasterManager.getDB().getFeedbackList());

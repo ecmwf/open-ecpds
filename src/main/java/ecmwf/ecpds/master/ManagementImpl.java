@@ -150,6 +150,15 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     /** Timestamp (ms) of the last {@link #certStatusCache} refresh. Zero forces an immediate refresh. */
     private volatile long certStatusCacheTime = 0L;
 
+    /** How long the unreviewed-feedback flag is considered fresh. Short TTL so the dot disappears promptly. */
+    private static final transient long FEEDBACK_STATUS_TTL = 5 * Timer.ONE_MINUTE;
+
+    /** Cached flag: true if at least one feedback entry has not been reviewed. */
+    private volatile boolean unreviewedFeedbackCache = false;
+
+    /** Timestamp (ms) of the last {@link #unreviewedFeedbackCache} refresh. Zero forces an immediate refresh. */
+    private volatile long unreviewedFeedbackCacheTime = 0L;
+
     /** The Constant METADATA_FILENAME. */
     private static final transient String METADATA_FILENAME = Cnf.at("MetaData", "fileName", ".*(.xml)");
 
@@ -3251,6 +3260,36 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
             _refreshCertStatusCache();
         }
         return monitor.done(certStatusCache);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns whether at least one feedback entry is unreviewed. The result is cached for a short period (5 minutes)
+     * and invalidated immediately whenever feedback is reviewed or deleted.
+     */
+    @Override
+    public boolean hasUnreviewedFeedback() throws MasterException, RemoteException {
+        final var monitor = new MonitorCall("hasUnreviewedFeedback()");
+        if (System.currentTimeMillis() - unreviewedFeedbackCacheTime > FEEDBACK_STATUS_TTL) {
+            try {
+                unreviewedFeedbackCache = base.hasUnreviewedFeedback();
+            } catch (final Exception e) {
+                _log.debug("hasUnreviewedFeedback: DB lookup failed", e);
+            }
+            unreviewedFeedbackCacheTime = System.currentTimeMillis();
+        }
+        return monitor.done(unreviewedFeedbackCache);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Immediately invalidates the cached unreviewed-feedback flag.
+     */
+    @Override
+    public void invalidateUnreviewedFeedbackCache() throws MasterException, RemoteException {
+        unreviewedFeedbackCacheTime = 0L;
     }
 
     /**

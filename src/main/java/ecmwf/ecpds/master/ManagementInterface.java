@@ -1725,4 +1725,28 @@ public interface ManagementInterface extends Remote {
      *             the remote exception
      */
     String getOverallCertStatus() throws MasterException, RemoteException;
+
+    /**
+     * Returns true if at least one feedback entry has not yet been reviewed. The result is cached for a short period
+     * and immediately invalidated whenever feedback is reviewed or deleted.
+     *
+     * @return true if unreviewed feedback exists
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    boolean hasUnreviewedFeedback() throws MasterException, RemoteException;
+
+    /**
+     * Immediately invalidates the cached unreviewed-feedback flag so the next call to {@link #hasUnreviewedFeedback()}
+     * performs a fresh DB query. Call this after any feedback is reviewed or deleted.
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void invalidateUnreviewedFeedbackCache() throws MasterException, RemoteException;
 }

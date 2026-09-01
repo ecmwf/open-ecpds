@@ -5499,6 +5499,24 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Returns true if there is at least one feedback entry that has not been reviewed.
+     *
+     * @return true if unreviewed feedback exists
+     */
+    public boolean hasUnreviewedFeedback() {
+        try (var it = getAll(Feedback.class)) {
+            while (it.hasNext()) {
+                if (!it.next().isReviewed()) {
+                    return true;
+                }
+            }
+        } catch (final Exception e) {
+            _log.warn("hasUnreviewedFeedback", e);
+        }
+        return false;
+    }
+
+    /**
      * Inserts a feedback entry.
      *
      * @param feedback

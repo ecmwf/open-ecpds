@@ -2064,6 +2064,15 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
+    public boolean hasUnreviewedFeedback() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("hasUnreviewedFeedback()");
+        return monitor.done(ecpds.hasUnreviewedFeedback());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public boolean tryInsertFeedback(final Feedback feedback) throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("tryInsertFeedback()");
         return monitor.done(ecpds.tryInsertFeedback(feedback));

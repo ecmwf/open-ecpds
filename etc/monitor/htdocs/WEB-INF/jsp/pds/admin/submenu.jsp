@@ -29,6 +29,19 @@
     final String _sm_capDot = _sm_capNotSet
         ? " <i class=\"bi bi-circle-fill text-warning ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
         : "";
+
+    // Resolve unreviewed-feedback status.
+    Boolean _sm_feedbackAttr = (Boolean) request.getAttribute("hasUnreviewedFeedback");
+    boolean _sm_hasFeedback;
+    if (_sm_feedbackAttr != null) {
+        _sm_hasFeedback = _sm_feedbackAttr;
+    } else {
+        try { _sm_hasFeedback = MasterManager.getMI().hasUnreviewedFeedback(); }
+        catch (final Exception _e) { _sm_hasFeedback = false; }
+    }
+    final String _sm_feedbackDot = _sm_hasFeedback
+        ? " <i class=\"bi bi-circle-fill text-warning ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
+        : "";
 %>
 
 <table class="spareBox2">
@@ -45,7 +58,7 @@
 	<auth:link basePathKey="admin.basepath" href="/upload"
 		wrappingTags="tr,td"><i class="bi bi-upload"></i> Upload Files</auth:link>
 	<auth:link basePathKey="admin.feedback.basepath" href=""
-		wrappingTags="tr,td"><i class="bi bi-chat-left-text"></i> User Feedback</auth:link>
+		wrappingTags="tr,td"><i class="bi bi-chat-left-text"></i> User Feedback<%=_sm_feedbackDot%></auth:link>
 	<auth:link basePathKey="admin.basepath" href="/metafields"
 		wrappingTags="tr,td"><i class="bi bi-list-check"></i> Metadata Fields</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/certificates"

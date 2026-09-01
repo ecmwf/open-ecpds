@@ -92,6 +92,11 @@ public class StartAction extends PDSAction {
             } catch (final Exception e) {
                 request.setAttribute("criticalPasswordNotSet", Boolean.FALSE);
             }
+            try {
+                request.setAttribute("hasUnreviewedFeedback", MasterManager.getMI().hasUnreviewedFeedback());
+            } catch (final Exception e) {
+                request.setAttribute("hasUnreviewedFeedback", Boolean.FALSE);
+            }
         }
 
         request.setAttribute("title", System.getProperty("monitor.title"));

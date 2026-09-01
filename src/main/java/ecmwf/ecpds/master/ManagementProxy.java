@@ -1463,4 +1463,16 @@ final class ManagementProxy implements ManagementInterface {
     public String getOverallCertStatus() throws MasterException, RemoteException {
         return managementInterface.getOverallCertStatus();
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean hasUnreviewedFeedback() throws MasterException, RemoteException {
+        return managementInterface.hasUnreviewedFeedback();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void invalidateUnreviewedFeedbackCache() throws MasterException, RemoteException {
+        managementInterface.invalidateUnreviewedFeedbackCache();
+    }
 }

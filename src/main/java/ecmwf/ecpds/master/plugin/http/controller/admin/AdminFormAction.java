@@ -62,6 +62,11 @@ public class AdminFormAction extends PDSAction {
         } catch (final Exception e) {
             request.setAttribute("criticalPasswordNotSet", Boolean.FALSE);
         }
+        try {
+            request.setAttribute("hasUnreviewedFeedback", MasterManager.getMI().hasUnreviewedFeedback());
+        } catch (final Exception e) {
+            request.setAttribute("hasUnreviewedFeedback", Boolean.FALSE);
+        }
         return mapping.findForward("success");
     }
 }

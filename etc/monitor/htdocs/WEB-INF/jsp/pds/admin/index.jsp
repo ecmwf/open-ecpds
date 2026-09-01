@@ -12,6 +12,7 @@
                            : certWarning ? "<span class=\"badge bg-warning text-dark ms-2\">Attention</span>"
                                          : "";
     final boolean capNotSet = Boolean.TRUE.equals(request.getAttribute("criticalPasswordNotSet"));
+    final boolean hasFeedback = Boolean.TRUE.equals(request.getAttribute("hasUnreviewedFeedback"));
 %>
 
 <div class="mb-4 px-3 py-3 rounded" style="background:rgba(108,117,125,0.07); border-left:4px solid #6c757d; font-size:0.85rem; color:var(--bs-body-color);">
@@ -98,6 +99,17 @@
 
     <auth:link basePathKey="admin.feedback.basepath" href="">
     <div class="col">
+    <% if (hasFeedback) { %>
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3 border border-warning-subtle"
+         style="background:rgba(255,193,7,0.06);">
+        <i class="bi bi-chat-left-text-fill text-warning flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title">User Feedback <span class="badge bg-warning text-dark ms-1">Pending</span></span>
+            <p class="tool-desc">There is unreviewed feedback awaiting acknowledgement. Review, acknowledge and manage
+            feedback submitted by users of the monitoring interface.</p>
+        </div>
+    </div>
+    <% } else { %>
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-chat-left-text text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -106,6 +118,7 @@
             Includes ratings, comments, feature requests and contact information where provided.</p>
         </div>
     </div>
+    <% } %>
     </div>
     </auth:link>
 

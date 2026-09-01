@@ -86,6 +86,13 @@ public class SubmitFeedbackAction extends PDSAction {
                 fb.setContact(trim(request.getParameter("contact")));
             }
             final var ok = MasterManager.getDB().tryInsertFeedback(fb);
+            if (ok) {
+                // Invalidate the cached unreviewed-feedback flag so the notification dot appears promptly
+                try {
+                    MasterManager.getMI().invalidateUnreviewedFeedbackCache();
+                } catch (final Exception ignored) {
+                }
+            }
             writeJson(response, ok ? "{\"ok\":true}" : "{\"ok\":false,\"error\":\"Failed to save\"}");
         } catch (final NumberFormatException e) {
             writeJson(response, "{\"ok\":false,\"error\":\"Invalid input\"}");
