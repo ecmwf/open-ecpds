@@ -42,6 +42,19 @@
     final String _sm_feedbackDot = _sm_hasFeedback
         ? " <i class=\"bi bi-circle-fill text-warning ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
         : "";
+
+    // Resolve outstanding (bad) transfers status — reads in-memory cache, zero DB cost.
+    Boolean _sm_badAttr = (Boolean) request.getAttribute("hasBadTransfers");
+    boolean _sm_hasBad;
+    if (_sm_badAttr != null) {
+        _sm_hasBad = _sm_badAttr;
+    } else {
+        try { _sm_hasBad = MasterManager.hasBadDataTransfers(); }
+        catch (final Exception _e) { _sm_hasBad = false; }
+    }
+    final String _sm_badDot = _sm_hasBad
+        ? " <i class=\"bi bi-circle-fill text-danger ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
+        : "";
 %>
 
 <table class="spareBox2">
@@ -54,7 +67,7 @@
 	<auth:link basePathKey="admin.basepath" href="/filter"
 		wrappingTags="tr,td"><i class="bi bi-file-zip"></i> Compress Files</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/requeue"
-		wrappingTags="tr,td"><i class="bi bi-hourglass-split"></i> Outstanding Transfers</auth:link>
+		wrappingTags="tr,td"><i class="bi bi-hourglass-split"></i> Outstanding Transfers<%=_sm_badDot%></auth:link>
 	<auth:link basePathKey="admin.basepath" href="/upload"
 		wrappingTags="tr,td"><i class="bi bi-upload"></i> Upload Files</auth:link>
 	<auth:link basePathKey="admin.feedback.basepath" href=""

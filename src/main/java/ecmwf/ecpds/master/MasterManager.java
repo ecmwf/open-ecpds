@@ -233,6 +233,21 @@ public final class MasterManager {
     }
 
     /**
+     * Returns true if any destination in the in-memory cache currently has at least one bad (outstanding) transfer.
+     * This reads directly from the already-populated {@link #DESTINATIONS_MAP} and makes no database calls.
+     *
+     * @return true if any destination has outstanding (bad) transfers
+     */
+    public static boolean hasBadDataTransfers() {
+        for (final DestinationCache cache : DESTINATIONS_MAP.values()) {
+            if (cache.getBadDataTransfersCount() > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Gets the monitoring cache.
      *
      * @param destinationName

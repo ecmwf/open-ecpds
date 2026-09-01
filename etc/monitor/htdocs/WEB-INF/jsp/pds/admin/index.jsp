@@ -13,6 +13,7 @@
                                          : "";
     final boolean capNotSet = Boolean.TRUE.equals(request.getAttribute("criticalPasswordNotSet"));
     final boolean hasFeedback = Boolean.TRUE.equals(request.getAttribute("hasUnreviewedFeedback"));
+    final boolean hasBadTransfers = Boolean.TRUE.equals(request.getAttribute("hasBadTransfers"));
 %>
 
 <div class="mb-4 px-3 py-3 rounded" style="background:rgba(108,117,125,0.07); border-left:4px solid #6c757d; font-size:0.85rem; color:var(--bs-body-color);">
@@ -73,6 +74,17 @@
 
     <auth:link basePathKey="admin.basepath" href="/requeue">
     <div class="col">
+    <% if (hasBadTransfers) { %>
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3 border border-danger-subtle"
+         style="background:rgba(220,53,69,0.05);">
+        <i class="bi bi-hourglass-split text-danger flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title">Outstanding Transfers <span class="badge bg-danger ms-1">Attention</span></span>
+            <p class="tool-desc">There are transfers that are stuck or failed and need attention. View and manage files
+            that are queued but have not yet been transferred, and requeue them for processing.</p>
+        </div>
+    </div>
+    <% } else { %>
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-hourglass-split text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
@@ -81,6 +93,7 @@
             to identify stuck or failed transfers matching a given file pattern, and requeue them for processing.</p>
         </div>
     </div>
+    <% } %>
     </div>
     </auth:link>
 

@@ -97,6 +97,11 @@ public class StartAction extends PDSAction {
             } catch (final Exception e) {
                 request.setAttribute("hasUnreviewedFeedback", Boolean.FALSE);
             }
+            try {
+                request.setAttribute("hasBadTransfers", MasterManager.hasBadDataTransfers());
+            } catch (final Exception e) {
+                request.setAttribute("hasBadTransfers", Boolean.FALSE);
+            }
         }
 
         request.setAttribute("title", System.getProperty("monitor.title"));

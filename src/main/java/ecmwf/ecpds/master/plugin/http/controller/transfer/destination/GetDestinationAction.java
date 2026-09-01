@@ -50,6 +50,7 @@ import org.apache.struts.action.ActionMapping;
 
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.StreamManager;
+import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
@@ -177,7 +178,23 @@ public class GetDestinationAction extends PDSAction {
                 }
                 return null;
             }
+            // Lightweight JSON endpoint: returns the bad-transfers count for the header badge.
+            // Reads from the in-memory DestinationCache via DataBaseProxy — zero DB cost.
             final var mode = request.getParameter("mode");
+            if ("badTransfersCount".equals(request.getParameter("json"))) {
+                int count = 0;
+                try {
+                    count = MasterManager.getDB().getBadDataTransfersByDestinationCount(destination.getName());
+                } catch (final Exception ignored) {
+                }
+                try {
+                    response.setContentType("application/json; charset=UTF-8");
+                    response.getWriter().write("{\"count\":" + count + "}");
+                    response.getWriter().flush();
+                } catch (final java.io.IOException ignored) {
+                }
+                return null;
+            }
             if ("parameters".equals(mode)) {
                 // This is the all_parameters.jsp page!
                 return mapping.findForward("allParams");

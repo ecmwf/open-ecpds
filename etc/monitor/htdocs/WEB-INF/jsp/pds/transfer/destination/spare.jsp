@@ -68,7 +68,7 @@
     <tr><td><a href='<bean:message key="destination.basepath"/>/${destination.id}?mode=changelog'><i class="bi bi-clock-history sidebar-icon"></i> Changes Log</a></td></tr>
 
     <tr><td><a href='<bean:message key="monitoring.timeline.basepath"/>/${destination.id}?date=${date}'><i class="bi bi-calendar3 sidebar-icon"></i> Transfer Timeline</a></td></tr>
-    <tr><td><a href='/do/monitoring/unsuccessful/${destination.id}'><i class="bi bi-hourglass-split sidebar-icon"></i> Outstanding</a></td></tr>
+    <tr><td><a href='/do/monitoring/unsuccessful/${destination.id}'><i class="bi bi-hourglass-split sidebar-icon"></i> Outstanding<span id="_destOutstandingSidebarBadge"></span></a></td></tr>
 
     <auth:if basePathKey="transferhistory.basepath" paths="/">
         <auth:then>

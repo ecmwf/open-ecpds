@@ -96,7 +96,8 @@
             <a href='<bean:message key="monitoring.timeline.basepath"/>/${destination.id}<c:if test="${not empty _destDate}">?date=${_destDate}</c:if>'
                class="btn btn-sm btn-outline-secondary" title="Transfer Timeline"><i class="bi bi-calendar3"></i></a>
             <a href='/do/monitoring/unsuccessful/${destination.id}'
-               class="btn btn-sm btn-outline-secondary" title="Outstanding"><i class="bi bi-hourglass-split"></i></a>
+               id="_destOutstandingBtn"
+               class="btn btn-sm btn-outline-secondary position-relative" title="Outstanding"><i class="bi bi-hourglass-split"></i></a>
             <auth:if basePathKey="transferhistory.basepath" paths="/">
             <auth:then>
             <a href='<bean:message key="transferhistory.basepath"/>?destinationName=${destination.id}<c:if test="${not empty _destDate}">&amp;date=${_destDate}</c:if>&amp;fromDestination=true'
@@ -216,7 +217,7 @@
                     if (item.href && item.href.indexOf('mode=datausers') !== -1
                             && !item.querySelector('.du-mobile-badge')) {
                         var b = document.createElement('span');
-                        b.className = 'badge rounded-pill bg-danger ms-auto du-mobile-badge';
+                        b.className = 'badge rounded-pill bg-success ms-auto du-mobile-badge';
                         b.style.cssText = 'font-size:0.6rem;padding:2px 4px;line-height:1;';
                         b.textContent = _duCount;
                         item.style.display = 'flex';
@@ -234,18 +235,63 @@
                     var btn = document.getElementById('_destDataUsersBtn');
                     if (btn) {
                         var badge = document.createElement('span');
-                        badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                        badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success';
                         badge.style.cssText = 'font-size:0.6rem;padding:2px 4px;line-height:1;';
                         badge.textContent = _duCount;
                         btn.appendChild(badge);
                     }
                     var sidebar = document.getElementById('_destDataUsersSidebarBadge');
                     if (sidebar) {
-                        sidebar.className = 'badge rounded-pill bg-danger ms-1';
+                        sidebar.className = 'badge rounded-pill bg-success ms-1';
                         sidebar.style.cssText = 'font-size:0.6rem;padding:2px 4px;line-height:1;vertical-align:middle;';
                         sidebar.textContent = _duCount;
                     }
                     applyMobileBadge();
+                })
+                .catch(function() {});
+        })();
+        (function() {
+            var destName = '${destination.name}';
+            if (!destName) return;
+            var _badCount = 0;
+            function applyOutstandingMobileBadge() {
+                if (!_badCount) return;
+                var menu = document.getElementById('_destActionsMenu');
+                if (!menu) return;
+                Array.from(menu.querySelectorAll('a.dropdown-item')).forEach(function(item) {
+                    if (item.href && item.href.indexOf('/do/monitoring/unsuccessful/') !== -1
+                            && !item.querySelector('.outstanding-mobile-badge')) {
+                        var b = document.createElement('span');
+                        b.className = 'badge rounded-pill bg-danger ms-auto outstanding-mobile-badge';
+                        b.style.cssText = 'font-size:0.6rem;padding:2px 4px;line-height:1;';
+                        b.textContent = _badCount;
+                        item.style.display = 'flex';
+                        item.style.alignItems = 'center';
+                        item.appendChild(b);
+                    }
+                });
+            }
+            document.addEventListener('DOMContentLoaded', applyOutstandingMobileBadge);
+            fetch('/do/transfer/destination/' + encodeURIComponent(destName) + '?json=badTransfersCount')
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(data) {
+                    if (!data || !data.count) return;
+                    _badCount = data.count;
+                    var btn = document.getElementById('_destOutstandingBtn');
+                    if (btn) {
+                        var badge = document.createElement('span');
+                        badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                        badge.style.cssText = 'font-size:0.6rem;padding:2px 4px;line-height:1;';
+                        badge.textContent = _badCount;
+                        btn.appendChild(badge);
+                    }
+                    var sidebar = document.getElementById('_destOutstandingSidebarBadge');
+                    if (sidebar) {
+                        sidebar.className = 'badge rounded-pill bg-danger ms-1';
+                        sidebar.style.cssText = 'font-size:0.6rem;padding:2px 4px;line-height:1;vertical-align:middle;';
+                        sidebar.textContent = _badCount;
+                    }
+                    applyOutstandingMobileBadge();
                 })
                 .catch(function() {});
         })();

@@ -67,6 +67,11 @@ public class AdminFormAction extends PDSAction {
         } catch (final Exception e) {
             request.setAttribute("hasUnreviewedFeedback", Boolean.FALSE);
         }
+        try {
+            request.setAttribute("hasBadTransfers", MasterManager.hasBadDataTransfers());
+        } catch (final Exception e) {
+            request.setAttribute("hasBadTransfers", Boolean.FALSE);
+        }
         return mapping.findForward("success");
     }
 }
