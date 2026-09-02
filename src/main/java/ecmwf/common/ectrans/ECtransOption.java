@@ -206,7 +206,8 @@ public class ECtransOption<T> {
             format = "ISO-8601 extended local time format e.g. \"10:15-11:25:30\"";
         } else if (clazz.equals(Duration.class)) {
             sb.append("a duration");
-            format = "ISO-8601 seconds based representation e.g. \"PT20.345S\", \"PT15M\" or \"PT48H\"";
+            format = "ISO-8601 seconds based representation e.g. \"PT20.345S\", \"PT15M\" or \"PT48H\", "
+                    + "or a simplified format e.g. \"48h\", \"30m\" or \"10d\"";
         } else if (clazz.equals(Period.class)) {
             sb.append("a period");
             format = "ISO-8601 calendar system e.g. \"P2Y\", \"P3M\", \"P4W\", \"P5D\", \"P1Y2M3D\", or \"P1Y2M3W4D\"";

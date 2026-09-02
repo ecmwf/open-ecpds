@@ -51,7 +51,11 @@ function checkValueForType(type, choices, currentLine) {
 		} else if (type === "Duration") {
 			const iso8601DurationRegex = /^([-+]?)P(?:([-+]?[0-9]+)D)?(T(?:([-+]?[0-9]+)H)?(?:([-+]?[0-9]+)M)?(?:([-+]?[0-9]+)(?:[.,]([0-9]{0,9}))?S)?)?$/;
 			const integerRegex = /^-?\d+$/;
-			result = iso8601DurationRegex.test(value) || integerRegex.test(value) ? null : "The value should be a duration (e.g. \"PT20.345S\", \"PT15M\" or \"PT48H\")";
+			// Alternative legacy format: a number followed by a single lowercase unit suffix
+			// (y=year, w=week, d=day, h=hour, m=minute, s=second, z=milliseconds), e.g. "48h".
+			const legacyDurationRegex = /^-?\d+[ywdhmsz]$/;
+			result = iso8601DurationRegex.test(value) || integerRegex.test(value) || legacyDurationRegex.test(value)
+				? null : "The value should be a duration (e.g. \"PT20.345S\", \"PT15M\", \"PT48H\" or \"48h\")";
 		} else if (type === "Period") {
 			const iso8601PeriodRegex = /^([-+]?)P(?:([-+]?[0-9]+)Y)?(?:([-+]?[0-9]+)M)?(?:([-+]?[0-9]+)W)?(?:([-+]?[0-9]+)D)?$/
 			const integerRegex = /^-?\d+$/;

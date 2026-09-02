@@ -212,9 +212,10 @@ public class GetHostListJsonAction extends PDSAction {
             return !"max-size".equals(value) && !value.matches("(?i)\\d+(b|kb|mb|gb|pb|tb|eb)?");
         }
         if (type == Duration.class) {
-            // ISO-8601 duration or plain integer
+            // ISO-8601 duration, plain integer, or legacy suffix format (e.g. "48h")
             return !value.matches("-?\\d+")
-                    && !value.matches("[-+]?P(?:\\d+D)?(?:T(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:[.,]\\d{0,9})?S)?)?");
+                    && !value.matches("[-+]?P(?:\\d+D)?(?:T(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:[.,]\\d{0,9})?S)?)?")
+                    && !value.matches("-?\\d+[ywdhmsz]");
         }
         if (type == Period.class) {
             // ISO-8601 period or plain integer

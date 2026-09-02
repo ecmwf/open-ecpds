@@ -201,7 +201,8 @@ public class GetDestinationListJsonAction extends PDSAction {
         }
         if (type == Duration.class) {
             return !value.matches("-?\\d+")
-                    && !value.matches("[-+]?P(?:\\d+D)?(?:T(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:[.,]\\d{0,9})?S)?)?");
+                    && !value.matches("[-+]?P(?:\\d+D)?(?:T(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:[.,]\\d{0,9})?S)?)?")
+                    && !value.matches("-?\\d+[ywdhmsz]");
         }
         if (type == Period.class) {
             return !value.matches("-?\\d+") && !value.matches("[-+]?P(?:\\d+Y)?(?:\\d+M)?(?:\\d+W)?(?:\\d+D)?");
