@@ -5,7 +5,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ---
 
-## open-ecpds 8.2.1-02092026
+## open-ecpds 8.2.0-01092026
 
 - **Nested Properties validation**: The ace-editor **Properties** panel and its server-side counterpart now validate the nested `key=value` entries found inside multi-value options such as `alias.pattern`, `scheduler.force`, `ectrans.notifyAuth` and `ectrans.notifyPublish`. Each `ECtransOptions` entry can now declare a list of `SubOption`s (name, type, optional choices), driving both the JavaScript on-the-fly checker and the Java save-time validator so unrecognized nested keys, invalid types, and invalid choices are flagged consistently on both sides. A duplicate nested key (e.g. `delay=0;...;delay=5`) is now also flagged, since the underlying parser silently keeps only the last occurrence. Long "nested option not recognized" tooltips now wrap across multiple lines instead of rendering as a single unreadable line.
 - **Duration validation**: The Properties editor now accepts and validates the simplified duration shorthand (e.g. `48h`, `30m`, `10s`) in addition to the standard ISO-8601 format (e.g. `PT48H`) for both client-side and server-side checks. The corresponding helper tooltip was updated to mention both formats.
