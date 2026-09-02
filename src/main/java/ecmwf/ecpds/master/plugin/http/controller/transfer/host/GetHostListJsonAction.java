@@ -36,10 +36,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
@@ -58,6 +60,7 @@ import ecmwf.common.database.DataBaseCursor;
 import ecmwf.common.ectrans.ECtransGroups;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.ectrans.ECtransSetup;
+import ecmwf.common.ectrans.SubOption;
 import ecmwf.common.technical.ByteSize;
 import ecmwf.common.technical.TimeRange;
 import ecmwf.ecpds.master.MasterManager;
@@ -96,8 +99,17 @@ public class GetHostListJsonAction extends PDSAction {
     /** Pattern to extract a quoted value from a property line: option = "value" */
     private static final Pattern QUOTED_VALUE = Pattern.compile("\"([^\"]*)\"");
 
-    /** Metadata about a recognized option: its Java type and allowed choices. */
-    private record OptionMeta(Class<?> type, List<String> choices) {
+    /**
+     * Pattern to split one "key=value" (or key&gt;=/&lt;=/!=value) piece out of a nested options string, mirroring
+     * {@link ecmwf.common.text.Options#addValue}.
+     */
+    private static final Pattern NESTED_OPTION = Pattern.compile("^([^=<>!]+?)\\s*(!=|>=|<=|=|>|<)(.*)$");
+
+    /**
+     * Metadata about a recognized option: its Java type, allowed choices, and (if its value is itself a nested options
+     * string) the known nested sub-options or whether they are free-form.
+     */
+    private record OptionMeta(Class<?> type, List<String> choices, List<SubOption> subOptions, boolean freeForm) {
     }
 
     /** Map from lowercase module.option name → OptionMeta, built once at startup. */
@@ -107,7 +119,8 @@ public class GetHostListJsonAction extends PDSAction {
         final var map = new HashMap<String, OptionMeta>();
         for (final var opt : ECtransOptions.get(ECtransGroups.HOST)) {
             if (opt.isVisible()) {
-                map.put(opt.getParameter().toLowerCase(), new OptionMeta(opt.getClazz(), opt.getChoicesAsStrings()));
+                map.put(opt.getParameter().toLowerCase(), new OptionMeta(opt.getClazz(), opt.getChoicesAsStrings(),
+                        opt.getSubOptions(), opt.hasFreeFormSubOptions()));
             }
         }
         return map;
@@ -192,7 +205,61 @@ public class GetHostListJsonAction extends PDSAction {
             return true;
         }
         // Type validation
-        return isTypeError(meta.type(), value);
+        if (isTypeError(meta.type(), value)) {
+            return true;
+        }
+        return hasNestedOptionError(meta.subOptions(), meta.freeForm(), value);
+    }
+
+    /**
+     * Validates the nested "key=value" (or key&gt;=/&lt;=/!=value) pairs inside an options-string value, mirroring
+     * checkNestedSubOptions() in ecpds.js. Returns true if an unknown key, an invalid choice, or an invalid type is
+     * found for one of the entries. No-op (returns false) when the option has no known sub-options or is declared
+     * free-form.
+     */
+    private static boolean hasNestedOptionError(final List<SubOption> subOptions, final boolean freeForm,
+            final String value) {
+        if (freeForm || subOptions == null || subOptions.isEmpty()) {
+            return false;
+        }
+        final Set<String> seenKeys = new HashSet<>();
+        for (final var rawToken : value.split("[;,\\n]")) {
+            final var token = rawToken.trim();
+            if (token.isEmpty()) {
+                continue;
+            }
+            final var tm = NESTED_OPTION.matcher(token);
+            if (!tm.find()) {
+                continue;
+            }
+            final var subKey = tm.group(1).trim();
+            var subValue = tm.group(3).trim();
+            if (subValue.length() > 1 && subValue.startsWith("\"") && subValue.endsWith("\"")) {
+                subValue = subValue.substring(1, subValue.length() - 1);
+            }
+            SubOption sub = null;
+            for (final var candidate : subOptions) {
+                if (candidate.name().equals(subKey)) {
+                    sub = candidate;
+                    break;
+                }
+            }
+            if (sub == null) {
+                return true;
+            }
+            // The underlying parser (ecmwf.common.text.Options) stores nested options in a map, so a
+            // repeated key silently overwrites the previous one instead of combining values.
+            if (!seenKeys.add(subKey)) {
+                return true;
+            }
+            if (!sub.choices().isEmpty() && !sub.choices().contains(subValue)) {
+                return true;
+            }
+            if (isTypeError(sub.clazz(), subValue)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isTypeError(final Class<?> type, final String value) {

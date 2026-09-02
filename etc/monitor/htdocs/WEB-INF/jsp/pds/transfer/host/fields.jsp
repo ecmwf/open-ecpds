@@ -917,7 +917,7 @@ oninput="validateMailInput(this); toggleMailRows()" />
                	    	tipsText = "Ignored as \"" + moduleName + "\" parameters are not valid for " + getHostType() + " hosts.";
            	    		tipsType = "warning";
           			} else {
-           	    		var error = checkValueForType(tipObject.type, tipObject.choices, currentLine);
+           	    		var error = checkValueForType(tipObject.type, tipObject.choices, currentLine, tipObject.subOptions, tipObject.freeForm);
            	    		if (error != null) {
            	    			tipsText = error;
            	    			tipsType = "error";

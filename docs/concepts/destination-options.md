@@ -17,7 +17,7 @@ These options affect the transfer requests created for the destination queue.
 | `scheduler.asap` | Boolean | *disabled* | Set the schedule time to “now” for each submitted transfer. This overrides the `-asap` option from the `ecpds` command, but transfers can still wait behind other queued work or lower priority |
 | `scheduler.delay` | Duration | *none* | Add an extra delay to the scheduled time of each submitted transfer. This is cumulative with delays already set through `ecpds -delay` or `incoming.delay` |
 | `scheduler.lifetime` | Duration | *none* | Set the lifetime of submitted transfer requests. Once the lifetime expires, the transfer is marked expired and is no longer available for dissemination or download |
-| `scheduler.standby` | Boolean | *none* | Change the `standby` flag of submitted transfer requests |
+| `scheduler.standby` | String | *none* | Change the `standby` flag of submitted transfer requests. One of `yes`, `no` or `never` |
 | `scheduler.version` | String | *none* | Set an optional version for submitted transfer requests. Supported placeholders include `$date`, `$timestamp`, `$destination`, `$target`, `$original` and `$timefile` |
 | `scheduler.dateformat` | String | *platform default* | Date format used for the `$date` placeholder inside `scheduler.version` |
 
@@ -43,7 +43,7 @@ These options affect the transfer requests created for the destination queue.
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `scheduler.force` | Multi-line rule set | *none* | Override scheduler parameters for selected files. Supported parameters include `scheduler.lifetime`, `scheduler.delay`, `scheduler.noRetrieval`, `scheduler.asap`, `scheduler.transfergroup` and `scheduler.standby`. Rules can be single-line (`asap=yes;standby=never;pattern=E1(.*)`) or multi-line using operators `.=`, `==`, `=.`, `!=`. With `==`, a filename wrapped in `{}` is treated as a regex |
+| `scheduler.force` | Multi-line rule set | *none* | Override scheduler parameters for selected files. Supported parameters include `scheduler.lifetime`, `scheduler.delay`, `scheduler.noRetrieval`, `scheduler.asap`, `scheduler.transfergroup`, `scheduler.version` and `scheduler.standby` (one of `yes`, `no` or `never`). The `pattern` and `ignore` parameters use regular expressions to select specific files on a single line. Rules can be single-line (`asap=yes;standby=never;pattern=E1(.*)`) or multi-line using operators `.=`, `==`, `=.`, `!=`. With `==`, a filename wrapped in `{}` is treated as a regex |
 
 ### Quick-start example — business-hours scheduling
 
@@ -156,7 +156,7 @@ incoming.maxBytesPerSecForOutput = "20MB"
 `alias.pattern` accepts comma-separated parameters such as:
 
 - selectors: `pattern=...`, `ignore=...`
-- alias attributes: `lifetime=...`, `priority=...`, `asap=...`, `event=...`, `delay=...`
+- alias attributes: `lifeTime=...`, `priority=...`, `asap=...`, `event=...`, `delay=...`, `recursive=...`
 - date controls for `$date`: `dateformat=...`, `datedelta=...`, `datesource=...`, `datepattern=...`
 - target rewriting with placeholders such as `$name`, `$path`, `$parent`, `$destination`, `$alias` and `$date`
 
@@ -172,14 +172,14 @@ interpreted as a regex.
 ### Quick-start example — alias GRIB files only
 
 ```properties
-alias.pattern = "pattern=(.*)\.grib,ignore=(.*)\.tmp,lifetime=P2D,priority=80,asap=yes"
+alias.pattern = "pattern=(.*)\.grib,ignore=(.*)\.tmp,lifeTime=P2D,priority=80,asap=yes"
 ```
 
 ### Quick-start example — rewrite targets per pattern
 
 ```properties
 alias.pattern = "
-  (== {(.*)\.dat}) lifetime=P2D,priority=80,asap=yes,event=no,delay=PT15M,target=/archive/$target
+  (== {(.*)\.dat}) lifeTime=P2D,priority=80,asap=yes,event=no,delay=PT15M,target=/archive/$target
   (.= M) target=/mirror/$date/$target,dateformat=MMdd,datedelta=-1,datesource=$target[2..12],datepattern=yyyyMMddHH
 "
 ```

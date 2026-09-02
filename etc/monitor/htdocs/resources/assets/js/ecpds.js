@@ -40,11 +40,33 @@ function getPassword() {
 	return pass;
 }
 
-function checkValueForType(type, choices, currentLine) {
-	const regex = /"([^"]+)"/;
+// Wraps text onto multiple lines (joined with real newlines) so long messages remain readable in the
+// Ace editor's gutter tooltip, mirroring ECtransOption#wrapWords used for the server-generated tips text.
+function wrapWords(text, maxLineLength) {
+	const words = text.split(/\s+/);
+	var lines = "";
+	var currentLine = "";
+	for (var i = 0; i < words.length; i++) {
+		const word = words[i];
+		if (currentLine.length + word.length + 1 <= maxLineLength) {
+			if (currentLine.length > 0)
+				currentLine += " ";
+		} else {
+			lines += currentLine + "\n";
+			currentLine = "";
+		}
+		currentLine += word;
+	}
+	if (currentLine.length > 0)
+		lines += currentLine;
+	return lines;
+}
+
+function checkValueForType(type, choices, currentLine, subOptions, freeForm) {
+	const regex = /"([^"]*)"/;
 	const matches = currentLine.match(regex);
 	var result = null;
-	if (matches && matches[1]) {
+	if (matches !== null) {
 		const value = matches[1];
 		if (type === "Boolean" && ["yes", "no", "true", "false"].indexOf(value.toLowerCase()) === -1) {
 			result = "The value should be a boolean (e.g. \"yes\" or \"no\")";
@@ -83,8 +105,58 @@ function checkValueForType(type, choices, currentLine) {
 		}
 		if (result === null && choices.length > 0 && choices.indexOf(value) === -1)
 			result = "The value must be one of the elements in the following list: " + choices.map(str => '"' + str + '"').join(", ");
+		// Some options (e.g. "scheduler.force", "http.proxy") hold a nested options string made of one or more
+		// "key=value" entries (as parsed by ecmwf.common.text.Options). If a fixed/known set of nested keys is
+		// declared for this option (subOptions), validate each entry found in the value against it. Options with
+		// arbitrary/free-form nested keys (e.g. HTTP headers) are intentionally left unchecked.
+		if (result === null && !freeForm && subOptions && subOptions.length > 0)
+			result = checkNestedSubOptions(subOptions, value);
 	}
-	return result !== null ? result + "." : null;
+	return result !== null ? wrapWords(result + ".", 80) : null;
+}
+
+// Validates the nested "key=value" entries found inside the value of an option such as
+// "scheduler.force" or "http.proxy" against the known/fixed list of sub options declared for it.
+function checkNestedSubOptions(subOptions, value) {
+	const seenKeys = {};
+	const tokens = value.split(/[;,\n]/);
+	for (var i = 0; i < tokens.length; i++) {
+		const token = tokens[i];
+		if (token.trim().length === 0)
+			continue;
+		// Matches the same "name<op>value" pieces as ecmwf.common.text.Options#addValue (op is one of
+		// "=", ">", "<" or "!=").
+		const m = token.match(/^([^=<>!]+?)\s*(!=|>=|<=|=|>|<)(.*)$/);
+		if (!m)
+			continue;
+		const key = m[1].trim();
+		var val = m[3].trim();
+		if (val.length > 1 && val.charAt(0) === '"' && val.charAt(val.length - 1) === '"')
+			val = val.substring(1, val.length - 1);
+		var sub = null;
+		for (var k = 0; k < subOptions.length; k++) {
+			if (subOptions[k].name === key) {
+				sub = subOptions[k];
+				break;
+			}
+		}
+		if (sub === null) {
+			const known = subOptions.map(function(s) { return '"' + s.name + '"'; }).join(", ");
+			return "The nested option \"" + key + "\" is not recognized (expected one of: " + known + ")";
+		}
+		// The underlying parser (ecmwf.common.text.Options) stores nested options in a map, so a
+		// repeated key silently overwrites the previous one instead of combining values.
+		if (seenKeys[key]) {
+			return "The nested option \"" + key + "\" is specified more than once (only the last value would be used)";
+		}
+		seenKeys[key] = true;
+		// Re-use the type-checking logic above by wrapping the extracted value the same way the top-level
+		// regex expects it (quoted), with no further nesting (subOptions/freeForm not propagated).
+		const subError = checkValueForType(sub.type, sub.choices, '="' + val + '"', [], false);
+		if (subError !== null)
+			return "The nested option \"" + key + "\" is invalid: " + subError.replace(/\.$/, "");
+	}
+	return null;
 }
 
 function getAnnotations(aceEditor, row) {
@@ -96,7 +168,7 @@ function getAnnotations(aceEditor, row) {
 			var moduleName = tipObject.caption.split(".")[0];
 			var tipsText;
 			var tipsType;
-			var error = checkValueForType(tipObject.type, tipObject.choices, currentLine);
+			var error = checkValueForType(tipObject.type, tipObject.choices, currentLine, tipObject.subOptions, tipObject.freeForm);
 			if (error != null) {
 				tipsText = error;
 				tipsType = "error";

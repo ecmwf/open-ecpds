@@ -68,6 +68,15 @@ public class ECtransOption<T> {
     /** The choices. */
     private final List<T> choices;
 
+    /** The sub options (nested key=value entries expected inside this option's value, if any). */
+    private final List<SubOption> subOptions;
+
+    /**
+     * Whether the nested key=value entries are free-form (arbitrary keys, e.g. HTTP headers) rather than a fixed/known
+     * set described by {@link #subOptions}.
+     */
+    private final boolean freeFormSubOptions;
+
     /** The visible. */
     private final boolean visible;
 
@@ -104,12 +113,42 @@ public class ECtransOption<T> {
      */
     protected ECtransOption(final ECtransGroups group, final String module, final String name, final Class<T> clazz,
             final List<T> defaultValues, final List<T> choices) {
+        this(group, module, name, clazz, defaultValues, choices, List.of(), false);
+    }
+
+    /**
+     * Instantiates a new ectrans option, additionally describing the nested key=value entries expected inside its value
+     * (as parsed by {@link ecmwf.common.text.Options}), if any.
+     *
+     * @param group
+     *            the group
+     * @param module
+     *            the module
+     * @param name
+     *            the name
+     * @param clazz
+     *            the clazz
+     * @param defaultValues
+     *            the default values
+     * @param choices
+     *            the choices
+     * @param subOptions
+     *            the known nested key=value entries, or an empty list if not applicable
+     * @param freeFormSubOptions
+     *            true if the value holds arbitrary/free-form nested key=value entries (e.g. HTTP headers) rather than a
+     *            fixed/known set
+     */
+    protected ECtransOption(final ECtransGroups group, final String module, final String name, final Class<T> clazz,
+            final List<T> defaultValues, final List<T> choices, final List<SubOption> subOptions,
+            final boolean freeFormSubOptions) {
         this.group = group;
         this.module = module;
         this.name = name;
         this.clazz = clazz;
         this.defaultValues = defaultValues;
         this.choices = choices;
+        this.subOptions = subOptions;
+        this.freeFormSubOptions = freeFormSubOptions;
         this.tips = wrapWords(new StringBuilder(getComment(true)).append(". ")
                 .append(get(getParameter(), "tips").orElse("").replace("'", "\"")).toString().trim(), 80);
         this.visible = Boolean.parseBoolean(get(getParameter(), "visible").orElse("true"));
@@ -263,6 +302,25 @@ public class ECtransOption<T> {
      */
     protected List<T> getChoices() {
         return choices;
+    }
+
+    /**
+     * Gets the known nested key=value entries expected inside this option's value, if any.
+     *
+     * @return the sub options, or an empty list if not applicable
+     */
+    protected List<SubOption> getSubOptions() {
+        return subOptions;
+    }
+
+    /**
+     * Checks if this option's value holds arbitrary/free-form nested key=value entries (e.g. HTTP headers) rather than
+     * a fixed/known set described by {@link #getSubOptions()}.
+     *
+     * @return true, if the nested entries are free-form
+     */
+    protected boolean hasFreeFormSubOptions() {
+        return freeFormSubOptions;
     }
 
     /**

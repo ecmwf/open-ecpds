@@ -66,8 +66,21 @@ import ecmwf.common.technical.TimeRange;
  */
 public enum ECtransOptions {
 
-    /** The destination alias pattern. */
-    DESTINATION_ALIAS_PATTERN("pattern", String.class, "recursive=no;delay=0;pattern=.*"),
+    /**
+     * The destination alias pattern. This is the default value shown for the auto-generated per-alias completion
+     * entries (one per aliased Destination, named dynamically after the target Destination and therefore not a fixed
+     * {@link ECtransOptions} constant on its own - see {@code AliasesParser}). Nested key=value entries: pattern/ignore
+     * (regexes on the target), target (force a new target), lifeTime, delay, priority, asap, event, recursive, and the
+     * date-related datedelta/dateformat/datesource/datepattern.
+     */
+    DESTINATION_ALIAS_PATTERN("pattern", String.class, "recursive=no;delay=0;pattern=.*",
+            new SubOption("pattern", String.class), new SubOption("ignore", String.class),
+            new SubOption("target", String.class), new SubOption("lifeTime", Duration.class),
+            new SubOption("delay", Duration.class), new SubOption("priority", Integer.class),
+            new SubOption("asap", Boolean.class), new SubOption("event", Boolean.class),
+            new SubOption("recursive", Boolean.class), new SubOption("datedelta", String.class),
+            new SubOption("dateformat", String.class), new SubOption("datesource", String.class),
+            new SubOption("datepattern", String.class)),
 
     /** The destination incoming standby. */
     DESTINATION_INCOMING_STANDBY("standby", Boolean.class, false),
@@ -192,8 +205,20 @@ public enum ECtransOptions {
     /** The destination scheduler requeueon. */
     DESTINATION_SCHEDULER_REQUEUEON("requeueon", String.class, STRING_NONE),
 
-    /** The destination scheduler force. */
-    DESTINATION_SCHEDULER_FORCE("force", String.class, STRING_NONE),
+    /**
+     * The destination scheduler force. Nested key=value entries: pattern (regex on target), ignore (regex on target),
+     * standby (force standby, one of "yes"/"no"/"never"), version (force the {@link #DESTINATION_SCHEDULER_VERSION}),
+     * lifetime (force the {@link #DESTINATION_SCHEDULER_LIFETIME}), delay (force the
+     * {@link #DESTINATION_SCHEDULER_DELAY}), noRetrieval (force the {@link #DESTINATION_SCHEDULER_NO_RETRIEVAL}), asap
+     * (force the {@link #DESTINATION_SCHEDULER_ASAP}) and transfergroup (force the
+     * {@link #DESTINATION_SCHEDULER_TRANSFERGROUP}).
+     */
+    DESTINATION_SCHEDULER_FORCE("force", String.class, STRING_NONE, new SubOption("pattern", String.class),
+            new SubOption("ignore", String.class),
+            new SubOption("standby", String.class, Arrays.asList("yes", "no", "never")),
+            new SubOption("version", String.class), new SubOption("lifetime", Duration.class),
+            new SubOption("delay", Duration.class), new SubOption("noRetrieval", Boolean.class),
+            new SubOption("asap", Boolean.class), new SubOption("transfergroup", String.class)),
 
     /** The destination scheduler requeuepattern. */
     DESTINATION_SCHEDULER_REQUEUEPATTERN("requeuepattern", String.class, ".*"),
@@ -324,14 +349,24 @@ public enum ECtransOptions {
     /** The host ectrans notify pre. */
     HOST_ECTRANS_NOTIFY_PRE("notifyPre", String.class, ""),
 
-    /** The host ectrans notify auth. */
-    HOST_ECTRANS_NOTIFY_AUTH("notifyAuth", String.class, ""),
+    /**
+     * The host ectrans notify auth. Nested key=value entries: url, name and password of the notification service (e.g.
+     * mqtt://...).
+     */
+    HOST_ECTRANS_NOTIFY_AUTH("notifyAuth", String.class, "", new SubOption("url", String.class),
+            new SubOption("name", String.class), new SubOption("password", String.class)),
 
     /** The host ectrans notify post. */
     HOST_ECTRANS_NOTIFY_POST("notifyPost", String.class, ""),
 
-    /** The host ectrans notify publish. */
-    HOST_ECTRANS_NOTIFY_PUBLISH("notifyPublish", String.class, ""),
+    /**
+     * The host ectrans notify publish. Nested key=value entries: url (or its alias payload), key (or its alias topic),
+     * value (or its alias metadata) and lifetime of the published notification.
+     */
+    HOST_ECTRANS_NOTIFY_PUBLISH("notifyPublish", String.class, "", new SubOption("url", String.class),
+            new SubOption("payload", String.class), new SubOption("key", String.class),
+            new SubOption("topic", String.class), new SubOption("value", String.class),
+            new SubOption("metadata", String.class), new SubOption("lifetime", Long.class)),
 
     /** The host ectrans location. */
     HOST_ECTRANS_LOCATION("location", String.class, ""),
@@ -339,8 +374,14 @@ public enum ECtransOptions {
     /** The host ectrans host selector. */
     HOST_ECTRANS_HOST_SELECTOR("hostSelector", String.class, STRING_NONE),
 
-    /** The host ectrans multiple input stream. */
-    HOST_ECTRANS_MULTIPLE_INPUT_STREAM("multipleInputStream", String.class, STRING_NONE),
+    /**
+     * The host ectrans multiple input stream. Nested key=value entries controlling the read-ahead pipe used when
+     * streaming multiple files as a single input stream.
+     */
+    HOST_ECTRANS_MULTIPLE_INPUT_STREAM("multipleInputStream", String.class, STRING_NONE,
+            new SubOption("retryCount", Integer.class), new SubOption("retryFrequency", Integer.class),
+            new SubOption("useCache", Boolean.class), new SubOption("cacheSize", Integer.class),
+            new SubOption("queueSize", Integer.class)),
 
     /** The host ectrans stream timeout. */
     HOST_ECTRANS_STREAM_TIMEOUT("streamTimeout", Duration.class, Duration.ofMinutes(5)),
@@ -863,14 +904,21 @@ public enum ECtransOptions {
     /** The host sftp login. */
     HOST_SFTP_LOGIN("login", String.class, STRING_NONE),
 
-    /** The host sftp allocate. */
-    HOST_SFTP_ALLOCATE("allocate", String.class, STRING_NONE),
+    /**
+     * The host sftp allocate. Nested key=value entries: url of the allocation service and req (the request to make,
+     * e.g. "json.pathspecs[0]").
+     */
+    HOST_SFTP_ALLOCATE("allocate", String.class, STRING_NONE, new SubOption("url", String.class),
+            new SubOption("req", String.class)),
 
     /** The host sftp cwd. */
     HOST_SFTP_CWD("cwd", String.class, STRING_NONE),
 
-    /** The host sftp properties. */
-    HOST_SFTP_PROPERTIES("properties", String.class, STRING_NONE),
+    /**
+     * The host sftp properties. Nested key=value entries are arbitrary/free-form (passed as-is to the allocate service
+     * as connection properties).
+     */
+    HOST_SFTP_PROPERTIES("properties", String.class, STRING_NONE, true),
 
     /** The host sftp usecleanpath. */
     HOST_SFTP_USECLEANPATH("usecleanpath", Boolean.class, false),
@@ -974,8 +1022,12 @@ public enum ECtransOptions {
     /** The host sftp bulk request number. */
     HOST_SFTP_BULK_REQUEST_NUMBER("bulkRequestNumber", Integer.class, 64),
 
-    /** The host sftp commit. */
-    HOST_SFTP_COMMIT("commit", String.class, STRING_NONE),
+    /**
+     * The host sftp commit. Nested key=value entries: url of the commit service and req (the expected HTTP status code,
+     * default 200).
+     */
+    HOST_SFTP_COMMIT("commit", String.class, STRING_NONE, new SubOption("url", String.class),
+            new SubOption("req", Integer.class)),
 
     /** The host sftp list recursive. */
     HOST_SFTP_LIST_RECURSIVE("listRecursive", Boolean.class, true),
@@ -1224,8 +1276,12 @@ public enum ECtransOptions {
     /** The host http enable content compression. */
     HOST_HTTP_ENABLE_CONTENT_COMPRESSION("enableContentCompression", Boolean.class, true),
 
-    /** The host http proxy. */
-    HOST_HTTP_PROXY("proxy", String.class, STRING_NONE),
+    /**
+     * The host http proxy. Nested key=value entries: host, protocol (default "http") and port (default 8080) of the
+     * proxy server.
+     */
+    HOST_HTTP_PROXY("proxy", String.class, STRING_NONE, new SubOption("host", String.class),
+            new SubOption("protocol", String.class), new SubOption("port", Integer.class)),
 
     /** The host http allow circular redirects. */
     HOST_HTTP_ALLOW_CIRCULAR_REDIRECTS("allowCircularRedirects", Boolean.class, false),
@@ -1693,8 +1749,11 @@ public enum ECtransOptions {
     /** The user portal mtime path perm regex. */
     USER_PORTAL_MTIME_PATH_PERM_REGEX("mtimePathPermRegex", String.class, STRING_NONE),
 
-    /** The user portal header registry. */
-    USER_PORTAL_HEADER_REGISTRY("headerRegistry", String.class, STRING_NONE),
+    /**
+     * The user portal header registry. Nested key=value entries are arbitrary/free-form HTTP header name=value pairs
+     * (matched against a filename key, and applied to the served file's response).
+     */
+    USER_PORTAL_HEADER_REGISTRY("headerRegistry", String.class, STRING_NONE, true),
 
     /** The user portal CORS allow-origin header value for HTTP file serving (e.g. * for public datasets). */
     USER_PORTAL_CORS_ALLOW_ORIGIN("corsAllowOrigin", String.class, STRING_NONE),
@@ -1819,6 +1878,95 @@ public enum ECtransOptions {
         final var words = toString().split("_");
         this.option = new ECtransOption<>(ECtransGroups.valueOf(words[0]), words[1].toLowerCase(), name.trim(), clazz,
                 defaultValues, choices);
+    }
+
+    /**
+     * Instantiates a new ectrans options whose value is itself a nested options string (e.g.
+     * {@code force="pattern=.*;standby=yes"}), additionally describing the known key=value entries expected inside it
+     * so that they can later be validated (e.g. by the Properties editor in the web UI).
+     *
+     * @param <T>
+     *            the generic type
+     * @param name
+     *            the name
+     * @param clazz
+     *            the clazz
+     * @param defaultValue
+     *            the default value
+     * @param subOptions
+     *            the known nested key=value entries expected inside this option's value
+     */
+    <T> ECtransOptions(final String name, final Class<T> clazz, final T defaultValue, final SubOption... subOptions) {
+        final var words = toString().split("_");
+        this.option = new ECtransOption<>(ECtransGroups.valueOf(words[0]), words[1].toLowerCase(), name.trim(), clazz,
+                Arrays.asList(defaultValue), new ArrayList<>(), Arrays.asList(subOptions), false);
+    }
+
+    /**
+     * Instantiates a new ectrans options whose value is itself a nested options string (e.g.
+     * {@code force="pattern=.*;standby=yes"}), additionally describing the known key=value entries expected inside it
+     * so that they can later be validated (e.g. by the Properties editor in the web UI).
+     *
+     * @param <T>
+     *            the generic type
+     * @param name
+     *            the name
+     * @param clazz
+     *            the clazz
+     * @param defaultValues
+     *            the default values
+     * @param subOptions
+     *            the known nested key=value entries expected inside this option's value
+     */
+    <T> ECtransOptions(final String name, final Class<T> clazz, final List<T> defaultValues,
+            final SubOption... subOptions) {
+        final var words = toString().split("_");
+        this.option = new ECtransOption<>(ECtransGroups.valueOf(words[0]), words[1].toLowerCase(), name.trim(), clazz,
+                defaultValues, new ArrayList<>(), Arrays.asList(subOptions), false);
+    }
+
+    /**
+     * Instantiates a new ectrans options whose value is itself a nested options string holding arbitrary, free-form
+     * key=value entries (e.g. HTTP headers) rather than a fixed/known set.
+     *
+     * @param <T>
+     *            the generic type
+     * @param name
+     *            the name
+     * @param clazz
+     *            the clazz
+     * @param defaultValue
+     *            the default value
+     * @param freeFormSubOptions
+     *            true if the value holds arbitrary/free-form nested key=value entries
+     */
+    <T> ECtransOptions(final String name, final Class<T> clazz, final T defaultValue,
+            final boolean freeFormSubOptions) {
+        final var words = toString().split("_");
+        this.option = new ECtransOption<>(ECtransGroups.valueOf(words[0]), words[1].toLowerCase(), name.trim(), clazz,
+                Arrays.asList(defaultValue), new ArrayList<>(), new ArrayList<>(), freeFormSubOptions);
+    }
+
+    /**
+     * Instantiates a new ectrans options whose value is itself a nested options string holding arbitrary, free-form
+     * key=value entries (e.g. HTTP headers) rather than a fixed/known set.
+     *
+     * @param <T>
+     *            the generic type
+     * @param name
+     *            the name
+     * @param clazz
+     *            the clazz
+     * @param defaultValues
+     *            the default values
+     * @param freeFormSubOptions
+     *            true if the value holds arbitrary/free-form nested key=value entries
+     */
+    <T> ECtransOptions(final String name, final Class<T> clazz, final List<T> defaultValues,
+            final boolean freeFormSubOptions) {
+        final var words = toString().split("_");
+        this.option = new ECtransOption<>(ECtransGroups.valueOf(words[0]), words[1].toLowerCase(), name.trim(), clazz,
+                defaultValues, new ArrayList<>(), new ArrayList<>(), freeFormSubOptions);
     }
 
     /**
@@ -2238,6 +2386,27 @@ public enum ECtransOptions {
     }
 
     /**
+     * Gets the known nested key=value entries expected inside this option's value (e.g. for
+     * {@code scheduler.force="pattern=.*;standby=yes"}, the sub options are "pattern" and "standby").
+     *
+     * @return the sub options, or an empty list if this option's value is not a nested options string with a
+     *         known/fixed set of entries
+     */
+    public List<SubOption> getSubOptions() {
+        return option.getSubOptions();
+    }
+
+    /**
+     * Checks if this option's value holds arbitrary/free-form nested key=value entries (e.g. HTTP headers in
+     * {@code user.portal.headerRegistry}) rather than a fixed/known set described by {@link #getSubOptions()}.
+     *
+     * @return true, if the nested entries are free-form
+     */
+    public boolean hasFreeFormSubOptions() {
+        return option.hasFreeFormSubOptions();
+    }
+
+    /**
      * Gets the all.
      *
      * @return the all
@@ -2325,8 +2494,24 @@ public enum ECtransOptions {
     private static String toString(final ECtransOption<?> option, final String parameter) {
         return "{ caption: '" + parameter + "', meta: '" + option.getComment(false) + "', type: '"
                 + option.getClazz().getSimpleName() + "', choices: ["
-                + option.getChoices().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(",")) + "], tips: '"
-                + option.getTips() + "' }";
+                + option.getChoices().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(","))
+                + "], subOptions: ["
+                + option.getSubOptions().stream().map(ECtransOptions::toString).collect(Collectors.joining(","))
+                + "], freeForm: " + option.hasFreeFormSubOptions() + ", tips: '" + option.getTips() + "' }";
+    }
+
+    /**
+     * To string. Serializes a {@link SubOption} as a JS object literal for use by the ace-editor Properties validator
+     * (e.g. {@code { name: 'pattern', type: 'String', choices: [] }}).
+     *
+     * @param subOption
+     *            the sub option
+     *
+     * @return the string
+     */
+    private static String toString(final SubOption subOption) {
+        return "{ name: '" + subOption.name() + "', type: '" + subOption.clazz().getSimpleName() + "', choices: ["
+                + subOption.choices().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(",")) + "] }";
     }
 
     /**

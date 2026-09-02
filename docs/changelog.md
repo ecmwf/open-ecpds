@@ -5,6 +5,14 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ---
 
+## open-ecpds 8.2.1-02092026
+
+- **Nested Properties validation**: The ace-editor **Properties** panel and its server-side counterpart now validate the nested `key=value` entries found inside multi-value options such as `alias.pattern`, `scheduler.force`, `ectrans.notifyAuth` and `ectrans.notifyPublish`. Each `ECtransOptions` entry can now declare a list of `SubOption`s (name, type, optional choices), driving both the JavaScript on-the-fly checker and the Java save-time validator so unrecognized nested keys, invalid types, and invalid choices are flagged consistently on both sides. A duplicate nested key (e.g. `delay=0;...;delay=5`) is now also flagged, since the underlying parser silently keeps only the last occurrence. Long "nested option not recognized" tooltips now wrap across multiple lines instead of rendering as a single unreadable line.
+- **Duration validation**: The Properties editor now accepts and validates the simplified duration shorthand (e.g. `48h`, `30m`, `10s`) in addition to the standard ISO-8601 format (e.g. `PT48H`) for both client-side and server-side checks. The corresponding helper tooltip was updated to mention both formats.
+- **Outstanding Transfers notification**: Added a lightweight notification dot — matching the existing indicators for TLS Certificates, User Feedback, and Critical Password — on the *Outstanding Transfers* entry in the Admin Tasks card on `/do/admin`, in the left-hand menu, and in the Admin Tasks card on `/do/start`, without adding extra load on the database.
+- **Data Users count decorator**: Changed the badge showing the number of associated Data Users on a Destination's *Data Users* icon (and its mobile/left-hand menu equivalents) from red to green, since it is purely informational and does not indicate an error.
+- **Outstanding transfers decorator**: Added a red badge on the *Outstanding* icon (linking to `/do/monitoring/unsuccessful/<destination>`), and its left-hand and mobile menu equivalents, showing the number of unsuccessful transfers for the destination — implemented without introducing additional database load.
+
 ## open-ecpds 8.2.0-01092026
 
 - **Critical Password**: Added a dedicated **Critical Password** stored as a SHA-256 hash in a new generic `SYS_CONFIG` database table (group/name/value, reusable for future DB-backed configuration). The password is completely separate from the normal administrator login, must be at least 12 characters, and is required to confirm irreversible administrative operations. A new admin page (*Admin Tasks → Critical Password*) lets any administrator set or renew it; initial setup is prompted automatically with a yellow banner on the start page and admin landing page whenever no password has been configured yet.
