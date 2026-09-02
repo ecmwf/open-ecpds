@@ -1113,6 +1113,12 @@ public enum ECtransOptions {
     /** The host s3 external id. */
     HOST_S3_EXTERNAL_ID("externalId", String.class, STRING_NONE),
 
+    /**
+     * The host s3 sts region. STS AssumeRole calls default to the true global endpoint (immune to region-locking
+     * Service Control Policies) unless this is set to force a specific regional STS endpoint.
+     */
+    HOST_S3_STS_REGION("stsRegion", String.class, STRING_NONE),
+
     /** The host s3 allow empty bucket name. */
     HOST_S3_ALLOW_EMPTY_BUCKET_NAME("allowEmptyBucketName", Boolean.class, false),
 

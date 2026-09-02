@@ -164,11 +164,19 @@ s3.acceleration = "yes"            # S3 Transfer Acceleration (default: no)
 <pre class="bg-body-secondary rounded p-2 mb-2" style="font-size:0.75rem;white-space:pre-wrap">s3.roleArn = "arn:aws:iam::123456789012:role/MyS3Role"
 s3.roleSessionName = "ecpds-session"   # session name tag (default: none)
 s3.durationSeconds = "3600"            # STS session lifetime in seconds (default: 3600)
-s3.externalId = "my-external-id"       # ExternalId condition (if required by the role trust policy)</pre>
+s3.externalId = "my-external-id"       # ExternalId condition (if required by the role trust policy)
+s3.stsRegion = ""                      # AWS region for the AssumeRole call (default: global endpoint)</pre>
           <div class="alert alert-light border py-1 px-2 mb-0 small">
-            The STS call always uses the global <code>us-east-1</code> endpoint, so <code>s3.region</code>
-            does not need to be set solely for role assumption. The base credentials (Login / Password)
-            must have <code>sts:AssumeRole</code> permission on the target role ARN.
+            By default the STS <code>AssumeRole</code> call uses the true global endpoint
+            (<code>sts.amazonaws.com</code>), independently of <code>s3.region</code> (which only applies to
+            the S3 client itself). This is deliberate: AWS Organizations Service Control Policies that
+            restrict allowed regions (<code>aws:RequestedRegion</code>) are commonly configured to exempt
+            the global STS endpoint, but <em>do</em> apply to regional STS endpoints
+            (e.g. <code>sts.eu-west-2.amazonaws.com</code>) — so tying the STS call to the bucket's region
+            can cause <code>AssumeRole</code> to be denied even though the identical call succeeds via the
+            AWS CLI (which defaults to the global endpoint). Only set <code>s3.stsRegion</code> if you
+            specifically need a regional STS endpoint. The base credentials (Login / Password) must have
+            <code>sts:AssumeRole</code> permission on the target role ARN.
           </div>
         </div>
 

@@ -72,6 +72,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_SCHEME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_SINGLEPART_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_SSL_VALIDATION;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_STRICT;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_STS_REGION;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_URL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_USE_BYTE_ARRAY_INPUT_STREAM;
 import static ecmwf.common.text.Util.isEmpty;
@@ -367,7 +368,7 @@ public final class AmazonS3Module extends TransferModule {
                     bucketName, url, isNotEmpty(region) ? region : "", setup.getBoolean(HOST_S3_MK_BUCKET),
                     setup.getString(HOST_S3_ROLE_ARN), setup.getString(HOST_S3_ROLE_SESSION_NAME),
                     setup.getInteger(HOST_S3_DURATION_SECONDS), setup.getString(HOST_S3_EXTERNAL_ID),
-                    setup.getString(HOST_S3_REQUEST_CHECKSUM_CALCULATION),
+                    setup.getString(HOST_S3_STS_REGION), setup.getString(HOST_S3_REQUEST_CHECKSUM_CALCULATION),
                     setup.getString(HOST_S3_RESPONSE_CHECKSUM_VALIDATION),
                     setup.getBoolean(HOST_S3_DISABLE_SDK_RETRIES), getDebug());
             // Surface the discovered region in the transfer comment so operators can see what
@@ -1302,13 +1303,22 @@ public final class AmazonS3Module extends TransferModule {
          *            the credentials provider
          * @param bucketName
          *            the bucket name to look up
+         * @param preferredRegion
+         *            the region to issue the discovery call from, if already known (e.g. from s3.region).
+         *            GetBucketLocation can be called from any region's endpoint regardless of the bucket's actual
+         *            location, so using the already-configured region here (instead of always hardcoding us-east-1)
+         *            avoids failures in AWS accounts where a Service Control Policy restricts allowed regions
+         *            (aws:RequestedRegion) to a specific whitelist that may not include us-east-1. Falls back to
+         *            us-east-1 if null/empty (e.g. on first connection to a bucket with no s3.region configured yet).
          *
          * @return the actual region for the bucket (e.g. "eu-west-1"), or null if discovery fails
          */
-        private static String discoverBucketRegion(final AwsCredentialsProvider creds, final String bucketName) {
+        private static String discoverBucketRegion(final AwsCredentialsProvider creds, final String bucketName,
+                final String preferredRegion) {
             // Use ApacheHttpClient explicitly — the SDK default falls back to apache5 which
             // is not on the classpath.
-            try (final var discoveryClient = S3Client.builder().credentialsProvider(creds).region(Region.US_EAST_1)
+            final var discoveryRegion = isNotEmpty(preferredRegion) ? Region.of(preferredRegion) : Region.US_EAST_1;
+            try (final var discoveryClient = S3Client.builder().credentialsProvider(creds).region(discoveryRegion)
                     .crossRegionAccessEnabled(true).httpClientBuilder(ApacheHttpClient.builder()).build()) {
                 final var location = discoveryClient
                         .getBucketLocation(GetBucketLocationRequest.builder().bucket(bucketName).build())
@@ -1367,6 +1377,10 @@ public final class AmazonS3Module extends TransferModule {
          *            the duration seconds
          * @param externalId
          *            the external id
+         * @param stsRegion
+         *            the AWS region for the STS AssumeRole call, if a role is assumed. Empty to use the true global STS
+         *            endpoint (recommended — immune to region-locking Service Control Policies); only set this to force
+         *            a specific regional STS endpoint.
          * @param requestChecksumCalculation
          *            the request checksum calculation (WHEN_SUPPORTED or WHEN_REQUIRED, empty to use SDK default)
          * @param responseChecksumValidation
@@ -1387,8 +1401,8 @@ public final class AmazonS3Module extends TransferModule {
                 final boolean enablePathStyleAccess, final boolean crossRegionAccess, final String bucketName,
                 final String url, final String region, final boolean mkBucket, final String roleArn,
                 final String roleSessionName, final int durationSeconds, final String externalId,
-                final String requestChecksumCalculation, final String responseChecksumValidation,
-                final boolean disableSdkRetries, final boolean debug)
+                final String stsRegion, final String requestChecksumCalculation,
+                final String responseChecksumValidation, final boolean disableSdkRetries, final boolean debug)
                 throws NoSuchAlgorithmException, KeyManagementException {
             // Build socket factories for both schemes.
             // TcpTunedSslSocketFactory hooks into prepareSocket() to apply TCP options + track HTTPS sockets.
@@ -1422,9 +1436,15 @@ public final class AmazonS3Module extends TransferModule {
                     .pathStyleAccessEnabled(enablePathStyleAccess).chunkedEncodingEnabled(!disableChunkedEncoding)
                     .build();
             // Build the S3 client.
-            // STS uses the global us-east-1 endpoint — region only matters for service-specific STS endpoints.
-            final var stsRegion = isNotEmpty(region) ? region : Region.US_EAST_1.id();
-            final var creds = loadCredentials(user, password, stsRegion, sslContext, roleArn, roleSessionName,
+            // Resolve the region for the STS AssumeRole call independently from the S3 bucket region:
+            // deliberately do NOT default to the bucket's region (e.g. eu-west-2) here. Region-locking
+            // AWS Organizations Service Control Policies (restricting aws:RequestedRegion) apply to
+            // *regional* STS endpoints but explicitly exempt the true global STS endpoint. Using the
+            // bucket region for STS would then cause AssumeRole to be denied by such an SCP even though
+            // the same call succeeds via the AWS CLI (which defaults to the global endpoint). Only use a
+            // specific region if s3.stsRegion is explicitly configured.
+            final var stsRegionName = isNotEmpty(stsRegion) ? stsRegion : Region.AWS_GLOBAL.id();
+            final var creds = loadCredentials(user, password, stsRegionName, sslContext, roleArn, roleSessionName,
                     durationSeconds, externalId);
             final var clientBuilder = S3Client.builder().credentialsProvider(creds).serviceConfiguration(s3Config)
                     .dualstackEnabled(dualstack).httpClient(trackingHttpClient);
@@ -1445,7 +1465,8 @@ public final class AmazonS3Module extends TransferModule {
             }
             if (isNotEmpty(bucketName) && (resolvedRegion == null || crossRegionAccess)) {
                 final var cached = _bucketRegionCache.get(bucketName);
-                final var discovered = cached != null ? cached : discoverBucketRegion(creds, bucketName);
+                final var discovered = cached != null ? cached
+                        : discoverBucketRegion(creds, bucketName, resolvedRegion);
                 if (discovered != null) {
                     if (cached == null) {
                         _bucketRegionCache.put(bucketName, discovered);
