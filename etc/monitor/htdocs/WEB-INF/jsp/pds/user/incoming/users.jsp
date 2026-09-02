@@ -30,6 +30,12 @@ style="background:rgba(255,193,7,0.08); color:var(--bs-body-color); border-left:
             title="Show only Data Users with no destinations (direct or via policy)">
         <i class="bi bi-exclamation-triangle-fill me-1"></i>Unassigned only
     </button>
+    <button id="incomingPendingBtn" type="button"
+            class="btn btn-sm btn-outline-warning position-relative d-none"
+            title="Show only pending self-service registrations awaiting approval (disabled Data Users with Portal Service = Self-Service)">
+        <i class="bi bi-person-plus-fill me-1"></i>Pending Registrations
+        <span id="incomingPendingBtn-badge" class="badge rounded-pill bg-danger ms-1">0</span>
+    </button>
     <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
         <div class="input-group input-group-sm" style="width:auto">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
@@ -348,11 +354,28 @@ $(document).ready(function() {
             { visible: false,  targets: [8, 9, 10] },
             { className: 'text-center', targets: [3, 4, 5, 7] }
         ],
-        drawCallback: function() { _updateDeleteAllBtn(); _setFilterLoading($('#incomingUnassignedBtn'), false); },
+        drawCallback: function() { _updateDeleteAllBtn(); _setFilterLoading($('#incomingUnassignedBtn'), false); _refreshPendingCount(); },
         dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>'
     });
     _incUsrTable = table;
     iqbUpdateBadge(); // initialise badge in case dest/policy are pre-selected from URL
+    // Fetch the count of pending self-service registrations (disabled + Portal Service =
+    // Self-Service) awaiting approval, and surface it as a clickable badge/button so admins
+    // can jump straight to reviewing them without needing to manually build the filter.
+    function _refreshPendingCount() {
+        $.getJSON('/do/user/incoming/list', { enabled: 'no', service: 'self-service' }, function(json) {
+            var n = (json && json.recordsFiltered) || 0;
+            var $btn = $('#incomingPendingBtn');
+            $('#incomingPendingBtn-badge').text(n);
+            $btn.toggleClass('d-none', n === 0);
+        });
+    }
+    _refreshPendingCount();
+    $('#incomingPendingBtn').on('click', function() {
+        var enSel = document.getElementById('iqb_enabled');    if (enSel) enSel.value = 'no';
+        var svSel = document.getElementById('iqb_service');    if (svSel) svSel.value = 'self-service';
+        iqbApply();
+    });
     // Restore comment from URL and init country flag
     (function() {
         var p = new URLSearchParams(window.location.search);

@@ -1507,10 +1507,19 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         final var byAndFrom = "By WebUser=" + webUser.getId() + " (" + webUser.getName() + ") from the web interface";
         master.updateTransferStatus(transfer.getId(), StatusFactory.STOP, true, action.getWebUserId(), byAndFrom, true,
                 false, addHistory);
-        transfer.setDeleted(true);
-        base.update(transfer);
-        if (master.getDataTransfers(transfer.getDataFileId()).length == 0) {
-            master.purgeDataFile(transfer.getDataFile(), addHistory ? byAndFrom : null);
+        // The transfer instance passed in may come from a lightweight/partial query (e.g. the
+        // Outstanding Transfers list only SELECTs a subset of columns for display purposes), so
+        // re-fetch a fully populated copy before persisting it. Otherwise the update below would
+        // overwrite NOT-NULL columns (such as DAF_ID) with the Java-default nulls left in the
+        // unpopulated fields of the partial bean, and the update would fail for every record.
+        final var fullTransfer = master.getDataTransfer(transfer.getId());
+        if (fullTransfer == null) {
+            throw new MasterException("Data Transfer '" + transfer.getId() + "' not found");
+        }
+        fullTransfer.setDeleted(true);
+        base.update(fullTransfer);
+        if (master.getDataTransfers(fullTransfer.getDataFileId()).length == 0) {
+            master.purgeDataFile(fullTransfer.getDataFile(), addHistory ? byAndFrom : null);
         }
     }
 

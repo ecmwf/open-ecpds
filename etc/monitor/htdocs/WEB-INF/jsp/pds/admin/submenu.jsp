@@ -67,17 +67,17 @@
 	<auth:link basePathKey="admin.basepath" href="/filter"
 		wrappingTags="tr,td"><i class="bi bi-file-zip"></i> Compress Files</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/requeue"
-		wrappingTags="tr,td"><i class="bi bi-hourglass-split"></i> Outstanding Transfers<%=_sm_badDot%></auth:link>
+		wrappingTags="tr,td"><i class="bi bi-hourglass-split"></i><span> Outstanding Transfers<%=_sm_badDot%></span></auth:link>
 	<auth:link basePathKey="admin.basepath" href="/upload"
 		wrappingTags="tr,td"><i class="bi bi-upload"></i> Upload Files</auth:link>
 	<auth:link basePathKey="admin.feedback.basepath" href=""
-		wrappingTags="tr,td"><i class="bi bi-chat-left-text"></i> User Feedback<%=_sm_feedbackDot%></auth:link>
+		wrappingTags="tr,td"><i class="bi bi-chat-left-text"></i><span> User Feedback<%=_sm_feedbackDot%></span></auth:link>
 	<auth:link basePathKey="admin.basepath" href="/metafields"
 		wrappingTags="tr,td"><i class="bi bi-list-check"></i> Metadata Fields</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/certificates"
-		wrappingTags="tr,td"><i class="bi <%=_sm_certIconClass%>"></i> TLS Certificates<%=_sm_certDot%></auth:link>
+		wrappingTags="tr,td"><i class="bi <%=_sm_certIconClass%>"></i><span> TLS Certificates<%=_sm_certDot%></span></auth:link>
 	<auth:link basePathKey="admin.basepath" href="/criticalpassword"
-		wrappingTags="tr,td"><i class="bi bi-key-fill"></i> Critical Password<%=_sm_capDot%></auth:link>
+		wrappingTags="tr,td"><i class="bi bi-key-fill"></i><span> Critical Password<%=_sm_capDot%></span></auth:link>
 	<auth:link basePathKey="admin.basepath" href="/purge"
 		wrappingTags="tr,td"><i class="bi bi-trash3-fill"></i> Purge All Data</auth:link>
 </table>

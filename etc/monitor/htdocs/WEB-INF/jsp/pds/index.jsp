@@ -198,12 +198,12 @@
             </div>
             <ul class="home-menu">
                 <auth:link basePathKey="admin.basepath" href="/filter" wrappingTags="li"><i class="bi bi-file-zip"></i>Compress Files</auth:link>
-                <auth:link basePathKey="admin.basepath" href="/requeue" wrappingTags="li"><i class="bi bi-hourglass-split"></i>Outstanding Transfers<%=_badDot%></auth:link>
+                <auth:link basePathKey="admin.basepath" href="/requeue" wrappingTags="li"><i class="bi bi-hourglass-split"></i><span>Outstanding Transfers<%=_badDot%></span></auth:link>
                 <auth:link basePathKey="admin.basepath" href="/upload" wrappingTags="li"><i class="bi bi-upload"></i>Upload Files</auth:link>
-                <auth:link basePathKey="admin.feedback.basepath" href="" wrappingTags="li"><i class="bi bi-chat-left-text"></i>User Feedback<%=_feedbackDot%></auth:link>
+                <auth:link basePathKey="admin.feedback.basepath" href="" wrappingTags="li"><i class="bi bi-chat-left-text"></i><span>User Feedback<%=_feedbackDot%></span></auth:link>
                 <auth:link basePathKey="admin.basepath" href="/metafields" wrappingTags="li"><i class="bi bi-list-check"></i>Metadata Fields</auth:link>
-                <auth:link basePathKey="admin.basepath" href="/certificates" wrappingTags="li"><i class="bi <%=_certIconClass%>"></i> TLS Certificates<%=_certDot%></auth:link>
-                <auth:link basePathKey="admin.basepath" href="/criticalpassword" wrappingTags="li"><i class="bi bi-key-fill"></i> Critical Password<%=_capDot%></auth:link>
+                <auth:link basePathKey="admin.basepath" href="/certificates" wrappingTags="li"><i class="bi <%=_certIconClass%>"></i><span> TLS Certificates<%=_certDot%></span></auth:link>
+                <auth:link basePathKey="admin.basepath" href="/criticalpassword" wrappingTags="li"><i class="bi bi-key-fill"></i><span> Critical Password<%=_capDot%></span></auth:link>
                 <auth:link basePathKey="admin.basepath" href="/purge" wrappingTags="li"><i class="bi bi-trash3-fill"></i> Purge All Data</auth:link>
             </ul>
         </div>

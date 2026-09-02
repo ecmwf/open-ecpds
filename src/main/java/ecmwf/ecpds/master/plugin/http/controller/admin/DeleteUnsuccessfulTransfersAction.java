@@ -73,6 +73,8 @@ public class DeleteUnsuccessfulTransfersAction extends PDSAction {
             final var cursor = new DataBaseCursor("0", "1", 0, BATCH_SIZE, "");
             Collection<DataTransfer> batch;
             var count = 0;
+            var failed = 0;
+            String firstError = null;
             do {
                 batch = DataTransferHome.findSortedBad(cursor);
                 var processed = 0;
@@ -82,6 +84,12 @@ public class DeleteUnsuccessfulTransfersAction extends PDSAction {
                         count++;
                         processed++;
                     } catch (final Exception e) {
+                        failed++;
+                        if (firstError == null) {
+                            // Keep the very first failure reason so it can be surfaced to the
+                            // admin user in the UI without requiring access to the server logs.
+                            firstError = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                        }
                         log.warn("Problem trying to delete Data Transfer '{}'", transfer.getId(), e);
                     }
                 }
@@ -89,9 +97,13 @@ public class DeleteUnsuccessfulTransfersAction extends PDSAction {
                     break; // No progress — avoid infinite loop
                 }
             } while (!batch.isEmpty());
-            log.info("Deleted {} outstanding transfer(s) across all destinations", count);
+            log.info("Deleted {} outstanding transfer(s) across all destinations ({} failed)", count, failed);
             request.setAttribute("action", "Deleted");
             request.setAttribute("requeuedSize", count);
+            if (failed > 0) {
+                request.setAttribute("failedSize", failed);
+                request.setAttribute("firstError", firstError);
+            }
         }
         return mapping.findForward("list");
     }

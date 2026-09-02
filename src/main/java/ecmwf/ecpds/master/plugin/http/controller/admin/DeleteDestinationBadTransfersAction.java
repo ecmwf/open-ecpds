@@ -81,6 +81,7 @@ public class DeleteDestinationBadTransfersAction extends PDSAction {
             final var cursor = new DataBaseCursor("0", "1", 0, BATCH_SIZE, search);
             Collection<DataTransfer> batch;
             var count = 0;
+            var failed = 0;
             do {
                 batch = DataTransferHome.findSortedBadByDestination(destination, cursor);
                 var processed = 0;
@@ -90,6 +91,7 @@ public class DeleteDestinationBadTransfersAction extends PDSAction {
                         count++;
                         processed++;
                     } catch (final Exception e) {
+                        failed++;
                         log.warn("Problem deleting Data Transfer '" + transfer.getId() + "'", e);
                     }
                 }
@@ -97,7 +99,8 @@ public class DeleteDestinationBadTransfersAction extends PDSAction {
                     break; // No progress made — avoid infinite loop
                 }
             } while (!batch.isEmpty());
-            log.info("Deleted {} outstanding transfer(s) for destination '{}'", count, destinationName);
+            log.info("Deleted {} outstanding transfer(s) for destination '{}' ({} failed)", count, destinationName,
+                    failed);
         }
         // Redirect back to the monitoring page — the AJAX table will reflect the new state
         try {
