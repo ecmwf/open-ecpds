@@ -2766,6 +2766,53 @@ public interface DataBaseInterface extends Remote {
     void setCriticalActionPasswordHash(String hash) throws DataBaseException, RemoteException;
 
     /**
+     * Gets the text of a configurable product status notification message (e.g. the pre-filled email body used on the
+     * product monitoring page to notify recipients of a dissemination delay, or that dissemination has resumed). These
+     * messages are stored in the SYS_CONFIG table (group "ProductStatus") and can be edited by administrators from the
+     * Monitor UI, instead of being hardcoded in the JSP page.
+     *
+     * @param name
+     *            the message name (one of {@code "productDelayMessage"} or {@code "productResumedMessage"})
+     *
+     * @return the stored message text, or {@code null} if it has not been customized (the caller should fall back to a
+     *         built-in default in that case)
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    String getProductStatusMessage(String name) throws DataBaseException, RemoteException;
+
+    /**
+     * Stores the text of a configurable product status notification message.
+     *
+     * @param name
+     *            the message name (one of {@code "productDelayMessage"} or {@code "productResumedMessage"})
+     * @param value
+     *            the message text to store
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void setProductStatusMessage(String name, String value) throws DataBaseException, RemoteException;
+
+    /**
+     * Clears a customized product status notification message, so it reverts to its built-in default.
+     *
+     * @param name
+     *            the message name (one of {@code "productDelayMessage"} or {@code "productResumedMessage"})
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void resetProductStatusMessage(String name) throws DataBaseException, RemoteException;
+
+    /**
      * Hard-deletes all DATA_TRANSFER, TRANSFER_HISTORY and DATA_FILE records from the database immediately, without
      * waiting for the scheduled purge cycle. Handles FK dependencies (TRANSFER_STATISTICS, TRANSFER_HISTORY,
      * PUBLICATION, METADATA_VALUE) in the correct order.

@@ -392,7 +392,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
 
   <form action="/do/monitoring" method="get" class="d-flex align-items-center gap-0 mb-0">
     <div class="input-group input-group-sm" style="width:210px;">
-      <span class="input-group-text" title="Filter by product name (use * or ? as wildcards)"><i class="bi bi-box"></i></span>
+      <span class="input-group-text" title="Filter by product name. Comma-separate multiple patterns; use * or ? as wildcards; prefix a token with ! or - to exclude it (e.g. *ERA5T*, !*TEST*)"><i class="bi bi-box"></i></span>
       <input type="text" name="application" id="productNameInput" class="form-control"
              placeholder="Product name"
              list="productNameList"
@@ -404,12 +404,131 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
     </div>
     <datalist id="productNameList"></datalist>
   </form>
+
+  <div style="position:relative; display:inline-block;">
+    <button id="btnManageProducts" type="button" class="btn btn-sm btn-outline-secondary"
+            onclick="toggleProductPickerPanel()"
+            title="Pick which products to show or discard">
+      <i class="bi bi-ui-checks"></i> Products
+    </button>
+    <div id="productPickerPanel" style="position:absolute; z-index:9999; min-width:280px; max-width:460px;
+                                    background:var(--bs-tertiary-bg,#e9ecef); border:1px solid var(--bs-border-color); border-top:3px solid var(--bs-primary,#0d6efd); border-radius:0 0 8px 8px;
+                                    box-shadow:0 8px 28px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.10); padding:12px 14px 10px; display:none;">
+      <div class="mb-2" style="font-size:0.78rem; color:var(--bs-body-color);">
+        <i class="bi bi-info-circle me-1 text-muted"></i>
+        Click a product to toggle it. <span style="color:#155724;">Green</span> = shown,
+        <span class="text-muted" style="text-decoration:line-through;">struck-through</span> = discarded.
+      </div>
+      <div class="d-flex flex-wrap gap-1 mb-1" id="productPickerChips" style="max-height:260px; overflow:auto;"></div>
+      <div class="d-flex gap-2 mt-2" style="border-top:1px solid var(--bs-border-color); padding-top:8px;">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="productPickerSelectAll(true)">Show All</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="productPickerSelectAll(false)">Discard All</button>
+        <button type="button" class="btn btn-sm btn-primary ms-auto" onclick="applyProductPicker()">
+          <i class="bi bi-check2 me-1"></i>Apply
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
   (function() {
-    var seen = {}, dl = document.getElementById('productNameList');
+    var seen = {}, names = [], dl = document.getElementById('productNameList');
     document.querySelectorAll('.prod-pill[data-sort-product]').forEach(function(pill) {
       var p = pill.getAttribute('data-sort-product');
-      if (p && !seen[p]) { seen[p] = true; var o = document.createElement('option'); o.value = p; dl.appendChild(o); }
+      if (p && !seen[p]) {
+        seen[p] = true;
+        names.push(p);
+        var o = document.createElement('option'); o.value = p; dl.appendChild(o);
+      }
+    });
+    names.sort(function(a, b) { return a.localeCompare(b); });
+
+    /* Parse the current filter value into: literal exclude tokens matching known products (managed by
+       the picker), and everything else (wildcard/include tokens, left untouched by the picker). */
+    function parseFilter() {
+      var raw = document.getElementById('productNameInput').value || '';
+      var hiddenSet = {}, otherTokens = [];
+      raw.split(',').forEach(function(rawToken) {
+        var token = rawToken.trim();
+        if (!token) return;
+        var exclude = false, name = token;
+        if (token.charAt(0) === '!' || token.charAt(0) === '-') {
+          exclude = true; name = token.substring(1).trim();
+        } else if (/^no-/i.test(token)) {
+          exclude = true; name = token.substring(3).trim();
+        }
+        var isKnownLiteral = exclude && name.indexOf('*') === -1 && name.indexOf('?') === -1
+          && names.some(function(n) { return n.toLowerCase() === name.toLowerCase(); });
+        if (isKnownLiteral) {
+          hiddenSet[name.toLowerCase()] = true;
+        } else {
+          otherTokens.push(token);
+        }
+      });
+      return { hidden: hiddenSet, other: otherTokens };
+    }
+
+    function renderChips() {
+      var state = parseFilter();
+      var container = document.getElementById('productPickerChips');
+      container.innerHTML = '';
+      names.forEach(function(name) {
+        var chip = document.createElement('span');
+        chip.className = 'hdr-chip' + (state.hidden[name.toLowerCase()] ? '' : ' selected');
+        chip.setAttribute('data-product', name);
+        chip.textContent = name;
+        chip.onclick = function() { chip.classList.toggle('selected'); };
+        container.appendChild(chip);
+      });
+    }
+
+    window.toggleProductPickerPanel = function() {
+      var panel = document.getElementById('productPickerPanel');
+      var btn = document.getElementById('btnManageProducts');
+      if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+      renderChips();
+      if (panel.parentElement !== document.body) { document.body.appendChild(panel); }
+      panel.style.position = 'absolute';
+      panel.style.zIndex = '9999';
+      panel.style.visibility = 'hidden';
+      panel.style.display = 'block';
+      var pw = panel.offsetWidth;
+      panel.style.display = 'none';
+      panel.style.visibility = '';
+      var r = btn.getBoundingClientRect();
+      var sy = window.pageYOffset || document.documentElement.scrollTop;
+      var sx = window.pageXOffset || document.documentElement.scrollLeft;
+      panel.style.top = (r.bottom + sy + 4) + 'px';
+      panel.style.left = Math.max(sx, r.right + sx - pw) + 'px';
+      panel.style.right = 'auto';
+      panel.style.display = 'block';
+    };
+
+    window.productPickerSelectAll = function(shown) {
+      document.querySelectorAll('#productPickerChips .hdr-chip').forEach(function(chip) {
+        chip.classList.toggle('selected', shown);
+      });
+    };
+
+    window.applyProductPicker = function() {
+      var state = parseFilter();
+      var hidden = [];
+      document.querySelectorAll('#productPickerChips .hdr-chip').forEach(function(chip) {
+        if (!chip.classList.contains('selected')) { hidden.push('!' + chip.getAttribute('data-product')); }
+      });
+      var tokens = state.other.concat(hidden);
+      var input = document.getElementById('productNameInput');
+      input.value = tokens.join(', ');
+      input.form.submit();
+    };
+
+    document.addEventListener('click', function(e) {
+      var panel = document.getElementById('productPickerPanel');
+      var btn = document.getElementById('btnManageProducts');
+      if (panel && panel.style.display === 'block'
+          && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+        panel.style.display = 'none';
+      }
     });
   })();
   </script>

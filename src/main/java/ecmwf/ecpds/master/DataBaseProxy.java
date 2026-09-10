@@ -2633,6 +2633,48 @@ final class DataBaseProxy implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
+    public String getProductStatusMessage(final String name) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getProductStatusMessage(" + name + ")");
+        try {
+            return monitor.done(dataBaseInterface.getProductStatusMessage(name));
+        } catch (final RemoteException e) {
+            throw new DataBaseException("getProductStatusMessage", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setProductStatusMessage(final String name, final String value)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("setProductStatusMessage(" + name + ")");
+        try {
+            dataBaseInterface.setProductStatusMessage(name, value);
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("setProductStatusMessage", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void resetProductStatusMessage(final String name) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("resetProductStatusMessage(" + name + ")");
+        try {
+            dataBaseInterface.resetProductStatusMessage(name);
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("resetProductStatusMessage", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public int deleteAllDataImmediately() throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("deleteAllDataImmediately()");
         try {

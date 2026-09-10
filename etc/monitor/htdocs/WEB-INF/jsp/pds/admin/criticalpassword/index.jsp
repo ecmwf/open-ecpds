@@ -31,9 +31,26 @@
 <% } %>
 
 <div class="card shadow-sm mb-4" style="max-width:540px;">
-    <div class="card-header fw-semibold">
-        <i class="bi bi-key-fill me-2"></i>
-        <% if (hasPassword) { %>Renew Critical Password<% } else { %>Set Critical Password<% } %>
+    <div class="card-header fw-semibold d-flex align-items-center gap-2">
+        <i class="bi bi-key-fill"></i>
+        <span><% if (hasPassword) { %>Renew Critical Password<% } else { %>Set Critical Password<% } %></span>
+        <button class="btn btn-link btn-sm text-muted p-0" type="button"
+            data-bs-toggle="collapse" data-bs-target="#capInfo"
+            aria-expanded="false" title="About this section">
+          <i class="bi bi-info-circle"></i>
+        </button>
+    </div>
+    <div class="collapse" id="capInfo">
+      <div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">
+        <strong class="d-block mb-1">About the Critical Password</strong>
+        <ul class="mb-0 ps-3">
+            <li>Stored as a SHA-256 hash in the database — the plaintext is never persisted.</li>
+            <li>Independent of your administrator login credentials.</li>
+            <li>Required when performing destructive operations such as <em>Purge All Data</em>.</li>
+            <li>Only administrators with access to <em>Admin Tasks</em> can set or renew it.</li>
+            <li>Renewing the password takes effect immediately for all logged-in administrators.</li>
+        </ul>
+      </div>
     </div>
     <div class="card-body">
         <% if (!hasPassword) { %>
@@ -81,17 +98,3 @@
     </div>
 </div>
 
-<div class="card shadow-sm" style="max-width:540px; border-color: #dee2e6;">
-    <div class="card-header text-muted fw-semibold" style="background:rgba(108,117,125,0.07);">
-        <i class="bi bi-info-circle me-2"></i>About the Critical Password
-    </div>
-    <div class="card-body text-muted" style="font-size:0.85rem;">
-        <ul class="mb-0 ps-3">
-            <li>Stored as a SHA-256 hash in the database — the plaintext is never persisted.</li>
-            <li>Independent of your administrator login credentials.</li>
-            <li>Required when performing destructive operations such as <em>Purge All Data</em>.</li>
-            <li>Only administrators with access to <em>Admin Tasks</em> can set or renew it.</li>
-            <li>Renewing the password takes effect immediately for all logged-in administrators.</li>
-        </ul>
-    </div>
-</div>

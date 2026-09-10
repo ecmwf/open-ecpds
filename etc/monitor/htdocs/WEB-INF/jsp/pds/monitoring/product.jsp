@@ -335,10 +335,6 @@ th {
 
 <c:set var="key" value="${productStatus.product}@${productStatus.time}" />
 <c:set var="emails" value="${reqData.contacts[key]}" />
-<c:set var="ECMWFProductsDelay"
-	value="Dear colleagues%2C%0A%0A%3C%3C Due to if known and not commercially or infrastructure sensitive%2C please give some information of the reason for the delay%2C the or otherwise The %3E%3E dissemination of ECMWF %3C%3C%3E%3E products for the %3C%3C00%2C 06%2C 12 or 18*%3E%3EZ cycle will be delayed %3C%3Cestimate time if possible%3E%3E.%0A%0AOur teams and partners are actively working to restore services.%0A%0A(Preferable to give a time stamp if and when appropriate%2C eg The next update will be at xx%3Axx UTC) %2F As soon as we have further details%2C we will inform you by email %3C%3Cor other channel if email%2Fsystem vulnerable?%3E%3E.%0A%0AFor more up-to-date information%2C you may please refer to ECMWF service status page at http%3A%2F%2Fwww.ecmwf.int%2Fen%2Fservice-status.%0A%0AOur sincere apologies for the inconvenience caused by this delay.%0A%0AKind regards%0A%0AECMWF Duty Manager" />
-<c:set var="ECMWFProducts"
-	value="Dear colleagues,%0D%0A%0D%0AI am pleased to inform you that the problems we encountered earlier%0D%0Awithin the operational production have been resolved and the dissemination of products has started.%0D%0A%0D%0AOur sincere apologies for the inconvenience caused by this delay.%0D%0A%0D%0AKind regards%0D%0A%0D%0AECMWF Duty Manager%0D%0A" />
 <c:if test="${not empty emails}">
     <div class="card mt-4 border-secondary-subtle">
         <div class="card-header py-2 px-3 d-flex align-items-center gap-2">

@@ -1316,6 +1316,11 @@
 		<put name="content" value="/WEB-INF/jsp/pds/admin/criticalpassword/index.jsp" />
 	</definition>
 
+	<definition name=".pds.admin.productmessages" extends=".pds.admin">
+		<put name="title" value="Product Status Messages" />
+		<put name="content" value="/WEB-INF/jsp/pds/admin/productmessages/index.jsp" />
+	</definition>
+
 	<definition name=".pds.admin.metafields" extends=".pds.admin">
 		<put name="title" value="Metadata Field Definitions" />
 		<put name="content" value="/WEB-INF/jsp/pds/admin/metadata_fields.jsp" />

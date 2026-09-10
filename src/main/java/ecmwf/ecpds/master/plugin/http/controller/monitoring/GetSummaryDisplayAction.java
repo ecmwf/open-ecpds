@@ -38,6 +38,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStepStatusHome;
@@ -145,5 +146,43 @@ public class GetSummaryDisplayAction extends PDSAction {
             request.setAttribute("stepsPerColumn", stepStatiiSize / 2 + 1);
         }
         request.setAttribute("nearestToScheduleIndex", MonitoringRequest.getNearestToScheduleIndex(products));
+        putProductStatusMessages(request, product, time);
+    }
+
+    /**
+     * Sets the "ECMWFProductsDelay" and "ECMWFProducts" request attributes consumed by product.jsp to pre-fill the
+     * Outlook deeplink email bodies. Fetches the current (possibly customized) messages from the database, falling back
+     * to the built-in defaults if they have not been customized, or if the database cannot be reached. The
+     * {@code {{PRODUCT}}} and {@code {{CYCLE}}} placeholders, if present, are replaced with the actual product name and
+     * cycle/time currently being viewed (e.g. "GENFO" and "06").
+     *
+     * @param request
+     *            the request
+     * @param product
+     *            the product name (e.g. "GENFO")
+     * @param time
+     *            the cycle/time (e.g. "06")
+     */
+    private static final void putProductStatusMessages(final HttpServletRequest request, final String product,
+            final String time) {
+        var delayMessage = ProductStatusMessages.DEFAULT_DELAY_MESSAGE;
+        var resumedMessage = ProductStatusMessages.DEFAULT_RESUMED_MESSAGE;
+        try {
+            final var db = MasterManager.getDB();
+            final var storedDelayMessage = db.getProductStatusMessage(ProductStatusMessages.DELAY_MESSAGE_NAME);
+            if (storedDelayMessage != null) {
+                delayMessage = storedDelayMessage;
+            }
+            final var storedResumedMessage = db.getProductStatusMessage(ProductStatusMessages.RESUMED_MESSAGE_NAME);
+            if (storedResumedMessage != null) {
+                resumedMessage = storedResumedMessage;
+            }
+        } catch (final Exception e) {
+            // Database not reachable or an error occurred: silently fall back to the built-in defaults.
+        }
+        delayMessage = ProductStatusMessages.substitutePlaceholders(delayMessage, product, time);
+        resumedMessage = ProductStatusMessages.substitutePlaceholders(resumedMessage, product, time);
+        request.setAttribute("ECMWFProductsDelay", ProductStatusMessages.encodeForEmailBody(delayMessage));
+        request.setAttribute("ECMWFProducts", ProductStatusMessages.encodeForEmailBody(resumedMessage));
     }
 }

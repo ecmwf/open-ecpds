@@ -673,10 +673,7 @@ public class MonitoringRequest {
                 log.debug("Finished adding products. Discarding: " + name + ", Sched: " + scheduledTime
                         + ", Window size is already " + window.size());
             } else if (!PRODUCTS_TO_SHOW_MONITORED_ONLY || isProductSentToAnyOfTheseDestinations(ps, destinations)) {
-                final var hasWildcard = application.contains("*") || application.contains("?");
-                if (isEmpty(application) || hasWildcard && matchesWildcard(application, name)
-                        || !hasWildcard && (name.endsWith("-" + application)
-                                || application.startsWith("no-") && !name.endsWith("-" + application.substring(3)))) {
+                if (matchesApplicationFilter(application, name)) {
                     log.debug("Adding product: " + name);
                     window.add(ps);
                 } else {
@@ -693,6 +690,65 @@ public class MonitoringRequest {
         }
         log.debug("Product window: " + window);
         return window;
+    }
+
+    /**
+     * Tests whether a product ({@code time-product}, e.g. {@code 06-GENFO}) should be shown, given the current
+     * product-name filter. The filter is a comma-separated list of tokens, each of which may:
+     * <ul>
+     * <li>contain the {@code *}/{@code ?} wildcards (e.g. {@code *ERA5T*})</li>
+     * <li>be an exact product name, matched against the trailing {@code -name} suffix (e.g. {@code ERA5T} matches
+     * {@code 06-ERA5T})</li>
+     * <li>be prefixed with {@code !} or {@code -} (or, for backward compatibility, with {@code no-}) to exclude rather
+     * than include matching products</li>
+     * </ul>
+     * A product is shown when: it matches at least one include token (or there are no include tokens at all, i.e. only
+     * exclude tokens or no filter), AND it does not match any exclude token. This allows combining an include pattern
+     * with one or more exclusions, e.g. {@code *ERA5T*, !*TEST*}.
+     *
+     * @param application
+     *            the product-name filter (comma-separated tokens, see above)
+     * @param name
+     *            the {@code time-product} name to test
+     *
+     * @return true if the product should be shown
+     */
+    private static boolean matchesApplicationFilter(final String application, final String name) {
+        if (isEmpty(application)) {
+            return true;
+        }
+        var hasIncludeToken = false;
+        var matchedInclude = false;
+        for (final var rawToken : application.split(",")) {
+            var token = rawToken.trim();
+            if (token.isEmpty()) {
+                continue;
+            }
+            final boolean exclude;
+            if (token.startsWith("!") || token.startsWith("-")) {
+                exclude = true;
+                token = token.substring(1).trim();
+            } else if (token.toLowerCase().startsWith("no-")) {
+                exclude = true;
+                token = token.substring(3).trim();
+            } else {
+                exclude = false;
+            }
+            if (token.isEmpty()) {
+                continue;
+            }
+            final var hasWildcard = token.contains("*") || token.contains("?");
+            final var matches = hasWildcard ? matchesWildcard(token, name) : name.endsWith("-" + token);
+            if (exclude) {
+                if (matches) {
+                    return false;
+                }
+            } else {
+                hasIncludeToken = true;
+                matchedInclude = matchedInclude || matches;
+            }
+        }
+        return !hasIncludeToken || matchedInclude;
     }
 
     /**

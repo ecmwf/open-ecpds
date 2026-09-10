@@ -188,6 +188,19 @@
     </div>
     </auth:link>
 
+    <auth:link basePathKey="admin.basepath" href="/productmessages">
+    <div class="col">
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
+        <i class="bi bi-envelope-paper-fill text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title">Product Status Messages</span>
+            <p class="tool-desc">Customize the "Products Delay" and "Products Resumed" email templates
+            pre-filled on the Product Status page, instead of relying on the built-in default text.</p>
+        </div>
+    </div>
+    </div>
+    </auth:link>
+
     <auth:link basePathKey="admin.basepath" href="/purge">
     <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">

@@ -78,6 +78,8 @@
 		wrappingTags="tr,td"><i class="bi <%=_sm_certIconClass%>"></i><span> TLS Certificates<%=_sm_certDot%></span></auth:link>
 	<auth:link basePathKey="admin.basepath" href="/criticalpassword"
 		wrappingTags="tr,td"><i class="bi bi-key-fill"></i><span> Critical Password<%=_sm_capDot%></span></auth:link>
+	<auth:link basePathKey="admin.basepath" href="/productmessages"
+		wrappingTags="tr,td"><i class="bi bi-envelope-paper-fill"></i> Product Status Messages</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/purge"
 		wrappingTags="tr,td"><i class="bi bi-trash3-fill"></i> Purge All Data</auth:link>
 </table>

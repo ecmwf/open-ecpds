@@ -4442,6 +4442,49 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         monitor.done();
     }
 
+    /** The set of recognized product status message names (defense-in-depth against arbitrary SYS_CONFIG writes). */
+    private static final Set<String> PRODUCT_STATUS_MESSAGE_NAMES = Set.of("productDelayMessage",
+            "productResumedMessage");
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getProductStatusMessage(final String name) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getProductStatusMessage(" + name + ")");
+        if (!PRODUCT_STATUS_MESSAGE_NAMES.contains(name)) {
+            throw new DataBaseException("Unknown product status message name: " + name);
+        }
+        return monitor.done(ecpds.getSysConfigValue("ProductStatus", name));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setProductStatusMessage(final String name, final String value)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("setProductStatusMessage(" + name + ")");
+        if (!PRODUCT_STATUS_MESSAGE_NAMES.contains(name)) {
+            throw new DataBaseException("Unknown product status message name: " + name);
+        }
+        ecpds.setSysConfigValue("ProductStatus", name, value);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void resetProductStatusMessage(final String name) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("resetProductStatusMessage(" + name + ")");
+        if (!PRODUCT_STATUS_MESSAGE_NAMES.contains(name)) {
+            throw new DataBaseException("Unknown product status message name: " + name);
+        }
+        ecpds.deleteSysConfigValue("ProductStatus", name);
+        monitor.done();
+    }
+
     /**
      * Computes the SHA-256 hex digest of the given plaintext string (UTF-8 encoded).
      *
