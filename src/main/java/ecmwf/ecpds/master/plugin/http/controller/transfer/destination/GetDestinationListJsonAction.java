@@ -68,6 +68,7 @@ import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.SubOption;
 import ecmwf.common.technical.ByteSize;
 import ecmwf.common.technical.TimeRange;
+import ecmwf.common.text.Format;
 import ecmwf.web.controller.ECMWFActionFormException;
 import ecmwf.web.model.users.User;
 
@@ -123,8 +124,9 @@ public class GetDestinationListJsonAction extends PDSAction {
             if (data == null || data.isBlank()) {
                 return false;
             }
-            final var sepIdx = data.indexOf(ECtransSetup.SEPARATOR);
-            final var propsText = sepIdx >= 0 ? data.substring(0, sepIdx) : data;
+            final var normalized = Format.windowsToUnix(data);
+            final var sepIdx = normalized.indexOf(ECtransSetup.SEPARATOR);
+            final var propsText = sepIdx >= 0 ? normalized.substring(0, sepIdx) : normalized;
             final var sb = new StringBuilder();
             for (final var rawLine : propsText.split("\n")) {
                 if (sb.length() == 0) {
@@ -156,8 +158,9 @@ public class GetDestinationListJsonAction extends PDSAction {
             if (data == null) {
                 return false;
             }
-            final var sepIdx = data.indexOf(ECtransSetup.SEPARATOR);
-            return sepIdx >= 0 && !data.substring(sepIdx + ECtransSetup.SEPARATOR.length()).trim().isEmpty();
+            final var normalized = Format.windowsToUnix(data);
+            final var sepIdx = normalized.indexOf(ECtransSetup.SEPARATOR);
+            return sepIdx >= 0 && !normalized.substring(sepIdx + ECtransSetup.SEPARATOR.length()).trim().isEmpty();
         } catch (final Exception ignored) {
         }
         return false;

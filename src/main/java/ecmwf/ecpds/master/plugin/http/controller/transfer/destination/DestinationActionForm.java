@@ -43,6 +43,7 @@ import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.StreamManager;
+import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.datafile.TransferGroupHome;
 import ecmwf.ecpds.master.plugin.http.home.ecuser.EcUserHome;
@@ -598,8 +599,12 @@ public class DestinationActionForm extends ECMWFActionForm {
      * @return the properties
      */
     private String getProperties(final String data) {
-        final var pos = data.indexOf(ECtransSetup.SEPARATOR);
-        return (pos >= 0 ? data.substring(0, pos) : data).trim();
+        if (data == null) {
+            return "";
+        }
+        final var normalized = Format.windowsToUnix(data);
+        final var pos = normalized.indexOf(ECtransSetup.SEPARATOR);
+        return (pos >= 0 ? normalized.substring(0, pos) : normalized).trim();
     }
 
     /**
@@ -620,8 +625,12 @@ public class DestinationActionForm extends ECMWFActionForm {
      * @return the javascript
      */
     private String getJavascript(final String data) {
-        final var pos = data.indexOf(ECtransSetup.SEPARATOR);
-        return pos >= 0 ? data.substring(pos + ECtransSetup.SEPARATOR.length()).trim() : "";
+        if (data == null) {
+            return "";
+        }
+        final var normalized = Format.windowsToUnix(data);
+        final var pos = normalized.indexOf(ECtransSetup.SEPARATOR);
+        return pos >= 0 ? normalized.substring(pos + ECtransSetup.SEPARATOR.length()).trim() : "";
     }
 
     /**
@@ -1675,7 +1684,9 @@ public class DestinationActionForm extends ECMWFActionForm {
         destination.setStopIfDirty(convertToBoolean(stopIfDirty));
         destination.setShowInMonitors(convertToBoolean(showInMonitors));
         destination.setGroupByDate(convertToBoolean(groupByDate));
-        destination.setData(properties + "\n" + ECtransSetup.SEPARATOR + javascript);
+        // Normalize any Windows-style (\r\n) line endings coming from the browser's textarea submission,
+        // so the stored separator/properties/script split remains reliable on the next read-back.
+        destination.setData(Format.windowsToUnix(properties + "\n" + ECtransSetup.SEPARATOR + javascript));
         destination.setDateFormat(dateFormat);
         destination.setEcUserName(ecUserName);
         destination.setCountryIso(countryIso);

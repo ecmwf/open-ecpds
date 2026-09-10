@@ -63,6 +63,7 @@ import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.SubOption;
 import ecmwf.common.technical.ByteSize;
 import ecmwf.common.technical.TimeRange;
+import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
@@ -142,8 +143,9 @@ public class GetHostListJsonAction extends PDSAction {
                 return false;
             }
             // Only look at the properties section (before the separator)
-            final var sepIdx = data.indexOf(ECtransSetup.SEPARATOR);
-            final var propsText = sepIdx >= 0 ? data.substring(0, sepIdx) : data;
+            final var normalized = Format.windowsToUnix(data);
+            final var sepIdx = normalized.indexOf(ECtransSetup.SEPARATOR);
+            final var propsText = sepIdx >= 0 ? normalized.substring(0, sepIdx) : normalized;
             // Reassemble logical lines: a value spanning multiple lines (multi-line quoted string)
             // must be joined before validation so continuation lines are not mistaken for keys.
             final var sb = new StringBuilder();
@@ -396,8 +398,10 @@ public class GetHostListJsonAction extends PDSAction {
                     if (data == null) {
                         return false;
                     }
-                    final var sepIdx = data.indexOf(ECtransSetup.SEPARATOR);
-                    final var js = sepIdx >= 0 ? data.substring(sepIdx + ECtransSetup.SEPARATOR.length()).trim() : "";
+                    final var normalized = Format.windowsToUnix(data);
+                    final var sepIdx = normalized.indexOf(ECtransSetup.SEPARATOR);
+                    final var js = sepIdx >= 0 ? normalized.substring(sepIdx + ECtransSetup.SEPARATOR.length()).trim()
+                            : "";
                     if (js.isEmpty()) {
                         return false;
                     }
@@ -426,9 +430,10 @@ public class GetHostListJsonAction extends PDSAction {
             final var propErr = hasPropertyErrors(host);
             final var dirNonEmpty = host.getDir() != null && !host.getDir().isBlank();
             final var jsData = Objects.requireNonNullElse(host.getData(), "");
-            final var jsSepIdx = jsData.indexOf(ECtransSetup.SEPARATOR);
-            final var jsContent = jsSepIdx >= 0 ? jsData.substring(jsSepIdx + ECtransSetup.SEPARATOR.length()).trim()
-                    : "";
+            final var jsNormalized = Format.windowsToUnix(jsData);
+            final var jsSepIdx = jsNormalized.indexOf(ECtransSetup.SEPARATOR);
+            final var jsContent = jsSepIdx >= 0
+                    ? jsNormalized.substring(jsSepIdx + ECtransSetup.SEPARATOR.length()).trim() : "";
             final var jsNonEmpty = !jsContent.isEmpty();
             final var row = data.addArray();
             row.add(buildFlagHtml(host));

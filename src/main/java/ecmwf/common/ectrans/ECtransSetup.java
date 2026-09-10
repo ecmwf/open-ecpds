@@ -201,13 +201,24 @@ public final class ECtransSetup implements Serializable {
         dataContent.clear();
         scriptContent.setLength(0);
         if (isNotEmpty(data)) {
-            final var sb = new StringBuilder(Format.windowsToUnix(data.trim()).concat("\n"));
+            final var normalized = Format.windowsToUnix(data.trim()).concat("\n");
+            // Locate the separator once upfront and split the data into its two independent parts: the
+            // properties text (searched for key="value" entries below) and the script (stored as-is). Doing
+            // this split first - rather than looking for the separator on every iteration of the properties
+            // parsing loop below - avoids any ambiguity caused by blank line(s) landing right before the
+            // separator (e.g. a trailing newline left over from the properties text), which previously caused
+            // the parser to miss the separator and instead scan into the script looking for more properties,
+            // leaking fragments of the script into the parsed properties and losing the script itself.
+            final var separatorIndex = normalized.indexOf(SEPARATOR);
+            final var propertiesPart = separatorIndex >= 0 ? normalized.substring(0, separatorIndex) : normalized;
+            if (separatorIndex >= 0) {
+                scriptContent.append(normalized.substring(separatorIndex + SEPARATOR.length()).trim());
+            }
+            final var sb = new StringBuilder(propertiesPart);
             var indexStart = 0;
             var indexStop = 0;
             var index = -1;
-            var foundSeparator = false;
-            while (sb.length() > 0 && !(foundSeparator = sb.indexOf(SEPARATOR) == 0)
-                    && (indexStart = removeSpacesInName(sb).indexOf("=\"")) != -1
+            while (sb.length() > 0 && (indexStart = removeSpacesInName(sb).indexOf("=\"")) != -1
                     && (indexStop = sb.substring(indexStart + 2).indexOf("\"\n")) != -1) {
                 final var name = sb.substring(0, indexStart).trim();
                 if ((index = name.indexOf(".")) != -1) {
@@ -215,9 +226,6 @@ public final class ECtransSetup implements Serializable {
                             sb.substring(indexStart + 2, indexStart + 2 + indexStop));
                 }
                 sb.delete(0, indexStart + 2 + indexStop + 2);
-            }
-            if (foundSeparator) {
-                scriptContent.append(sb.substring(SEPARATOR.length()).trim());
             }
         }
         debug = getBoolean(HOST_ECTRANS_DEBUG);

@@ -43,6 +43,7 @@ import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.StreamManager;
+import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.plugin.http.home.datafile.TransferGroupHome;
 import ecmwf.ecpds.master.plugin.http.home.ecuser.EcUserHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.EcTransModuleHome;
@@ -337,8 +338,12 @@ public class HostActionForm extends ECMWFActionForm {
      * save so they survive a user edit without being visible in the editor.
      */
     private static String extractHiddenOptions(final String data) {
-        final var pos = data.indexOf(ECtransSetup.SEPARATOR);
-        final var raw = pos >= 0 ? data.substring(0, pos).trim() : data.trim();
+        if (data == null) {
+            return "";
+        }
+        final var normalized = Format.windowsToUnix(data);
+        final var pos = normalized.indexOf(ECtransSetup.SEPARATOR);
+        final var raw = pos >= 0 ? normalized.substring(0, pos).trim() : normalized.trim();
         try {
             final var stripped = DataBaseObject.removeHiddenOptions(raw);
             final var sb = new StringBuilder();
@@ -355,8 +360,12 @@ public class HostActionForm extends ECMWFActionForm {
     }
 
     private String getProperties(final String data) {
-        final var pos = data.indexOf(ECtransSetup.SEPARATOR);
-        final var raw = pos >= 0 ? data.substring(0, pos).trim() : data.trim();
+        if (data == null) {
+            return "";
+        }
+        final var normalized = Format.windowsToUnix(data);
+        final var pos = normalized.indexOf(ECtransSetup.SEPARATOR);
+        final var raw = pos >= 0 ? normalized.substring(0, pos).trim() : normalized.trim();
         try {
             // Strip hidden/internal options so they are not shown or accidentally edited by the user.
             return DataBaseObject.removeHiddenOptions(raw);
@@ -384,9 +393,13 @@ public class HostActionForm extends ECMWFActionForm {
      * @return the javascript
      */
     private String getJavascript(final String data) {
-        final var pos = data.indexOf(ECtransSetup.SEPARATOR);
+        if (data == null) {
+            return "";
+        }
+        final var normalized = Format.windowsToUnix(data);
+        final var pos = normalized.indexOf(ECtransSetup.SEPARATOR);
         if (pos >= 0) {
-            return data.substring(pos + ECtransSetup.SEPARATOR.length()).trim();
+            return normalized.substring(pos + ECtransSetup.SEPARATOR.length()).trim();
         }
         return "";
     }
@@ -1112,7 +1125,10 @@ public class HostActionForm extends ECMWFActionForm {
         // options (tokenExpiry, tokenValue, lastupdate) that were stripped from the editor view, so they
         // are not lost when the user saves the host.
         final var existingHiddenOptions = extractHiddenOptions(h.getData());
-        h.setData(properties + "\n" + existingHiddenOptions + ECtransSetup.SEPARATOR + javascript);
+        // Normalize any Windows-style (\r\n) line endings coming from the browser's textarea submission,
+        // so the stored separator/properties/script split remains reliable on the next read-back.
+        h.setData(
+                Format.windowsToUnix(properties + "\n" + existingHiddenOptions + ECtransSetup.SEPARATOR + javascript));
         h.setECUserName(owner);
         h.setTransferMethodName(transferMethod);
         h.setTransferGroupName(transferGroup);
