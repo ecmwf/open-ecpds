@@ -303,7 +303,7 @@ public final class FtpModule extends TransferModule {
         mkdirs = setup.getBoolean(HOST_FTP_MKDIRS);
         prefix = setup.getString(HOST_FTP_PREFIX);
         suffix = setup.getString(HOST_FTP_SUFFIX);
-        md5Ext = setup.getString(HOST_FTP_MD5_EXT);
+        md5Ext = setup.getChecksumExtension(HOST_FTP_MD5_EXT);
         final var postConnectCmd = setup.getString(HOST_FTP_POST_CONNECT_CMD);
         preCloseCmd = setup.getString(HOST_FTP_PRE_CLOSE_CMD);
         preGetCmd = setup.getString(HOST_FTP_PRE_GET_CMD);

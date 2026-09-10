@@ -26,11 +26,14 @@ package ecmwf.common.ectrans;
  * @since 2024-07-01
  */
 
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_CHECKSUM_ALGORITHM;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_CHECKSUM_EXT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_DEBUG;
 import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Period;
 import java.util.ArrayList;
@@ -51,6 +54,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.graalvm.polyglot.Value;
 
+import ecmwf.common.checksum.Checksum;
 import ecmwf.common.ectrans.ECtransGroups.Module;
 import ecmwf.common.technical.ByteSize;
 import ecmwf.common.technical.Cnf;
@@ -955,6 +959,46 @@ public final class ECtransSetup implements Serializable {
      */
     public String getString(final ECtransOptions option) {
         return get(option, String.class);
+    }
+
+    /**
+     * Gets the checksum algorithm currently configured via "ectrans.checksumAlgorithm", defaulting to MD5 if unset or
+     * invalid.
+     *
+     * @return the checksum algorithm
+     */
+    public Checksum.Algorithm getChecksumAlgorithm() {
+        try {
+            return Checksum.getAlgorithm(getString(HOST_ECTRANS_CHECKSUM_ALGORITHM));
+        } catch (final NoSuchAlgorithmException e) {
+            return Checksum.Algorithm.MD5;
+        }
+    }
+
+    /**
+     * Gets the extension to use for the checksum sidecar file written by transfer modules such as FTP/FTPS/SFTP.
+     * Resolution order: the common "ectrans.checksumExt" option if set, then (only when the configured checksum
+     * algorithm is MD5) the module-specific legacy extension option (e.g. "ftp.md5Ext"), and finally the default
+     * extension for the configured algorithm (e.g. ".sha256").
+     *
+     * @param legacyMd5ExtOption
+     *            the module-specific legacy md5Ext option (e.g. HOST_FTP_MD5_EXT)
+     *
+     * @return the checksum extension
+     */
+    public String getChecksumExtension(final ECtransOptions legacyMd5ExtOption) {
+        final var checksumExt = getString(HOST_ECTRANS_CHECKSUM_EXT);
+        if (isNotEmpty(checksumExt)) {
+            return checksumExt;
+        }
+        final var algorithm = getChecksumAlgorithm();
+        if (algorithm == Checksum.Algorithm.MD5) {
+            final var legacyExt = getString(legacyMd5ExtOption);
+            if (isNotEmpty(legacyExt)) {
+                return legacyExt;
+            }
+        }
+        return algorithm.getExtension();
     }
 
     /**

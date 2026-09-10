@@ -64,7 +64,9 @@ ectrans.hostSelector = "($network == internal) 10.0.0.5"
 | `ectrans.filterpattern` | String | `.*` | Regex pattern matched against the **original** filename to decide whether compression applies. The pattern is not applied to the final target name |
 | `ectrans.checkfiltersize` | Boolean | `true` | When `true` and the compressed file is larger than the original, the original (uncompressed) file is sent instead, without the compression extension |
 | `ectrans.supportFilter` | Boolean | `false` | When the remote server is a DissFTP server, enable on-the-fly decompression at the remote end during dissemination |
-| `ectrans.createChecksum` | Boolean | `false` | Compute an MD5 checksum on the fly during dissemination if none has been generated yet. The checksum is then passed to the transfer module for optional use |
+| `ectrans.createChecksum` | Boolean | `false` | Compute a checksum on the fly during dissemination if none has been generated yet, using the algorithm selected with `ectrans.checksumAlgorithm`. The checksum is then passed to the transfer module for optional use |
+| `ectrans.checksumAlgorithm` | String | `MD5` | Algorithm used when `ectrans.createChecksum` is enabled. One of `MD5`, `SHA-1`, `SHA-256`, `CRC32`, `Adler32`. For FTP/FTPS/SFTP the resulting value is written verbatim to a sidecar file whose extension is controlled by `ectrans.checksumExt` |
+| `ectrans.checksumExt` | String | *none* | Overrides the extension of the checksum sidecar file written by FTP/FTPS/SFTP, regardless of the algorithm (e.g. `.sha256`). When unset, the extension is derived automatically from `ectrans.checksumAlgorithm` (`.md5`, `.sha1`, `.sha256`, `.crc32`, `.adler32`) — except when the algorithm is `MD5`, in which case the module's legacy `md5Ext` option (if set) is honoured first, for backward compatibility |
 
 ## External Handlers — GET
 

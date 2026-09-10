@@ -41,31 +41,37 @@ public abstract class Checksum {
     public enum Algorithm {
 
         /** The adler32. */
-        ADLER32("Adler32"),
+        ADLER32("Adler32", ".adler32"),
 
         /** The crc32. */
-        CRC32("CRC32"),
+        CRC32("CRC32", ".crc32"),
 
         /** The md5. */
-        MD5("MD5"),
+        MD5("MD5", ".md5"),
 
         /** The sha1. */
-        SHA1("SHA-1"),
+        SHA1("SHA-1", ".sha1"),
 
         /** The sha256. */
-        SHA256("SHA-256");
+        SHA256("SHA-256", ".sha256");
 
         /** The name. */
         private final String name;
+
+        /** The default sidecar file extension. */
+        private final String extension;
 
         /**
          * Instantiates a new algorithm.
          *
          * @param name
          *            the name
+         * @param extension
+         *            the default sidecar file extension
          */
-        Algorithm(final String name) {
+        Algorithm(final String name, final String extension) {
             this.name = name;
+            this.extension = extension;
         }
 
         /**
@@ -75,6 +81,15 @@ public abstract class Checksum {
          */
         public String getName() {
             return name;
+        }
+
+        /**
+         * Gets the default sidecar file extension for this algorithm (e.g. ".sha256").
+         *
+         * @return the extension
+         */
+        public String getExtension() {
+            return extension;
         }
     }
 

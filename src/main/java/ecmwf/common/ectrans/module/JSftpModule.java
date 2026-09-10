@@ -358,7 +358,7 @@ public class JSftpModule extends TransferModule {
         mkdirs = setup.getBoolean(HOST_SFTP_MKDIRS);
         prefix = setup.getString(HOST_SFTP_PREFIX);
         suffix = setup.getString(HOST_SFTP_SUFFIX);
-        md5Ext = setup.getString(HOST_SFTP_MD5_EXT);
+        md5Ext = setup.getChecksumExtension(HOST_SFTP_MD5_EXT);
         chmod = setup.getString(HOST_SFTP_CHMOD);
         ignoreCheck = setup.getBoolean(HOST_SFTP_IGNORE_CHECK);
         executionCode = setup.getInteger(HOST_SFTP_EXEC_CODE);

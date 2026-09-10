@@ -94,7 +94,7 @@
               <tr><td><code>ftps.deleteOnRename</code></td><td><code>true</code></td><td>Delete the target before renaming the temporary file (avoids rename-to-existing failures)</td></tr>
               <tr><td><code>ftps.ignoreCheck</code></td><td><code>true</code></td><td>Do not verify the transferred file size after upload</td></tr>
               <tr><td><code>ftps.ignoreDelete</code></td><td><code>true</code></td><td>Ignore errors when deleting the remote file</td></tr>
-              <tr><td><code>ftps.md5Ext</code></td><td><code>.md5</code></td><td>Extension used for MD5 checksum sidecar files</td></tr>
+              <tr><td><code>ftps.md5Ext</code></td><td><code>.md5</code></td><td>Legacy option: extension for the checksum sidecar file, applied only when <code>ectrans.checksumAlgorithm</code> is <code>MD5</code> (default) and <code>ectrans.checksumExt</code> is unset. Use <code>ectrans.checksumExt</code> for other algorithms</td></tr>
             </tbody>
           </table>
         </div>

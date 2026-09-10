@@ -86,7 +86,7 @@ ftp.useNoop = "30s"
 | `ftp.ignoreCheck` | `true` | Skip post-transfer integrity check (SIZE command) |
 | `ftp.retryAfterTimeoutOnCheck` | `false` | Retry the integrity check after a timeout instead of failing |
 | `ftp.ignoreDelete` | `true` | Ignore errors when deleting remote files |
-| `ftp.md5Ext` | *none* | If set, write an MD5 sidecar file with this extension (e.g. `.md5`) |
+| `ftp.md5Ext` | `.md5` | Legacy option: extension used for the checksum sidecar file, but only applied when `ectrans.checksumAlgorithm` is `MD5` (default) and `ectrans.checksumExt` is not set. For other algorithms, or to override regardless of algorithm, use `ectrans.checksumExt` instead (see [ECtrans Common Options](ectrans.md)) |
 
 ### Directory listing
 

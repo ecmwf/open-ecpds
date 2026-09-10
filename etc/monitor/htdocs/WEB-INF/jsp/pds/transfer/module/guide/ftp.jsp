@@ -165,7 +165,7 @@ ftp.useNoop = "30s"</pre>
               <tr><td><code>ftp.ignoreCheck</code></td><td><code>true</code></td><td>Skip post-transfer integrity check (SIZE command)</td></tr>
               <tr><td><code>ftp.retryAfterTimeoutOnCheck</code></td><td><code>false</code></td><td>Retry the integrity check after a timeout instead of failing</td></tr>
               <tr><td><code>ftp.ignoreDelete</code></td><td><code>true</code></td><td>Ignore errors when deleting remote files</td></tr>
-              <tr><td><code>ftp.md5Ext</code></td><td><em>none</em></td><td>If set, write an MD5 sidecar file with this extension (e.g. <code>.md5</code>)</td></tr>
+              <tr><td><code>ftp.md5Ext</code></td><td><code>.md5</code></td><td>Legacy option: extension for the checksum sidecar file, applied only when <code>ectrans.checksumAlgorithm</code> is <code>MD5</code> (default) and <code>ectrans.checksumExt</code> is unset. Use <code>ectrans.checksumExt</code> for other algorithms</td></tr>
             </tbody>
           </table>
         </div>

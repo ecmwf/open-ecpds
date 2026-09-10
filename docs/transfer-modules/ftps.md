@@ -55,7 +55,7 @@ Only relevant when `ftps.connectionType` is `FTPS` or `FTPES`.
 | `ftps.deleteOnRename` | `true` | Delete the target before renaming the temporary file (avoids rename-to-existing failures) |
 | `ftps.ignoreCheck` | `true` | Do not verify the transferred file size after upload |
 | `ftps.ignoreDelete` | `true` | Ignore errors when deleting the remote file |
-| `ftps.md5Ext` | `.md5` | Extension used for MD5 checksum sidecar files |
+| `ftps.md5Ext` | `.md5` | Legacy option: extension used for the checksum sidecar file, but only applied when `ectrans.checksumAlgorithm` is `MD5` (default) and `ectrans.checksumExt` is not set. For other algorithms, or to override regardless of algorithm, use `ectrans.checksumExt` instead (see [ECtrans Common Options](ectrans.md)) |
 
 ## Paths
 

@@ -211,7 +211,7 @@ sftp.fingerPrint = "SHA256:abc123..."</pre>
               <tr><td><code>sftp.bulkRequestNumber</code></td><td><code>64</code></td><td>SFTP read-ahead / in-flight request count (higher = faster on high-latency links)</td></tr>
               <tr><td><code>sftp.useWriteFlush</code></td><td><code>false</code></td><td>Apply write-flush workaround for some server implementations</td></tr>
               <tr><td><code>sftp.ignoreCheck</code></td><td><code>false</code></td><td>Skip post-transfer size verification</td></tr>
-              <tr><td><code>sftp.md5Ext</code></td><td><em>none</em></td><td>If set, write an MD5 sidecar file with this extension</td></tr>
+              <tr><td><code>sftp.md5Ext</code></td><td><code>.md5</code></td><td>Legacy option: extension for the checksum sidecar file, applied only when <code>ectrans.checksumAlgorithm</code> is <code>MD5</code> (default) and <code>ectrans.checksumExt</code> is unset. Use <code>ectrans.checksumExt</code> for other algorithms</td></tr>
             </tbody>
           </table>
         </div>

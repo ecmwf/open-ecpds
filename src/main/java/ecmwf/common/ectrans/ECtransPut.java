@@ -28,6 +28,7 @@ package ecmwf.common.ectrans;
 
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_BUFF_INPUT_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_BUFF_OUTPUT_SIZE;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_CHECKSUM_ALGORITHM;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_CREATE_CHECKSUM;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_INITIAL_INPUT_FILTER;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_INITIAL_INPUT_MD5;
@@ -55,6 +56,7 @@ import static ecmwf.common.text.Util.isNotEmpty;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 
 import org.apache.logging.log4j.LogManager;
@@ -257,8 +259,15 @@ public final class ECtransPut extends ECtransAction {
                 }
                 OutputStream out = null;
                 Checksum md5 = null;
-                final var algorithm = Checksum.Algorithm.MD5;
+                var algorithm = Checksum.Algorithm.MD5;
                 if (createChecksum && checksum == null) {
+                    final var algorithmName = setup.getString(HOST_ECTRANS_CHECKSUM_ALGORITHM);
+                    try {
+                        algorithm = Checksum.getAlgorithm(algorithmName);
+                    } catch (final NoSuchAlgorithmException e) {
+                        _log.warn("Unknown checksum algorithm {}, defaulting to {}", algorithmName,
+                                algorithm.getName());
+                    }
                     try {
                         md5 = Checksum.getChecksum(algorithm, in);
                         in = md5.getInputStream();

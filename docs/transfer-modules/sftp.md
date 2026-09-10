@@ -126,7 +126,7 @@ sftp.fingerPrint = "SHA256:abc123..."
 | `sftp.bulkRequestNumber` | `64` | SFTP read-ahead / in-flight request count (higher = faster on high-latency links) |
 | `sftp.useWriteFlush` | `false` | Apply write-flush workaround for some server implementations |
 | `sftp.ignoreCheck` | `false` | Skip post-transfer size verification |
-| `sftp.md5Ext` | *none* | If set, write an MD5 sidecar file with this extension |
+| `sftp.md5Ext` | `.md5` | Legacy option: extension used for the checksum sidecar file, but only applied when `ectrans.checksumAlgorithm` is `MD5` (default) and `ectrans.checksumExt` is not set. For other algorithms, or to override regardless of algorithm, use `ectrans.checksumExt` instead (see [ECtrans Common Options](ectrans.md)) |
 
 ### Post-upload command
 

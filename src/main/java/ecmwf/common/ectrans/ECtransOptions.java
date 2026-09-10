@@ -313,6 +313,12 @@ public enum ECtransOptions {
     /** The host ectrans create checksum. */
     HOST_ECTRANS_CREATE_CHECKSUM("createChecksum", Boolean.class, false),
 
+    /** The host ectrans checksum algorithm. */
+    HOST_ECTRANS_CHECKSUM_ALGORITHM("checksumAlgorithm", String.class, "MD5"),
+
+    /** The host ectrans checksum ext. */
+    HOST_ECTRANS_CHECKSUM_EXT("checksumExt", String.class, STRING_NONE),
+
     /** The host ectrans support filter. */
     HOST_ECTRANS_SUPPORT_FILTER("supportFilter", Boolean.class, false),
 
