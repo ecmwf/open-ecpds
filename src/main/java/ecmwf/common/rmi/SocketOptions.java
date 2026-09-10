@@ -249,8 +249,11 @@ class SocketOptions {
         if (!ssAvailable) {
             return "exception:ss-not-found";
         }
-        final String[] command = { "ss", "-ntepi", "state", "established", "--inet-sockopt", "-O", "-H",
-                "sport = " + socket.getLocalPort() + " and dport = " + socket.getPort() };
+        // Filter on the full local/remote address:port 4-tuple.
+        final var localAddress = formatAddressForFilter(socket.getLocalAddress().getHostAddress());
+        final var remoteAddress = formatAddressForFilter(socket.getInetAddress().getHostAddress());
+        final String[] command = { "ss", "-ntepi", "state", "established", "--inet-sockopt", "-O", "-H", "src "
+                + localAddress + ":" + socket.getLocalPort() + " and dst " + remoteAddress + ":" + socket.getPort() };
         final var pb = new ProcessBuilder(command);
         pb.redirectErrorStream(true); // Merge error with output stream
         Process process = null;
@@ -272,6 +275,34 @@ class SocketOptions {
                 }
                 return "exception:timeout";
             }
+            // Defensive check: with the address:port filter above there should be at most one matching
+            // connection (a TCP 4-tuple is unique), but guard against any unexpected duplicate (e.g. a
+            // connection lingering in the process of being replaced) by keeping only the first block. Each
+            // connection starts a new, non-indented line; any following indented line(s) are extra "-i" details
+            // for that same connection.
+            var connectionCount = 0;
+            var firstBlockEnd = -1;
+            final var lines = output.toString().split("\n", -1);
+            for (var i = 0; i < lines.length; i++) {
+                final var line = lines[i];
+                if (!line.isEmpty() && !Character.isWhitespace(line.charAt(0))) {
+                    connectionCount++;
+                    if (connectionCount == 2) {
+                        firstBlockEnd = i;
+                        break;
+                    }
+                }
+            }
+            if (connectionCount > 1) {
+                _log.warn(
+                        "SS output unexpectedly matched more than one connection for {} (local={}:{}, remote={}:{}) - keeping only the first",
+                        socket, localAddress, socket.getLocalPort(), remoteAddress, socket.getPort());
+                final var trimmed = new StringBuilder();
+                for (var i = 0; i < firstBlockEnd; i++) {
+                    trimmed.append(lines[i]).append("\n");
+                }
+                return trimmed.toString();
+            }
             return output.toString();
         } catch (final InterruptedException _) {
             Thread.currentThread().interrupt();
@@ -284,6 +315,19 @@ class SocketOptions {
                 StreamPlugThread.closeQuietly(process.getOutputStream());
             }
         }
+    }
+
+    /**
+     * Formats an address for use in an "ss" filter expression ({@code src ADDR:PORT} / {@code dst ADDR:PORT}). IPv6
+     * addresses must be enclosed in brackets in that syntax, IPv4 addresses are used as-is.
+     *
+     * @param address
+     *            the raw address (as returned by {@link java.net.InetAddress#getHostAddress()})
+     *
+     * @return the address formatted for the "ss" filter
+     */
+    private static String formatAddressForFilter(final String address) {
+        return address.contains(":") ? "[" + address + "]" : address;
     }
 
     /**
