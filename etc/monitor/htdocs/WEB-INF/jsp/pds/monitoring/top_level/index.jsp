@@ -433,13 +433,11 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
   <script>
   (function() {
     var seen = {}, names = [], dl = document.getElementById('productNameList');
-    document.querySelectorAll('.prod-pill[data-sort-product]').forEach(function(pill) {
-      var p = pill.getAttribute('data-sort-product');
-      if (p && !seen[p]) {
-        seen[p] = true;
-        names.push(p);
-        var o = document.createElement('option'); o.value = p; dl.appendChild(o);
-      }
+    <c:forEach var="pn" items="${reqData.allProductNames}">
+    names.push("<c:out value="${fn:replace(fn:replace(pn, '\\', '\\\\'), '\"', '\\\"')}" escapeXml="false" />");
+    </c:forEach>
+    names.forEach(function(p) {
+      if (p && !seen[p]) { seen[p] = true; var o = document.createElement('option'); o.value = p; dl.appendChild(o); }
     });
     names.sort(function(a, b) { return a.localeCompare(b); });
 

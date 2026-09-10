@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -124,6 +125,12 @@ public class MonitoringRequest {
 
     /** The product window header. */
     private final List<ProductStatus> productWindowHeader;
+
+    /**
+     * Distinct, sorted list of all known product names, regardless of the current product-name filter (used to populate
+     * the "Products" picker panel so hidden products can still be re-enabled from it).
+     */
+    private final List<String> allProductNames;
 
     /** The Constant contacts. */
     private static final Map<String, ContactList> contacts = new ConcurrentHashMap<>();
@@ -315,12 +322,14 @@ public class MonitoringRequest {
             productWindow = calculateProductWindow(productStatuses, allDestinations, PRODUCTS_TO_SHOW_COUNT);
             productWindowHeader = calculateProductWindow(productStatuses, allDestinations,
                     PRODUCTS_TO_SHOW_HEADER_COUNT);
+            allProductNames = calculateAllProductNames(productStatuses, allDestinations);
         } else {
             destinationProductStatuses = new HashMap<>();
             productStatuses = new HashMap<>();
             productWindow = new ArrayList<>();
-            productWindowHeader = calculateProductWindow(ProductStatusHome.findFromMemory(), allDestinations,
-                    PRODUCTS_TO_SHOW_HEADER_COUNT);
+            final var allProducts = ProductStatusHome.findFromMemory();
+            productWindowHeader = calculateProductWindow(allProducts, allDestinations, PRODUCTS_TO_SHOW_HEADER_COUNT);
+            allProductNames = calculateAllProductNames(allProducts, allDestinations);
         }
         status = new Status();
     }
@@ -482,6 +491,17 @@ public class MonitoringRequest {
     }
 
     /**
+     * Gets the distinct, sorted list of all known product names, regardless of the current product-name filter. Used to
+     * populate the "Products" picker panel, so that products currently hidden by the filter can still be listed (and
+     * re-enabled) from it.
+     *
+     * @return the all product names
+     */
+    public List<String> getAllProductNames() {
+        return allProductNames;
+    }
+
+    /**
      * Gets the status.
      *
      * @return the status
@@ -633,6 +653,29 @@ public class MonitoringRequest {
             log.error("Problem calculating warnings for destination " + d, e);
             return "ok";
         }
+    }
+
+    /**
+     * Computes the distinct, sorted list of all known product names (ignoring the product-name filter), so that the
+     * "Products" picker panel in the UI can list every product, including those currently hidden by the filter. Still
+     * respects the "monitored destinations only" restriction, consistent with {@link #calculateProductWindow}.
+     *
+     * @param productStatuses
+     *            the product statuses
+     * @param destinations
+     *            the list of monitored destinations
+     *
+     * @return the sorted list of distinct product names
+     */
+    private List<String> calculateAllProductNames(final Map<String, ProductStatus> productStatuses,
+            final Collection<Destination> destinations) {
+        final Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (final ProductStatus ps : productStatuses.values()) {
+            if (!PRODUCTS_TO_SHOW_MONITORED_ONLY || isProductSentToAnyOfTheseDestinations(ps, destinations)) {
+                names.add(ps.getProduct());
+            }
+        }
+        return new ArrayList<>(names);
     }
 
     /**
