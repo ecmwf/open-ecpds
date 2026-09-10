@@ -10,6 +10,13 @@
     if (_sessionUser instanceof ecmwf.ecpds.master.plugin.http.model.ecuser.WebUser) {
         _showFeedbackBtn = ((ecmwf.ecpds.master.plugin.http.model.ecuser.WebUser) _sessionUser).isShareFeedbackEnabled();
     }
+    // Prefer the documentation embedded in this release (built from the exact same source tree, so it can
+    // never drift from the running version) over the GitHub Pages copy, which always reflects the latest
+    // master and could describe features not yet available in this OpenECPDS release. Fall back to GitHub
+    // Pages only if the embedded copy was not built into this deployment (e.g. a local dev/test setup).
+    boolean _hasEmbeddedDocs = application.getResource("/docs/index.html") != null;
+    String _docsHref = _hasEmbeddedDocs ? "/docs/" : "https://ecmwf.github.io/open-ecpds/";
+    String _docsTitle = _hasEmbeddedDocs ? "OpenECPDS Documentation" : "OpenECPDS Documentation (online, latest version)";
 %>
 
 <nav id="topheader" class="topheader navbar py-0" style="background-color:<%=System.getProperty("monitor.color")%>;">
@@ -57,8 +64,8 @@
             <button id="btnTheme" class="btn btn-sm btn-outline-light p-1 lh-1" onclick="ecpdsToggleTheme()" title="Toggle light/dark theme" style="width:28px;height:28px;">
               <i id="themeIcon" class="bi bi-moon-fill" style="font-size:0.8rem;"></i>
             </button>
-            <a class="btn btn-sm btn-outline-light p-1 lh-1 d-flex align-items-center justify-content-center" href="https://ecmwf.github.io/open-ecpds/" target="_blank" rel="noopener"
-               title="OpenECPDS Documentation" style="width:28px;height:28px;">
+            <a class="btn btn-sm btn-outline-light p-1 lh-1 d-flex align-items-center justify-content-center" href="<%=_docsHref%>" target="_blank" rel="noopener"
+               title="<%=_docsTitle%>" style="width:28px;height:28px;">
               <i class="bi bi-book" style="font-size:0.85rem;"></i>
             </a>
             <logic:present name="<%=ecmwf.web.model.users.User.SESSION_KEY%>">

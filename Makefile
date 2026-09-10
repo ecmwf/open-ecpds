@@ -28,6 +28,7 @@ MONITOR_UI_HOST ?= ecpds-mover
 MONITOR_UI_PORT ?= 8443
 JAVADOC_SRC := ecpds-core/target/site/apidocs
 SITE_DIR    := site
+MONITOR_DOCS_DIR := etc/monitor/htdocs/docs
 
 # Extract the tag number from the Maven file
 VERSION=$(shell grep '<revision>' pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
@@ -114,7 +115,7 @@ dev-container-exists = \
 .PHONY: help dev .dev-cntnr .run login rm-dev \
         get-geodb get-licenses build build-sa build-cli cr-login push push-sa push-cli push-native push-sa-native push-cli-native manifest sa-manifest cli-manifest release-tools \
         start-db stop-db start-ai stop-ai start-backend stop-backend \
-        docs docs-screenshots docs-preview docs-publish \
+        docs docs-embed docs-screenshots docs-preview docs-publish \
         clean info
 
 # ─── Development container ────────────────────────────────────────────────────
@@ -186,12 +187,14 @@ get-licenses: ## Fetch license information for all dependencies (**)
 build: ## Compile java sources into JARs, create RPMs and Docker images (**)
 	@$(call is-dev-container,"",inside)
 	@echo -n "$(TAG)" > VERSION
+	@$(MAKE) docs-embed
 	@mvn package
 	@cd docker && $(MAKE) all
 
 build-sa: ## Build the standalone all-in-one Docker image (**)
 	@$(call is-dev-container,"",inside)
 	@echo -n "$(TAG)" > VERSION
+	@$(MAKE) docs-embed
 	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
 	@cd docker && $(MAKE) get-rpms get-licenses build-java build-sa
 
@@ -223,12 +226,14 @@ push-cli: ## Push locally-built CLI image to CR as single-arch (no manifest)
 push-native: ## Build and push native arch image to CR with arch suffix — run on each machine (**)
 	@$(call is-dev-container,"",inside)
 	@echo -n "$(TAG)" > VERSION
+	@$(MAKE) docs-embed
 	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
 	@cd docker && $(MAKE) get-rpms get-licenses build-java push-native
 
 push-sa-native: ## Build and push native arch standalone image with arch suffix — run on each machine (**)
 	@$(call is-dev-container,"",inside)
 	@echo -n "$(TAG)" > VERSION
+	@$(MAKE) docs-embed
 	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
 	@cd docker && $(MAKE) get-rpms get-licenses build-java push-sa-native
 
@@ -308,6 +313,18 @@ docs: ## Build the documentation site (MkDocs + JavaDocs) into site/ (**)
 	@cp -r $(JAVADOC_SRC)/. $(SITE_DIR)/javadoc/
 	@echo "Site ready at: $(CURDIR)/$(SITE_DIR)/"
 
+docs-embed: ## Build the documentation site (MkDocs + JavaDocs) directly into the Monitor htdocs/, so releases ship the docs matching their own version (**)
+	@$(call is-dev-container,"",inside)
+	@echo "Generating JavaDocs..."
+	@mvn javadoc:javadoc -pl ecpds-core -Dcheckstyle.skip=true -Dspotbugs.skip=true -Dmaven.javadoc.failOnError=false -q
+	@echo "Building MkDocs static site into $(MONITOR_DOCS_DIR)/ ..."
+	@rm -rf $(MONITOR_DOCS_DIR)
+	@mkdocs build --strict --site-dir $(MONITOR_DOCS_DIR)
+	@echo "Copying JavaDocs into $(MONITOR_DOCS_DIR)/javadoc/ ..."
+	@mkdir -p $(MONITOR_DOCS_DIR)/javadoc
+	@cp -r $(JAVADOC_SRC)/. $(MONITOR_DOCS_DIR)/javadoc/
+	@echo "Embedded documentation ready at: $(CURDIR)/$(MONITOR_DOCS_DIR)/"
+
 docs-screenshots: ## Regenerate Monitor UI screenshots from a running standalone container (**)
 	@$(call is-dev-container,"",inside)
 	@echo ""
@@ -358,6 +375,7 @@ clean: ## Stop containers, remove images, JARs, RPMs and dependencies (**)
 	@mvn clean  || exit 1
 	@rm -f lib/*.jar lib/*.pom || exit 1
 	@rm -rf $(SITE_DIR)
+	@rm -rf $(MONITOR_DOCS_DIR)
 
 info: ## Output the configuration
 	@printf "\n"
