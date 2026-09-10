@@ -172,7 +172,7 @@ Allow specifying a wildcard filter when processing the listing. This is useful t
 This option help fine-tune the aliasing process and are accessible via the destination editor.
 
 ### alias.pattern
-This option filters files designated to be aliased to the target destination. Multiple parameters, separated by a comma (e.g. "param1=value1,param2=value2"), can be specified. The "pattern" and "ignore" parameters allow specifying regular expressions (regex) to respectively include or reject files based on their target names (e.g. "pattern=M(T|C|E|G)(.*),ignore=(.*).tmp"). Once the files are selected, it becomes possible to enforce new parameters such as "lifeTime" (ISO-8601 duration), "priority" (0-99), "asap" (boolean), "event" (boolean), and "delay" (ISO-8601 duration) before creating the alias. For instance: "lifetime=P2D,priority=80,asap=yes,event=no,delay=PT15M". Various placeholders ("$name", "$path", "$parent", "$destination", and "$alias") are replaced by their respective values. Additionally, a "$date" placeholder can be specified. By default, this represents the current date in "yyyyMMdd" format, but can be adjusted using "dateformat", "datedelta", "datesource", and "datepattern" options. For example, to extract the date from the target file name (characters 2 to 12 in the "yyyyMMddHH" pattern), subtract 1 day, and display it in "MMdd" format: "dateformat=MMdd,datedelta=-1,datesource=$target[2..12],datepattern=yyyyMMddHH". In case different parameters need to be enforced based on the target, this option allows a value that spans multiple lines. Each line follows this format: "({operator} target) {parameters}". The {operator} can be "==", "!=", ".=", or "=.", and the parameters are a comma-separated list as described above. When the "==" operator is used, if the target is enclosed by "{}", it is considered a regex pattern. For example, the first line might be: "(== {(.*).dat}) lifetime=P2D,priority=80,asap=yes,event=no,delay=PT15M,target=/tmp/$target".
+This option filters files designated to be aliased to the target destination. Multiple parameters, separated by a comma (e.g. "param1=value1,param2=value2"), can be specified. The "pattern" and "ignore" parameters allow specifying regular expressions (regex) to respectively include or reject files based on their target names (e.g. "pattern=M(T|C|E|G)(.*),ignore=(.*).tmp"). Once the files are selected, it becomes possible to enforce new parameters such as "lifeTime" (ISO-8601 duration), "priority" (0-99), "asap" (boolean), "event" (boolean), and "delay" (ISO-8601 duration) before creating the alias. For instance: "lifeTime=P2D,priority=80,asap=yes,event=no,delay=PT15M". Various placeholders ("$name", "$path", "$parent", "$destination", and "$alias") are replaced by their respective values. Additionally, a "$date" placeholder can be specified. By default, this represents the current date in "yyyyMMdd" format, but can be adjusted using "dateformat", "datedelta", "datesource", and "datepattern" options. For example, to extract the date from the target file name (characters 2 to 12 in the "yyyyMMddHH" pattern), subtract 1 day, and display it in "MMdd" format: "dateformat=MMdd,datedelta=-1,datesource=$target[2..12],datepattern=yyyyMMddHH". In case different parameters need to be enforced based on the target, this option allows a value that spans multiple lines. Each line follows this format: "({operator} target) {parameters}". The {operator} can be "==", "!=", ".=", or "=.", and the parameters are a comma-separated list as described above. When the "==" operator is used, if the target is enclosed by "{}", it is considered a regex pattern. For example, the first line might be: "(== {(.*).dat}) lifeTime=P2D,priority=80,asap=yes,event=no,delay=PT15M,target=/tmp/$target".
 
 ## Azure Options
 
@@ -278,6 +278,12 @@ When ECtrans write to the output stream, this option allows for the setup of a b
 ### ectrans.checkfiltersize
 If the data file is already compressed, this option allows configuration for handling cases where the compressed file size exceeds that of the original file. Such instances may occur due to certain compression algorithms generating larger files based on the file's content. When enabled (default setting), if a compressed file is larger than the original, the original file is utilized. Consequently, this results in disseminating the original file without the compression extension.
 
+### ectrans.checksumAlgorithm
+When "ectrans.createChecksum" is enabled, this option selects the algorithm used to compute the checksum on the fly during dissemination. Supported values are "MD5" (default), "SHA-1", "SHA-256", "CRC32" and "Adler32". The resulting checksum value is passed to the underlying transfer module unchanged (e.g. for FTP/FTPS/SFTP it is written to a sidecar file whose extension is derived automatically from the algorithm, or overridden with "ectrans.checksumExt").
+
+### ectrans.checksumExt
+Allow overriding the extension used for the checksum sidecar file written by the transfer module (e.g. ".sha256"), regardless of the algorithm selected with "ectrans.checksumAlgorithm". When not set, a suitable extension is derived automatically from the configured algorithm (e.g. ".md5", ".sha1", ".sha256", ".crc32", ".adler32"), except when the algorithm is "MD5" and the module's own legacy "md5Ext" option is set, which then takes precedence for backward compatibility.
+
 ### ectrans.closeAsynchronous
 This option enables the asynchronous closure of the transfer module once the data transfer has completed, which accelerates dissemination, especially under heavy loads on target hosts where closing streams might take some time. However, it's important to note a potential issue: if there's a failure during the closure process, indicating a problem on the remote host, the transfer scheduler remains unaware of this failure, and the file isn't requeued. This behaviour depends on the underlying transfer module.
 
@@ -288,7 +294,7 @@ Allow specifying a timeout duration for processing the closure of the underlying
 Allow specifying a timeout duration for processing the connection to the remote site by the underlying transfer module.
 
 ### ectrans.createChecksum
-If this option is enabled and no MD5 checksum has already been generated, then an MD5 checksum is computed on the fly during the file dissemination. If the MD5 checksum is computed then it is passed to the underlying transfer module which can be configured to make some use of it.
+If this option is enabled and no checksum has already been generated, then a checksum is computed on the fly during the file dissemination, using the algorithm selected with "ectrans.checksumAlgorithm" (MD5 by default). If the checksum is computed then it is passed to the underlying transfer module which can be configured to make some use of it.
 
 ### ectrans.debug
 Allow requesting debug messages in the data mover logs related to the transfer module activity for this host.
@@ -334,6 +340,12 @@ Allow specifying a timeout duration for processing the moving of a file on the r
 
 ### ectrans.multipleInputStream
 When processing data retrieval via index files and "ectrans.usemget" is disabled, this option allow configuring the multiple input streams. The parameters are "retryCount" (default 1), "retryFrequency" (default 1000), "useCache" (default false), "cacheSize" (655360 bytes) and "queueSize" (default 3). For example "retryCount=2,queueSize=4,useCache=yes".
+
+### ectrans.notifyAuth
+Allow authenticating with an external notification service before publishing a notification (e.g. via "ectrans.notifyPublish"). This option requires three parameters: "url" (the notification service address, e.g. "mqtt://host:1883"), "name" (the user name) and "password" (the password). All three parameters are mandatory; if any is missing the notification is not sent. For example "url=mqtt://localhost:1883;name=ecpds;password=secret".
+
+### ectrans.notifyPublish
+When "ectrans.notifyAuth" is configured, this option allows publishing a notification once the data transmission is complete. The parameters are "url" (or its alias "payload"), "key" (or its alias "topic"), "value" (or its alias "metadata") and "lifetime" (in milliseconds, for how long the notification remains valid). The notification is only sent if "url"/"payload", "key"/"topic" and "value"/"metadata" are all provided. For example "topic=ecpds/gts/0000;payload=https://ecpds.ecmwf.int/data/gts/FGTER.bin;metadata=filename=FGTER.bin,metatime=0000;lifetime=4505".
 
 ### ectrans.plugBuffSize
 When ECtrans is connecting the input and output streams, this option allows for the setup of a buffer. The use of buffers between input and output streams helps optimize data transfer, improves efficiency, and ensures smoother communication between different parts of a system, reducing the impact of differences in processing speeds between streams.
@@ -494,7 +506,7 @@ Allow setting the login while logging into the remote FTP server. This is overwr
 Allow forcing the FTP client to bind a privileged port (500 &lt;= N &lt;= 1023) instead of an unprivileged port (N &gt; 1023) when using the Active FTP mode.
 
 ### ftp.md5Ext
-When requesting a checksum with "ectrans.createChecksum", allow configuring the MD5 extension.
+Legacy option to configure the extension used for the checksum sidecar file when requesting a checksum with "ectrans.createChecksum". Only applied when "ectrans.checksumAlgorithm" is "MD5" (the default) and "ectrans.checksumExt" is not set; for other algorithms, use "ectrans.checksumExt" instead, or leave both unset to use the algorithm's default extension (e.g. ".sha256").
 
 ### ftp.mkdirs
 Allow creating the directory named by the target pathname, including any necessary but non-existent parent directories.
@@ -619,7 +631,7 @@ Allow specifying the listen address used by the FTPS client (e.g. when waiting f
 Allow setting the login while logging into the remote FTPS server. This is overwriting the login set through the interface.
 
 ### ftps.md5Ext
-When requesting a checksum with "ectrans.createChecksum", allow configuring the MD5 extension.
+Legacy option to configure the extension used for the checksum sidecar file when requesting a checksum with "ectrans.createChecksum". Only applied when "ectrans.checksumAlgorithm" is "MD5" (the default) and "ectrans.checksumExt" is not set; for other algorithms, use "ectrans.checksumExt" instead, or leave both unset to use the algorithm's default extension (e.g. ".sha256").
 
 ### ftps.mkdirs
 Allow creating the directory named by the target pathname, including any necessary but non-existent parent directories.
@@ -1084,6 +1096,9 @@ Allow setting a default destination to prevent displaying the DATA/DESNAME direc
 ### portal.dirPathPermRegex
 Allow the configuration of a regular expression (regex) to control whether the "dir" operation is permitted. The regex is applied to the full path, including the domain name. A valid value could be: "(.*):/data/incoming/(.*)".
 
+### portal.disabledProtocols
+Allow disabling specific protocols for this user. Accepts a comma-separated list of protocol names to disable. Supported values are: "https" (Web Portal login), "s3" (S3-compatible), "ftp" (FTP), "sftp" (SFTP/SCP), and "dav" (WebDAV). For example, "ftp,sftp" disables both FTP and SFTP access; "https" blocks web portal login entirely (useful for pure SFTP or S3 users). All protocols are enabled by default (empty value). The Access Guide cards are also hidden for disabled protocols.
+
 ### portal.domain
 Allow setting a default domain to prevent displaying the DATA directory within the path. This option is ignored if "portal.destination" is defined as it takes over.
 
@@ -1310,7 +1325,7 @@ Maximum number of part buffers that may be queued waiting for an upload thread. 
 Allow specifying a depth level while recursively listing sub-directories.
 
 ### s3.region
-Sets the region where the AWS service client will operate. Setting the region is crucial because it determines the geographical location of the S3 bucket and the AWS servers that will handle the requests.
+Sets the region where the AWS service client will operate. Setting the region is crucial because it determines the geographical location of the S3 bucket and the AWS servers that will handle the requests. Set to "auto" to let OpenECPDS automatically discover the correct region for the bucket at connection time (via GetBucketLocation), which avoids 301 PermanentRedirect errors caused by misconfigured regions.
 
 ### s3.requestChecksumCalculation
 Controls when the AWS SDK calculates checksums for outgoing requests. Accepted values are "WHEN_SUPPORTED" (calculate and send a checksum for all requests that support it) and "WHEN_REQUIRED" (only calculate checksums when the operation explicitly requires it). When this option is not set, the SDK default applies ("WHEN_SUPPORTED" for SDK v2.46+).
@@ -1336,6 +1351,9 @@ If enabled, enforce SSL certificate validation.
 ### s3.strict
 If enabled, enforce hostname verification for SSL connections.
 
+### s3.stsRegion
+Sets the AWS region used for the STS AssumeRole call when a roleArn is configured, independently from s3.region (which only applies to the S3 client). Leave empty (recommended) to use the true global STS endpoint, which is exempt from AWS Organizations Service Control Policies that restrict allowed regions (aws:RequestedRegion) â a regional STS endpoint (e.g. the bucket's own region) can be denied by such policies even when the equivalent AWS CLI call succeeds via the global endpoint. Only set this to force a specific regional STS endpoint.
+
 ### s3.url
 Allow specifying an alternative URL to connect to the endpoint. By default, the URL is constructed using the "s3.scheme", "s3.port" options and hostname field (scheme://hostname:port).
 
@@ -1359,7 +1377,7 @@ Allow specifying the date format when using the "$date" parameter in the "schedu
 Allow adding a delay to the scheduled time of a data transfer submitted to this destination. This delay will be in addition to any existing delay already set up through the ecpds (-delay) command or the "incoming.delay" option for this destination.
 
 ### scheduler.force
-When a file is pushed to this destination, this option allows modification of various scheduler parameters such as "scheduler.lifetime", "scheduler.delay", "scheduler.noRetrieval", "scheduler.asap", "scheduler.transfergroup" and "scheduler.standby". The "pattern" and "ignore" parameters use regular expressions (regex) to select specific files in a single line. For instance: scheduler.force = "asap=yes;standby=never;pattern=E1(.*)". This setting takes precedence over other parameters defined outside the "scheduler.force" option. If necessary, this option can be divided across multiple lines to provide specific rules for different groups of data transfers. In this case, each line should follow this format: " ({operator} filename) {options}". The {operator} can be one of the following: ".=" (starts with), "==" (equals to; if the filename part is between {} then it is considered a regex), "=." (ends with), "!=" (not equal to). For example: "(== {avhrr_n.*}) standby=never;delay=2h".
+When a file is pushed to this destination, this option allows modification of various scheduler parameters such as "scheduler.lifetime", "scheduler.delay", "scheduler.noRetrieval", "scheduler.asap", "scheduler.transfergroup", "scheduler.version" and "scheduler.standby". The "pattern" and "ignore" parameters use regular expressions (regex) to select specific files in a single line. For instance: scheduler.force = "asap=yes;standby=never;pattern=E1(.*)". This setting takes precedence over other parameters defined outside the "scheduler.force" option. If necessary, this option can be divided across multiple lines to provide specific rules for different groups of data transfers. In this case, each line should follow this format: " ({operator} filename) {options}". The {operator} can be one of the following: ".=" (starts with), "==" (equals to; if the filename part is between {} then it is considered a regex), "=." (ends with), "!=" (not equal to). For example: "(== {avhrr_n.*}) standby=never;delay=2h".
 
 ### scheduler.forceStop
 If the "failOnDestinationNotFound" option is enabled in the "ECpdsPlugin" of the master (ecmwf.properties files), this setting allows any data transfer request submitted to this destination to be forcibly set to the STOP status.
@@ -1465,7 +1483,7 @@ Allow setting the login while logging into the remote SFTP server. This is overw
 Allow specifying the Message Authentication Code (MAC) algorithms to allow (e.g. "hmac-md5,hmac-md5-96,hmac-sha1,hmac-sha1-96"). The list of valid algorithms can be found at http://www.jcraft.com/jsch/README (multiple algorithms can be specified using the columns separator). By default all supported algorithms are allowed.
 
 ### sftp.md5Ext
-When requesting a checksum with "ectrans.createChecksum", allow configuring the MD5 extension.
+Legacy option to configure the extension used for the checksum sidecar file when requesting a checksum with "ectrans.createChecksum". Only applied when "ectrans.checksumAlgorithm" is "MD5" (the default) and "ectrans.checksumExt" is not set; for other algorithms, use "ectrans.checksumExt" instead, or leave both unset to use the algorithm's default extension (e.g. ".sha256").
 
 ### sftp.mkdirs
 Allow creating the directory named by the target pathname, including any necessary but non-existent parent directories.
