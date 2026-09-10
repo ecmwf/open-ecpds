@@ -1358,6 +1358,14 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.MetaFieldsAction">
 			<forward name="success" path=".pds.admin.metafields" />
 		</action>
+		<action path="/admin/productdescriptions"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.ProductDescriptionsAction">
+			<forward name="success" path=".pds.admin.productdescriptions" />
+		</action>
+		<action path="/admin/productdescriptions/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.ProductDescriptionsAction">
+			<forward name="success" path=".pds.admin.productdescriptions" />
+		</action>
 		<action path="/admin/upload"
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.UploadAction"
 			name="uploadActionForm" scope="request">

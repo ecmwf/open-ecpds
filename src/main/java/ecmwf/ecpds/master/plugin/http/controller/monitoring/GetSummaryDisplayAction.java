@@ -153,8 +153,9 @@ public class GetSummaryDisplayAction extends PDSAction {
      * Sets the "ECMWFProductsDelay" and "ECMWFProducts" request attributes consumed by product.jsp to pre-fill the
      * Outlook deeplink email bodies. Fetches the current (possibly customized) messages from the database, falling back
      * to the built-in defaults if they have not been customized, or if the database cannot be reached. The
-     * {@code {{PRODUCT}}} and {@code {{CYCLE}}} placeholders, if present, are replaced with the actual product name and
-     * cycle/time currently being viewed (e.g. "GENFO" and "06").
+     * {@code {{PRODUCT}}}, {@code {{CYCLE}}} and {@code {{DESCRIPTION}}} placeholders, if present, are replaced with
+     * the actual product name and cycle/time currently being viewed (e.g. "GENFO" and "06"), and the description
+     * configured for that product (Admin Tasks &rarr; Product Descriptions), if any.
      *
      * @param request
      *            the request
@@ -167,6 +168,7 @@ public class GetSummaryDisplayAction extends PDSAction {
             final String time) {
         var delayMessage = ProductStatusMessages.DEFAULT_DELAY_MESSAGE;
         var resumedMessage = ProductStatusMessages.DEFAULT_RESUMED_MESSAGE;
+        String description = null;
         try {
             final var db = MasterManager.getDB();
             final var storedDelayMessage = db.getProductStatusMessage(ProductStatusMessages.DELAY_MESSAGE_NAME);
@@ -177,11 +179,14 @@ public class GetSummaryDisplayAction extends PDSAction {
             if (storedResumedMessage != null) {
                 resumedMessage = storedResumedMessage;
             }
+            if (product != null) {
+                description = db.getProductDescriptions().get(product);
+            }
         } catch (final Exception e) {
             // Database not reachable or an error occurred: silently fall back to the built-in defaults.
         }
-        delayMessage = ProductStatusMessages.substitutePlaceholders(delayMessage, product, time);
-        resumedMessage = ProductStatusMessages.substitutePlaceholders(resumedMessage, product, time);
+        delayMessage = ProductStatusMessages.substitutePlaceholders(delayMessage, product, time, description);
+        resumedMessage = ProductStatusMessages.substitutePlaceholders(resumedMessage, product, time, description);
         request.setAttribute("ECMWFProductsDelay", ProductStatusMessages.encodeForEmailBody(delayMessage));
         request.setAttribute("ECMWFProducts", ProductStatusMessages.encodeForEmailBody(resumedMessage));
     }

@@ -1326,6 +1326,11 @@
 		<put name="content" value="/WEB-INF/jsp/pds/admin/metadata_fields.jsp" />
 	</definition>
 
+	<definition name=".pds.admin.productdescriptions" extends=".pds.admin">
+		<put name="title" value="Product Descriptions" />
+		<put name="content" value="/WEB-INF/jsp/pds/admin/productdescriptions/index.jsp" />
+	</definition>
+
 	<definition name=".pds.admin.requeue.list"
 		extends=".pds.admin">
 		<put name="title" value="Outstanding Transfers" />

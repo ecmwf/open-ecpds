@@ -52,6 +52,12 @@ public final class ProductStatusMessages {
     /** Placeholder replaced with the cycle/time (e.g. "06") currently being viewed. */
     public static final String CYCLE_PLACEHOLDER = "{{CYCLE}}";
 
+    /**
+     * Placeholder replaced with the free-text description configured for the current product (Admin Tasks &rarr;
+     * Product Descriptions), or with an empty string if none has been configured.
+     */
+    public static final String DESCRIPTION_PLACEHOLDER = "{{DESCRIPTION}}";
+
     /** Built-in default text for the "Products Delay" message (used until an administrator customizes it). */
     public static final String DEFAULT_DELAY_MESSAGE = """
             Dear colleagues,
@@ -85,7 +91,8 @@ public final class ProductStatusMessages {
 
     /**
      * Replaces the {@code {{PRODUCT}}} and {@code {{CYCLE}}} placeholders, if present, with the actual product name and
-     * cycle/time currently being viewed (e.g. "GENFO" and "06" for {@code /do/monitoring/summary/GENFO/06}).
+     * cycle/time currently being viewed (e.g. "GENFO" and "06" for {@code /do/monitoring/summary/GENFO/06}). The
+     * {@code {{DESCRIPTION}}} placeholder, if present, is replaced with an empty string.
      *
      * @param text
      *            the plain-text message, possibly containing placeholders
@@ -97,11 +104,34 @@ public final class ProductStatusMessages {
      * @return the message with placeholders replaced
      */
     public static String substitutePlaceholders(final String text, final String product, final String cycle) {
+        return substitutePlaceholders(text, product, cycle, null);
+    }
+
+    /**
+     * Replaces the {@code {{PRODUCT}}}, {@code {{CYCLE}}} and {@code {{DESCRIPTION}}} placeholders, if present, with
+     * the actual product name, cycle/time and configured product description currently being viewed (e.g. "GENFO" and
+     * "06" for {@code /do/monitoring/summary/GENFO/06}).
+     *
+     * @param text
+     *            the plain-text message, possibly containing placeholders
+     * @param product
+     *            the product name to substitute for {@link #PRODUCT_PLACEHOLDER}
+     * @param cycle
+     *            the cycle/time to substitute for {@link #CYCLE_PLACEHOLDER}
+     * @param description
+     *            the product description to substitute for {@link #DESCRIPTION_PLACEHOLDER}, or {@code null} if none
+     *            has been configured (substituted with an empty string in that case)
+     *
+     * @return the message with placeholders replaced
+     */
+    public static String substitutePlaceholders(final String text, final String product, final String cycle,
+            final String description) {
         if (text == null) {
             return null;
         }
-        return text.replace(PRODUCT_PLACEHOLDER, product != null ? product : "").replace(CYCLE_PLACEHOLDER,
-                cycle != null ? cycle : "");
+        return text.replace(PRODUCT_PLACEHOLDER, product != null ? product : "")
+                .replace(CYCLE_PLACEHOLDER, cycle != null ? cycle : "")
+                .replace(DESCRIPTION_PLACEHOLDER, description != null ? description : "");
     }
 
     /**

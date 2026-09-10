@@ -2675,6 +2675,48 @@ final class DataBaseProxy implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
+    public Map<String, String> getProductDescriptions() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getProductDescriptions()");
+        try {
+            return monitor.done(dataBaseInterface.getProductDescriptions());
+        } catch (final RemoteException e) {
+            throw new DataBaseException("getProductDescriptions", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setProductDescription(final String product, final String description)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("setProductDescription(" + product + ")");
+        try {
+            dataBaseInterface.setProductDescription(product, description);
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("setProductDescription", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteProductDescription(final String product) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteProductDescription(" + product + ")");
+        try {
+            dataBaseInterface.deleteProductDescription(product);
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("deleteProductDescription", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public int deleteAllDataImmediately() throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("deleteAllDataImmediately()");
         try {

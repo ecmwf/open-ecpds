@@ -205,6 +205,7 @@
                 <auth:link basePathKey="admin.basepath" href="/certificates" wrappingTags="li"><i class="bi <%=_certIconClass%>"></i><span> TLS Certificates<%=_certDot%></span></auth:link>
                 <auth:link basePathKey="admin.basepath" href="/criticalpassword" wrappingTags="li"><i class="bi bi-key-fill"></i><span> Critical Password<%=_capDot%></span></auth:link>
                 <auth:link basePathKey="admin.basepath" href="/productmessages" wrappingTags="li"><i class="bi bi-envelope-paper-fill"></i>Product Status Messages</auth:link>
+                <auth:link basePathKey="admin.basepath" href="/productdescriptions" wrappingTags="li"><i class="bi bi-card-list"></i>Product Descriptions</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/purge" wrappingTags="li"><i class="bi bi-trash3-fill"></i> Purge All Data</auth:link>
             </ul>
         </div>

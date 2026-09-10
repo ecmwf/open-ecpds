@@ -4485,6 +4485,46 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         monitor.done();
     }
 
+    /** Product names accepted for {@link #setProductDescription}/{@link #deleteProductDescription}. */
+    private static final java.util.regex.Pattern PRODUCT_NAME_PATTERN = java.util.regex.Pattern
+            .compile("[A-Za-z0-9_.-]{1,64}");
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<String, String> getProductDescriptions() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getProductDescriptions()");
+        return monitor.done(ecpds.getSysConfigValuesByGroup("ProductDescription"));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setProductDescription(final String product, final String description)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("setProductDescription(" + product + ")");
+        if (product == null || !PRODUCT_NAME_PATTERN.matcher(product).matches()) {
+            throw new DataBaseException("Invalid product name: " + product);
+        }
+        ecpds.setSysConfigValue("ProductDescription", product, description);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteProductDescription(final String product) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteProductDescription(" + product + ")");
+        if (product == null || !PRODUCT_NAME_PATTERN.matcher(product).matches()) {
+            throw new DataBaseException("Invalid product name: " + product);
+        }
+        ecpds.deleteSysConfigValue("ProductDescription", product);
+        monitor.done();
+    }
+
     /**
      * Computes the SHA-256 hex digest of the given plaintext string (UTF-8 encoded).
      *

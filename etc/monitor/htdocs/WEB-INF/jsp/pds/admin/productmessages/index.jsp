@@ -13,9 +13,10 @@
         <span>
             These messages pre-fill the Outlook email body when an administrator uses the <strong>"Notify
             Delay"</strong> or <strong>"Notify Resumed"</strong> links on the Product Status page. Leave a field
-            empty (or unchanged) to keep using the built-in default text. Use the placeholders <code>{{PRODUCT}}</code>
-            and <code>{{CYCLE}}</code> to automatically insert the product name (e.g. <code>GENFO</code>) and cycle
-            (e.g. <code>06</code>) of the page the message is sent from.
+            empty (or unchanged) to keep using the built-in default text. Use the placeholders <code>{{PRODUCT}}</code>,
+            <code>{{CYCLE}}</code> and <code>{{DESCRIPTION}}</code> to automatically insert the product name (e.g.
+            <code>GENFO</code>), cycle (e.g. <code>06</code>) of the page the message is sent from, and the
+            <a href="/do/admin/productdescriptions">description configured for that product</a>, if any.
         </span>
     </div>
 </div>
@@ -111,6 +112,9 @@
             <li>The <code>{{PRODUCT}}</code> and <code>{{CYCLE}}</code> placeholders are replaced with the product
             and cycle of the page the message is sent from (e.g. <code>GENFO</code> and <code>06</code> on
             <code>/do/monitoring/summary/GENFO/06</code>).</li>
+            <li>The <code>{{DESCRIPTION}}</code> placeholder is replaced with the text configured for the current
+            product under <a href="/do/admin/productdescriptions">Admin Tasks &rarr; Product Descriptions</a>, or an
+            empty string if none has been configured.</li>
         </ul>
     </div>
 </div>

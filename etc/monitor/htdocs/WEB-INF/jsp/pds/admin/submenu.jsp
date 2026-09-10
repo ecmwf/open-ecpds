@@ -80,6 +80,8 @@
 		wrappingTags="tr,td"><i class="bi bi-key-fill"></i><span> Critical Password<%=_sm_capDot%></span></auth:link>
 	<auth:link basePathKey="admin.basepath" href="/productmessages"
 		wrappingTags="tr,td"><i class="bi bi-envelope-paper-fill"></i> Product Status Messages</auth:link>
+	<auth:link basePathKey="admin.basepath" href="/productdescriptions"
+		wrappingTags="tr,td"><i class="bi bi-card-list"></i> Product Descriptions</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/purge"
 		wrappingTags="tr,td"><i class="bi bi-trash3-fill"></i> Purge All Data</auth:link>
 </table>

@@ -201,6 +201,19 @@
     </div>
     </auth:link>
 
+    <auth:link basePathKey="admin.basepath" href="/productdescriptions">
+    <div class="col">
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
+        <i class="bi bi-card-list text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title">Product Descriptions</span>
+            <p class="tool-desc">Add or remove a short text description for each product, made available as the
+            <code>{{DESCRIPTION}}</code> placeholder inside the Product Status Messages.</p>
+        </div>
+    </div>
+    </div>
+    </auth:link>
+
     <auth:link basePathKey="admin.basepath" href="/purge">
     <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">

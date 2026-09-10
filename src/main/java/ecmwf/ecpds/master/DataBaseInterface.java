@@ -2813,6 +2813,49 @@ public interface DataBaseInterface extends Remote {
     void resetProductStatusMessage(String name) throws DataBaseException, RemoteException;
 
     /**
+     * Gets the text descriptions configured for products, keyed by product name (e.g. {@code "GOPER"}). These
+     * descriptions are stored in the SYS_CONFIG table (group "ProductDescription"), managed from the Monitor UI (Admin
+     * Tasks &rarr; Product Descriptions), and made available as the {@code {{DESCRIPTION}}} placeholder in the Product
+     * Status Messages.
+     *
+     * @return an ordered map of product name to description (empty if none have been configured)
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Map<String, String> getProductDescriptions() throws DataBaseException, RemoteException;
+
+    /**
+     * Stores (adds or updates) the text description for a product.
+     *
+     * @param product
+     *            the product name (e.g. {@code "GOPER"})
+     * @param description
+     *            the description text
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void setProductDescription(String product, String description) throws DataBaseException, RemoteException;
+
+    /**
+     * Removes the text description configured for a product.
+     *
+     * @param product
+     *            the product name (e.g. {@code "GOPER"})
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void deleteProductDescription(String product) throws DataBaseException, RemoteException;
+
+    /**
      * Hard-deletes all DATA_TRANSFER, TRANSFER_HISTORY and DATA_FILE records from the database immediately, without
      * waiting for the scheduled purge cycle. Handles FK dependencies (TRANSFER_STATISTICS, TRANSFER_HISTORY,
      * PUBLICATION, METADATA_VALUE) in the correct order.

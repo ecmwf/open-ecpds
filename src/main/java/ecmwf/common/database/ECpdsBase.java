@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -5671,6 +5672,30 @@ public final class ECpdsBase extends DataBase {
             _log.warn("getSysConfigValue({},{})", group, name, e);
             throw new DataBaseException("getSysConfigValue", e);
         }
+    }
+
+    /**
+     * Retrieves all name/value pairs stored under a given SYS_CONFIG group, ordered by parameter name.
+     *
+     * @param group
+     *            the configuration group (e.g. {@code "ProductDescription"})
+     *
+     * @return an ordered map of parameter name to value (empty if no rows exist for the group)
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public Map<String, String> getSysConfigValuesByGroup(final String group) throws DataBaseException {
+        final Map<String, String> result = new LinkedHashMap<>();
+        try (var rs = executeSelect("ECpdsBase", "getSysConfigValuesByGroup", new String[] { "group=" + group })) {
+            while (rs.next()) {
+                result.put(rs.getString("SCF_PARAM_NAME"), rs.getString("SCF_PARAM_VALUE"));
+            }
+        } catch (final Exception e) {
+            _log.warn("getSysConfigValuesByGroup({})", group, e);
+            throw new DataBaseException("getSysConfigValuesByGroup", e);
+        }
+        return result;
     }
 
     /**
