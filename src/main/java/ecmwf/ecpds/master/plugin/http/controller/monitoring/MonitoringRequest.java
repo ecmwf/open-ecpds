@@ -320,7 +320,7 @@ public class MonitoringRequest {
             destinationProductStatuses = DestinationProductStatusHome.findFromMemory();
             productStatuses = ProductStatusHome.findFromMemory();
             productWindow = calculateProductWindow(productStatuses, allDestinations, PRODUCTS_TO_SHOW_COUNT);
-            productWindowHeader = calculateProductWindow(productStatuses, allDestinations,
+            productWindowHeader = calculateProductWindow(mergeGroupedProducts(productStatuses), allDestinations,
                     PRODUCTS_TO_SHOW_HEADER_COUNT);
             allProductNames = calculateAllProductNames(productStatuses, allDestinations);
         } else {
@@ -328,7 +328,8 @@ public class MonitoringRequest {
             productStatuses = new HashMap<>();
             productWindow = new ArrayList<>();
             final var allProducts = ProductStatusHome.findFromMemory();
-            productWindowHeader = calculateProductWindow(allProducts, allDestinations, PRODUCTS_TO_SHOW_HEADER_COUNT);
+            productWindowHeader = calculateProductWindow(mergeGroupedProducts(allProducts), allDestinations,
+                    PRODUCTS_TO_SHOW_HEADER_COUNT);
             allProductNames = calculateAllProductNames(allProducts, allDestinations);
         }
         status = new Status();
@@ -679,6 +680,102 @@ public class MonitoringRequest {
     }
 
     /**
+     * For products configured (via the generic entry in Product Descriptions) to have all their cycles/times grouped
+     * into a single monitoring page instead of one page per cycle/time, collapses all of that product's entries in the
+     * given map into a single synthetic entry (see {@link #mergeProductStatuses}). The synthetic entry's "time" is left
+     * empty, which is how the pill/monitoring page JSPs recognise a merged, "all cycles" entry and link to
+     * {@code /do/monitoring/summary/PRODUCT} instead of {@code /do/monitoring/summary/PRODUCT/TIME}. Products not
+     * configured to be grouped are left untouched. If the list of grouped products cannot be loaded (e.g. database
+     * unavailable), the map is returned unchanged.
+     *
+     * @param source
+     *            the product statuses, keyed by "product@time"
+     *
+     * @return a new map: ungrouped entries unchanged, plus one merged entry per grouped product
+     */
+    private Map<String, ProductStatus> mergeGroupedProducts(final Map<String, ProductStatus> source) {
+        final var groupedProducts = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        try {
+            for (final var m : ecmwf.ecpds.master.MasterManager.getDB().getProductMetadata()) {
+                if (m.isGeneric() && m.isGroupTimes()) {
+                    groupedProducts.add(m.getProduct());
+                }
+            }
+        } catch (final Exception e) {
+            log.warn("mergeGroupedProducts: failed to load grouped product names", e);
+        }
+        if (groupedProducts.isEmpty()) {
+            return source;
+        }
+        final Map<String, ProductStatus> result = new HashMap<>();
+        final Map<String, List<ProductStatus>> toMerge = new HashMap<>();
+        for (final var ps : source.values()) {
+            if (groupedProducts.contains(ps.getProduct())) {
+                toMerge.computeIfAbsent(ps.getProduct(), k -> new ArrayList<>()).add(ps);
+            } else {
+                result.put(ps.getProduct() + "@" + ps.getTime(), ps);
+            }
+        }
+        for (final var e : toMerge.entrySet()) {
+            result.put(e.getKey() + "@", mergeProductStatuses(e.getKey(), e.getValue()));
+        }
+        return result;
+    }
+
+    /**
+     * Merges several cycles/times of the same product into a single synthetic {@link ProductStatus}: the worst (highest
+     * severity) status among its non-"none" cycles is used for the color/label (falling back to "none" only if every
+     * cycle is "none"), the earliest scheduledTime is kept (so the merged pill sorts alongside its most urgent cycle,
+     * consistent with {@link ProductStatusComparator}), and the most recent lastUpdate/productTime are kept. The number
+     * of cycles being merged is stashed in the (otherwise unused, for this kind of entry) "buffer" field, so JSPs can
+     * show it (e.g. {@code ${pro.buffer}}) without needing a new interface method.
+     *
+     * @param product
+     *            the product name
+     * @param cycles
+     *            the individual per-time entries for this product (non-empty)
+     *
+     * @return the merged, synthetic entry, with an empty "time"
+     */
+    public static ProductStatus mergeProductStatuses(final String product, final List<ProductStatus> cycles) {
+        final var merged = new ecmwf.ecpds.master.plugin.http.dao.monitoring.ProductStatusBean(product, "", 0, true);
+        merged.setPresent(true);
+        merged.setBuffer(cycles.size());
+        ProductStatus worst = null;
+        Date earliestScheduled = null;
+        Date mostRecentUpdate = null;
+        Date mostRecentProductTime = null;
+        for (final var ps : cycles) {
+            if (ps.getGenerationStatus() != ecmwf.ecpds.master.plugin.http.model.monitoring.GenerationMonitoringStatus.STATUS_NONE
+                    && (worst == null || ps.getGenerationStatus() > worst.getGenerationStatus())) {
+                worst = ps;
+            }
+            final var sched = ps.getScheduledTime();
+            if (sched != null && (earliestScheduled == null || sched.before(earliestScheduled))) {
+                earliestScheduled = sched;
+            }
+            final var upd = ps.getLastUpdate();
+            if (upd != null && (mostRecentUpdate == null || upd.after(mostRecentUpdate))) {
+                mostRecentUpdate = upd;
+            }
+            final var pt = ps.getProductTime();
+            if (pt != null && (mostRecentProductTime == null || pt.after(mostRecentProductTime))) {
+                mostRecentProductTime = pt;
+            }
+        }
+        if (worst == null) {
+            // Every cycle is STATUS_NONE.
+            worst = cycles.get(0);
+        }
+        merged.setGenerationStatusCode(worst.getGenerationStatusCode());
+        merged.setGenerationStatus(worst.getGenerationStatus());
+        merged.setScheduledTime(earliestScheduled);
+        merged.setLastUpdate(mostRecentUpdate);
+        merged.setProductTime(mostRecentProductTime);
+        return merged;
+    }
+
+    /**
      * Get the list of products to show. Conditions: a) Received by at least ONE currently monitored destination b)
      * Maximum number will be PRODUCTS_TO_SHOW c) If there are more than PRODUCTS_TO SHOW only take those that are
      * scheduled up to 4 hours later than now.
@@ -697,6 +794,13 @@ public class MonitoringRequest {
         final List<ProductStatus> sortedProductStatus = new ArrayList<>(productStatuses.values());
         Collections.sort(sortedProductStatus, new ProductStatusComparator());
         final List<ProductStatus> window = new ArrayList<>();
+        // Grouped/merged "all cycles" entries (synthetic, time is empty) are never subject to the schedule-based
+        // cutoff/trimming below: since they aggregate every cycle of a product, their (earliest) scheduledTime can
+        // look much "older" than the individual entries of other, more frequent products, and would otherwise get
+        // silently trimmed out of the visible window despite representing perfectly current data. They are always
+        // kept (still subject to the monitored-destinations/application-name filters), and merged back in, in their
+        // correct chronological position, at the end.
+        final List<ProductStatus> pinned = new ArrayList<>();
         final var c = Calendar.getInstance();
         c.add(Calendar.HOUR, PRODUCTS_TO_SHOW_PERIOD);
         final var limitRight = c.getTime();
@@ -707,18 +811,24 @@ public class MonitoringRequest {
             final var ps = i.next();
             final var scheduledTime = ps.getScheduledTime();
             final var name = ps.getTime() + "-" + ps.getProduct();
-            if (scheduledTime == null) {
+            final var isGroupedEntry = isEmpty(ps.getTime());
+            if (scheduledTime == null && !isGroupedEntry) {
                 log.debug("Discarding product: " + name + " (no schedule time)");
                 continue;
             }
-            if (scheduledTime.after(limitRight) && window.size() >= productsToShowCount) {
+            if (!isGroupedEntry && scheduledTime.after(limitRight) && window.size() >= productsToShowCount) {
                 done = true;
                 log.debug("Finished adding products. Discarding: " + name + ", Sched: " + scheduledTime
                         + ", Window size is already " + window.size());
             } else if (!PRODUCTS_TO_SHOW_MONITORED_ONLY || isProductSentToAnyOfTheseDestinations(ps, destinations)) {
                 if (matchesApplicationFilter(application, name)) {
-                    log.debug("Adding product: " + name);
-                    window.add(ps);
+                    if (isGroupedEntry) {
+                        log.debug("Pinning grouped product: " + name);
+                        pinned.add(ps);
+                    } else {
+                        log.debug("Adding product: " + name);
+                        window.add(ps);
+                    }
                 } else {
                     log.debug("Discarding product: " + name + " (application not " + application + ")");
                 }
@@ -726,13 +836,20 @@ public class MonitoringRequest {
                 log.debug("Discarding product: " + name + " (destinations not monitored)");
             }
         }
+        List<ProductStatus> result = window;
         if (window.size() > productsToShowCount) {
             final int realSize = window.size() - productsToShowCount;
             log.debug("Product window (sublist {} -> {}): {}", window.size(), realSize, window);
-            return window.subList(realSize, window.size());
+            result = window.subList(realSize, window.size());
+        } else {
+            log.debug("Product window: " + window);
         }
-        log.debug("Product window: " + window);
-        return window;
+        if (!pinned.isEmpty()) {
+            result = new ArrayList<>(result);
+            result.addAll(pinned);
+            Collections.sort(result, new ProductStatusComparator());
+        }
+        return result;
     }
 
     /**

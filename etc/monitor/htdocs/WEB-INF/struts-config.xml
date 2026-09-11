@@ -1289,6 +1289,12 @@
 			name="monSesForm" scope="session">
 			<forward name="success" path=".pds.monitoring.summary" />
 		</action>
+		<action path="/monitoring/summary/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetSummaryDisplayAction"
+			name="monSesForm" scope="session">
+			<forward name="success"
+				path=".pds.monitoring.summary.product" />
+		</action>
 		<action path="/monitoring/summary/*/*" parameter="{1}|{2}"
 			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetSummaryDisplayAction"
 			name="monSesForm" scope="session">

@@ -53,9 +53,20 @@
     <c:forEach var="pro" items="${reqData.productWindowHeader}" varStatus="proIdx">
       <c:set var="isSelected" value="${not empty productStatus && productStatus.product==pro.product && productStatus.time==pro.time}"/>
       <c:set var="dotClass" value="mon-dot mon-dot-${pro.generationStatus lt 0 ? 'n1' : pro.generationStatus}"/>
-      <a href="/do/monitoring/summary/${pro.product}/${pro.time}"
+      <c:set var="isGrouped" value="${empty pro.time}"/>
+      <c:choose>
+        <c:when test="${isGrouped}">
+          <c:set var="proHref" value="/do/monitoring/summary/${pro.product}"/>
+          <c:set var="proTitle" value="All ${pro.buffer} cycles - Earliest scheduled ${pro.scheduledTime} - Status: ${pro.generationStatusFormattedCode}"/>
+        </c:when>
+        <c:otherwise>
+          <c:set var="proHref" value="/do/monitoring/summary/${pro.product}/${pro.time}"/>
+          <c:set var="proTitle" value="Scheduled for ${pro.scheduledTime} - Status: ${pro.generationStatusFormattedCode}"/>
+        </c:otherwise>
+      </c:choose>
+      <a href="${proHref}"
          class="prod-pill ${isSelected ? 'active' : ''}"
-         title="Scheduled for ${pro.scheduledTime} - Status: ${pro.generationStatusFormattedCode}"
+         title="${proTitle}"
          data-sort-natural="${proIdx.index}"
          data-sort-product="${pro.product}"
          data-sort-time="${pro.time}"
@@ -64,7 +75,7 @@
          data-sort-lastupdate="${not empty pro.lastUpdate ? pro.lastUpdate.time : 0}"
          data-sort-arrival="${not empty pro.arrivalTime ? pro.arrivalTime.time : 0}"
          data-sort-status="${pro.generationStatus}">
-        <span class="${dotClass}"></span>${pro.time}-${pro.product}
+        <span class="${dotClass}"></span><c:choose><c:when test="${isGrouped}"><i class="bi bi-layers-fill" style="font-size:0.75em;"></i> ${pro.product}</c:when><c:otherwise>${pro.time}-${pro.product}</c:otherwise></c:choose>
       </a>
     </c:forEach>
   </div>

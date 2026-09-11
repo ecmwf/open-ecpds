@@ -103,6 +103,12 @@ public class ProductDescriptionsAction extends PDSAction {
         private final boolean known;
 
         /**
+         * Whether all cycles/times of this product are grouped into a single monitoring page. Only meaningful on the
+         * generic (all-types) entry.
+         */
+        private final boolean groupTimes;
+
+        /**
          * Instantiates a new product metadata entry.
          *
          * @param product
@@ -115,14 +121,17 @@ public class ProductDescriptionsAction extends PDSAction {
          *            the tips
          * @param known
          *            whether the product currently exists in the monitoring interface
+         * @param groupTimes
+         *            whether all cycles/times of this product are grouped into a single monitoring page
          */
         public ProductMetadataEntry(final String product, final String type, final String description,
-                final String tips, final boolean known) {
+                final String tips, final boolean known, final boolean groupTimes) {
             this.product = product;
             this.type = type;
             this.description = description;
             this.tips = tips;
             this.known = known;
+            this.groupTimes = groupTimes;
         }
 
         /**
@@ -178,6 +187,15 @@ public class ProductDescriptionsAction extends PDSAction {
         public boolean isKnown() {
             return known;
         }
+
+        /**
+         * Checks whether all cycles/times of this product are grouped into a single monitoring page.
+         *
+         * @return true, if all cycles/times are grouped into one page
+         */
+        public boolean isGroupTimes() {
+            return groupTimes;
+        }
     }
 
     /**
@@ -229,7 +247,7 @@ public class ProductDescriptionsAction extends PDSAction {
             final var entries = new ArrayList<ProductMetadataEntry>(sorted.size());
             for (final var m : sorted) {
                 entries.add(new ProductMetadataEntry(m.getProduct(), m.getType(), m.getDescription(), m.getTips(),
-                        knownProducts.contains(m.getProduct())));
+                        knownProducts.contains(m.getProduct()), m.isGroupTimes()));
             }
             request.setAttribute("productDescriptions", entries);
         } catch (final Exception e) {
@@ -281,7 +299,10 @@ public class ProductDescriptionsAction extends PDSAction {
             if (tips.length() > MAX_TEXT_LENGTH)
                 throw new IllegalArgumentException("Tips too long (max " + MAX_TEXT_LENGTH + ")");
 
-            MasterManager.getDB().setProductMetadata(product, type, description, tips);
+            // Only meaningful on the generic (all-types) entry; ignored (stored as false) on type-specific rows.
+            final var groupTimes = type.isEmpty() && Boolean.TRUE.equals(body.get("groupTimes"));
+
+            MasterManager.getDB().setProductMetadata(product, type, description, tips, groupTimes);
 
             response.getWriter().write("{\"success\":true}");
         } catch (final Exception e) {
@@ -401,7 +422,7 @@ public class ProductDescriptionsAction extends PDSAction {
                 if (!seen.add(key) || existing.contains(key)) {
                     continue;
                 }
-                db.setProductMetadata(product, type, "", "");
+                db.setProductMetadata(product, type, "", "", false);
                 final var entry = new java.util.LinkedHashMap<String, String>();
                 entry.put("product", product);
                 entry.put("type", type);

@@ -2702,11 +2702,11 @@ final class DataBaseProxy implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
-    public void setProductMetadata(final String product, final String type, final String description, final String tips)
-            throws DataBaseException, RemoteException {
+    public void setProductMetadata(final String product, final String type, final String description, final String tips,
+            final boolean groupTimes) throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("setProductMetadata(" + product + "," + type + ")");
         try {
-            dataBaseInterface.setProductMetadata(product, type, description, tips);
+            dataBaseInterface.setProductMetadata(product, type, description, tips, groupTimes);
             monitor.done();
         } catch (final RemoteException e) {
             throw new DataBaseException("setProductMetadata", e);

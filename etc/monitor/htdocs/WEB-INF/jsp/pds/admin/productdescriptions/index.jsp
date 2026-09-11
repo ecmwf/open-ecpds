@@ -2,12 +2,16 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%
     final String pdError = (String) request.getAttribute("pdError");
+    final boolean pdHasEmbeddedDocs = application.getResource("/docs/index.html") != null;
+    final String pdDocsHref = pdHasEmbeddedDocs ? "/docs/administration/product-descriptions/"
+            : "https://ecmwf.github.io/open-ecpds/administration/product-descriptions/";
 %>
 
 <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
 style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-left:4px solid #6c757d;">
 <i class="bi bi-card-text text-secondary flex-shrink-0"></i>
-<span>Descriptions and tips for products (optionally per type), used as the <code>{{DESCRIPTION}}</code> placeholder in <a href="/do/admin/productmessages">Product Messages</a> and shown on the <a href="/do/monitoring">monitoring</a> product pages.</span>
+<span>Descriptions and tips for products (optionally per type), used as the <code>{{DESCRIPTION}}</code> placeholder in <a href="/do/admin/productmessages">Product Messages</a> and shown on the <a href="/do/monitoring">monitoring</a> product pages. See the <a href="<%=pdDocsHref%>" target="_blank" rel="noopener">full guide</a> for details.</span>
+
 </div>
 
 <% if (pdError != null) { %>
@@ -73,15 +77,24 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
     <strong class="d-block mb-1">Product Descriptions &mdash; overview</strong>
     <p class="mb-1">Configure metadata for a product (e.g. <code>GOPER</code>, as seen in
       <code>/do/monitoring/summary/GOPER/06</code>), optionally scoped to one of its types (the <em>Type</em> column
-      shown in that page, e.g. <code>AN</code>/<code>FC</code>). Leave Type blank to apply an entry to all types of a
-      product that don't have their own type-specific entry.</p>
+      shown in that page, e.g. <code>AN</code>/<code>FC</code>). Leave Type blank for a <strong>generic</strong>
+      entry that acts as the <strong>default</strong> for every type of that product that doesn't have its own,
+      more specific entry &mdash; you only need one generic entry to cover all types; add a type-specific one only
+      for the types that need different wording, it will override the generic default for that type alone.</p>
     <ul class="mb-1 ps-3">
-      <li><strong>Product</strong> / <strong>Type</strong> &mdash; identify the entry; Type blank = applies to all types.</li>
+      <li><strong>Product</strong> / <strong>Type</strong> &mdash; identify the entry; Type blank = generic/default entry for the product.</li>
       <li><strong>Description</strong> &mdash; used to build the <code>{{DESCRIPTION}}</code> placeholder in
-        <a href="/do/admin/productmessages">Product Messages</a>, as a bullet list across the types shown for
-        the product.</li>
-      <li><strong>Tips</strong> &mdash; shown as an expandable info card on the product's monitoring page
-        (e.g. <code>/do/monitoring/summary/GOPER/06/0/AN</code>).</li>
+        <a href="/do/admin/productmessages">Product Messages</a>: shown as a bullet list, one line per type
+        currently shown for the product &mdash; unless every type resolves to the exact same text (e.g. only the
+        generic entry is configured), in which case it is shown once, as plain text.</li>
+      <li><strong>Tips</strong> &mdash; same default/override and bullet-list-or-plain-text behaviour as
+        Description, but shown as an expandable info card (<i class="bi bi-info-circle"></i>) on the product's
+        monitoring page (e.g. <code>/do/monitoring/summary/GOPER/06/0/AN</code>) instead of in an email message.</li>
+      <li><strong>Group all cycles/times into one page</strong> &mdash; on the generic (blank Type) entry only.
+        When enabled, the pill for this product on <a href="/do/monitoring">the monitoring page</a> shows a
+        <i class="bi bi-layers-fill text-primary"></i> icon instead of a cycle/time (e.g. <code>06-GOPER</code>),
+        and links to <code>/do/monitoring/summary/GOPER</code>, a single page listing every cycle/time for that
+        product together, instead of one page per cycle/time.</li>
       <li><i class="bi bi-exclamation-triangle-fill text-warning"></i> &mdash; shown next to a product that does not currently
         exist in the <a href="/do/monitoring">monitoring interface</a> (e.g. a typo, or a product that is no longer active).</li>
       <li><strong>Unknown only</strong> &mdash; shows only such products. Use with <em>Delete All Unknown</em> to clean up stale entries.</li>
@@ -109,12 +122,17 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
     <tr data-pd-product="<c:out value="${entry.product}" />" data-pd-type="<c:out value="${entry.type}" />"
         data-pd-description="<c:out value="${entry.description}" />"
         data-pd-tips="<c:out value="${entry.tips}" />"
-        data-pd-known="${entry.known ? 1 : 0}">
+        data-pd-known="${entry.known ? 1 : 0}"
+        data-pd-group-times="${entry.groupTimes ? 1 : 0}">
       <td>
         <code><c:out value="${entry.product}" /></code>
         <c:if test="${!entry.known}">
         <i class="bi bi-exclamation-triangle-fill text-warning ms-1"
            title="This product does not currently exist in the monitoring interface (/do/monitoring)."></i>
+        </c:if>
+        <c:if test="${entry.generic && entry.groupTimes}">
+        <i class="bi bi-layers-fill text-primary ms-1"
+           title="All cycles/times of this product are grouped into a single monitoring page (/do/monitoring/summary/${entry.product})."></i>
         </c:if>
       </td>
       <td>
@@ -184,6 +202,15 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
                            placeholder="e.g. AN (blank = all types)" autocomplete="off">
                     <div class="form-text text-muted">Blank applies to all types.</div>
                   </div>
+                </div>
+                <div class="form-check mb-3" id="pdGroupTimesWrapper">
+                    <input type="checkbox" class="form-check-input" id="pdGroupTimes">
+                    <label class="form-check-label" for="pdGroupTimes">Group all cycles/times into one page</label>
+                    <div class="form-text text-muted" id="pdGroupTimesHint">
+                        Only applies when Type is blank. When enabled, the pill for this product on
+                        <code>/do/monitoring</code> shows all cycles/times together and links to
+                        <code>/do/monitoring/summary/PRODUCT</code> instead of one page per cycle/time.
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label for="pdDescription" class="form-label fw-semibold">Description</label>
@@ -281,12 +308,13 @@ document.addEventListener('DOMContentLoaded', function() {
 function _pdRefreshRows() {
   var tbody = document.getElementById('pdTableBody');
   _pdAllRows = Array.from(tbody.querySelectorAll('tr[data-pd-product]'));
-  // Rebuild the (product,type) -> {description,tips} lookup used by the Edit modal from the rendered rows' data attributes.
+  // Rebuild the (product,type) -> {description,tips,groupTimes} lookup used by the Edit modal from the rendered rows' data attributes.
   _pdData = {};
   _pdAllRows.forEach(function(tr) {
     _pdData[_pdKey(tr.dataset.pdProduct, tr.dataset.pdType)] = {
       description: tr.dataset.pdDescription || '',
-      tips: tr.dataset.pdTips || ''
+      tips: tr.dataset.pdTips || '',
+      groupTimes: tr.dataset.pdGroupTimes === '1'
     };
   });
 }
@@ -422,6 +450,18 @@ function pdUpdateEmptyMessage() {
   _pdRender();
 }
 
+function _pdUpdateGroupTimesState() {
+  var type = document.getElementById('pdType').value.trim();
+  var chk = document.getElementById('pdGroupTimes');
+  var wrapper = document.getElementById('pdGroupTimesWrapper');
+  var applies = !type;
+  chk.disabled = !applies;
+  if (!applies) {
+    chk.checked = false;
+  }
+  wrapper.classList.toggle('text-muted', !applies);
+}
+
 function pdOpenAdd() {
   _pdEditingKey = null;
   document.getElementById('pdModalTitle').textContent = 'Add Description';
@@ -431,6 +471,8 @@ function pdOpenAdd() {
   document.getElementById('pdType').disabled = false;
   document.getElementById('pdDescription').value = '';
   document.getElementById('pdTips').value = '';
+  document.getElementById('pdGroupTimes').checked = false;
+  _pdUpdateGroupTimesState();
   document.getElementById('pdSaveError').classList.add('d-none');
   _pdModal.show();
 }
@@ -445,9 +487,13 @@ function pdOpenEdit(product, type) {
   var entry = _pdData[_pdEditingKey] || {};
   document.getElementById('pdDescription').value = entry.description || '';
   document.getElementById('pdTips').value = entry.tips || '';
+  document.getElementById('pdGroupTimes').checked = !!entry.groupTimes;
+  _pdUpdateGroupTimesState();
   document.getElementById('pdSaveError').classList.add('d-none');
   _pdModal.show();
 }
+
+document.getElementById('pdType').addEventListener('input', _pdUpdateGroupTimesState);
 
 function pdSave() {
   var btn = document.getElementById('pdSaveBtn');
@@ -458,6 +504,7 @@ function pdSave() {
   var type = document.getElementById('pdType').value.trim();
   var description = document.getElementById('pdDescription').value;
   var tips = document.getElementById('pdTips').value;
+  var groupTimes = !type && document.getElementById('pdGroupTimes').checked;
 
   if (!product) {
     errEl.textContent = 'Product name is required.';
@@ -479,14 +526,14 @@ function pdSave() {
   fetch('<c:url value="/do/admin/productdescriptions/save"/>', {
     method: 'POST',
     headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-    body: JSON.stringify({ product: product, type: type, description: description, tips: tips })
+    body: JSON.stringify({ product: product, type: type, description: description, tips: tips, groupTimes: groupTimes })
   }).then(function(r){ return r.json(); })
     .then(function(data) {
       btn.disabled = false;
       if (data.success) {
         _pdModal.hide();
-        _pdData[_pdKey(product, type)] = { description: description, tips: tips };
-        pdRenderRow(product, type, description, tips);
+        _pdData[_pdKey(product, type)] = { description: description, tips: tips, groupTimes: groupTimes };
+        pdRenderRow(product, type, description, tips, groupTimes);
         pdUpdateEmptyMessage();
         pdShowSuccess('Product description saved successfully.');
       } else {
@@ -504,7 +551,7 @@ function _pdFindRow(product, type) {
   return document.querySelector('#pdTableBody tr[data-pd-product="' + CSS.escape(product) + '"][data-pd-type="' + CSS.escape(type || '') + '"]');
 }
 
-function pdRenderRow(product, type, description, tips) {
+function pdRenderRow(product, type, description, tips, groupTimes) {
   var existing = _pdFindRow(product, type);
   if (existing) {
     var cells = existing.querySelectorAll('.pd-desc-cell');
@@ -512,6 +559,8 @@ function pdRenderRow(product, type, description, tips) {
     cells[1].textContent = tips; cells[1].title = tips;
     existing.dataset.pdDescription = description;
     existing.dataset.pdTips = tips;
+    existing.dataset.pdGroupTimes = groupTimes ? '1' : '0';
+    _pdUpdateGroupTimesIcon(existing, !type, groupTimes);
     return;
   }
   var row = document.createElement('tr');
@@ -520,6 +569,7 @@ function pdRenderRow(product, type, description, tips) {
   row.dataset.pdDescription = description;
   row.dataset.pdTips = tips;
   row.dataset.pdKnown = '1'; // newly-added rows are assumed known until the page is reloaded
+  row.dataset.pdGroupTimes = groupTimes ? '1' : '0';
   row.innerHTML =
     '<td><code></code></td>' +
     '<td class="pd-type-cell"></td>' +
@@ -543,12 +593,24 @@ function pdRenderRow(product, type, description, tips) {
     span.textContent = 'all types';
     typeCell.appendChild(span);
   }
+  _pdUpdateGroupTimesIcon(row, !type, groupTimes);
   var cells = row.querySelectorAll('.pd-desc-cell');
   cells[0].textContent = description; cells[0].title = description;
   cells[1].textContent = tips; cells[1].title = tips;
   row.querySelector('.btn-outline-secondary').addEventListener('click', function() { pdOpenEdit(product, type); });
   row.querySelector('.btn-outline-danger').addEventListener('click', function() { pdConfirmDelete(product, type); });
   document.getElementById('pdTableBody').appendChild(row);
+}
+
+function _pdUpdateGroupTimesIcon(row, generic, groupTimes) {
+  var existingIcon = row.querySelector('.pd-group-times-icon');
+  if (existingIcon) { existingIcon.remove(); }
+  if (generic && groupTimes) {
+    var icon = document.createElement('i');
+    icon.className = 'bi bi-layers-fill text-primary ms-1 pd-group-times-icon';
+    icon.title = 'All cycles/times of this product are grouped into a single monitoring page (/do/monitoring/summary/' + row.dataset.pdProduct + ').';
+    row.querySelector('td code').after(icon);
+  }
 }
 
 function pdConfirmDelete(product, type) {

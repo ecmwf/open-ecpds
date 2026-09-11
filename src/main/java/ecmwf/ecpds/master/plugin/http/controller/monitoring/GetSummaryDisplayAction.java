@@ -83,7 +83,25 @@ public class GetSummaryDisplayAction extends PDSAction {
         if (params.isEmpty()) {
             throw new ECMWFActionFormException("Unsupported Feature. Please contact the development team.");
         }
-        if (params.size() == 2) {
+        if (params.size() == 1) {
+            // Merged "all cycles/times" view: for products configured (Product Descriptions) to group all their
+            // cycles onto a single page instead of one page per cycle. Gather every cycle currently known for
+            // the product and combine their step statii into one table.
+            final var product = params.get(0).toString();
+            final var times = new TreeSet<String>();
+            for (final var ps : ProductStatusHome.findFromMemory().values()) {
+                if (product.equals(ps.getProduct())) {
+                    times.add(ps.getTime());
+                }
+            }
+            final List<ProductStepStatus> stepStatii = new ArrayList<>();
+            for (final var time : times) {
+                stepStatii.addAll(ProductStepStatusHome.findAll(product, time));
+            }
+            putDataForHeader(request, ses, product, "", stepStatii, false, null);
+            request.setAttribute("productStepStatii", stepStatii);
+            request.setAttribute("productTimes", times);
+        } else if (params.size() == 2) {
             // Summary by product (tag). Take as tag name whatever they pass us.
             // If it is invalid then the page will be empty :-(. It is too
             // expensive to validate.
@@ -108,7 +126,7 @@ public class GetSummaryDisplayAction extends PDSAction {
             request.setAttribute("step", step);
             request.setAttribute("type", type);
         } else {
-            throw new ECMWFActionFormException("Expected 0 or 2 parameters.");
+            throw new ECMWFActionFormException("Expected 0, 1, 2 or 4 parameters.");
         }
         request.setAttribute("updated", new Date());
         return mapping.findForward("success");
@@ -144,9 +162,23 @@ public class GetSummaryDisplayAction extends PDSAction {
             final boolean onecolumn, final String currentType) throws MonitoringException, TransferException {
         final List<ProductStatus> products = new ArrayList<>(ProductStatusHome.findFromMemory().values());
         Collections.sort(products, new ProductStatusComparator());
-        request.setAttribute("productStatus", ProductStatusHome.findByProduct(product, time));
+        if (time == null || time.isBlank()) {
+            // Merged "all cycles" view: synthesize a single ProductStatus (worst status, earliest scheduled,
+            // most recent update) from every cycle currently known for the product.
+            final List<ProductStatus> cycles = new ArrayList<>();
+            for (final var ps : products) {
+                if (product.equals(ps.getProduct())) {
+                    cycles.add(ps);
+                }
+            }
+            request.setAttribute("productStatus",
+                    cycles.isEmpty() ? null : MonitoringRequest.mergeProductStatuses(product, cycles));
+            request.setAttribute("productNameAndTime", product);
+        } else {
+            request.setAttribute("productStatus", ProductStatusHome.findByProduct(product, time));
+            request.setAttribute("productNameAndTime", time + "-" + product);
+        }
         request.setAttribute("productName", product);
-        request.setAttribute("productNameAndTime", time + "-" + product);
         request.setAttribute("products", products);
         request.setAttribute("reqData", new MonitoringRequest(request, ses));
         final var stepStatiiSize = stepStatii.size();
@@ -236,7 +268,7 @@ public class GetSummaryDisplayAction extends PDSAction {
         for (final var m : metadata) {
             byType.put(m.getType(), m);
         }
-        final var generic = byType.containsKey("") ? getter.apply(byType.get("")) : null;
+        final var generic = byType.containsKey("") ? stripValue(getter.apply(byType.get(""))) : null;
         final var types = new TreeSet<String>();
         for (final var s : stepStatii) {
             final var type = s.getType();
@@ -247,8 +279,8 @@ public class GetSummaryDisplayAction extends PDSAction {
         final var bullets = new LinkedHashMap<String, String>();
         for (final var type : types) {
             final var specific = byType.get(type);
-            final var value = specific != null && getter.apply(specific) != null && !getter.apply(specific).isBlank()
-                    ? getter.apply(specific) : generic;
+            final var specificValue = specific != null ? stripValue(getter.apply(specific)) : null;
+            final var value = specificValue != null ? specificValue : generic;
             if (value != null && !value.isBlank()) {
                 bullets.put(type, value);
             }
@@ -256,17 +288,43 @@ public class GetSummaryDisplayAction extends PDSAction {
         if (bullets.isEmpty()) {
             return generic;
         }
-        if (bullets.size() == 1 && types.size() <= 1) {
-            return bullets.values().iterator().next();
+        final var distinctValues = new java.util.LinkedHashSet<>(bullets.values());
+        if (distinctValues.size() == 1) {
+            // Every type currently shown resolves to the exact same text (most commonly because only the generic,
+            // all-types entry is configured, with no per-type overrides): showing the same line once per type would
+            // just be noisy repetition, so collapse to a single, plain entry instead.
+            return distinctValues.iterator().next();
         }
         final var sb = new StringBuilder();
         for (final var e : bullets.entrySet()) {
             if (sb.length() > 0) {
                 sb.append('\n');
             }
-            sb.append("- ").append(e.getKey()).append(": ").append(e.getValue());
+            // Any embedded line breaks in the value (e.g. a multi-line Tips/Description entry) are re-indented so
+            // continuation lines line up under the text rather than falling back flush against the left edge of the
+            // card.
+            final var indented = e.getValue().replace("\r\n", "\n").replace("\n", "\n  ");
+            sb.append("- ").append(e.getKey()).append(": ").append(indented);
         }
         return sb.toString();
+    }
+
+    /**
+     * Trims leading/trailing whitespace from a stored metadata value (description or tips), so stray spaces/tabs
+     * accidentally saved around the text (e.g. via copy/paste) do not show up as visual misalignment in the bullet list
+     * or info panel.
+     *
+     * @param value
+     *            the raw value, possibly {@code null}
+     *
+     * @return the trimmed value, or {@code null} if it was {@code null} or blank
+     */
+    private static final String stripValue(final String value) {
+        if (value == null) {
+            return null;
+        }
+        final var stripped = value.strip();
+        return stripped.isEmpty() ? null : stripped;
     }
 
     /**
@@ -288,11 +346,11 @@ public class GetSummaryDisplayAction extends PDSAction {
         String generic = null;
         for (final var m : metadata) {
             if (type.equals(m.getType())) {
-                specific = getter.apply(m);
+                specific = stripValue(getter.apply(m));
             } else if (m.isGeneric()) {
-                generic = getter.apply(m);
+                generic = stripValue(getter.apply(m));
             }
         }
-        return specific != null && !specific.isBlank() ? specific : generic;
+        return specific != null ? specific : generic;
     }
 }

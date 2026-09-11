@@ -4516,8 +4516,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
-    public void setProductMetadata(final String product, final String type, final String description, final String tips)
-            throws DataBaseException, RemoteException {
+    public void setProductMetadata(final String product, final String type, final String description, final String tips,
+            final boolean groupTimes) throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("setProductMetadata(" + product + "," + type + ")");
         if (product == null || !PRODUCT_NAME_PATTERN.matcher(product).matches()) {
             throw new DataBaseException("Invalid product name: " + product);
@@ -4525,7 +4525,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         if (type == null || !PRODUCT_TYPE_PATTERN.matcher(type).matches()) {
             throw new DataBaseException("Invalid product type: " + type);
         }
-        ecpds.setProductMetadata(product, type, description, tips);
+        ecpds.setProductMetadata(product, type, description, tips, groupTimes);
         monitor.done();
     }
 

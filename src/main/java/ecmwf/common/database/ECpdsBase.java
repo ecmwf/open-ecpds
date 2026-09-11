@@ -5755,7 +5755,7 @@ public final class ECpdsBase extends DataBase {
         try (var rs = executeSelect("ECpdsBase", "getAllProductMetadata")) {
             while (rs.next()) {
                 result.add(new ProductMetadata(rs.getString("PRM_PRODUCT"), rs.getString("PRM_TYPE"),
-                        rs.getString("PRM_DESCRIPTION"), rs.getString("PRM_TIPS")));
+                        rs.getString("PRM_DESCRIPTION"), rs.getString("PRM_TIPS"), rs.getBoolean("PRM_GROUP_TIMES")));
             }
         } catch (final Exception e) {
             _log.warn("getAllProductMetadata()", e);
@@ -5782,7 +5782,7 @@ public final class ECpdsBase extends DataBase {
                 new String[] { "product=" + product })) {
             while (rs.next()) {
                 result.add(new ProductMetadata(rs.getString("PRM_PRODUCT"), rs.getString("PRM_TYPE"),
-                        rs.getString("PRM_DESCRIPTION"), rs.getString("PRM_TIPS")));
+                        rs.getString("PRM_DESCRIPTION"), rs.getString("PRM_TIPS"), rs.getBoolean("PRM_GROUP_TIMES")));
             }
         } catch (final Exception e) {
             _log.warn("getProductMetadataByProduct({})", product, e);
@@ -5792,8 +5792,8 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
-     * Inserts or updates (UPSERT) the description and tips for a (product, type) pair. The {@code PRM_UPDATED_AT}
-     * timestamp is set to the current database time.
+     * Inserts or updates (UPSERT) the description, tips and "group times" flag for a (product, type) pair. The
+     * {@code PRM_UPDATED_AT} timestamp is set to the current database time.
      *
      * @param product
      *            the product name
@@ -5803,15 +5803,18 @@ public final class ECpdsBase extends DataBase {
      *            the description text
      * @param tips
      *            the tips text
+     * @param groupTimes
+     *            whether all cycles/times of this product should be grouped into a single monitoring page (only
+     *            meaningful on the generic, all-types entry)
      *
      * @throws DataBaseException
      *             the data base exception
      */
-    public void setProductMetadata(final String product, final String type, final String description, final String tips)
-            throws DataBaseException {
+    public void setProductMetadata(final String product, final String type, final String description, final String tips,
+            final boolean groupTimes) throws DataBaseException {
         try {
             executeUpdate("ECpdsBase", "setProductMetadata", new String[] { "product=" + product, "type=" + type,
-                    "description=" + description, "tips=" + tips });
+                    "description=" + description, "tips=" + tips, "groupTimes=" + (groupTimes ? "1" : "0") });
         } catch (final Exception e) {
             _log.warn("setProductMetadata({},{})", product, type, e);
             throw new DataBaseException("setProductMetadata", e);

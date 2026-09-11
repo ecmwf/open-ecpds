@@ -2856,13 +2856,16 @@ public interface DataBaseInterface extends Remote {
      *            the description text
      * @param tips
      *            the tips text
+     * @param groupTimes
+     *            whether all cycles/times of this product should be grouped into a single monitoring page (only
+     *            meaningful on the generic, all-types entry)
      *
      * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    void setProductMetadata(String product, String type, String description, String tips)
+    void setProductMetadata(String product, String type, String description, String tips, boolean groupTimes)
             throws DataBaseException, RemoteException;
 
     /**

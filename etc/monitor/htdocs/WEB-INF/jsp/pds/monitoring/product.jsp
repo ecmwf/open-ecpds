@@ -177,19 +177,26 @@ th {
 		<div class="mon-field">
 			<span class="mon-label">Product</span>
 			<span class="mon-value">
-				<a href="<bean:message key="monitoring.basepath"/>/summary/${productName}/${productStatus.time}">${productStatus.time}-${productName}</a><c:if test="${not empty step and not empty type}">, Step <u>${step}</u>, Type <u>${type}</u></c:if>
+				<c:choose>
+					<c:when test="${not empty productStatus.time}">
+						<a href="<bean:message key="monitoring.basepath"/>/summary/${productName}/${productStatus.time}">${productStatus.time}-${productName}</a><c:if test="${not empty step and not empty type}">, Step <u>${step}</u>, Type <u>${type}</u></c:if>
+					</c:when>
+					<c:otherwise>
+						<a href="<bean:message key="monitoring.basepath"/>/summary/${productName}">${productName}</a> <span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted">All cycles</span>
+					</c:otherwise>
+				</c:choose>
 			</span>
 		</div>
 		<div class="mon-field">
-			<span class="mon-label">Product Time (UTC)</span>
+			<span class="mon-label"><c:choose><c:when test="${not empty productStatus.time}">Product Time (UTC)</c:when><c:otherwise>Most Recent Time (UTC)</c:otherwise></c:choose></span>
 			<span class="mon-value">${productStatus.productTime}</span>
 		</div>
 		<div class="mon-field">
-			<span class="mon-label">Scheduled (UTC)</span>
+			<span class="mon-label"><c:choose><c:when test="${not empty productStatus.time}">Scheduled (UTC)</c:when><c:otherwise>Earliest Scheduled (UTC)</c:otherwise></c:choose></span>
 			<span class="mon-value">${productStatus.scheduledTime}</span>
 		</div>
 		<div class="mon-field">
-			<span class="mon-label">Last Update (UTC)</span>
+			<span class="mon-label"><c:choose><c:when test="${not empty productStatus.time}">Last Update (UTC)</c:when><c:otherwise>Most Recent Update (UTC)</c:otherwise></c:choose></span>
 			<span class="mon-value">
 				<c:choose>
 					<c:when test="${not empty productStatus.lastUpdate}">${productStatus.lastUpdate}</c:when>
@@ -232,9 +239,7 @@ th {
 
 	<c:if test="${not empty productTips}">
 	<div class="collapse mb-3" id="productTipsPanel">
-		<div class="card card-body py-2 px-3" style="font-size:0.85rem; white-space:pre-wrap; border-left:4px solid var(--bs-primary,#0d6efd);">
-			<c:out value="${productTips}"/>
-		</div>
+		<div class="card card-body py-2 px-3" style="font-size:0.85rem; white-space:pre-wrap; border-left:4px solid var(--bs-primary,#0d6efd);"><c:out value="${productTips}"/></div>
 	</div>
 	</c:if>
 

@@ -24,7 +24,9 @@ package ecmwf.common.database;
  * Per-product (optionally per-type) metadata: a free-text description (used as the {@code {{DESCRIPTION}}}
  * placeholder in Product Status Messages) and a "Tips" text (shown on the product monitoring page). Stored in the
  * {@code PRODUCT_METADATA} table, keyed by (product, type). An empty {@code type} ({@code ""}) denotes a generic
- * entry that applies to all types of that product, used as a fallback when no type-specific entry exists.
+ * entry that applies to all types of that product, used as a fallback when no type-specific entry exists. The
+ * generic entry's {@code groupTimes} flag additionally controls whether all of the product's cycles/times are
+ * grouped into a single monitoring page ({@code /do/monitoring/summary/PRODUCT}) instead of one page per time.
  */
 
 import java.io.Serializable;
@@ -50,6 +52,12 @@ public final class ProductMetadata implements Serializable {
     private final String tips;
 
     /**
+     * Whether all cycles/times of this product should be grouped into a single monitoring page. Only meaningful on the
+     * generic (all-types) entry.
+     */
+    private final boolean groupTimes;
+
+    /**
      * Instantiates a new product metadata.
      *
      * @param product
@@ -62,10 +70,30 @@ public final class ProductMetadata implements Serializable {
      *            the tips
      */
     public ProductMetadata(final String product, final String type, final String description, final String tips) {
+        this(product, type, description, tips, false);
+    }
+
+    /**
+     * Instantiates a new product metadata.
+     *
+     * @param product
+     *            the product
+     * @param type
+     *            the type
+     * @param description
+     *            the description
+     * @param tips
+     *            the tips
+     * @param groupTimes
+     *            whether all cycles/times of this product should be grouped into a single monitoring page
+     */
+    public ProductMetadata(final String product, final String type, final String description, final String tips,
+            final boolean groupTimes) {
         this.product = product;
         this.type = type != null ? type : "";
         this.description = description;
         this.tips = tips;
+        this.groupTimes = groupTimes;
     }
 
     /**
@@ -102,6 +130,16 @@ public final class ProductMetadata implements Serializable {
      */
     public String getTips() {
         return tips;
+    }
+
+    /**
+     * Checks whether all cycles/times of this product should be grouped into a single monitoring page. Only meaningful
+     * on the generic (all-types) entry.
+     *
+     * @return true, if all cycles/times should be grouped into one page
+     */
+    public boolean isGroupTimes() {
+        return groupTimes;
     }
 
     /**
