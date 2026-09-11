@@ -74,7 +74,7 @@ endif
 # Display help by default
 .DEFAULT_GOAL := help
 
-.PHONY: help up ps logs connect config down prune mariadb dump-full dump-conf clean info
+.PHONY: help up ps logs connect config down prune mariadb dump-full dump-conf import clean info
 
 # ─── Help ─────────────────────────────────────────────────────────────────────
 
@@ -170,6 +170,20 @@ dump-conf: check-yaml ## Dump only configuration data from the database to stdou
 		ACTIVITY BANDWIDTH DATA_FILE DATA_TRANSFER EVENT INCOMING_HISTORY \
 		METADATA_ATTRIBUTE METADATA_VALUE MONITORING_VALUE PRODUCT_STATUS \
 		PUBLICATION TRANSFER_HISTORY UPLOAD_HISTORY CHANGE_LOG'
+
+import: check-yaml ## Import a SQL file into the running database (arg: file=path/to/file.sql)
+	@if [ -z "$(file)" ]; then \
+		printf "$(RED)Error: no SQL file specified. Usage: make import file=path/to/file.sql$(RESET)\n"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(file)" ]; then \
+		printf "$(RED)Error: file '$(file)' not found$(RESET)\n"; \
+		exit 1; \
+	fi
+	@printf "Importing $(CYAN)$(file)$(RESET) into the 'ecpds' database...\n"
+	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec -T database sh -c \
+		'mariadb -p"$$MYSQL_ROOT_PASSWORD" ecpds' < "$(file)"
+	@printf "$(CYAN)Import complete.$(RESET)\n"
 
 # ─── Maintenance ──────────────────────────────────────────────────────────────
 
