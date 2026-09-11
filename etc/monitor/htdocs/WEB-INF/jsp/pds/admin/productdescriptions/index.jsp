@@ -180,7 +180,7 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
                   </div>
                   <div class="col-5">
                     <label for="pdType" class="form-label fw-semibold">Type</label>
-                    <input type="text" class="form-control" id="pdType"
+                    <input type="text" class="form-control" id="pdType" style="min-width:0;"
                            placeholder="e.g. AN (blank = all types)" autocomplete="off">
                     <div class="form-text text-muted">Blank applies to all types.</div>
                   </div>
