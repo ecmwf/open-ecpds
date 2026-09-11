@@ -16,7 +16,8 @@
             empty (or unchanged) to keep using the built-in default text. Use the placeholders <code>{{PRODUCT}}</code>,
             <code>{{CYCLE}}</code> and <code>{{DESCRIPTION}}</code> to automatically insert the product name (e.g.
             <code>GENFO</code>), cycle (e.g. <code>06</code>) of the page the message is sent from, and the
-            <a href="/do/admin/productdescriptions">description configured for that product</a>, if any.
+            <a href="/do/admin/productdescriptions">description(s) configured for that product</a> &mdash; rendered as
+            a bullet list across the types shown on the page, if more than one applies.
         </span>
     </div>
 </div>
@@ -92,16 +93,13 @@
         <button type="submit" class="btn btn-warning">
             <i class="bi bi-save-fill me-1"></i>Save Messages
         </button>
-        <a href="/do/admin" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to Admin Tasks
-        </a>
     </div>
 </form>
 
 
 <div class="card shadow-sm" style="max-width:720px; border-color: #dee2e6;">
     <div class="card-header text-muted fw-semibold" style="background:rgba(108,117,125,0.07);">
-        <i class="bi bi-info-circle me-2"></i>About Product Status Messages
+        <i class="bi bi-info-circle me-2"></i>About Product Messages
     </div>
     <div class="card-body text-muted" style="font-size:0.85rem;">
         <ul class="mb-0 ps-3">
@@ -112,9 +110,11 @@
             <li>The <code>{{PRODUCT}}</code> and <code>{{CYCLE}}</code> placeholders are replaced with the product
             and cycle of the page the message is sent from (e.g. <code>GENFO</code> and <code>06</code> on
             <code>/do/monitoring/summary/GENFO/06</code>).</li>
-            <li>The <code>{{DESCRIPTION}}</code> placeholder is replaced with the text configured for the current
-            product under <a href="/do/admin/productdescriptions">Admin Tasks &rarr; Product Descriptions</a>, or an
-            empty string if none has been configured.</li>
+            <li>The <code>{{DESCRIPTION}}</code> placeholder is replaced with the description(s) configured under
+            <a href="/do/admin/productdescriptions">Admin Tasks &rarr; Product Descriptions</a> for the current
+            product: a plain text if only one type applies (or a type-independent description was configured), a
+            bullet list (one line per type, e.g. <code>- AN: ...</code>) when several types shown on the page each
+            resolve to a different description, or an empty string if none has been configured.</li>
         </ul>
     </div>
 </div>

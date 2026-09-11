@@ -96,7 +96,7 @@ specific Data User.
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `incoming.tmpDetect` | Boolean | *disabled* | Treat uploaded files as temporary based on `incoming.tmpPattern`. Temporary files remain in standby until the user renames them to their final name |
-| `incoming.tmpPattern` | Regex | `(^\.)|(\.tmp$)` | Regex used by `incoming.tmpDetect` to identify temporary files. By default, a file is temporary when its basename starts with `.` and/or ends with `.tmp` (case-insensitive) |
+| `incoming.tmpPattern` | Regex | `(^\.)|(\.tmp$)|(\.temp$)` | Regex used by `incoming.tmpDetect` to identify temporary files. By default, a file is temporary when its basename starts with `.` and/or ends with `.tmp` or `.temp` (case-insensitive) |
 
 ### Metadata & parsing
 

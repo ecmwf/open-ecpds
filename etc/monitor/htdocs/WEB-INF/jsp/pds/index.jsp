@@ -4,24 +4,13 @@
     final String _certStatus  = (String) request.getAttribute("certStatus");
     final boolean _certError   = "ERROR".equals(_certStatus);
     final boolean _certWarning = "WARNING".equals(_certStatus);
-    final String _certIconClass = "bi-shield-lock";
-    final String _certDot = _certError
-        ? " <i class=\"bi bi-circle-fill text-danger ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
-        : _certWarning
-        ? " <i class=\"bi bi-circle-fill text-warning ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
-        : "";
+    final String _certIconClass = "bi-shield-lock" + (_certError ? " text-danger" : _certWarning ? " text-warning" : "");
     final boolean _capNotSet = Boolean.TRUE.equals(request.getAttribute("criticalPasswordNotSet"));
-    final String _capDot = _capNotSet
-        ? " <i class=\"bi bi-circle-fill text-warning ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
-        : "";
+    final String _capIconClass = "bi-key-fill" + (_capNotSet ? " text-warning" : "");
     final boolean _hasFeedback = Boolean.TRUE.equals(request.getAttribute("hasUnreviewedFeedback"));
-    final String _feedbackDot = _hasFeedback
-        ? " <i class=\"bi bi-circle-fill text-warning ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
-        : "";
+    final String _feedbackIconClass = "bi-chat-left-text" + (_hasFeedback ? " text-warning" : "");
     final boolean _hasBadTransfers = Boolean.TRUE.equals(request.getAttribute("hasBadTransfers"));
-    final String _badDot = _hasBadTransfers
-        ? " <i class=\"bi bi-circle-fill text-danger ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
-        : "";
+    final String _badIconClass = "bi-hourglass-split" + (_hasBadTransfers ? " text-danger" : "");
 %>
 
 <%-- Critical Password setup banner (shown to admins only when not yet configured) --%>
@@ -198,13 +187,13 @@
             </div>
             <ul class="home-menu">
                 <auth:link basePathKey="admin.basepath" href="/filter" wrappingTags="li"><i class="bi bi-file-zip"></i>Compress Files</auth:link>
-                <auth:link basePathKey="admin.basepath" href="/requeue" wrappingTags="li"><i class="bi bi-hourglass-split"></i><span>Outstanding Transfers<%=_badDot%></span></auth:link>
+                <auth:link basePathKey="admin.basepath" href="/requeue" wrappingTags="li"><i class="bi <%=_badIconClass%>"></i>Outstanding Transfers</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/upload" wrappingTags="li"><i class="bi bi-upload"></i>Upload Files</auth:link>
-                <auth:link basePathKey="admin.feedback.basepath" href="" wrappingTags="li"><i class="bi bi-chat-left-text"></i><span>User Feedback<%=_feedbackDot%></span></auth:link>
+                <auth:link basePathKey="admin.feedback.basepath" href="" wrappingTags="li"><i class="bi <%=_feedbackIconClass%>"></i>User Feedback</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/metafields" wrappingTags="li"><i class="bi bi-list-check"></i>Metadata Fields</auth:link>
-                <auth:link basePathKey="admin.basepath" href="/certificates" wrappingTags="li"><i class="bi <%=_certIconClass%>"></i><span> TLS Certificates<%=_certDot%></span></auth:link>
-                <auth:link basePathKey="admin.basepath" href="/criticalpassword" wrappingTags="li"><i class="bi bi-key-fill"></i><span> Critical Password<%=_capDot%></span></auth:link>
-                <auth:link basePathKey="admin.basepath" href="/productmessages" wrappingTags="li"><i class="bi bi-envelope-paper-fill"></i>Product Status Messages</auth:link>
+                <auth:link basePathKey="admin.basepath" href="/certificates" wrappingTags="li"><i class="bi <%=_certIconClass%>"></i>TLS Certificates</auth:link>
+                <auth:link basePathKey="admin.basepath" href="/criticalpassword" wrappingTags="li"><i class="bi <%=_capIconClass%>"></i>Critical Password</auth:link>
+                <auth:link basePathKey="admin.basepath" href="/productmessages" wrappingTags="li"><i class="bi bi-envelope-paper-fill"></i>Product Messages</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/productdescriptions" wrappingTags="li"><i class="bi bi-card-list"></i>Product Descriptions</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/purge" wrappingTags="li"><i class="bi bi-trash3-fill"></i> Purge All Data</auth:link>
             </ul>

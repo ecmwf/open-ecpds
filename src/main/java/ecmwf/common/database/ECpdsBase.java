@@ -5743,6 +5743,102 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Retrieves all rows from the PRODUCT_METADATA table, ordered by product then type.
+     *
+     * @return the list of all configured product metadata entries (empty if none)
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public List<ProductMetadata> getAllProductMetadata() throws DataBaseException {
+        final List<ProductMetadata> result = new ArrayList<>();
+        try (var rs = executeSelect("ECpdsBase", "getAllProductMetadata")) {
+            while (rs.next()) {
+                result.add(new ProductMetadata(rs.getString("PRM_PRODUCT"), rs.getString("PRM_TYPE"),
+                        rs.getString("PRM_DESCRIPTION"), rs.getString("PRM_TIPS")));
+            }
+        } catch (final Exception e) {
+            _log.warn("getAllProductMetadata()", e);
+            throw new DataBaseException("getAllProductMetadata", e);
+        }
+        return result;
+    }
+
+    /**
+     * Retrieves all PRODUCT_METADATA rows for a given product (one per configured type, plus the generic entry if
+     * configured), ordered by type.
+     *
+     * @param product
+     *            the product name (e.g. {@code "GOPER"})
+     *
+     * @return the list of product metadata entries for the product (empty if none configured)
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public List<ProductMetadata> getProductMetadataByProduct(final String product) throws DataBaseException {
+        final List<ProductMetadata> result = new ArrayList<>();
+        try (var rs = executeSelect("ECpdsBase", "getProductMetadataByProduct",
+                new String[] { "product=" + product })) {
+            while (rs.next()) {
+                result.add(new ProductMetadata(rs.getString("PRM_PRODUCT"), rs.getString("PRM_TYPE"),
+                        rs.getString("PRM_DESCRIPTION"), rs.getString("PRM_TIPS")));
+            }
+        } catch (final Exception e) {
+            _log.warn("getProductMetadataByProduct({})", product, e);
+            throw new DataBaseException("getProductMetadataByProduct", e);
+        }
+        return result;
+    }
+
+    /**
+     * Inserts or updates (UPSERT) the description and tips for a (product, type) pair. The {@code PRM_UPDATED_AT}
+     * timestamp is set to the current database time.
+     *
+     * @param product
+     *            the product name
+     * @param type
+     *            the product type, or an empty string for the generic (all-types) entry
+     * @param description
+     *            the description text
+     * @param tips
+     *            the tips text
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void setProductMetadata(final String product, final String type, final String description, final String tips)
+            throws DataBaseException {
+        try {
+            executeUpdate("ECpdsBase", "setProductMetadata", new String[] { "product=" + product, "type=" + type,
+                    "description=" + description, "tips=" + tips });
+        } catch (final Exception e) {
+            _log.warn("setProductMetadata({},{})", product, type, e);
+            throw new DataBaseException("setProductMetadata", e);
+        }
+    }
+
+    /**
+     * Deletes a row from the PRODUCT_METADATA table. Does nothing if no row exists.
+     *
+     * @param product
+     *            the product name
+     * @param type
+     *            the product type, or an empty string for the generic (all-types) entry
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void deleteProductMetadata(final String product, final String type) throws DataBaseException {
+        try {
+            executeUpdate("ECpdsBase", "deleteProductMetadata", new String[] { "product=" + product, "type=" + type });
+        } catch (final Exception e) {
+            _log.warn("deleteProductMetadata({},{})", product, type, e);
+            throw new DataBaseException("deleteProductMetadata", e);
+        }
+    }
+
+    /**
      * Inserts a TransferStatistics record. Uses auto-increment for the primary key.
      *
      * @param stats

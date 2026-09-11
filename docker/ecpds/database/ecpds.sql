@@ -1646,6 +1646,23 @@ INSERT INTO `POLICY_USER` VALUES
 UNLOCK TABLES;
 
 --
+-- Table structure for table `PRODUCT_METADATA`
+--
+
+DROP TABLE IF EXISTS `PRODUCT_METADATA`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `PRODUCT_METADATA` (
+  `PRM_PRODUCT` varchar(64) NOT NULL,
+  `PRM_TYPE` varchar(32) NOT NULL DEFAULT '',
+  `PRM_DESCRIPTION` text DEFAULT NULL,
+  `PRM_TIPS` text DEFAULT NULL,
+  `PRM_UPDATED_AT` datetime DEFAULT NULL,
+  PRIMARY KEY (`PRM_PRODUCT`,`PRM_TYPE`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `PRODUCT_STATUS`
 --
 

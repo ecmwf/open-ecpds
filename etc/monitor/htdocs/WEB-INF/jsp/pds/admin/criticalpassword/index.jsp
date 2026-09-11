@@ -90,9 +90,6 @@
                     <i class="bi bi-key-fill me-1"></i>
                     <% if (hasPassword) { %>Renew Password<% } else { %>Set Password<% } %>
                 </button>
-                <a href="/do/admin" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-1"></i>Back to Admin Tasks
-                </a>
             </div>
         </form>
     </div>

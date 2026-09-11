@@ -2675,12 +2675,12 @@ final class DataBaseProxy implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
-    public Map<String, String> getProductDescriptions() throws DataBaseException, RemoteException {
-        final var monitor = new MonitorCall("getProductDescriptions()");
+    public List<ecmwf.common.database.ProductMetadata> getProductMetadata() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getProductMetadata()");
         try {
-            return monitor.done(dataBaseInterface.getProductDescriptions());
+            return monitor.done(dataBaseInterface.getProductMetadata());
         } catch (final RemoteException e) {
-            throw new DataBaseException("getProductDescriptions", e);
+            throw new DataBaseException("getProductMetadata", e);
         }
     }
 
@@ -2688,14 +2688,13 @@ final class DataBaseProxy implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
-    public void setProductDescription(final String product, final String description)
+    public List<ecmwf.common.database.ProductMetadata> getProductMetadata(final String product)
             throws DataBaseException, RemoteException {
-        final var monitor = new MonitorCall("setProductDescription(" + product + ")");
+        final var monitor = new MonitorCall("getProductMetadata(" + product + ")");
         try {
-            dataBaseInterface.setProductDescription(product, description);
-            monitor.done();
+            return monitor.done(dataBaseInterface.getProductMetadata(product));
         } catch (final RemoteException e) {
-            throw new DataBaseException("setProductDescription", e);
+            throw new DataBaseException("getProductMetadata", e);
         }
     }
 
@@ -2703,13 +2702,29 @@ final class DataBaseProxy implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
-    public void deleteProductDescription(final String product) throws DataBaseException, RemoteException {
-        final var monitor = new MonitorCall("deleteProductDescription(" + product + ")");
+    public void setProductMetadata(final String product, final String type, final String description, final String tips)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("setProductMetadata(" + product + "," + type + ")");
         try {
-            dataBaseInterface.deleteProductDescription(product);
+            dataBaseInterface.setProductMetadata(product, type, description, tips);
             monitor.done();
         } catch (final RemoteException e) {
-            throw new DataBaseException("deleteProductDescription", e);
+            throw new DataBaseException("setProductMetadata", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteProductMetadata(final String product, final String type)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteProductMetadata(" + product + "," + type + ")");
+        try {
+            dataBaseInterface.deleteProductMetadata(product, type);
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("deleteProductMetadata", e);
         }
     }
 

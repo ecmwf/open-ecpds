@@ -2813,47 +2813,72 @@ public interface DataBaseInterface extends Remote {
     void resetProductStatusMessage(String name) throws DataBaseException, RemoteException;
 
     /**
-     * Gets the text descriptions configured for products, keyed by product name (e.g. {@code "GOPER"}). These
-     * descriptions are stored in the SYS_CONFIG table (group "ProductDescription"), managed from the Monitor UI (Admin
-     * Tasks &rarr; Product Descriptions), and made available as the {@code {{DESCRIPTION}}} placeholder in the Product
-     * Status Messages.
+     * Gets all configured product metadata entries (description and tips per product/type pair). Stored in the
+     * PRODUCT_METADATA table, managed from the Monitor UI (Admin Tasks &rarr; Product Descriptions). An entry with an
+     * empty type applies to all types of that product (used as a fallback). Descriptions are made available as the
+     * {@code {{DESCRIPTION}}} placeholder in the Product Status Messages (aggregated across the types shown on the
+     * current monitoring page); tips are shown directly on the product monitoring page.
      *
-     * @return an ordered map of product name to description (empty if none have been configured)
+     * @return the list of all configured product metadata entries (empty if none have been configured)
      *
      * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    Map<String, String> getProductDescriptions() throws DataBaseException, RemoteException;
+    List<ecmwf.common.database.ProductMetadata> getProductMetadata() throws DataBaseException, RemoteException;
 
     /**
-     * Stores (adds or updates) the text description for a product.
+     * Gets the configured product metadata entries for a single product (one per configured type, plus the generic
+     * entry if configured).
      *
      * @param product
      *            the product name (e.g. {@code "GOPER"})
+     *
+     * @return the list of product metadata entries for the product (empty if none configured)
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    List<ecmwf.common.database.ProductMetadata> getProductMetadata(String product)
+            throws DataBaseException, RemoteException;
+
+    /**
+     * Stores (adds or updates) the description and tips for a (product, type) pair.
+     *
+     * @param product
+     *            the product name (e.g. {@code "GOPER"})
+     * @param type
+     *            the product type (e.g. {@code "AN"}), or an empty string for the generic (all-types) entry
      * @param description
      *            the description text
+     * @param tips
+     *            the tips text
      *
      * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    void setProductDescription(String product, String description) throws DataBaseException, RemoteException;
+    void setProductMetadata(String product, String type, String description, String tips)
+            throws DataBaseException, RemoteException;
 
     /**
-     * Removes the text description configured for a product.
+     * Removes the product metadata configured for a (product, type) pair.
      *
      * @param product
      *            the product name (e.g. {@code "GOPER"})
+     * @param type
+     *            the product type, or an empty string for the generic (all-types) entry
      *
      * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    void deleteProductDescription(String product) throws DataBaseException, RemoteException;
+    void deleteProductMetadata(String product, String type) throws DataBaseException, RemoteException;
 
     /**
      * Hard-deletes all DATA_TRANSFER, TRANSFER_HISTORY and DATA_FILE records from the database immediately, without

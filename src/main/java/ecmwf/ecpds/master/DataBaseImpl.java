@@ -4485,30 +4485,47 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         monitor.done();
     }
 
-    /** Product names accepted for {@link #setProductDescription}/{@link #deleteProductDescription}. */
+    /** Product names accepted for {@link #setProductMetadata}/{@link #deleteProductMetadata}. */
     private static final java.util.regex.Pattern PRODUCT_NAME_PATTERN = java.util.regex.Pattern
             .compile("[A-Za-z0-9_.-]{1,64}");
+
+    /** Product types accepted for {@link #setProductMetadata}/{@link #deleteProductMetadata} (empty = generic). */
+    private static final java.util.regex.Pattern PRODUCT_TYPE_PATTERN = java.util.regex.Pattern
+            .compile("[A-Za-z0-9_.-]{0,32}");
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Map<String, String> getProductDescriptions() throws DataBaseException, RemoteException {
-        final var monitor = new MonitorCall("getProductDescriptions()");
-        return monitor.done(ecpds.getSysConfigValuesByGroup("ProductDescription"));
+    public List<ecmwf.common.database.ProductMetadata> getProductMetadata() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getProductMetadata()");
+        return monitor.done(ecpds.getAllProductMetadata());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void setProductDescription(final String product, final String description)
+    public List<ecmwf.common.database.ProductMetadata> getProductMetadata(final String product)
             throws DataBaseException, RemoteException {
-        final var monitor = new MonitorCall("setProductDescription(" + product + ")");
+        final var monitor = new MonitorCall("getProductMetadata(" + product + ")");
+        return monitor.done(ecpds.getProductMetadataByProduct(product));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setProductMetadata(final String product, final String type, final String description, final String tips)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("setProductMetadata(" + product + "," + type + ")");
         if (product == null || !PRODUCT_NAME_PATTERN.matcher(product).matches()) {
             throw new DataBaseException("Invalid product name: " + product);
         }
-        ecpds.setSysConfigValue("ProductDescription", product, description);
+        if (type == null || !PRODUCT_TYPE_PATTERN.matcher(type).matches()) {
+            throw new DataBaseException("Invalid product type: " + type);
+        }
+        ecpds.setProductMetadata(product, type, description, tips);
         monitor.done();
     }
 
@@ -4516,12 +4533,16 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
-    public void deleteProductDescription(final String product) throws DataBaseException, RemoteException {
-        final var monitor = new MonitorCall("deleteProductDescription(" + product + ")");
+    public void deleteProductMetadata(final String product, final String type)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteProductMetadata(" + product + "," + type + ")");
         if (product == null || !PRODUCT_NAME_PATTERN.matcher(product).matches()) {
             throw new DataBaseException("Invalid product name: " + product);
         }
-        ecpds.deleteSysConfigValue("ProductDescription", product);
+        if (type == null || !PRODUCT_TYPE_PATTERN.matcher(type).matches()) {
+            throw new DataBaseException("Invalid product type: " + type);
+        }
+        ecpds.deleteProductMetadata(product, type);
         monitor.done();
     }
 

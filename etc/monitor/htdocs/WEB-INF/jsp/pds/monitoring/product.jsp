@@ -212,7 +212,26 @@ th {
 				${productStatus.generationStatusFormattedCode}
 			</span>
 		</div>
+		<c:if test="${not empty type and not empty productTips}">
+		<div class="mon-field">
+			<span class="mon-label">Tips</span>
+			<span class="mon-value">
+				<button class="btn btn-link btn-sm p-0" type="button" data-bs-toggle="collapse"
+						data-bs-target="#productTipsPanel" aria-expanded="false" title="Show tips for this product/type">
+					<i class="bi bi-info-circle"></i>
+				</button>
+			</span>
+		</div>
+		</c:if>
 	</div>
+
+	<c:if test="${not empty type and not empty productTips}">
+	<div class="collapse mb-3" id="productTipsPanel">
+		<div class="card card-body py-2 px-3" style="font-size:0.85rem; white-space:pre-wrap; border-left:4px solid var(--bs-primary,#0d6efd);">
+			<c:out value="${productTips}"/>
+		</div>
+	</div>
+	</c:if>
 
 	<c:set var="arrival" value="${empty step ? 'Arrival' : 'Update'}"/>
 	<c:set var="totalSteps" value="${fn:length(productStepStatii)}"/>

@@ -27,9 +27,12 @@ package ecmwf.ecpds.master.plugin.http.controller.monitoring;
  */
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,6 +41,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import ecmwf.common.database.ProductMetadata;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
@@ -45,6 +49,7 @@ import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStepStatusHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException;
 import ecmwf.ecpds.master.plugin.http.model.monitoring.ProductStatus;
+import ecmwf.ecpds.master.plugin.http.model.monitoring.ProductStepStatus;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.web.ECMWFException;
@@ -85,7 +90,7 @@ public class GetSummaryDisplayAction extends PDSAction {
             final var product = params.get(0).toString();
             final var time = params.get(1).toString();
             final var stepStatii = ProductStepStatusHome.findAll(product, time);
-            putDataForHeader(request, ses, product, time, stepStatii.size(), false);
+            putDataForHeader(request, ses, product, time, stepStatii, false, null);
             request.setAttribute("productStepStatii", stepStatii);
         } else if (params.size() == 4) {
             final var product = params.get(0).toString();
@@ -98,7 +103,7 @@ public class GetSummaryDisplayAction extends PDSAction {
             }
             final var type = params.get(3).toString();
             final var history = ProductStepStatusHome.findHistory(product, time, step, type, -1);
-            putDataForHeader(request, ses, product, time, history.size(), true);
+            putDataForHeader(request, ses, product, time, history, true, type);
             request.setAttribute("productStepStatii", history);
             request.setAttribute("step", step);
             request.setAttribute("type", type);
@@ -120,10 +125,14 @@ public class GetSummaryDisplayAction extends PDSAction {
      *            the product
      * @param time
      *            the time
-     * @param stepStatiiSize
-     *            the step statii size
+     * @param stepStatii
+     *            the product step statii currently shown in the table (used to compute the number of rows per column,
+     *            and the distinct product types for the {@code {{DESCRIPTION}}} placeholder)
      * @param onecolumn
      *            the onecolumn
+     * @param currentType
+     *            the single product type currently being viewed (step/type history page), or {@code null} on the
+     *            product/cycle overview page; used to look up the Tips text for the product monitoring page
      *
      * @throws MonitoringException
      *             the monitoring exception
@@ -131,8 +140,8 @@ public class GetSummaryDisplayAction extends PDSAction {
      *             the transfer exception
      */
     private static final void putDataForHeader(final HttpServletRequest request, final MonitoringSessionActionForm ses,
-            final String product, final String time, final int stepStatiiSize, final boolean onecolumn)
-            throws MonitoringException, TransferException {
+            final String product, final String time, final Collection<ProductStepStatus> stepStatii,
+            final boolean onecolumn, final String currentType) throws MonitoringException, TransferException {
         final List<ProductStatus> products = new ArrayList<>(ProductStatusHome.findFromMemory().values());
         Collections.sort(products, new ProductStatusComparator());
         request.setAttribute("productStatus", ProductStatusHome.findByProduct(product, time));
@@ -140,22 +149,26 @@ public class GetSummaryDisplayAction extends PDSAction {
         request.setAttribute("productNameAndTime", time + "-" + product);
         request.setAttribute("products", products);
         request.setAttribute("reqData", new MonitoringRequest(request, ses));
+        final var stepStatiiSize = stepStatii.size();
         if (onecolumn) {
             request.setAttribute("stepsPerColumn", stepStatiiSize);
         } else {
             request.setAttribute("stepsPerColumn", stepStatiiSize / 2 + 1);
         }
         request.setAttribute("nearestToScheduleIndex", MonitoringRequest.getNearestToScheduleIndex(products));
-        putProductStatusMessages(request, product, time);
+        putProductStatusMessages(request, product, time, stepStatii, currentType);
     }
 
     /**
      * Sets the "ECMWFProductsDelay" and "ECMWFProducts" request attributes consumed by product.jsp to pre-fill the
-     * Outlook deeplink email bodies. Fetches the current (possibly customized) messages from the database, falling back
-     * to the built-in defaults if they have not been customized, or if the database cannot be reached. The
-     * {@code {{PRODUCT}}}, {@code {{CYCLE}}} and {@code {{DESCRIPTION}}} placeholders, if present, are replaced with
-     * the actual product name and cycle/time currently being viewed (e.g. "GENFO" and "06"), and the description
-     * configured for that product (Admin Tasks &rarr; Product Descriptions), if any.
+     * Outlook deeplink email bodies, as well as "productTips" (the Tips text for the current product/type, if any).
+     * Fetches the current (possibly customized) messages from the database, falling back to the built-in defaults if
+     * they have not been customized, or if the database cannot be reached. The {@code {{PRODUCT}}} and
+     * {@code {{CYCLE}}} placeholders, if present, are replaced with the actual product name and cycle/time currently
+     * being viewed (e.g. "GENFO" and "06"). The {@code {{DESCRIPTION}}} placeholder is replaced with a bullet list of
+     * the descriptions configured (Admin Tasks &rarr; Product Descriptions) for each distinct product type currently
+     * shown in the table (falling back to the generic, all-types description when no type-specific one is configured),
+     * or with the plain generic description when no type-specific rows apply.
      *
      * @param request
      *            the request
@@ -163,12 +176,17 @@ public class GetSummaryDisplayAction extends PDSAction {
      *            the product name (e.g. "GENFO")
      * @param time
      *            the cycle/time (e.g. "06")
+     * @param stepStatii
+     *            the product step statii currently shown in the table, used to determine the distinct product types
+     * @param currentType
+     *            the single product type currently being viewed, or {@code null} on the product/cycle overview page
      */
     private static final void putProductStatusMessages(final HttpServletRequest request, final String product,
-            final String time) {
+            final String time, final Collection<ProductStepStatus> stepStatii, final String currentType) {
         var delayMessage = ProductStatusMessages.DEFAULT_DELAY_MESSAGE;
         var resumedMessage = ProductStatusMessages.DEFAULT_RESUMED_MESSAGE;
         String description = null;
+        String tips = null;
         try {
             final var db = MasterManager.getDB();
             final var storedDelayMessage = db.getProductStatusMessage(ProductStatusMessages.DELAY_MESSAGE_NAME);
@@ -180,7 +198,11 @@ public class GetSummaryDisplayAction extends PDSAction {
                 resumedMessage = storedResumedMessage;
             }
             if (product != null) {
-                description = db.getProductDescriptions().get(product);
+                final var metadata = db.getProductMetadata(product);
+                description = buildDescription(metadata, stepStatii);
+                if (currentType != null) {
+                    tips = lookupField(metadata, currentType, ProductMetadata::getTips);
+                }
             }
         } catch (final Exception e) {
             // Database not reachable or an error occurred: silently fall back to the built-in defaults.
@@ -189,5 +211,84 @@ public class GetSummaryDisplayAction extends PDSAction {
         resumedMessage = ProductStatusMessages.substitutePlaceholders(resumedMessage, product, time, description);
         request.setAttribute("ECMWFProductsDelay", ProductStatusMessages.encodeForEmailBody(delayMessage));
         request.setAttribute("ECMWFProducts", ProductStatusMessages.encodeForEmailBody(resumedMessage));
+        request.setAttribute("productTips", tips);
+    }
+
+    /**
+     * Builds the {@code {{DESCRIPTION}}} placeholder text: one bullet line per distinct product type currently shown in
+     * the table (falling back to the generic, all-types entry when no type-specific description is configured), or the
+     * plain generic description when no type-specific rows apply/resolve.
+     *
+     * @param metadata
+     *            all configured metadata entries for the product
+     * @param stepStatii
+     *            the product step statii currently shown in the table
+     *
+     * @return the description text (bullet list, plain text, or {@code null} if nothing is configured)
+     */
+    private static final String buildDescription(final List<ProductMetadata> metadata,
+            final Collection<ProductStepStatus> stepStatii) {
+        final var byType = new LinkedHashMap<String, ProductMetadata>();
+        for (final var m : metadata) {
+            byType.put(m.getType(), m);
+        }
+        final var genericDescription = byType.containsKey("") ? byType.get("").getDescription() : null;
+        final var types = new TreeSet<String>();
+        for (final var s : stepStatii) {
+            final var type = s.getType();
+            if (type != null && !type.isBlank()) {
+                types.add(type);
+            }
+        }
+        final var bullets = new LinkedHashMap<String, String>();
+        for (final var type : types) {
+            final var specific = byType.get(type);
+            final var text = specific != null && specific.getDescription() != null
+                    && !specific.getDescription().isBlank() ? specific.getDescription() : genericDescription;
+            if (text != null && !text.isBlank()) {
+                bullets.put(type, text);
+            }
+        }
+        if (bullets.isEmpty()) {
+            return genericDescription;
+        }
+        if (bullets.size() == 1 && types.size() <= 1) {
+            return bullets.values().iterator().next();
+        }
+        final var sb = new StringBuilder();
+        for (final var e : bullets.entrySet()) {
+            if (sb.length() > 0) {
+                sb.append('\n');
+            }
+            sb.append("- ").append(e.getKey()).append(": ").append(e.getValue());
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Looks up a single field (description or tips) for a product type, falling back to the generic (all-types) entry
+     * when no type-specific one is configured.
+     *
+     * @param metadata
+     *            all configured metadata entries for the product
+     * @param type
+     *            the product type
+     * @param getter
+     *            the field accessor ({@link ProductMetadata#getDescription()} or {@link ProductMetadata#getTips()})
+     *
+     * @return the resolved field value, or {@code null} if nothing is configured
+     */
+    private static final String lookupField(final List<ProductMetadata> metadata, final String type,
+            final java.util.function.Function<ProductMetadata, String> getter) {
+        String specific = null;
+        String generic = null;
+        for (final var m : metadata) {
+            if (type.equals(m.getType())) {
+                specific = getter.apply(m);
+            } else if (m.isGeneric()) {
+                generic = getter.apply(m);
+            }
+        }
+        return specific != null && !specific.isBlank() ? specific : generic;
     }
 }

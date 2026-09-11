@@ -10,12 +10,7 @@
     }
     final boolean _sm_certError   = "ERROR".equals(_sm_certStatus);
     final boolean _sm_certWarning = "WARNING".equals(_sm_certStatus);
-    final String _sm_certIconClass = "bi-shield-lock";
-    final String _sm_certDot = _sm_certError
-        ? " <i class=\"bi bi-circle-fill text-danger ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
-        : _sm_certWarning
-        ? " <i class=\"bi bi-circle-fill text-warning ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
-        : "";
+    final String _sm_certIconClass = "bi-shield-lock" + (_sm_certError ? " text-danger" : _sm_certWarning ? " text-warning" : "");
 
     // Resolve cap status similarly.
     Boolean _sm_capNotSetAttr = (Boolean) request.getAttribute("criticalPasswordNotSet");
@@ -26,9 +21,7 @@
         try { _sm_capNotSet = !MasterManager.getDB().hasCriticalActionPassword(); }
         catch (final Exception _e) { _sm_capNotSet = false; }
     }
-    final String _sm_capDot = _sm_capNotSet
-        ? " <i class=\"bi bi-circle-fill text-warning ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
-        : "";
+    final String _sm_capIconClass = "bi-key-fill" + (_sm_capNotSet ? " text-warning" : "");
 
     // Resolve unreviewed-feedback status.
     Boolean _sm_feedbackAttr = (Boolean) request.getAttribute("hasUnreviewedFeedback");
@@ -39,9 +32,7 @@
         try { _sm_hasFeedback = MasterManager.getMI().hasUnreviewedFeedback(); }
         catch (final Exception _e) { _sm_hasFeedback = false; }
     }
-    final String _sm_feedbackDot = _sm_hasFeedback
-        ? " <i class=\"bi bi-circle-fill text-warning ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
-        : "";
+    final String _sm_feedbackIconClass = "bi-chat-left-text" + (_sm_hasFeedback ? " text-warning" : "");
 
     // Resolve outstanding (bad) transfers status — reads in-memory cache, zero DB cost.
     Boolean _sm_badAttr = (Boolean) request.getAttribute("hasBadTransfers");
@@ -52,9 +43,7 @@
         try { _sm_hasBad = MasterManager.hasBadDataTransfers(); }
         catch (final Exception _e) { _sm_hasBad = false; }
     }
-    final String _sm_badDot = _sm_hasBad
-        ? " <i class=\"bi bi-circle-fill text-danger ms-1\" style=\"font-size:0.45rem;vertical-align:middle;\"></i>"
-        : "";
+    final String _sm_badIconClass = "bi-hourglass-split" + (_sm_hasBad ? " text-danger" : "");
 %>
 
 <table class="spareBox2">
@@ -67,19 +56,19 @@
 	<auth:link basePathKey="admin.basepath" href="/filter"
 		wrappingTags="tr,td"><i class="bi bi-file-zip"></i> Compress Files</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/requeue"
-		wrappingTags="tr,td"><i class="bi bi-hourglass-split"></i><span> Outstanding Transfers<%=_sm_badDot%></span></auth:link>
+		wrappingTags="tr,td"><i class="bi <%=_sm_badIconClass%>"></i> Outstanding Transfers</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/upload"
 		wrappingTags="tr,td"><i class="bi bi-upload"></i> Upload Files</auth:link>
 	<auth:link basePathKey="admin.feedback.basepath" href=""
-		wrappingTags="tr,td"><i class="bi bi-chat-left-text"></i><span> User Feedback<%=_sm_feedbackDot%></span></auth:link>
+		wrappingTags="tr,td"><i class="bi <%=_sm_feedbackIconClass%>"></i> User Feedback</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/metafields"
 		wrappingTags="tr,td"><i class="bi bi-list-check"></i> Metadata Fields</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/certificates"
-		wrappingTags="tr,td"><i class="bi <%=_sm_certIconClass%>"></i><span> TLS Certificates<%=_sm_certDot%></span></auth:link>
+		wrappingTags="tr,td"><i class="bi <%=_sm_certIconClass%>"></i> TLS Certificates</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/criticalpassword"
-		wrappingTags="tr,td"><i class="bi bi-key-fill"></i><span> Critical Password<%=_sm_capDot%></span></auth:link>
+		wrappingTags="tr,td"><i class="bi <%=_sm_capIconClass%>"></i> Critical Password</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/productmessages"
-		wrappingTags="tr,td"><i class="bi bi-envelope-paper-fill"></i> Product Status Messages</auth:link>
+		wrappingTags="tr,td"><i class="bi bi-envelope-paper-fill"></i> Product Messages</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/productdescriptions"
 		wrappingTags="tr,td"><i class="bi bi-card-list"></i> Product Descriptions</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/purge"

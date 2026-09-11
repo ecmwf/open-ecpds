@@ -193,7 +193,7 @@
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
         <i class="bi bi-envelope-paper-fill text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
         <div>
-            <span class="tool-title">Product Status Messages</span>
+            <span class="tool-title">Product Messages</span>
             <p class="tool-desc">Customize the "Products Delay" and "Products Resumed" email templates
             pre-filled on the Product Status page, instead of relying on the built-in default text.</p>
         </div>
@@ -208,7 +208,7 @@
         <div>
             <span class="tool-title">Product Descriptions</span>
             <p class="tool-desc">Add or remove a short text description for each product, made available as the
-            <code>{{DESCRIPTION}}</code> placeholder inside the Product Status Messages.</p>
+            <code>{{DESCRIPTION}}</code> placeholder inside the Product Messages.</p>
         </div>
     </div>
     </div>

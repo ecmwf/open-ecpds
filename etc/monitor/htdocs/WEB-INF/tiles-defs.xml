@@ -1317,7 +1317,7 @@
 	</definition>
 
 	<definition name=".pds.admin.productmessages" extends=".pds.admin">
-		<put name="title" value="Product Status Messages" />
+		<put name="title" value="Product Messages" />
 		<put name="content" value="/WEB-INF/jsp/pds/admin/productmessages/index.jsp" />
 	</definition>
 
