@@ -30,6 +30,7 @@ th {
     border: 1px solid var(--bs-border-color);
     border-radius: 8px;
     padding: 0.75rem 1rem;
+    margin-top: 1rem;
     margin-bottom: 1rem;
     display: flex;
     flex-wrap: wrap;
@@ -213,15 +214,10 @@ th {
 			</span>
 		</div>
 		<c:if test="${not empty type and not empty productTips}">
-		<div class="mon-field">
-			<span class="mon-label">Tips</span>
-			<span class="mon-value">
-				<button class="btn btn-link btn-sm p-0" type="button" data-bs-toggle="collapse"
-						data-bs-target="#productTipsPanel" aria-expanded="false" title="Show tips for this product/type">
-					<i class="bi bi-info-circle"></i>
-				</button>
-			</span>
-		</div>
+		<button class="btn btn-link btn-sm p-0 ms-auto" type="button" data-bs-toggle="collapse"
+				data-bs-target="#productTipsPanel" aria-expanded="false" title="Show tips for this product/type">
+			<i class="bi bi-info-circle" style="font-size:1.1rem;"></i>
+		</button>
 		</c:if>
 	</div>
 

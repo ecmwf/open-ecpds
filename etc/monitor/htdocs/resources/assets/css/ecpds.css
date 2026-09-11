@@ -1824,6 +1824,15 @@ a.dest-type-link:hover .bi-globe {
     border-bottom: 2px solid var(--bs-border-color-translucent) !important;
 }
 
+/* thead.table-info — dark mode: Bootstrap keeps this variant's light-cyan background fixed regardless of
+   theme, which makes text-muted sort-arrow icons (light grey, meant for dark backgrounds) invisible. */
+[data-bs-theme=dark] thead.table-info > tr > th,
+[data-bs-theme=dark] thead.table-info > tr > td {
+    background-color: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color) !important;
+    border-bottom: 2px solid var(--bs-border-color-translucent) !important;
+}
+
 /* table.listing th — override hardcoded #6c757d in dark mode */
 [data-bs-theme=dark] table.listing th,
 [data-bs-theme=dark] table.listing tr th,
