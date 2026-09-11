@@ -213,15 +213,24 @@ th {
 				${productStatus.generationStatusFormattedCode}
 			</span>
 		</div>
-		<c:if test="${not empty type and not empty productTips}">
-		<button class="btn btn-link btn-sm p-0 ms-auto" type="button" data-bs-toggle="collapse"
-				data-bs-target="#productTipsPanel" aria-expanded="false" title="Show tips for this product/type">
-			<i class="bi bi-info-circle" style="font-size:1.1rem;"></i>
-		</button>
-		</c:if>
+		<c:choose>
+			<c:when test="${not empty productTips}">
+				<button class="btn btn-link btn-sm p-0 ms-auto" type="button" data-bs-toggle="collapse"
+						data-bs-target="#productTipsPanel" aria-expanded="false"
+						title="${not empty type ? 'Show tips for this product/type' : 'Show tips for all types of this product'}">
+					<i class="bi bi-info-circle" style="font-size:1.1rem;"></i>
+				</button>
+			</c:when>
+			<c:otherwise>
+				<button class="btn btn-link btn-sm p-0 ms-auto text-muted" type="button" disabled
+						title="No tips configured for this product">
+					<i class="bi bi-info-circle" style="font-size:1.1rem; opacity:0.4;"></i>
+				</button>
+			</c:otherwise>
+		</c:choose>
 	</div>
 
-	<c:if test="${not empty type and not empty productTips}">
+	<c:if test="${not empty productTips}">
 	<div class="collapse mb-3" id="productTipsPanel">
 		<div class="card card-body py-2 px-3" style="font-size:0.85rem; white-space:pre-wrap; border-left:4px solid var(--bs-primary,#0d6efd);">
 			<c:out value="${productTips}"/>

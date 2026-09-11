@@ -199,10 +199,9 @@ public class GetSummaryDisplayAction extends PDSAction {
             }
             if (product != null) {
                 final var metadata = db.getProductMetadata(product);
-                description = buildDescription(metadata, stepStatii);
-                if (currentType != null) {
-                    tips = lookupField(metadata, currentType, ProductMetadata::getTips);
-                }
+                description = buildBulletedField(metadata, stepStatii, ProductMetadata::getDescription);
+                tips = currentType != null ? lookupField(metadata, currentType, ProductMetadata::getTips)
+                        : buildBulletedField(metadata, stepStatii, ProductMetadata::getTips);
             }
         } catch (final Exception e) {
             // Database not reachable or an error occurred: silently fall back to the built-in defaults.
@@ -215,24 +214,29 @@ public class GetSummaryDisplayAction extends PDSAction {
     }
 
     /**
-     * Builds the {@code {{DESCRIPTION}}} placeholder text: one bullet line per distinct product type currently shown in
-     * the table (falling back to the generic, all-types entry when no type-specific description is configured), or the
-     * plain generic description when no type-specific rows apply/resolve.
+     * Builds a bullet-list rendering of a {@link ProductMetadata} field (description or tips): one bullet line per
+     * distinct product type currently shown in the table (falling back to the generic, all-types entry when no
+     * type-specific value is configured), or the plain generic value when no type-specific rows apply/resolve. Used
+     * both for the {@code {{DESCRIPTION}}} placeholder and for the aggregated Tips info panel shown on the
+     * product/cycle overview page (which has no single "current type").
      *
      * @param metadata
      *            all configured metadata entries for the product
      * @param stepStatii
      *            the product step statii currently shown in the table
+     * @param getter
+     *            the field accessor ({@link ProductMetadata#getDescription()} or {@link ProductMetadata#getTips()})
      *
-     * @return the description text (bullet list, plain text, or {@code null} if nothing is configured)
+     * @return the text (bullet list, plain text, or {@code null} if nothing is configured)
      */
-    private static final String buildDescription(final List<ProductMetadata> metadata,
-            final Collection<ProductStepStatus> stepStatii) {
+    private static final String buildBulletedField(final List<ProductMetadata> metadata,
+            final Collection<ProductStepStatus> stepStatii,
+            final java.util.function.Function<ProductMetadata, String> getter) {
         final var byType = new LinkedHashMap<String, ProductMetadata>();
         for (final var m : metadata) {
             byType.put(m.getType(), m);
         }
-        final var genericDescription = byType.containsKey("") ? byType.get("").getDescription() : null;
+        final var generic = byType.containsKey("") ? getter.apply(byType.get("")) : null;
         final var types = new TreeSet<String>();
         for (final var s : stepStatii) {
             final var type = s.getType();
@@ -243,14 +247,14 @@ public class GetSummaryDisplayAction extends PDSAction {
         final var bullets = new LinkedHashMap<String, String>();
         for (final var type : types) {
             final var specific = byType.get(type);
-            final var text = specific != null && specific.getDescription() != null
-                    && !specific.getDescription().isBlank() ? specific.getDescription() : genericDescription;
-            if (text != null && !text.isBlank()) {
-                bullets.put(type, text);
+            final var value = specific != null && getter.apply(specific) != null && !getter.apply(specific).isBlank()
+                    ? getter.apply(specific) : generic;
+            if (value != null && !value.isBlank()) {
+                bullets.put(type, value);
             }
         }
         if (bullets.isEmpty()) {
-            return genericDescription;
+            return generic;
         }
         if (bullets.size() == 1 && types.size() <= 1) {
             return bullets.values().iterator().next();
