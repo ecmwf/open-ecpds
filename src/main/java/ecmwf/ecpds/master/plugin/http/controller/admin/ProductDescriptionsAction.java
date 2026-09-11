@@ -209,7 +209,11 @@ public class ProductDescriptionsAction extends PDSAction {
         // interface (/do/monitoring).
         final var knownProducts = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
         try {
-            knownProducts.addAll(ProductStatusHome.findFromMemory().keySet());
+            // findFromMemory() is keyed by "product@time", not by product name, so the product names must be
+            // collected from the cached values rather than from the map's key set.
+            for (final var status : ProductStatusHome.findFromMemory().values()) {
+                knownProducts.add(status.getProduct());
+            }
             request.setAttribute("knownProductNames", new ArrayList<>(knownProducts));
         } catch (final Exception e) {
             request.setAttribute("knownProductNames", java.util.Collections.emptyList());
@@ -331,7 +335,11 @@ public class ProductDescriptionsAction extends PDSAction {
             final var db = MasterManager.getDB();
             final var knownProducts = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
             try {
-                knownProducts.addAll(ProductStatusHome.findFromMemory().keySet());
+                // findFromMemory() is keyed by "product@time", not by product name, so the product names must be
+                // collected from the cached values rather than from the map's key set.
+                for (final var status : ProductStatusHome.findFromMemory().values()) {
+                    knownProducts.add(status.getProduct());
+                }
             } catch (final Exception e) {
                 _log.warn("ProductDescriptionsAction.handleDeleteUnknown: failed to load known products", e);
             }
