@@ -3709,14 +3709,20 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     /**
      * {@inheritDoc}
      *
-     * Resolves the MasterServer's own hostname the same way any other Host is resolved (see
-     * {@link DataBaseImpl#resolveGeoIp(String)}), including any {@code [GeoIP]} {@code forced.*} override.
+     * Resolves the MasterServer's own hostname/IP address the same way any other Host is resolved (see
+     * {@link DataBaseImpl#resolveGeoIp(String)}), including any {@code [GeoIP]} {@code forced.*} override. Since a
+     * {@code forced.*} entry may be keyed by either the hostname or the IP address, both are tried - the hostname
+     * first, then the IP address if that did not resolve (this also covers the common case of a {@code forced.<ip>=...}
+     * override, which the hostname alone would never match).
      */
     @Override
     public double[] getLiveTransferOrigin() throws RemoteException {
         try {
-            final var hostName = InetAddress.getLocalHost().getCanonicalHostName();
-            final var geo = DataBaseImpl.resolveGeoIp(hostName);
+            final var local = InetAddress.getLocalHost();
+            var geo = DataBaseImpl.resolveGeoIp(local.getCanonicalHostName());
+            if (geo == null || geo.latitude() == null || geo.longitude() == null) {
+                geo = DataBaseImpl.resolveGeoIp(local.getHostAddress());
+            }
             if (geo != null && geo.latitude() != null && geo.longitude() != null) {
                 return new double[] { geo.latitude(), geo.longitude() };
             }
