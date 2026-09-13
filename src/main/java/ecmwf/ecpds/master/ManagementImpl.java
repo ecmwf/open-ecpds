@@ -3766,8 +3766,8 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      * {@inheritDoc}
      */
     @Override
-    public Map<String, double[]> getGeoLocations(final String[] hostNames) throws RemoteException {
-        final Map<String, double[]> result = new HashMap<>();
+    public Map<String, GeoPoint> getGeoLocations(final String[] hostNames) throws RemoteException {
+        final Map<String, GeoPoint> result = new HashMap<>();
         if (hostNames != null) {
             for (final var hostName : hostNames) {
                 if (hostName == null || hostName.isBlank() || result.containsKey(hostName)) {
@@ -3776,7 +3776,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                 try {
                     final var geo = DataBaseImpl.resolveGeoIp(hostName);
                     if (geo != null && geo.latitude() != null && geo.longitude() != null) {
-                        result.put(hostName, new double[] { geo.latitude(), geo.longitude() });
+                        result.put(hostName, new GeoPoint(geo.latitude(), geo.longitude(), geo.country()));
                     }
                 } catch (final Exception e) {
                     _log.debug("Resolving geolocation for {}", hostName, e);

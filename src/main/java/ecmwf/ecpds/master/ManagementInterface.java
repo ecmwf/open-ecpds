@@ -1823,10 +1823,10 @@ public interface ManagementInterface extends Remote {
      * @param hostNames
      *            the host names to resolve
      *
-     * @return a map from host name to [latitude, longitude] pair, containing only the host names that could be resolved
+     * @return a map from host name to {@link GeoPoint}, containing only the host names that could be resolved
      *
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    Map<String, double[]> getGeoLocations(String[] hostNames) throws RemoteException;
+    Map<String, GeoPoint> getGeoLocations(String[] hostNames) throws RemoteException;
 }

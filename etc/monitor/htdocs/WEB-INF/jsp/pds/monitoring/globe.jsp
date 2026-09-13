@@ -40,6 +40,12 @@
 #globeInfoPanel dd{margin-bottom:.35rem;word-break:break-all;}
 #globeOriginWarning{position:absolute;right:10px;bottom:10px;z-index:10;max-width:min(360px,80vw);background:rgba(20,25,30,.86);color:#eee;border-radius:8px;padding:.55rem .8rem;font-size:.78rem;line-height:1.4;display:none;box-shadow:0 4px 16px rgba(0,0,0,.35);}
 #globeOriginWarning i{margin-right:.4rem;color:#997404;}
+#globeCountryTable{position:absolute;left:10px;bottom:10px;z-index:10;max-width:min(280px,70vw);max-height:42%;overflow:auto;background:rgba(20,25,30,.86);color:#eee;border-radius:8px;padding:.5rem .7rem;font-size:.76rem;line-height:1.4;display:none;box-shadow:0 4px 16px rgba(0,0,0,.35);}
+.globe-country-table-title{font-weight:600;color:#9fd6ff;margin-bottom:.3rem;}
+#globeCountryTable table{width:100%;border-collapse:collapse;}
+#globeCountryTable th{color:#9fd6ff;text-align:left;font-weight:600;padding:0 6px 4px 0;position:sticky;top:0;background:rgba(20,25,30,.86);}
+#globeCountryTable td{padding:2px 6px 2px 0;white-space:nowrap;}
+#globeCountryTable td.country-name{max-width:130px;overflow:hidden;text-overflow:ellipsis;}
 </style>
 
 <div id="globeHeader">
@@ -52,6 +58,26 @@
     </div>
     <div class="actions-group">
         <span class="globe-badge-connecting" id="globeStatusBadge">Connecting...</span>
+        <div class="dropdown d-inline-block">
+            <button type="button" id="globeViewModeBtn" class="globe-icon-btn" title="Group arcs by host or country"
+                    data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                <i class="bi bi-diagram-3"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end p-2" style="min-width:180px;" aria-labelledby="globeViewModeBtn">
+                <li>
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="radio" name="globeViewModeRadio" id="globeViewModeHost" value="host">
+                        <label class="form-check-label" for="globeViewModeHost" style="font-size:.85rem;">Per host</label>
+                    </div>
+                </li>
+                <li>
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="radio" name="globeViewModeRadio" id="globeViewModeCountry" value="country">
+                        <label class="form-check-label" for="globeViewModeCountry" style="font-size:.85rem;">Per country</label>
+                    </div>
+                </li>
+            </ul>
+        </div>
         <div class="dropdown d-inline-block">
             <button type="button" id="globeLabelsBtn" class="globe-icon-btn" title="Toggle country/town names"
                     data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
@@ -95,6 +121,13 @@
     <div id="globeOriginWarning">
         <i class="bi bi-exclamation-triangle-fill"></i><strong>OpenECPDS location not configured.</strong>
         <span id="globeOriginWarningText">The origin marker cannot be placed because the OpenECPDS geolocation could not be resolved.</span>
+    </div>
+    <div id="globeCountryTable">
+        <div class="globe-country-table-title">Transfers by country</div>
+        <table>
+            <thead><tr><th>Country</th><th>Active</th><th>Throughput</th></tr></thead>
+            <tbody id="globeCountryTableBody"></tbody>
+        </table>
     </div>
 </div>
 
@@ -209,14 +242,26 @@
     var ORIGIN_COLOR = Cesium.Color.fromCssColorString("#ffd166");
     var PROXY_HOST_COLOR = Cesium.Color.fromCssColorString("#a78bfa");
     var TERMINAL_FADE_MS = 2500;
+    var ORIGIN_PIXEL_SIZE = 12;
+    var MOVER_PIXEL_SIZE = 10;
 
     var origin = null; // {lat, lon}
     var originPoint = null;
     // hostName -> { arc, point, lat, lon, transfers: {transferId: sample}, status, removeTimeout, pulsePhase }
     var hosts = Object.create(null);
+    // countryCode -> { arc, point, lat, lon, hostCount, transfers: {transferId: sample}, agg, removeTimeout, pulsePhase }
+    // - only populated/rendered while viewMode === "country" (see setViewMode()).
+    var countries = Object.create(null);
     // moverName -> { point, lat, lon, transferIds: Set, removeTimeout } - only for Proxy Hosts (see
     // isProxyHost on each transfer sample), never for ordinary, directly-connected Data Movers.
     var movers = Object.create(null);
+
+    // Whether arcs/markers are grouped per target Host ("host", the default - one arc per Host) or per resolved
+    // destination country ("country" - one aggregated arc per country, plus a small breakdown table), the latter
+    // being a much less cluttered "broad view" once there are many hundreds/thousands of concurrent transfers to
+    // many different Hosts. Persisted across reloads via localStorage, like the label toggles below.
+    var VIEW_MODE_PREF_KEY = "globeViewMode";
+    var viewMode = localStorage.getItem(VIEW_MODE_PREF_KEY) === "country" ? "country" : "host";
 
     // Optional country/city name labels, provisioned lazily/in the background by GlobeLabelsProvisioner (see
     // globeImageryProvider fallback above for the same rationale) - fetched once, best-effort, and simply skipped
@@ -271,6 +316,24 @@
     });
     setCountryLabelsVisible(countryLabelsVisible);
     setCityLabelsVisible(cityLabelsVisible);
+
+    // View-mode dropdown wiring (see setViewMode() further below for the actual behaviour). The button itself is
+    // marked "active" whenever "Per country" is selected, mirroring updateLabelsBtnState()'s pattern above.
+    document.getElementById("globeViewModeHost").addEventListener("change", function () {
+        if (this.checked) {
+            setViewMode("host");
+            document.getElementById("globeViewModeBtn").classList.remove("active");
+        }
+    });
+    document.getElementById("globeViewModeCountry").addEventListener("change", function () {
+        if (this.checked) {
+            setViewMode("country");
+            document.getElementById("globeViewModeBtn").classList.add("active");
+        }
+    });
+    document.getElementById(viewMode === "country" ? "globeViewModeCountry" : "globeViewModeHost").checked = true;
+    document.getElementById("globeViewModeBtn").classList.toggle("active", viewMode === "country");
+    document.getElementById("globeCountryTable").style.display = viewMode === "country" ? "block" : "none";
 
     // Renders a name as a small rounded "pill" (plain text on a translucent rounded-rect background, optionally
     // with a border) into an offscreen canvas, used as a Billboard image - Cesium's built-in Label background is a
@@ -468,7 +531,11 @@
     // Builds a set of positions following the geodesic (great-circle) path between two points, lofted into a
     // parabolic arc above the surface, so that transfers spanning long distances (e.g. Europe <-> US) are rendered
     // as a curved 3D arc rather than a straight line cutting through the globe.
-    function arcPositions(lon1, lat1, lon2, lat2) {
+    // trimStartMeters/trimEndMeters (both optional, in world-space meters) shorten the visible arc at either end,
+    // so it can be made to start/end at the edge of a marker circle instead of poking out from underneath its
+    // center - see pixelRadiusToMeters()/retrimArc() below, which compute those distances from each marker's
+    // on-screen pixel size.
+    function arcPositions(lon1, lat1, lon2, lat2, trimStartMeters, trimEndMeters) {
         var start = Cesium.Cartographic.fromDegrees(lon1, lat1);
         var end = Cesium.Cartographic.fromDegrees(lon2, lat2);
         var geodesic = new Cesium.EllipsoidGeodesic(start, end);
@@ -480,14 +547,79 @@
         // excessive.
         var maxHeight = Cesium.Math.clamp(totalDistance * 0.12, 15000, 900000);
         var segments = Cesium.Math.clamp(Math.round(totalDistance / 100000), 16, 128);
+        // Each trim is capped at 40% of the total distance so a very short arc (or an unusually large marker)
+        // never fully collapses; if the two trims would overlap, fall back to no trimming at all rather than
+        // drawing a degenerate/reversed arc.
+        var startFraction = Cesium.Math.clamp((trimStartMeters || 0) / totalDistance, 0, 0.4);
+        var endFraction = 1 - Cesium.Math.clamp((trimEndMeters || 0) / totalDistance, 0, 0.4);
+        if (endFraction <= startFraction) {
+            startFraction = 0;
+            endFraction = 1;
+        }
         var positions = [];
         for (var i = 0; i <= segments; i++) {
-            var fraction = i / segments;
+            var fraction = startFraction + (endFraction - startFraction) * (i / segments);
             var carto = geodesic.interpolateUsingFraction(fraction);
             var height = Math.sin(Math.PI * fraction) * maxHeight;
             positions.push(Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, height));
         }
         return positions;
+    }
+
+    // Converts a marker's on-screen pixel diameter to an approximate world-space distance (meters) at its current
+    // position/zoom level, so arcs can be trimmed to visually start/end at the edge of a marker circle rather than
+    // its center (which otherwise looks like the arc is erupting from the middle of a differently-coloured dot).
+    function pixelRadiusToMeters(lat, lon, pixelDiameter) {
+        var cart = Cesium.Cartesian3.fromDegrees(lon, lat);
+        var metersPerPixel = viewer.camera.getPixelSize(
+            new Cesium.BoundingSphere(cart, 0), viewer.scene.drawingBufferWidth, viewer.scene.drawingBufferHeight);
+        if (!metersPerPixel || !isFinite(metersPerPixel)) {
+            return 0;
+        }
+        return (pixelDiameter / 2) * metersPerPixel;
+    }
+
+    // Recomputes one arc's trimmed positions from its stored raw endpoints/marker sizes - used both right after
+    // creation and whenever the camera moves/zooms enough to change the pixel-to-meters ratio (see
+    // refreshArcTrims()), so the visual gap at each end keeps tracking the marker's on-screen size correctly.
+    function retrimArc(entry) {
+        if (!entry.arc || !entry.arcOrigin) {
+            return;
+        }
+        var trimStart = pixelRadiusToMeters(entry.arcOrigin.lat, entry.arcOrigin.lon, entry.arcOrigin.pixelSize);
+        var trimEnd = pixelRadiusToMeters(entry.lat, entry.lon, entry.destPixelSize);
+        entry.arc.positions =
+            arcPositions(entry.arcOrigin.lon, entry.arcOrigin.lat, entry.lon, entry.lat, trimStart, trimEnd);
+    }
+
+    // Re-trims every currently-rendered arc (host or country view) - bound to the camera's `changed` event below,
+    // rather than every single postRender frame, since the pixel-to-meters ratio only meaningfully changes while
+    // the user is actively panning/zooming.
+    function refreshArcTrims() {
+        Object.keys(hosts).forEach(function (name) { retrimArc(hosts[name]); });
+        Object.keys(countries).forEach(function (code) { retrimArc(countries[code]); });
+    }
+    viewer.camera.percentageChanged = 0.05;
+    viewer.camera.changed.addEventListener(refreshArcTrims);
+
+    // Resolves an ISO country code (as returned by GeoIP, e.g. "US", "IT") to its display name via the browser's
+    // built-in Intl.DisplayNames, so the country table/labels don't need a bundled name lookup table of their own.
+    // Falls back to the raw code itself if Intl.DisplayNames is unavailable (very old browsers) or the code is
+    // unrecognised.
+    var countryNameFormatter = (typeof Intl !== "undefined" && Intl.DisplayNames)
+        ? new Intl.DisplayNames(["en"], { type: "region" }) : null;
+    function countryDisplayName(code) {
+        if (!code) {
+            return "Unknown";
+        }
+        if (countryNameFormatter) {
+            try {
+                return countryNameFormatter.of(code) || code;
+            } catch (e) {
+                return code;
+            }
+        }
+        return code;
     }
 
     function setOrigin(lat, lon) {
@@ -498,7 +630,7 @@
         }
         originPoint = points.add({
             position: Cesium.Cartesian3.fromDegrees(lon, lat),
-            pixelSize: 12,
+            pixelSize: ORIGIN_PIXEL_SIZE,
             color: ORIGIN_COLOR,
             outlineColor: Cesium.Color.WHITE,
             outlineWidth: 2
@@ -571,7 +703,7 @@
         if (!existing) {
             var point = points.add({
                 position: Cesium.Cartesian3.fromDegrees(lon, lat),
-                pixelSize: 10,
+                pixelSize: MOVER_PIXEL_SIZE,
                 color: PROXY_HOST_COLOR,
                 outlineColor: Cesium.Color.WHITE,
                 outlineWidth: 2
@@ -586,8 +718,9 @@
         }
     }
 
-    // Aggregates every transfer currently reported for one Host into the counters the marker/arc/panel need.
-    function aggregateHost(transferMap) {
+    // Aggregates every transfer currently reported for one Host (or, in country view, every transfer to every
+    // Host within one country) into the counters the marker/arc/panel need.
+    function aggregateTransfers(transferMap) {
         var agg = { activeCount: 0, totalRate: 0, totalBytes: 0, protocols: {}, hasActive: false, hasFailed: false, maxDuration: 0, arcOrigin: null };
         Object.keys(transferMap).forEach(function (id) {
             var s = transferMap[id];
@@ -623,7 +756,7 @@
         if (!origin) {
             return;
         }
-        var agg = aggregateHost(transferMap);
+        var agg = aggregateTransfers(transferMap);
         var color = hostColor(agg);
         var existing = hosts[name];
         if (existing && existing.removeTimeout) {
@@ -634,7 +767,11 @@
             if (existing.point) points.remove(existing.point);
         }
         var arcOrigin = agg.arcOrigin || origin;
-        var positions = arcPositions(arcOrigin.lon, arcOrigin.lat, lon, lat);
+        var originPixelSize = agg.arcOrigin ? MOVER_PIXEL_SIZE : ORIGIN_PIXEL_SIZE;
+        var destPixelSize = Cesium.Math.clamp(8 + agg.activeCount * 1.5, 8, 20);
+        var trimStart = pixelRadiusToMeters(arcOrigin.lat, arcOrigin.lon, originPixelSize);
+        var trimEnd = pixelRadiusToMeters(lat, lon, destPixelSize);
+        var positions = arcPositions(arcOrigin.lon, arcOrigin.lat, lon, lat, trimStart, trimEnd);
         var arc = arcs.add({
             positions: positions,
             width: rateWidth(agg.totalRate),
@@ -642,7 +779,7 @@
         });
         var point = points.add({
             position: Cesium.Cartesian3.fromDegrees(lon, lat),
-            pixelSize: Cesium.Math.clamp(8 + agg.activeCount * 1.5, 8, 20),
+            pixelSize: destPixelSize,
             color: color,
             outlineColor: Cesium.Color.WHITE,
             outlineWidth: 1
@@ -650,6 +787,8 @@
         point.hostName = name;
         var entry = {
             arc: arc, point: point, lat: lat, lon: lon, label: label || name, transfers: transferMap, agg: agg,
+            arcOrigin: { lat: arcOrigin.lat, lon: arcOrigin.lon, pixelSize: originPixelSize },
+            destPixelSize: destPixelSize,
             removeTimeout: null, pulsePhase: existing ? existing.pulsePhase : Math.random() * Math.PI * 2
         };
         hosts[name] = entry;
@@ -657,6 +796,86 @@
             // Every transfer to this Host just completed/failed: fade the marker out shortly instead of
             // leaving it on the globe forever.
             entry.removeTimeout = setTimeout(function () { removeHost(name); }, TERMINAL_FADE_MS);
+        }
+        updateKpis();
+    }
+
+    function removeCountry(code) {
+        var c = countries[code];
+        if (!c) {
+            return;
+        }
+        if (c.removeTimeout) {
+            clearTimeout(c.removeTimeout);
+        }
+        if (c.arc) {
+            arcs.remove(c.arc);
+        }
+        if (c.point) {
+            points.remove(c.point);
+        }
+        delete countries[code];
+    }
+
+    // Removes every currently-rendered per-Host arc/marker without touching the `hosts` bookkeeping map itself
+    // (used when switching away from "Per host" view, and defensively on every snapshot applied in "Per country"
+    // view, so both sets of primitives are never shown on the globe at the same time).
+    function clearAllHostEntities() {
+        Object.keys(hosts).forEach(function (name) { removeHost(name); });
+    }
+
+    // Same as clearAllHostEntities(), but for the per-country arcs/markers.
+    function clearAllCountryEntities() {
+        Object.keys(countries).forEach(function (code) { removeCountry(code); });
+    }
+
+    // Adds/updates the single aggregated arc/marker for one destination country - one arc summarising every
+    // transfer currently going to any Host resolved to that country, so the globe stays readable even with
+    // hundreds/thousands of individual Hosts (see viewMode).
+    function upsertCountry(code, lat, lon, hostCount, transferMap) {
+        if (!origin) {
+            return;
+        }
+        var agg = aggregateTransfers(transferMap);
+        var color = hostColor(agg);
+        var existing = countries[code];
+        if (existing && existing.removeTimeout) {
+            clearTimeout(existing.removeTimeout);
+        }
+        if (existing) {
+            if (existing.arc) arcs.remove(existing.arc);
+            if (existing.point) points.remove(existing.point);
+        }
+        var arcOrigin = agg.arcOrigin || origin;
+        var originPixelSize = agg.arcOrigin ? MOVER_PIXEL_SIZE : ORIGIN_PIXEL_SIZE;
+        var destPixelSize = Cesium.Math.clamp(10 + agg.activeCount * 1.2, 10, 26);
+        var trimStart = pixelRadiusToMeters(arcOrigin.lat, arcOrigin.lon, originPixelSize);
+        var trimEnd = pixelRadiusToMeters(lat, lon, destPixelSize);
+        var positions = arcPositions(arcOrigin.lon, arcOrigin.lat, lon, lat, trimStart, trimEnd);
+        var arc = arcs.add({
+            positions: positions,
+            width: rateWidth(agg.totalRate),
+            material: Cesium.Material.fromType("Color", { color: color.withAlpha(0.85) })
+        });
+        var point = points.add({
+            position: Cesium.Cartesian3.fromDegrees(lon, lat),
+            pixelSize: destPixelSize,
+            color: color,
+            outlineColor: Cesium.Color.WHITE,
+            outlineWidth: 1
+        });
+        point.countryCode = code;
+        var entry = {
+            arc: arc, point: point, lat: lat, lon: lon, hostCount: hostCount, transfers: transferMap, agg: agg,
+            arcOrigin: { lat: arcOrigin.lat, lon: arcOrigin.lon, pixelSize: originPixelSize },
+            destPixelSize: destPixelSize,
+            removeTimeout: null, pulsePhase: existing ? existing.pulsePhase : Math.random() * Math.PI * 2
+        };
+        countries[code] = entry;
+        if (!agg.hasActive) {
+            // Every transfer to this country just completed/failed: fade the marker out shortly instead of
+            // leaving it on the globe forever.
+            entry.removeTimeout = setTimeout(function () { removeCountry(code); }, TERMINAL_FADE_MS);
         }
         updateKpis();
     }
@@ -671,16 +890,30 @@
                 h.arc.material.uniforms.color.alpha = 0.55 + 0.35 * Math.sin(t * 2.2 + h.pulsePhase);
             }
         });
+        Object.keys(countries).forEach(function (code) {
+            var c = countries[code];
+            if (c.agg.hasActive && c.arc && c.arc.material && c.arc.material.uniforms) {
+                c.arc.material.uniforms.color.alpha = 0.55 + 0.35 * Math.sin(t * 2.2 + c.pulsePhase);
+            }
+        });
     });
 
     // Groups the flat sample list from a "snapshot" message by target Host (skipping ones whose
     // geolocation could not be resolved) for marker/arc placement, then reconciles the current marker/arc set
     // against it. The KPI cards are updated separately (see updateKpis()), straight from the raw, ungrouped
     // sample list, so they stay accurate even for samples that get skipped here.
+    //
+    // Also always groups the same samples by resolved destination country (see byCountry below), regardless of the
+    // current viewMode, so that: (a) the country breakdown table is always current, and (b) switching viewMode
+    // in-between two polls (see setViewMode()) can redraw instantly from the last snapshot without waiting for the
+    // next one. Only the grouping matching the current viewMode is actually turned into Cesium arcs/markers - the
+    // other one's Cesium primitives (if any are still left over from before a mode switch) are defensively cleared
+    // on every call.
     function applySnapshot(samples) {
         lastSamples = samples;
         var byHost = Object.create(null);
         var byMover = Object.create(null);
+        var byCountry = Object.create(null);
         samples.forEach(function (sample) {
             if (sample.hostLat === undefined || sample.hostLon === undefined || !sample.host) {
                 return; // can't place a marker without a resolved location.
@@ -701,18 +934,45 @@
                     mGroup.hasActive = true;
                 }
             }
-        });
-        Object.keys(byHost).forEach(function (name) {
-            var g = byHost[name];
-            upsertHost(name, g.lat, g.lon, g.label, g.transfers);
-        });
-        // Any Host marker still on the globe but absent from this snapshot (and not already fading out from a
-        // previous terminal-only snapshot) is stale - drop it immediately.
-        Object.keys(hosts).forEach(function (name) {
-            if (!byHost[name] && !hosts[name].removeTimeout) {
-                removeHost(name);
+            if (sample.hostCountry) {
+                var cGroup = byCountry[sample.hostCountry];
+                if (!cGroup) {
+                    cGroup = byCountry[sample.hostCountry] = { latSum: 0, lonSum: 0, hosts: Object.create(null), transfers: Object.create(null) };
+                }
+                if (!cGroup.hosts[sample.host]) {
+                    cGroup.hosts[sample.host] = true;
+                    cGroup.latSum += sample.hostLat;
+                    cGroup.lonSum += sample.hostLon;
+                }
+                cGroup.transfers[sample.transferId] = sample;
             }
         });
+        if (viewMode === "host") {
+            clearAllCountryEntities();
+            Object.keys(byHost).forEach(function (name) {
+                var g = byHost[name];
+                upsertHost(name, g.lat, g.lon, g.label, g.transfers);
+            });
+            // Any Host marker still on the globe but absent from this snapshot (and not already fading out from a
+            // previous terminal-only snapshot) is stale - drop it immediately.
+            Object.keys(hosts).forEach(function (name) {
+                if (!byHost[name] && !hosts[name].removeTimeout) {
+                    removeHost(name);
+                }
+            });
+        } else {
+            clearAllHostEntities();
+            Object.keys(byCountry).forEach(function (code) {
+                var g = byCountry[code];
+                var hostCount = Object.keys(g.hosts).length;
+                upsertCountry(code, g.latSum / hostCount, g.lonSum / hostCount, hostCount, g.transfers);
+            });
+            Object.keys(countries).forEach(function (code) {
+                if (!byCountry[code] && !countries[code].removeTimeout) {
+                    removeCountry(code);
+                }
+            });
+        }
         Object.keys(byMover).forEach(function (name) {
             var m = byMover[name];
             upsertMover(name, m.lat, m.lon, m.hasActive);
@@ -722,7 +982,43 @@
                 removeMover(name);
             }
         });
+        updateCountryTable(byCountry);
         updateKpis();
+    }
+
+    // Renders the small "transmissions per country" breakdown table (shown only in "Per country" view, see
+    // setViewMode()), sorted by active transfer count so the busiest countries are always at the top.
+    function updateCountryTable(byCountry) {
+        var tbody = document.getElementById("globeCountryTableBody");
+        if (!tbody) {
+            return;
+        }
+        var rows = Object.keys(byCountry).map(function (code) {
+            var agg = aggregateTransfers(byCountry[code].transfers);
+            return { code: code, hostCount: Object.keys(byCountry[code].hosts).length, agg: agg };
+        });
+        rows.sort(function (a, b) { return b.agg.activeCount - a.agg.activeCount || b.agg.totalRate - a.agg.totalRate; });
+        if (rows.length === 0) {
+            tbody.innerHTML = "<tr><td colspan=\"3\" style=\"color:#999;\">No active transfers</td></tr>";
+            return;
+        }
+        tbody.innerHTML = rows.map(function (r) {
+            return "<tr><td class=\"country-name\" title=\"" + countryDisplayName(r.code) + "\">" +
+                countryDisplayName(r.code) + "</td><td>" + r.agg.activeCount + "</td><td>" +
+                formatRate(r.agg.totalRate) + "</td></tr>";
+        }).join("");
+    }
+
+    // Switches between "Per host" and "Per country" grouping, redrawing immediately from the last received
+    // snapshot (rather than waiting up to POLL_PERIOD_SECONDS for the next one) so the switch feels instant.
+    function setViewMode(mode) {
+        if (mode !== "host" && mode !== "country") {
+            return;
+        }
+        viewMode = mode;
+        localStorage.setItem(VIEW_MODE_PREF_KEY, mode);
+        document.getElementById("globeCountryTable").style.display = mode === "country" ? "block" : "none";
+        applySnapshot(lastSamples);
     }
 
     function formatBytes(n) {
@@ -741,24 +1037,20 @@
         return bps.toFixed(1) + " " + units[i];
     }
 
-    function showInfoPanel(hostName) {
-        var h = hosts[hostName];
-        if (!h) {
-            return;
-        }
-        var samples = Object.keys(h.transfers).map(function (id) { return h.transfers[id]; });
-        var destination = samples[0] && samples[0].destination;
-        document.getElementById("globeInfoTitle").textContent = (h.label || hostName) + (destination ? " (" + destination + ")" : "");
+    // Renders the shared info-panel body (used for both a single Host and an aggregated country) from an
+    // already-computed agg (see aggregateTransfers()) and its underlying transfer samples.
+    function renderInfoPanel(title, agg, transfers) {
+        document.getElementById("globeInfoTitle").textContent = title;
         var body = document.getElementById("globeInfoBody");
         var html =
-            "<dt>Active transfers</dt><dd>" + h.agg.activeCount + "</dd>" +
-            "<dt>Protocol(s)</dt><dd>" + (h.agg.protocols.join(", ") || "-") + "</dd>" +
-            "<dt>Total throughput</dt><dd>" + formatRate(h.agg.totalRate) + "</dd>" +
-            "<dt>Total transferred</dt><dd>" + formatBytes(h.agg.totalBytes) + "</dd>" +
-            "<dt>Longest duration</dt><dd>" + Math.round(h.agg.maxDuration / 1000) + " s</dd>";
+            "<dt>Active transfers</dt><dd>" + agg.activeCount + "</dd>" +
+            "<dt>Protocol(s)</dt><dd>" + (agg.protocols.join(", ") || "-") + "</dd>" +
+            "<dt>Total throughput</dt><dd>" + formatRate(agg.totalRate) + "</dd>" +
+            "<dt>Total transferred</dt><dd>" + formatBytes(agg.totalBytes) + "</dd>" +
+            "<dt>Longest duration</dt><dd>" + Math.round(agg.maxDuration / 1000) + " s</dd>";
         html += "<dt>Per-transfer</dt><dd><table style=\"width:100%;font-size:.76rem;\"><thead><tr>" +
             "<th>Mover</th><th>Proto</th><th>Rate</th><th>Bytes</th><th>Status</th></tr></thead><tbody>";
-        samples.forEach(function (s) {
+        transfers.forEach(function (s) {
             html += "<tr><td>" + (s.mover || "-") + "</td><td>" + (s.protocol || "-") + "</td><td>" +
                 formatRate(s.rateBitsPerSecond) + "</td><td>" + formatBytes(s.bytesSent) + "</td><td>" +
                 (s.status || "-") + "</td></tr>";
@@ -768,13 +1060,35 @@
         document.getElementById("globeInfoPanel").style.display = "block";
     }
 
+    function showInfoPanel(hostName) {
+        var h = hosts[hostName];
+        if (!h) {
+            return;
+        }
+        var samples = Object.keys(h.transfers).map(function (id) { return h.transfers[id]; });
+        var destination = samples[0] && samples[0].destination;
+        renderInfoPanel((h.label || hostName) + (destination ? " (" + destination + ")" : ""), h.agg, samples);
+    }
+
+    function showCountryInfoPanel(code) {
+        var c = countries[code];
+        if (!c) {
+            return;
+        }
+        var samples = Object.keys(c.transfers).map(function (id) { return c.transfers[id]; });
+        var title = countryDisplayName(code) + " (" + c.hostCount + " host" + (c.hostCount === 1 ? "" : "s") + ")";
+        renderInfoPanel(title, c.agg, samples);
+    }
+
     var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     handler.setInputAction(function (movement) {
         var picked = viewer.scene.pick(movement.position);
-        // scene.pick() returns the PointPrimitive itself (no .id was set on it), so the
-        // custom "hostName" property we attached in upsertHost() is read directly.
+        // scene.pick() returns the PointPrimitive itself (no .id was set on it), so the custom "hostName"/
+        // "countryCode" property we attached in upsertHost()/upsertCountry() is read directly.
         if (Cesium.defined(picked) && Cesium.defined(picked.hostName)) {
             showInfoPanel(picked.hostName);
+        } else if (Cesium.defined(picked) && Cesium.defined(picked.countryCode)) {
+            showCountryInfoPanel(picked.countryCode);
         }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 

@@ -1508,7 +1508,7 @@ final class ManagementProxy implements ManagementInterface {
 
     /** {@inheritDoc} */
     @Override
-    public Map<String, double[]> getGeoLocations(final String[] hostNames) throws RemoteException {
+    public Map<String, GeoPoint> getGeoLocations(final String[] hostNames) throws RemoteException {
         return managementInterface.getGeoLocations(hostNames);
     }
 }

@@ -44,6 +44,7 @@ import org.eclipse.jetty.ee8.websocket.api.WriteCallback;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ecmwf.ecpds.master.GeoPoint;
 import ecmwf.ecpds.master.LiveTransferSample;
 import ecmwf.ecpds.master.ManagementInterface;
 import ecmwf.ecpds.master.MasterManager;
@@ -95,8 +96,8 @@ public class GlobeWebSocket implements WebSocketListener {
     /** The shared poll task, running only while at least one client is connected. */
     private static volatile ScheduledFuture<?> pollTask;
 
-    /** Host name to [latitude, longitude] geolocation cache, shared across connections. */
-    private static final ConcurrentHashMap<String, double[]> GEO_CACHE = new ConcurrentHashMap<>();
+    /** Host name to resolved {@link GeoPoint} cache, shared across connections. */
+    private static final ConcurrentHashMap<String, GeoPoint> GEO_CACHE = new ConcurrentHashMap<>();
 
     /** Latest known MasterServer origin location, refreshed by the poller; {@code null} until first resolved. */
     private static volatile double[] originLocation;
@@ -362,16 +363,19 @@ public class GlobeWebSocket implements WebSocketListener {
         node.put("timestamp", sample.getTimestamp());
         final var location = resolveHost(hostGeoKey(sample));
         if (location != null) {
-            node.put("hostLat", location[0]);
-            node.put("hostLon", location[1]);
+            node.put("hostLat", location.latitude());
+            node.put("hostLon", location.longitude());
+            if (location.country() != null && !location.country().isBlank()) {
+                node.put("hostCountry", location.country());
+            }
         }
         final var moverName = sample.getMoverName();
         if (moverName != null && activeProxyHostNames.contains(moverName)) {
             node.put("isProxyHost", true);
             final var moverLocation = resolveHost(moverName);
             if (moverLocation != null) {
-                node.put("moverLat", moverLocation[0]);
-                node.put("moverLon", moverLocation[1]);
+                node.put("moverLat", moverLocation.latitude());
+                node.put("moverLon", moverLocation.longitude());
             }
         }
         return node;
@@ -437,9 +441,9 @@ public class GlobeWebSocket implements WebSocketListener {
      * @param hostName
      *            the host name
      *
-     * @return a [latitude, longitude] pair, or {@code null} if it is not (yet) resolved/cached
+     * @return the resolved {@link GeoPoint}, or {@code null} if it is not (yet) resolved/cached
      */
-    private static double[] resolveHost(final String hostName) {
+    private static GeoPoint resolveHost(final String hostName) {
         return hostName == null || hostName.isBlank() ? null : GEO_CACHE.get(hostName);
     }
 
