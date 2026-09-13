@@ -1475,4 +1475,40 @@ final class ManagementProxy implements ManagementInterface {
     public void invalidateUnreviewedFeedbackCache() throws MasterException, RemoteException {
         managementInterface.invalidateUnreviewedFeedbackCache();
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public LiveTransferSample[] getLiveTransfers() throws RemoteException {
+        return managementInterface.getLiveTransfers();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public double[] getLiveTransferOrigin() throws RemoteException {
+        return managementInterface.getLiveTransferOrigin();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getLiveTransferOriginHost() throws RemoteException {
+        return managementInterface.getLiveTransferOriginHost();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public long getLiveTransferBytes24h() throws RemoteException {
+        return managementInterface.getLiveTransferBytes24h();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String[] getActiveProxyHostNames() throws RemoteException {
+        return managementInterface.getActiveProxyHostNames();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Map<String, double[]> getGeoLocations(final String[] hostNames) throws RemoteException {
+        return managementInterface.getGeoLocations(hostNames);
+    }
 }

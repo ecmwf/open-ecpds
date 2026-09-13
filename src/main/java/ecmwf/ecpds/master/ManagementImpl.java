@@ -31,6 +31,7 @@ import static ecmwf.common.text.Util.isNotEmpty;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -3690,5 +3691,92 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         }
         certStatusCacheTime = 0L; // force status refresh on next query
         monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Also touches the {@link LiveTransferRegistry} so DataMovers keep sampling for a short window (see
+     * {@link LiveTransferRegistry#touch()}).
+     */
+    @Override
+    public LiveTransferSample[] getLiveTransfers() throws RemoteException {
+        final var registry = LiveTransferRegistry.getInstance();
+        registry.touch();
+        return registry.getActiveTransfers().toArray(new LiveTransferSample[0]);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Resolves the MasterServer's own hostname the same way any other Host is resolved (see
+     * {@link DataBaseImpl#resolveGeoIp(String)}), including any {@code [GeoIP]} {@code forced.*} override.
+     */
+    @Override
+    public double[] getLiveTransferOrigin() throws RemoteException {
+        try {
+            final var hostName = InetAddress.getLocalHost().getCanonicalHostName();
+            final var geo = DataBaseImpl.resolveGeoIp(hostName);
+            if (geo != null && geo.latitude() != null && geo.longitude() != null) {
+                return new double[] { geo.latitude(), geo.longitude() };
+            }
+        } catch (final Exception e) {
+            _log.debug("Resolving MasterServer origin location", e);
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getLiveTransferOriginHost() throws RemoteException {
+        try {
+            final var local = InetAddress.getLocalHost();
+            return local.getCanonicalHostName() + " (" + local.getHostAddress() + ")";
+        } catch (final Exception e) {
+            _log.debug("Resolving MasterServer origin hostname/address", e);
+            return null;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getLiveTransferBytes24h() throws RemoteException {
+        return LiveTransferRegistry.getInstance().getBytesLast24h();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String[] getActiveProxyHostNames() throws RemoteException {
+        return master.getActiveProxyHostNames();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<String, double[]> getGeoLocations(final String[] hostNames) throws RemoteException {
+        final Map<String, double[]> result = new HashMap<>();
+        if (hostNames != null) {
+            for (final var hostName : hostNames) {
+                if (hostName == null || hostName.isBlank() || result.containsKey(hostName)) {
+                    continue;
+                }
+                try {
+                    final var geo = DataBaseImpl.resolveGeoIp(hostName);
+                    if (geo != null && geo.latitude() != null && geo.longitude() != null) {
+                        result.put(hostName, new double[] { geo.latitude(), geo.longitude() });
+                    }
+                } catch (final Exception e) {
+                    _log.debug("Resolving geolocation for {}", hostName, e);
+                }
+            }
+        }
+        return result;
     }
 }

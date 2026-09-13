@@ -1749,4 +1749,84 @@ public interface ManagementInterface extends Remote {
      *             the remote exception
      */
     void invalidateUnreviewedFeedbackCache() throws MasterException, RemoteException;
+
+    /**
+     * Gets a snapshot of every currently active data transfer known to the {@link LiveTransferRegistry}, for the "Live
+     * ECPDS Earth" globe visualisation. Polling this method (e.g. from the Monitor plugin's WebSocket broadcaster) also
+     * keeps live sampling enabled on the DataMovers for a short window (see {@link LiveTransferRegistry#touch()}), so
+     * it should only be called while at least one globe page is actually open.
+     *
+     * @return the currently active live transfer samples
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    LiveTransferSample[] getLiveTransfers() throws RemoteException;
+
+    /**
+     * Gets the MasterServer's own geolocation, used to centre the "Live ECPDS Earth" globe. Resolved via the same GeoIP
+     * mechanism (including any {@code [GeoIP]} {@code forced.*} overrides) used elsewhere (e.g. the Host traceroute
+     * map), so an administrator who has already forced a location for the MasterServer's own hostname/address there
+     * does not need to configure anything else.
+     *
+     * @return a [latitude, longitude] pair, or {@code null} if it could not be resolved
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    double[] getLiveTransferOrigin() throws RemoteException;
+
+    /**
+     * Gets the hostname/IP address that {@link #getLiveTransferOrigin()} attempts to resolve the MasterServer's own
+     * geolocation from, so that an administrator can be told exactly what to add a {@code [GeoIP]} {@code forced.*}
+     * override for when resolution fails.
+     *
+     * @return a display string such as {@code "myhost.example.com (10.1.2.3)"}, or {@code null} if it could not be
+     *         determined
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    String getLiveTransferOriginHost() throws RemoteException;
+
+    /**
+     * Gets the total number of bytes transferred (across every DataMover/ProxyHost) over the rolling last 24 hours, for
+     * display on the "Live ECPDS Earth" globe visualisation. This is a single, MasterServer-side counter (see
+     * {@link LiveTransferRegistry#getBytesLast24h()}), so every connected globe client sees the same value regardless
+     * of when it connected/reconnected. It is memory-only and resets on a MasterServer restart.
+     *
+     * @return the total bytes transferred in the last 24 hours
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    long getLiveTransferBytes24h() throws RemoteException;
+
+    /**
+     * Gets the names of every currently active ProxyHost (a Data Mover reachable only through another Data Mover's REST
+     * interface, i.e. without a direct RMI connection to the MasterServer), for display as a distinct marker on the
+     * "Live ECPDS Earth" globe visualisation. Ordinary, directly-connected Data Movers are intentionally not included.
+     *
+     * @return the active ProxyHost names
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    String[] getActiveProxyHostNames() throws RemoteException;
+
+    /**
+     * Resolves the geolocation of each of the given Host names, for display on the "Live ECPDS Earth" globe
+     * visualisation. Delegates to {@link DataBaseImpl#resolveGeoIp(String)} on the MasterServer side (the only place
+     * the GeoIP2 database is available), including any {@code [GeoIP]} {@code forced.*} override, so the Monitor JVM
+     * never needs its own copy of the GeoIP2 database or the {@code geoip2}/{@code maxmind-db} libraries.
+     *
+     * @param hostNames
+     *            the host names to resolve
+     *
+     * @return a map from host name to [latitude, longitude] pair, containing only the host names that could be resolved
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Map<String, double[]> getGeoLocations(String[] hostNames) throws RemoteException;
 }

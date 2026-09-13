@@ -95,6 +95,32 @@ public interface MasterInterface extends ProviderInterface {
     DownloadProgress[] updateDownloadProgress(DownloadProgress[] progress) throws RemoteException;
 
     /**
+     * Update live transfer statistics. Pushed periodically by a DataMover for every active data transfer, so that the
+     * MasterServer can feed the "Live ECPDS Earth" globe visualisation (see {@link LiveTransferRegistry}). This is a
+     * best-effort, fire-and-forget stream: samples may be dropped/ignored (e.g. if no visualisation client is currently
+     * connected).
+     *
+     * @param samples
+     *            the samples
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void updateLiveTransferStatistics(LiveTransferSample[] samples) throws RemoteException;
+
+    /**
+     * Whether the MasterServer currently wants to receive live transfer statistics (e.g. because at least one "Live
+     * ECPDS Earth" globe visualisation client is connected). DataMovers should poll this periodically and skip
+     * sampling/pushing altogether while it is {@code false}, to avoid any overhead when nobody is watching.
+     *
+     * @return true, if live transfer monitoring is currently wanted
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    boolean isLiveTransferMonitoringEnabled() throws RemoteException;
+
+    /**
      * Update data.
      *
      * @param host

@@ -33,6 +33,7 @@ import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.ExistingStorageDirectory;
 import ecmwf.common.database.Host;
 import ecmwf.common.ecaccess.ECauthToken;
+import ecmwf.ecpds.master.LiveTransferSample;
 import ecmwf.ecpds.mover.service.RESTClient.MonitorRequest;
 import ecmwf.ecpds.mover.service.RESTClient.UpdateDataRequest;
 
@@ -222,4 +223,27 @@ public interface RESTInterface {
      *             the exception
      */
     boolean isValidDataFile(long dataFileId) throws Exception;
+
+    /**
+     * Live transfer statistics sent from a ProxyHost (relayed via this data mover's REST server) to the MasterServer,
+     * feeding the "Live Earth" globe visualisation.
+     *
+     * @param samples
+     *            the samples
+     *
+     * @throws java.lang.Exception
+     *             the exception
+     */
+    void updateLiveTransferStatistics(LiveTransferSample[] samples) throws Exception;
+
+    /**
+     * Whether the MasterServer currently wants live transfer statistics, so a ProxyHost knows whether it is worth
+     * sampling/pushing at all (relayed via this data mover's REST server).
+     *
+     * @return true, if enabled
+     *
+     * @throws java.lang.Exception
+     *             the exception
+     */
+    boolean isLiveTransferMonitoringEnabled() throws Exception;
 }

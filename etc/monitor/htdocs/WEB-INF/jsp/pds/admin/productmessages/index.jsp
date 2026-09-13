@@ -7,19 +7,43 @@
     final boolean resumedCustomized = Boolean.TRUE.equals(request.getAttribute("resumedMessageCustomized"));
 %>
 
-<div class="mb-4 px-3 py-3 rounded" style="background:rgba(108,117,125,0.07); border-left:4px solid #6c757d; font-size:0.85rem; color:var(--bs-body-color);">
-    <div class="d-flex align-items-start gap-2">
-        <i class="bi bi-envelope-paper-fill text-secondary flex-shrink-0 mt-1"></i>
-        <span>
-            These messages pre-fill the Outlook email body when an administrator uses the <strong>"Notify
-            Delay"</strong> or <strong>"Notify Resumed"</strong> links on the Product Status page. Leave a field
-            empty (or unchanged) to keep using the built-in default text. Use the placeholders <code>{{PRODUCT}}</code>,
-            <code>{{CYCLE}}</code> and <code>{{DESCRIPTION}}</code> to automatically insert the product name (e.g.
-            <code>GENFO</code>), cycle (e.g. <code>06</code>) of the page the message is sent from, and the
-            <a href="/do/admin/productdescriptions">description(s) configured for that product</a> &mdash; rendered as
-            a bullet list across the types shown on the page, if more than one applies.
-        </span>
-    </div>
+<%-- Header: title + info button --%>
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+     style="background:rgba(108,117,125,0.07); color:var(--bs-body-color); border-left:4px solid #6c757d;">
+    <i class="bi bi-envelope-paper-fill text-secondary flex-shrink-0"></i>
+    <span>
+        <strong>Product Messages</strong> &mdash; customize the email templates used for delay/resume notifications
+    </span>
+    <button class="btn btn-link btn-sm text-muted p-0 ms-1" type="button"
+        data-bs-toggle="collapse" data-bs-target="#pmInfoPanel"
+        aria-expanded="false" title="About this page">
+        <i class="bi bi-info-circle"></i>
+    </button>
+</div>
+
+<%-- Info panel --%>
+<div class="collapse mb-3" id="pmInfoPanel">
+  <div class="card-body py-2 px-3 border rounded" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid #6c757d!important;">
+    <p class="mb-1">These messages pre-fill the Outlook email body when an administrator uses the
+    <strong>"Notify Delay"</strong> or <strong>"Notify Resumed"</strong> links on the Product Status page. Leave a
+    field empty (or unchanged) to keep using the built-in default text.</p>
+    <ul class="mb-0 ps-3">
+        <li><strong>Storage</strong> &mdash; stored in the database, so they can be customized per site without a
+        code change. Clearing a field (submitting it empty or unchanged from the default) reverts it to the built-in
+        default text. Changes take effect immediately on the Product Status page for all users.</li>
+        <li><strong>Placeholders</strong> &mdash; <code>{{PRODUCT}}</code> and <code>{{CYCLE}}</code> are replaced
+        with the product and cycle of the page the message is sent from (e.g. <code>GENFO</code> and <code>06</code>
+        on <code>/do/monitoring/summary/GENFO/06</code>).</li>
+        <li><strong>Description placeholder</strong> &mdash; <code>{{DESCRIPTION}}</code> is replaced with the
+        description(s) configured under <a href="/do/admin/productdescriptions">Admin Tasks &rarr; Product
+        Descriptions</a> for the current product: a plain text if only one type applies (or a type-independent
+        description was configured), a bullet list (one line per type, e.g. <code>- AN: ...</code>) when several
+        types shown on the page each resolve to a different description, or an empty string if none has been
+        configured.</li>
+        <li><strong>Edit markers</strong> &mdash; the <code>&lt;&lt;...&gt;&gt;</code> placeholder markers highlight
+        text that should be edited before sending.</li>
+    </ul>
+  </div>
 </div>
 
 <% if (pmError != null) { %>
@@ -96,28 +120,6 @@
     </div>
 </form>
 
-
-<div class="card shadow-sm" style="max-width:720px; border-color: #dee2e6;">
-    <div class="card-header text-muted fw-semibold" style="background:rgba(108,117,125,0.07);">
-        <i class="bi bi-info-circle me-2"></i>About Product Messages
-    </div>
-    <div class="card-body text-muted" style="font-size:0.85rem;">
-        <ul class="mb-0 ps-3">
-            <li>Stored in the database, so they can be customized per site without a code change.</li>
-            <li>Clearing a field (submitting it empty or unchanged from the default) reverts it to the built-in
-            default text shown above.</li>
-            <li>Changes take effect immediately on the Product Status page for all users.</li>
-            <li>The <code>{{PRODUCT}}</code> and <code>{{CYCLE}}</code> placeholders are replaced with the product
-            and cycle of the page the message is sent from (e.g. <code>GENFO</code> and <code>06</code> on
-            <code>/do/monitoring/summary/GENFO/06</code>).</li>
-            <li>The <code>{{DESCRIPTION}}</code> placeholder is replaced with the description(s) configured under
-            <a href="/do/admin/productdescriptions">Admin Tasks &rarr; Product Descriptions</a> for the current
-            product: a plain text if only one type applies (or a type-independent description was configured), a
-            bullet list (one line per type, e.g. <code>- AN: ...</code>) when several types shown on the page each
-            resolve to a different description, or an empty string if none has been configured.</li>
-        </ul>
-    </div>
-</div>
 
 <script>
 (function() {

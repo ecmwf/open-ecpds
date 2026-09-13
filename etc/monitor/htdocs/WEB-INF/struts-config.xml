@@ -1284,6 +1284,10 @@
 			<forward name="monitoring_disabled"
 				path=".pds.monitoring.disabled" />
 		</action>
+		<action path="/monitoring/globe"
+			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetGlobeDisplayAction">
+			<forward name="success" path=".pds.monitoring.globe" />
+		</action>
 		<action path="/monitoring/summary"
 			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetSummaryDisplayAction"
 			name="monSesForm" scope="session">

@@ -34,6 +34,7 @@ import ecmwf.common.monitor.MonitorManager;
 import ecmwf.ecpds.master.DataAccessInterface;
 import ecmwf.ecpds.master.DownloadProgress;
 import ecmwf.ecpds.master.IncomingProfile;
+import ecmwf.ecpds.master.LiveTransferSample;
 
 /**
  * The Class MasterRMI.
@@ -90,6 +91,26 @@ final class MasterRMI implements MasterProxy {
     @Override
     public DownloadProgress[] updateDownloadProgress(final DownloadProgress[] progress) throws Exception {
         return _mover.getMasterInterface().updateDownloadProgress(progress);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Update live transfer statistics.
+     */
+    @Override
+    public void updateLiveTransferStatistics(final LiveTransferSample[] samples) throws Exception {
+        _mover.getMasterInterface().updateLiveTransferStatistics(samples);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Whether live transfer monitoring is enabled.
+     */
+    @Override
+    public boolean isLiveTransferMonitoringEnabled() throws Exception {
+        return _mover.getMasterInterface().isLiveTransferMonitoringEnabled();
     }
 
     /**

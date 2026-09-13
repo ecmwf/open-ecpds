@@ -33,6 +33,7 @@ import ecmwf.common.ecaccess.ECauthToken;
 import ecmwf.ecpds.master.DataAccessInterface;
 import ecmwf.ecpds.master.DownloadProgress;
 import ecmwf.ecpds.master.IncomingProfile;
+import ecmwf.ecpds.master.LiveTransferSample;
 
 /**
  * The Interface MasterProxy.
@@ -66,6 +67,27 @@ public interface MasterProxy {
      *             the exception
      */
     DownloadProgress[] updateDownloadProgress(DownloadProgress[] progress) throws Exception;
+
+    /**
+     * Update live transfer statistics.
+     *
+     * @param samples
+     *            the samples
+     *
+     * @throws java.lang.Exception
+     *             the exception
+     */
+    void updateLiveTransferStatistics(LiveTransferSample[] samples) throws Exception;
+
+    /**
+     * Whether the MasterServer currently wants live transfer statistics.
+     *
+     * @return true, if enabled
+     *
+     * @throws java.lang.Exception
+     *             the exception
+     */
+    boolean isLiveTransferMonitoringEnabled() throws Exception;
 
     /**
      * Proxy host is alive.

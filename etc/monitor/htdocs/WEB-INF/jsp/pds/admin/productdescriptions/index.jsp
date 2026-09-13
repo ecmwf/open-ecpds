@@ -156,11 +156,11 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
     </tr>
     </c:forEach>
     <tr id="pdEmptyRow" style="display:none;">
-      <td colspan="5" class="text-muted text-center py-3">No product descriptions found.</td>
+      <td colspan="5" class="dt-empty">No matching records found.</td>
     </tr>
   </tbody>
 </table>
-<div class="d-flex align-items-center mt-2 px-3 pb-2" id="pdDtInfo" style="font-size:0.85rem;"></div>
+<div class="d-flex align-items-center mt-2 px-3 pb-2 dataTables_info dt-info" id="pdDtInfo"></div>
 </div>
 </div>
 </div>
@@ -402,11 +402,7 @@ function _pdRender() {
 
   var info = document.getElementById('pdDtInfo');
   if (total === 0) {
-    info.innerHTML = _pdAllRows.length === 0
-      ? '<span class="text-muted">No product descriptions have been configured yet.</span>'
-      : (_pdUnknownOnly
-          ? '<span class="text-muted">No unknown products found &mdash; all configured products exist in the monitoring interface.</span>'
-          : '<span class="text-muted">No entries match your search.</span>');
+    info.innerHTML = '<span>Showing 0 to 0 of 0 entries</span>';
     return;
   }
   var showing = 'Showing ' + (start + 1) + ' to ' + end + ' of ' + total

@@ -9,6 +9,8 @@
 .badge-pending  { background: rgba(255,193,7,0.12);  color: #996600; border: 1px solid rgba(255,193,7,0.3); }
 .fbk-cell-truncate { max-width: 220px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
 .fbk-cell-truncate:hover { text-decoration: underline dotted; }
+/* Keep the empty-table message at the standard (body-default) size, not the compact 0.82rem used for data rows */
+#fbkTable td.dt-empty { font-size: 1rem; }
 </style>
 
 <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
@@ -17,14 +19,6 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
 <span>Feedback submitted by users of <strong><%=System.getProperty("monitor.nickName")%></strong>. Entries marked <em>reviewed</em> have been acknowledged. Delete entries once actioned.</span>
 </div>
 
-<c:choose>
-<c:when test="${empty feedbackList}">
-<div class="alert alert-info d-flex align-items-center gap-2 mt-3">
-  <i class="bi bi-info-circle-fill"></i>
-  <span>No feedback has been submitted yet.</span>
-</div>
-</c:when>
-<c:otherwise>
 <div class="card border-0 shadow-sm mt-3">
 <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-chat-left-text text-primary"></i>
@@ -135,8 +129,6 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
 </div>
 </div>
 </div>
-</c:otherwise>
-</c:choose>
 
 <c:if test="${not empty feedbackList}">
 <div class="d-flex gap-2 mt-3">
@@ -163,7 +155,6 @@ function validate(path, message) {
     onCancel: function() {}
   });
 }
-<c:if test="${not empty feedbackList}">
 $(document).ready(function() {
   var _len = (function() { try { var v = parseInt(localStorage.getItem('fbkPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
   $('#fbkPageLen').val(_len);
@@ -251,5 +242,4 @@ $(document).ready(function() {
     URL.revokeObjectURL(url);
   });
 });
-</c:if>
 </script>

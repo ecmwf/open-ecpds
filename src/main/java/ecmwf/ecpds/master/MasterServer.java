@@ -355,6 +355,9 @@ public final class MasterServer extends ECaccessProvider
     /** The mover availability scheduler. */
     private final transient MoverAvailabilityScheduler theMoverAvailabilityScheduler;
 
+    /** The live transfer bytes (rolling 24h total) persistence scheduler. */
+    private final transient LiveTransferBytesScheduler theLiveTransferBytesScheduler;
+
     /** The data transfer check. */
     private final transient DataTransferCheck theDataTransferCheck;
 
@@ -529,6 +532,9 @@ public final class MasterServer extends ECaccessProvider
         _log.info("MasterServer-version: {}", Version.getFullVersion());
         NativeAuthenticationProvider.setProvider(MasterProvider.class);
         DestinationOption.getList(); // Make sure the list of options is loaded!
+        // Live ECPDS Earth (Phase 0): allow forcing the live transfer monitoring feed on regardless of connected
+        // WebSocket listeners (useful for backend testing before the frontend/websocket exists).
+        LiveTransferRegistry.getInstance().setEnabled(Cnf.at("Server", "liveTransferMonitoringForceEnabled", false));
         if (Cnf.at("Server", "transferScheduler", true)) {
             _log.debug("Starting TransferScheduler");
             theTransferScheduler = new TransferScheduler("TransferScheduler");
@@ -709,6 +715,15 @@ public final class MasterServer extends ECaccessProvider
             theMoverAvailabilityScheduler.start();
         } else {
             theMoverAvailabilityScheduler = null;
+        }
+        if (Cnf.at("Server", "liveTransferBytesScheduler", true)) {
+            _log.debug("Loading live transfer bytes snapshot from DB");
+            _loadLiveTransferBytesFromDb();
+            _log.debug("Starting LiveTransferBytesScheduler");
+            theLiveTransferBytesScheduler = new LiveTransferBytesScheduler("LiveTransferBytesScheduler");
+            theLiveTransferBytesScheduler.start();
+        } else {
+            theLiveTransferBytesScheduler = null;
         }
         _log.debug("Monitors to notify: {}", containersToNotify);
         _log.debug("Passwords allowed from: {}", allowedPasswordOn);
@@ -3140,6 +3155,25 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * Loads the "Live ECPDS Earth" rolling 24h transferred-bytes buckets, previously persisted to the
+     * {@code SYS_CONFIG} table by {@link LiveTransferBytesScheduler}, back into {@link LiveTransferRegistry} so a
+     * MasterServer restart only loses at most a few minutes of history for that figure instead of the full 24 hours.
+     */
+    private void _loadLiveTransferBytesFromDb() {
+        final var base = getECpdsBase();
+        if (base == null) {
+            _log.warn("Skipping live transfer bytes snapshot load because ECpdsBase is not available yet");
+            return;
+        }
+        try {
+            final var persisted = base.getSysConfigValue("LiveTransfer", "bytes24hBuckets");
+            LiveTransferRegistry.getInstance().restoreBucketsFromPersistence(persisted);
+        } catch (final DataBaseException e) {
+            _log.warn("Failed to load live transfer bytes snapshot from DB", e);
+        }
+    }
+
+    /**
      * Sum bytes transferred by a portal user within the given rolling window.
      *
      * @param uid
@@ -3784,6 +3818,21 @@ public final class MasterServer extends ECaccessProvider
         // MasterServer was restarted. If it was the case then it would have to
         // reset all its transmissions!
         return getStartDate().getTime();
+    }
+
+    /**
+     * Gets the names of every currently active (non-expired) ProxyHost, i.e. every Data Mover which reaches the
+     * MasterServer only through the REST interface (see {@link #proxyHostIsAlive(String)}) rather than a direct RMI
+     * connection. Used by the "Live ECPDS Earth" globe visualisation to show a distinct marker only for ProxyHosts, not
+     * for every ordinary, directly-connected Data Mover.
+     *
+     * @return the active ProxyHost names, or an empty array if the ProxyHostRepository is disabled
+     */
+    public String[] getActiveProxyHostNames() {
+        if (theProxyHostRepository == null) {
+            return new String[0];
+        }
+        return theProxyHostRepository.getList().stream().map(proxyHost -> proxyHost._name).toArray(String[]::new);
     }
 
     /**
@@ -4498,6 +4547,38 @@ public final class MasterServer extends ECaccessProvider
         } catch (final Throwable t) {
             throw Format.getRemoteException("MasterServer=" + getRoot(), t);
         }
+    }
+
+    /**
+     * Update live transfer statistics. Feeds the in-memory {@link LiveTransferRegistry} used by the "Live ECPDS Earth"
+     * globe visualisation.
+     *
+     * @param samples
+     *            the samples
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    @Override
+    public void updateLiveTransferStatistics(final LiveTransferSample[] samples) throws RemoteException {
+        try {
+            LiveTransferRegistry.getInstance().update(samples);
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("MasterServer=" + getRoot(), t);
+        }
+    }
+
+    /**
+     * Whether live transfer monitoring is currently wanted (Live ECPDS Earth - Phase 0).
+     *
+     * @return true, if enabled
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    @Override
+    public boolean isLiveTransferMonitoringEnabled() throws RemoteException {
+        return LiveTransferRegistry.getInstance().isEnabled();
     }
 
     /**
@@ -6578,6 +6659,20 @@ public final class MasterServer extends ECaccessProvider
         if (theMoverAvailabilityScheduler != null) {
             theMoverAvailabilityScheduler.shutdown();
         }
+        if (theLiveTransferBytesScheduler != null) {
+            theLiveTransferBytesScheduler.shutdown();
+            // Persist one last time on a graceful shutdown so a planned restart loses as little history as
+            // possible (rather than waiting for the next periodic tick, up to liveTransferBytesScheduler delay away).
+            try {
+                final var base = getECpdsBase();
+                if (base != null) {
+                    base.setSysConfigValue("LiveTransfer", "bytes24hBuckets",
+                            LiveTransferRegistry.getInstance().snapshotBucketsForPersistence());
+                }
+            } catch (final DataBaseException e) {
+                _log.warn("Failed to persist live transfer bytes snapshot on shutdown", e);
+            }
+        }
         if (theDissDownloadScheduler != null) {
             theDissDownloadScheduler.shutdown();
         }
@@ -8286,6 +8381,36 @@ public final class MasterServer extends ECaccessProvider
                 } catch (final DataBaseException e) {
                     _log.warn("MoverAvailabilityScheduler: failed to delete old availability snapshots", e);
                 }
+            }
+            return NEXT_STEP_DELAY;
+        }
+    }
+
+    /**
+     * The Class LiveTransferBytesScheduler. Periodically persists the "Live ECPDS Earth" rolling 24h transferred-bytes
+     * buckets ({@link LiveTransferRegistry#snapshotBucketsForPersistence()}) to a single {@code SYS_CONFIG} row, so a
+     * MasterServer restart only loses the handful of minutes since the last save instead of the whole 24h window.
+     */
+    public final class LiveTransferBytesScheduler extends MBeanScheduler {
+
+        private LiveTransferBytesScheduler(final String name) {
+            super(name);
+            setDelay(Cnf.durationAt("Scheduler", "liveTransferBytesScheduler", 2 * Timer.ONE_MINUTE));
+            setJammedTimeout(
+                    Cnf.durationAt("Scheduler", "liveTransferBytesSchedulerJammedTimeout", 5 * Timer.ONE_MINUTE));
+        }
+
+        @Override
+        public int nextStep() {
+            final var base = getECpdsBase();
+            if (base == null) {
+                return NEXT_STEP_DELAY;
+            }
+            try {
+                final var snapshot = LiveTransferRegistry.getInstance().snapshotBucketsForPersistence();
+                base.setSysConfigValue("LiveTransfer", "bytes24hBuckets", snapshot);
+            } catch (final DataBaseException e) {
+                _log.warn("LiveTransferBytesScheduler: failed to persist live transfer bytes snapshot", e);
             }
             return NEXT_STEP_DELAY;
         }

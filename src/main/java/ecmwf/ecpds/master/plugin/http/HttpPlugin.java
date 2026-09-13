@@ -87,6 +87,7 @@ import ecmwf.common.security.HttpCertificateProvider;
 import ecmwf.common.security.Tools;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.version.Version;
+import ecmwf.web.model.users.User;
 import ecmwf.ecpds.master.ChangeHostEvent;
 import ecmwf.ecpds.master.DataBaseInterface;
 import ecmwf.ecpds.master.DataTransferEvent;
@@ -225,11 +226,25 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
                 wsContainer.addMapping("/ws/ai", (req, _) -> {
                     _log.debug("WebSocket request from {}", req.getRemoteSocketAddress());
                     var httpSession = req.getHttpServletRequest().getSession(false);
-                    if (httpSession == null) {
-                        _log.warn("WebSocket connection rejected: no HTTP session");
+                    if (httpSession == null || getAuthenticatedUser(httpSession) == null) {
+                        _log.warn("WebSocket connection rejected: no authenticated user");
                         return null; // reject connection
                     }
                     return new AssistantWebSocket(httpSession);
+                });
+                wsContainer.addMapping("/ws/globe", (req, _) -> {
+                    _log.debug("WebSocket request from {}", req.getRemoteSocketAddress());
+                    var httpSession = req.getHttpServletRequest().getSession(false);
+                    final var user = httpSession == null ? null : getAuthenticatedUser(httpSession);
+                    // A session existing is not enough on its own (e.g. an anonymous visit to the login page
+                    // already creates one): require an authenticated user, AND the same page-level authorisation
+                    // enforced by GetGlobeDisplayAction/PDSAction for /do/monitoring/globe, so this WebSocket can
+                    // never expose live transfer data to a user who could not otherwise open the globe page itself.
+                    if (user == null || !hasMonitoringAccess(user)) {
+                        _log.warn("WebSocket connection rejected: no authenticated/authorised user");
+                        return null; // reject connection
+                    }
+                    return new GlobeWebSocket();
                 });
             });
             final var sessionHandler = monitor.getSessionHandler();
@@ -249,6 +264,30 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
             resource.setDirAllowed(false);
             resource.setWelcomeFiles(new String[] { "index.html" });
             resource.setBaseResourceAsString(jettyHome + "/resources");
+            // Optional, higher-resolution "Live Earth" globe imagery, provisioned lazily/in the background at
+            // runtime by GlobeImageryProvisioner (not bundled/committed, unlike the low-resolution imagery served
+            // above from htdocs/resources): served straight from its (configurable) local cache directory, under
+            // the same /cesium/Assets/Textures/ path the bundled imagery lives under, so the frontend can request
+            // either with the same Cesium provider code. Falls through to a 404 (handled client-side, see globe.jsp)
+            // until the first background provisioning run completes.
+            final var globeImageryContext = new org.eclipse.jetty.server.handler.ContextHandler(
+                    "/cesium/Assets/Textures/NaturalEarthHR");
+            final var globeImageryResource = new ResourceHandler();
+            globeImageryResource.setDirAllowed(false);
+            final var globeImageryCacheDir = GlobeImageryProvisioner.getCacheDirectory();
+            globeImageryCacheDir.mkdirs(); // ResourceHandler needs a directory that already exists to start cleanly.
+            globeImageryResource.setBaseResourceAsString(globeImageryCacheDir.getAbsolutePath());
+            globeImageryContext.setHandler(globeImageryResource);
+            // Optional country/city name labels for the "Live Earth" globe, provisioned lazily/in the background at
+            // runtime by GlobeLabelsProvisioner - same rationale/pattern as the imagery layer above.
+            final var globeLabelsContext = new org.eclipse.jetty.server.handler.ContextHandler(
+                    "/cesium/Assets/Data/GlobeLabels");
+            final var globeLabelsResource = new ResourceHandler();
+            globeLabelsResource.setDirAllowed(false);
+            final var globeLabelsCacheDir = GlobeLabelsProvisioner.getCacheDirectory();
+            globeLabelsCacheDir.mkdirs(); // ResourceHandler needs a directory that already exists to start cleanly.
+            globeLabelsResource.setBaseResourceAsString(globeLabelsCacheDir.getAbsolutePath());
+            globeLabelsContext.setHandler(globeLabelsResource);
             // Take care of certificate and environment parameters!
             final var rewrite = new RewriteHandler();
             rewrite.addRule(new SessionRule());
@@ -257,9 +296,16 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
             rewrite.addRule(getRule("*", "X-Content-Type-Options", "nosniff"));
             rewrite.addRule(getRule("*", "Content-Security-Policy",
                     "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline';"));
+            // The Live ECPDS Earth globe page relies on the self-hosted CesiumJS bundle, whose
+            // Knockout-based widget internals require 'unsafe-eval' (e.g. dynamic binding-expression
+            // evaluation) to run at all; without it Cesium fails to even initialise. Scope this looser
+            // policy to just that one page rather than weakening it site-wide.
+            rewrite.addRule(getRule("/do/monitoring/globe", "Content-Security-Policy",
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline';"));
             rewrite.addRule(getRule("*", "X-Frame-Options", "SAMEORIGIN"));
             rewrite.addRule(getRule("*", "Strict-Transport-Security", "max-age=31536000;includeSubDomains"));
-            final var handlers = new Handler.Sequence(List.of(ecpds, resource, monitor.get()));
+            final var handlers = new Handler.Sequence(
+                    List.of(ecpds, globeImageryContext, globeLabelsContext, resource, monitor.get()));
             rewrite.setHandler(handlers);
             httpServer.setHandler(rewrite);
             // Create HTTPS listener
@@ -430,6 +476,42 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
         @Override
         public void destroy() {
             // No cleanup needed
+        }
+    }
+
+    /**
+     * Gets the authenticated {@link User} stored in the given HTTP session by {@code LoginAction} upon login, or
+     * {@code null} if the session belongs to an anonymous visitor (e.g. someone who only loaded the login page, which
+     * creates a session before any credentials are checked). Used to gate WebSocket upgrades ({@code /ws/ai},
+     * {@code /ws/globe}), since merely having an HTTP session is not sufficient proof of authentication.
+     *
+     * @param httpSession
+     *            the http session
+     *
+     * @return the authenticated user, or null
+     */
+    private static User getAuthenticatedUser(final javax.servlet.http.HttpSession httpSession) {
+        final var attribute = httpSession.getAttribute(User.SESSION_KEY);
+        return attribute instanceof final User user ? user : null;
+    }
+
+    /**
+     * Whether the given (already authenticated) user is authorised to access the "Live Earth" globe page, mirroring
+     * exactly the check {@code PDSAction}/{@code GetGlobeDisplayAction} perform for {@code /do/monitoring/globe} before
+     * serving the page itself - so this WebSocket can never expose live transfer data to a user who could not otherwise
+     * open the page.
+     *
+     * @param user
+     *            the user
+     *
+     * @return true, if the user has access
+     */
+    private static boolean hasMonitoringAccess(final User user) {
+        try {
+            return user.hasAccess("/do/monitoring/globe");
+        } catch (final Exception e) {
+            _log.warn("Could not check monitoring access for user '{}'", user.getUid(), e);
+            return false;
         }
     }
 

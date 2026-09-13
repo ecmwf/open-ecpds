@@ -100,6 +100,7 @@ import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.text.BASE64Coder;
 import ecmwf.common.text.Format;
 import ecmwf.common.version.Version;
+import ecmwf.ecpds.master.LiveTransferSample;
 import ecmwf.ecpds.mover.MoverProvider;
 import ecmwf.ecpds.mover.MoverServer;
 import ecmwf.ecpds.mover.service.RESTClient.MonitorRequest;
@@ -460,6 +461,68 @@ public final class RESTServer {
             throw w;
         } catch (final Throwable t) {
             _log.warn("isValidDataFile", t);
+            return RESTMessage.getErrorMessage(t).getResponse();
+        }
+    }
+
+    /**
+     * Update live transfer statistics. Relays samples reported by a ProxyHost (which has no direct RMI connection to
+     * the MasterServer) via this data mover's own {@link ecmwf.ecpds.mover.MasterProxy}, feeding the "Live Earth" globe
+     * visualisation.
+     *
+     * @param ui
+     *            the ui
+     * @param samples
+     *            the samples
+     *
+     * @return the response
+     */
+    @SuppressWarnings("null")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("master/updateLiveTransferStatistics")
+    public Response updateLiveTransferStatistics(@Context final UriInfo ui, final List<LiveTransferSample> samples) {
+        _log.debug("REST received request: updateLiveTransferStatistics({})",
+                samples != null ? samples.size() + " sample(s)" : "no-sample");
+        checkIsControlChannel(ui);
+        checkParameter("samples", samples);
+        try {
+            mover.getMasterProxy().updateLiveTransferStatistics(samples.toArray(new LiveTransferSample[0]));
+            return RESTMessage.getSuccessMessage().getResponse();
+        } catch (final WebApplicationException w) {
+            _log.warn("updateLiveTransferStatistics - {}", describe(w));
+            throw w;
+        } catch (final Throwable t) {
+            _log.warn("updateLiveTransferStatistics", t);
+            return RESTMessage.getErrorMessage(t).getResponse();
+        }
+    }
+
+    /**
+     * Whether the MasterServer currently wants live transfer statistics, so a ProxyHost knows whether it is worth
+     * sampling/pushing at all.
+     *
+     * @param ui
+     *            the ui
+     *
+     * @return the response
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("master/isLiveTransferMonitoringEnabled")
+    public Response isLiveTransferMonitoringEnabled(@Context final UriInfo ui) {
+        _log.debug("REST received request: isLiveTransferMonitoringEnabled()");
+        checkIsControlChannel(ui);
+        try {
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("enabled", mover.getMasterProxy().isLiveTransferMonitoringEnabled());
+            return message.getResponse();
+        } catch (final WebApplicationException w) {
+            _log.warn("isLiveTransferMonitoringEnabled - {}", describe(w));
+            throw w;
+        } catch (final Throwable t) {
+            _log.warn("isLiveTransferMonitoringEnabled", t);
             return RESTMessage.getErrorMessage(t).getResponse();
         }
     }

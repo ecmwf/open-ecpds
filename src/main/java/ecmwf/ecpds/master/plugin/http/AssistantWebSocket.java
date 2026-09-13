@@ -40,13 +40,9 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.jetty.websocket.api.Callback;
-import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketOpen;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
+import org.eclipse.jetty.ee8.websocket.api.Session;
+import org.eclipse.jetty.ee8.websocket.api.WebSocketListener;
+import org.eclipse.jetty.ee8.websocket.api.WriteCallback;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -71,9 +67,16 @@ import ecmwf.common.ai.ChatConversation;
  * <li>Token batching to reduce message overhead</li>
  * </ul>
  * </p>
+ * <p>
+ * Implements the (legacy/"ee8") {@link WebSocketListener} interface directly rather than relying on the
+ * annotation-based API, since the endpoint is registered through
+ * {@link org.eclipse.jetty.ee8.websocket.server.config.JettyWebSocketServletContainerInitializer}, whose frame-handler
+ * factory only recognises {@code org.eclipse.jetty.ee8.websocket.api.annotations.*} annotations (not the similarly
+ * named ones in {@code org.eclipse.jetty.websocket.api.annotations}), so implementing the interface avoids that
+ * ambiguity.
+ * </p>
  */
-@WebSocket
-public class AssistantWebSocket {
+public class AssistantWebSocket implements WebSocketListener {
 
     private static final Logger LOG = LogManager.getLogger(AssistantWebSocket.class);
 
@@ -153,10 +156,10 @@ public class AssistantWebSocket {
      * @param session
      *            the connected WebSocket session
      */
-    @OnWebSocketOpen
-    public void onConnect(final Session session) {
+    @Override
+    public void onWebSocketConnect(final Session session) {
         this.session = session;
-        session.setIdleTimeout(Duration.ofMinutes(2));
+        session.getPolicy().setIdleTimeout(Duration.ofMinutes(2));
         // schedule token flush at regular interval
         flushTask = HEARTBEAT_POOL.scheduleAtFixedRate(this::flushTokenBuffer, TOKEN_FLUSH_INTERVAL_MS,
                 TOKEN_FLUSH_INTERVAL_MS, TimeUnit.MILLISECONDS);
@@ -164,7 +167,7 @@ public class AssistantWebSocket {
         wsPingTask = HEARTBEAT_POOL.scheduleAtFixedRate(() -> {
             if (session != null && session.isOpen()) {
                 try {
-                    session.sendPing(ByteBuffer.wrap(new byte[] { 1, 2, 3, 4 }), Callback.NOOP);
+                    session.getRemote().sendPing(ByteBuffer.wrap(new byte[] { 1, 2, 3, 4 }), WriteCallback.NOOP);
                 } catch (final Exception e) {
                     LOG.debug("WS ping failed: {}", e.toString());
                 }
@@ -195,8 +198,8 @@ public class AssistantWebSocket {
      * @param message
      *            the raw JSON message from the client
      */
-    @OnWebSocketMessage
-    public void onMessage(final String message) {
+    @Override
+    public void onWebSocketText(final String message) {
         try {
             final var node = JSON.readTree(message);
             // ---- Handle cancel request ----
@@ -211,7 +214,7 @@ public class AssistantWebSocket {
                 if (session != null && session.isOpen()) {
                     final var cancelNode = JSON.createObjectNode();
                     cancelNode.put("type", "done"); // signal client the response is stopped
-                    session.sendText(JSON.writeValueAsString(cancelNode), Callback.NOOP);
+                    session.getRemote().sendString(JSON.writeValueAsString(cancelNode), WriteCallback.NOOP);
                 }
                 return; // done processing this cancel message
             }
@@ -263,8 +266,8 @@ public class AssistantWebSocket {
      * @param reason
      *            the reason for closure
      */
-    @OnWebSocketClose
-    public void onClose(final int statusCode, final String reason) {
+    @Override
+    public void onWebSocketClose(final int statusCode, final String reason) {
         cancelled.set(true);
         if (currentTask != null)
             currentTask.cancel(true);
@@ -281,8 +284,8 @@ public class AssistantWebSocket {
      * @param error
      *            the thrown error
      */
-    @OnWebSocketError
-    public void onError(final Throwable error) {
+    @Override
+    public void onWebSocketError(final Throwable error) {
         cancelled.set(true);
         if (currentTask != null)
             currentTask.cancel(true);
@@ -357,7 +360,7 @@ public class AssistantWebSocket {
             final var node = JSON.createObjectNode();
             node.put("type", "token");
             node.put("text", toSend);
-            session.sendText(JSON.writeValueAsString(node), Callback.NOOP);
+            session.getRemote().sendString(JSON.writeValueAsString(node), WriteCallback.NOOP);
         } catch (final Exception e) {
             LOG.warn("Failed to flush tokens", e);
         }
@@ -383,7 +386,7 @@ public class AssistantWebSocket {
         try {
             final var node = JSON.createObjectNode();
             node.put("type", "done");
-            session.sendText(JSON.writeValueAsString(node), Callback.NOOP);
+            session.getRemote().sendString(JSON.writeValueAsString(node), WriteCallback.NOOP);
         } catch (final Exception e) {
             LOG.warn("END failed", e);
         }
@@ -414,7 +417,7 @@ public class AssistantWebSocket {
             final var node = JSON.createObjectNode();
             node.put("type", "error");
             node.put("message", msg);
-            session.sendText(JSON.writeValueAsString(node), Callback.NOOP);
+            session.getRemote().sendString(JSON.writeValueAsString(node), WriteCallback.NOOP);
         } catch (final Exception e) {
             LOG.warn("Error message failed", e);
         }
@@ -439,7 +442,7 @@ public class AssistantWebSocket {
         try {
             final var node = JSON.createObjectNode();
             node.put("type", "ping");
-            session.sendText(JSON.writeValueAsString(node), Callback.NOOP);
+            session.getRemote().sendString(JSON.writeValueAsString(node), WriteCallback.NOOP);
         } catch (final Exception e) {
             LOG.warn("PING failed", e);
         }

@@ -42,6 +42,7 @@ import ecmwf.common.technical.ThreadService.ConfigurableLoopRunnable;
 import ecmwf.ecpds.master.DataAccessInterface;
 import ecmwf.ecpds.master.DownloadProgress;
 import ecmwf.ecpds.master.IncomingProfile;
+import ecmwf.ecpds.master.LiveTransferSample;
 import ecmwf.ecpds.mover.service.RESTClient.MonitorRequest;
 import ecmwf.ecpds.mover.service.RESTClient.UpdateDataRequest;
 
@@ -117,6 +118,26 @@ final class MasterREST implements MasterProxy {
     @Override
     public DownloadProgress[] updateDownloadProgress(final DownloadProgress[] progress) throws Exception {
         throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Update live transfer statistics.
+     */
+    @Override
+    public void updateLiveTransferStatistics(final LiveTransferSample[] samples) throws Exception {
+        _rest.updateLiveTransferStatistics(samples);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Whether live transfer monitoring is enabled.
+     */
+    @Override
+    public boolean isLiveTransferMonitoringEnabled() throws Exception {
+        return _rest.isLiveTransferMonitoringEnabled();
     }
 
     /**

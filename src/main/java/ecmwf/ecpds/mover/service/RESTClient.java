@@ -36,6 +36,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +64,7 @@ import ecmwf.common.database.HostLocation;
 import ecmwf.common.ecaccess.ECauthToken;
 import ecmwf.common.security.SSLSocketFactory;
 import ecmwf.common.technical.Cnf;
+import ecmwf.ecpds.master.LiveTransferSample;
 import ecmwf.ecpds.mover.RESTInterface;
 
 /**
@@ -277,6 +279,38 @@ public final class RESTClient implements RESTInterface {
         for (final String dataMover : getDataMover()) {
             try (final var response = send(httpProxy, dataMover + "/ecpds/master/isValidDataFile", connectTimeout,
                     "GET", null, Map.of("dataFileId", String.valueOf(dataFileId)))) {
+                return parse(response, boolean.class);
+            } catch (final Throwable t) {
+                restException = new RestException("Connecting to " + dataMover, t);
+            }
+        }
+        throw restException != null ? restException : new RestException("No MasterServer available");
+    }
+
+    @Override
+    public void updateLiveTransferStatistics(final LiveTransferSample[] samples) throws RestException {
+        _log.debug("REST sending request: updateLiveTransferStatistics({})",
+                samples != null ? samples.length + " sample(s)" : "no-sample");
+        RestException restException = null;
+        for (final String dataMover : getDataMover()) {
+            try (final var response = send(httpProxy, dataMover + "/ecpds/master/updateLiveTransferStatistics",
+                    connectTimeout, "PUT", Arrays.asList(samples), Map.of())) {
+                parse(response);
+                return;
+            } catch (final Throwable t) {
+                restException = new RestException("Connecting to " + dataMover, t);
+            }
+        }
+        throw restException != null ? restException : new RestException("No MasterServer available");
+    }
+
+    @Override
+    public boolean isLiveTransferMonitoringEnabled() throws RestException {
+        _log.debug("REST sending request: isLiveTransferMonitoringEnabled()");
+        RestException restException = null;
+        for (final String dataMover : getDataMover()) {
+            try (final var response = send(httpProxy, dataMover + "/ecpds/master/isLiveTransferMonitoringEnabled",
+                    connectTimeout, "GET", null, Map.of())) {
                 return parse(response, boolean.class);
             } catch (final Throwable t) {
                 restException = new RestException("Connecting to " + dataMover, t);

@@ -19,7 +19,6 @@ package ecmwf.ecpds.master.plugin.http.controller.admin;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.TreeSet;
 

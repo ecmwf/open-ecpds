@@ -67,8 +67,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.Deflater;
@@ -167,6 +169,7 @@ import ecmwf.common.text.Options;
 import ecmwf.common.version.Version;
 import ecmwf.ecpds.master.DataAccessInterface;
 import ecmwf.ecpds.master.DownloadProgress;
+import ecmwf.ecpds.master.LiveTransferSample;
 import ecmwf.ecpds.master.MasterConnection;
 import ecmwf.ecpds.master.MasterException;
 import ecmwf.ecpds.master.MasterInterface;
@@ -202,6 +205,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
 
     /** The downloadRepository. */
     private final transient DownloadRepository downloadRepository;
+
+    /** The liveStatsRepository (Live ECPDS Earth - Phase 0). */
+    private final transient LiveStatsRepository liveStatsRepository;
 
     /** The ticketRepository. */
     private final transient TicketRepository ticketRepository;
@@ -1089,6 +1095,13 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             downloadRepository.start();
         } else {
             downloadRepository = null;
+        }
+        if (Cnf.at("Server", "liveStatsRepository", true)) {
+            _log.debug("Starting LiveStatsRepository");
+            liveStatsRepository = new LiveStatsRepository("LiveStatsRepository");
+            liveStatsRepository.start();
+        } else {
+            liveStatsRepository = null;
         }
         moverRepository = new MoverRepository();
         ectrans = new ECtransContainer(new MoverProvider(moverRepository, false));
@@ -4176,6 +4189,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         /** The _update. */
         private long _update = -1;
 
+        /** The last time a live transfer sample was pushed (Live ECPDS Earth - Phase 0). */
+        private long _lastLiveSample = -1;
+
         /** The _closed. */
         private final AtomicBoolean _closed = new AtomicBoolean(false);
 
@@ -4244,6 +4260,30 @@ public final class MoverServer extends StarterServer implements MoverInterface {
          */
         void setFileDescriptor(final FileDescriptor descriptor) {
             _descriptor = descriptor;
+        }
+
+        /**
+         * Offer a live transfer sample to the {@link LiveStatsRepository}, if enabled (Live ECPDS Earth - Phase 0).
+         *
+         * @param status
+         *            one of {@link LiveTransferSample#STATUS_ACTIVE}, {@link LiveTransferSample#STATUS_DONE} or
+         *            {@link LiveTransferSample#STATUS_FAILED}
+         */
+        private void _offerLiveSample(final String status) {
+            if (liveStatsRepository == null || !liveStatsRepository.isMasterEnabled()) {
+                return;
+            }
+            try {
+                final var host = _transfer.getHost();
+                final var protocol = host != null ? host.getTransferMethodName() : null;
+                final var rate = _transfer.getDuration() > 0
+                        ? (double) _transfer.getSent() * 8000 / _transfer.getDuration() : -1;
+                liveStatsRepository.offer(new LiveTransferSample(_transfer.getId(), getRoot(),
+                        _transfer.getDestinationName(), _transfer.getHostName(), protocol, _fileSize,
+                        _transfer.getSent(), _transfer.getDuration(), rate, status));
+            } catch (final Throwable t) {
+                _log.debug("Building LiveTransferSample for DataTransfer-{}", _transfer.getId(), t);
+            }
         }
 
         /**
@@ -4339,6 +4379,10 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 _update = System.currentTimeMillis();
                 _monitor = monitor;
                 refreshTransferStats();
+                if (_update - _lastLiveSample >= 2 * Timer.ONE_SECOND) {
+                    _lastLiveSample = _update;
+                    _offerLiveSample(LiveTransferSample.STATUS_ACTIVE);
+                }
             } else if (!_closed.get() && _timeout > 0 && System.currentTimeMillis() - _update > _timeout) {
                 failed(null, "stream timeout after " + Format.formatDuration(_timeout));
             }
@@ -4439,6 +4483,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             _log.info("Transfer {} ({}) completed: {} - statistics: '{}'", _transfer.getId(), targetName, comment,
                     statisticsString != null ? statisticsString : "none");
+            _offerLiveSample(LiveTransferSample.STATUS_DONE);
             if (usedCompressedFile && _descriptor != null && _descriptor.isLocal()) {
                 // We have successfully transmitted a local compressed file, so we might now
                 // unlink the uncompressed version of it to save some disk space!
@@ -4506,6 +4551,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             _log.warn("Transfer {} ({}) failed: {} - statistics: '{}'", _transfer.getId(), _dataFile.getSource(),
                     comment, statisticsString != null ? statisticsString : "none");
+            _offerLiveSample(LiveTransferSample.STATUS_FAILED);
         }
     }
 
@@ -5723,6 +5769,127 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 }
             }
             // Now we can wait for the next loop!
+            return NEXT_STEP_DELAY;
+        }
+    }
+
+    /**
+     * The Class LiveStatsRepository.
+     *
+     * Batches and periodically pushes {@link LiveTransferSample}s to the MasterServer, feeding the "Live ECPDS Earth"
+     * globe visualisation (Phase 0 - backend plumbing only, see {@link LiveTransferRegistry}). Samples are coalesced
+     * per transfer id (only the most recent sample for a given transfer is kept between two pushes) to keep the payload
+     * bounded regardless of how often {@link #offer(LiveTransferSample)} is called.
+     */
+    private final class LiveStatsRepository extends MBeanRepository<LiveTransferSample> {
+
+        /** Pending samples, coalesced by transfer id. */
+        private final Map<Long, LiveTransferSample> _pending = new ConcurrentHashMap<>();
+
+        /** Cached result of the last {@link MasterProxy#isLiveTransferMonitoringEnabled()} poll. */
+        private volatile boolean _masterWantsLiveStats = false;
+
+        /** Last time {@link MasterProxy#isLiveTransferMonitoringEnabled()} was polled. */
+        private volatile long _lastEnabledCheck = -1;
+
+        /**
+         * Instantiates a new live stats repository.
+         *
+         * @param name
+         *            the name
+         */
+        private LiveStatsRepository(final String name) {
+            super(name);
+            setDelay(Cnf.durationAt("Scheduler", "liveStatsRepository", 2 * Timer.ONE_SECOND));
+            setJammedTimeout(Cnf.durationAt("Scheduler", "liveStatsRepositoryJammedTimeout", 5 * Timer.ONE_MINUTE));
+        }
+
+        /**
+         * Whether the MasterServer currently wants live transfer statistics. Cached and refreshed at most every
+         * {@link #getDelay()} to keep the check cheap when called from the hot path (e.g. {@code update()} on every
+         * active transfer).
+         *
+         * @return true, if enabled
+         */
+        boolean isMasterEnabled() {
+            return _masterWantsLiveStats;
+        }
+
+        /**
+         * Offer a fresh sample, replacing any not-yet-pushed sample for the same transfer.
+         *
+         * @param sample
+         *            the sample
+         */
+        void offer(final LiveTransferSample sample) {
+            if (sample != null) {
+                _pending.put(sample.getTransferId(), sample);
+            }
+        }
+
+        /**
+         * Gets the key.
+         *
+         * @param sample
+         *            the sample
+         *
+         * @return the key
+         */
+        @Override
+        public String getKey(final LiveTransferSample sample) {
+            return Format.formatLong(sample.getTransferId(), 10, true);
+        }
+
+        /**
+         * Gets the status.
+         *
+         * @param sample
+         *            the sample
+         *
+         * @return the status
+         */
+        @Override
+        public String getStatus(final LiveTransferSample sample) {
+            return sample.getStatus() + "(" + Format.formatSize(sample.getByteSent()) + " on "
+                    + sample.getDestinationName() + "/" + sample.getHostName() + ")";
+        }
+
+        /**
+         * Next step.
+         *
+         * @return the int
+         */
+        @Override
+        public int nextStep() {
+            if (masterManager != null && !masterManager.isConnected()) {
+                return NEXT_STEP_DELAY;
+            }
+            final var now = System.currentTimeMillis();
+            if (now - _lastEnabledCheck >= NEXT_STEP_DELAY) {
+                _lastEnabledCheck = now;
+                try {
+                    _masterWantsLiveStats = getMasterProxy().isLiveTransferMonitoringEnabled();
+                } catch (final Exception e) {
+                    _log.debug("isLiveTransferMonitoringEnabled", e);
+                    _masterWantsLiveStats = false;
+                }
+            }
+            if (!_masterWantsLiveStats) {
+                // Nobody is watching, so let's not bother pushing anything (and drop what accumulated meanwhile)!
+                _pending.clear();
+                return NEXT_STEP_DELAY;
+            }
+            if (_pending.isEmpty()) {
+                return NEXT_STEP_DELAY;
+            }
+            final Map<Long, LiveTransferSample> batch = new ConcurrentHashMap<>(_pending);
+            _pending.keySet().removeAll(batch.keySet());
+            final var array = batch.values().toArray(new LiveTransferSample[batch.size()]);
+            try {
+                getMasterProxy().updateLiveTransferStatistics(array);
+            } catch (final Exception e) {
+                _log.debug("updateLiveTransferStatistics", e);
+            }
             return NEXT_STEP_DELAY;
         }
     }
