@@ -465,6 +465,31 @@
         return Cesium.Math.clamp(1.5 + Math.log10(1 + mbps) * 2.2, 1.5, 10);
     }
 
+    // Builds a set of positions following the geodesic (great-circle) path between two points, lofted into a
+    // parabolic arc above the surface, so that transfers spanning long distances (e.g. Europe <-> US) are rendered
+    // as a curved 3D arc rather than a straight line cutting through the globe.
+    function arcPositions(lon1, lat1, lon2, lat2) {
+        var start = Cesium.Cartographic.fromDegrees(lon1, lat1);
+        var end = Cesium.Cartographic.fromDegrees(lon2, lat2);
+        var geodesic = new Cesium.EllipsoidGeodesic(start, end);
+        var totalDistance = geodesic.surfaceDistance;
+        if (!totalDistance || !isFinite(totalDistance)) {
+            return [Cesium.Cartesian3.fromDegrees(lon1, lat1), Cesium.Cartesian3.fromDegrees(lon2, lat2)];
+        }
+        // Taller arcs for longer distances, capped so short hops don't look flat and very long ones don't look
+        // excessive.
+        var maxHeight = Cesium.Math.clamp(totalDistance * 0.12, 15000, 900000);
+        var segments = Cesium.Math.clamp(Math.round(totalDistance / 100000), 16, 128);
+        var positions = [];
+        for (var i = 0; i <= segments; i++) {
+            var fraction = i / segments;
+            var carto = geodesic.interpolateUsingFraction(fraction);
+            var height = Math.sin(Math.PI * fraction) * maxHeight;
+            positions.push(Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, height));
+        }
+        return positions;
+    }
+
     function setOrigin(lat, lon) {
         var firstTime = !originPoint;
         origin = { lat: lat, lon: lon };
@@ -609,10 +634,7 @@
             if (existing.point) points.remove(existing.point);
         }
         var arcOrigin = agg.arcOrigin || origin;
-        var positions = [
-            Cesium.Cartesian3.fromDegrees(arcOrigin.lon, arcOrigin.lat),
-            Cesium.Cartesian3.fromDegrees(lon, lat)
-        ];
+        var positions = arcPositions(arcOrigin.lon, arcOrigin.lat, lon, lat);
         var arc = arcs.add({
             positions: positions,
             width: rateWidth(agg.totalRate),
