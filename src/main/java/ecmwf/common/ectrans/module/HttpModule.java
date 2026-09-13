@@ -140,6 +140,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.net.ssl.HostnameVerifier;
+
 import org.apache.hc.client5.http.ConnectionKeepAliveStrategy;
 import org.apache.hc.client5.http.auth.AuthCache;
 import org.apache.hc.client5.http.auth.AuthScope;
@@ -276,6 +278,15 @@ public final class HttpModule extends TransferModule {
 
     /** The ssl socket factory. */
     private SSLClientSocketFactory sslSocketFactory = null;
+
+    /** Tracks the IP address of the most recently connected HTTPS socket (see {@link #getConnectedRemoteAddress()}). */
+    private TrackingSslConnectionSocketFactory trackingSslConnectionSocketFactory = null;
+
+    /**
+     * Tracks the IP address of the most recently connected plain (HTTP) socket, see
+     * {@link #getConnectedRemoteAddress()}.
+     */
+    private ConfigConnectionSocketFactory httpConnectionSocketFactory = null;
 
     /** The mqtt subscriber. */
     private MqttClient mqttSubscriber = null;
@@ -436,13 +447,13 @@ public final class HttpModule extends TransferModule {
             socketFactory = new ClientSocketFactory(socketConfig);
             sslSocketFactory = socketConfig.getSSLSocketFactory(getSetup().getString(HOST_HTTP_PROTOCOL),
                     getSetup().getBoolean(HOST_HTTP_SSL_VALIDATION));
-            poolManager = new PoolingHttpClientConnectionManager(RegistryBuilder.<ConnectionSocketFactory> create()
-                    .register("http", new ConfigConnectionSocketFactory(socketFactory))
-                    .register("https",
-                            new SSLConnectionSocketFactory(sslSocketFactory,
-                                    getSetup().getStringList(HOST_HTTP_SUPPORTED_PROTOCOLS).toArray(new String[0]),
-                                    null, !getSetup().getBoolean(HOST_HTTP_STRICT) ? new NoopHostnameVerifier() : null))
-                    .build());
+            httpConnectionSocketFactory = new ConfigConnectionSocketFactory(socketFactory);
+            trackingSslConnectionSocketFactory = new TrackingSslConnectionSocketFactory(sslSocketFactory,
+                    getSetup().getStringList(HOST_HTTP_SUPPORTED_PROTOCOLS).toArray(new String[0]), null,
+                    !getSetup().getBoolean(HOST_HTTP_STRICT) ? new NoopHostnameVerifier() : null);
+            poolManager = new PoolingHttpClientConnectionManager(
+                    RegistryBuilder.<ConnectionSocketFactory> create().register("http", httpConnectionSocketFactory)
+                            .register("https", trackingSslConnectionSocketFactory).build());
             final int maxTotal = getSetup().getInteger(HOST_HTTP_LIST_MAX_THREADS);
             poolManager.setDefaultMaxPerRoute(maxTotal);
             poolManager.setMaxTotal(maxTotal);
@@ -504,6 +515,9 @@ public final class HttpModule extends TransferModule {
         /** The socket factory. */
         final ClientSocketFactory socketFactory;
 
+        /** IP address of the most recently connected plain (HTTP) socket. */
+        private volatile String lastRemoteAddress;
+
         /**
          * Instantiates a new config connection socket factory.
          *
@@ -539,9 +553,74 @@ public final class HttpModule extends TransferModule {
         public Socket connectSocket(final TimeValue connectTimeout, final Socket socket, final HttpHost host,
                 final InetSocketAddress remoteAddress, final InetSocketAddress localAddress, final HttpContext context)
                 throws IOException {
-            return socketFactory.getConfiguredWrapper(
+            final var connected = socketFactory.getConfiguredWrapper(
                     super.connectSocket(connectTimeout, socket, host, remoteAddress, localAddress, context));
+            final var address = connected.getInetAddress();
+            if (address != null) {
+                lastRemoteAddress = address.getHostAddress();
+            }
+            return connected;
         }
+
+        /**
+         * Returns the IP address of the most recently connected plain (HTTP) socket, or {@code null} if none has
+         * connected yet.
+         */
+        String getLastRemoteAddress() {
+            return lastRemoteAddress;
+        }
+    }
+
+    /**
+     * An {@link SSLConnectionSocketFactory} subclass that additionally tracks the IP address of the most recently
+     * connected HTTPS socket, so that "Live ECPDS Earth" can use the real endpoint actually connected to (which may
+     * differ from a fresh DNS lookup of the same hostname for anycast/load-balanced services).
+     */
+    private static final class TrackingSslConnectionSocketFactory extends SSLConnectionSocketFactory {
+
+        private volatile String lastRemoteAddress;
+
+        TrackingSslConnectionSocketFactory(final javax.net.ssl.SSLSocketFactory socketfactory,
+                final String[] supportedProtocols, final String[] supportedCipherSuites,
+                final HostnameVerifier hostnameVerifier) {
+            super(socketfactory, supportedProtocols, supportedCipherSuites, hostnameVerifier);
+        }
+
+        @Override
+        public Socket connectSocket(final TimeValue connectTimeout, final Socket socket, final HttpHost host,
+                final InetSocketAddress remoteAddress, final InetSocketAddress localAddress, final HttpContext context)
+                throws IOException {
+            final var connected = super.connectSocket(connectTimeout, socket, host, remoteAddress, localAddress,
+                    context);
+            final var address = connected.getInetAddress();
+            if (address != null) {
+                lastRemoteAddress = address.getHostAddress();
+            }
+            return connected;
+        }
+
+        /**
+         * Returns the IP address of the most recently connected HTTPS socket, or {@code null} if none has connected
+         * yet.
+         */
+        String getLastRemoteAddress() {
+            return lastRemoteAddress;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns the real IP address of the remote host most recently connected to, tracked via the connection socket
+     * factories. Preferred over resolving the Host address via DNS again later, since some HTTP endpoints (e.g.
+     * anycast/load-balanced services such as Google Cloud Storage) may resolve to a different IP on every lookup.
+     */
+    @Override
+    public String getConnectedRemoteAddress() {
+        final var https = trackingSslConnectionSocketFactory != null
+                ? trackingSslConnectionSocketFactory.getLastRemoteAddress() : null;
+        return https != null ? https
+                : httpConnectionSocketFactory != null ? httpConnectionSocketFactory.getLastRemoteAddress() : null;
     }
 
     /**

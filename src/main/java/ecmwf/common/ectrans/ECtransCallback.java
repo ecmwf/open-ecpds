@@ -71,6 +71,20 @@ public interface ECtransCallback {
     void completed(TransferModule module);
 
     /**
+     * Notifies that the module has connected and is now processing the requested action. Called once, right before
+     * {@link ECtransAction#exec(TransferModule, boolean)} starts, so implementations that need the live
+     * {@link TransferModule} instance while a transfer is still in progress (e.g. to query
+     * {@link TransferModule#getConnectedRemoteAddress()} for "Live ECPDS Earth") can capture it here. Default no-op for
+     * implementations that do not need it.
+     *
+     * @param module
+     *            the module
+     */
+    default void connected(TransferModule module) {
+        // no-op by default
+    }
+
+    /**
      * Failed.
      *
      * @param module

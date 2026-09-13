@@ -4192,6 +4192,13 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         /** The last time a live transfer sample was pushed (Live ECPDS Earth - Phase 0). */
         private long _lastLiveSample = -1;
 
+        /**
+         * The TransferModule currently handling this transfer, captured via {@link #connected(TransferModule)} as soon
+         * as it becomes available, so that {@link #_offerLiveSample(String)} can query its real, currently connected
+         * remote address (Live ECPDS Earth - Phase 0).
+         */
+        private volatile TransferModule _module = null;
+
         /** The _closed. */
         private final AtomicBoolean _closed = new AtomicBoolean(false);
 
@@ -4263,6 +4270,21 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         }
 
         /**
+         * Notifies that the {@link TransferModule} handling this transfer has connected, capturing a reference to it so
+         * that {@link #_offerLiveSample(String)} can later query its real, currently connected remote address (see
+         * {@link TransferModule#getConnectedRemoteAddress()}) - preferred over the configured Host address for
+         * anycast/load-balanced endpoints (e.g. Amazon S3, Google Cloud Storage) where a later DNS lookup of the same
+         * hostname may return a different IP than the one actually used for this transfer.
+         *
+         * @param module
+         *            the module
+         */
+        @Override
+        public void connected(final TransferModule module) {
+            _module = module;
+        }
+
+        /**
          * Offer a live transfer sample to the {@link LiveStatsRepository}, if enabled (Live ECPDS Earth - Phase 0).
          *
          * @param status
@@ -4277,7 +4299,10 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 final var host = _transfer.getHost();
                 final var protocol = host != null ? host.getTransferMethodName() : null;
                 final var hostNickname = host != null ? host.getNickname() : null;
-                final var hostAddress = host != null ? host.getHost() : null;
+                final var module = _module;
+                final var connectedAddress = module != null ? module.getConnectedRemoteAddress() : null;
+                final var hostAddress = connectedAddress != null && !connectedAddress.isBlank() ? connectedAddress
+                        : host != null ? host.getHost() : null;
                 final var rate = _transfer.getDuration() > 0
                         ? (double) _transfer.getSent() * 8000 / _transfer.getDuration() : -1;
                 liveStatsRepository.offer(new LiveTransferSample(_transfer.getId(), getRoot(),

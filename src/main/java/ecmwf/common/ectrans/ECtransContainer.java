@@ -1961,6 +1961,10 @@ public final class ECtransContainer implements MBeanService {
         public void action() throws Exception {
             progressUpdate(1);
             try {
+                final var callback = action.getECtransCallback();
+                if (callback != null) {
+                    callback.connected(module);
+                }
                 action.exec(module, interruptible);
             } finally {
                 progressUpdate(-1);

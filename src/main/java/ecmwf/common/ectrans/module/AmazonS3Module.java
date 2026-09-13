@@ -393,6 +393,19 @@ public final class AmazonS3Module extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Returns the real IP address of the S3 endpoint most recently connected to, tracked via the socket factories (see
+     * {@link TcpTunedSslSocketFactory}/{@link TcpTunedPlainSocketFactory}). Preferred over resolving {@code hostName}
+     * via DNS again later, since Amazon S3 (and other S3-compatible/anycast services such as Google Cloud Storage) may
+     * resolve a hostname to a different IP on every lookup.
+     */
+    @Override
+    public String getConnectedRemoteAddress() {
+        return s3 != null ? s3.getConnectedRemoteAddress() : null;
+    }
+
+    /**
      * Gets the bucket name and key. Return {"bucketName", "key"}!
      *
      * @param name
@@ -1033,6 +1046,7 @@ public final class AmazonS3Module extends TransferModule {
         private final SocketConfig tcpConfig;
         private final ClientSocketStatistics statistics;
         private final Queue<SocketEntry> tracked = new ConcurrentLinkedQueue<>();
+        private volatile String lastRemoteAddress;
 
         /** Strict-mode constructor — uses the default hostname verifier. */
         TcpTunedSslSocketFactory(final SSLContext ctx, final SocketConfig cfg) {
@@ -1056,6 +1070,20 @@ public final class AmazonS3Module extends TransferModule {
             if (statistics != null) {
                 tracked.add(new SocketEntry(tcp, System.currentTimeMillis()));
             }
+            final var address = tcp.getInetAddress();
+            if (address != null) {
+                lastRemoteAddress = address.getHostAddress();
+            }
+        }
+
+        /**
+         * Returns the IP address of the most recently connected socket (best-effort, may be {@code null} before the
+         * first connection or if the address could not be determined), used to give "Live ECPDS Earth" the real,
+         * currently-in-use endpoint rather than a possibly different, freshly re-resolved DNS answer for
+         * anycast/load-balanced services (e.g. Amazon S3, Google Cloud Storage).
+         */
+        String getLastRemoteAddress() {
+            return lastRemoteAddress;
         }
 
         /**
@@ -1104,6 +1132,7 @@ public final class AmazonS3Module extends TransferModule {
         private final SocketConfig tcpConfig;
         private final ClientSocketStatistics statistics;
         private final Queue<SocketEntry> tracked = new ConcurrentLinkedQueue<>();
+        private volatile String lastRemoteAddress;
 
         TcpTunedPlainSocketFactory(final SocketConfig cfg) {
             tcpConfig = cfg;
@@ -1120,7 +1149,19 @@ public final class AmazonS3Module extends TransferModule {
             if (statistics != null) {
                 tracked.add(new SocketEntry(connected, System.currentTimeMillis()));
             }
+            final var address = connected.getInetAddress();
+            if (address != null) {
+                lastRemoteAddress = address.getHostAddress();
+            }
             return connected;
+        }
+
+        /**
+         * Returns the IP address of the most recently connected socket, see
+         * {@link TcpTunedSslSocketFactory#getLastRemoteAddress()}.
+         */
+        String getLastRemoteAddress() {
+            return lastRemoteAddress;
         }
 
         void updateStatistics() throws IOException {
@@ -1293,6 +1334,17 @@ public final class AmazonS3Module extends TransferModule {
             sslSocketFactory = sslFactory;
             plainSocketFactory = plainFactory;
             httpClient = trackingClient;
+        }
+
+        /**
+         * Returns the IP address of the most recently connected socket (HTTPS is used for virtually all S3 traffic, so
+         * this is preferred over the plain-HTTP factory, which is only used as a fallback).
+         *
+         * @return the remote IP address, or {@code null} if no socket has connected yet
+         */
+        String getConnectedRemoteAddress() {
+            final var https = sslSocketFactory.getLastRemoteAddress();
+            return https != null ? https : plainSocketFactory.getLastRemoteAddress();
         }
 
         /**

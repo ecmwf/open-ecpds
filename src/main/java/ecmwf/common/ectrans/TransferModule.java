@@ -698,6 +698,20 @@ public abstract class TransferModule implements Closeable {
     }
 
     /**
+     * Gets the real IP address of the remote host this module most recently connected to, if the underlying protocol
+     * implementation tracks it. This can differ from the configured Host address for anycast/load-balanced endpoints
+     * (e.g. Amazon S3, Google Cloud Storage), where a fresh DNS lookup of the same hostname performed later (e.g. for
+     * "Live ECPDS Earth" geolocation) may return a different IP than the one actually used for the transfer. Overridden
+     * by modules that track this (currently {@code s3} and {@code http}/{@code https}); other modules keep the default
+     * of {@code null}, meaning the configured Host address should be used instead.
+     *
+     * @return the remote IP address, or {@code null} if not tracked or not yet connected
+     */
+    public String getConnectedRemoteAddress() {
+        return null;
+    }
+
+    /**
      * Gets the current status of the transfer module.
      *
      * @return the status

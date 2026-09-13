@@ -404,6 +404,17 @@ public final class FtpModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Returns the real IP address of the control connection actually connected to, since some FTP endpoints may resolve
+     * to a different IP on every lookup (e.g. anycast/load-balanced services).
+     */
+    @Override
+    public String getConnectedRemoteAddress() {
+        return ftp != null ? ftp.getConnectedRemoteAddress() : null;
+    }
+
+    /**
      * _setup session.
      *
      * @param ftp

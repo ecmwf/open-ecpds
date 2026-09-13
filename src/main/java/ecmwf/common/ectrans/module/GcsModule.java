@@ -181,6 +181,17 @@ public final class GcsModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Returns the real IP address of the remote host actually connected to, since some GCS endpoints may resolve to a
+     * different IP on every lookup (e.g. anycast/load-balanced services).
+     */
+    @Override
+    public String getConnectedRemoteAddress() {
+        return socketFactory != null ? socketFactory.getLastRemoteAddress() : null;
+    }
+
+    /**
      * Connect.
      *
      * @param location

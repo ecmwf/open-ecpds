@@ -64,6 +64,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -106,9 +107,12 @@ import org.apache.hc.core5.http.config.RegistryBuilder;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.InputStreamEntity;
 import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import javax.net.ssl.HostnameVerifier;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -143,6 +147,16 @@ public final class WebDavModule extends TransferModule {
     private CloseableHttpClient httpClient;
     private ClientSocketFactory socketFactory = null;
     private SSLClientSocketFactory sslSocketFactory = null;
+
+    /** Tracks the IP address of the most recently connected HTTPS socket (see {@link #getConnectedRemoteAddress()}). */
+    private TrackingSslConnectionSocketFactory trackingSslConnectionSocketFactory = null;
+
+    /**
+     * Tracks the IP address of the most recently connected plain (HTTP) socket, see
+     * {@link #getConnectedRemoteAddress()}.
+     */
+    private ConfigConnectionSocketFactory httpConnectionSocketFactory = null;
+
     private String host;
     private String scheme;
     private int port;
@@ -205,9 +219,9 @@ public final class WebDavModule extends TransferModule {
             throw new IOException("Unable to initialize WebDAV TLS support", e);
         }
         final var cm = new PoolingHttpClientConnectionManager(RegistryBuilder.<ConnectionSocketFactory> create()
-                .register("http", new ConfigConnectionSocketFactory(socketFactory))
+                .register("http", httpConnectionSocketFactory = new ConfigConnectionSocketFactory(socketFactory))
                 .register("https",
-                        new SSLConnectionSocketFactory(sslSocketFactory,
+                        trackingSslConnectionSocketFactory = new TrackingSslConnectionSocketFactory(sslSocketFactory,
                                 setup.getStringList(HOST_WEBDAV_SUPPORTED_PROTOCOLS).toArray(new String[0]), null,
                                 setup.getBoolean(HOST_WEBDAV_SSL_VALIDATION) ? null : NoopHostnameVerifier.INSTANCE))
                 .build());
@@ -707,6 +721,9 @@ public final class WebDavModule extends TransferModule {
     private static final class ConfigConnectionSocketFactory extends PlainConnectionSocketFactory {
         private final ClientSocketFactory socketFactory;
 
+        /** IP address of the most recently connected plain (HTTP) socket. */
+        private volatile String lastRemoteAddress;
+
         ConfigConnectionSocketFactory(final ClientSocketFactory socketFactory) {
             this.socketFactory = socketFactory;
         }
@@ -716,5 +733,78 @@ public final class WebDavModule extends TransferModule {
                 throws IOException {
             return socketFactory.getConfiguredWrapper(super.createSocket(context));
         }
+
+        @Override
+        public java.net.Socket connectSocket(final TimeValue connectTimeout, final java.net.Socket socket,
+                final HttpHost host, final InetSocketAddress remoteAddress, final InetSocketAddress localAddress,
+                final org.apache.hc.core5.http.protocol.HttpContext context) throws IOException {
+            final var connected = super.connectSocket(connectTimeout, socket, host, remoteAddress, localAddress,
+                    context);
+            final var address = connected.getInetAddress();
+            if (address != null) {
+                lastRemoteAddress = address.getHostAddress();
+            }
+            return connected;
+        }
+
+        /**
+         * Returns the IP address of the most recently connected plain (HTTP) socket, or {@code null} if none has
+         * connected yet.
+         */
+        String getLastRemoteAddress() {
+            return lastRemoteAddress;
+        }
+    }
+
+    /**
+     * An {@link SSLConnectionSocketFactory} subclass that additionally tracks the IP address of the most recently
+     * connected HTTPS socket, so that "Live ECPDS Earth" can use the real endpoint actually connected to (which may
+     * differ from a fresh DNS lookup of the same hostname for anycast/load-balanced services).
+     */
+    private static final class TrackingSslConnectionSocketFactory extends SSLConnectionSocketFactory {
+
+        private volatile String lastRemoteAddress;
+
+        TrackingSslConnectionSocketFactory(final javax.net.ssl.SSLSocketFactory socketfactory,
+                final String[] supportedProtocols, final String[] supportedCipherSuites,
+                final HostnameVerifier hostnameVerifier) {
+            super(socketfactory, supportedProtocols, supportedCipherSuites, hostnameVerifier);
+        }
+
+        @Override
+        public java.net.Socket connectSocket(final TimeValue connectTimeout, final java.net.Socket socket,
+                final HttpHost host, final InetSocketAddress remoteAddress, final InetSocketAddress localAddress,
+                final org.apache.hc.core5.http.protocol.HttpContext context) throws IOException {
+            final var connected = super.connectSocket(connectTimeout, socket, host, remoteAddress, localAddress,
+                    context);
+            final var address = connected.getInetAddress();
+            if (address != null) {
+                lastRemoteAddress = address.getHostAddress();
+            }
+            return connected;
+        }
+
+        /**
+         * Returns the IP address of the most recently connected HTTPS socket, or {@code null} if none has connected
+         * yet.
+         */
+        String getLastRemoteAddress() {
+            return lastRemoteAddress;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns the real IP address of the remote host most recently connected to, tracked via the connection socket
+     * factories. Preferred over resolving the Host address via DNS again later, since some WebDAV endpoints may resolve
+     * to a different IP on every lookup (e.g. anycast/load-balanced services).
+     */
+    @Override
+    public String getConnectedRemoteAddress() {
+        final var https = trackingSslConnectionSocketFactory != null
+                ? trackingSslConnectionSocketFactory.getLastRemoteAddress() : null;
+        return https != null ? https
+                : httpConnectionSocketFactory != null ? httpConnectionSocketFactory.getLastRemoteAddress() : null;
     }
 }

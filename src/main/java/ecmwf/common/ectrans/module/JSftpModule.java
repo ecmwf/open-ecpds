@@ -280,6 +280,17 @@ public class JSftpModule extends TransferModule {
     /**
      * {@inheritDoc}
      *
+     * Returns the real IP address of the remote host actually connected to, since some SFTP endpoints may resolve to a
+     * different IP on every lookup (e.g. anycast/load-balanced services).
+     */
+    @Override
+    public String getConnectedRemoteAddress() {
+        return socketFactory != null ? socketFactory.getLastRemoteAddress() : null;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Connect.
      *
      * @param location
@@ -1504,6 +1515,9 @@ public class JSftpModule extends TransferModule {
         /** The socket factory. */
         private final ClientSocketFactory socketFactory;
 
+        /** IP address of the most recently connected socket, see {@link #getLastRemoteAddress()}. */
+        private volatile String lastRemoteAddress;
+
         /**
          * Instantiates a new jsch socket factory.
          *
@@ -1539,7 +1553,21 @@ public class JSftpModule extends TransferModule {
          */
         @Override
         public Socket createSocket(final String host, final int port) throws IOException {
-            return socketFactory.createSocket(host, port);
+            final var socket = socketFactory.createSocket(host, port);
+            final var address = socket.getInetAddress();
+            if (address != null) {
+                lastRemoteAddress = address.getHostAddress();
+            }
+            return socket;
+        }
+
+        /**
+         * Returns the IP address of the most recently connected socket, or {@code null} if none has connected yet.
+         *
+         * @return the last remote address
+         */
+        String getLastRemoteAddress() {
+            return lastRemoteAddress;
         }
 
         /**

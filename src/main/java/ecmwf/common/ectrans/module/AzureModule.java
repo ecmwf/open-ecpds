@@ -166,6 +166,17 @@ public final class AzureModule extends TransferModule {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Returns the real IP address of the remote host actually connected to, since some Azure Blob Storage endpoints may
+     * resolve to a different IP on every lookup (e.g. anycast/load-balanced services).
+     */
+    @Override
+    public String getConnectedRemoteAddress() {
+        return service != null ? service.getConnectedRemoteAddress() : null;
+    }
+
+    /**
      * Connect.
      *
      * @param location
@@ -1081,6 +1092,12 @@ public final class AzureModule extends TransferModule {
         /** The count number. */
         private final AtomicInteger countNumber = new AtomicInteger();
 
+        /**
+         * IP address of the most recently connected remote host for this client, tracked via the underlying
+         * reactor-netty {@code HttpClient}, see {@link #getConnectedRemoteAddress()}.
+         */
+        private final java.util.concurrent.atomic.AtomicReference<String> lastRemoteAddress;
+
         /** The blol builder. */
         private final BlobServiceClientBuilder blolBuilder;
 
@@ -1119,8 +1136,17 @@ public final class AzureModule extends TransferModule {
                 synchronized (mutex.lock()) {
                     var cacheIten = instances.get(key);
                     if (cacheIten == null) {
+                        final var lastRemoteAddress = new java.util.concurrent.atomic.AtomicReference<String>();
+                        final var nettyHttpClient = reactor.netty.http.client.HttpClient.create()
+                                .doOnConnected(connection -> {
+                                    final var remoteAddress = connection.channel().remoteAddress();
+                                    if (remoteAddress instanceof final java.net.InetSocketAddress inetSocketAddress
+                                            && inetSocketAddress.getAddress() != null) {
+                                        lastRemoteAddress.set(inetSocketAddress.getAddress().getHostAddress());
+                                    }
+                                });
                         final var builder = new BlobServiceClientBuilder()
-                                .httpClient(new NettyAsyncHttpClientBuilder().build()).endpoint(url);
+                                .httpClient(new NettyAsyncHttpClientBuilder(nettyHttpClient).build()).endpoint(url);
                         if (isNotEmpty(accountName) && isNotEmpty(accountKey)) {
                             // Using storage shared key credentials
                             _log.debug("Using storage shared key credentials");
@@ -1136,7 +1162,7 @@ public final class AzureModule extends TransferModule {
                                     .clientId(userAssignedClientId).build();
                             builder.credential(managedIdentityCredential);
                         }
-                        cacheIten = new BlobServiceClientCache(key, builder);
+                        cacheIten = new BlobServiceClientCache(key, builder, lastRemoteAddress);
                         instances.put(key, cacheIten);
                         if (mkContainer && isNotEmpty(containerName)) {
                             final var containerClient = cacheIten.getBlobContainerClient(containerName);
@@ -1160,10 +1186,23 @@ public final class AzureModule extends TransferModule {
          * @param builder
          *            the builder
          */
-        BlobServiceClientCache(final String key, final BlobServiceClientBuilder builder) {
+        BlobServiceClientCache(final String key, final BlobServiceClientBuilder builder,
+                final java.util.concurrent.atomic.AtomicReference<String> lastRemoteAddress) {
             uniqueKey = key;
             blolBuilder = builder;
+            this.lastRemoteAddress = lastRemoteAddress;
             _log.debug("Cache {}", key);
+        }
+
+        /**
+         * Returns the IP address of the most recently connected remote host for this client, or {@code null} if none
+         * has connected yet. Used by "Live ECPDS Earth" to report the real endpoint actually reached, since some Azure
+         * Blob Storage endpoints may resolve to a different IP on every lookup.
+         *
+         * @return the connected remote address
+         */
+        String getConnectedRemoteAddress() {
+            return lastRemoteAddress.get();
         }
 
         /**

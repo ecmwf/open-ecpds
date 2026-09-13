@@ -69,6 +69,23 @@ public class SSLClientSocketFactory extends SSLSocketFactory {
     private final List<SSLSocketWrapper> wrappers = Collections.synchronizedList(new ArrayList<>());
 
     /**
+     * The IP address of the most recently connected socket created by this factory, used by "Live ECPDS Earth" to
+     * report the real endpoint actually connected to (which may differ from a fresh DNS lookup of the same hostname for
+     * anycast/load-balanced services).
+     */
+    private volatile String lastRemoteAddress;
+
+    /**
+     * Returns the IP address of the most recently connected socket created by this factory, or {@code null} if none has
+     * connected yet.
+     *
+     * @return the last remote address
+     */
+    public String getLastRemoteAddress() {
+        return lastRemoteAddress;
+    }
+
+    /**
      * Update statistics.
      *
      * @throws java.io.IOException
@@ -136,6 +153,10 @@ public class SSLClientSocketFactory extends SSLSocketFactory {
                     selfSocket, selfSocket.getClass().getName());
             config.setTCPOptions(selfSocket);
             config.configureConnectedSocket(selfSocket);
+            final var address = selfSocket.getInetAddress();
+            if (address != null) {
+                lastRemoteAddress = address.getHostAddress();
+            }
             return statistics != null ? new SSLSocketWrapper(statistics, sslSocket, selfSocket) : sslSocket;
         }
         throw new IOException("SSLSocket expected");

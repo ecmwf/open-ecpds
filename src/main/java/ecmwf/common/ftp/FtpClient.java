@@ -785,6 +785,21 @@ public final class FtpClient {
     }
 
     /**
+     * Returns the IP address of the control-connection socket actually connected to, used by "Live ECPDS Earth" to
+     * report the real endpoint reached (which may differ from a fresh DNS lookup of the same hostname for
+     * anycast/load-balanced services).
+     *
+     * @return the connected remote address, or {@code null} if not connected
+     */
+    public String getConnectedRemoteAddress() {
+        if (_serverSocket == null) {
+            return null;
+        }
+        final var address = _serverSocket.getInetAddress();
+        return address != null ? address.getHostAddress() : null;
+    }
+
+    /**
      * _socket is open.
      *
      * @param s
