@@ -44,6 +44,17 @@
         catch (final Exception _e) { _sm_hasBad = false; }
     }
     final String _sm_badIconClass = "bi-hourglass-split" + (_sm_hasBad ? " text-danger" : "");
+
+    // Resolve origin-location status (used to place the MasterServer's own marker on the Live Earth globe).
+    Boolean _sm_originAttr = (Boolean) request.getAttribute("originLocationNotResolved");
+    boolean _sm_originNotResolved;
+    if (_sm_originAttr != null) {
+        _sm_originNotResolved = _sm_originAttr;
+    } else {
+        try { _sm_originNotResolved = MasterManager.getMI().getLiveTransferOrigin() == null; }
+        catch (final Exception _e) { _sm_originNotResolved = false; }
+    }
+    final String _sm_originIconClass = "bi-geo-alt" + (_sm_originNotResolved ? " text-warning" : "");
 %>
 
 <table class="spareBox2">
@@ -67,6 +78,8 @@
 		wrappingTags="tr,td"><i class="bi <%=_sm_certIconClass%>"></i> TLS Certificates</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/criticalpassword"
 		wrappingTags="tr,td"><i class="bi <%=_sm_capIconClass%>"></i> Critical Password</auth:link>
+	<auth:link basePathKey="admin.basepath" href="/origin"
+		wrappingTags="tr,td"><i class="bi <%=_sm_originIconClass%>"></i> Origin Location</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/productmessages"
 		wrappingTags="tr,td"><i class="bi bi-envelope-paper-fill"></i> Product Messages</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/productdescriptions"

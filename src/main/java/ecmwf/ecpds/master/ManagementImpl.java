@@ -3709,7 +3709,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     /**
      * {@inheritDoc}
      *
-     * Resolves the MasterServer's own hostname/IP address the same way any other Host is resolved (see
+     * If an administrator has stored a manual override (Admin Tasks &rarr; Origin Location, see
+     * {@link DataBaseInterface#getOriginLocationOverride()}), it takes precedence and is returned as-is. Otherwise,
+     * resolves the MasterServer's own hostname/IP address the same way any other Host is resolved (see
      * {@link DataBaseImpl#resolveGeoIp(String)}), including any {@code [GeoIP]} {@code forced.*} override. Since a
      * {@code forced.*} entry may be keyed by either the hostname or the IP address, both are tried - the hostname
      * first, then the IP address if that did not resolve (this also covers the common case of a {@code forced.<ip>=...}
@@ -3717,6 +3719,22 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      */
     @Override
     public double[] getLiveTransferOrigin() throws RemoteException {
+        try {
+            final var override = MasterManager.getDB().getOriginLocationOverride();
+            if (override != null) {
+                return override;
+            }
+        } catch (final Exception e) {
+            _log.debug("Checking for a manual MasterServer origin location override", e);
+        }
+        return getAutomaticLiveTransferOrigin();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getAutomaticLiveTransferOrigin() throws RemoteException {
         try {
             final var local = InetAddress.getLocalHost();
             var geo = DataBaseImpl.resolveGeoIp(local.getCanonicalHostName());

@@ -1,4 +1,5 @@
 <%@ page session="true" %>
+<%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 
 <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
 <style>
@@ -32,20 +33,27 @@
 #globeContainer{position:relative;width:100%;height:calc(100vh - 340px);min-height:420px;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.15);}
 #globeLegend{position:absolute;left:10px;top:10px;z-index:10;background:rgba(20,25,30,.72);color:#eee;border-radius:8px;padding:.5rem .75rem;font-size:.78rem;line-height:1.5;backdrop-filter:blur(2px);}
 #globeLegend .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;}
-#globeInfoPanel{position:absolute;right:10px;top:10px;z-index:10;width:290px;max-width:80vw;background:rgba(20,25,30,.86);color:#eee;border-radius:8px;padding:.75rem 1rem;font-size:.82rem;display:none;box-shadow:0 4px 16px rgba(0,0,0,.35);}
+#globeRightPanels{position:absolute;right:10px;top:10px;z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-height:calc(100% - 20px);pointer-events:none;}
+#globeRightPanels>div{pointer-events:auto;position:static;}
+#globeInfoPanel{width:290px;max-width:80vw;background:rgba(20,25,30,.86);color:#eee;border-radius:8px;padding:.75rem 1rem;font-size:.82rem;display:none;box-shadow:0 4px 16px rgba(0,0,0,.35);}
 #globeInfoPanel h6{color:#9fd6ff;margin-bottom:.4rem;}
 #globeInfoPanel .close-btn{position:absolute;top:6px;right:8px;cursor:pointer;color:#ccc;}
 #globeInfoPanel dl{margin:0;}
 #globeInfoPanel dt{color:#aaa;font-weight:400;}
 #globeInfoPanel dd{margin-bottom:.35rem;word-break:break-all;}
-#globeOriginWarning{position:absolute;right:10px;bottom:10px;z-index:10;max-width:min(360px,80vw);background:rgba(20,25,30,.86);color:#eee;border-radius:8px;padding:.55rem .8rem;font-size:.78rem;line-height:1.4;display:none;box-shadow:0 4px 16px rgba(0,0,0,.35);}
-#globeOriginWarning i{margin-right:.4rem;color:#997404;}
-#globeCountryTable{position:absolute;left:10px;bottom:10px;z-index:10;max-width:min(280px,70vw);max-height:42%;overflow:auto;background:rgba(20,25,30,.86);color:#eee;border-radius:8px;padding:.5rem .7rem;font-size:.76rem;line-height:1.4;display:none;box-shadow:0 4px 16px rgba(0,0,0,.35);}
+#globeOriginWarning{position:absolute;right:10px;bottom:34px;z-index:10;max-width:min(230px,55vw);background:rgba(20,25,30,.86);color:#eee;border-radius:8px;padding:.5rem .7rem;font-size:.76rem;line-height:1.35;display:none;box-shadow:0 4px 16px rgba(0,0,0,.35);}
+#globeOriginWarning i{margin-right:.35rem;color:#997404;}
+#globeOriginWarningDetail{color:#aaa;font-size:.9em;margin-top:.15rem;word-break:break-word;}
+#globeOriginWarning a{color:#9fd6ff;}
+#globeCountryTable{max-width:min(280px,70vw);max-height:42%;overflow:auto;background:rgba(20,25,30,.86);color:#eee;border-radius:8px;padding:.5rem .7rem;font-size:.76rem;line-height:1.4;display:none;box-shadow:0 4px 16px rgba(0,0,0,.35);}
 .globe-country-table-title{font-weight:600;color:#9fd6ff;margin-bottom:.3rem;}
 #globeCountryTable table{width:100%;border-collapse:collapse;}
 #globeCountryTable th{color:#9fd6ff;text-align:left;font-weight:600;padding:0 6px 4px 0;position:sticky;top:0;background:rgba(20,25,30,.86);}
 #globeCountryTable td{padding:2px 6px 2px 0;white-space:nowrap;}
 #globeCountryTable td.country-name{max-width:130px;overflow:hidden;text-overflow:ellipsis;}
+.country-flag{font-size:1.15rem;cursor:default;}
+.country-flyto-btn{margin-left:6px;cursor:pointer;color:#9fd6ff;font-size:.85rem;}
+.country-flyto-btn:hover{color:#fff;}
 </style>
 
 <div id="globeHeader">
@@ -98,6 +106,9 @@
                 </li>
             </ul>
         </div>
+        <button type="button" id="globeRecenterBtn" class="globe-icon-btn" title="Re-center on OpenECPDS location">
+            <i class="bi bi-crosshair"></i>
+        </button>
         <button type="button" id="globeFullscreenBtn" class="globe-icon-btn" title="Toggle full screen">
             <i class="bi bi-arrows-fullscreen"></i>
         </button>
@@ -113,21 +124,24 @@
         <div><span class="dot" style="background:#ffd166;"></span>OpenECPDS location</div>
         <div><span class="dot" style="background:#a78bfa;"></span>Proxy Host location</div>
     </div>
-    <div id="globeInfoPanel">
-        <span class="close-btn" onclick="document.getElementById('globeInfoPanel').style.display='none';">&times;</span>
-        <h6 id="globeInfoTitle">Transfer</h6>
-        <dl id="globeInfoBody"></dl>
+    <div id="globeRightPanels">
+        <div id="globeInfoPanel">
+            <span class="close-btn" onclick="document.getElementById('globeInfoPanel').style.display='none';">&times;</span>
+            <h6 id="globeInfoTitle">Transfer</h6>
+            <dl id="globeInfoBody"></dl>
+        </div>
+        <div id="globeCountryTable">
+            <div class="globe-country-table-title">Transfers by country</div>
+            <table>
+                <thead><tr><th>Country</th><th>Active</th><th>Throughput</th></tr></thead>
+                <tbody id="globeCountryTableBody"></tbody>
+            </table>
+        </div>
     </div>
     <div id="globeOriginWarning">
         <i class="bi bi-exclamation-triangle-fill"></i><strong>OpenECPDS location not configured.</strong>
-        <span id="globeOriginWarningText">The origin marker cannot be placed because the OpenECPDS geolocation could not be resolved.</span>
-    </div>
-    <div id="globeCountryTable">
-        <div class="globe-country-table-title">Transfers by country</div>
-        <table>
-            <thead><tr><th>Country</th><th>Active</th><th>Throughput</th></tr></thead>
-            <tbody id="globeCountryTableBody"></tbody>
-        </table>
+        <div id="globeOriginWarningDetail"></div>
+        <auth:link basePathKey="admin.basepath" href="/origin">Configure &rarr;</auth:link>
     </div>
 </div>
 
@@ -622,6 +636,18 @@
         return code;
     }
 
+    // Converts an ISO alpha-2 country code (e.g. "US") to its flag emoji by mapping each letter to the matching
+    // Unicode "Regional Indicator Symbol" (U+1F1E6 = 'A'); most platforms/browsers render the resulting pair as a
+    // single flag glyph. Falls back to the raw code (as text) for non-alpha2 values (e.g. "Unknown").
+    function countryFlagEmoji(code) {
+        if (!code || code.length !== 2 || !/^[A-Za-z]{2}$/.test(code)) {
+            return null;
+        }
+        var upper = code.toUpperCase();
+        var base = 0x1F1E6 - 65; // 'A'.charCodeAt(0) === 65
+        return String.fromCodePoint(upper.charCodeAt(0) + base, upper.charCodeAt(1) + base);
+    }
+
     function setOrigin(lat, lon) {
         var firstTime = !originPoint;
         origin = { lat: lat, lon: lon };
@@ -653,9 +679,7 @@
             }
             document.getElementById("globeOriginWarning").style.display = "none";
         } else if (msg.originResolved === false) {
-            var text = "The origin marker cannot be placed because the OpenECPDS geolocation could not be resolved";
-            text += msg.originHost ? " for " + msg.originHost + "." : ".";
-            document.getElementById("globeOriginWarningText").textContent = text;
+            document.getElementById("globeOriginWarningDetail").textContent = msg.originHost || "";
             document.getElementById("globeOriginWarning").style.display = "block";
         }
     }
@@ -995,7 +1019,14 @@
         }
         var rows = Object.keys(byCountry).map(function (code) {
             var agg = aggregateTransfers(byCountry[code].transfers);
-            return { code: code, hostCount: Object.keys(byCountry[code].hosts).length, agg: agg };
+            var hostCount = Object.keys(byCountry[code].hosts).length;
+            return {
+                code: code,
+                hostCount: hostCount,
+                agg: agg,
+                lat: byCountry[code].latSum / hostCount,
+                lon: byCountry[code].lonSum / hostCount
+            };
         });
         rows.sort(function (a, b) { return b.agg.activeCount - a.agg.activeCount || b.agg.totalRate - a.agg.totalRate; });
         if (rows.length === 0) {
@@ -1003,8 +1034,15 @@
             return;
         }
         tbody.innerHTML = rows.map(function (r) {
-            return "<tr><td class=\"country-name\" title=\"" + countryDisplayName(r.code) + "\">" +
-                countryDisplayName(r.code) + "</td><td>" + r.agg.activeCount + "</td><td>" +
+            var name = countryDisplayName(r.code);
+            var flag = countryFlagEmoji(r.code);
+            var flagHtml = flag
+                ? "<span class=\"country-flag\" title=\"" + name + "\">" + flag + "</span>"
+                : "<span title=\"" + name + "\">" + name + "</span>";
+            var cell = flagHtml +
+                "<i class=\"bi bi-crosshair country-flyto-btn\" title=\"Fly to " + name + "\" data-lat=\"" + r.lat +
+                "\" data-lon=\"" + r.lon + "\"></i>";
+            return "<tr><td class=\"country-name\">" + cell + "</td><td>" + r.agg.activeCount + "</td><td>" +
                 formatRate(r.agg.totalRate) + "</td></tr>";
         }).join("");
     }
@@ -1134,6 +1172,33 @@
     }
 
     connect();
+
+    var recenterBtn = document.getElementById("globeRecenterBtn");
+    recenterBtn.addEventListener("click", function () {
+        if (!origin) {
+            return;
+        }
+        viewer.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(origin.lon, origin.lat, 12000000)
+        });
+    });
+
+    // Delegated click handler for the per-row "fly to" icons in the country table (rows are re-rendered on every
+    // snapshot, so a static per-row listener would need to be re-attached each time - delegation avoids that).
+    document.getElementById("globeCountryTableBody").addEventListener("click", function (evt) {
+        var btn = evt.target.closest(".country-flyto-btn");
+        if (!btn) {
+            return;
+        }
+        var lat = parseFloat(btn.getAttribute("data-lat"));
+        var lon = parseFloat(btn.getAttribute("data-lon"));
+        if (isNaN(lat) || isNaN(lon)) {
+            return;
+        }
+        viewer.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(lon, lat, 4000000)
+        });
+    });
 
     var fullscreenBtn = document.getElementById("globeFullscreenBtn");
     var fullscreenIcon = fullscreenBtn.querySelector("i");

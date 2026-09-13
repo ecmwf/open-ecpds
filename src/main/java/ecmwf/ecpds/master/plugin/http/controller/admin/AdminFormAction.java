@@ -72,6 +72,11 @@ public class AdminFormAction extends PDSAction {
         } catch (final Exception e) {
             request.setAttribute("hasBadTransfers", Boolean.FALSE);
         }
+        try {
+            request.setAttribute("originLocationNotResolved", MasterManager.getMI().getLiveTransferOrigin() == null);
+        } catch (final Exception e) {
+            request.setAttribute("originLocationNotResolved", Boolean.FALSE);
+        }
         return mapping.findForward("success");
     }
 }

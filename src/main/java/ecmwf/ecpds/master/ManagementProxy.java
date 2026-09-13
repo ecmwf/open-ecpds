@@ -1490,6 +1490,12 @@ final class ManagementProxy implements ManagementInterface {
 
     /** {@inheritDoc} */
     @Override
+    public double[] getAutomaticLiveTransferOrigin() throws RemoteException {
+        return managementInterface.getAutomaticLiveTransferOrigin();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public String getLiveTransferOriginHost() throws RemoteException {
         return managementInterface.getLiveTransferOriginHost();
     }

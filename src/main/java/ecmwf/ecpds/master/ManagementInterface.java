@@ -1777,6 +1777,19 @@ public interface ManagementInterface extends Remote {
     double[] getLiveTransferOrigin() throws RemoteException;
 
     /**
+     * Gets the MasterServer's own geolocation resolved purely automatically via GeoIP (including any {@code [GeoIP]}
+     * {@code forced.*} overrides), ignoring any manual Origin Location override stored in the database (see
+     * {@link ecmwf.ecpds.master.DataBaseInterface#getOriginLocationOverride()}). Used by the "Origin Location" admin
+     * page to show what automatic resolution currently yields, regardless of whether manual mode is active.
+     *
+     * @return a [latitude, longitude] pair, or {@code null} if it could not be resolved
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    double[] getAutomaticLiveTransferOrigin() throws RemoteException;
+
+    /**
      * Gets the hostname/IP address that {@link #getLiveTransferOrigin()} attempts to resolve the MasterServer's own
      * geolocation from, so that an administrator can be told exactly what to add a {@code [GeoIP]} {@code forced.*}
      * override for when resolution fails.

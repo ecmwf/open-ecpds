@@ -11,6 +11,8 @@
     final String _feedbackIconClass = "bi-chat-left-text" + (_hasFeedback ? " text-warning" : "");
     final boolean _hasBadTransfers = Boolean.TRUE.equals(request.getAttribute("hasBadTransfers"));
     final String _badIconClass = "bi-hourglass-split" + (_hasBadTransfers ? " text-danger" : "");
+    final boolean _originNotResolved = Boolean.TRUE.equals(request.getAttribute("originLocationNotResolved"));
+    final String _originIconClass = "bi-geo-alt" + (_originNotResolved ? " text-warning" : "");
 %>
 
 <%-- Critical Password setup banner (shown to admins only when not yet configured) --%>
@@ -193,6 +195,7 @@
                 <auth:link basePathKey="admin.basepath" href="/metafields" wrappingTags="li"><i class="bi bi-list-check"></i>Metadata Fields</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/certificates" wrappingTags="li"><i class="bi <%=_certIconClass%>"></i>TLS Certificates</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/criticalpassword" wrappingTags="li"><i class="bi <%=_capIconClass%>"></i>Critical Password</auth:link>
+                <auth:link basePathKey="admin.basepath" href="/origin" wrappingTags="li"><i class="bi <%=_originIconClass%>"></i>Origin Location</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/productmessages" wrappingTags="li"><i class="bi bi-envelope-paper-fill"></i>Product Messages</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/productdescriptions" wrappingTags="li"><i class="bi bi-card-list"></i>Product Descriptions</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/purge" wrappingTags="li"><i class="bi bi-trash3-fill"></i> Purge All Data</auth:link>

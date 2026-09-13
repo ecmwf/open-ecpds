@@ -2766,6 +2766,61 @@ public interface DataBaseInterface extends Remote {
     void setCriticalActionPasswordHash(String hash) throws DataBaseException, RemoteException;
 
     /**
+     * Returns true if the MasterServer's own origin location (used to place the origin marker on the Live Earth globe)
+     * is resolved automatically via GeoIP, or false if an administrator has stored a manual override (see
+     * {@link #setOriginLocationOverride(double, double)}). Defaults to true (automatic) when nothing has been
+     * configured yet.
+     *
+     * @return true if the origin location is resolved automatically
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    boolean isOriginLocationAutomatic() throws DataBaseException, RemoteException;
+
+    /**
+     * Gets the administrator-configured manual override for the MasterServer's own origin location (SYS_CONFIG table,
+     * group "Master"), used in place of the automatic GeoIP resolution on the Live Earth globe.
+     *
+     * @return a {@code [latitude, longitude]} pair, or {@code null} if the origin location is currently automatic (see
+     *         {@link #isOriginLocationAutomatic()}) or no override has been stored
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    double[] getOriginLocationOverride() throws DataBaseException, RemoteException;
+
+    /**
+     * Stores a manual override for the MasterServer's own origin location, switching it out of automatic (GeoIP) mode.
+     *
+     * @param latitude
+     *            the latitude, in degrees
+     * @param longitude
+     *            the longitude, in degrees
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void setOriginLocationOverride(double latitude, double longitude) throws DataBaseException, RemoteException;
+
+    /**
+     * Clears any manual override for the MasterServer's own origin location, switching it back to automatic (GeoIP)
+     * resolution.
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void clearOriginLocationOverride() throws DataBaseException, RemoteException;
+
+    /**
      * Gets the text of a configurable product status notification message (e.g. the pre-filled email body used on the
      * product monitoring page to notify recipients of a dissemination delay, or that dissemination has resumed). These
      * messages are stored in the SYS_CONFIG table (group "ProductStatus") and can be edited by administrators from the

@@ -4442,6 +4442,60 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         monitor.done();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isOriginLocationAutomatic() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("isOriginLocationAutomatic()");
+        return monitor.done(!"false".equals(ecpds.getSysConfigValue("Master", "originAutomatic")));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getOriginLocationOverride() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getOriginLocationOverride()");
+        if ("false".equals(ecpds.getSysConfigValue("Master", "originAutomatic"))) {
+            final var latitude = ecpds.getSysConfigValue("Master", "originLatitude");
+            final var longitude = ecpds.getSysConfigValue("Master", "originLongitude");
+            if (latitude != null && longitude != null) {
+                try {
+                    return monitor.done(new double[] { Double.parseDouble(latitude), Double.parseDouble(longitude) });
+                } catch (final NumberFormatException e) {
+                    _log.warn("Invalid stored origin location override: {} / {}", latitude, longitude);
+                }
+            }
+        }
+        return monitor.done((double[]) null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setOriginLocationOverride(final double latitude, final double longitude)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("setOriginLocationOverride()");
+        ecpds.setSysConfigValue("Master", "originAutomatic", "false");
+        ecpds.setSysConfigValue("Master", "originLatitude", Double.toString(latitude));
+        ecpds.setSysConfigValue("Master", "originLongitude", Double.toString(longitude));
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void clearOriginLocationOverride() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("clearOriginLocationOverride()");
+        ecpds.setSysConfigValue("Master", "originAutomatic", "true");
+        ecpds.deleteSysConfigValue("Master", "originLatitude");
+        ecpds.deleteSysConfigValue("Master", "originLongitude");
+        monitor.done();
+    }
+
     /** The set of recognized product status message names (defense-in-depth against arbitrary SYS_CONFIG writes). */
     private static final Set<String> PRODUCT_STATUS_MESSAGE_NAMES = Set.of("productDelayMessage",
             "productResumedMessage");

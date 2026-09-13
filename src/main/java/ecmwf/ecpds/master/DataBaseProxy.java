@@ -2633,6 +2633,61 @@ final class DataBaseProxy implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
+    public boolean isOriginLocationAutomatic() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("isOriginLocationAutomatic()");
+        try {
+            return monitor.done(dataBaseInterface.isOriginLocationAutomatic());
+        } catch (final RemoteException e) {
+            throw new DataBaseException("isOriginLocationAutomatic", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getOriginLocationOverride() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getOriginLocationOverride()");
+        try {
+            return monitor.done(dataBaseInterface.getOriginLocationOverride());
+        } catch (final RemoteException e) {
+            throw new DataBaseException("getOriginLocationOverride", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setOriginLocationOverride(final double latitude, final double longitude)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("setOriginLocationOverride()");
+        try {
+            dataBaseInterface.setOriginLocationOverride(latitude, longitude);
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("setOriginLocationOverride", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void clearOriginLocationOverride() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("clearOriginLocationOverride()");
+        try {
+            dataBaseInterface.clearOriginLocationOverride();
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("clearOriginLocationOverride", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String getProductStatusMessage(final String name) throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getProductStatusMessage(" + name + ")");
         try {

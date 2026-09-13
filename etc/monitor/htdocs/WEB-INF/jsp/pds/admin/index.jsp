@@ -14,6 +14,7 @@
     final boolean capNotSet = Boolean.TRUE.equals(request.getAttribute("criticalPasswordNotSet"));
     final boolean hasFeedback = Boolean.TRUE.equals(request.getAttribute("hasUnreviewedFeedback"));
     final boolean hasBadTransfers = Boolean.TRUE.equals(request.getAttribute("hasBadTransfers"));
+    final boolean originNotResolved = Boolean.TRUE.equals(request.getAttribute("originLocationNotResolved"));
 %>
 
 <div class="mb-4 px-3 py-3 rounded" style="background:rgba(108,117,125,0.07); border-left:4px solid #6c757d; font-size:0.85rem; color:var(--bs-body-color);">
@@ -53,6 +54,16 @@
         <strong>TLS certificate attention required.</strong>
         One or more certificates are self-signed or expiring within 30 days.
         <a href="/do/admin/certificates" class="alert-link ms-1">Review certificates &rarr;</a>
+    </div>
+</div>
+<% } %>
+<% if (originNotResolved) { %>
+<div class="alert alert-warning d-flex align-items-start gap-3 mb-4" role="alert">
+    <i class="bi bi-geo-alt flex-shrink-0 mt-1" style="font-size:1.2rem;"></i>
+    <div>
+        <strong>Origin Location not configured.</strong>
+        The origin marker cannot be placed on the Live Earth globe because this server's location could not be resolved.
+        <a href="/do/admin/origin" class="alert-link ms-1">Configure it now &rarr;</a>
     </div>
 </div>
 <% } %>
@@ -182,6 +193,31 @@
             <p class="tool-desc">Renew the Critical Password required to authorize irreversible
             administrative operations. This password is stored as a secure hash and is separate from your login
             credentials.</p>
+        </div>
+    </div>
+    <% } %>
+    </div>
+    </auth:link>
+
+    <auth:link basePathKey="admin.basepath" href="/origin">
+    <div class="col">
+    <% if (originNotResolved) { %>
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3 border border-warning-subtle"
+         style="background:rgba(255,193,7,0.06);">
+        <i class="bi bi-geo-alt text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title">Origin Location <span class="badge bg-warning text-dark ms-1">Not Resolved</span></span>
+            <p class="tool-desc">Configure the geographic location of this server, used to place its marker on the
+            Live Earth globe. Automatic (GeoIP) or manual coordinates.</p>
+        </div>
+    </div>
+    <% } else { %>
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
+        <i class="bi bi-geo-alt text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title">Origin Location</span>
+            <p class="tool-desc">Configure the geographic location of this server, used to place its marker on the
+            Live Earth globe. Automatic (GeoIP) or manual coordinates.</p>
         </div>
     </div>
     <% } %>
