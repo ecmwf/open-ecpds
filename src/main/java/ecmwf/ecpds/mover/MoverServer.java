@@ -4276,11 +4276,13 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             try {
                 final var host = _transfer.getHost();
                 final var protocol = host != null ? host.getTransferMethodName() : null;
+                final var hostNickname = host != null ? host.getNickname() : null;
+                final var hostAddress = host != null ? host.getHost() : null;
                 final var rate = _transfer.getDuration() > 0
                         ? (double) _transfer.getSent() * 8000 / _transfer.getDuration() : -1;
                 liveStatsRepository.offer(new LiveTransferSample(_transfer.getId(), getRoot(),
-                        _transfer.getDestinationName(), _transfer.getHostName(), protocol, _fileSize,
-                        _transfer.getSent(), _transfer.getDuration(), rate, status));
+                        _transfer.getDestinationName(), _transfer.getHostName(), hostNickname, hostAddress, protocol,
+                        _fileSize, _transfer.getSent(), _transfer.getDuration(), rate, status));
             } catch (final Throwable t) {
                 _log.debug("Building LiveTransferSample for DataTransfer-{}", _transfer.getId(), t);
             }

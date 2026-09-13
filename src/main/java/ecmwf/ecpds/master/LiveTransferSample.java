@@ -65,6 +65,18 @@ public final class LiveTransferSample implements Serializable {
     /** The target Host name (nickname) the data is being sent to. */
     private final String hostName;
 
+    /**
+     * Display name (nickname) of the target Host, for human-readable labelling on the globe UI (falls back to
+     * {@link #hostName} when not set).
+     */
+    private final String hostNickname;
+
+    /**
+     * The actual network address (hostname or IP) the target Host connects to, used to resolve its geolocation - the
+     * Host's database name/id ({@link #hostName}) is an internal identifier and is never itself resolvable via GeoIP.
+     */
+    private final String hostAddress;
+
     /** The ectrans module/protocol in use (e.g. ftp, sftp, http, s3, ...). */
     private final String protocol;
 
@@ -97,6 +109,10 @@ public final class LiveTransferSample implements Serializable {
      *            the destination name
      * @param hostName
      *            the host name
+     * @param hostNickname
+     *            the host nickname (display name, falls back to hostName when blank)
+     * @param hostAddress
+     *            the host's actual network address (hostname or IP), used for GeoIP resolution
      * @param protocol
      *            the protocol
      * @param fileSize
@@ -114,7 +130,8 @@ public final class LiveTransferSample implements Serializable {
     public LiveTransferSample(@JsonProperty("transferId") final long transferId,
             @JsonProperty("moverName") final String moverName,
             @JsonProperty("destinationName") final String destinationName,
-            @JsonProperty("hostName") final String hostName, @JsonProperty("protocol") final String protocol,
+            @JsonProperty("hostName") final String hostName, @JsonProperty("hostNickname") final String hostNickname,
+            @JsonProperty("hostAddress") final String hostAddress, @JsonProperty("protocol") final String protocol,
             @JsonProperty("fileSize") final long fileSize, @JsonProperty("byteSent") final long byteSent,
             @JsonProperty("duration") final long duration,
             @JsonProperty("rateBitsPerSecond") final double rateBitsPerSecond,
@@ -123,6 +140,8 @@ public final class LiveTransferSample implements Serializable {
         this.moverName = moverName;
         this.destinationName = destinationName;
         this.hostName = hostName;
+        this.hostNickname = hostNickname;
+        this.hostAddress = hostAddress;
         this.protocol = protocol;
         this.fileSize = fileSize;
         this.byteSent = byteSent;
@@ -146,6 +165,14 @@ public final class LiveTransferSample implements Serializable {
 
     public String getHostName() {
         return hostName;
+    }
+
+    public String getHostNickname() {
+        return hostNickname;
+    }
+
+    public String getHostAddress() {
+        return hostAddress;
     }
 
     public String getProtocol() {
@@ -188,8 +215,9 @@ public final class LiveTransferSample implements Serializable {
     @Override
     public String toString() {
         return "LiveTransferSample [transferId=" + transferId + ", moverName=" + moverName + ", destinationName="
-                + destinationName + ", hostName=" + hostName + ", protocol=" + protocol + ", fileSize="
-                + Format.formatSize(fileSize) + ", byteSent=" + Format.formatSize(byteSent) + ", duration="
-                + Format.formatDuration(duration) + ", status=" + status + "]";
+                + destinationName + ", hostName=" + hostName + ", hostNickname=" + hostNickname + ", hostAddress="
+                + hostAddress + ", protocol=" + protocol + ", fileSize=" + Format.formatSize(fileSize) + ", byteSent="
+                + Format.formatSize(byteSent) + ", duration=" + Format.formatDuration(duration) + ", status=" + status
+                + "]";
     }
 }

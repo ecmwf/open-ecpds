@@ -351,6 +351,8 @@ public class GlobeWebSocket implements WebSocketListener {
         node.put("mover", sample.getMoverName());
         node.put("destination", sample.getDestinationName());
         node.put("host", sample.getHostName());
+        final var hostNickname = sample.getHostNickname();
+        node.put("hostLabel", hostNickname != null && !hostNickname.isBlank() ? hostNickname : sample.getHostName());
         node.put("protocol", sample.getProtocol());
         node.put("fileSize", sample.getFileSize());
         node.put("bytesSent", sample.getByteSent());
@@ -358,7 +360,7 @@ public class GlobeWebSocket implements WebSocketListener {
         node.put("rateBitsPerSecond", sample.getRateBitsPerSecond());
         node.put("status", sample.getStatus());
         node.put("timestamp", sample.getTimestamp());
-        final var location = resolveHost(sample.getHostName());
+        final var location = resolveHost(hostGeoKey(sample));
         if (location != null) {
             node.put("hostLat", location[0]);
             node.put("hostLon", location[1]);
@@ -376,7 +378,23 @@ public class GlobeWebSocket implements WebSocketListener {
     }
 
     /**
-     * Resolves (and caches) the geolocation of every Host name referenced by the given samples (both the transfer's
+     * Returns the key to use to resolve/cache a sample's target Host geolocation - the Host's actual network address
+     * ({@link LiveTransferSample#getHostAddress()}) when known, since that is the only thing GeoIP can meaningfully
+     * resolve (the Host's database name/id, {@link LiveTransferSample#getHostName()}, is just an internal identifier
+     * and is never itself resolvable). Falls back to the Host name for older/incomplete samples.
+     *
+     * @param sample
+     *            the sample
+     *
+     * @return the geo cache key to use for this sample's target Host
+     */
+    private static String hostGeoKey(final LiveTransferSample sample) {
+        final var address = sample.getHostAddress();
+        return address != null && !address.isBlank() ? address : sample.getHostName();
+    }
+
+    /**
+     * Resolves (and caches) the geolocation of every Host address referenced by the given samples (both the transfer's
      * target Host and, for ProxyHosts, the Data Mover itself) that is not already cached, via a single batched RMI
      * round-trip to the MasterServer (see {@link ManagementInterface#getGeoLocations(String[])}) - the GeoIP2 database
      * only ever needs to exist on the MasterServer side, never on the Monitor JVM.
@@ -389,9 +407,9 @@ public class GlobeWebSocket implements WebSocketListener {
     private static void resolveGeoLocations(final ManagementInterface mi, final LiveTransferSample[] samples) {
         final Set<String> unresolved = new HashSet<>();
         for (final var sample : samples) {
-            final var hostName = sample.getHostName();
-            if (hostName != null && !hostName.isBlank() && !GEO_CACHE.containsKey(hostName)) {
-                unresolved.add(hostName);
+            final var hostKey = hostGeoKey(sample);
+            if (hostKey != null && !hostKey.isBlank() && !GEO_CACHE.containsKey(hostKey)) {
+                unresolved.add(hostKey);
             }
             final var moverName = sample.getMoverName();
             if (moverName != null && activeProxyHostNames.contains(moverName) && !GEO_CACHE.containsKey(moverName)) {

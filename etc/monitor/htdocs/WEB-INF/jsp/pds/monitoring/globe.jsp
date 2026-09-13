@@ -594,7 +594,7 @@
         return STATUS_COLOR.DONE;
     }
 
-    function upsertHost(name, lat, lon, transferMap) {
+    function upsertHost(name, lat, lon, label, transferMap) {
         if (!origin) {
             return;
         }
@@ -627,8 +627,8 @@
         });
         point.hostName = name;
         var entry = {
-            arc: arc, point: point, lat: lat, lon: lon, transfers: transferMap, agg: agg, removeTimeout: null,
-            pulsePhase: existing ? existing.pulsePhase : Math.random() * Math.PI * 2
+            arc: arc, point: point, lat: lat, lon: lon, label: label || name, transfers: transferMap, agg: agg,
+            removeTimeout: null, pulsePhase: existing ? existing.pulsePhase : Math.random() * Math.PI * 2
         };
         hosts[name] = entry;
         if (!agg.hasActive) {
@@ -665,7 +665,7 @@
             }
             var group = byHost[sample.host];
             if (!group) {
-                group = byHost[sample.host] = { lat: sample.hostLat, lon: sample.hostLon, transfers: Object.create(null) };
+                group = byHost[sample.host] = { lat: sample.hostLat, lon: sample.hostLon, label: sample.hostLabel, transfers: Object.create(null) };
             }
             group.transfers[sample.transferId] = sample;
             // Only Proxy Hosts get their own marker - ordinary, directly-connected Data Movers are intentionally
@@ -682,7 +682,7 @@
         });
         Object.keys(byHost).forEach(function (name) {
             var g = byHost[name];
-            upsertHost(name, g.lat, g.lon, g.transfers);
+            upsertHost(name, g.lat, g.lon, g.label, g.transfers);
         });
         // Any Host marker still on the globe but absent from this snapshot (and not already fading out from a
         // previous terminal-only snapshot) is stale - drop it immediately.
@@ -726,7 +726,7 @@
         }
         var samples = Object.keys(h.transfers).map(function (id) { return h.transfers[id]; });
         var destination = samples[0] && samples[0].destination;
-        document.getElementById("globeInfoTitle").textContent = hostName + (destination ? " (" + destination + ")" : "");
+        document.getElementById("globeInfoTitle").textContent = (h.label || hostName) + (destination ? " (" + destination + ")" : "");
         var body = document.getElementById("globeInfoBody");
         var html =
             "<dt>Active transfers</dt><dd>" + h.agg.activeCount + "</dd>" +
