@@ -1173,6 +1173,16 @@
 
     connect();
 
+    // The globe page never issues any other HTTP request after the initial page load (all live data flows over the
+    // WebSocket above), so - unlike every other page in the application - simply leaving it open does not reset the
+    // HttpSession's inactivity timer, and the user's login can silently expire while they are actively watching the
+    // globe. Periodically pinging a tiny authenticated no-op endpoint keeps the session alive without ever reloading
+    // the page (which would otherwise reset the Cesium view/camera).
+    var SESSION_KEEPALIVE_PERIOD_MS = 5 * 60 * 1000;
+    setInterval(function () {
+        fetch("/do/monitoring/globe/keepalive", { method: "GET", credentials: "same-origin" }).catch(function () {});
+    }, SESSION_KEEPALIVE_PERIOD_MS);
+
     var recenterBtn = document.getElementById("globeRecenterBtn");
     recenterBtn.addEventListener("click", function () {
         if (!origin) {

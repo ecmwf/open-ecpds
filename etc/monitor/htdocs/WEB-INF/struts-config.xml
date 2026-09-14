@@ -1288,6 +1288,9 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetGlobeDisplayAction">
 			<forward name="success" path=".pds.monitoring.globe" />
 		</action>
+		<action path="/monitoring/globe/keepalive"
+			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GlobeKeepAliveAction">
+		</action>
 		<action path="/monitoring/summary"
 			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetSummaryDisplayAction"
 			name="monSesForm" scope="session">
