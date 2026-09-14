@@ -108,6 +108,14 @@
         <span id="btnProductLayoutLabel">Single</span>
       </button>
     </c:if>
+    <%-- "All cycles" shortcut (only when viewing a single dedicated cycle, not already on the merged/all-cycles page) --%>
+    <c:if test="${productStatus.calculated && not empty productStatus.time}">
+      <span class="text-muted" style="font-size:0.75rem;">|</span>
+      <a href="/do/monitoring/summary/${productStatus.product}" class="btn btn-sm btn-outline-secondary"
+         title="View all cycles of ${productStatus.product}">
+        <i class="bi bi-layers-fill"></i> All cycles
+      </a>
+    </c:if>
         <%-- Page selector (only on the main monitoring page, not product detail) --%>
     <c:if test="${not productStatus.calculated}">
       <span class="text-muted" style="font-size:0.75rem;">|</span>
