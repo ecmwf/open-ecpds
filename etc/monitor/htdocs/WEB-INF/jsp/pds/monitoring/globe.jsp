@@ -60,7 +60,7 @@
     <div class="title-group">
         <i class="bi bi-globe2 text-info"></i>
         <div>
-            <div class="title-text">Live Earth</div>
+            <div class="title-text"><%=System.getProperty("monitor.nickName")%> Live Earth</div>
             <div class="subtitle" id="globeSubtitle">Connecting...</div>
         </div>
     </div>
