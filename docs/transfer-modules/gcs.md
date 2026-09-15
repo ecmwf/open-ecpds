@@ -132,6 +132,27 @@ gcs.bucketName = "streaming-bucket"
 gcs.prefix = "live/"
 ```
 
+### Parallel composite upload
+
+For large files, GCS supports splitting an upload into parts that are uploaded concurrently as temporary objects, then combined server-side into the final object (Google's "parallel composite upload", the same mechanism used by `gsutil -o GSUtil:parallel_composite_upload_threshold`). This can significantly reduce upload time on high-bandwidth links, at the cost of extra (short-lived) objects and API calls during the upload.
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `gcs.parallelUpload` | `no` | Enables parallel composite upload. Disabled by default; existing uploads are unaffected unless this is turned on. |
+| `gcs.parallelUploadNumThreads` | *SDK default (cached pool)* | Number of threads used to upload parts concurrently. Only used when `gcs.parallelUpload` is enabled. |
+| `gcs.parallelUploadPartSize` | *SDK default (16 MB)* | Size of each part uploaded concurrently, as a byte size value (e.g. `16m`, `32m`). Only used when `gcs.parallelUpload` is enabled. |
+
+!!! note
+    Composite objects only expose a CRC32C checksum (no MD5). This has no impact on OpenECPDS, which does not rely on GCS-side MD5 hashes for verification.
+
+### Quick-start examples
+
+```properties
+gcs.parallelUpload = "yes"
+gcs.parallelUploadNumThreads = "8"
+gcs.parallelUploadPartSize = "32m"
+```
+
 ### Object naming
 
 GCS object names are derived from the remote file path. If `gcs.bucketName` is set, the object name is `{prefix}{filename}`. Otherwise, the first path component is used as the bucket name and the remainder as the object key.

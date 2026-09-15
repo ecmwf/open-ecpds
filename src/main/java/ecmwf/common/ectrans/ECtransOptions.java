@@ -1164,6 +1164,25 @@ public enum ECtransOptions {
     /** The host gcs chunk size. */
     HOST_GCS_CHUNK_SIZE("chunkSize", ByteSize.class, BYTE_SIZE_NONE),
 
+    /**
+     * The host gcs parallel upload. Enables Google's "parallel composite upload": the object is split into parts
+     * uploaded concurrently as temporary objects, then server-side composed into the final object. Off by default so
+     * behaviour is unchanged unless explicitly enabled; mainly beneficial for large files.
+     */
+    HOST_GCS_PARALLEL_UPLOAD("parallelUpload", Boolean.class, false),
+
+    /**
+     * The host gcs parallel upload num threads. Number of threads used to upload parts concurrently when parallelUpload
+     * is enabled. A value of 0 (the default) lets the underlying library manage its own cached thread pool.
+     */
+    HOST_GCS_PARALLEL_UPLOAD_NUM_THREADS("parallelUploadNumThreads", Integer.class, 0),
+
+    /**
+     * The host gcs parallel upload part size. Size of each part uploaded concurrently when parallelUpload is enabled.
+     * Not set by default, in which case the underlying library's default (16MB) is used.
+     */
+    HOST_GCS_PARALLEL_UPLOAD_PART_SIZE("parallelUploadPartSize", ByteSize.class, BYTE_SIZE_NONE),
+
     /** The host client email */
     HOST_GCS_CLIENT_EMAIL("clientEmail", String.class, STRING_NONE),
 

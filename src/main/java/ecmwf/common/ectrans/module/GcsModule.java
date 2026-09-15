@@ -48,6 +48,9 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_CLIENT_ID;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_FTPGROUP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_FTPUSER;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_MK_BUCKET;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PARALLEL_UPLOAD;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PARALLEL_UPLOAD_NUM_THREADS;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PARALLEL_UPLOAD_PART_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PORT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PREFIX;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PRIVATE_KEY;
@@ -63,6 +66,7 @@ import static ecmwf.common.text.Util.isNotEmpty;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -71,6 +75,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPOutputStream;
 
@@ -86,8 +91,11 @@ import com.google.cloud.http.HttpTransportOptions;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.BlobWriteSessionConfigs;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
+import com.google.cloud.storage.ParallelCompositeUploadBlobWriteSessionConfig.BufferAllocationStrategy;
+import com.google.cloud.storage.ParallelCompositeUploadBlobWriteSessionConfig.ExecutorSupplier;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.Storage.BlobListOption;
 import com.google.cloud.storage.StorageException;
@@ -293,7 +301,7 @@ public final class GcsModule extends TransferModule {
             gcs = StorageOptions.newBuilder().setProjectId(projectId).setCredentials(credentials)
                     .setTransportOptions(
                             HttpTransportOptions.newBuilder().setHttpTransportFactory(() -> httpTransport).build())
-                    .build().getService();
+                    .setBlobWriteSessionConfig(getBlobWriteSessionConfig(setup)).build().getService();
 
             if (isNotEmpty(bucketName) && setup.getBoolean(HOST_GCS_MK_BUCKET)) {
                 // The user has configured a Bucket Name!
@@ -422,6 +430,66 @@ public final class GcsModule extends TransferModule {
     }
 
     /**
+     * Builds the {@link com.google.cloud.storage.BlobWriteSessionConfig} to use for this connection's Storage client.
+     *
+     * <p>
+     * When {@code gcs.parallelUpload} is enabled, uploads are split into parts uploaded concurrently as temporary
+     * objects, then server-side composed into the final object (Google's "parallel composite upload"). This is set once
+     * at the client level (it applies to every write performed through {@link #gcs}), and is used by the
+     * {@code blobWriteSession}-based upload path in the {@code put} methods below. When disabled (the default), the
+     * library's normal default write session is used and behaviour is unchanged.
+     *
+     * @param setup
+     *            the setup
+     *
+     * @return the blob write session config
+     */
+    private static com.google.cloud.storage.BlobWriteSessionConfig getBlobWriteSessionConfig(final ECtransSetup setup) {
+        if (!setup.getBoolean(HOST_GCS_PARALLEL_UPLOAD)) {
+            return BlobWriteSessionConfigs.getDefault();
+        }
+        var pcuConfig = BlobWriteSessionConfigs.parallelCompositeUpload();
+        final var numThreads = setup.getInteger(HOST_GCS_PARALLEL_UPLOAD_NUM_THREADS);
+        if (numThreads > 0) {
+            pcuConfig = pcuConfig.withExecutorSupplier(ExecutorSupplier.fixedPool(numThreads));
+        }
+        final var partSize = setup.getOptionalByteSize(HOST_GCS_PARALLEL_UPLOAD_PART_SIZE);
+        if (partSize.isPresent()) {
+            pcuConfig = pcuConfig
+                    .withBufferAllocationStrategy(BufferAllocationStrategy.simple((int) partSize.get().size()));
+        }
+        _log.debug("GCS parallel composite upload enabled (numThreads={}, partSize={})",
+                numThreads > 0 ? numThreads : "default", partSize.isPresent() ? partSize.get().size() : "default");
+        return pcuConfig;
+    }
+
+    /**
+     * Waits for a parallel composite upload session to complete, surfacing any failure (e.g. a part upload or the final
+     * compose call failing) as an {@link IOException}.
+     *
+     * @param session
+     *            the blob write session
+     * @param name
+     *            the object name (for error messages)
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     */
+    private static void waitForCompletion(final com.google.cloud.storage.BlobWriteSession session, final String name)
+            throws IOException {
+        try {
+            session.getResult().get();
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted while waiting for GCS parallel composite upload of " + name, e);
+        } catch (final ExecutionException e) {
+            final var cause = e.getCause() != null ? e.getCause() : e;
+            throw new IOException(
+                    "GCS parallel composite upload of " + name + " failed: " + Format.getMessage(cause, "", 0));
+        }
+    }
+
+    /**
      * Checks if a chunk size was set, adjusts it to be a multiple of 256KB (as per GCS requirements) and checks if this
      * size is a valid one (between 256KB and 50MB).
      *
@@ -474,14 +542,23 @@ public final class GcsModule extends TransferModule {
         try {
             final var objectInfo = BlobInfo.newBuilder(BlobId.of(bucketNameAndObject[0], bucketNameAndObject[1]))
                     .build();
-            // check (and use) if a different chunk size was set, GCS default 5MB
-            int chunkSize = getValidatedChunkSize();
-            if (chunkSize > 0) {
-                _log.debug("Using GCS upload with chunk size={} bytes", chunkSize);
-                gcs.createFrom(objectInfo, in, chunkSize);
+            if (getSetup().getBoolean(HOST_GCS_PARALLEL_UPLOAD)) {
+                _log.debug("Using GCS parallel composite upload");
+                final var session = gcs.blobWriteSession(objectInfo);
+                try (var out = Channels.newOutputStream(session.open())) {
+                    StreamPlugThread.copy(out, in, StreamPlugThread.DEFAULT_BUFF_SIZE);
+                }
+                waitForCompletion(session, name);
             } else {
-                _log.debug("Using GCS upload with default chunk size.");
-                gcs.createFrom(objectInfo, in);
+                // check (and use) if a different chunk size was set, GCS default 5MB
+                int chunkSize = getValidatedChunkSize();
+                if (chunkSize > 0) {
+                    _log.debug("Using GCS upload with chunk size={} bytes", chunkSize);
+                    gcs.createFrom(objectInfo, in, chunkSize);
+                } else {
+                    _log.debug("Using GCS upload with default chunk size.");
+                    gcs.createFrom(objectInfo, in);
+                }
             }
         } catch (final IllegalArgumentException e) {
             throw new IOException("Pushing object " + name + ": " + e.getMessage());
@@ -519,6 +596,18 @@ public final class GcsModule extends TransferModule {
         try {
             final var objectInfo = BlobInfo.newBuilder(BlobId.of(bucketNameAndObject[0], bucketNameAndObject[1]))
                     .build();
+            if (getSetup().getBoolean(HOST_GCS_PARALLEL_UPLOAD)) {
+                _log.debug("Using GCS parallel composite upload");
+                final var session = gcs.blobWriteSession(objectInfo);
+                final var out = Channels.newOutputStream(session.open());
+                return new FilterOutputStream(out) {
+                    @Override
+                    public void close() throws IOException {
+                        super.close();
+                        waitForCompletion(session, name);
+                    }
+                };
+            }
             // check (and use) if a different chunk size was set, GCS default 5MB
             int chunkSize = getValidatedChunkSize();
             WriteChannel writer = gcs.writer(objectInfo);

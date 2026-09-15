@@ -235,12 +235,46 @@ gcs.bucketLocation = "EU"</pre>
         </div>
 
         <div class="mb-3">
+          <p class="small fw-semibold mb-1"><i class="bi bi-lightning-charge text-primary me-1"></i>Parallel composite upload</p>
+          <p class="small text-muted mb-1">For large files, GCS can split an upload into parts
+          uploaded concurrently as temporary objects, then combine them server-side into the final
+          object (Google's "parallel composite upload", the same mechanism used by
+          <code>gsutil -o GSUtil:parallel_composite_upload_threshold</code>). This can significantly
+          reduce upload time on high-bandwidth links, at the cost of extra (short-lived) objects and
+          API calls during the upload.</p>
+          <table class="table table-sm table-bordered small mb-0">
+            <thead class="table-light"><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>gcs.parallelUpload</code></td><td><code>false</code></td>
+                  <td>Enables parallel composite upload. Disabled by default; existing uploads are
+                  unaffected unless this is turned on.</td></tr>
+              <tr><td><code>gcs.parallelUploadNumThreads</code></td><td><em>SDK default (cached pool)</em></td>
+                  <td>Number of threads used to upload parts concurrently. Only used when
+                  <code>gcs.parallelUpload</code> is enabled.</td></tr>
+              <tr><td><code>gcs.parallelUploadPartSize</code></td><td><em>SDK default (16 MB)</em></td>
+                  <td>Size of each part uploaded concurrently, as a byte size value (e.g.
+                  <code>16m</code>, <code>32m</code>). Only used when <code>gcs.parallelUpload</code>
+                  is enabled.</td></tr>
+            </tbody>
+          </table>
+          <div class="alert alert-info py-2 px-3 mt-2 small d-flex align-items-start gap-2">
+            <i class="bi bi-info-circle flex-shrink-0" style="margin-top:0.1em"></i>
+            <div>Composite objects only expose a CRC32C checksum (no MD5). This has no impact on
+            OpenECPDS, which does not rely on GCS-side MD5 hashes for verification.</div>
+          </div>
+        </div>
+
+        <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Quick-start examples</p>
           <pre class="border rounded p-2 small mb-1" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- 32 MB chunks for large files --%>
 gcs.chunkSize = "32m"</pre>
-          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- streaming mode (no chunk buffering) - omit chunkSize --%>
+          <pre class="border rounded p-2 small mb-1" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- streaming mode (no chunk buffering) - omit chunkSize --%>
 gcs.bucketName = "streaming-bucket"
 gcs.prefix = "live/"</pre>
+          <pre class="border rounded p-2 small mb-0" style="background:var(--bs-tertiary-bg);white-space:pre-wrap;"><%-- parallel composite upload for large files --%>
+gcs.parallelUpload = "yes"
+gcs.parallelUploadNumThreads = "8"
+gcs.parallelUploadPartSize = "32m"</pre>
         </div>
 
         <div class="mb-3">
