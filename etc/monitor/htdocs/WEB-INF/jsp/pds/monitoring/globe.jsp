@@ -87,6 +87,32 @@
             </ul>
         </div>
         <div class="dropdown d-inline-block">
+            <button type="button" id="globeDirectionBtn" class="globe-icon-btn" title="Monitor Dissemination and/or Acquisition"
+                    data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                <i class="bi bi-arrow-left-right"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end p-2" style="min-width:190px;" aria-labelledby="globeDirectionBtn">
+                <li>
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="radio" name="globeDirectionRadio" id="globeDirectionBoth" value="both">
+                        <label class="form-check-label" for="globeDirectionBoth" style="font-size:.85rem;">Dissemination + Acquisition</label>
+                    </div>
+                </li>
+                <li>
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="radio" name="globeDirectionRadio" id="globeDirectionDiss" value="dissemination">
+                        <label class="form-check-label" for="globeDirectionDiss" style="font-size:.85rem;">Dissemination only</label>
+                    </div>
+                </li>
+                <li>
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="radio" name="globeDirectionRadio" id="globeDirectionAcq" value="acquisition">
+                        <label class="form-check-label" for="globeDirectionAcq" style="font-size:.85rem;">Acquisition only</label>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <div class="dropdown d-inline-block">
             <button type="button" id="globeLabelsBtn" class="globe-icon-btn" title="Toggle country/town names"
                     data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                 <i class="bi bi-tag"></i>
@@ -123,6 +149,10 @@
         <div><span class="dot" style="background:#ef4444;"></span>Failed / retransmitting</div>
         <div><span class="dot" style="background:#ffd166;"></span>OpenECPDS location</div>
         <div><span class="dot" style="background:#a78bfa;"></span>Proxy Host location</div>
+        <div style="margin-top:.25rem;color:#bbb;max-width:160px;">Arrows point in the direction data is flowing</div>
+        <div id="globeUnresolvedNote" style="display:none;margin-top:.35rem;color:#bbb;max-width:160px;font-size:.72rem;line-height:1.3;">
+            <i class="bi bi-exclamation-triangle" style="color:#d9a441;margin-right:.3rem;"></i><span id="globeUnresolvedNoteText"></span>
+        </div>
     </div>
     <div id="globeRightPanels">
         <div id="globeInfoPanel">
@@ -277,6 +307,17 @@
     var VIEW_MODE_PREF_KEY = "globeViewMode";
     var viewMode = localStorage.getItem(VIEW_MODE_PREF_KEY) === "country" ? "country" : "host";
 
+    // Which direction(s) of transfer to monitor: "both" (default), "dissemination" (data pushed out to a Host) or
+    // "acquisition" (data pulled in from a Host). Filters the raw sample list (see applyDirectionFilter()) before
+    // any arc/marker grouping or KPI counting happens, so every part of the page (arcs, country table, KPI cards)
+    // consistently reflects only the selected direction(s). Persisted across reloads via localStorage, like
+    // viewMode above.
+    var DIRECTION_MODE_PREF_KEY = "globeDirectionMode";
+    var directionMode = localStorage.getItem(DIRECTION_MODE_PREF_KEY) || "both";
+    if (["both", "dissemination", "acquisition"].indexOf(directionMode) === -1) {
+        directionMode = "both";
+    }
+
     // Optional country/city name labels, provisioned lazily/in the background by GlobeLabelsProvisioner (see
     // globeImageryProvider fallback above for the same rationale) - fetched once, best-effort, and simply skipped
     // if not yet available (e.g. first run with no internet access yet at startup): the globe remains fully usable
@@ -347,6 +388,27 @@
     });
     document.getElementById(viewMode === "country" ? "globeViewModeCountry" : "globeViewModeHost").checked = true;
     document.getElementById("globeViewModeBtn").classList.toggle("active", viewMode === "country");
+
+    // Direction-mode dropdown wiring (see setDirectionMode() further below). The button is marked "active"
+    // whenever a single direction (rather than "Both") is selected.
+    document.getElementById("globeDirectionBoth").addEventListener("change", function () {
+        if (this.checked) {
+            setDirectionMode("both");
+        }
+    });
+    document.getElementById("globeDirectionDiss").addEventListener("change", function () {
+        if (this.checked) {
+            setDirectionMode("dissemination");
+        }
+    });
+    document.getElementById("globeDirectionAcq").addEventListener("change", function () {
+        if (this.checked) {
+            setDirectionMode("acquisition");
+        }
+    });
+    document.getElementById({ both: "globeDirectionBoth", dissemination: "globeDirectionDiss",
+        acquisition: "globeDirectionAcq" }[directionMode]).checked = true;
+    document.getElementById("globeDirectionBtn").classList.toggle("active", directionMode !== "both");
     document.getElementById("globeCountryTable").style.display = viewMode === "country" ? "block" : "none";
 
     // Renders a name as a small rounded "pill" (plain text on a translucent rounded-rect background, optionally
@@ -454,13 +516,21 @@
 
     // Total bytes transferred over the last rolling 24h, maintained server-side by the MasterServer (see
     // LiveTransferRegistry#getBytesLast24h()) and pushed with every "snapshot" message, so every open globe page -
-    // and every reconnect - shows the exact same, always-on figure rather than a per-connection counter.
+    // and every reconnect - shows the exact same, always-on figures rather than a per-connection counter. Kept as
+    // three separate totals (combined/Dissemination/Acquisition) so the "Transferred (24h)" KPI can match whichever
+    // direction is currently selected (see directionMode/updateKpis()).
     var bytesLast24h = 0;
+    var bytesLast24hDissemination = 0;
+    var bytesLast24hAcquisition = 0;
 
-    // The raw sample list from the most recent "snapshot" message, kept so the KPI cards (see updateKpis()) can
-    // always reflect the true active-transfer/host count straight from the MasterServer, independent of whether
-    // the MasterServer's own origin location or any target Host's geolocation has been resolved yet (geolocation is
-    // only needed to actually place a marker/arc on the globe, not to count activity).
+    // The raw sample list from the most recent "snapshot" message (every direction), kept so switching
+    // directionMode (see setDirectionMode()) can redraw instantly without waiting for the next poll.
+    var rawSamples = [];
+
+    // The direction-filtered sample list (see applyDirectionFilter()), used everywhere else (KPI cards, arc/marker
+    // grouping, country table) so the whole page consistently reflects only the currently selected direction(s),
+    // independent of whether the MasterServer's own origin location or any target Host's geolocation has been
+    // resolved yet (geolocation is only needed to actually place a marker/arc on the globe, not to count activity).
     var lastSamples = [];
 
     // Auto-scaling gauge ceiling for the throughput speed-meter: grows immediately to cover new peaks, then
@@ -498,9 +568,20 @@
         arc.style.stroke = pct < 0.6 ? "#38bdf8" : pct < 0.85 ? "#ffd166" : "#ef4444";
     }
 
-    // Counts straight from the last raw sample list (see lastSamples above), not from the `hosts` map used for
-    // marker placement, so these figures stay accurate even while the origin and/or target Host locations are not
-    // (yet) resolved.
+    // Picks the rolling 24h bytes total matching the current directionMode.
+    function currentBytesLast24h() {
+        if (directionMode === "dissemination") {
+            return bytesLast24hDissemination;
+        }
+        if (directionMode === "acquisition") {
+            return bytesLast24hAcquisition;
+        }
+        return bytesLast24h;
+    }
+
+    // Counts straight from the last direction-filtered sample list (see lastSamples above), not from the `hosts`
+    // map used for marker placement, so these figures stay accurate even while the origin and/or target Host
+    // locations are not (yet) resolved.
     function updateKpis() {
         var activeHostNames = Object.create(null);
         var transferCount = 0;
@@ -518,10 +599,11 @@
         document.getElementById("kpiTransfers").textContent = transferCount;
         document.getElementById("kpiHosts").textContent = Object.keys(activeHostNames).length;
         document.getElementById("kpiThroughput").textContent = formatRate(totalRate);
-        document.getElementById("kpiBytes").textContent = formatBytes(bytesLast24h);
+        document.getElementById("kpiBytes").textContent = formatBytes(currentBytesLast24h());
         updateGauge(totalRate);
         document.getElementById("globeSubtitle").textContent = "Live data - updates automatically";
     }
+
 
     function setStatus(state, label) {
         var badge = document.getElementById("globeStatusBadge");
@@ -540,6 +622,14 @@
         // Logarithmic scale: ~1 Mbps -> thin, ~1 Gbps -> thick.
         var mbps = bps / 1e6;
         return Cesium.Math.clamp(1.5 + Math.log10(1 + mbps) * 2.2, 1.5, 10);
+    }
+
+    // Builds the material used for every arc: a "PolylineArrow" fabric, so the arrowhead at the polyline's end
+    // gives every arc a visible sense of direction (see directionalArcPositions()) - Dissemination arcs point
+    // towards the destination Host (data pushed out), Acquisition arcs point back towards the origin/Proxy Host
+    // (data pulled in), simply depending on which end of the (reversible) positions array each was built to end at.
+    function arcMaterial(color) {
+        return Cesium.Material.fromType("PolylineArrow", { color: color.withAlpha(0.85) });
     }
 
     // Builds a set of positions following the geodesic (great-circle) path between two points, lofted into a
@@ -593,6 +683,19 @@
         return (pixelDiameter / 2) * metersPerPixel;
     }
 
+    // Builds the (trimmed) arc positions between a marker's origin (the MasterServer/Proxy Host location, stored
+    // as {lat, lon, pixelSize}) and its destination Host (lat/lon, destPixelSize), oriented so the arrowhead (see
+    // "PolylineArrow" material in upsertHost()/upsertCountry()) always points in the actual direction data is
+    // flowing: origin -> Host for Dissemination (data pushed out), Host -> origin for Acquisition (data pulled
+    // in), simply by swapping which endpoint the positions array starts/ends at.
+    function directionalArcPositions(arcOrigin, destLat, destLon, destPixelSize, isAcquisition) {
+        var trimOrigin = pixelRadiusToMeters(arcOrigin.lat, arcOrigin.lon, arcOrigin.pixelSize);
+        var trimDest = pixelRadiusToMeters(destLat, destLon, destPixelSize);
+        return isAcquisition
+            ? arcPositions(destLon, destLat, arcOrigin.lon, arcOrigin.lat, trimDest, trimOrigin)
+            : arcPositions(arcOrigin.lon, arcOrigin.lat, destLon, destLat, trimOrigin, trimDest);
+    }
+
     // Recomputes one arc's trimmed positions from its stored raw endpoints/marker sizes - used both right after
     // creation and whenever the camera moves/zooms enough to change the pixel-to-meters ratio (see
     // refreshArcTrims()), so the visual gap at each end keeps tracking the marker's on-screen size correctly.
@@ -600,10 +703,8 @@
         if (!entry.arc || !entry.arcOrigin) {
             return;
         }
-        var trimStart = pixelRadiusToMeters(entry.arcOrigin.lat, entry.arcOrigin.lon, entry.arcOrigin.pixelSize);
-        var trimEnd = pixelRadiusToMeters(entry.lat, entry.lon, entry.destPixelSize);
-        entry.arc.positions =
-            arcPositions(entry.arcOrigin.lon, entry.arcOrigin.lat, entry.lon, entry.lat, trimStart, trimEnd);
+        entry.arc.positions = directionalArcPositions(entry.arcOrigin, entry.lat, entry.lon, entry.destPixelSize,
+            entry.isAcquisition);
     }
 
     // Re-trims every currently-rendered arc (host or country view) - bound to the camera's `changed` event below,
@@ -745,7 +846,7 @@
     // Aggregates every transfer currently reported for one Host (or, in country view, every transfer to every
     // Host within one country) into the counters the marker/arc/panel need.
     function aggregateTransfers(transferMap) {
-        var agg = { activeCount: 0, totalRate: 0, totalBytes: 0, protocols: {}, hasActive: false, hasFailed: false, maxDuration: 0, arcOrigin: null };
+        var agg = { activeCount: 0, totalRate: 0, totalBytes: 0, protocols: {}, hasActive: false, hasFailed: false, maxDuration: 0, arcOrigin: null, isAcquisition: false };
         Object.keys(transferMap).forEach(function (id) {
             var s = transferMap[id];
             if (s.status === "ACTIVE") {
@@ -759,6 +860,9 @@
             agg.maxDuration = Math.max(agg.maxDuration, s.duration || 0);
             if (s.protocol) {
                 agg.protocols[s.protocol] = true;
+            }
+            if (s.direction === "ACQUISITION") {
+                agg.isAcquisition = true;
             }
             // If this transfer was relayed through a Proxy Host, draw the arc from that Proxy Host's own
             // location instead of the MasterServer's, so the globe reflects where the data actually left from.
@@ -793,13 +897,12 @@
         var arcOrigin = agg.arcOrigin || origin;
         var originPixelSize = agg.arcOrigin ? MOVER_PIXEL_SIZE : ORIGIN_PIXEL_SIZE;
         var destPixelSize = Cesium.Math.clamp(8 + agg.activeCount * 1.5, 8, 20);
-        var trimStart = pixelRadiusToMeters(arcOrigin.lat, arcOrigin.lon, originPixelSize);
-        var trimEnd = pixelRadiusToMeters(lat, lon, destPixelSize);
-        var positions = arcPositions(arcOrigin.lon, arcOrigin.lat, lon, lat, trimStart, trimEnd);
+        var positions = directionalArcPositions({ lat: arcOrigin.lat, lon: arcOrigin.lon, pixelSize: originPixelSize },
+            lat, lon, destPixelSize, agg.isAcquisition);
         var arc = arcs.add({
             positions: positions,
             width: rateWidth(agg.totalRate),
-            material: Cesium.Material.fromType("Color", { color: color.withAlpha(0.85) })
+            material: arcMaterial(color)
         });
         var point = points.add({
             position: Cesium.Cartesian3.fromDegrees(lon, lat),
@@ -812,7 +915,7 @@
         var entry = {
             arc: arc, point: point, lat: lat, lon: lon, label: label || name, transfers: transferMap, agg: agg,
             arcOrigin: { lat: arcOrigin.lat, lon: arcOrigin.lon, pixelSize: originPixelSize },
-            destPixelSize: destPixelSize,
+            destPixelSize: destPixelSize, isAcquisition: agg.isAcquisition,
             removeTimeout: null, pulsePhase: existing ? existing.pulsePhase : Math.random() * Math.PI * 2
         };
         hosts[name] = entry;
@@ -873,13 +976,12 @@
         var arcOrigin = agg.arcOrigin || origin;
         var originPixelSize = agg.arcOrigin ? MOVER_PIXEL_SIZE : ORIGIN_PIXEL_SIZE;
         var destPixelSize = Cesium.Math.clamp(10 + agg.activeCount * 1.2, 10, 26);
-        var trimStart = pixelRadiusToMeters(arcOrigin.lat, arcOrigin.lon, originPixelSize);
-        var trimEnd = pixelRadiusToMeters(lat, lon, destPixelSize);
-        var positions = arcPositions(arcOrigin.lon, arcOrigin.lat, lon, lat, trimStart, trimEnd);
+        var positions = directionalArcPositions({ lat: arcOrigin.lat, lon: arcOrigin.lon, pixelSize: originPixelSize },
+            lat, lon, destPixelSize, agg.isAcquisition);
         var arc = arcs.add({
             positions: positions,
             width: rateWidth(agg.totalRate),
-            material: Cesium.Material.fromType("Color", { color: color.withAlpha(0.85) })
+            material: arcMaterial(color)
         });
         var point = points.add({
             position: Cesium.Cartesian3.fromDegrees(lon, lat),
@@ -892,7 +994,7 @@
         var entry = {
             arc: arc, point: point, lat: lat, lon: lon, hostCount: hostCount, transfers: transferMap, agg: agg,
             arcOrigin: { lat: arcOrigin.lat, lon: arcOrigin.lon, pixelSize: originPixelSize },
-            destPixelSize: destPixelSize,
+            destPixelSize: destPixelSize, isAcquisition: agg.isAcquisition,
             removeTimeout: null, pulsePhase: existing ? existing.pulsePhase : Math.random() * Math.PI * 2
         };
         countries[code] = entry;
@@ -934,12 +1036,19 @@
     // other one's Cesium primitives (if any are still left over from before a mode switch) are defensively cleared
     // on every call.
     function applySnapshot(samples) {
-        lastSamples = samples;
+        rawSamples = samples;
+        lastSamples = directionMode === "both" ? samples : samples.filter(function (s) {
+            return (s.direction || "DISSEMINATION").toLowerCase() === directionMode;
+        });
         var byHost = Object.create(null);
         var byMover = Object.create(null);
         var byCountry = Object.create(null);
-        samples.forEach(function (sample) {
+        var unresolvedActiveCount = 0;
+        lastSamples.forEach(function (sample) {
             if (sample.hostLat === undefined || sample.hostLon === undefined || !sample.host) {
+                if (sample.status === "ACTIVE") {
+                    unresolvedActiveCount++;
+                }
                 return; // can't place a marker without a resolved location.
             }
             var group = byHost[sample.host];
@@ -1007,7 +1116,26 @@
             }
         });
         updateCountryTable(byCountry);
+        updateUnresolvedNote(unresolvedActiveCount);
         updateKpis();
+    }
+
+    // Shows a small, subtle note in the legend when one or more currently ACTIVE transfers cannot be drawn on the
+    // globe because their Host's address could not be geolocated (no GeoIP match and no `[GeoIP]` `forced.*`
+    // override configured) - these are still counted in the KPI cards above (see updateKpis()), just not visible
+    // as an arc/marker, so without this note their absence could otherwise look like a discrepancy.
+    function updateUnresolvedNote(count) {
+        var note = document.getElementById("globeUnresolvedNote");
+        if (!note) {
+            return;
+        }
+        if (count > 0) {
+            document.getElementById("globeUnresolvedNoteText").textContent =
+                count + " active transfer" + (count === 1 ? "" : "s") + " not shown (host location unresolved)";
+            note.style.display = "block";
+        } else {
+            note.style.display = "none";
+        }
     }
 
     // Renders the small "transmissions per country" breakdown table (shown only in "Per country" view, see
@@ -1056,7 +1184,20 @@
         viewMode = mode;
         localStorage.setItem(VIEW_MODE_PREF_KEY, mode);
         document.getElementById("globeCountryTable").style.display = mode === "country" ? "block" : "none";
-        applySnapshot(lastSamples);
+        applySnapshot(rawSamples);
+    }
+
+    // Switches which direction(s) of transfer to monitor ("both"/"dissemination"/"acquisition"), redrawing
+    // immediately from the last received (unfiltered) snapshot so the switch feels instant, and refreshing the
+    // "Transferred (24h)" KPI to match (see currentBytesLast24h()).
+    function setDirectionMode(mode) {
+        if (["both", "dissemination", "acquisition"].indexOf(mode) === -1) {
+            return;
+        }
+        directionMode = mode;
+        localStorage.setItem(DIRECTION_MODE_PREF_KEY, mode);
+        document.getElementById("globeDirectionBtn").classList.toggle("active", mode !== "both");
+        applySnapshot(rawSamples);
     }
 
     function formatBytes(n) {
@@ -1164,6 +1305,12 @@
             } else if (msg.type === "snapshot") {
                 if (typeof msg.bytes24h === "number") {
                     bytesLast24h = msg.bytes24h;
+                }
+                if (typeof msg.bytes24hDissemination === "number") {
+                    bytesLast24hDissemination = msg.bytes24hDissemination;
+                }
+                if (typeof msg.bytes24hAcquisition === "number") {
+                    bytesLast24hAcquisition = msg.bytes24hAcquisition;
                 }
                 applyOrigin(msg);
                 applySnapshot(msg.transfers || []);

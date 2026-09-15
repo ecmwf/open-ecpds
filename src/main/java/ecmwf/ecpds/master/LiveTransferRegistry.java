@@ -69,7 +69,10 @@ public final class LiveTransferRegistry {
      */
     private static final long POLL_ENABLE_WINDOW_MS = 15 * 1000;
 
-    /** Number of one-minute buckets used to maintain a rolling 24h transferred-bytes total ({@link #_bucketBytes}). */
+    /**
+     * Number of one-minute buckets used to maintain a rolling 24h transferred-bytes total
+     * ({@link #_bucketBytesDiss}/{@link #_bucketBytesAcq}).
+     */
     private static final int BUCKET_COUNT = 24 * 60;
 
     /** Singleton instance. */
@@ -89,19 +92,26 @@ public final class LiveTransferRegistry {
 
     /**
      * Last known cumulative {@link LiveTransferSample#getByteSent()} per transfer id, used to derive per-sample byte
-     * deltas (each sample carries a cumulative total, not an incremental one) for the rolling 24h total below.
+     * deltas (each sample carries a cumulative total, not an incremental one) for the rolling 24h totals below.
      */
     private final Map<Long, Long> _lastKnownBytes = new ConcurrentHashMap<>();
 
     /**
-     * Bytes transferred per one-minute bucket, indexed by {@code (epochMinute % BUCKET_COUNT)}; a bucket is reset to
-     * zero the first time it is reused for a new minute, giving an always-accurate rolling 24h window without ever
-     * growing unbounded.
+     * Dissemination bytes transferred per one-minute bucket, indexed by {@code (epochMinute % BUCKET_COUNT)}; a bucket
+     * is reset to zero the first time it is reused for a new minute, giving an always-accurate rolling 24h window
+     * without ever growing unbounded. Kept separate from {@link #_bucketBytesAcq} so the "Transferred (24h)" KPI can be
+     * filtered by direction, matching whichever of Dissemination/Acquisition/Both is currently selected on the globe
+     * UI.
      */
-    private final AtomicLongArray _bucketBytes = new AtomicLongArray(BUCKET_COUNT);
+    private final AtomicLongArray _bucketBytesDiss = new AtomicLongArray(BUCKET_COUNT);
+
+    /** Acquisition bytes transferred per one-minute bucket; see {@link #_bucketBytesDiss}. */
+    private final AtomicLongArray _bucketBytesAcq = new AtomicLongArray(BUCKET_COUNT);
 
     /**
-     * The epoch-minute each bucket in {@link #_bucketBytes} currently holds data for; {@code -1} means "never used".
+     * The epoch-minute each bucket in {@link #_bucketBytesDiss}/{@link #_bucketBytesAcq} currently holds data for;
+     * {@code -1} means "never used". Shared between both directions since they are always advanced together (one bucket
+     * per minute, regardless of direction).
      */
     private final AtomicLongArray _bucketMinute = new AtomicLongArray(BUCKET_COUNT);
 
@@ -168,23 +178,54 @@ public final class LiveTransferRegistry {
      * @return the total bytes transferred in the last 24 hours
      */
     public long getBytesLast24h() {
+        return getBytesLast24h(LiveTransferSample.DIRECTION_DISSEMINATION)
+                + getBytesLast24h(LiveTransferSample.DIRECTION_ACQUISITION);
+    }
+
+    /**
+     * Gets the total number of bytes transferred (across every Mover/ProxyHost) over the last rolling 24 hours, for a
+     * single direction. Same semantics/persistence as {@link #getBytesLast24h()}, just filtered to one of
+     * {@link LiveTransferSample#DIRECTION_DISSEMINATION} or {@link LiveTransferSample#DIRECTION_ACQUISITION}, so the
+     * globe UI's "Transferred (24h)" KPI can match whichever of Dissemination/Acquisition/Both is currently selected.
+     *
+     * @param direction
+     *            one of {@link LiveTransferSample#DIRECTION_DISSEMINATION} or
+     *            {@link LiveTransferSample#DIRECTION_ACQUISITION}
+     *
+     * @return the total bytes transferred in the last 24 hours for that direction
+     */
+    public long getBytesLast24h(final String direction) {
+        final var buckets = _bucketsFor(direction);
         final var nowMinute = System.currentTimeMillis() / 60_000;
         final var oldestMinute = nowMinute - BUCKET_COUNT + 1;
         var total = 0L;
         for (var i = 0; i < BUCKET_COUNT; i++) {
             final var bucketMinute = _bucketMinute.get(i);
             if (bucketMinute >= oldestMinute && bucketMinute <= nowMinute) {
-                total += _bucketBytes.get(i);
+                total += buckets.get(i);
             }
         }
         return total;
     }
 
     /**
+     * Gets the per-minute bucket array to use for the given direction.
+     *
+     * @param direction
+     *            one of {@link LiveTransferSample#DIRECTION_DISSEMINATION} or
+     *            {@link LiveTransferSample#DIRECTION_ACQUISITION}; anything else defaults to Dissemination
+     *
+     * @return the matching bucket array
+     */
+    private AtomicLongArray _bucketsFor(final String direction) {
+        return LiveTransferSample.DIRECTION_ACQUISITION.equals(direction) ? _bucketBytesAcq : _bucketBytesDiss;
+    }
+
+    /**
      * Serializes every currently non-empty, non-stale (i.e. within the last 24h) per-minute bucket into a compact
-     * {@code minute:bytes} pairs string, suitable for storage in a single {@code SYS_CONFIG} row. Meant to be called
-     * periodically (e.g. every few minutes) by the MasterServer, so a restart only loses the handful of minutes since
-     * the last save rather than the full rolling 24h window.
+     * {@code minute:dissBytes:acqBytes} triples string, suitable for storage in a single {@code SYS_CONFIG} row. Meant
+     * to be called periodically (e.g. every few minutes) by the MasterServer, so a restart only loses the handful of
+     * minutes since the last save rather than the full rolling 24h window.
      *
      * @return the serialized snapshot, or an empty string if there is nothing (yet) to persist
      */
@@ -194,12 +235,13 @@ public final class LiveTransferRegistry {
         final var sb = new StringBuilder();
         for (var i = 0; i < BUCKET_COUNT; i++) {
             final var bucketMinute = _bucketMinute.get(i);
-            final var bytes = _bucketBytes.get(i);
-            if (bucketMinute >= oldestMinute && bucketMinute <= nowMinute && bytes > 0) {
+            final var dissBytes = _bucketBytesDiss.get(i);
+            final var acqBytes = _bucketBytesAcq.get(i);
+            if (bucketMinute >= oldestMinute && bucketMinute <= nowMinute && (dissBytes > 0 || acqBytes > 0)) {
                 if (sb.length() > 0) {
                     sb.append(',');
                 }
-                sb.append(bucketMinute).append(':').append(bytes);
+                sb.append(bucketMinute).append(':').append(dissBytes).append(':').append(acqBytes);
             }
         }
         return sb.toString();
@@ -209,7 +251,10 @@ public final class LiveTransferRegistry {
      * Repopulates the per-minute buckets from a string previously produced by {@link #snapshotBucketsForPersistence()},
      * e.g. on MasterServer startup, so the rolling 24h total does not simply reset to zero after a restart. Entries for
      * minutes already outside the current rolling 24h window (i.e. the MasterServer was down for a while) are silently
-     * skipped, exactly as they would eventually age out of the live buckets anyway.
+     * skipped, exactly as they would eventually age out of the live buckets anyway. Accepts both the current
+     * {@code minute:dissBytes:acqBytes} format and the legacy {@code minute:bytes} format (from before the
+     * Dissemination/Acquisition split), treating a legacy entry's single value as Dissemination bytes so upgrading a
+     * running MasterServer does not lose its rolling 24h total.
      *
      * @param data
      *            the previously persisted snapshot, as produced by {@link #snapshotBucketsForPersistence()}
@@ -222,20 +267,22 @@ public final class LiveTransferRegistry {
         final var oldestMinute = nowMinute - BUCKET_COUNT + 1;
         var restored = 0;
         for (final String entry : data.split(",")) {
-            final var separator = entry.indexOf(':');
-            if (separator <= 0 || separator >= entry.length() - 1) {
+            final var fields = entry.split(":");
+            if (fields.length != 2 && fields.length != 3) {
                 continue;
             }
             try {
-                final var minute = Long.parseLong(entry.substring(0, separator));
-                final var bytes = Long.parseLong(entry.substring(separator + 1));
-                if (minute < oldestMinute || minute > nowMinute || bytes <= 0) {
+                final var minute = Long.parseLong(fields[0]);
+                final var dissBytes = Long.parseLong(fields[1]);
+                final var acqBytes = fields.length == 3 ? Long.parseLong(fields[2]) : 0L;
+                if (minute < oldestMinute || minute > nowMinute || (dissBytes <= 0 && acqBytes <= 0)) {
                     continue; // stale (outside the rolling window) or corrupt - skip.
                 }
                 final var index = (int) (minute % BUCKET_COUNT);
-                synchronized (_bucketBytes) {
+                synchronized (_bucketBytesDiss) {
                     _bucketMinute.set(index, minute);
-                    _bucketBytes.set(index, bytes);
+                    _bucketBytesDiss.set(index, Math.max(dissBytes, 0));
+                    _bucketBytesAcq.set(index, Math.max(acqBytes, 0));
                 }
                 restored++;
             } catch (final NumberFormatException e) {
@@ -250,7 +297,7 @@ public final class LiveTransferRegistry {
     /**
      * Derives the incremental number of bytes carried by this sample (each sample carries a cumulative
      * {@link LiveTransferSample#getByteSent()}, not an incremental one) compared to the last sample seen for the same
-     * transfer id, and adds it to the current one-minute bucket of the rolling 24h total.
+     * transfer id, and adds it to the current one-minute bucket of the rolling 24h total for the sample's direction.
      *
      * @param sample
      *            the sample
@@ -267,16 +314,19 @@ public final class LiveTransferRegistry {
         if (delta <= 0) {
             return;
         }
+        final var buckets = _bucketsFor(sample.getDirection());
         final var minute = System.currentTimeMillis() / 60_000;
         final var index = (int) (minute % BUCKET_COUNT);
-        // Reset the bucket the first time it is (re)used for this minute, so stale data from ~24h ago is dropped.
-        // Synchronized (rather than a bare getAndSet) to avoid a race where a second thread's concurrent addAndGet
-        // below could land in between this reset's getAndSet and its set(0), and be wiped out by the latter.
-        synchronized (_bucketBytes) {
+        // Reset both direction buckets the first time this slot is (re)used for this minute, so stale data from
+        // ~24h ago is dropped. Synchronized (rather than a bare getAndSet) to avoid a race where a second thread's
+        // concurrent addAndGet below could land in between this reset's getAndSet and its set(0), and be wiped out
+        // by the latter.
+        synchronized (_bucketBytesDiss) {
             if (_bucketMinute.getAndSet(index, minute) != minute) {
-                _bucketBytes.set(index, 0);
+                _bucketBytesDiss.set(index, 0);
+                _bucketBytesAcq.set(index, 0);
             }
-            _bucketBytes.addAndGet(index, delta);
+            buckets.addAndGet(index, delta);
         }
     }
 

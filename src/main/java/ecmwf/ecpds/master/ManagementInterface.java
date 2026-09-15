@@ -1816,6 +1816,22 @@ public interface ManagementInterface extends Remote {
     long getLiveTransferBytes24h() throws RemoteException;
 
     /**
+     * Gets the total number of bytes transferred over the rolling last 24 hours, filtered to a single direction, for
+     * display on the "Live ECPDS Earth" globe visualisation when the Dissemination/Acquisition/Both toggle is set to a
+     * single direction. See {@link #getLiveTransferBytes24h()} for the combined (Both) figure.
+     *
+     * @param direction
+     *            one of {@link LiveTransferSample#DIRECTION_DISSEMINATION} or
+     *            {@link LiveTransferSample#DIRECTION_ACQUISITION}
+     *
+     * @return the total bytes transferred in the last 24 hours for that direction
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    long getLiveTransferBytes24h(String direction) throws RemoteException;
+
+    /**
      * Gets the names of every currently active ProxyHost (a Data Mover reachable only through another Data Mover's REST
      * interface, i.e. without a direct RMI connection to the MasterServer), for display as a distinct marker on the
      * "Live ECPDS Earth" globe visualisation. Ordinary, directly-connected Data Movers are intentionally not included.

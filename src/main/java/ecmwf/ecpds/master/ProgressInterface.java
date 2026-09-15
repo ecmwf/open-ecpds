@@ -58,4 +58,53 @@ public interface ProgressInterface {
      *            the byte sent
      */
     void update(final String root, final long byteSent);
+
+    /**
+     * Gets the name of the Destination this retrieval is for, if applicable. Used by the "Live ECPDS Earth" globe
+     * visualisation to label/attribute Acquisition retrieval samples; not every implementation is tied to a
+     * Destination.
+     *
+     * @return the destination name, or {@code null} if not applicable/known
+     */
+    default String getDestinationName() {
+        return null;
+    }
+
+    /**
+     * Gets the source Host used for this retrieval (e.g. the Acquisition Host it is being pulled from), if applicable.
+     * Used by the "Live ECPDS Earth" globe visualisation to geolocate/label Acquisition retrieval samples.
+     *
+     * @return the source host, or {@code null} if not applicable/known
+     */
+    default ecmwf.common.database.Host getSourceHost() {
+        return null;
+    }
+
+    /**
+     * Whether this retrieval is a genuine Acquisition (i.e. from an Acquisition Host), as opposed to e.g. a
+     * Dissemination-side backup/source pull which is not shown as an Acquisition on the "Live ECPDS Earth" globe.
+     *
+     * @return true, if this is an Acquisition retrieval
+     */
+    default boolean isAcquisition() {
+        return false;
+    }
+
+    /**
+     * Gets the total duration, in milliseconds, since this retrieval started.
+     *
+     * @return the duration, or {@code 0} if not applicable/known
+     */
+    default long getDuration() {
+        return 0;
+    }
+
+    /**
+     * Gets the total size, in bytes, of the file being retrieved.
+     *
+     * @return the file size, or {@code -1} if not applicable/known
+     */
+    default long getFileSize() {
+        return -1;
+    }
 }

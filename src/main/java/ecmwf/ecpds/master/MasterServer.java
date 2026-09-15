@@ -4530,10 +4530,12 @@ public final class MasterServer extends ECaccessProvider
             for (final DownloadProgress aProgress : progress) {
                 final var dataFileId = aProgress.getDataFileId();
                 final var root = aProgress.getRoot();
+                final var byteSent = aProgress.getByteSent();
                 final var progressInterface = getProgressInterface(dataFileId);
                 if (progressInterface != null) {
                     // We found it!
-                    progressInterface.update(root, aProgress.getByteSent());
+                    progressInterface.update(root, byteSent);
+                    _offerAcquisitionLiveSample(progressInterface, root, byteSent);
                 } else {
                     // Not found so it should be interrupted on the Mover (e.g. the
                     // retrieval has been interrupted because it was too slow)!
@@ -4546,6 +4548,44 @@ public final class MasterServer extends ECaccessProvider
             return toInterrupt.toArray(new DownloadProgress[toInterrupt.size()]);
         } catch (final Throwable t) {
             throw Format.getRemoteException("MasterServer=" + getRoot(), t);
+        }
+    }
+
+    /**
+     * Feeds an Acquisition retrieval's progress into the {@link LiveTransferRegistry}, for the "Live ECPDS Earth" globe
+     * visualisation, when the given {@link ProgressInterface} is a genuine Acquisition retrieval (see
+     * {@link ProgressInterface#isAcquisition()}) and the registry currently has at least one interested listener (see
+     * {@link LiveTransferRegistry#isEnabled()}). Best-effort: any error is logged and swallowed, since this is purely a
+     * visualisation feed and must never affect the retrieval itself. Uses the negated {@code dataFileId} as the
+     * sample's transfer id, since Acquisition retrieval is tracked per-DataFile (not per-DataTransfer) and this keeps
+     * it from colliding with genuine DataTransfer ids (always positive) used by Dissemination samples in the same
+     * registry.
+     *
+     * @param progressInterface
+     *            the progress interface for the retrieval this update relates to
+     * @param root
+     *            the name of the DataMover performing the retrieval
+     * @param byteSent
+     *            the number of bytes retrieved so far
+     */
+    private void _offerAcquisitionLiveSample(final ProgressInterface progressInterface, final String root,
+            final long byteSent) {
+        if (!progressInterface.isAcquisition() || !LiveTransferRegistry.getInstance().isEnabled()) {
+            return;
+        }
+        try {
+            final var source = progressInterface.getSourceHost();
+            final var duration = progressInterface.getDuration();
+            final var rate = duration > 0 ? (double) byteSent * 8000 / duration : -1;
+            LiveTransferRegistry.getInstance()
+                    .update(new LiveTransferSample[] { new LiveTransferSample(-progressInterface.getDataFileId(), root,
+                            progressInterface.getDestinationName(), source != null ? source.getName() : null,
+                            source != null ? source.getNickname() : null, source != null ? source.getHost() : null,
+                            source != null ? source.getTransferMethodName() : null, progressInterface.getFileSize(),
+                            byteSent, duration, rate, LiveTransferSample.STATUS_ACTIVE,
+                            LiveTransferSample.DIRECTION_ACQUISITION) });
+        } catch (final Throwable t) {
+            _log.debug("Building LiveTransferSample for Acquisition DataFile-{}", progressInterface.getDataFileId(), t);
         }
     }
 
@@ -12992,6 +13032,9 @@ public final class MasterServer extends ECaccessProvider
             /** The source Host which is used for the retrieval. */
             private Host _source = null;
 
+            /** Whether this is a genuine Acquisition retrieval (as opposed to a Dissemination-side source pull). */
+            private boolean _acquisition = false;
+
             /**
              * Used to indicate the interruption of the thread when the transmission takes too long.
              */
@@ -13036,6 +13079,46 @@ public final class MasterServer extends ECaccessProvider
              */
             public String getDestinationName() {
                 return _transfer.getDestinationName();
+            }
+
+            /**
+             * Gets the source Host used for this retrieval, for the "Live ECPDS Earth" globe visualisation.
+             *
+             * @return the source host
+             */
+            @Override
+            public Host getSourceHost() {
+                return _source;
+            }
+
+            /**
+             * Whether this is a genuine Acquisition retrieval, for the "Live ECPDS Earth" globe visualisation.
+             *
+             * @return true, if this is an Acquisition retrieval
+             */
+            @Override
+            public boolean isAcquisition() {
+                return _acquisition;
+            }
+
+            /**
+             * Gets the total duration since this retrieval started, for the "Live ECPDS Earth" globe visualisation.
+             *
+             * @return the duration
+             */
+            @Override
+            public long getDuration() {
+                return System.currentTimeMillis() - _time;
+            }
+
+            /**
+             * Gets the total size of the file being retrieved, for the "Live ECPDS Earth" globe visualisation.
+             *
+             * @return the file size
+             */
+            @Override
+            public long getFileSize() {
+                return _transfer.getDataFile().getSize();
             }
 
             /**
@@ -13098,6 +13181,7 @@ public final class MasterServer extends ECaccessProvider
                     final var dataFileId = dataFile.getId();
                     final var hostForSourceName = dataFile.getHostForAcquisitionName();
                     final var acquisition = isNotEmpty(hostForSourceName);
+                    _acquisition = acquisition;
                     if (acquisition) {
                         _log.debug("Registered by the Acquisition Thread");
                         _source = base.getHost(hostForSourceName);

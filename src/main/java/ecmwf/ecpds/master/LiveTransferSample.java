@@ -53,6 +53,12 @@ public final class LiveTransferSample implements Serializable {
     /** Status: transfer failed/was retried. */
     public static final String STATUS_FAILED = "FAILED";
 
+    /** Direction: data pushed out to a Dissemination Host. */
+    public static final String DIRECTION_DISSEMINATION = "DISSEMINATION";
+
+    /** Direction: data pulled in from an Acquisition Host. */
+    public static final String DIRECTION_ACQUISITION = "ACQUISITION";
+
     /** The data transfer id this sample relates to. */
     private final long transferId;
 
@@ -95,6 +101,14 @@ public final class LiveTransferSample implements Serializable {
     /** One of {@link #STATUS_ACTIVE}, {@link #STATUS_DONE} or {@link #STATUS_FAILED}. */
     private final String status;
 
+    /**
+     * One of {@link #DIRECTION_DISSEMINATION} (data pushed out to a Host) or {@link #DIRECTION_ACQUISITION} (data
+     * pulled in from a Host); defaults to {@link #DIRECTION_DISSEMINATION} when not explicitly set (e.g. samples pushed
+     * by older DataMovers or code paths not yet aware of Acquisition sampling), so the globe UI can keep treating an
+     * absent value the same way it always has.
+     */
+    private final String direction;
+
     /** Wall-clock time (epoch millis) at which the sample was taken. */
     private final long timestamp;
 
@@ -125,6 +139,9 @@ public final class LiveTransferSample implements Serializable {
      *            the rate bits per second
      * @param status
      *            the status
+     * @param direction
+     *            one of {@link #DIRECTION_DISSEMINATION} or {@link #DIRECTION_ACQUISITION}; defaults to
+     *            {@link #DIRECTION_DISSEMINATION} if {@code null}
      */
     @JsonCreator
     public LiveTransferSample(@JsonProperty("transferId") final long transferId,
@@ -135,7 +152,7 @@ public final class LiveTransferSample implements Serializable {
             @JsonProperty("fileSize") final long fileSize, @JsonProperty("byteSent") final long byteSent,
             @JsonProperty("duration") final long duration,
             @JsonProperty("rateBitsPerSecond") final double rateBitsPerSecond,
-            @JsonProperty("status") final String status) {
+            @JsonProperty("status") final String status, @JsonProperty("direction") final String direction) {
         this.transferId = transferId;
         this.moverName = moverName;
         this.destinationName = destinationName;
@@ -148,6 +165,7 @@ public final class LiveTransferSample implements Serializable {
         this.duration = duration;
         this.rateBitsPerSecond = rateBitsPerSecond;
         this.status = status;
+        this.direction = direction != null ? direction : DIRECTION_DISSEMINATION;
         this.timestamp = System.currentTimeMillis();
     }
 
@@ -199,6 +217,10 @@ public final class LiveTransferSample implements Serializable {
         return status;
     }
 
+    public String getDirection() {
+        return direction;
+    }
+
     public long getTimestamp() {
         return timestamp;
     }
@@ -218,6 +240,6 @@ public final class LiveTransferSample implements Serializable {
                 + destinationName + ", hostName=" + hostName + ", hostNickname=" + hostNickname + ", hostAddress="
                 + hostAddress + ", protocol=" + protocol + ", fileSize=" + Format.formatSize(fileSize) + ", byteSent="
                 + Format.formatSize(byteSent) + ", duration=" + Format.formatDuration(duration) + ", status=" + status
-                + "]";
+                + ", direction=" + direction + "]";
     }
 }

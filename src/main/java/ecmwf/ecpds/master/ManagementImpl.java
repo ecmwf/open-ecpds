@@ -3776,6 +3776,14 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      * {@inheritDoc}
      */
     @Override
+    public long getLiveTransferBytes24h(final String direction) throws RemoteException {
+        return LiveTransferRegistry.getInstance().getBytesLast24h(direction);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String[] getActiveProxyHostNames() throws RemoteException {
         return master.getActiveProxyHostNames();
     }

@@ -105,8 +105,14 @@ public class GlobeWebSocket implements WebSocketListener {
     /** Latest known MasterServer hostname/IP used to resolve {@link #originLocation}, refreshed by the poller. */
     private static volatile String originHost;
 
-    /** Latest known rolling-24h transferred-bytes total, refreshed by the poller. */
+    /** Latest known rolling-24h transferred-bytes total (Dissemination + Acquisition), refreshed by the poller. */
     private static volatile long bytesLast24h;
+
+    /** Latest known rolling-24h transferred-bytes total for Dissemination only, refreshed by the poller. */
+    private static volatile long bytesLast24hDissemination;
+
+    /** Latest known rolling-24h transferred-bytes total for Acquisition only, refreshed by the poller. */
+    private static volatile long bytesLast24hAcquisition;
 
     /**
      * Names of every currently active ProxyHost (a Data Mover reachable only through another Data Mover's REST
@@ -264,6 +270,8 @@ public class GlobeWebSocket implements WebSocketListener {
             }
             try {
                 bytesLast24h = mi.getLiveTransferBytes24h();
+                bytesLast24hDissemination = mi.getLiveTransferBytes24h(LiveTransferSample.DIRECTION_DISSEMINATION);
+                bytesLast24hAcquisition = mi.getLiveTransferBytes24h(LiveTransferSample.DIRECTION_ACQUISITION);
             } catch (final Exception e) {
                 LOG.debug("Fetching MasterServer 24h transferred bytes total", e);
             }
@@ -305,6 +313,8 @@ public class GlobeWebSocket implements WebSocketListener {
         final var node = JSON.createObjectNode();
         node.put("type", "snapshot");
         node.put("bytes24h", bytesLast24h);
+        node.put("bytes24hDissemination", bytesLast24hDissemination);
+        node.put("bytes24hAcquisition", bytesLast24hAcquisition);
         // Re-sent on every poll (not just at connect) so a client whose page is already open picks up the
         // MasterServer's origin location as soon as it becomes resolvable, without needing to reconnect.
         addOriginFields(node);
@@ -361,6 +371,7 @@ public class GlobeWebSocket implements WebSocketListener {
         node.put("rateBitsPerSecond", sample.getRateBitsPerSecond());
         node.put("status", sample.getStatus());
         node.put("timestamp", sample.getTimestamp());
+        node.put("direction", sample.getDirection());
         final var location = resolveHost(hostGeoKey(sample));
         if (location != null) {
             node.put("hostLat", location.latitude());

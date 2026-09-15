@@ -4307,7 +4307,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                         ? (double) _transfer.getSent() * 8000 / _transfer.getDuration() : -1;
                 liveStatsRepository.offer(new LiveTransferSample(_transfer.getId(), getRoot(),
                         _transfer.getDestinationName(), _transfer.getHostName(), hostNickname, hostAddress, protocol,
-                        _fileSize, _transfer.getSent(), _transfer.getDuration(), rate, status));
+                        _fileSize, _transfer.getSent(), _transfer.getDuration(), rate, status,
+                        LiveTransferSample.DIRECTION_DISSEMINATION));
             } catch (final Throwable t) {
                 _log.debug("Building LiveTransferSample for DataTransfer-{}", _transfer.getId(), t);
             }

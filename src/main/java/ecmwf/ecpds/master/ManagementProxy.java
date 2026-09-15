@@ -1508,6 +1508,12 @@ final class ManagementProxy implements ManagementInterface {
 
     /** {@inheritDoc} */
     @Override
+    public long getLiveTransferBytes24h(final String direction) throws RemoteException {
+        return managementInterface.getLiveTransferBytes24h(direction);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public String[] getActiveProxyHostNames() throws RemoteException {
         return managementInterface.getActiveProxyHostNames();
     }
