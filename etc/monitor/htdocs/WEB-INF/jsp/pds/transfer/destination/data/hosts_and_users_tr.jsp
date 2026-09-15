@@ -43,6 +43,8 @@
 				<c:if test="${disseminationHostname eq ' ()'}">
 					<c:set var="disseminationHostname" value="" scope="page" />
 				</c:if>
+				<c:set var="disseminationHostBottleneck" value="${disseminationHost.name.maxConnections lt destination.maxConnections}" scope="page" />
+				<c:set var="disseminationHostOverProvisioned" value="${disseminationHost.name.maxConnections gt destination.maxConnections}" scope="page" />
 				<tr>
 					<td>
 						<c:if test="${disseminationHost.name.active}">
@@ -54,6 +56,14 @@
 								title="This Host is NOT Activated (id=${disseminationHost.name.name})"
 								href="/do/transfer/host/${disseminationHost.name.name}"
 								style="text-decoration:line-through;color:var(--bs-secondary-color)">${disseminationHost.name.nickName}</a>${disseminationHostname}
+						</c:if>
+						<c:if test="${disseminationHostBottleneck}">
+							<i class="bi bi-exclamation-triangle-fill text-warning ms-1" style="font-size:0.75rem;cursor:pointer;"
+								title="This host allows at most ${disseminationHost.name.maxConnections} parallel connection(s), lower than the Destination's ${destination.maxConnections}. The effective limit for transfers through this host is the more restrictive of the two: ${disseminationHost.name.maxConnections}."></i>
+						</c:if>
+						<c:if test="${disseminationHostOverProvisioned}">
+							<i class="bi bi-info-circle-fill text-info ms-1" style="font-size:0.75rem;cursor:pointer;"
+								title="This host allows up to ${disseminationHost.name.maxConnections} parallel connection(s), higher than the Destination's ${destination.maxConnections}. The Destination's limit is more restrictive, so the effective limit for transfers through this host is capped at ${destination.maxConnections}; the extra capacity on this host is unused."></i>
 						</c:if>
 					</td>
 					<td>${disseminationHost.value}</td>
