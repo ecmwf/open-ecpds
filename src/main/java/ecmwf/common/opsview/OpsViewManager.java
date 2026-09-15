@@ -451,13 +451,36 @@ public final class OpsViewManager {
                     }
                     json = (ObjectNode) response.getEntity(JsonNode.class);
                 }
-                final var list = (ArrayNode) json.path("list");
+                final var listNode = json.path("list");
+                if (!listNode.isArray()) {
+                    // Some Opsview versions omit "list" entirely (rather than returning an empty array) when the
+                    // filter matches no Host at all - most commonly because the Host referenced by filterName (e.g.
+                    // "ECPDS_Dissemination") does not exist yet on this particular Opsview server. Fail with a clear,
+                    // actionable message (including the raw response) instead of an uninformative ClassCastException.
+                    _log.warn(
+                            "Unexpected Opsview response for filter '{}' (no 'list' array found - the Host might "
+                                    + "not exist on this Opsview server): {}",
+                            filterName, OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(json));
+                    throw new IOException(
+                            "No 'list' found in Opsview response for filter '" + filterName + "' (Host missing?)");
+                }
+                final var list = (ArrayNode) listNode;
                 ArrayNode hostattributes = null;
                 final List<String> fromClient = new ArrayList<>(Arrays.asList(destinations));
                 final List<String> fromServer = new ArrayList<>();
                 for (final JsonNode host : list) {
                     if (host != null && filterName.equals(host.path("name").asText())) {
-                        hostattributes = (ArrayNode) host.path("hostattributes");
+                        final var hostattributesNode = host.path("hostattributes");
+                        if (!hostattributesNode.isArray()) {
+                            _log.warn(
+                                    "Unexpected Opsview response for filter '{}' (no 'hostattributes' array found "
+                                            + "for the matching Host): {}",
+                                    filterName,
+                                    OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(host));
+                            throw new IOException(
+                                    "No 'hostattributes' found in Opsview response for filter '" + filterName + "'");
+                        }
+                        hostattributes = (ArrayNode) hostattributesNode;
                         for (final JsonNode d : hostattributes) {
                             if (d != null) {
                                 fromServer.add(d.path("value").asText());
