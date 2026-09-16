@@ -122,6 +122,9 @@ get-sa: ## Copy RPMs, SQL, and certs into standalone build context
 		printf "$(RED)** RPMs not staged — run 'make get-rpms' first **$(RESET)\n" && exit 1; \
 	fi
 	mkdir -p ecpds/standalone/rpms ecpds/standalone/etc/mover ecpds/standalone/etc/monitor
+	rm -f ecpds/standalone/rpms/ecpds-common-*.rpm ecpds/standalone/rpms/ecpds-master-*.rpm \
+		ecpds/standalone/rpms/ecpds-mover-*.rpm ecpds/standalone/rpms/ecpds-monitor-*.rpm \
+		ecpds/standalone/rpms/ecpds-tools-*.rpm
 	cp -f ecpds/mover/rpms/ecpds-common-*.noarch.rpm ecpds/standalone/rpms/
 	cp -f ecpds/master/rpms/ecpds-master-*.noarch.rpm ecpds/standalone/rpms/
 	cp -f ecpds/mover/rpms/ecpds-mover-*.rpm ecpds/standalone/rpms/
@@ -134,6 +137,7 @@ get-cli: ## Copy ecpds-tools RPM into CLI image build context
 		printf "$(RED)** RPMs not staged — run 'make get-rpms' first **$(RESET)\n" && exit 1; \
 	fi
 	mkdir -p ecpds/cli/rpms
+	rm -f ecpds/cli/rpms/ecpds-tools-*.rpm
 	cp -f ecpds/tools/rpms/ecpds-tools-*.rpm ecpds/cli/rpms/
 
 build-sa: .https-access get-sa ## Build the standalone all-in-one image
