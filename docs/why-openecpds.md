@@ -176,6 +176,10 @@ operators can inspect transfer state,
 manage queues,
 review event histories,
 and work with concepts that map directly to how a distributed transfer estate is run.
+A real-time 3D globe view, **Live Earth**, visualises every transfer currently in progress —
+aggregated per destination Host, colour-coded by status, and broken down by Acquisition versus
+Dissemination — giving operators an immediate, at-a-glance picture of global activity that a
+table-only dashboard cannot provide.
 
 The documentation also reflects this operational focus,
 with dedicated sections for transfer statistics,
@@ -185,6 +189,7 @@ and physical infrastructure examples.
 That matters when the evaluation question is not only “can it move files?” but also “can we
 operate this reliably every day?”
 See [Monitoring](monitoring/transfer-statistics.md),
+[Live Earth](monitor-ui/monitoring.md#live-earth),
 [Event Logging](event-logging/overview.md),
 and [Global Reach](global-reach.md).
 ### Data Portal: incoming and outgoing in one platform
