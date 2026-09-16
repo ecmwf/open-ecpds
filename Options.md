@@ -742,6 +742,15 @@ Allow forcing a user name in the listing output. Default user name is the login 
 ### gcs.mkBucket
 Allow creating missing buckets when pushing data. This requires specific permissions.
 
+### gcs.parallelUpload
+Enables Google's "parallel composite upload": the object is split into parts uploaded concurrently as temporary objects, then server-side composed into the final object. Disabled by default; mainly beneficial for large files on high-bandwidth links. Composite objects only expose a CRC32C checksum (no MD5).
+
+### gcs.parallelUploadNumThreads
+Number of threads used to upload parts concurrently when "gcs.parallelUpload" is enabled. If not specified, the underlying library manages its own cached thread pool.
+
+### gcs.parallelUploadPartSize
+Size of each part uploaded concurrently when "gcs.parallelUpload" is enabled. If not specified, the underlying library's default (16MB) is used.
+
 ### gcs.port
 Allow specifying the port number of the remote GCS endpoint to connect to.
 
@@ -1027,7 +1036,7 @@ Enable the enforcement of standby mode for a file pushed by a user via the data 
 When a user uploads a file through the data portal, enabling this feature forces the use of incoming.tmpPattern to determine whether the file is temporary. If flagged as temporary, the file remains in standby mode until the user renames it to its final name.
 
 ### incoming.tmpPattern
-When incoming.tmpDetect is enabled, this feature allows specifying a regex pattern to identify temporary files. By default, a file is considered temporary if its filename (excluding the path) starts with a dot and/or ends with the .tmp extension (case-insensitive).
+When incoming.tmpDetect is enabled, this feature allows specifying a regex pattern to identify temporary files. By default, a file is considered temporary if its filename (excluding the path) starts with a dot and/or ends with the .tmp or .temp extension (case-insensitive).
 
 ### incoming.uploadPeriod
 Define the rolling time window for the upload byte quota set by "incoming.maxUploadBytes". If not set, the quota is disabled.
