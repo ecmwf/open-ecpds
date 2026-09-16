@@ -36,6 +36,13 @@ The base map imagery is the low-resolution "Natural Earth II" imagery bundled wi
 globeImageryCacheDir=/var/lib/ecpds/monitor/globe-imagery
 ```
 
+Building the higher-resolution tile pyramid briefly needs a few hundred MB of heap (to hold the full source raster and the largest resized zoom level at once), on top of whatever the Monitor plugin otherwise uses. To avoid this optional enhancement ever destabilising a memory-constrained deployment (e.g. the standalone all-in-one image's default 512MB heap per service), it is automatically skipped — falling back to the bundled low-resolution imagery, with a one-off log message — if the JVM's max heap is below a configurable threshold (1024MB by default), set via `globeImageryMinHeapMB` in the same `[Server]` section:
+
+```ini
+[Server]
+globeImageryMinHeapMB=1024
+```
+
 Country and major city names can similarly be shown on the globe, using the same lazy/background/no-account approach: the Monitor plugin downloads Natural Earth's small (public-domain) country boundary and populated-place datasets on first use and converts them into a compact labels file, cached on disk (a few tens of KB). The default whole-globe view shows no names at all to stay uncluttered; country names join in first as the view zooms in a little, then city names join in even later as it zooms in further still (largest cities first, progressively smaller/less populated ones as it gets closer) - the same progressive-reveal technique used by most web map providers, shown as bold, uppercase, amber-bordered pills for countries versus plainer grey pills for cities so the two kinds of labels are easy to tell apart at a glance. Like the imagery layer, this never blocks the page — labels simply appear once (if ever) the background download finishes — and retries indefinitely every 15 minutes if it fails. They are hidden by default; a small tag icon next to the fullscreen button opens a dropdown with independent "Country names" / "Town names" switches, so each user can show either, both, or neither, remembered separately on their browser between visits. Its cache location can likewise be pointed at a persistent path with a `globeLabelsCacheDir` entry in the same `[Server]` section:
 
 ```ini

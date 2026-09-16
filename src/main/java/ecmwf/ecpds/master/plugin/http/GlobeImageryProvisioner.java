@@ -103,6 +103,17 @@ final class GlobeImageryProvisioner {
     /** Marker file written (last) once a cache directory is fully/successfully populated. */
     private static final String COMPLETE_MARKER = ".complete";
 
+    /**
+     * Minimum JVM max heap (bytes) required before attempting provisioning. Tiling holds the full source raster
+     * (~10800x5400 {@code TYPE_INT_RGB}, ~233MB) and, concurrently, the largest resized zoom-level image (level
+     * {@value #MAX_ZOOM}, ~134MB) at the same time, on top of whatever the rest of the Monitor plugin (Jetty,
+     * WebSockets, RMI, etc.) already uses. On a small heap (e.g. the 512MB default used by the standalone
+     * all-in-one image) this reliably triggers an {@link OutOfMemoryError} which, combined with
+     * {@code -XX:+CrashOnOutOfMemoryError}, brings down the whole Monitor JVM in a crash loop - unacceptable for a
+     * purely optional, best-effort enhancement. Configurable via {@code [Server] globeImageryMinHeapMB}.
+     */
+    private static final long MIN_HEAP_BYTES = Cnf.at("Server", "globeImageryMinHeapMB", 1024L) * 1024L * 1024L;
+
     /** Ensures the background provisioning loop is started at most once per JVM. */
     private static final AtomicBoolean STARTED = new AtomicBoolean(false);
 
@@ -136,10 +147,21 @@ final class GlobeImageryProvisioner {
     /**
      * Starts the background provisioning loop if it is not already running and the imagery is not already available.
      * Safe to call repeatedly (e.g. once per "Live Earth" WebSocket connection) - only the very first call actually
-     * spawns the background thread.
+     * spawns the background thread. No-op (with a one-off log message) if the JVM's max heap is below
+     * {@link #MIN_HEAP_BYTES}, since the bundled low-resolution imagery is always used as a fallback anyway.
      */
     static void ensureStarted() {
         if (isReady() || !STARTED.compareAndSet(false, true)) {
+            return;
+        }
+        final var maxHeap = Runtime.getRuntime().maxMemory();
+        if (maxHeap < MIN_HEAP_BYTES) {
+            LOG.info(
+                    "Skipping higher-resolution globe imagery provisioning: JVM max heap ({}MB) is below the "
+                            + "required minimum ({}MB); the bundled low-resolution imagery will be used instead. "
+                            + "Increase the heap (e.g. ALLOCATED_MEMORY/MAX_MEMORY) or lower "
+                            + "[Server] globeImageryMinHeapMB to enable it.",
+                    maxHeap / (1024 * 1024), MIN_HEAP_BYTES / (1024 * 1024));
             return;
         }
         final var worker = new Thread(GlobeImageryProvisioner::_runLoop, "globe-imagery-provisioner");
