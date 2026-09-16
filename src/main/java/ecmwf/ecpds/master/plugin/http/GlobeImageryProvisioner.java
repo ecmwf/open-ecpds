@@ -107,8 +107,8 @@ final class GlobeImageryProvisioner {
      * Minimum JVM max heap (bytes) required before attempting provisioning. Tiling holds the full source raster
      * (~10800x5400 {@code TYPE_INT_RGB}, ~233MB) and, concurrently, the largest resized zoom-level image (level
      * {@value #MAX_ZOOM}, ~134MB) at the same time, on top of whatever the rest of the Monitor plugin (Jetty,
-     * WebSockets, RMI, etc.) already uses. On a small heap (e.g. the 512MB default used by the standalone
-     * all-in-one image) this reliably triggers an {@link OutOfMemoryError} which, combined with
+     * WebSockets, RMI, etc.) already uses. On a small heap (e.g. the 512MB default used by the standalone all-in-one
+     * image) this reliably triggers an {@link OutOfMemoryError} which, combined with
      * {@code -XX:+CrashOnOutOfMemoryError}, brings down the whole Monitor JVM in a crash loop - unacceptable for a
      * purely optional, best-effort enhancement. Configurable via {@code [Server] globeImageryMinHeapMB}.
      */
