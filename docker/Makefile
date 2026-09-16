@@ -90,8 +90,10 @@ get-rpms: ## Get RPMs from the source RPM directories
 	@$(MAKE) .get-rpm app=monitor rpm=common arch=noarch
 	@$(MAKE) .get-rpm app=tools rpm=tools arch=$(shell uname -m)
 
-.get-rpm: # Create the target directory and get the specified RPM (args: app, rpm, arch)
-	mkdir -p ecpds/$(app)/rpms && cp -f ../ecpds-$(rpm)/target/rpm/ecpds-$(rpm)/RPMS/$(arch)/ecpds-$(rpm)-$(TAG).$(arch).rpm ecpds/$(app)/rpms/.
+.get-rpm: # Create the target directory, remove any stale RPM of the same name, and get the specified RPM (args: app, rpm, arch)
+	mkdir -p ecpds/$(app)/rpms
+	rm -f ecpds/$(app)/rpms/ecpds-$(rpm)-*.rpm
+	cp -f ../ecpds-$(rpm)/target/rpm/ecpds-$(rpm)/RPMS/$(arch)/ecpds-$(rpm)-$(TAG).$(arch).rpm ecpds/$(app)/rpms/.
 
 get-licenses: ## Get the licenses for the java image
 	@if [ ! -d $(LICENSES_DIR) ]; then \
