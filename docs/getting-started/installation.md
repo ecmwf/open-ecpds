@@ -28,6 +28,22 @@ make dev
 
 If successful, you should be logged into the development container.
 
+By default, the container targets your host's native architecture. To build/run a
+second, side-by-side dev container for another architecture (e.g. for multi-arch
+image testing), pass `ARCH`:
+
+```bash
+make dev ARCH=arm64   # or ARCH=amd64
+```
+
+Each `ARCH` gets its own image/container name (`node-<project>-dev-<arch>` /
+`running-<project>-dev-<arch>`), so both can coexist and run at the same time.
+The docs-preview port is also kept separate automatically: the native-arch
+container publishes it on the usual `8000`, while any other `ARCH` is offset to
+`8001` (override with `HOST_DOCS_PORT=...` if you need a different port).
+Cross-arch builds/runs require QEMU/binfmt emulation (or Docker Desktop's built-in
+support) when `ARCH` differs from the host's native architecture.
+
 ## Build and configure OpenECPDS
 
 Once inside the development container, compile the Java classes, package the RPM files,

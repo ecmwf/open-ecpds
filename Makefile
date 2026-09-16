@@ -17,13 +17,26 @@ WORKSPACE := $(realpath ..)
 DOCKER_HOST_WORKSPACE ?= $(realpath .)
 DOCKER_HOST_OS ?= $(shell uname -s)
 DOCKER_GUEST_OS := $(shell uname -s)
-IMAGE_NAME := node-$(PROJECT_NAME)-dev
-CONTAINER_NAME := running-$(PROJECT_NAME)-dev
+# Target arch for the dev container (defaults to the host's native arch).
+# Override to run a second, side-by-side dev container for another arch, e.g.:
+#   make dev ARCH=arm64
+# Requires QEMU/binfmt emulation (or Docker Desktop's built-in support) when
+# ARCH differs from the host's native arch.
+NATIVE_ARCH := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+ARCH ?= $(NATIVE_ARCH)
+IMAGE_NAME := node-$(PROJECT_NAME)-dev-$(ARCH)
+CONTAINER_NAME := running-$(PROJECT_NAME)-dev-$(ARCH)
 WORKDIR := /workspaces/$(PROJECT_NAME)
 DB_DATA_DIR := run/var/lib/ecpds/database
 AI_DATA_DIR := run/var/lib/ecpds/ia
 DOCS_HOST ?= 0.0.0.0
 DOCS_PORT ?= 8000
+# Host-side port published for the docs preview. Kept at DOCS_PORT for the
+# native-arch container; offset by one for any other ARCH so a second,
+# alternative-arch dev container can run at the same time without a port
+# clash. Override explicitly (e.g. HOST_DOCS_PORT=8010) if you need something
+# else (for instance, running a 3rd container for the same non-native arch).
+HOST_DOCS_PORT ?= $(shell if [ "$(ARCH)" = "$(NATIVE_ARCH)" ]; then echo $(DOCS_PORT); else echo $$(($(DOCS_PORT) + 1)); fi)
 MONITOR_UI_HOST ?= ecpds-mover
 MONITOR_UI_PORT ?= 8443
 JAVADOC_SRC := ecpds-core/target/site/apidocs
@@ -119,16 +132,19 @@ dev-container-exists = \
         clean info
 
 # ─── Development container ────────────────────────────────────────────────────
-dev: .dev-cntnr .run login ## Build, run and login into the development container (*)
+# ARCH selects the target arch (defaults to native; override e.g. ARCH=arm64 to
+# build/run a second, side-by-side dev container for another arch).
+dev: .dev-cntnr .run login ## Build, run and login into the development container (*) [ARCH=amd64|arm64]
 
-.dev-cntnr: ## Build the development container (*)
+.dev-cntnr: ## Build the development container (*) [ARCH=amd64|arm64]
 	@$(call is-dev-container,true,outside)
 	@$(call dev-container-exists)
-	cd .devcontainer && $(DOCKER) build -f Dockerfile -t $(IMAGE_NAME) .
+	cd .devcontainer && $(DOCKER) build --platform linux/$(ARCH) -f Dockerfile -t $(IMAGE_NAME) .
 
-.run: ## Run the development container (*)
+.run: ## Run the development container (*) [ARCH=amd64|arm64]
 	@$(call is-dev-container,true,outside)
 	@$(DOCKER) run -d \
+		--platform linux/$(ARCH) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v $(HOME)/.kube:/root/.kube \
 		-v $(HOME)/.copilot:/root/.copilot \
@@ -138,7 +154,7 @@ dev: .dev-cntnr .run login ## Build, run and login into the development containe
 		-e DOCKER_HOST_OS=$(DOCKER_HOST_OS) \
 		--name $(CONTAINER_NAME) \
 		--add-host=ecpds-mover:host-gateway \
-		-p $(DOCS_PORT):$(DOCS_PORT) \
+		-p $(HOST_DOCS_PORT):$(DOCS_PORT) \
 		$(IMAGE_NAME) \
 		sleep infinity
 
@@ -152,7 +168,7 @@ login: ## Log in to the running development container (*) with GitHub Copilot to
 		$(DOCKER) exec -it -w $(WORKDIR) $(CONTAINER_NAME) /bin/bash; \
 	fi
 
-rm-dev: ## Stop the development container, then remove both its container and image. (*)
+rm-dev: ## Stop the development container, then remove both its container and image. (*) [ARCH=amd64|arm64]
 	@$(call is-dev-container,true,outside)
 	@$(call check-dev-container)
 	@$(DOCKER) stop $(CONTAINER_NAME) || true
@@ -395,6 +411,7 @@ info: ## Output the configuration
 	@printf "  %-24s %s\n" "Workspace:"  "$(DOCKER_HOST_WORKSPACE)"
 	@printf "\n"
 	@printf "$(GREEN)── Development container ────────────────────$(RESET)\n"
+	@printf "  %-24s %s\n" "Arch:"       "$(ARCH)"
 	@printf "  %-24s %s\n" "Image:"      "$(IMAGE_NAME)"
 	@printf "  %-24s %s\n" "Container:"  "$(CONTAINER_NAME)"
 	@if [ -n "$(shell $(DOCKER) ps -q -f name=$(CONTAINER_NAME) 2>/dev/null)" ]; then \
@@ -404,7 +421,7 @@ info: ## Output the configuration
 	else \
 		printf "  %-24s %s\n" "Status:" "not created"; \
 	fi
-	@printf "  %-24s %s\n" "Docs port:"  "$(DOCS_PORT)"
+	@printf "  %-24s %s\n" "Docs port:"  "$(HOST_DOCS_PORT) -> $(DOCS_PORT) (container)"
 	@printf "\n"
 	@printf "$(GREEN)── Docker / container engine ────────────────$(RESET)\n"
 	@printf "  %-24s %s\n" "Command:"    "$(DOCKER)"
