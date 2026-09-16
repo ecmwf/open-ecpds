@@ -42,6 +42,16 @@ DOCKER_VERSION := $(shell $(DOCKER) --version)
 # Map native uname -m to Docker arch suffix (x86_64→amd64, aarch64→arm64)
 NATIVE_ARCH := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
 
+# Target arch for the *application* images built by `.build` (mover, master,
+# monitor, standalone, cli, java, etc). Defaults to NATIVE_ARCH (i.e. whatever
+# this container/host actually is under `uname -m`, which is what the staged
+# RPMs were built for). This is passed as ARCH from the root Makefile when
+# invoked from inside an alternative-arch dev container (ARCH=amd64/arm64),
+# since `docker build` here talks to the *host's* Docker daemon over the
+# mounted socket — it does NOT inherit the dev container's own emulated
+# platform, so it must be told explicitly via --platform.
+ARCH ?= $(NATIVE_ARCH)
+
 # Check HTTPS access (required to build images)
 HTTPS_ACCESS := $(shell curl -s --max-time 2 -I https://google.com | sed 's/^[^ ]*  *\([0-9]\).*/\1/; 1q')
 
@@ -132,6 +142,7 @@ build-cli: .https-access get-cli ## Build the ecpds CLI image
 
 .build: # Build the image (args: app, tag)
 	$(DOCKER) build $(BUILD_OPTS) \
+		--platform linux/$(ARCH) \
 		--build-arg SDKMAN_JDK=$(SDKMAN_JDK) \
 		--build-arg OLLAMA_FAST_MODEL_NAME=$(OLLAMA_FAST_MODEL_NAME) \
 		--build-arg OLLAMA_DEEP_MODEL_NAME=$(OLLAMA_DEEP_MODEL_NAME) \
@@ -220,6 +231,7 @@ cli-manifest: .checkcr ## Combine arch-specific CLI images into a multi-arch man
 
 .push-native: # Build and push native-arch image with arch suffix tag to CR (args: app, tag)
 	$(DOCKER) build $(BUILD_OPTS) \
+		--platform linux/$(ARCH) \
 		--provenance=false \
 		--build-arg SDKMAN_JDK=$(SDKMAN_JDK) \
 		--build-arg OLLAMA_FAST_MODEL_NAME=$(OLLAMA_FAST_MODEL_NAME) \
