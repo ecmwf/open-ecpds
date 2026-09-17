@@ -508,6 +508,9 @@ public final class AmazonS3Module extends TransferModule {
         _log.debug("Put file {} ({})", name, posn);
         setStatus("PUT");
         final var bnk = getBucketNameAndKey(name);
+        // Record the actual remote key (including the configured s3.prefix, if any) so that the
+        // Transfer History reflects where the file was really written, not just the local target name!
+        setAttribute("remote.fileName", bnk[1]);
         if (posn > 0) {
             throw new IOException("Resume not supported by the " + getSetup().getModuleName() + " module");
         }
@@ -576,6 +579,9 @@ public final class AmazonS3Module extends TransferModule {
         _log.debug("Put file {} ({})", name, posn);
         setStatus("PUT");
         final var bnk = getBucketNameAndKey(name);
+        // Record the actual remote key (including the configured s3.prefix, if any) so that the
+        // Transfer History reflects where the file was really written, not just the local target name!
+        setAttribute("remote.fileName", bnk[1]);
         if (posn > 0) {
             throw new IOException("Resume not supported by the " + getSetup().getModuleName() + " module");
         }
@@ -604,6 +610,9 @@ public final class AmazonS3Module extends TransferModule {
             throw new IOException("Resume not supported by the " + getSetup().getModuleName() + " module");
         }
         final var bnk = getBucketNameAndKey(name);
+        // Record the actual remote key (including the configured s3.prefix, if any) so that the
+        // Transfer History reflects where the file was really read from, not just the local target name!
+        setAttribute("remote.fileName", bnk[1]);
         try {
             s3input = s3.getS3Client().getObject(GetObjectRequest.builder().bucket(bnk[0]).key(bnk[1]).build());
             return s3input;

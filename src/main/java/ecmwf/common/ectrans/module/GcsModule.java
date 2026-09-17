@@ -539,6 +539,9 @@ public final class GcsModule extends TransferModule {
             throw new IOException("Resume not supported by the " + getSetup().getModuleName() + " module");
         }
         final var bucketNameAndObject = getBucketNameAndObjectName(name);
+        // Record the actual remote object name (including the configured gcs.prefix, if any) so that the
+        // Transfer History reflects where the file was really written, not just the local target name!
+        setAttribute("remote.fileName", bucketNameAndObject[1]);
         try {
             final var objectInfo = BlobInfo.newBuilder(BlobId.of(bucketNameAndObject[0], bucketNameAndObject[1]))
                     .build();
@@ -593,6 +596,9 @@ public final class GcsModule extends TransferModule {
         }
         _log.debug("Using GCS put");
         final var bucketNameAndObject = getBucketNameAndObjectName(name);
+        // Record the actual remote object name (including the configured gcs.prefix, if any) so that the
+        // Transfer History reflects where the file was really written, not just the local target name!
+        setAttribute("remote.fileName", bucketNameAndObject[1]);
         try {
             final var objectInfo = BlobInfo.newBuilder(BlobId.of(bucketNameAndObject[0], bucketNameAndObject[1]))
                     .build();
@@ -646,6 +652,9 @@ public final class GcsModule extends TransferModule {
         }
         _log.debug("Using GCS get");
         final var bucketNameAndObject = getBucketNameAndObjectName(name);
+        // Record the actual remote object name (including the configured gcs.prefix, if any) so that the
+        // Transfer History reflects where the file was really read from, not just the local target name!
+        setAttribute("remote.fileName", bucketNameAndObject[1]);
         try {
             gcsInput = Channels.newInputStream(gcs.reader(bucketNameAndObject[0], bucketNameAndObject[1]));
             return gcsInput;
