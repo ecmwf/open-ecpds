@@ -113,6 +113,12 @@ curl -k -u test:test2021 -H "Accept: application/json" \
   https://localhost:7443/ecpds/data/list/hourly_aq
 ```
 
+Example output (trimmed):
+
+```json
+[{"name":"HourlyData_2026091600.dat","size":758823,"time":"2026-09-16T14:50:54.098Z","directory":false},{"name":"HourlyData_2026091601.dat","size":757791,"time":"2026-09-16T14:50:55.191Z","directory":false}, ... ,{"name":"HourlyData_2026091705.dat","size":746933,"time":"2026-09-17T08:15:20.546Z","directory":false}]
+```
+
 ### SFTP
 
 ```bash
