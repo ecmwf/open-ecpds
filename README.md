@@ -64,7 +64,7 @@ The database initialises automatically on first start. The `/data` volume persis
 
 ### Populate some data
 
-The standalone image ships with a few example destinations (e.g. `hourly_aq`), but they start out empty and switched off. Before testing the protocols below, log into the Monitoring UI and start one or two of them so there is some data to experiment with:
+The standalone image ships with a few example destinations (e.g. `hourly_aq`), but they start out empty and switched off. Before testing the protocols below, log into the Monitoring UI and start one or two of them so there is some data to experiment with. This requires the container to have outbound Internet access, as these destinations acquire data from external providers:
 
 1. Open `https://localhost:8443` and log in as `admin` / `admin2021`.
 2. On the main page, in the **Transmission** section, select **Destinations**.
