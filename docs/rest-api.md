@@ -246,6 +246,14 @@ Assigns one or more categories to an incoming user. The request body is a JSON a
 { "status": "ok" }
 ```
 
+!!! warning "Activation required before associating a destination"
+    A newly created incoming user (via `incoming/user/add` or `incoming/user/add2`) is **inactive** by
+    default. Calling `incoming/association/add` on an inactive user fails with
+    `User <id> not found/active`. To activate the user, call `incoming/category/add` with a category
+    name that contains `ECPDS` (case-insensitive), e.g. `["ECPDS"]` — this is a special marker, not an
+    actual category that needs to exist in the `CATEGORY` table. Omitting an `ECPDS` category (or
+    calling `incoming/category/add` with a list that doesn't contain one) deactivates the user again.
+
 ---
 
 #### `POST /v1/incoming/association/add`

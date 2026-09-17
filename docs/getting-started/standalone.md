@@ -241,6 +241,16 @@ curl -k -u api:api2021 -X POST \
 ```
 
 ```bash
+# Activate the user — a new incoming user is inactive by default, and
+# incoming/association/add fails with "User newuser not found/active" until
+# it is assigned a category containing "ECPDS" (a special marker, not an
+# actual category from the CATEGORY table)
+curl -k -u api:api2021 -X POST -H "Content-Type: application/json" \
+  -d '["ECPDS"]' \
+  "https://localhost:8443/ecpds/v1/incoming/category/add?id=newuser"
+```
+
+```bash
 # Associate a user with a destination
 curl -k -u api:api2021 -X POST \
   "https://localhost:8443/ecpds/v1/incoming/association/add?id=newuser&destination=hourly_aq"
