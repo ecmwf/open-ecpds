@@ -104,13 +104,7 @@ curl -k -u test:test2021 -H "Accept: application/json" \
 Example output:
 
 ```json
-[
-  {
-    "name": "hourly_aq",
-    "comment": "Hourly Air Quality data",
-    "userStatus": "ACTIVE"
-  }
-]
+[{"name":"efas_iconeu_opendata","size":null,"time":"2025-09-29T13:56:23.598Z","directory":true},{"name":"hourly_aq","size":null,"time":"2025-09-29T14:02:53.465Z","directory":true},{"name":"wis2_sbo","size":null,"time":"2025-09-29T13:58:05.020Z","directory":true}]
 ```
 
 ```bash
