@@ -91,8 +91,11 @@ rclone lsd :s3: \
   --s3-endpoint=https://localhost:7443/s3 \
   --s3-access-key-id=test \
   --s3-secret-access-key=test2021 \
+  --s3-v2-auth \
   --no-check-certificate
 ```
+
+> **Note:** `--s3-v2-auth` forces the older AWS V2 signature scheme. Some rclone/AWS SDK versions have V4-signing quirks that don't match this server's implementation, causing a `SignatureDoesNotMatch` error; V2 auth is a reliable workaround.
 
 **WebDAV** — using [curl](https://curl.se/):
 ```bash
