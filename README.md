@@ -62,6 +62,17 @@ The database initialises automatically on first start. The `/data` volume persis
 
 > **Note on FTP:** OpenECPDS fully supports FTP in production deployments. However, FTP passive mode (PASV) is not compatible with Docker port mapping — the server advertises its internal container address for data connections, which external clients cannot reach. For that reason, FTP is disabled in this standalone image. Use SFTP (port 7022) as a drop-in alternative for file transfers in Docker.
 
+### Populate some data
+
+The standalone image ships with a few example destinations (e.g. `hourly_aq`), but they start out empty and switched off. Before testing the protocols below, log into the Monitoring UI and start one or two of them so there is some data to experiment with:
+
+1. Open `https://localhost:8443` and log in as `admin` / `admin2021`.
+2. On the main page, in the **Transmission** section, select **Destinations**.
+3. Click a destination's name (e.g. `hourly_aq`) in the table to open its **Data** page.
+4. Click the green **Start Destination** (▶) button above the transfers table.
+
+Once started, the destination retrieves files from its source host and makes them available through the Data Portal, so the commands below have something to list and download.
+
 ### Testing the protocols
 
 All examples below use the pre-configured `test / test2021` account. The container uses a self-signed certificate — pass the appropriate insecure/skip-verify flag for each tool.

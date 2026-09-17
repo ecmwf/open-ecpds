@@ -71,6 +71,20 @@ everything across restarts. Wait about 30 seconds for all services to become ava
     for data connections, which external clients cannot reach. Use SFTP (port 7022) as a
     drop-in alternative.
 
+## Populate some data
+
+The standalone image ships with a few example destinations (e.g. `hourly_aq`), but they
+start out empty and switched off. Before trying the protocols below, log into the
+Monitoring UI and start one or two of them so there is some data to experiment with:
+
+1. Open `https://localhost:8443` and log in as `admin` / `admin2021`.
+2. On the main page, in the **Transmission** section, select **Destinations**.
+3. Click a destination's name (e.g. `hourly_aq`) in the table to open its **Data** page.
+4. Click the green **Start Destination** (▶) button above the transfers table.
+
+Once started, the destination retrieves files from its source host and makes them
+available through the Data Portal, so the commands below have something to list and download.
+
 ## Try the protocols
 
 All examples use the pre-configured `test / test2021` account.
