@@ -32,6 +32,7 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Date;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -161,7 +162,7 @@ public class GetValidateTransferListJsonAction extends PDSAction {
             row.add(buildSizeHtml(dt));
             row.add(buildStatusHtml(dt, memberState));
             row.add(String.valueOf(dt.getPriority()));
-            row.add(buildActionsHtml(dt, hasActiveDissHosts));
+            row.add(buildActionsHtml(dt, hasActiveDissHosts, memberState));
             row.add(buildValidateSelectHtml(dt, safeDest));
         }
         try {
@@ -259,6 +260,27 @@ public class GetValidateTransferListJsonAction extends PDSAction {
             return escapeHtml(Format.formatShortSize(dt.getSize()));
         } catch (final Exception _) {
             return "";
+        }
+    }
+
+    /**
+     * Whether this transfer's content must be hidden/blocked from a restricted (member state) user because its
+     * scheduled dissemination time has not yet passed. Mirrors the "Planned" status disguise applied in
+     * {@code StatusFactory.getDataTransferStatusName(boolean, DataTransfer, String)}: a transfer sitting in WAIT status
+     * is embargoed for a restricted user until its scheduled time is reached, even though the file itself is already
+     * available on the mover.
+     */
+    private static boolean isEmbargoedForRestrictedUser(final DataTransfer dt, final boolean memberState) {
+        if (!memberState) {
+            return false;
+        }
+        try {
+            final var scheduledTime = dt.getScheduledTime();
+            return StatusFactory.WAIT.equals(dt.getStatus()) && scheduledTime != null
+                    && scheduledTime.after(new Date());
+        } catch (final Exception e) {
+            // Fail closed: if we can't determine the schedule, don't expose the download.
+            return true;
         }
     }
 
@@ -471,7 +493,8 @@ public class GetValidateTransferListJsonAction extends PDSAction {
         }
     }
 
-    private static String buildActionsHtml(final DataTransfer dt, final boolean hasActiveDissHosts) {
+    private static String buildActionsHtml(final DataTransfer dt, final boolean hasActiveDissHosts,
+            final boolean memberState) {
         final var id = escapeHtml(dt.getId());
         if (dt.getDeleted()) {
             return "<span class=\"text-muted fst-italic\" title=\"Data Transfer deleted\">[deleted]</span>";
@@ -485,7 +508,7 @@ public class GetValidateTransferListJsonAction extends PDSAction {
         }
         final var sb = new StringBuilder();
         sb.append("<span class=\"d-flex gap-1 align-items-center\">");
-        if (dt.getCanBeDownloaded()) {
+        if (dt.getCanBeDownloaded() && !isEmbargoedForRestrictedUser(dt, memberState)) {
             sb.append("<a href=\"javascript:transferChange('download','").append(id).append("')\" title=\"Download ")
                     .append(escapeHtml(dt.getTarget())).append("\">").append("<i class=\"bi bi-download\"></i></a>");
         }

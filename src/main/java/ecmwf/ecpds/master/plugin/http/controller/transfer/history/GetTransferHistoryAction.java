@@ -88,13 +88,21 @@ public class GetTransferHistoryAction extends PDSAction {
             final var mode = request.getParameter("mode");
             // Initialize the cursor for the database search
             final var cursor = Util.getDataBaseCursor("history", 25, 1, true, request);
+            // A restricted (member state) user must never see history events that occurred before the transfer's
+            // scheduled time, even though they have access to this destination-level history page.
+            boolean memberState = false;
+            try {
+                memberState = !user.hasAccess(getResource(request, "nonmemberstate.basepath"));
+            } catch (final Exception _) {
+            }
+            final var afterScheduleTime = memberState;
             final Collection<TransferHistory> historyItems;
             try {
                 historyItems = "productDate".equals(mode)
                         ? TransferHistoryHome.findByDestinationNameAndProductDate(user, destinationName,
-                                getISOFormat().parse(date), cursor)
+                                getISOFormat().parse(date), afterScheduleTime, cursor)
                         : TransferHistoryHome.findByDestinationNameAndHistoryDate(user, destinationName,
-                                getISOFormat().parse(date), cursor);
+                                getISOFormat().parse(date), afterScheduleTime, cursor);
             } catch (final ParseException e) {
                 throw new ECMWFActionFormException("Error parsing date", e);
             }

@@ -84,6 +84,8 @@ public class TransferHistoryHome extends ModelHomeBase {
      *            the dest
      * @param date
      *            the date
+     * @param afterScheduleTime
+     *            the after schedule time
      * @param cursor
      *            the cursor
      *
@@ -93,9 +95,10 @@ public class TransferHistoryHome extends ModelHomeBase {
      *             the transfer exception
      */
     public static final Collection<TransferHistory> findByDestinationNameAndProductDate(final User user,
-            final String dest, final Date date, final DataBaseCursor cursor) throws TransferException {
+            final String dest, final Date date, final boolean afterScheduleTime, final DataBaseCursor cursor)
+            throws TransferException {
         return find(new TransferHistoryByDestinationAndDate(user, dest, date,
-                TransferHistoryByDestinationAndDate.USE_PRODUCT_DATE, cursor));
+                TransferHistoryByDestinationAndDate.USE_PRODUCT_DATE, afterScheduleTime, cursor));
     }
 
     /**
@@ -107,6 +110,8 @@ public class TransferHistoryHome extends ModelHomeBase {
      *            the dest
      * @param date
      *            the date
+     * @param afterScheduleTime
+     *            the after schedule time
      * @param cursor
      *            the cursor
      *
@@ -116,9 +121,10 @@ public class TransferHistoryHome extends ModelHomeBase {
      *             the transfer exception
      */
     public static final Collection<TransferHistory> findByDestinationNameAndHistoryDate(final User user,
-            final String dest, final Date date, final DataBaseCursor cursor) throws TransferException {
+            final String dest, final Date date, final boolean afterScheduleTime, final DataBaseCursor cursor)
+            throws TransferException {
         return find(new TransferHistoryByDestinationAndDate(user, dest, date,
-                TransferHistoryByDestinationAndDate.USE_HISTORY_DATE, cursor));
+                TransferHistoryByDestinationAndDate.USE_HISTORY_DATE, afterScheduleTime, cursor));
     }
 
     /**

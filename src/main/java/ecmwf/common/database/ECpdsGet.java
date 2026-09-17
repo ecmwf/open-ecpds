@@ -2493,12 +2493,13 @@ final class ECpdsGet {
      *             Signals that an I/O exception has occurred.
      */
     DBResultSet getSortedTransferHistoryPerDestinationOnHistoryDate(final String paramDestination,
-            final java.sql.Timestamp paramFromDate, final java.sql.Timestamp paramToDate, final String paramSort,
-            final String paramOrder, final int paramStart, final int paramLength) throws SQLException, IOException {
+            final java.sql.Timestamp paramFromDate, final java.sql.Timestamp paramToDate,
+            final boolean paramAfterScheduleTime, final String paramSort, final String paramOrder, final int paramStart,
+            final int paramLength) throws SQLException, IOException {
         return _database.executeSelect("ECpdsBase", "getSortedTransferHistoryPerDestinationOnHistoryDate",
                 new String[] { "destination=" + paramDestination, "fromDate=" + paramFromDate.getTime(),
-                        "toDate=" + paramToDate.getTime(), "sort=" + paramSort, "order=" + paramOrder,
-                        "start=" + paramStart, "length=" + paramLength });
+                        "toDate=" + paramToDate.getTime(), "afterScheduleTime=" + paramAfterScheduleTime,
+                        "sort=" + paramSort, "order=" + paramOrder, "start=" + paramStart, "length=" + paramLength });
     }
 
     /**
@@ -2527,12 +2528,13 @@ final class ECpdsGet {
      *             Signals that an I/O exception has occurred.
      */
     DBResultSet getSortedTransferHistoryPerDestinationOnProductDate(final String paramDestination,
-            final java.sql.Timestamp paramFromDate, final java.sql.Timestamp paramToDate, final String paramSort,
-            final String paramOrder, final int paramStart, final int paramLength) throws SQLException, IOException {
+            final java.sql.Timestamp paramFromDate, final java.sql.Timestamp paramToDate,
+            final boolean paramAfterScheduleTime, final String paramSort, final String paramOrder, final int paramStart,
+            final int paramLength) throws SQLException, IOException {
         return _database.executeSelect("ECpdsBase", "getSortedTransferHistoryPerDestinationOnProductDate",
                 new String[] { "destination=" + paramDestination, "fromDate=" + paramFromDate.getTime(),
-                        "toDate=" + paramToDate.getTime(), "sort=" + paramSort, "order=" + paramOrder,
-                        "start=" + paramStart, "length=" + paramLength });
+                        "toDate=" + paramToDate.getTime(), "afterScheduleTime=" + paramAfterScheduleTime,
+                        "sort=" + paramSort, "order=" + paramOrder, "start=" + paramStart, "length=" + paramLength });
     }
 
     /**

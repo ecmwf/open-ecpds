@@ -1452,6 +1452,8 @@ public interface DataBaseInterface extends Remote {
      *            the from iso date
      * @param toIsoDate
      *            the to iso date
+     * @param afterScheduleTime
+     *            the after schedule time
      * @param cursor
      *            the cursor
      *
@@ -1463,7 +1465,7 @@ public interface DataBaseInterface extends Remote {
      *             the remote exception
      */
     Collection<TransferHistory> getTransferHistoryByDestinationOnProductDate(String destinationName, Date fromIsoDate,
-            Date toIsoDate, DataBaseCursor cursor) throws DataBaseException, RemoteException;
+            Date toIsoDate, boolean afterScheduleTime, DataBaseCursor cursor) throws DataBaseException, RemoteException;
 
     /**
      * Gets the transfer history by destination on history date.
@@ -1474,6 +1476,8 @@ public interface DataBaseInterface extends Remote {
      *            the from iso date
      * @param toIsoDate
      *            the to iso date
+     * @param afterScheduleTime
+     *            the after schedule time
      * @param cursor
      *            the cursor
      *
@@ -1485,7 +1489,7 @@ public interface DataBaseInterface extends Remote {
      *             the remote exception
      */
     Collection<TransferHistory> getTransferHistoryByDestinationOnHistoryDate(String destinationName, Date fromIsoDate,
-            Date toIsoDate, DataBaseCursor cursor) throws DataBaseException, RemoteException;
+            Date toIsoDate, boolean afterScheduleTime, DataBaseCursor cursor) throws DataBaseException, RemoteException;
 
     /**
      * Gets the allowed ec users by host name.

@@ -57,6 +57,7 @@ import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.HostHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
+import ecmwf.ecpds.master.plugin.http.model.transfer.Status;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.controller.ECMWFActionForm;
@@ -244,6 +245,13 @@ public class OperationsAction extends PDSAction {
         } else if (DOWNLOAD.equals(subAction)) {
             try {
                 final var transfer = getValidatedDataTransfer(subActionParameter, d, u);
+                final var memberState = !u.hasAccess(getResource(request, "nonmemberstate.basepath"));
+                final var scheduledTime = transfer.getScheduledTime();
+                if (memberState && Status.WAIT.equals(transfer.getStatus()) && scheduledTime != null
+                        && scheduledTime.after(new Date())) {
+                    throw new ECMWFActionFormException(
+                            "This data is not yet available for download (scheduled for " + scheduledTime + ")");
+                }
                 request.setAttribute("size", transfer.getSize());
                 request.setAttribute("content", d.getTransferContent(transfer, u));
             } catch (Exception e) {

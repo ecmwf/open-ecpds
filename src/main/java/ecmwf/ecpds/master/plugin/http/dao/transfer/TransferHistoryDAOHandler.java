@@ -106,11 +106,13 @@ public class TransferHistoryDAOHandler extends PDSDAOBase implements DAOHandler 
                 if (mode == TransferHistoryByDestinationAndDate.USE_PRODUCT_DATE) {
                     return convertToModelBeanCollection(s.getUser(),
                             MasterManager.getDB().getTransferHistoryByDestinationOnProductDate(s.getDestination(),
-                                    getBaseDate(s.getDate(), 0), getBaseDate(s.getDate(), 1), s.getDataBaseCursor()));
+                                    getBaseDate(s.getDate(), 0), getBaseDate(s.getDate(), 1), s.getAfterScheduleTime(),
+                                    s.getDataBaseCursor()));
                 } else if (mode == TransferHistoryByDestinationAndDate.USE_HISTORY_DATE) {
                     return convertToModelBeanCollection(s.getUser(),
                             MasterManager.getDB().getTransferHistoryByDestinationOnHistoryDate(s.getDestination(),
-                                    getBaseDate(s.getDate(), 0), getBaseDate(s.getDate(), 1), s.getDataBaseCursor()));
+                                    getBaseDate(s.getDate(), 0), getBaseDate(s.getDate(), 1), s.getAfterScheduleTime(),
+                                    s.getDataBaseCursor()));
                 } else {
                     throw new DAOException("Invalid mode for TransferHistoryByDestinationAndDate: " + mode);
                 }

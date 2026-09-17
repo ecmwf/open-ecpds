@@ -72,7 +72,14 @@ public class GetTransferHistoryForDataTransferJsonAction extends PDSAction {
         final var transferId = parameters.get(0).toString();
         final var cursor = Util.getDataBaseCursorForDataTables(1, true, request);
         final var transferHistoryBasePath = getResource(request, "transferhistory.basepath");
-        final var canSeeHistoryDetail = user.hasAccess(transferHistoryBasePath);
+        // A restricted (member state) user must never see history events that occurred before the transfer's
+        // scheduled time, regardless of their separate transferhistory.basepath access.
+        boolean memberState = false;
+        try {
+            memberState = !user.hasAccess(getResource(request, "nonmemberstate.basepath"));
+        } catch (final Exception _) {
+        }
+        final var canSeeHistoryDetail = user.hasAccess(transferHistoryBasePath) && !memberState;
 
         Collection<TransferHistory> historyItems;
         String queryError = null;

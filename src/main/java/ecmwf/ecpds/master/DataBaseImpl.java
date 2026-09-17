@@ -1901,12 +1901,12 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      */
     @Override
     public Collection<TransferHistory> getTransferHistoryByDestinationOnProductDate(final String destinationName,
-            final Date fromIsoDate, final Date toIsoDate, final DataBaseCursor cursor)
+            final Date fromIsoDate, final Date toIsoDate, final boolean afterScheduleTime, final DataBaseCursor cursor)
             throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getTransferHistoryByDestinationOnProductDate(" + destinationName + ","
                 + fromIsoDate + "," + toIsoDate + ")");
         return monitor.done(ecpds.getSortedTransferHistoryByDestinationOnProductDate(destinationName, fromIsoDate,
-                toIsoDate, cursor));
+                toIsoDate, afterScheduleTime, cursor));
     }
 
     /**
@@ -1930,12 +1930,12 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      */
     @Override
     public Collection<TransferHistory> getTransferHistoryByDestinationOnHistoryDate(final String destinationName,
-            final Date fromIsoDate, final Date toIsoDate, final DataBaseCursor cursor)
+            final Date fromIsoDate, final Date toIsoDate, final boolean afterScheduleTime, final DataBaseCursor cursor)
             throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getTransferHistoryByDestinationOnHistoryDate(" + destinationName + ","
                 + fromIsoDate + "," + toIsoDate + ")");
         return monitor.done(ecpds.getSortedTransferHistoryByDestinationOnHistoryDate(destinationName, fromIsoDate,
-                toIsoDate, cursor));
+                toIsoDate, afterScheduleTime, cursor));
     }
 
     /**

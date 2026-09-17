@@ -62,6 +62,9 @@ public class TransferHistoryByDestinationAndDate extends ModelSearchBase {
     /** The cursor. */
     private final DataBaseCursor cursor;
 
+    /** The after schedule time. */
+    private final boolean afterScheduleTime;
+
     /**
      * Instantiates a new transfer history by destination and date.
      *
@@ -73,16 +76,28 @@ public class TransferHistoryByDestinationAndDate extends ModelSearchBase {
      *            the date
      * @param mode
      *            the mode
+     * @param afterScheduleTime
+     *            the after schedule time
      * @param cursor
      *            the cursor
      */
     public TransferHistoryByDestinationAndDate(final User user, final String destination, final Date date,
-            final int mode, final DataBaseCursor cursor) {
+            final int mode, final boolean afterScheduleTime, final DataBaseCursor cursor) {
         this.destination = destination;
         this.date = date;
         this.user = user;
         this.mode = mode;
+        this.afterScheduleTime = afterScheduleTime;
         this.cursor = cursor;
+    }
+
+    /**
+     * Gets the after schedule time.
+     *
+     * @return the after schedule time
+     */
+    public boolean getAfterScheduleTime() {
+        return afterScheduleTime;
     }
 
     /**

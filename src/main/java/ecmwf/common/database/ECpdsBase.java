@@ -4541,6 +4541,8 @@ public final class ECpdsBase extends DataBase {
      *            the from iso date
      * @param toIsoDate
      *            the to iso date
+     * @param afterScheduleTime
+     *            the after schedule time
      * @param cursor
      *            the cursor
      *
@@ -4550,10 +4552,11 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Collection<TransferHistory> getSortedTransferHistoryByDestinationOnProductDate(final String destinationName,
-            final Date fromIsoDate, final Date toIsoDate, final DataBaseCursor cursor) throws DataBaseException {
+            final Date fromIsoDate, final Date toIsoDate, final boolean afterScheduleTime, final DataBaseCursor cursor)
+            throws DataBaseException {
         try (var rs = ecpds.getSortedTransferHistoryPerDestinationOnProductDate(destinationName,
-                new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), cursor.getSort(),
-                cursor.getOrder(), cursor.getStart(), cursor.getLength())) {
+                new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), afterScheduleTime,
+                cursor.getSort(), cursor.getOrder(), cursor.getStart(), cursor.getLength())) {
             final var hosts = new HashMap<String, Host>();
             final List<TransferHistory> array = new ArrayList<>();
             TransferHistory initialHistory = null; // In the first TransferHistory we set the collection size (total)!
@@ -4595,6 +4598,8 @@ public final class ECpdsBase extends DataBase {
      *            the from iso date
      * @param toIsoDate
      *            the to iso date
+     * @param afterScheduleTime
+     *            the after schedule time
      * @param cursor
      *            the cursor
      *
@@ -4604,10 +4609,11 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Collection<TransferHistory> getSortedTransferHistoryByDestinationOnHistoryDate(final String destinationName,
-            final Date fromIsoDate, final Date toIsoDate, final DataBaseCursor cursor) throws DataBaseException {
+            final Date fromIsoDate, final Date toIsoDate, final boolean afterScheduleTime, final DataBaseCursor cursor)
+            throws DataBaseException {
         try (var rs = ecpds.getSortedTransferHistoryPerDestinationOnHistoryDate(destinationName,
-                new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), cursor.getSort(),
-                cursor.getOrder(), cursor.getStart(), cursor.getLength())) {
+                new Timestamp(fromIsoDate.getTime()), new Timestamp(toIsoDate.getTime()), afterScheduleTime,
+                cursor.getSort(), cursor.getOrder(), cursor.getStart(), cursor.getLength())) {
             final var hosts = new HashMap<String, Host>();
             final List<TransferHistory> array = new ArrayList<>();
             TransferHistory initialHistory = null; // In the first TransferHistory we set the collection size (total)!

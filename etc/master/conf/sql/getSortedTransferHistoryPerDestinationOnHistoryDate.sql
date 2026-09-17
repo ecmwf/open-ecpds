@@ -11,6 +11,7 @@
 #prompt "destination;Destination name;%"
 #prompt "fromDate;From date;%;java.sql.Timestamp"
 #prompt "toDate;To date;%;java.sql.Timestamp"
+#prompt "afterScheduleTime;After schedule time;%"
 #prompt "sort; Column;%"
 #prompt "order; Ordering (Descending=2,Ascending=1);%"
 #prompt "start; Start column;%"
@@ -21,11 +22,15 @@
 ##
 SELECT SQL_CALC_FOUND_ROWS TRH.*
 FROM
-  TRANSFER_HISTORY TRH
+  TRANSFER_HISTORY TRH, DATA_TRANSFER DAT
 WHERE
   TRH.DES_NAME='$destination' AND
+  TRH.DAT_ID = DAT.DAT_ID AND
   TRH.TRH_TIME >= '$fromDate' AND 
   TRH.TRH_TIME < '$toDate'
+#if ('$afterScheduleTime' == 'true')
+	AND TRH.TRH_TIME > DAT.DAT_SCHEDULED_TIME
+#fi
 #if ('$sort' == '0')
 	ORDER BY TRH_ERROR
 #fi

@@ -63,6 +63,14 @@ public class GetTransferHistoryListJsonAction extends PDSAction {
         }
         final var mode = request.getParameter("mode");
         final var cursor = Util.getDataBaseCursorForDataTables(1, true, request);
+        // A restricted (member state) user must never see history events that occurred before the transfer's
+        // scheduled time, even though they have access to this destination-level history page.
+        boolean memberState = false;
+        try {
+            memberState = !user.hasAccess(getResource(request, "nonmemberstate.basepath"));
+        } catch (final Exception _) {
+        }
+        final var afterScheduleTime = memberState;
 
         Collection<TransferHistory> historyItems;
         String queryError = null;
@@ -70,9 +78,9 @@ public class GetTransferHistoryListJsonAction extends PDSAction {
             final var historyDate = new SimpleDateFormat("yyyy-MM-dd").parse(date);
             historyItems = "productDate".equals(mode)
                     ? TransferHistoryHome.findByDestinationNameAndProductDate(user, destinationName, historyDate,
-                            cursor)
+                            afterScheduleTime, cursor)
                     : TransferHistoryHome.findByDestinationNameAndHistoryDate(user, destinationName, historyDate,
-                            cursor);
+                            afterScheduleTime, cursor);
         } catch (final Exception e) {
             historyItems = new ArrayList<>(0);
             queryError = e.getMessage();

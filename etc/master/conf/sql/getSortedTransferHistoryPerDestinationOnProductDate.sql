@@ -11,6 +11,7 @@
 #prompt "destination;Destination name;%"
 #prompt "fromDate;From date;%;java.sql.Timestamp"
 #prompt "toDate;To date;%;java.sql.Timestamp"
+#prompt "afterScheduleTime;After schedule time;%"
 #prompt "sort; Column;%"
 #prompt "order; Ordering (Descending=2,Ascending=1);%"
 #prompt "start; Start column;%"
@@ -28,6 +29,9 @@ WHERE
   DAT.DAF_ID = DAF.DAF_ID AND
   DAF.DAF_TIME_BASE >= '$fromDate' AND 
   DAF.DAF_TIME_BASE < '$toDate'
+#if ('$afterScheduleTime' == 'true')
+	AND TRH.TRH_TIME > DAT.DAT_SCHEDULED_TIME
+#fi
 #if ('$sort' == '0')
 	ORDER BY TRH_ERROR
 #fi
