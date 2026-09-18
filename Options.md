@@ -830,6 +830,9 @@ By default, URL strings are encoded using URL encoding rules based on the UTF-8 
 ### http.headers
 Allow the specification of additional headers to be included in the header list, alongside standard headers such as "User-Agent", "Accept" and authentication headers (if "http.authheader" is set). These headers will be sent to the HTTP server with every request.
 
+### http.honorRetryAfter
+When a "429 Too Many Requests" or "503 Service Unavailable" response is received, wait and automatically retry (up to "http.rateLimitRetryCount" times) instead of immediately failing. If enabled (default) and the response carries a "Retry-After" header, that value is honored (capped by "http.maxRetryAfter"); otherwise an exponential backoff starting at "http.rateLimitBackoff" is used.
+
 ### http.isSymlink
 Allow forcing the symbolic link detector to always return the provided value.
 
@@ -851,8 +854,14 @@ Allow listing sub-directories recursively.
 ### http.maxRedirects
 The maximum number of HTTP redirects to follow automatically when a request receives a redirect response (for example, 301 or 302). Prevents infinite redirect loops and allows the client to reach the final destination URL safely.
 
+### http.maxRetryAfter
+Upper bound on how long to wait before retrying a "429"/"503" response, whether the delay comes from a server-supplied "Retry-After" header or from the internal exponential backoff. Protects against a misconfigured or malicious server requesting an excessive wait.
+
 ### http.maxSize
 Allow setting the maximum size for an HTML document when processing a GET request to retrieve the listing output.
+
+### http.minRequestInterval
+Enforce a minimum delay between the start of any two consecutive requests issued against this host (including requests made concurrently by "http.listMaxThreads" listing threads), so as to cap the request rate against a slow or rate-limiting site and avoid triggering a ban. Disabled (no pacing) by default.
 
 ### http.mqttAddPayload
 Allow requesting the creation of a file, alongside the data file, containing the content of the MQTT payload. By default, the ".payload" extension is used, but this can be configured via the "acquisition.payloadExtension" option.
@@ -934,6 +943,12 @@ Allows the selection of the SSL/TLS (Secure Sockets Layer/Transport Layer Securi
 
 ### http.proxy
 Allow specifying a HTTP proxy when connecting to the remote site (e.g. "host=proxy.domain.ms,protocol=https,port=8080").
+
+### http.rateLimitBackoff
+Base delay used for the exponential backoff applied between retries of a "429"/"503" response when no (or no "http.honorRetryAfter") "Retry-After" header is present. The delay doubles on each further retry (1x, 2x, 4x, ...) plus a random jitter of up to 20%, and is capped by "http.maxRetryAfter".
+
+### http.rateLimitRetryCount
+Maximum number of automatic retries performed for a single request that keeps receiving "429"/"503" responses, before giving up and surfacing the error as usual. This is independent from (and in addition to) the generic "ectrans.retryCount", which retries the whole transfer rather than a single request.
 
 ### http.scheme
 Allow specifying the scheme when connecting to the remote site.
