@@ -55,34 +55,53 @@ public class DestinationDispatcherAction extends PDSAction {
 
         try {
             if ("list".equalsIgnoreCase(json)) {
-                return new GetDestinationListJsonAction().safeAuthorizedPerform(mapping, form, request, response, user);
-
-            } else if ("dataList".equalsIgnoreCase(json)) {
-                return new GetDestinationTransferListJsonAction().safeAuthorizedPerform(mapping, form, request,
+                return withServlet(new GetDestinationListJsonAction()).safeAuthorizedPerform(mapping, form, request,
                         response, user);
 
+            } else if ("dataList".equalsIgnoreCase(json)) {
+                return withServlet(new GetDestinationTransferListJsonAction()).safeAuthorizedPerform(mapping, form,
+                        request, response, user);
+
             } else if ("validateList".equalsIgnoreCase(json)) {
-                return new GetValidateTransferListJsonAction().safeAuthorizedPerform(mapping, form, request, response,
-                        user);
+                return withServlet(new GetValidateTransferListJsonAction()).safeAuthorizedPerform(mapping, form,
+                        request, response, user);
 
             } else if ("idList".equalsIgnoreCase(json)) {
-                return new GetDestinationTransferIdListAction().safeAuthorizedPerform(mapping, form, request, response,
-                        user);
+                return withServlet(new GetDestinationTransferIdListAction()).safeAuthorizedPerform(mapping, form,
+                        request, response, user);
 
             } else if ("basketIdList".equalsIgnoreCase(json)) {
-                return new GetBasketIdListAction().safeAuthorizedPerform(mapping, form, request, response, user);
+                return withServlet(new GetBasketIdListAction()).safeAuthorizedPerform(mapping, form, request, response,
+                        user);
 
             } else if ("syncSelection".equalsIgnoreCase(json)) {
-                return new GetDestinationSyncSelectionAction().safeAuthorizedPerform(mapping, form, request, response,
-                        user);
+                return withServlet(new GetDestinationSyncSelectionAction()).safeAuthorizedPerform(mapping, form,
+                        request, response, user);
             }
 
             // Default: normal page
-            return new GetDestinationAction().safeAuthorizedPerform(mapping, form, request, response, user);
+            return withServlet(new GetDestinationAction()).safeAuthorizedPerform(mapping, form, request, response,
+                    user);
 
         } catch (Exception e) {
             log.warn("Error in DestinationDispatcherAction", e);
             throw e;
         }
+    }
+
+    /**
+     * Propagates this dispatcher's {@link org.apache.struts.action.ActionServlet} to a directly-instantiated
+     * sub-action, since Struts only calls {@code setServlet} on actions it creates itself via the action mapping. Not
+     * doing so leaves {@code action.getServlet()} {@code null}, which makes any call relying on it (e.g.
+     * {@link ecmwf.web.controller.ECMWFAction#getResource}) throw a {@link NullPointerException}.
+     *
+     * @param action
+     *            the newly created sub-action
+     *
+     * @return the same action, for chaining
+     */
+    private <T extends org.apache.struts.action.Action> T withServlet(final T action) {
+        action.setServlet(getServlet());
+        return action;
     }
 }

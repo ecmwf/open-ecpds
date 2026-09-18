@@ -79,7 +79,9 @@ public class GetDataTransferAction extends PDSAction {
         String json = request.getParameter("json");
         try {
             if ("list".equalsIgnoreCase(json)) {
-                new GetDataTransferListJsonAction().safeAuthorizedPerform(mapping, form, request, response, user);
+                final var action = new GetDataTransferListJsonAction();
+                action.setServlet(getServlet());
+                action.safeAuthorizedPerform(mapping, form, request, response, user);
                 return null;
             }
 

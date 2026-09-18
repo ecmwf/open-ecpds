@@ -22,14 +22,31 @@ public class DataTransferDispatcherAction extends PDSAction {
 
         try {
             if ("list".equalsIgnoreCase(json)) {
-                return new GetDataTransferListJsonAction().safeAuthorizedPerform(mapping, form, request, response,
-                        user);
+                return withServlet(new GetDataTransferListJsonAction()).safeAuthorizedPerform(mapping, form, request,
+                        response, user);
             }
 
-            return new GetDataTransferAction().safeAuthorizedPerform(mapping, form, request, response, user);
+            return withServlet(new GetDataTransferAction()).safeAuthorizedPerform(mapping, form, request, response,
+                    user);
 
         } catch (Exception e) {
             throw new ECMWFActionFormException(e.getMessage(), e);
         }
+    }
+
+    /**
+     * Propagates this dispatcher's {@link org.apache.struts.action.ActionServlet} to a directly-instantiated
+     * sub-action, since Struts only calls {@code setServlet} on actions it creates itself via the action mapping. Not
+     * doing so leaves {@code action.getServlet()} {@code null}, which makes any call relying on it (e.g.
+     * {@link ecmwf.web.controller.ECMWFAction#getResource}) throw a {@link NullPointerException}.
+     *
+     * @param action
+     *            the newly created sub-action
+     *
+     * @return the same action, for chaining
+     */
+    private <T extends org.apache.struts.action.Action> T withServlet(final T action) {
+        action.setServlet(getServlet());
+        return action;
     }
 }
