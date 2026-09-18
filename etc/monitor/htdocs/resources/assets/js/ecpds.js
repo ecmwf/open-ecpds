@@ -1564,3 +1564,192 @@ function confirmCloseAll(path, count) {
         onConfirm: function () { window.location = path; }
     });
 }
+
+/*
+ * Shared helpers for parsing ECtrans host Properties values (byte sizes with optional KB/MB/GB/TB
+ * suffixes, and "yes"/"no"/"true"/"false" booleans). Used by the per-module memory estimators
+ * below.
+ */
+function _ectransToBytes(raw) {
+	var unit = { b: 1, k: 1024, m: 1024 * 1024, g: 1024 * 1024 * 1024, t: 1024 * 1024 * 1024 * 1024 };
+	var m = String(raw).trim().replace(/["']/g, '').match(/^([0-9]+(?:\.[0-9]+)?)\s*(b|kb|mb|gb|tb)?$/i);
+	if (!m) return null;
+	var n = parseFloat(m[1]);
+	var u = (m[2] || 'b').toLowerCase().charAt(0);
+	return Math.round(n * (unit[u] || 1));
+}
+
+function _ectransToBool(raw) {
+	var v = String(raw).trim().replace(/["']/g, '').toLowerCase();
+	return v === 'yes' || v === 'true' || v === '1';
+}
+
+/*
+ * S3 upload memory estimator. Mirrors the code path in AmazonS3Module#put(): files whose size is
+ * unknown or >= s3.multipartSize always go through MultipartUploadOutputStream (a fixed-size pool
+ * of (numUploadThreads + queueCapacity) buffers of partSize MB each); smaller files either get
+ * fully buffered as a byte[] (s3.useByteArrayInputStream, when also below s3.singlepartSize) or
+ * streamed with only a small internal buffer. Disabling chunked encoding
+ * (s3.disableChunkedEncoding) forces the AWS SDK to fully materialise the payload to compute its
+ * SHA-256 signature up front, so it is treated here as forcing full buffering of whichever path
+ * would otherwise have streamed. Shared between the host view page (data.jsp) and the host edit
+ * form (fields.jsp).
+ */
+function s3ParseProperties(text) {
+	var cfg = {
+		partSizeMB: 10,
+		numUploadThreads: 2,
+		queueCapacity: 4,
+		multipartSize: Number.MAX_SAFE_INTEGER,
+		singlepartSize: Number.MAX_SAFE_INTEGER,
+		useByteArrayInputStream: false,
+		disableChunkedEncoding: false
+	};
+	text.split('\n').forEach(function(line) {
+		line = line.trim();
+		if (!line || line.startsWith('#') || line.startsWith('//')) return;
+		var eq = line.indexOf('=');
+		if (eq < 0) return;
+		var key = line.substring(0, eq).trim();
+		var value = line.substring(eq + 1).trim();
+		if (key === 's3.partSize') { var v = parseFloat(value.replace(/["']/g, '')); if (!isNaN(v)) cfg.partSizeMB = v; }
+		else if (key === 's3.numUploadThreads') cfg.numUploadThreads = parseInt(value.replace(/["']/g, ''), 10) || cfg.numUploadThreads;
+		else if (key === 's3.queueCapacity') cfg.queueCapacity = parseInt(value.replace(/["']/g, ''), 10) || cfg.queueCapacity;
+		else if (key === 's3.multipartSize') { var v2 = _ectransToBytes(value); if (v2 !== null) cfg.multipartSize = v2; }
+		else if (key === 's3.singlepartSize') { var v3 = _ectransToBytes(value); if (v3 !== null) cfg.singlepartSize = v3; }
+		else if (key === 's3.useByteArrayInputStream') cfg.useByteArrayInputStream = _ectransToBool(value);
+		else if (key === 's3.disableChunkedEncoding') cfg.disableChunkedEncoding = _ectransToBool(value);
+	});
+	return cfg;
+}
+
+function s3FormatBytes(n) {
+	if (n >= 1024 * 1024 * 1024) return (n / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+	if (n >= 1024 * 1024) return (n / (1024 * 1024)).toFixed(1) + ' MB';
+	if (n >= 1024) return (n / 1024).toFixed(1) + ' KB';
+	return n + ' B';
+}
+
+function s3EstimateForSize(sizeBytes, cfg) {
+	var partSizeBytes = cfg.partSizeMB * 1024 * 1024;
+	if (sizeBytes < 0 || sizeBytes >= cfg.multipartSize) {
+		var peak = (cfg.numUploadThreads + cfg.queueCapacity) * partSizeBytes;
+		if (cfg.disableChunkedEncoding) peak *= 2;
+		return { path: 'Multipart streaming', peak: peak };
+	}
+	if (cfg.useByteArrayInputStream && sizeBytes < cfg.singlepartSize) {
+		return { path: 'Single-part (byte-array buffered)', peak: sizeBytes };
+	}
+	if (cfg.disableChunkedEncoding) {
+		return { path: 'Single-part (streamed, but fully materialised for signing)', peak: sizeBytes };
+	}
+	return { path: 'Single-part (streamed)', peak: 64 * 1024 };
+}
+
+/*
+ * Renders the S3 memory estimate table + config summary into the given DOM element ids, reading
+ * the current properties text live (works for both the read-only viewer and the editable form).
+ */
+function renderS3MemoryEstimate(propertiesText, summaryElId, tableElId, concurrentInputElId) {
+	var cfg = s3ParseProperties(propertiesText);
+	var summary = document.getElementById(summaryElId);
+	if (summary) {
+		summary.innerHTML = '<div class="d-flex flex-wrap gap-3">' +
+			'<span><strong>partSize:</strong> ' + cfg.partSizeMB + ' MB</span>' +
+			'<span><strong>numUploadThreads:</strong> ' + cfg.numUploadThreads + '</span>' +
+			'<span><strong>queueCapacity:</strong> ' + cfg.queueCapacity + '</span>' +
+			'<span><strong>multipartSize:</strong> ' + (cfg.multipartSize >= Number.MAX_SAFE_INTEGER ? 'disabled (MAX)' : s3FormatBytes(cfg.multipartSize)) + '</span>' +
+			'<span><strong>useByteArrayInputStream:</strong> ' + (cfg.useByteArrayInputStream ? 'yes' : 'no') + '</span>' +
+			'<span><strong>disableChunkedEncoding:</strong> ' + (cfg.disableChunkedEncoding ? 'yes' : 'no') + '</span>' +
+			'</div>';
+	}
+	var sizes = [10 * 1024 * 1024, 100 * 1024 * 1024, 1024 * 1024 * 1024, 10 * 1024 * 1024 * 1024, 100 * 1024 * 1024 * 1024];
+	var labels = ['10 MB', '100 MB', '1 GB', '10 GB', '100 GB'];
+	var concurrentInput = document.getElementById(concurrentInputElId);
+	var concurrent = Math.max(1, parseInt(concurrentInput && concurrentInput.value, 10) || 1);
+	var tbody = document.querySelector('#' + tableElId + ' tbody');
+	tbody.innerHTML = '';
+	sizes.forEach(function(size, i) {
+		var est = s3EstimateForSize(size, cfg);
+		var tr = document.createElement('tr');
+		tr.innerHTML = '<td>' + labels[i] + '</td><td>' + est.path + '</td>' +
+			'<td class="text-end">' + s3FormatBytes(est.peak) + '</td>' +
+			'<td class="text-end">' + s3FormatBytes(est.peak * concurrent) + '</td>';
+		tbody.appendChild(tr);
+	});
+	var unknownRow = document.createElement('tr');
+	var estUnknown = s3EstimateForSize(-1, cfg);
+	unknownRow.innerHTML = '<td>Unknown size (streaming)</td><td>' + estUnknown.path + '</td>' +
+		'<td class="text-end">' + s3FormatBytes(estUnknown.peak) + '</td>' +
+		'<td class="text-end">' + s3FormatBytes(estUnknown.peak * concurrent) + '</td>';
+	tbody.appendChild(unknownRow);
+}
+
+/*
+ * Azure upload memory estimator. Mirrors the code path in AzureModule#put(): files whose size is
+ * unknown or >= azure.multipartSize go through the async parallel block-blob upload, whose
+ * read-ahead buffer pool peaks at numBuffers (azure.numBuffers, the ParallelTransferOptions
+ * max concurrency) x blockSize (azure.blockSize); smaller files use a single synchronous PUT that
+ * streams directly with only a small internal buffer (azure.chunkSize does not materially change
+ * the peak — it only controls the granularity of the underlying reactive Flux reads). Unlike S3,
+ * the Azure module has no full-buffering ("byte array") option and no chunked-encoding memory
+ * multiplier.
+ */
+function azureParseProperties(text) {
+	var cfg = {
+		blockSize: 10 * 1024,
+		numBuffers: 5,
+		multipartSize: 256 * 1024 * 1024
+	};
+	text.split('\n').forEach(function(line) {
+		line = line.trim();
+		if (!line || line.startsWith('#') || line.startsWith('//')) return;
+		var eq = line.indexOf('=');
+		if (eq < 0) return;
+		var key = line.substring(0, eq).trim();
+		var value = line.substring(eq + 1).trim();
+		if (key === 'azure.blockSize') { var v = _ectransToBytes(value); if (v !== null) cfg.blockSize = v; }
+		else if (key === 'azure.numBuffers') cfg.numBuffers = parseInt(value.replace(/["']/g, ''), 10) || cfg.numBuffers;
+		else if (key === 'azure.multipartSize') { var v2 = _ectransToBytes(value); if (v2 !== null) cfg.multipartSize = v2; }
+	});
+	return cfg;
+}
+
+function azureEstimateForSize(sizeBytes, cfg) {
+	if (sizeBytes < 0 || sizeBytes >= cfg.multipartSize) {
+		return { path: 'Parallel block-blob upload (async)', peak: cfg.numBuffers * cfg.blockSize };
+	}
+	return { path: 'Single PUT (streamed)', peak: 64 * 1024 };
+}
+
+function renderAzureMemoryEstimate(propertiesText, summaryElId, tableElId, concurrentInputElId) {
+	var cfg = azureParseProperties(propertiesText);
+	var summary = document.getElementById(summaryElId);
+	if (summary) {
+		summary.innerHTML = '<div class="d-flex flex-wrap gap-3">' +
+			'<span><strong>blockSize:</strong> ' + s3FormatBytes(cfg.blockSize) + '</span>' +
+			'<span><strong>numBuffers:</strong> ' + cfg.numBuffers + '</span>' +
+			'<span><strong>multipartSize:</strong> ' + s3FormatBytes(cfg.multipartSize) + '</span>' +
+			'</div>';
+	}
+	var sizes = [10 * 1024 * 1024, 100 * 1024 * 1024, 1024 * 1024 * 1024, 10 * 1024 * 1024 * 1024, 100 * 1024 * 1024 * 1024];
+	var labels = ['10 MB', '100 MB', '1 GB', '10 GB', '100 GB'];
+	var concurrentInput = document.getElementById(concurrentInputElId);
+	var concurrent = Math.max(1, parseInt(concurrentInput && concurrentInput.value, 10) || 1);
+	var tbody = document.querySelector('#' + tableElId + ' tbody');
+	tbody.innerHTML = '';
+	sizes.forEach(function(size, i) {
+		var est = azureEstimateForSize(size, cfg);
+		var tr = document.createElement('tr');
+		tr.innerHTML = '<td>' + labels[i] + '</td><td>' + est.path + '</td>' +
+			'<td class="text-end">' + s3FormatBytes(est.peak) + '</td>' +
+			'<td class="text-end">' + s3FormatBytes(est.peak * concurrent) + '</td>';
+		tbody.appendChild(tr);
+	});
+	var unknownRow = document.createElement('tr');
+	var estUnknown = azureEstimateForSize(-1, cfg);
+	unknownRow.innerHTML = '<td>Unknown size (streaming)</td><td>' + estUnknown.path + '</td>' +
+		'<td class="text-end">' + s3FormatBytes(estUnknown.peak) + '</td>' +
+		'<td class="text-end">' + s3FormatBytes(estUnknown.peak * concurrent) + '</td>';
+	tbody.appendChild(unknownRow);
+}

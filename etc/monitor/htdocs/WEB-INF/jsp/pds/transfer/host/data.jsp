@@ -228,6 +228,11 @@ type='radio' id='ispython' name='dirType' />Python
    onclick="var el=document.getElementById('moduleGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"
    title="Configuration Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide</a>
 </c:if>
+<c:if test="${host.transferMethod.ecTransModuleName == 's3' || host.transferMethod.ecTransModuleName == 'azure'}">
+<a href="#" class="btn btn-sm btn-outline-warning ms-1 flex-shrink-0" id="memEstimateBtn"
+   onclick="openMemoryEstimator();return false;"
+   title="Estimate memory usage for the current options"><i class="bi bi-cpu me-1"></i><span class="d-none d-sm-inline">Memory </span>Estimator</a>
+</c:if>
 </div>
 <div class="collapse" id="viewOptionsInfoPanel">
   <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;">
@@ -457,6 +462,42 @@ JavaScript
 	<%-- Directory Guide offcanvas --%>
 	<jsp:include page="/WEB-INF/jsp/pds/transfer/host/directory_guide.jsp"/>
 
+	<%-- Memory Estimator modal (S3/Azure) --%>
+	<c:if test="${host.transferMethod.ecTransModuleName == 's3' || host.transferMethod.ecTransModuleName == 'azure'}">
+	<div class="modal fade" id="memoryEstimatorModal" tabindex="-1" aria-labelledby="memoryEstimatorLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg modal-dialog-scrollable">
+	<div class="modal-content">
+	<div class="modal-header py-2">
+	<h6 class="modal-title fw-semibold" id="memoryEstimatorLabel"><i class="bi bi-cpu me-2 text-warning"></i><span id="memEstimatorTitleModule">${host.transferMethod.ecTransModuleName == 's3' ? 'S3' : 'Azure'}</span> Upload Memory Estimator</h6>
+	<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+	</div>
+	<div class="modal-body">
+	<div class="alert alert-secondary py-2 px-3 mb-3" style="font-size:0.82rem;">
+	Estimates the <strong>peak JVM heap used by this Mover to upload a single file</strong> with the
+	<code>${host.transferMethod.ecTransModuleName}.*</code> options currently in the <em>Properties</em>
+	editor below (unsaved edits are included live). This is an approximation of the code path in
+	<code>${host.transferMethod.ecTransModuleName == 's3' ? 'AmazonS3Module' : 'AzureModule'}</code>
+	&mdash; actual usage can vary slightly with JVM/GC behaviour.
+	</div>
+	<div id="memEstimatorConfigSummary" class="mb-3" style="font-size:0.82rem;"></div>
+	<div class="row g-2 align-items-end mb-3">
+	<div class="col-auto">
+	<label for="memEstimatorConcurrent" class="form-label mb-1" style="font-size:0.8rem;">Concurrent transfers on this host</label>
+	<input type="number" min="1" step="1" value="1" id="memEstimatorConcurrent" class="form-control form-control-sm" style="width:120px;">
+	</div>
+	</div>
+	<div class="table-responsive">
+	<table class="table table-sm table-striped align-middle mb-0" id="memEstimatorTable">
+	<thead><tr><th>File size</th><th>Upload path used</th><th class="text-end">Peak per transfer</th><th class="text-end">Total (all concurrent)</th></tr></thead>
+	<tbody></tbody>
+	</table>
+	</div>
+	</div>
+	</div>
+	</div>
+	</div>
+	</c:if>
+
 	<%-- Help offcanvas panel --%>
 	<div class="offcanvas offcanvas-end" tabindex="-1" id="hostHelpOffcanvas"
 	     aria-labelledby="hostHelpOffcanvasLabel" style="width:480px;max-width:95vw;">
@@ -670,5 +711,20 @@ JavaScript
 		})();
 
 	</script>
+
+	<c:if test="${host.transferMethod.ecTransModuleName == 's3' || host.transferMethod.ecTransModuleName == 'azure'}">
+	<script>
+		window.openMemoryEstimator = function() {
+			var concurrentInput = document.getElementById('memEstimatorConcurrent');
+			var renderFn = transferModuleName === 'azure' ? renderAzureMemoryEstimate : renderS3MemoryEstimate;
+			function render() {
+				renderFn(editorProperties.getValue(), 'memEstimatorConfigSummary', 'memEstimatorTable', 'memEstimatorConcurrent');
+			}
+			concurrentInput.oninput = render;
+			render();
+			bootstrap.Modal.getOrCreateInstance(document.getElementById('memoryEstimatorModal')).show();
+		};
+	</script>
+	</c:if>
 
 </c:if>

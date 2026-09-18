@@ -113,6 +113,18 @@ Small files (below `azure.multipartSize`) are uploaded in a single PUT. Larger f
 | `azure.numBuffers` | `5` | Maximum number of concurrent block upload buffers (parallelism) |
 | `azure.chunkSize` | `0` (disabled) | Flux buffer chunk size when reading the input stream (0 = unbuffered). Rarely needs changing. |
 
+!!! info "Memory usage"
+    Peak memory per transfer for files at or above `azure.multipartSize` (or of unknown size) is
+    `numBuffers × blockSize` (e.g. defaults: 5 × 10 KB ≈ **50 KB**; the high-throughput example
+    below: 10 × 4 MB = **40 MB**). Smaller files use a single synchronous PUT that streams directly
+    with negligible memory overhead — unlike the S3 module, Azure has no full-buffering option and
+    no chunked-encoding memory multiplier.
+
+!!! tip "Memory Estimator"
+    Open the host's edit page and click the **Memory Estimator** button in the *Options* panel
+    (S3 and Azure hosts only) to compute these peaks live for the `azure.*` properties currently in
+    the editor (including unsaved edits), across a range of file sizes.
+
 ### Integrity & overwrite
 
 | Option | Default | Description |

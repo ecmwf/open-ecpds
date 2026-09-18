@@ -229,6 +229,18 @@ azure.mkContainer = "yes"</pre>
                   Rarely needs changing.</td></tr>
             </tbody>
           </table>
+          <div class="alert alert-info py-1 px-2 mt-2 mb-0 small d-flex align-items-start gap-2">
+            <i class="bi bi-info-circle flex-shrink-0" style="margin-top:0.1em"></i>
+            <div>Peak memory per transfer (files &ge; <code>azure.multipartSize</code>, or of unknown size) =
+            <code>numBuffers &times; blockSize</code> (e.g. defaults: 5 &times; 10 KB &asymp; <strong>50 KB</strong>;
+            the quick-start example below: 10 &times; 4 MB = <strong>40 MB</strong>). Smaller files use a single
+            synchronous PUT that streams directly with negligible memory overhead.</div>
+          </div>
+          <div class="alert alert-secondary py-1 px-2 mt-2 mb-0 small d-flex align-items-start gap-2">
+            <i class="bi bi-cpu flex-shrink-0" style="margin-top:0.1em"></i>
+            <div>Use the <strong>Memory Estimator</strong> button in the host's <em>Options</em> panel to compute
+            these peaks live for the properties currently in the editor, across a range of file sizes.</div>
+          </div>
         </div>
 
         <div class="mb-3">

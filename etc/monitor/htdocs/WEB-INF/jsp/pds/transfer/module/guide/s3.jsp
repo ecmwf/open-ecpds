@@ -254,6 +254,11 @@ s3.singlepartSize = "9223372036854775807"  # max size for single-part streaming 
             With N concurrent S3 transfers this multiplies: 10 transfers at defaults = 10 × (2+4) × 10 = <strong>600 MB</strong>.
             Reduce <code>s3.partSize</code> or thread counts if memory is constrained.</div>
           </div>
+          <div class="alert alert-secondary py-1 px-2 mt-2 mb-0 small d-flex align-items-start gap-2">
+            <i class="bi bi-cpu flex-shrink-0" style="margin-top:0.1em"></i>
+            <div>Use the <strong>Memory Estimator</strong> button in the host's <em>Options</em> panel to compute
+            these peaks live for the properties currently in the editor, across a range of file sizes.</div>
+          </div>
         </div>
 
         <hr class="my-2">

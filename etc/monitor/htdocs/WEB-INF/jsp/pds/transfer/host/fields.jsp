@@ -464,6 +464,12 @@ onclick="formatSource(editorDir); return false">Format</button>
         title="Configuration Guide">
   <i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide
 </button>
+<button id="formMemEstimateBtn" type="button"
+        class="btn btn-sm btn-outline-warning ms-1 flex-shrink-0 d-none"
+        onclick="openMemoryEstimatorForm(); return false;"
+        title="Estimate memory usage for the current options">
+  <i class="bi bi-cpu me-1"></i><span class="d-none d-sm-inline">Memory </span>Estimator
+</button>
 </div>
 <div class="card-body">
 <div class="row g-3">
@@ -1394,7 +1400,67 @@ oninput="validateMailInput(this); toggleMailRows()" />
 	}
 	_updateFormGuideBtn('${requestScope[actionFormName].transferMethod}');
 
+	// Memory Estimator button — only shown while the S3 or Azure module is selected
+	function _updateMemEstimateBtn(moduleName) {
+		var btn = document.getElementById('formMemEstimateBtn');
+		if (!btn) return;
+		btn.classList.toggle('d-none', moduleName !== 's3' && moduleName !== 'azure');
+	}
+	_updateMemEstimateBtn(getTransferModuleName());
+	document.getElementById("transferMethod").addEventListener("change", function() {
+		_updateMemEstimateBtn(getTransferModuleName());
+	});
+
+	window.openMemoryEstimatorForm = function() {
+		var concurrentInput = document.getElementById('memEstimatorConcurrentForm');
+		var moduleName = getTransferModuleName();
+		var renderFn = moduleName === 'azure' ? renderAzureMemoryEstimate : renderS3MemoryEstimate;
+		var titleEl = document.getElementById('memEstimatorTitleModuleForm');
+		if (titleEl) titleEl.textContent = moduleName === 'azure' ? 'Azure' : 'S3';
+		var noteEl = document.getElementById('memEstimatorNoteForm');
+		if (noteEl) {
+			noteEl.innerHTML = 'Estimates the <strong>peak JVM heap used by this Mover to upload a single file</strong> with the ' +
+				'<code>' + moduleName + '.*</code> options currently in the <em>Properties</em> editor below (unsaved edits are ' +
+				'included live). This is an approximation of the code path in <code>' +
+				(moduleName === 'azure' ? 'AzureModule' : 'AmazonS3Module') + '</code> &mdash; actual usage can vary slightly with JVM/GC behaviour.';
+		}
+		function render() {
+			renderFn(editorProperties.getValue(), 'memEstimatorConfigSummaryForm', 'memEstimatorTableForm', 'memEstimatorConcurrentForm');
+		}
+		concurrentInput.oninput = render;
+		render();
+		bootstrap.Modal.getOrCreateInstance(document.getElementById('memoryEstimatorModalForm')).show();
+	};
+
 </script>
+
+<%-- Memory Estimator modal (S3/Azure, edit form context) --%>
+<div class="modal fade" id="memoryEstimatorModalForm" tabindex="-1" aria-labelledby="memoryEstimatorModalFormLabel" aria-hidden="true">
+<div class="modal-dialog modal-lg modal-dialog-scrollable">
+<div class="modal-content">
+<div class="modal-header py-2">
+<h6 class="modal-title fw-semibold" id="memoryEstimatorModalFormLabel"><i class="bi bi-cpu me-2 text-warning"></i><span id="memEstimatorTitleModuleForm">S3</span> Upload Memory Estimator</h6>
+<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+<div class="alert alert-secondary py-2 px-3 mb-3" style="font-size:0.82rem;" id="memEstimatorNoteForm"></div>
+<div id="memEstimatorConfigSummaryForm" class="mb-3" style="font-size:0.82rem;"></div>
+<div class="row g-2 align-items-end mb-3">
+<div class="col-auto">
+<label for="memEstimatorConcurrentForm" class="form-label mb-1" style="font-size:0.8rem;">Concurrent transfers on this host</label>
+<input type="number" min="1" step="1" value="1" id="memEstimatorConcurrentForm" class="form-control form-control-sm" style="width:120px;">
+</div>
+</div>
+<div class="table-responsive">
+<table class="table table-sm table-striped align-middle mb-0" id="memEstimatorTableForm">
+<thead><tr><th>File size</th><th>Upload path used</th><th class="text-end">Peak per transfer</th><th class="text-end">Total (all concurrent)</th></tr></thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
 
 <%-- Guide offcanvases (all modules with guides, unique IDs for the form context) --%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
