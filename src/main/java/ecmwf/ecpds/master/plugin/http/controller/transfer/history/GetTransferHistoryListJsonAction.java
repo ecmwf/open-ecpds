@@ -26,6 +26,8 @@ import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -44,6 +46,9 @@ import ecmwf.web.model.users.User;
  * Returns a DataTables-compatible JSON payload for the Transfer History page.
  */
 public class GetTransferHistoryListJsonAction extends PDSAction {
+
+    /** The Constant log. */
+    private static final Logger log = LogManager.getLogger(GetTransferHistoryListJsonAction.class);
 
     private static final String TRANSFER_HISTORY_BASE_PATH = "/do/transfer/history";
     private static final String HOST_BASE_PATH = "/do/transfer/host";
@@ -65,10 +70,13 @@ public class GetTransferHistoryListJsonAction extends PDSAction {
         final var cursor = Util.getDataBaseCursorForDataTables(1, true, request);
         // A restricted (member state) user must never see history events that occurred before the transfer's
         // scheduled time, even though they have access to this destination-level history page.
-        boolean memberState = false;
+        // Fail closed: if we cannot determine the restriction, treat the user as restricted.
+        boolean memberState = true;
         try {
             memberState = !user.hasAccess(getResource(request, "nonmemberstate.basepath"));
-        } catch (final Exception _) {
+        } catch (final Exception e) {
+            log.warn("Could not determine nonmemberstate.basepath access for user '" + user.getUid()
+                    + "'; defaulting to restricted", e);
         }
         final var afterScheduleTime = memberState;
 

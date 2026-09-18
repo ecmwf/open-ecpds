@@ -34,6 +34,8 @@ import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -55,6 +57,9 @@ import ecmwf.web.model.users.User;
  */
 public class GetTransferHistoryForDataTransferJsonAction extends PDSAction {
 
+    /** The Constant log. */
+    private static final Logger log = LogManager.getLogger(GetTransferHistoryForDataTransferJsonAction.class);
+
     private static final String TRANSFER_HISTORY_BASE_PATH = "/do/transfer/history";
     private static final String HOST_BASE_PATH = "/do/transfer/host";
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -74,10 +79,13 @@ public class GetTransferHistoryForDataTransferJsonAction extends PDSAction {
         final var transferHistoryBasePath = getResource(request, "transferhistory.basepath");
         // A restricted (member state) user must never see history events that occurred before the transfer's
         // scheduled time, regardless of their separate transferhistory.basepath access.
-        boolean memberState = false;
+        // Fail closed: if we cannot determine the member-state restriction, treat the user as restricted.
+        boolean memberState = true;
         try {
             memberState = !user.hasAccess(getResource(request, "nonmemberstate.basepath"));
-        } catch (final Exception _) {
+        } catch (final Exception e) {
+            log.warn("Could not determine nonmemberstate.basepath access for user '" + user.getUid()
+                    + "'; defaulting to restricted", e);
         }
         final var canSeeHistoryDetail = user.hasAccess(transferHistoryBasePath) && !memberState;
 

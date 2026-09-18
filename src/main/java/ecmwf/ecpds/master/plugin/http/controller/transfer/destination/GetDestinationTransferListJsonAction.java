@@ -38,6 +38,8 @@ import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -64,6 +66,9 @@ import ecmwf.web.model.users.User;
  * + LIMIT, making it safe for tables with hundreds of thousands of rows.
  */
 public class GetDestinationTransferListJsonAction extends PDSAction {
+
+    /** The Constant log. */
+    private static final Logger log = LogManager.getLogger(GetDestinationTransferListJsonAction.class);
 
     /** Base paths for linked detail pages. */
     private static final String HOST_BASE_PATH = "/do/transfer/host";
@@ -113,12 +118,17 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
         boolean hasAccess = true;
         try {
             hasAccess = user.hasAccess(getResource(request, "datatransfer.basepath"));
-        } catch (final Exception _) {
+        } catch (final Exception e) {
+            log.warn("Could not determine datatransfer.basepath access for user '" + user.getUid() + "'", e);
         }
-        boolean memberState = false;
+        // Fail closed: if we cannot determine the member-state restriction, treat the user as
+        // restricted rather than silently exposing the embargoed status/download icon.
+        boolean memberState = true;
         try {
             memberState = !user.hasAccess(getResource(request, "nonmemberstate.basepath"));
-        } catch (final Exception _) {
+        } catch (final Exception e) {
+            log.warn("Could not determine nonmemberstate.basepath access for user '" + user.getUid()
+                    + "'; defaulting to restricted", e);
         }
         // Column visibility is already gated by the JSP auth tag (ecpdsCanHandleQueue).
         // Action security is enforced by the individual action handlers on submit.

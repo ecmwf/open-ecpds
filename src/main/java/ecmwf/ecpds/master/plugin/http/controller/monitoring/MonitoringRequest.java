@@ -711,7 +711,7 @@ public class MonitoringRequest {
         final Map<String, List<ProductStatus>> toMerge = new HashMap<>();
         for (final var ps : source.values()) {
             if (groupedProducts.contains(ps.getProduct())) {
-                toMerge.computeIfAbsent(ps.getProduct(), k -> new ArrayList<>()).add(ps);
+                toMerge.computeIfAbsent(ps.getProduct(), _ -> new ArrayList<>()).add(ps);
             } else {
                 result.put(ps.getProduct() + "@" + ps.getTime(), ps);
             }
