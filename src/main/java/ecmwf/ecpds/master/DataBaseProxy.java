@@ -2243,13 +2243,14 @@ final class DataBaseProxy implements DataBaseInterface {
      */
     @Override
     public void incomingUserAdd(final String user, final String id, final String password, final String email,
-            final String iso, final String portalService) throws DataBaseException, RemoteException {
+            final String iso, final String portalService, final String active)
+            throws DataBaseException, RemoteException {
         if (isEmpty(user) || isEmpty(id)) {
             throw new DataBaseException("Invalid parameter(s) for incomingUserAdd");
         }
         final var monitor = new MonitorCall("incomingUserAdd(" + user + "," + id + "," + password + "," + email + ","
-                + iso + "," + portalService + ")");
-        dataBaseInterface.incomingUserAdd(user, id, password, email, iso, portalService);
+                + iso + "," + portalService + "," + active + ")");
+        dataBaseInterface.incomingUserAdd(user, id, password, email, iso, portalService, active);
         monitor.done();
     }
 
@@ -2292,13 +2293,13 @@ final class DataBaseProxy implements DataBaseInterface {
      */
     @Override
     public String incomingUserAdd2(final String user, final String id, final String email, final String iso,
-            final String portalService) throws DataBaseException, RemoteException {
+            final String portalService, final String active) throws DataBaseException, RemoteException {
         if (isEmpty(user) || isEmpty(id) || isEmpty(email) || isEmpty(iso)) {
             throw new DataBaseException("Invalid parameter(s) for incomingUserAdd2");
         }
-        final var monitor = new MonitorCall(
-                "incomingUserAdd2(" + user + "," + id + "," + email + "," + iso + "," + portalService + ")");
-        return monitor.done(dataBaseInterface.incomingUserAdd2(user, id, email, iso, portalService));
+        final var monitor = new MonitorCall("incomingUserAdd2(" + user + "," + id + "," + email + "," + iso + ","
+                + portalService + "," + active + ")");
+        return monitor.done(dataBaseInterface.incomingUserAdd2(user, id, email, iso, portalService, active));
     }
 
     /**

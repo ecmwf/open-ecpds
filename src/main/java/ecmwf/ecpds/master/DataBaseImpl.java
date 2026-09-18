@@ -3556,6 +3556,9 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      * @param portalService
      *            the portal service mode ("standard-login", "open-access" or "self-service"); {@code null} or empty
      *            keeps the default ("standard-login") on creation, or leaves it unchanged on update
+     * @param active
+     *            whether the user should be active; {@code null} or empty keeps the default (inactive) on creation, or
+     *            leaves it unchanged on update
      *
      * @throws DataBaseException
      *             the data base exception
@@ -3564,10 +3567,11 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      */
     @Override
     public void incomingUserAdd(final String user, final String id, final String password, final String email,
-            final String iso, final String portalService) throws DataBaseException, RemoteException {
+            final String iso, final String portalService, final String active)
+            throws DataBaseException, RemoteException {
         checkUser(user, "incomingUserAdd");
         final var monitor = new MonitorCall("incomingUserAdd(" + user + "," + id + "," + password + "," + email + ","
-                + iso + "," + portalService + ")");
+                + iso + "," + portalService + "," + active + ")");
         if (iso != null) {
             // Let's check if it is a valid country!
             final var country = ecpds.getCountryObject(iso);
@@ -3589,9 +3593,9 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             // It does not exists yet so we create it with all the default
             // values!
             incomingUser = new IncomingUser();
-            // It is not active yet, only the call to add a category can
-            // activate a user!
-            incomingUser.setActive(false);
+            // It is not active yet by default, unless explicitly requested; the call to add a
+            // category can also activate a user!
+            incomingUser.setActive(active != null && !active.isEmpty() && Boolean.parseBoolean(active));
             incomingUser.setSynchronized(false);
             incomingUser.setComment(email);
             incomingUser.setData(null);
@@ -3622,6 +3626,9 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             }
             if (portalService != null && !portalService.isEmpty()) {
                 incomingUser.setPortalService(portalService);
+            }
+            if (active != null && !active.isEmpty()) {
+                incomingUser.setActive(active);
             }
             ecpds.update(incomingUser);
         }
@@ -3680,6 +3687,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      * @param portalService
      *            the portal service mode ("standard-login", "open-access" or "self-service"); {@code null} or empty
      *            defaults to "standard-login"
+     * @param active
+     *            whether the user should be active; {@code null} or empty defaults to {@code true}
      *
      * @return the string
      *
@@ -3690,10 +3699,10 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      */
     @Override
     public String incomingUserAdd2(final String user, final String id, final String email, final String iso,
-            final String portalService) throws DataBaseException, RemoteException {
+            final String portalService, final String active) throws DataBaseException, RemoteException {
         checkUser(user, "incomingUserAdd2");
-        final var monitor = new MonitorCall(
-                "incomingUserAdd2(" + user + "," + id + "," + email + "," + iso + "," + portalService + ")");
+        final var monitor = new MonitorCall("incomingUserAdd2(" + user + "," + id + "," + email + "," + iso + ","
+                + portalService + "," + active + ")");
         // Let's check if it is a valid country!
         final var country = ecpds.getCountryObject(iso);
         if (country == null) {
@@ -3715,7 +3724,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         }
         // It does not exists yet so we create it!
         incomingUser = new IncomingUser();
-        incomingUser.setActive(true);
+        incomingUser.setActive(active == null || active.isEmpty() || Boolean.parseBoolean(active));
         incomingUser.setSynchronized(false);
         incomingUser.setComment(email);
         incomingUser.setData(null);

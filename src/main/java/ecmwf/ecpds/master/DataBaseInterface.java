@@ -2371,14 +2371,17 @@ public interface DataBaseInterface extends Remote {
      * @param portalService
      *            the portal service mode ("standard-login", "open-access" or "self-service"); {@code null} or empty
      *            keeps the default ("standard-login") on creation, or leaves it unchanged on update
+     * @param active
+     *            whether the user should be active; {@code null} or empty keeps the default (inactive) on creation, or
+     *            leaves it unchanged on update
      *
      * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    void incomingUserAdd(String user, String id, String password, String email, String iso, String portalService)
-            throws DataBaseException, RemoteException;
+    void incomingUserAdd(String user, String id, String password, String email, String iso, String portalService,
+            String active) throws DataBaseException, RemoteException;
 
     /**
      * Incoming user add2.
@@ -2394,6 +2397,8 @@ public interface DataBaseInterface extends Remote {
      * @param portalService
      *            the portal service mode ("standard-login", "open-access" or "self-service"); {@code null} or empty
      *            defaults to "standard-login"
+     * @param active
+     *            whether the user should be active; {@code null} or empty defaults to {@code true}
      *
      * @return the string
      *
@@ -2402,7 +2407,7 @@ public interface DataBaseInterface extends Remote {
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    String incomingUserAdd2(String user, String id, String email, String iso, String portalService)
+    String incomingUserAdd2(String user, String id, String email, String iso, String portalService, String active)
             throws DataBaseException, RemoteException;
 
     /**

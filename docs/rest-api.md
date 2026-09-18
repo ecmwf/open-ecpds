@@ -157,6 +157,7 @@ Creates a new incoming user with a password.
 | `email` | ✅ | Email address |
 | `iso` | ✅ | ISO country code (2-letter) |
 | `portalService` | ❌ | Data Portal access mode: `standard-login`, `open-access`, or `self-service`. Defaults to `standard-login` on creation; on update, an omitted/empty value leaves the existing mode unchanged. See [Data Users — Portal Service modes](use-cases/data-users.md#portal-service-modes) |
+| `active` | ❌ | `true`/`false`. Whether the user is active (allowed to authenticate/be associated with destinations). Defaults to `false` on creation; on update, an omitted/empty value leaves the existing flag unchanged. Equivalent to (and overridden by) the `incoming/category/add` "ECPDS" marker convention described below |
 
 **Service name:** `incomingUserAdd`
 
@@ -179,6 +180,7 @@ Creates or updates an incoming user without a password (password set separately 
 | `email` | ✅ | Email address |
 | `iso` | ✅ | ISO country code |
 | `portalService` | ❌ | Data Portal access mode: `standard-login`, `open-access`, or `self-service`. Defaults to `standard-login` if omitted |
+| `active` | ❌ | `true`/`false`. Whether the user is active. Defaults to `true` if omitted |
 
 **Service name:** `incomingUserAdd2`
 
@@ -250,11 +252,18 @@ Assigns one or more categories to an incoming user. The request body is a JSON a
 
 !!! warning "Activation required before associating a destination"
     A newly created incoming user (via `incoming/user/add` or `incoming/user/add2`) is **inactive** by
-    default. Calling `incoming/association/add` on an inactive user fails with
-    `User <id> not found/active`. To activate the user, call `incoming/category/add` with a category
-    name that contains `ECPDS` (case-insensitive), e.g. `["ECPDS"]` — this is a special marker, not an
-    actual category that needs to exist in the `CATEGORY` table. Omitting an `ECPDS` category (or
-    calling `incoming/category/add` with a list that doesn't contain one) deactivates the user again.
+    default unless `active=true` is passed at creation time. Calling `incoming/association/add` on an
+    inactive user fails with `User <id> not found/active`.
+
+    The simplest way to activate a user is the `active` parameter on `incoming/user/add`/`add2` (see
+    above), either at creation time or in a follow-up call to `incoming/user/add`.
+
+    Alternatively, `incoming/category/add` can also activate/deactivate a user as a side effect: passing
+    a category name that contains `ECPDS` (case-insensitive), e.g. `["ECPDS"]`, activates the user — this
+    is a special marker, not an actual category that needs to exist in the `CATEGORY` table (the
+    category list itself is not stored). Omitting an `ECPDS` marker deactivates the user again. This
+    predates the `active` parameter and is kept for backward compatibility, but `active` is the more
+    direct and self-explanatory option for new integrations.
 
 ---
 

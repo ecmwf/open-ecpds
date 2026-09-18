@@ -114,6 +114,10 @@ public final class ECpdsRESTV1 {
      * @param portalService
      *            the portal service mode ("standard-login", "open-access" or "self-service"); optional, defaults to
      *            "standard-login" on creation
+     * @param active
+     *            whether the user should be active; optional, defaults to {@code false} (inactive) on creation, or
+     *            leaves it unchanged on update. See the `incoming/category/add` endpoint for the legacy activation
+     *            mechanism
      *
      * @return the response
      */
@@ -123,12 +127,13 @@ public final class ECpdsRESTV1 {
     public Response incomingUserAdd(@HeaderParam("authorization") final String authString,
             @Context final HttpServletRequest request, @QueryParam("id") final String id,
             @QueryParam("pass") final String pass, @QueryParam("email") final String email,
-            @QueryParam("iso") final String iso, @QueryParam("portalService") final String portalService) {
+            @QueryParam("iso") final String iso, @QueryParam("portalService") final String portalService,
+            @QueryParam("active") final String active) {
         _log.debug("incomingUserAdd");
         try {
             final var userNameAndPassword = _getUserNameAndPassword(authString, request);
             _checkParameter("id", id);
-            MasterManager.getDB().incomingUserAdd(userNameAndPassword, id, pass, email, iso, portalService);
+            MasterManager.getDB().incomingUserAdd(userNameAndPassword, id, pass, email, iso, portalService, active);
             return RESTMessage.getSuccessMessage().getResponse();
         } catch (final WebApplicationException w) {
             _log.warn("incomingUserAdd", w);
@@ -155,6 +160,8 @@ public final class ECpdsRESTV1 {
      * @param portalService
      *            the portal service mode ("standard-login", "open-access" or "self-service"); optional, defaults to
      *            "standard-login"
+     * @param active
+     *            whether the user should be active; optional, defaults to {@code true}
      *
      * @return the response
      */
@@ -164,7 +171,7 @@ public final class ECpdsRESTV1 {
     public Response incomingUserAdd2(@HeaderParam("authorization") final String authString,
             @Context final HttpServletRequest request, @QueryParam("id") final String id,
             @QueryParam("email") final String email, @QueryParam("iso") final String iso,
-            @QueryParam("portalService") final String portalService) {
+            @QueryParam("portalService") final String portalService, @QueryParam("active") final String active) {
         _log.debug("incomingUserAdd2");
         try {
             final var userNameAndPassword = _getUserNameAndPassword(authString, request);
@@ -173,7 +180,7 @@ public final class ECpdsRESTV1 {
             _checkParameter("iso", iso);
             final var message = RESTMessage.getSuccessMessage();
             message.put("pass",
-                    MasterManager.getDB().incomingUserAdd2(userNameAndPassword, id, email, iso, portalService));
+                    MasterManager.getDB().incomingUserAdd2(userNameAndPassword, id, email, iso, portalService, active));
             return message.getResponse();
         } catch (final WebApplicationException w) {
             _log.warn("incomingUserAdd2", w);

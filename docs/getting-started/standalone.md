@@ -236,19 +236,12 @@ curl -k -u api:api2021 https://localhost:8443/ecpds/v1/incoming/user/list
 
 ```bash
 # Create a new incoming user (portalService is optional, defaults to
-# "standard-login"; other values are "open-access" and "self-service")
+# "standard-login"; other values are "open-access" and "self-service").
+# active=true is required here since a new incoming user is inactive by
+# default, and incoming/association/add fails with "User newuser not
+# found/active" until the user is active.
 curl -k -u api:api2021 -X POST \
-  "https://localhost:8443/ecpds/v1/incoming/user/add?id=newuser&pass=secret&email=newuser@example.com&iso=gb&portalService=standard-login"
-```
-
-```bash
-# Activate the user — a new incoming user is inactive by default, and
-# incoming/association/add fails with "User newuser not found/active" until
-# it is assigned a category containing "ECPDS" (a special marker, not an
-# actual category from the CATEGORY table)
-curl -k -u api:api2021 -X POST -H "Content-Type: application/json" \
-  -d '["ECPDS"]' \
-  "https://localhost:8443/ecpds/v1/incoming/category/add?id=newuser"
+  "https://localhost:8443/ecpds/v1/incoming/user/add?id=newuser&pass=secret&email=newuser@example.com&iso=gb&portalService=standard-login&active=true"
 ```
 
 ```bash
