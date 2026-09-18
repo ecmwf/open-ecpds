@@ -29,6 +29,12 @@ ectrans.hostSelector = "($network == internal) 10.0.0.5"
 | `ectrans.retryCount` | Integer | `1` | Number of additional connection attempts before signalling a failure to the transfer scheduler |
 | `ectrans.retryFrequency` | Duration | `1s` | Delay between retry attempts when `ectrans.retryCount` is greater than zero |
 
+!!! tip
+    For the [HTTP module](http.md), see also `http.minRequestInterval`, `http.honorRetryAfter`, `http.maxRetryAfter`,
+    `http.rateLimitRetryCount` and `http.rateLimitBackoff` under [Rate limiting & overload protection](http.md#rate-limiting--overload-protection)
+    — these pace/retry individual requests to avoid overloading or getting banned by a slow or rate-limiting site,
+    complementing the whole-transfer retry mechanism above.
+
 ## Timeouts
 
 | Option | Type | Default | Description |

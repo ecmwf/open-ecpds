@@ -267,6 +267,34 @@ http.allowCircularRedirects = "no"    # allow repeated redirects to the same URL
 http.enableContentCompression = "yes" # accept gzip / deflate responses
 ```
 
+### Rate limiting & overload protection
+
+Slow or rate-limiting sites can be overwhelmed by too many concurrent/rapid requests — and may respond by banning the
+source IP. These options pace outgoing requests and cooperate with server-side throttling:
+
+```properties
+# Cap the request rate: never start two requests less than this far apart,
+# across all requests (including concurrent listing threads). Disabled by default.
+http.minRequestInterval = "500ms"
+
+# On "429 Too Many Requests" / "503 Service Unavailable", wait and retry automatically
+# instead of failing immediately (up to "http.rateLimitRetryCount" times).
+http.honorRetryAfter = "yes"       # honor the server's "Retry-After" header, if present (default: yes)
+http.maxRetryAfter = "5m"          # cap on how long any single wait may be (default: 5m)
+http.rateLimitRetryCount = "5"     # max automatic retries for a single request (default: 5)
+
+# When no "Retry-After" header is present, back off exponentially instead (with jitter):
+# attempt 1 = ~2s, attempt 2 = ~4s, attempt 3 = ~8s, ... capped by "http.maxRetryAfter".
+http.rateLimitBackoff = "2s"
+```
+
+!!! note
+    `http.rateLimitRetryCount` retries a single HTTP request in place; it is independent from — and applied before —
+    the generic `ectrans.retryCount` / `ectrans.retryFrequency`, which retry the whole transfer after it has failed.
+    A request with a body (PUT/POST) is only auto-retried if its content is repeatable (e.g. backed by a file or byte
+    array rather than a single-use stream); otherwise the error is surfaced immediately so the outer retry mechanism
+    can re-open the transfer from scratch.
+
 ### URL encoding & path handling
 
 ```properties

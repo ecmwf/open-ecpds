@@ -59,12 +59,15 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_FTP_LIKE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_HAS_PARAMETERS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_HEADERS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_IS_SYMLINK;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_HONOR_RETRY_AFTER;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_MAX_DIRS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_MAX_FILES;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_MAX_THREADS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_MAX_WAITING;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_LIST_RECURSIVE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MAX_REDIRECTS;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MAX_RETRY_AFTER;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MIN_REQUEST_INTERVAL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MAX_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_PARSER;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_PARSER_OPTIONS;
@@ -93,6 +96,8 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MULTIPART_MODE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_PORT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_PROTOCOL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_PROXY;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_RATE_LIMIT_BACKOFF;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_RATE_LIMIT_RETRY_COUNT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_SCHEME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_SELECT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_SSL_VALIDATION;
@@ -126,6 +131,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -137,8 +143,10 @@ import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.net.ssl.HostnameVerifier;
 
@@ -272,6 +280,13 @@ public final class HttpModule extends TransferModule {
 
     /** The closed. */
     private final AtomicBoolean closed = new AtomicBoolean(false);
+
+    /**
+     * Reservation clock for {@link #HOST_HTTP_MIN_REQUEST_INTERVAL} pacing: each request atomically reserves the next
+     * available send slot so that, across all threads sharing this module instance (e.g. concurrent listing), no two
+     * requests start less than the configured interval apart.
+     */
+    private final AtomicLong nextRequestSlotMillis = new AtomicLong(0);
 
     /** The socket factory. */
     private ClientSocketFactory socketFactory = null;
@@ -2425,27 +2440,133 @@ public final class HttpModule extends TransferModule {
             if (cookieStore != null) {
                 context.setCookieStore(cookieStore);
             }
-            // High-level execute -> redirect/cookie/auth handling is automatic.
-            final var httpResponse = httpClient.execute(targetHost, httpRequest, context);
-            if (getDebug()) {
-                _log.debug("Protocol version: {}", httpResponse.getVersion());
-            }
-            final var statusCode = httpResponse.getCode();
-            if (getDebug()) {
-                _log.debug("Response status: {} {}", statusCode, httpResponse.getReasonPhrase());
-                for (final Header header : httpResponse.getHeaders()) {
-                    _log.debug("Response Header: {}={}", header.getName(), header.getValue());
+            final var maxRateLimitRetries = getSetup().getInteger(HOST_HTTP_RATE_LIMIT_RETRY_COUNT);
+            for (var attempt = 0;; attempt++) {
+                // Rate-limiting: never start a request less than "http.minRequestInterval" after the previous one,
+                // across all threads sharing this module instance (e.g. concurrent listing).
+                paceRequest();
+                // High-level execute -> redirect/cookie/auth handling is automatic.
+                final var httpResponse = httpClient.execute(targetHost, httpRequest, context);
+                if (getDebug()) {
+                    _log.debug("Protocol version: {}", httpResponse.getVersion());
                 }
+                final var statusCode = httpResponse.getCode();
+                if (getDebug()) {
+                    _log.debug("Response status: {} {}", statusCode, httpResponse.getReasonPhrase());
+                    for (final Header header : httpResponse.getHeaders()) {
+                        _log.debug("Response Header: {}={}", header.getName(), header.getValue());
+                    }
+                }
+                final var accepted = acceptedStatusCodes == null || acceptedStatusCodes.length == 0
+                        || Arrays.stream(acceptedStatusCodes).anyMatch(code -> code == statusCode);
+                if (!accepted) {
+                    if ((statusCode == 429 || statusCode == 503) && attempt < maxRateLimitRetries
+                            && isRetriable(httpRequest)) {
+                        final var wait = getRateLimitWaitDuration(httpResponse, attempt);
+                        _log.warn(
+                                "Received {} for {} ({}); waiting {} before retry {}/{} (rate-limit/overload protection)",
+                                statusCode, httpRequest.getRequestUri(), httpResponse.getReasonPhrase(), wait,
+                                attempt + 1, maxRateLimitRetries);
+                        EntityUtils.consumeQuietly(httpResponse.getEntity());
+                        sleepUninterruptibly(wait);
+                        continue;
+                    }
+                    EntityUtils.consumeQuietly(httpResponse.getEntity());
+                    throw new IOException("Error " + statusCode + " " + httpResponse.getReasonPhrase());
+                }
+                return httpResponse;
             }
-            if (acceptedStatusCodes != null && acceptedStatusCodes.length > 0
-                    && Arrays.stream(acceptedStatusCodes).noneMatch(code -> code == statusCode)) {
-                EntityUtils.consumeQuietly(httpResponse.getEntity());
-                throw new IOException("Error " + statusCode + " " + httpResponse.getReasonPhrase());
-            }
-            return httpResponse;
         } catch (final Throwable t) {
             _log.warn("Processing {}", httpRequest.getRequestUri(), t);
             throw new IOException(Format.getMessage(t));
+        }
+    }
+
+    /**
+     * Whether the given request can safely be resent as-is after a {@code 429}/{@code 503} rate-limit wait: requests
+     * without a body (GET/HEAD/DELETE) are always safe; requests with a body (PUT/POST) are only safe if the entity
+     * declares itself repeatable (e.g. backed by a byte array or file, not a single-use stream).
+     */
+    private static boolean isRetriable(final HttpUriRequestBase httpRequest) {
+        final var entity = httpRequest.getEntity();
+        return entity == null || entity.isRepeatable();
+    }
+
+    /**
+     * Enforces {@link #HOST_HTTP_MIN_REQUEST_INTERVAL} pacing by blocking the current thread, if necessary, until the
+     * next reserved send slot is reached. No-op (returns immediately) when the option is unset/zero.
+     */
+    private void paceRequest() throws IOException {
+        final var interval = getSetup().getDuration(HOST_HTTP_MIN_REQUEST_INTERVAL);
+        if (interval == null || interval.isZero() || interval.isNegative()) {
+            return;
+        }
+        final var intervalMillis = interval.toMillis();
+        long mySlot;
+        while (true) {
+            final var previousSlot = nextRequestSlotMillis.get();
+            final var now = System.currentTimeMillis();
+            mySlot = Math.max(previousSlot, now);
+            if (nextRequestSlotMillis.compareAndSet(previousSlot, mySlot + intervalMillis)) {
+                break;
+            }
+        }
+        sleepUninterruptibly(Duration.ofMillis(mySlot - System.currentTimeMillis()));
+    }
+
+    /**
+     * Computes how long to wait before retrying a {@code 429}/{@code 503} response: honors the server's
+     * {@code Retry-After} header (seconds or HTTP-date form) when {@link #HOST_HTTP_HONOR_RETRY_AFTER} is enabled and
+     * the header is present, otherwise falls back to an exponential backoff (with up to 20% jitter) based on
+     * {@link #HOST_HTTP_RATE_LIMIT_BACKOFF} and the current attempt number. Either way, the result is capped by
+     * {@link #HOST_HTTP_MAX_RETRY_AFTER}.
+     */
+    private Duration getRateLimitWaitDuration(final ClassicHttpResponse httpResponse, final int attempt)
+            throws IOException {
+        final var maxWait = getSetup().getDuration(HOST_HTTP_MAX_RETRY_AFTER);
+        if (getSetup().getBoolean(HOST_HTTP_HONOR_RETRY_AFTER)) {
+            final var header = httpResponse.getFirstHeader("Retry-After");
+            if (header != null) {
+                final var value = header.getValue();
+                try {
+                    // "Retry-After: 120" (delta-seconds)
+                    final var seconds = Long.parseLong(value.trim());
+                    return min(Duration.ofSeconds(Math.max(0, seconds)), maxWait);
+                } catch (final NumberFormatException e) {
+                    // "Retry-After: <HTTP-date>"
+                    try {
+                        final var retryAt = java.time.ZonedDateTime.parse(value.trim(),
+                                java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME);
+                        final var millis = retryAt.toInstant().toEpochMilli() - System.currentTimeMillis();
+                        return min(Duration.ofMillis(Math.max(0, millis)), maxWait);
+                    } catch (final Exception ignored) {
+                        // Fall through to the exponential backoff below.
+                    }
+                }
+            }
+        }
+        final var base = getSetup().getDuration(HOST_HTTP_RATE_LIMIT_BACKOFF);
+        final var exponential = base.multipliedBy(1L << Math.min(attempt, 16));
+        final var jitterFactor = 1.0 + ThreadLocalRandom.current().nextDouble(0.0, 0.2);
+        final var withJitter = Duration.ofMillis((long) (exponential.toMillis() * jitterFactor));
+        return min(withJitter, maxWait);
+    }
+
+    /** Returns the smaller of the two durations. */
+    private static Duration min(final Duration a, final Duration b) {
+        return a.compareTo(b) <= 0 ? a : b;
+    }
+
+    /** Sleeps for the given duration, restoring the interrupt flag (without throwing) if interrupted. */
+    private static void sleepUninterruptibly(final Duration duration) {
+        final var millis = duration.toMillis();
+        if (millis <= 0) {
+            return;
+        }
+        try {
+            Thread.sleep(millis);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

@@ -1471,6 +1471,44 @@ public enum ECtransOptions {
     HOST_HTTP_LIST_MAX_DIRS("listMaxDirs", Integer.class, 50000),
 
     /**
+     * Minimum delay enforced between the start of any two consecutive requests issued by this module instance
+     * (including concurrent listing threads), used to cap the request rate against slow or rate-limiting sites and
+     * avoid triggering bans. Disabled (no pacing) by default.
+     */
+    HOST_HTTP_MIN_REQUEST_INTERVAL("minRequestInterval", Duration.class, DURATION_NONE),
+
+    /**
+     * Whether a {@code 429 Too Many Requests} or {@code 503 Service Unavailable} response should be handled by waiting
+     * and automatically retrying (up to {@link #HOST_HTTP_RATE_LIMIT_RETRY_COUNT} times) instead of immediately failing
+     * the request. When the response carries a {@code Retry-After} header, that value is honored (capped by
+     * {@link #HOST_HTTP_MAX_RETRY_AFTER}); otherwise an exponential backoff (with jitter) starting at
+     * {@link #HOST_HTTP_RATE_LIMIT_BACKOFF} is used.
+     */
+    HOST_HTTP_HONOR_RETRY_AFTER("honorRetryAfter", Boolean.class, true),
+
+    /**
+     * Upper bound on how long to wait before retrying a {@code 429}/{@code 503} response, whether the delay comes from
+     * a server-supplied {@code Retry-After} header or from the internal exponential backoff. Protects against a
+     * misconfigured or malicious server requesting an excessive wait.
+     */
+    HOST_HTTP_MAX_RETRY_AFTER("maxRetryAfter", Duration.class, Duration.ofMinutes(5)),
+
+    /**
+     * Maximum number of automatic retries performed for a single request that keeps receiving {@code 429}/{@code
+     * 503} responses, before giving up and surfacing the error as usual. This is independent from (and in addition to)
+     * the generic {@link #HOST_ECTRANS_RETRY_COUNT}, which retries the whole transfer rather than a single request.
+     */
+    HOST_HTTP_RATE_LIMIT_RETRY_COUNT("rateLimitRetryCount", Integer.class, 5),
+
+    /**
+     * Base delay used for the exponential backoff applied between retries of a {@code 429}/{@code 503} response when no
+     * (or no {@link #HOST_HTTP_HONOR_RETRY_AFTER}) {@code Retry-After} header is present. The delay doubles on each
+     * further retry (1x, 2x, 4x, ...) plus a random jitter of up to 20%, and is capped by
+     * {@link #HOST_HTTP_MAX_RETRY_AFTER}.
+     */
+    HOST_HTTP_RATE_LIMIT_BACKOFF("rateLimitBackoff", Duration.class, Duration.ofSeconds(2)),
+
+    /**
      * The string value of the token returned by {@code getAuthToken()} (or the configured function). The JavaScript
      * function should return an object with this as a key, e.g.:
      *
