@@ -980,22 +980,27 @@ public final class FtpModule extends TransferModule {
             currentStatus = "CLOSE";
             closeStreams();
             try {
-                if (ftp != null && ftp.commandIsOpen()) {
-                    if (putName != null && !checked) {
-                        try {
-                            ftpDel(getName(putName));
-                        } catch (final IOException _) {
+                if (ftp != null) {
+                    if (ftp.commandIsOpen()) {
+                        if (putName != null && !checked) {
+                            try {
+                                ftpDel(getName(putName));
+                            } catch (final IOException _) {
+                            }
                         }
-                    }
-                    if (ftp.commandIsOpen() && isNotEmpty(preCloseCmd)) {
-                        final var tokenizer = new StringTokenizer(preCloseCmd, ";");
-                        while (tokenizer.hasMoreTokens()) {
-                            ftpCommand(tokenizer.nextToken());
+                        if (ftp.commandIsOpen() && isNotEmpty(preCloseCmd)) {
+                            final var tokenizer = new StringTokenizer(preCloseCmd, ";");
+                            while (tokenizer.hasMoreTokens()) {
+                                ftpCommand(tokenizer.nextToken());
+                            }
                         }
                     }
                     if (checked && keepAlive > 0 && key != null && ftp.commandIsOpen()) {
                         cache.put(key, ftp, keepAlive, useNoop);
                     } else {
+                        // Always release the underlying sockets (data/server), even if the control
+                        // connection already dropped (e.g. broken pipe mid-transfer), otherwise they
+                        // would never be closed and the sockets would leak.
                         ftp.close(true);
                     }
                 }
