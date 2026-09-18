@@ -105,9 +105,9 @@
     <tr>
       <th>Err</th>
       <th>Host</th>
-      <th title="Scheduled Time (UTC) &mdash; date shown in selector above, or in the cell itself when 'All' is selected">Sched. Time</th>
-      <th title="Start Time (UTC) &mdash; date shown in selector above, or in the cell itself when 'All' is selected">Start Time</th>
-      <th title="Finish Time (UTC) &mdash; date shown in selector above, or in the cell itself when 'All' is selected">Finish Time</th>
+      <th title="Scheduled Time (UTC) &mdash; full date shown, since it may differ from the selected Prod. Date (which is the file's product/base time)">Sched. Time</th>
+      <th title="Start Time (UTC) &mdash; full date shown, since it may differ from the selected Prod. Date (which is the file's product/base time)">Start Time</th>
+      <th title="Finish Time (UTC) &mdash; full date shown, since it may differ from the selected Prod. Date (which is the file's product/base time)">Finish Time</th>
       <th style="min-width:120px;">Target</th>
       <th>TS</th>
       <th>%</th>

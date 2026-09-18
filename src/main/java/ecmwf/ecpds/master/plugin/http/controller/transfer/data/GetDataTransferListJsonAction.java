@@ -187,9 +187,17 @@ public class GetDataTransferListJsonAction extends PDSAction {
                 + escapeHtml(nickName) + "</a>";
     }
 
+    /**
+     * The date selector filters on the transfer's product/base time ({@code DAT_TIME_BASE}), which is unrelated to when
+     * the transfer was actually scheduled. A transfer selected for a given date can legitimately be scheduled on a
+     * different calendar day (delayed dissemination, embargo, retries, ...), so the date is always included here rather
+     * than assuming it matches the selector.
+     */
+    private static final String DATE_AND_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
     private static String buildScheduledTimeHtml(final DataTransfer dt) {
         final var t = dt.getScheduledTime();
-        return t != null ? Format.formatTime("HH:mm:ss", t.getTime()) : "";
+        return t != null ? Format.formatTime(DATE_AND_TIME_FORMAT, t.getTime()) : "";
     }
 
     private static String buildTargetHtml(final DataTransfer dt) {
