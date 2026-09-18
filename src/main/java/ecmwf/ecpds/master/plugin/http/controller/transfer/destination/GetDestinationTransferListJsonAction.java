@@ -203,9 +203,9 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
             final var row = data.addArray();
             row.add(buildErrHtml(dt));
             row.add(buildHostHtml(dt));
-            row.add(buildScheduledTimeHtml(dt));
-            row.add(buildStartTimeHtml(dt));
-            row.add(buildFinishTimeHtml(dt));
+            row.add(buildScheduledTimeHtml(dt, date == null));
+            row.add(buildStartTimeHtml(dt, date == null));
+            row.add(buildFinishTimeHtml(dt, date == null));
             row.add(buildTargetHtml(dt));
             row.add(buildTimeStepHtml(dt));
             row.add(buildProgressHtml(dt));
@@ -250,9 +250,15 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
                 + "\" class=\"text-decoration-none\">" + escapeHtml(nickName) + "</a>";
     }
 
-    private static String buildScheduledTimeHtml(final DataTransfer dt) {
+    /** Time-only format used when a single Prod Date is selected (date is shown in the selector). */
+    private static final String TIME_ONLY_FORMAT = "HH:mm:ss";
+
+    /** Date+time format used when "All" Prod Dates are selected, since rows may span multiple dates. */
+    private static final String DATE_AND_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
+    private static String buildScheduledTimeHtml(final DataTransfer dt, final boolean includeDate) {
         final var t = dt.getScheduledTime();
-        return t != null ? Format.formatTime("HH:mm:ss", t.getTime()) : "";
+        return t != null ? Format.formatTime(includeDate ? DATE_AND_TIME_FORMAT : TIME_ONLY_FORMAT, t.getTime()) : "";
     }
 
     /**
@@ -275,15 +281,15 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
         }
     }
 
-    private static String buildStartTimeHtml(final DataTransfer dt) {
+    private static String buildStartTimeHtml(final DataTransfer dt, final boolean includeDate) {
         final var t = dt.getStartTime();
-        return t != null ? Format.formatTime("HH:mm:ss", t.getTime())
+        return t != null ? Format.formatTime(includeDate ? DATE_AND_TIME_FORMAT : TIME_ONLY_FORMAT, t.getTime())
                 : "<i class=\"bi bi-dash text-muted\" title=\"Not started\"></i>";
     }
 
-    private static String buildFinishTimeHtml(final DataTransfer dt) {
+    private static String buildFinishTimeHtml(final DataTransfer dt, final boolean includeDate) {
         final var t = dt.getRealFinishTime();
-        return t != null ? Format.formatTime("HH:mm:ss", t.getTime())
+        return t != null ? Format.formatTime(includeDate ? DATE_AND_TIME_FORMAT : TIME_ONLY_FORMAT, t.getTime())
                 : "<i class=\"bi bi-dash text-muted\" title=\"Not finished\"></i>";
     }
 

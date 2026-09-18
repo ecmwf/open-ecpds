@@ -208,20 +208,26 @@ public class GetValidateTransferListJsonAction extends PDSAction {
                 + escapeHtml(nickName) + "</a>";
     }
 
+    /**
+     * Selected transfers may span multiple Prod Dates (there is no date selector for this basket view), so the date is
+     * always included alongside the time to avoid ambiguity.
+     */
+    private static final String DATE_AND_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
     private static String buildScheduledTimeHtml(final DataTransfer dt) {
         final var t = dt.getScheduledTime();
-        return t != null ? Format.formatTime("HH:mm:ss", t.getTime()) : "";
+        return t != null ? Format.formatTime(DATE_AND_TIME_FORMAT, t.getTime()) : "";
     }
 
     private static String buildStartTimeHtml(final DataTransfer dt) {
         final var t = dt.getStartTime();
-        return t != null ? Format.formatTime("HH:mm:ss", t.getTime())
+        return t != null ? Format.formatTime(DATE_AND_TIME_FORMAT, t.getTime())
                 : "<i class=\"bi bi-dash text-muted\" title=\"Not started\"></i>";
     }
 
     private static String buildFinishTimeHtml(final DataTransfer dt) {
         final var t = dt.getRealFinishTime();
-        return t != null ? Format.formatTime("HH:mm:ss", t.getTime())
+        return t != null ? Format.formatTime(DATE_AND_TIME_FORMAT, t.getTime())
                 : "<i class=\"bi bi-dash text-muted\" title=\"Not finished\"></i>";
     }
 
