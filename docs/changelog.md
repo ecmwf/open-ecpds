@@ -5,7 +5,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ---
 
-## open-ecpds 8.2.0-01092026
+## open-ecpds 8.2.0-17092026
 
 - **HTTP module rate limiting & overload protection**: New `http.minRequestInterval` option paces outgoing requests (across all threads, including concurrent listing) to avoid overwhelming or getting banned by a slow or rate-limiting site. `429 Too Many Requests` / `503 Service Unavailable` responses are no longer treated as immediate failures: they are now automatically retried (up to `http.rateLimitRetryCount` times), honoring the server's `Retry-After` header when present (`http.honorRetryAfter`, capped by `http.maxRetryAfter`), or falling back to an exponential backoff with jitter (`http.rateLimitBackoff`) otherwise.
 - **Dissemination Host max-connections mismatch indicator**: On `/do/transfer/destination/<name>`, each Dissemination Host now shows a warning (⚠) or info (ⓘ) icon with a tooltip when its own Max Connections differs from the Destination's, clarifying that the effective limit is the more restrictive of the two.
