@@ -60,6 +60,8 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.rmi.RemoteException;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -2064,11 +2066,63 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final var passwd = host.getPasswd();
             final var env = passwd != null && !passwd.isEmpty() ? java.util.Map.of("ECPDS_PASSWD", passwd)
                     : java.util.Collections.<String, String> emptyMap();
-            // Run the report!
-            return _exec(cmd, env);
+            // Run the report! If this Data Mover is running inside a virtualized/user-mode
+            // Docker networking stack (e.g. Docker Desktop for macOS/Windows), prepend a
+            // warning so the Monitor UI can inform the user that the mtr/traceroute (and
+            // "ss"-based socket statistics) results below are not representative of the real
+            // network path.
+            final var report = _exec(cmd, env);
+            return _isVirtualizedNetworkDetected() ? _virtualizedNetworkWarning() + report : report;
         } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
+    }
+
+    /** Cached result of {@link #_isVirtualizedNetworkDetected()} (computed once per JVM). */
+    private static Boolean _virtualizedNetworkDetected;
+
+    /**
+     * Detects whether this Data Mover is running inside a virtualized/user-mode Docker networking stack, such as Docker
+     * Desktop for macOS/Windows, which runs containers inside a LinuxKit Linux VM. In that case, the ICMP "TTL
+     * Exceeded" replies used by mtr/traceroute are not relayed back into the container beyond the first (docker0/bridge
+     * gateway) hop, and "ss"-based TCP socket statistics (rtt/cwnd) reflect the virtualized network path rather than
+     * the real one to the remote host. On a native Linux Docker host both work correctly, since containers sit on a
+     * real bridge with normal kernel routing.
+     * <p>
+     * Detection is based on the kernel release reported in {@code /proc/version}, which for a Docker Desktop LinuxKit
+     * VM contains the string {@code linuxkit} (e.g. {@code 6.10.14-linuxkit}). The result is computed once and cached,
+     * since the kernel does not change while the JVM is running.
+     *
+     * @return true if a LinuxKit-based virtualized network stack is detected
+     */
+    private static synchronized boolean _isVirtualizedNetworkDetected() {
+        if (_virtualizedNetworkDetected == null) {
+            var detected = false;
+            try {
+                final var version = Files.readString(Path.of("/proc/version"));
+                detected = version.toLowerCase().contains("linuxkit");
+            } catch (final IOException e) {
+                _log.debug("Could not read /proc/version to detect a virtualized network stack", e);
+            }
+            _virtualizedNetworkDetected = detected;
+        }
+        return _virtualizedNetworkDetected;
+    }
+
+    /**
+     * Builds the HTML warning banner prepended to the Host network report when a virtualized network stack is detected
+     * (see {@link #_isVirtualizedNetworkDetected()}).
+     *
+     * @return the warning banner, as an HTML fragment
+     */
+    private static String _virtualizedNetworkWarning() {
+        return "<div style='color:#8a6100;background:#fff8e1;border:1px solid #ffd54f;border-radius:4px;"
+                + "padding:6px 10px;margin-bottom:8px;font-family:sans-serif;'>"
+                + "<b>&#9888; Limited network diagnostics:</b> this Data Mover appears to be running inside a "
+                + "virtualized Docker networking stack (e.g. Docker Desktop for macOS/Windows). The mtr/traceroute "
+                + "results below will typically only show the first hop, and TCP socket statistics (\"ss\"-based "
+                + "RTT/cwnd) reflect the virtualized network path rather than the real one. Run this Data Mover on "
+                + "a native Linux Docker host to get accurate results.</div>\r\n\r\n";
     }
 
     /**

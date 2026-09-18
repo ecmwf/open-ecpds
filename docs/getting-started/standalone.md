@@ -308,6 +308,27 @@ docker start standalone
 docker rm standalone
 ```
 
+## Known limitations
+
+!!! warning "MTR / network path diagnostics on Docker Desktop (macOS/Windows)"
+    The Host **Network** page in the Monitoring UI runs `mtr`/`traceroute` inside the
+    container to chart the network path to a remote host. On **Docker Desktop for macOS
+    or Windows**, this will typically only show the first hop (the `docker0` gateway)
+    followed by all `* * *` timeouts, even though the same command works fine from a
+    terminal on the host machine.
+
+    This is a limitation of Docker Desktop's virtualized networking, not an OpenECPDS
+    issue. On macOS/Windows, containers reach the outside world through a userspace VM
+    networking layer (gVisor-tap-vsock, formerly vpnkit) that performs NAT for outbound
+    traffic but does not relay the ICMP "TTL Exceeded" replies sent back by intermediate
+    routers for each traceroute probe. Only the local `docker0` bridge answers, because
+    that hop never actually leaves the VM.
+
+    On a native Linux Docker host (e.g. production data movers), containers sit on a
+    real bridge with normal kernel routing, so `mtr` reports the full path correctly.
+    There is no workaround for Docker Desktop itself — to validate MTR/traceroute
+    behaviour, run the standalone container on a Linux host/VM instead.
+
 ## Next steps
 
 - Explore the [Monitoring UI](https://localhost:8443) to see destinations, hosts, and
