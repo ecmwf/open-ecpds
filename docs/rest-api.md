@@ -156,6 +156,7 @@ Creates a new incoming user with a password.
 | `pass` | ✅ | Password |
 | `email` | ✅ | Email address |
 | `iso` | ✅ | ISO country code (2-letter) |
+| `portalService` | ❌ | Data Portal access mode: `standard-login`, `open-access`, or `self-service`. Defaults to `standard-login` on creation; on update, an omitted/empty value leaves the existing mode unchanged. See [Data Users — Portal Service modes](use-cases/data-users.md#portal-service-modes) |
 
 **Service name:** `incomingUserAdd`
 
@@ -177,6 +178,7 @@ Creates or updates an incoming user without a password (password set separately 
 | `id` | ✅ | Username |
 | `email` | ✅ | Email address |
 | `iso` | ✅ | ISO country code |
+| `portalService` | ❌ | Data Portal access mode: `standard-login`, `open-access`, or `self-service`. Defaults to `standard-login` if omitted |
 
 **Service name:** `incomingUserAdd2`
 

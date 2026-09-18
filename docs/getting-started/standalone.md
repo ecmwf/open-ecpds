@@ -235,9 +235,10 @@ curl -k -u api:api2021 https://localhost:8443/ecpds/v1/incoming/user/list
 ```
 
 ```bash
-# Create a new incoming user
+# Create a new incoming user (portalService is optional, defaults to
+# "standard-login"; other values are "open-access" and "self-service")
 curl -k -u api:api2021 -X POST \
-  "https://localhost:8443/ecpds/v1/incoming/user/add?id=newuser&pass=secret&email=newuser@example.com&iso=gb"
+  "https://localhost:8443/ecpds/v1/incoming/user/add?id=newuser&pass=secret&email=newuser@example.com&iso=gb&portalService=standard-login"
 ```
 
 ```bash

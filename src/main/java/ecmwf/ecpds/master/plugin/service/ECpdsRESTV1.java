@@ -111,6 +111,9 @@ public final class ECpdsRESTV1 {
      *            the email
      * @param iso
      *            the iso
+     * @param portalService
+     *            the portal service mode ("standard-login", "open-access" or "self-service"); optional, defaults to
+     *            "standard-login" on creation
      *
      * @return the response
      */
@@ -120,12 +123,12 @@ public final class ECpdsRESTV1 {
     public Response incomingUserAdd(@HeaderParam("authorization") final String authString,
             @Context final HttpServletRequest request, @QueryParam("id") final String id,
             @QueryParam("pass") final String pass, @QueryParam("email") final String email,
-            @QueryParam("iso") final String iso) {
+            @QueryParam("iso") final String iso, @QueryParam("portalService") final String portalService) {
         _log.debug("incomingUserAdd");
         try {
             final var userNameAndPassword = _getUserNameAndPassword(authString, request);
             _checkParameter("id", id);
-            MasterManager.getDB().incomingUserAdd(userNameAndPassword, id, pass, email, iso);
+            MasterManager.getDB().incomingUserAdd(userNameAndPassword, id, pass, email, iso, portalService);
             return RESTMessage.getSuccessMessage().getResponse();
         } catch (final WebApplicationException w) {
             _log.warn("incomingUserAdd", w);
@@ -149,6 +152,9 @@ public final class ECpdsRESTV1 {
      *            the email
      * @param iso
      *            the iso
+     * @param portalService
+     *            the portal service mode ("standard-login", "open-access" or "self-service"); optional, defaults to
+     *            "standard-login"
      *
      * @return the response
      */
@@ -157,7 +163,8 @@ public final class ECpdsRESTV1 {
     @Path("incoming/user/add2")
     public Response incomingUserAdd2(@HeaderParam("authorization") final String authString,
             @Context final HttpServletRequest request, @QueryParam("id") final String id,
-            @QueryParam("email") final String email, @QueryParam("iso") final String iso) {
+            @QueryParam("email") final String email, @QueryParam("iso") final String iso,
+            @QueryParam("portalService") final String portalService) {
         _log.debug("incomingUserAdd2");
         try {
             final var userNameAndPassword = _getUserNameAndPassword(authString, request);
@@ -165,7 +172,8 @@ public final class ECpdsRESTV1 {
             _checkParameter("email", email);
             _checkParameter("iso", iso);
             final var message = RESTMessage.getSuccessMessage();
-            message.put("pass", MasterManager.getDB().incomingUserAdd2(userNameAndPassword, id, email, iso));
+            message.put("pass",
+                    MasterManager.getDB().incomingUserAdd2(userNameAndPassword, id, email, iso, portalService));
             return message.getResponse();
         } catch (final WebApplicationException w) {
             _log.warn("incomingUserAdd2", w);

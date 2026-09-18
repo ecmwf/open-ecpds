@@ -3553,6 +3553,9 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      *            the email
      * @param iso
      *            the iso
+     * @param portalService
+     *            the portal service mode ("standard-login", "open-access" or "self-service"); {@code null} or empty
+     *            keeps the default ("standard-login") on creation, or leaves it unchanged on update
      *
      * @throws DataBaseException
      *             the data base exception
@@ -3561,10 +3564,10 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      */
     @Override
     public void incomingUserAdd(final String user, final String id, final String password, final String email,
-            final String iso) throws DataBaseException, RemoteException {
+            final String iso, final String portalService) throws DataBaseException, RemoteException {
         checkUser(user, "incomingUserAdd");
-        final var monitor = new MonitorCall(
-                "incomingUserAdd(" + user + "," + id + "," + password + "," + email + "," + iso + ")");
+        final var monitor = new MonitorCall("incomingUserAdd(" + user + "," + id + "," + password + "," + email + ","
+                + iso + "," + portalService + ")");
         if (iso != null) {
             // Let's check if it is a valid country!
             final var country = ecpds.getCountryObject(iso);
@@ -3579,6 +3582,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         if (id.indexOf("-") != -1) {
             throw new DataBaseException("Userid " + id + " not valid (contains '-')");
         }
+        // Let's check if it is a valid portal service mode!
+        checkPortalService(portalService);
         var incomingUser = ecpds.getIncomingUserObject(id);
         if (incomingUser == null) {
             // It does not exists yet so we create it with all the default
@@ -3595,6 +3600,9 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             incomingUser.setLastLoginHost(null);
             incomingUser.setPassword(password);
             incomingUser.setIso(iso);
+            if (portalService != null && !portalService.isEmpty()) {
+                incomingUser.setPortalService(portalService);
+            }
             ecpds.insert(incomingUser, false);
             // Now we give him the standard read permissions!
             ecpds.insert(new IncomingPermission(incomingUser, ecpds.getOperation("dir")), false);
@@ -3612,9 +3620,31 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             if (iso != null) {
                 incomingUser.setIso(iso);
             }
+            if (portalService != null && !portalService.isEmpty()) {
+                incomingUser.setPortalService(portalService);
+            }
             ecpds.update(incomingUser);
         }
         monitor.done();
+    }
+
+    /** The valid values for the Portal Service field on an IncomingUser. */
+    private static final List<String> PORTAL_SERVICES = List.of("standard-login", "open-access", "self-service");
+
+    /**
+     * Check portal service. Validates the (optional) portal service mode passed to the REST API.
+     *
+     * @param portalService
+     *            the portal service
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    private static void checkPortalService(final String portalService) throws DataBaseException {
+        if (portalService != null && !portalService.isEmpty() && !PORTAL_SERVICES.contains(portalService)) {
+            throw new DataBaseException(
+                    "Portal service " + portalService + " not valid (expected one of " + PORTAL_SERVICES + ")");
+        }
     }
 
     /** Allow generating a temporary password. */
@@ -3647,6 +3677,9 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      *            the email
      * @param iso
      *            the iso
+     * @param portalService
+     *            the portal service mode ("standard-login", "open-access" or "self-service"); {@code null} or empty
+     *            defaults to "standard-login"
      *
      * @return the string
      *
@@ -3656,10 +3689,11 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      *             the remote exception
      */
     @Override
-    public String incomingUserAdd2(final String user, final String id, final String email, final String iso)
-            throws DataBaseException, RemoteException {
+    public String incomingUserAdd2(final String user, final String id, final String email, final String iso,
+            final String portalService) throws DataBaseException, RemoteException {
         checkUser(user, "incomingUserAdd2");
-        final var monitor = new MonitorCall("incomingUserAdd2(" + user + "," + id + "," + email + "," + iso + ")");
+        final var monitor = new MonitorCall(
+                "incomingUserAdd2(" + user + "," + id + "," + email + "," + iso + "," + portalService + ")");
         // Let's check if it is a valid country!
         final var country = ecpds.getCountryObject(iso);
         if (country == null) {
@@ -3669,6 +3703,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         if (!Format.isValidId(id, "_.")) {
             throw new DataBaseException("Userid " + id + " not valid (only letters, digits, '_' and '.' are allowed)");
         }
+        // Let's check if it is a valid portal service mode!
+        checkPortalService(portalService);
         // We generate a password!
         final var password = randomString(8);
         var incomingUser = ecpds.getIncomingUserObject(id);
@@ -3688,6 +3724,9 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         incomingUser.setLastLoginHost(null);
         incomingUser.setPassword(password);
         incomingUser.setIso(iso);
+        if (portalService != null && !portalService.isEmpty()) {
+            incomingUser.setPortalService(portalService);
+        }
         ecpds.insert(incomingUser, false);
         // Now we give him the standard read permissions!
         ecpds.insert(new IncomingPermission(incomingUser, ecpds.getOperation("dir")), false);
