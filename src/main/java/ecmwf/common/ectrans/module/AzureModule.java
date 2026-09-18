@@ -1164,12 +1164,21 @@ public final class AzureModule extends TransferModule {
                         }
                         cacheIten = new BlobServiceClientCache(key, builder, lastRemoteAddress);
                         instances.put(key, cacheIten);
-                        if (mkContainer && isNotEmpty(containerName)) {
-                            final var containerClient = cacheIten.getBlobContainerClient(containerName);
-                            if (!containerClient.exists()) {
-                                _log.debug("Creating Container {}", containerName);
-                                containerClient.create();
+                        try {
+                            if (mkContainer && isNotEmpty(containerName)) {
+                                final var containerClient = cacheIten.getBlobContainerClient(containerName);
+                                if (!containerClient.exists()) {
+                                    _log.debug("Creating Container {}", containerName);
+                                    containerClient.create();
+                                }
                             }
+                        } catch (final Throwable t) {
+                            // Roll back the just-inserted entry so it is not orphaned in the static
+                            // map (never locked, hence never eligible for shutdown()) and so that the
+                            // next attempt retries the container creation instead of silently skipping
+                            // it forever against a half-initialized cache entry.
+                            instances.remove(key, cacheIten);
+                            throw t;
                         }
                     }
                     cacheIten.lock();

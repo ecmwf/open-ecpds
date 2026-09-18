@@ -1644,17 +1644,28 @@ public final class HttpModule extends TransferModule {
         if (response == null) {
             return;
         }
-        final var entity = response.getEntity();
-        if (entity == null) {
-            return;
-        }
         try {
-            if (getDebug() && _log.isDebugEnabled()) {
-                logResponsePreview(entity);
+            final var entity = response.getEntity();
+            if (entity != null) {
+                try {
+                    if (getDebug() && _log.isDebugEnabled()) {
+                        logResponsePreview(entity);
+                    }
+                    EntityUtils.consumeQuietly(entity);
+                } catch (Exception e) {
+                    _log.warn("Consuming entity", e);
+                }
             }
-            EntityUtils.consumeQuietly(entity);
-        } catch (Exception e) {
-            _log.warn("Consuming entity", e);
+        } finally {
+            // ClassicHttpResponse is Closeable and holds the underlying pooled connection. HEAD requests (used by
+            // size()/existence checks) and other bodyless responses (e.g. 204/304) have no entity, so nothing above
+            // would ever trigger the connection release; without this the connection pool (bounded by
+            // "http.listMaxThreads") eventually exhausts and every further request for this host hangs.
+            try {
+                response.close();
+            } catch (final IOException e) {
+                _log.debug("Closing response", e);
+            }
         }
     }
 
@@ -2467,11 +2478,11 @@ public final class HttpModule extends TransferModule {
                                 "Received {} for {} ({}); waiting {} before retry {}/{} (rate-limit/overload protection)",
                                 statusCode, httpRequest.getRequestUri(), httpResponse.getReasonPhrase(), wait,
                                 attempt + 1, maxRateLimitRetries);
-                        EntityUtils.consumeQuietly(httpResponse.getEntity());
+                        closeResponse(httpResponse);
                         sleepUninterruptibly(wait);
                         continue;
                     }
-                    EntityUtils.consumeQuietly(httpResponse.getEntity());
+                    closeResponse(httpResponse);
                     throw new IOException("Error " + statusCode + " " + httpResponse.getReasonPhrase());
                 }
                 return httpResponse;
