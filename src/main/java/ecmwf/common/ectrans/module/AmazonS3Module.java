@@ -1267,13 +1267,26 @@ public final class AmazonS3Module extends TransferModule {
                         sdkResponseBuilder.appendHeader(header.getName(), header.getValue());
                     }
                     final var entity = apacheResponse.getEntity();
-                    final AbortableInputStream bodyStream = entity != null
-                            ? AbortableInputStream.create(entity.getContent(), () -> {
-                                try {
-                                    apacheResponse.close();
-                                } catch (final IOException ignored) {
-                                }
-                            }) : null;
+                    final AbortableInputStream bodyStream;
+                    if (entity != null) {
+                        bodyStream = AbortableInputStream.create(entity.getContent(), () -> {
+                            try {
+                                apacheResponse.close();
+                            } catch (final IOException ignored) {
+                            }
+                        });
+                    } else {
+                        // No entity means nobody downstream will ever read/close a body stream to release
+                        // the connection (e.g. HEAD requests, 204/304 responses to DELETE). Close the
+                        // response now, otherwise the underlying pooled connection leaks forever and the
+                        // bounded connection pool (maxTotal=50) eventually exhausts, hanging all further
+                        // requests for this host.
+                        try {
+                            apacheResponse.close();
+                        } catch (final IOException ignored) {
+                        }
+                        bodyStream = null;
+                    }
                     return HttpExecuteResponse.builder().response(sdkResponseBuilder.build()).responseBody(bodyStream)
                             .build();
                 }
