@@ -134,6 +134,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import software.amazon.awssdk.http.AbortableInputStream;
+import software.amazon.awssdk.http.ContentStreamProvider;
 import software.amazon.awssdk.http.ExecutableHttpRequest;
 import software.amazon.awssdk.http.HttpExecuteRequest;
 import software.amazon.awssdk.http.HttpExecuteResponse;
@@ -542,7 +543,12 @@ public final class AmazonS3Module extends TransferModule {
                 final RequestBody requestBody;
                 if (getSetup().getBoolean(HOST_S3_USE_BYTE_ARRAY_INPUT_STREAM)
                         && size < getSetup().getLong(HOST_S3_SINGLEPART_SIZE)) {
-                    requestBody = RequestBody.fromBytes(IoUtils.toByteArray(in));
+                    // RequestBody.fromBytes() would make its own defensive copy of the array (doubling
+                    // peak memory for this transfer); fromByteArrayUnsafe avoids that copy since the
+                    // freshly-read array here is not referenced/mutated anywhere else.
+                    final var bytes = IoUtils.toByteArray(in);
+                    requestBody = RequestBody.fromContentProvider(ContentStreamProvider.fromByteArrayUnsafe(bytes),
+                            bytes.length, "application/octet-stream");
                 } else {
                     requestBody = RequestBody.fromInputStream(in, size);
                 }
@@ -1880,7 +1886,12 @@ public final class AmazonS3Module extends TransferModule {
                         final var response = s3.getS3Client().uploadPart(
                                 UploadPartRequest.builder().bucket(bucket).key(key).uploadId(uploadId)
                                         .partNumber(currentPartNumber).contentLength((long) dataLen).build(),
-                                RequestBody.fromBytes(body));
+                                // RequestBody.fromBytes() would silently make its own defensive copy of the
+                                // array (doubling peak memory per in-flight part); fromByteArrayUnsafe avoids
+                                // that copy since "body" is not mutated again until the pool buffer is returned
+                                // below, which only happens once this upload has completed.
+                                RequestBody.fromContentProvider(ContentStreamProvider.fromByteArrayUnsafe(body),
+                                        dataLen, "application/octet-stream"));
                         return CompletedPart.builder().partNumber(currentPartNumber).eTag(response.eTag()).build();
                     } finally {
                         bufferPool.offer(data);
