@@ -50,6 +50,8 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_FTPUSER;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_MK_BUCKET;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PARALLEL_UPLOAD;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PARALLEL_UPLOAD_NUM_THREADS;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PARALLEL_UPLOAD_PART_CLEANUP_EXISTING_BUCKET;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PARALLEL_UPLOAD_PART_MAX_AGE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PARALLEL_UPLOAD_PART_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PORT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PREFIX;
@@ -71,6 +73,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channels;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -303,10 +306,16 @@ public final class GcsModule extends TransferModule {
                             HttpTransportOptions.newBuilder().setHttpTransportFactory(() -> httpTransport).build())
                     .setBlobWriteSessionConfig(getBlobWriteSessionConfig(setup)).build().getService();
 
-            if (isNotEmpty(bucketName) && setup.getBoolean(HOST_GCS_MK_BUCKET)) {
+            final var applyToExistingBucket = setup.getBoolean(HOST_GCS_PARALLEL_UPLOAD_PART_CLEANUP_EXISTING_BUCKET);
+            if (isNotEmpty(bucketName) && (setup.getBoolean(HOST_GCS_MK_BUCKET) || applyToExistingBucket)) {
                 // The user has configured a Bucket Name!
-                if (gcs.get(bucketName) == null) {
-                    createBucket(bucketName);
+                final var existingBucket = gcs.get(bucketName);
+                if (existingBucket == null) {
+                    if (setup.getBoolean(HOST_GCS_MK_BUCKET)) {
+                        createBucket(bucketName);
+                    }
+                } else if (applyToExistingBucket) {
+                    ensurePartCleanupLifecycleRule(existingBucket);
                 }
             }
 
@@ -385,7 +394,10 @@ public final class GcsModule extends TransferModule {
     }
 
     /**
-     * Creates a bucket with an optional region setting.
+     * Creates a bucket with an optional region setting. If
+     * {@link ecmwf.common.ectrans.ECtransOptions#HOST_GCS_PARALLEL_UPLOAD_PART_MAX_AGE} is set, the new bucket is also
+     * created with the "*.part" cleanup lifecycle rule so that any stray parallel composite upload part left behind by
+     * an interrupted transfer gets deleted automatically.
      *
      * @param name
      *            the bucket name
@@ -395,11 +407,80 @@ public final class GcsModule extends TransferModule {
      */
     private void createBucket(final String name) throws IOException {
         final var region = currentSetup.getString(HOST_GCS_BUCKET_LOCATION);
-        if (isNotEmpty(region)) {
-            gcs.create(BucketInfo.newBuilder(name).setLocation(region).build());
-        } else {
-            gcs.create(BucketInfo.newBuilder(name).build());
-        }
+        final var builder = isNotEmpty(region) ? BucketInfo.newBuilder(name).setLocation(region)
+                : BucketInfo.newBuilder(name);
+        currentSetup.getOptionalDuration(HOST_GCS_PARALLEL_UPLOAD_PART_MAX_AGE)
+                .ifPresent(maxAge -> builder.setLifecycleRules(List.of(buildPartCleanupLifecycleRule(maxAge))));
+        gcs.create(builder.build());
+    }
+
+    /**
+     * Builds the Object Lifecycle rule which deletes any object whose name ends with ".part" (the suffix always used by
+     * the Google Cloud Storage client library for parallel composite upload part objects, regardless of the configured
+     * naming strategy) once it is older than the given duration.
+     *
+     * @param maxAge
+     *            the maximum age a stray part object is allowed to reach before being deleted
+     *
+     * @return the lifecycle rule
+     */
+    private static BucketInfo.LifecycleRule buildPartCleanupLifecycleRule(final Duration maxAge) {
+        final var ageInDays = Math.max(1, (int) Math.ceil(maxAge.toSeconds() / 86400.0));
+        return new BucketInfo.LifecycleRule(BucketInfo.LifecycleRule.LifecycleAction.newDeleteAction(),
+                BucketInfo.LifecycleRule.LifecycleCondition.newBuilder().setAge(ageInDays)
+                        .setMatchesSuffix(List.of(".part")).build());
+    }
+
+    /**
+     * Ensures the given (already existing) bucket has the "*.part" cleanup lifecycle rule configured, adding it if not
+     * already present, or replacing it if a previously-added rule with a different maxAge is found. Only called when
+     * {@link ecmwf.common.ectrans.ECtransOptions#HOST_GCS_PARALLEL_UPLOAD_PART_CLEANUP_EXISTING_BUCKET} is enabled, so
+     * that ECPDS never silently mutates the lifecycle configuration of a bucket it does not manage unless explicitly
+     * instructed to.
+     *
+     * @param bucket
+     *            the existing bucket
+     */
+    private void ensurePartCleanupLifecycleRule(final Bucket bucket) {
+        currentSetup.getOptionalDuration(HOST_GCS_PARALLEL_UPLOAD_PART_MAX_AGE).ifPresent(maxAge -> {
+            final var newRule = buildPartCleanupLifecycleRule(maxAge);
+            final var existingRules = bucket.getLifecycleRules();
+            if (existingRules != null && existingRules.stream().anyMatch(newRule::equals)) {
+                _log.debug("Bucket {} already has the .part cleanup lifecycle rule", bucket.getName());
+                return;
+            }
+            try {
+                final var mergedRules = new ArrayList<BucketInfo.LifecycleRule>();
+                if (existingRules != null) {
+                    // Keep every other rule as-is, but drop any previously-added ".part" cleanup rule (e.g. with a
+                    // now-stale maxAge) so that changing the option does not keep stacking duplicate rules.
+                    existingRules.stream().filter(rule -> !isPartCleanupRule(rule)).forEach(mergedRules::add);
+                }
+                mergedRules.add(newRule);
+                gcs.update(bucket.toBuilder().setLifecycleRules(mergedRules).build());
+                _log.info("Added .part cleanup lifecycle rule (maxAge={}) to existing bucket {}", maxAge,
+                        bucket.getName());
+            } catch (final Throwable t) {
+                // Best-effort: failing to add the safety-net lifecycle rule must not prevent the module from
+                // connecting/transferring.
+                _log.warn("Could not add .part cleanup lifecycle rule to existing bucket {}", bucket.getName(), t);
+            }
+        });
+    }
+
+    /**
+     * Checks if the given lifecycle rule is a "delete objects matching the .part suffix" rule, i.e. one previously
+     * added by {@link #buildPartCleanupLifecycleRule(Duration)} (possibly with a different age).
+     *
+     * @param rule
+     *            the lifecycle rule
+     *
+     * @return true, if this is a ".part" cleanup rule
+     */
+    private static boolean isPartCleanupRule(final BucketInfo.LifecycleRule rule) {
+        final var condition = rule.getCondition();
+        return rule.getAction() instanceof BucketInfo.LifecycleRule.DeleteLifecycleAction && condition != null
+                && condition.getMatchesSuffix() != null && condition.getMatchesSuffix().equals(List.of(".part"));
     }
 
     /**
@@ -490,6 +571,41 @@ public final class GcsModule extends TransferModule {
     }
 
     /**
+     * Best-effort, immediate cleanup of any leftover parallel composite upload part object for the given target object,
+     * called right after a parallel composite upload fails inside this JVM (e.g. network error, disconnection,
+     * interruption). This is a complement to (not a replacement for) the ".part" Object Lifecycle rule optionally
+     * configured via {@link ecmwf.common.ectrans.ECtransOptions#HOST_GCS_PARALLEL_UPLOAD_PART_MAX_AGE}, which remains
+     * the only safety net for a hard process/JVM kill (where no application code runs at all). Relies on the fact that
+     * the Google Cloud Storage client library's default part naming strategy ({@code PartNamingStrategy.noPrefix()})
+     * always names each part object as {@code <objectName>;<hash>;<partRange>.part}, i.e. the object key always starts
+     * with the exact target object name followed by ';', which is what makes this a safe, non-heuristic listing prefix.
+     *
+     * @param bucketName
+     *            the bucket name
+     * @param objectName
+     *            the target object name (as passed to {@link com.google.cloud.storage.BlobId#of})
+     */
+    private void cleanupOrphanParts(final String bucketName, final String objectName) {
+        try {
+            final var prefix = objectName + ";";
+            var deleted = 0;
+            for (final var blob : gcs.list(bucketName, BlobListOption.prefix(prefix)).iterateAll()) {
+                if (blob.getName().endsWith(".part") && gcs.delete(blob.getBlobId())) {
+                    deleted++;
+                }
+            }
+            if (deleted > 0) {
+                _log.info(
+                        "Deleted {} orphan part object(s) for {} in bucket {} after a failed parallel composite upload",
+                        deleted, objectName, bucketName);
+            }
+        } catch (final Throwable t) {
+            // Best-effort: the lifecycle rule (if configured) remains the safety net if this fails.
+            _log.warn("Could not clean up orphan part object(s) for {} in bucket {}", objectName, bucketName, t);
+        }
+    }
+
+    /**
      * Checks if a chunk size was set, adjusts it to be a multiple of 256KB (as per GCS requirements) and checks if this
      * size is a valid one (between 256KB and 50MB).
      *
@@ -548,10 +664,15 @@ public final class GcsModule extends TransferModule {
             if (getSetup().getBoolean(HOST_GCS_PARALLEL_UPLOAD)) {
                 _log.debug("Using GCS parallel composite upload");
                 final var session = gcs.blobWriteSession(objectInfo);
-                try (var out = Channels.newOutputStream(session.open())) {
-                    StreamPlugThread.copy(out, in, StreamPlugThread.DEFAULT_BUFF_SIZE);
+                try {
+                    try (var out = Channels.newOutputStream(session.open())) {
+                        StreamPlugThread.copy(out, in, StreamPlugThread.DEFAULT_BUFF_SIZE);
+                    }
+                    waitForCompletion(session, name);
+                } catch (final Exception e) {
+                    cleanupOrphanParts(bucketNameAndObject[0], bucketNameAndObject[1]);
+                    throw e;
                 }
-                waitForCompletion(session, name);
             } else {
                 // check (and use) if a different chunk size was set, GCS default 5MB
                 int chunkSize = getValidatedChunkSize();
@@ -609,8 +730,13 @@ public final class GcsModule extends TransferModule {
                 return new FilterOutputStream(out) {
                     @Override
                     public void close() throws IOException {
-                        super.close();
-                        waitForCompletion(session, name);
+                        try {
+                            super.close();
+                            waitForCompletion(session, name);
+                        } catch (final IOException e) {
+                            cleanupOrphanParts(bucketNameAndObject[0], bucketNameAndObject[1]);
+                            throw e;
+                        }
                     }
                 };
             }

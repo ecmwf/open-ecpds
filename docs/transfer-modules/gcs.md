@@ -141,9 +141,14 @@ For large files, GCS supports splitting an upload into parts that are uploaded c
 | `gcs.parallelUpload` | `no` | Enables parallel composite upload. Disabled by default; existing uploads are unaffected unless this is turned on. |
 | `gcs.parallelUploadNumThreads` | *SDK default (cached pool)* | Number of threads used to upload parts concurrently. Only used when `gcs.parallelUpload` is enabled. |
 | `gcs.parallelUploadPartSize` | *SDK default (16 MB)* | Size of each part uploaded concurrently, as a byte size value (e.g. `16m`, `32m`). Only used when `gcs.parallelUpload` is enabled. |
+| `gcs.parallelUploadPartMaxAge` | *not set* | Adds/ensures a bucket Object Lifecycle rule that deletes any object whose name ends with `.part` once older than this duration (e.g. `2d`), as a safety net against parts left behind by an interrupted transfer. |
+| `gcs.parallelUploadPartCleanupExistingBucket` | `no` | Whether the `.part` cleanup lifecycle rule (see `gcs.parallelUploadPartMaxAge`) is also applied to a bucket that already exists (not created by OpenECPDS). Disabled by default so OpenECPDS never silently mutates a bucket's lifecycle configuration unless explicitly told to. |
 
 !!! note
     Composite objects only expose a CRC32C checksum (no MD5). This has no impact on OpenECPDS, which does not rely on GCS-side MD5 hashes for verification.
+
+!!! warning "Stray `.part` objects on an interrupted transfer"
+    The GCS client library only deletes the temporary `.part` objects as part of its own graceful compose/close sequence. If the transfer process is killed, the connection is dropped hard, or the cleanup call itself fails (e.g. correlated network issue), some `.part` objects can be left behind permanently — Google Cloud Storage does not expire them on its own. Google's own documentation for parallel composite uploads recommends configuring a bucket lifecycle rule as a safety net; set `gcs.parallelUploadPartMaxAge` to have OpenECPDS manage that rule automatically (and `gcs.parallelUploadPartCleanupExistingBucket` if the bucket already exists and wasn't created by OpenECPDS).
 
 ### Quick-start examples
 
@@ -151,6 +156,7 @@ For large files, GCS supports splitting an upload into parts that are uploaded c
 gcs.parallelUpload = "yes"
 gcs.parallelUploadNumThreads = "8"
 gcs.parallelUploadPartSize = "32m"
+gcs.parallelUploadPartMaxAge = "2d"
 ```
 
 ### Object naming

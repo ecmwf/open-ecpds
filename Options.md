@@ -748,6 +748,12 @@ Enables Google's "parallel composite upload": the object is split into parts upl
 ### gcs.parallelUploadNumThreads
 Number of threads used to upload parts concurrently when "gcs.parallelUpload" is enabled. If not specified, the underlying library manages its own cached thread pool.
 
+### gcs.parallelUploadPartCleanupExistingBucket
+When "gcs.parallelUploadPartMaxAge" is set, controls whether the "*.part" cleanup lifecycle rule is also applied to a bucket that already exists (i.e. was not created by ECPDS). Disabled by default so ECPDS never silently mutates the lifecycle configuration of a bucket it does not own; when enabled, the rule is only added (or updated) if an equivalent one is not already present.
+
+### gcs.parallelUploadPartMaxAge
+When "gcs.parallelUpload" is enabled, temporary "*.part" objects are normally deleted automatically once the final object has been composed. If a transfer is interrupted (e.g. the process is killed or the connection drops) before that cleanup completes, some part objects can be left behind permanently since Google Cloud Storage does not expire them on its own. When set to a positive duration, ECPDS ensures the bucket has an Object Lifecycle rule that automatically deletes any object whose name ends with ".part" once it is older than this duration, as a safety net against such leaks. Not set by default (no lifecycle rule is added/managed).
+
 ### gcs.parallelUploadPartSize
 Size of each part uploaded concurrently when "gcs.parallelUpload" is enabled. If not specified, the underlying library's default (16MB) is used.
 

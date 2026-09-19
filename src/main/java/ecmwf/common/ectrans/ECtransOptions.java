@@ -1183,6 +1183,26 @@ public enum ECtransOptions {
      */
     HOST_GCS_PARALLEL_UPLOAD_PART_SIZE("parallelUploadPartSize", ByteSize.class, BYTE_SIZE_NONE),
 
+    /**
+     * The host gcs parallel upload part max age. When parallelUpload is enabled, the temporary "*.part" objects are
+     * normally deleted automatically once the final object has been composed. If the transfer is interrupted (e.g. the
+     * process is killed, or the connection drops) before that cleanup completes, some part objects can be left behind
+     * permanently since Google Cloud Storage does not expire them on its own. When this option is set to a positive
+     * duration, ECPDS ensures the bucket has an Object Lifecycle rule that automatically deletes any object whose name
+     * ends with ".part" once it is older than this duration, as a safety net against such leaks. Not set by default (no
+     * lifecycle rule is added/managed by ECPDS).
+     */
+    HOST_GCS_PARALLEL_UPLOAD_PART_MAX_AGE("parallelUploadPartMaxAge", Duration.class, DURATION_NONE),
+
+    /**
+     * The host gcs parallel upload part cleanup existing bucket. When parallelUploadPartMaxAge is set, this controls
+     * whether the "*.part" lifecycle rule is also applied to a bucket that already exists (i.e. was not created by
+     * ECPDS). Off by default so ECPDS never silently mutates the lifecycle configuration of a bucket it does not own;
+     * when enabled, the rule is only added if an equivalent one is not already present.
+     */
+    HOST_GCS_PARALLEL_UPLOAD_PART_CLEANUP_EXISTING_BUCKET("parallelUploadPartCleanupExistingBucket", Boolean.class,
+            false),
+
     /** The host client email */
     HOST_GCS_CLIENT_EMAIL("clientEmail", String.class, STRING_NONE),
 
