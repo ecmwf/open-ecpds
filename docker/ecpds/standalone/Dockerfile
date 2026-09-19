@@ -33,6 +33,7 @@ ENV OPSVIEW_HOST=""
 
 # ── Mover settings ─────────────────────────────────────────────────────────────
 ENV KEYSTORE_PASSWORD=s5w8g771
+ENV SHARED_SECRET="CkduiVdXnlduaZQIGoCZgv8PRbgDdEGLc/HRBDmuh/o="
 ENV MOVER_TITLE="Personal Data Store (PDS)"
 ENV MOVER_COLOR="#0079d3"
 ENV OPERATION=yes

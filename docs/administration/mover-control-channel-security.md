@@ -30,12 +30,35 @@ the plain-socket control channel) — identically on every Data Mover and every
 Proxy/Continental Data Mover that need to talk to each other. The Master
 Server itself does not need it, since it is not a party to this REST channel.
 
+Just like the existing keystore password, the value is **not** hardcoded
+directly in `ecmwf.properties`. It is read from a JVM system property that
+the startup script populates from a `SHARED_SECRET` environment variable,
+itself sourced from the Mover's `mover.cnf` (or the Proxy's `proxy.cnf`) —
+the same file already used for `KEYSTORE_PASSWORD` and other per-host secrets:
+
+```ini
+# mover.cnf / proxy.cnf
+export SHARED_SECRET=<a-long-random-value>
+```
+
+`ecmwf.properties` then simply references it:
+
 ```ini
 [Security]
-sharedSecret=<a-long-random-value>
+SSLKeyStore=${mover.etc}/ecpds-mover.pfx
+SSLKeyStorePassword=${keystore.password}
+sharedSecret=${sharedsecret.value}
+
 # Optional: how much clock drift/replay window to tolerate (default 5m)
 controlChannelMaxSkew=5m
 ```
+
+This keeps the actual secret value out of any file that might be checked
+into version control or bundled into a shared configuration template, and
+lets it be provisioned the same way as other host-specific credentials (a
+secrets manager, a `mover.cnf`/`proxy.cnf` populated by configuration
+management, a Docker/Kubernetes secret injected as the `SHARED_SECRET`
+environment variable, ...).
 
 Generate a strong random value, for example:
 
@@ -44,7 +67,8 @@ openssl rand -base64 32
 ```
 
 !!! warning "Unset by default, for backward compatibility"
-    If `sharedSecret` is left unset, the control channel remains
+    If `SHARED_SECRET`/`sharedSecret` is left unset (the default in the
+    shipped `mover.cnf`/`proxy.cnf` templates), the control channel remains
     unauthenticated exactly as before this feature was introduced — a warning
     is logged at startup to make the operator aware. Setting a shared secret
     is strongly recommended on any Data Mover that is reachable from outside
