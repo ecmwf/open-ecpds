@@ -55,6 +55,8 @@ public final class RESTApplication extends Application {
     public Set<Class<?>> getClasses() {
         final Set<Class<?>> s = new HashSet<>();
         s.add(RESTServer.class);
+        // Verifies the HMAC signature on "mover/*" and "master/*" control-channel requests (see RESTSignature).
+        s.add(RESTAuthFilter.class);
         return s;
     }
 

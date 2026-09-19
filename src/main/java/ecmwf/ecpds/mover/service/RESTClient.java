@@ -552,7 +552,8 @@ public final class RESTClient implements RESTInterface {
                 }
             });
             _log.debug("REST connection: {} (proxy={},connectTimeout={})", url, proxy, connectTimeout);
-            final var builder = HttpRequest.newBuilder(buildUri(url, query)).header("Accept", "application/json")
+            final var uri = buildUri(url, query);
+            final var builder = HttpRequest.newBuilder(uri).header("Accept", "application/json")
                     .header("Accept-Charset", "iso-8859-1");
             final var timeout = timeout(connectTimeout);
             if (timeout != null) {
@@ -560,11 +561,13 @@ public final class RESTClient implements RESTInterface {
             }
             final HttpRequest request;
             if (body == null) {
+                sign(builder, method, uri, EMPTY_BODY);
                 request = builder.method(method, HttpRequest.BodyPublishers.noBody()).build();
             } else {
+                final var json = OBJECT_MAPPER.writeValueAsString(body);
+                sign(builder, method, uri, json.getBytes(StandardCharsets.UTF_8));
                 request = builder.header("Content-Type", "application/json")
-                        .method(method, HttpRequest.BodyPublishers.ofString(OBJECT_MAPPER.writeValueAsString(body)))
-                        .build();
+                        .method(method, HttpRequest.BodyPublishers.ofString(json)).build();
             }
             return new CloseableClientResponse(client.send(request, HttpResponse.BodyHandlers.ofString()));
         } catch (final IOException e) {
@@ -578,6 +581,37 @@ public final class RESTClient implements RESTInterface {
                 throw re;
             }
             throw new RestException("Calling " + url, e);
+        }
+    }
+
+    /** The Constant EMPTY_BODY. */
+    private static final byte[] EMPTY_BODY = new byte[0];
+
+    /**
+     * Attaches the {@link RESTSignature} HMAC headers to the request being built, if a shared secret is configured (see
+     * {@link RESTSignature#ENABLED}). No-op otherwise, preserving pre-existing (unauthenticated) behaviour.
+     *
+     * @param builder
+     *            the request builder to add the signature headers to
+     * @param method
+     *            the HTTP method
+     * @param uri
+     *            the target URI (path and query are what gets signed)
+     * @param body
+     *            the raw request body bytes (empty array if there is no body)
+     */
+    private static void sign(final HttpRequest.Builder builder, final String method, final URI uri, final byte[] body) {
+        if (!RESTSignature.ENABLED) {
+            return;
+        }
+        final var timestamp = System.currentTimeMillis();
+        final var pathAndQuery = uri.getRawPath() + (uri.getRawQuery() != null ? "?" + uri.getRawQuery() : "");
+        try {
+            final var signature = RESTSignature.sign(method, pathAndQuery, timestamp, body);
+            builder.header(RESTSignature.TIMESTAMP_HEADER, Long.toString(timestamp));
+            builder.header(RESTSignature.SIGNATURE_HEADER, signature);
+        } catch (final Exception e) {
+            _log.error("Could not sign control-channel request to {}", uri, e);
         }
     }
 

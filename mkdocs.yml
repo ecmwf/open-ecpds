@@ -119,6 +119,7 @@ nav:
       - Administration: monitor-ui/admin.md
   - Administration:
       - TLS Certificates: administration/certificates.md
+      - Securing the Mover Control Channel: administration/mover-control-channel-security.md
       - TOTP Authentication: administration/totp.md
       - Critical Action Password: administration/critical-password.md
       - Purge All Data: administration/purge.md

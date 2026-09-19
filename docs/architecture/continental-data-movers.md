@@ -32,7 +32,9 @@ functionalities include:
 - **Efficient Connection Management** — Control connections to the OpenECPDS Master
   Server are load-balanced through OpenECPDS Movers, optimising accessibility and
   reliability. Communication occurs via secure HTTPS requests using a REST/JSON
-  interface, ensuring robust and scalable data handling.
+  interface, ensuring robust and scalable data handling. This REST/JSON control
+  channel can (and should) be authenticated with a shared secret — see
+  [Securing the Mover Control Channel](../administration/mover-control-channel-security.md).
 
 ## Steps to optimise data transfers
 
@@ -106,3 +108,4 @@ describes the related host configuration.
 - [Components](components.md) — Mover Server
 - [Global Reach](../global-reach.md)
 - [Replication, Source, Backup & Proxy Directory](../host-directory/replication.md)
+- [Securing the Mover Control Channel](../administration/mover-control-channel-security.md)
