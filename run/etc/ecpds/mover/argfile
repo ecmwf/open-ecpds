@@ -14,6 +14,7 @@
 -Dmover.internalAddress='127.0.0.1'
 -Dmaster.address='127.0.0.1'
 -Dkeystore.password='s5w8g771'
+-Dsharedsecret.value='2z14vqbu75XB3IRsddH0gztpXHbUGg9e2GaX3jFq3p0='
 -Dmover.title='Personal Data Store (OpenECPDS)'
 -Dmover.color='#0079d3'
 -Dmover.operation='yes'

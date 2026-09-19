@@ -190,7 +190,7 @@ services:
       # Password to unlock the 'etc/ecpds/mover/ecpds-mover.pfx' keystore
       KEYSTORE_PASSWORD: s5w8g771
 	  # Control Channel Shared Secret
-      SHARED_SECRET: "CkduiVdXnlduaZQIGoCZgv8PRbgDdEGLc/HRBDmuh/o="
+      SHARED_SECRET: "2z14vqbu75XB3IRsddH0gztpXHbUGg9e2GaX3jFq3p0="
       # Personalisation of monitoring web interface
       MOVER_TITLE: "Personal Data Store (PDS)"
       MOVER_COLOR: "#0079d3"
