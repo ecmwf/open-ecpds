@@ -84,7 +84,7 @@ public final class ECpdsClient {
     private static final int PORT = Cnf.at("ECpdsPlugin", "port", Cnf.at("Ports", "ecpds", 6640));
 
     /** The Constant SECRET. */
-    private static final String SECRET = Cnf.at("Security", "sharedSecret", "");
+    private static final String SECRET = Cnf.at("Security", "cliSharedSecret", "");
 
     /** The Constant CHALLENGE_SIZE. */
     private static final int CHALLENGE_SIZE = 32;

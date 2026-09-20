@@ -134,6 +134,72 @@ ecpds \
 The privileged-port check can be disabled server-side by setting
 `ECpdsPlugin.checkPort=false` in `ecmwf.properties` (useful for local development).
 
+### Shared-secret challenge-response (transport-level, optional)
+
+Independently of the `-user`/`-pass` or ECUSER checks above, the connection between the
+`ecpds` binary and the Master Server can be protected by an additional, transport-level
+HMAC challenge-response. This runs **before** any application-level authentication and
+guards against a completely different threat: a network peer that can reach the Master
+Server's `ecpds` command port but does not hold the shared secret cannot open a session
+at all, regardless of which user account it claims to be.
+
+The protocol is symmetric with the one used to secure the
+[mover/master REST control channel](../administration/mover-control-channel-security.md):
+
+1. On connection, the Master Server sends the client a random 32-byte challenge.
+2. The client computes an HMAC-SHA256 of the challenge using the shared secret and
+   returns the 32-byte response.
+3. The server computes the expected response the same way and compares it in constant
+   time. On mismatch, the connection is closed before any command is processed.
+
+This mechanism is **disabled by default** and fully backward-compatible: if no shared
+secret is configured on the Master Server, the challenge-response step is skipped
+entirely and the connection proceeds straight to the IncomingUser/ECUSER checks above.
+
+!!! note "A separate secret from the mover control channel"
+    This channel is configured with its own `[Security] cliSharedSecret` option, distinct
+    from the `[Security] rccSharedSecret` option used by the
+    [mover/master REST control channel](../administration/mover-control-channel-security.md).
+    The two protect unrelated connections (this one is a direct socket between the
+    `ecpds` CLI binary and the Master Server; the other is an HTTPS/JSON relay between
+    Proxy/Continental Data Movers and a regular Data Mover) and do **not** need to share
+    the same value.
+
+**Server-side configuration** (Master Server, `ecmwf.properties`):
+
+```properties
+[Security]
+cliSharedSecret=${clisharedsecret.value}
+```
+
+As with the mover control channel, `clisharedsecret.value` is resolved from a JVM system
+property populated by the `master` startup script from the `CLI_SHARED_SECRET` environment
+variable (set in `master.cnf`, or via the `CLI_SHARED_SECRET` container environment
+variable in the Docker/Kubernetes deployments). See
+[Mover Control Channel Security](../administration/mover-control-channel-security.md#configuration)
+for the full rationale behind this indirection.
+
+**Client-side configuration** (`ecpds` CLI binary):
+
+The `ecpds` binary reads the shared secret from the same `CLI_SHARED_SECRET` environment
+variable name (though it is read directly by the C binary at runtime, not via the JVM
+indirection used server-side):
+
+```bash
+export CLI_SHARED_SECRET="dboUz95GH4U8LihvnJPGfBce5/rFJdbYXoZesRXBIyQ="
+ecpds \
+  -echost master.example.com \
+  -user mylogin -pass mypassword \
+  -destination MY_DESTINATION \
+  -source /path/to/myfile.dat
+```
+
+!!! warning "Secret must match exactly"
+    The value of `CLI_SHARED_SECRET` on every machine invoking `ecpds` must be
+    identical to the Master Server's `[Security] cliSharedSecret`. A mismatch causes the
+    connection to be rejected immediately, before the IncomingUser/ECUSER checks are
+    even attempted.
+
 ## Command-line reference
 
 Run `ecpds -help` for the full option list. The most commonly used options are:

@@ -30,10 +30,13 @@ ENV METADATA_MISSING_CONTACTS_MAIL=""
 ENV SMTP_HOST=""
 ENV SMTP_FROM=""
 ENV OPSVIEW_HOST=""
+# Shared secret for the ecpds CLI <-> Master-Server challenge-response authentication
+ENV CLI_SHARED_SECRET="dboUz95GH4U8LihvnJPGfBce5/rFJdbYXoZesRXBIyQ="
 
 # ── Mover settings ─────────────────────────────────────────────────────────────
 ENV KEYSTORE_PASSWORD=s5w8g771
-ENV SHARED_SECRET="2z14vqbu75XB3IRsddH0gztpXHbUGg9e2GaX3jFq3p0="
+# Shared secret for the Mover/Proxy REST control channel authentication (independent from CLI_SHARED_SECRET above)
+ENV RCC_SHARED_SECRET="2z14vqbu75XB3IRsddH0gztpXHbUGg9e2GaX3jFq3p0="
 ENV MOVER_TITLE="Personal Data Store (PDS)"
 ENV MOVER_COLOR="#0079d3"
 ENV OPERATION=yes

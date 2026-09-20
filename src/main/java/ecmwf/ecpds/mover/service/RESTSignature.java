@@ -45,11 +45,12 @@ import ecmwf.common.technical.Cnf;
  * port used by end-users to download data, so without this signature it would otherwise be reachable by anyone who can
  * connect to that port.
  *
- * Reuses the same {@code [Security] sharedSecret} configuration option already used by
- * {@link ecmwf.common.plugin.SimplePlugin} for its own challenge-response authentication, so a single secret can be
- * distributed to all ECPDS components. For backward compatibility, if the secret is left unset (the default), the
- * control channel remains unsigned/unauthenticated exactly as before this was introduced - a warning is logged in that
- * case to make the operator aware.
+ * Configured via the {@code [Security] rccSharedSecret} option ("RCC" = REST Control Channel), distributed to every
+ * Data Mover and Proxy/Continental Data Mover. This is a separate secret from {@code [Security] cliSharedSecret}, used
+ * by {@link ecmwf.common.plugin.SimplePlugin} to authenticate the unrelated `ecpds` CLI ↔ Master Server channel. For
+ * backward compatibility, if the secret is left unset (the default), the control channel remains
+ * unsigned/unauthenticated exactly as before this was introduced - a warning is logged in that case to make the
+ * operator aware.
  */
 final class RESTSignature {
 
@@ -57,7 +58,7 @@ final class RESTSignature {
     private static final Logger _log = LogManager.getLogger(RESTSignature.class);
 
     /** The Constant SECRET. */
-    private static final String SECRET = Cnf.at("Security", "sharedSecret", "");
+    private static final String SECRET = Cnf.at("Security", "rccSharedSecret", "");
 
     /** The Constant ENABLED. True if a shared secret is configured, so signing/verification is active. */
     static final boolean ENABLED = !SECRET.isEmpty();
@@ -73,10 +74,11 @@ final class RESTSignature {
 
     static {
         if (!ENABLED) {
-            _log.warn("[Security] sharedSecret is not set: the mover/master REST control channel is NOT authenticated "
-                    + "(any client able to reach this Data Mover's data portal port could invoke it). Set "
-                    + "[Security] sharedSecret (same value on every Data Mover, Proxy Host and Master Server) "
-                    + "to enable HMAC request signing on this channel.");
+            _log.warn(
+                    "[Security] rccSharedSecret is not set: the mover/master REST control channel is NOT authenticated "
+                            + "(any client able to reach this Data Mover's data portal port could invoke it). Set "
+                            + "[Security] rccSharedSecret (same value on every Data Mover, Proxy Host and Master Server) "
+                            + "to enable HMAC request signing on this channel.");
         }
     }
 

@@ -62,6 +62,9 @@ services:
       PORT_CALLBACK: 2600 # Java Remote Method Invocation (communication between components)
       PORT_ECPDS: 2640 # Dedicated service for ecpds command
       PORT_FTP: 2021 # Virtual FTP Server
+      # Shared secret for the ecpds CLI <-> Master-Server challenge-response authentication
+      # (independent from, and does not need to match, the mover's RCC_SHARED_SECRET)
+      CLI_SHARED_SECRET: "dboUz95GH4U8LihvnJPGfBce5/rFJdbYXoZesRXBIyQ="
       # Database related parameters (database interface/port must be the same as in 'etc/ecpds/database/mysqld.cnf')
       DATABASE_ALIAS: sequential://ecpds-database:3309/ecpds
       DATABASE_MIN_SPOOL_SIZE: 5
@@ -189,8 +192,8 @@ services:
       LOG_LEVEL: debug
       # Password to unlock the 'etc/ecpds/mover/ecpds-mover.pfx' keystore
       KEYSTORE_PASSWORD: s5w8g771
-	  # Control Channel Shared Secret
-      SHARED_SECRET: "2z14vqbu75XB3IRsddH0gztpXHbUGg9e2GaX3jFq3p0="
+      # Shared secret for the Mover/Proxy REST control channel (RCC) authentication
+      RCC_SHARED_SECRET: "2z14vqbu75XB3IRsddH0gztpXHbUGg9e2GaX3jFq3p0="
       # Personalisation of monitoring web interface
       MOVER_TITLE: "Personal Data Store (PDS)"
       MOVER_COLOR: "#0079d3"

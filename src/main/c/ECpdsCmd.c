@@ -82,7 +82,7 @@
 
 /* Secret concatenated with the challenge to compute the response hash */
 #define SECRET                                                                 \
-  (getenv("ECPDS_SHARED_SECRET") ? getenv("ECPDS_SHARED_SECRET") : "")
+  (getenv("CLI_SHARED_SECRET") ? getenv("CLI_SHARED_SECRET") : "")
 
 /* Number of bytes in the challenge sent by the server */
 #define CHALLENGE_SIZE 32

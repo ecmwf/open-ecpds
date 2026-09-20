@@ -47,8 +47,8 @@ import org.apache.logging.log4j.Logger;
  * "file/", "data/...", "register", ...), which have their own, separate, authentication and are deliberately left
  * untouched by this filter (only paths starting with "mover/" or "master/" are checked).
  *
- * If {@code [Security] sharedSecret} is not configured ({@link RESTSignature#ENABLED} is {@code false}), this filter is
- * a no-op and the control channel remains reachable without authentication, exactly as it was before this filter was
+ * If {@code [Security] rccSharedSecret} is not configured ({@link RESTSignature#ENABLED} is {@code false}), this filter
+ * is a no-op and the control channel remains reachable without authentication, exactly as it was before this filter was
  * introduced - this preserves backward compatibility for existing deployments, but is strongly discouraged: a startup
  * warning is logged by {@link RESTSignature} in that case.
  */

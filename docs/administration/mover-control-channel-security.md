@@ -24,21 +24,25 @@ mechanism and keep using their own, separate, authentication.
 
 ## Configuration
 
-The signature is enabled by configuring a shared secret — the same
-`[Security] sharedSecret` option already used elsewhere in OpenECPDS (e.g. by
-the plain-socket control channel) — identically on every Data Mover and every
-Proxy/Continental Data Mover that need to talk to each other. The Master
-Server itself does not need it, since it is not a party to this REST channel.
+The signature is enabled by configuring a shared secret — the
+`[Security] rccSharedSecret` option ("RCC" = REST Control Channel) —
+identically on every Data Mover and every Proxy/Continental Data Mover that
+need to talk to each other. The Master Server itself does not need it, since
+it is not a party to this REST channel. This is a **separate** secret from
+`[Security] cliSharedSecret`, which protects the unrelated `ecpds` CLI ↔
+Master Server channel (see [Related](#related) below) — the two must not be
+confused, and do not need to share the same value.
 
 Just like the existing keystore password, the value is **not** hardcoded
 directly in `ecmwf.properties`. It is read from a JVM system property that
-the startup script populates from a `SHARED_SECRET` environment variable,
-itself sourced from the Mover's `mover.cnf` (or the Proxy's `proxy.cnf`) —
-the same file already used for `KEYSTORE_PASSWORD` and other per-host secrets:
+the startup script populates from an `RCC_SHARED_SECRET` environment
+variable, itself sourced from the Mover's `mover.cnf` (or the Proxy's
+`proxy.cnf`) — the same file already used for `KEYSTORE_PASSWORD` and other
+per-host secrets:
 
 ```ini
 # mover.cnf / proxy.cnf
-export SHARED_SECRET=<a-long-random-value>
+export RCC_SHARED_SECRET=<a-long-random-value>
 ```
 
 `ecmwf.properties` then simply references it:
@@ -47,7 +51,7 @@ export SHARED_SECRET=<a-long-random-value>
 [Security]
 SSLKeyStore=${mover.etc}/ecpds-mover.pfx
 SSLKeyStorePassword=${keystore.password}
-sharedSecret=${sharedsecret.value}
+rccSharedSecret=${rccsharedsecret.value}
 
 # Optional: how much clock drift/replay window to tolerate (default 5m)
 controlChannelMaxSkew=5m
@@ -57,7 +61,7 @@ This keeps the actual secret value out of any file that might be checked
 into version control or bundled into a shared configuration template, and
 lets it be provisioned the same way as other host-specific credentials (a
 secrets manager, a `mover.cnf`/`proxy.cnf` populated by configuration
-management, a Docker/Kubernetes secret injected as the `SHARED_SECRET`
+management, a Docker/Kubernetes secret injected as the `RCC_SHARED_SECRET`
 environment variable, ...).
 
 Generate a strong random value, for example:
@@ -67,7 +71,7 @@ openssl rand -base64 32
 ```
 
 !!! warning "Unset by default, for backward compatibility"
-    If `SHARED_SECRET`/`sharedSecret` is left unset (the default in the
+    If `RCC_SHARED_SECRET`/`rccSharedSecret` is left unset (the default in the
     shipped `mover.cnf`/`proxy.cnf` templates), the control channel remains
     unauthenticated exactly as before this feature was introduced — a warning
     is logged at startup to make the operator aware. Setting a shared secret
@@ -78,11 +82,11 @@ openssl rand -base64 32
 
 To enable this without downtime across a fleet of Movers:
 
-1. Set `sharedSecret` on the **Proxy/Continental Data Movers first** (the
+1. Set `rccSharedSecret` on the **Proxy/Continental Data Movers first** (the
    REST clients) and restart them. They start signing their requests; Data
    Movers that don't have the secret configured yet simply ignore the extra
    signature headers, so nothing breaks.
-2. Then set `sharedSecret` on the **regular Data Movers** (the REST servers)
+2. Then set `rccSharedSecret` on the **regular Data Movers** (the REST servers)
    and restart them. From that point on, they require and verify a valid
    signature on every `mover/*`/`master/*` request — which every
    Proxy/Continental Data Mover is by then already sending.
@@ -108,3 +112,6 @@ easily keeps clocks within this window, even across continents.
 
 - [Continental Data Movers](../architecture/continental-data-movers.md)
 - [TLS Certificate Management](certificates.md)
+- [`ecpds` CLI shared-secret challenge-response](../use-cases/ecpds-cli.md#shared-secret-challenge-response-transport-level-optional) —
+  a separate `[Security] cliSharedSecret` option protects the unrelated, plain-socket
+  channel between the `ecpds` CLI binary and the Master Server.

@@ -58,7 +58,7 @@ public abstract class SimplePlugin extends ServerPlugin {
     private static final Logger _log = LogManager.getLogger(SimplePlugin.class);
 
     /** The Constant SECRET. */
-    private static final String SECRET = Cnf.at("Security", "sharedSecret", "");
+    private static final String SECRET = Cnf.at("Security", "cliSharedSecret", "");
 
     /** The Constant CHALLENGE_SIZE. */
     private static final int CHALLENGE_SIZE = 32;
