@@ -1291,6 +1291,14 @@
 		<action path="/monitoring/globe/keepalive"
 			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GlobeKeepAliveAction">
 		</action>
+		<action path="/monitoring/topology"
+			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetTopologyDisplayAction">
+			<forward name="success" path=".pds.monitoring.topology" />
+		</action>
+		<action path="/monitoring/topology/data"
+			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetSystemTopologyJsonAction">
+		</action>
+
 		<action path="/monitoring/summary"
 			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetSummaryDisplayAction"
 			name="monSesForm" scope="session">

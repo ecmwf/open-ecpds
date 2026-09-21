@@ -1356,6 +1356,17 @@ final class ManagementProxy implements ManagementInterface {
     /**
      * {@inheritDoc}
      *
+     * Gets the system topology.
+     */
+    @Override
+    public Map<String, Object> getSystemTopology() throws MasterException, RemoteException {
+        final var monitor = new MonitorCall("getSystemTopology()");
+        return monitor.done(managementInterface.getSystemTopology());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Returns availability snapshots for a DataMover.
      */
     @Override

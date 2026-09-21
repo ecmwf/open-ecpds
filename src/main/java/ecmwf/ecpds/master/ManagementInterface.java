@@ -1505,6 +1505,23 @@ public interface ManagementInterface extends Remote {
     Map<String, long[][]> getMoverVolumeUsage(String moverName) throws MasterException, RemoteException;
 
     /**
+     * Returns a snapshot of the OpenECPDS system topology: the Master Server itself (host and locally-running
+     * plugins/ports), the database (configured host and a live reachability check) and every known DataMover
+     * (configured host/port, whether it is enabled, and whether its most recent availability snapshot marks it as up or
+     * down). Intended for a "System Topology" diagram in the Monitor UI; deliberately returns only plain,
+     * {@link java.io.Serializable} types ({@link String}, {@link Boolean}, {@link Integer}, {@link Map},
+     * {@link java.util.List}) so it travels over RMI without needing dedicated DTO classes.
+     *
+     * @return a map with {@code "master"}, {@code "database"} and {@code "movers"} entries; never {@code null}
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Map<String, Object> getSystemTopology() throws MasterException, RemoteException;
+
+    /**
      * Returns availability snapshots for the given DataMover from the database.
      *
      * <p>

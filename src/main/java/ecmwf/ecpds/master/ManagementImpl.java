@@ -3231,6 +3231,84 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     /**
      * {@inheritDoc}
      *
+     * Builds the system topology snapshot: the Master's own host/plugins (read live and locally, from this same JVM's
+     * PluginContainer), the configured database host (parsed from the {@code database.alias} system property set by the
+     * startup script) plus its reachability (proven by the fact this very call reached the Master, which cannot serve
+     * most requests without a working database connection), and every known DataMover (host/port from the
+     * {@code TRANSFER_SERVER} table, "active" from its configuration flag, "up" from its most recent availability
+     * snapshot, falling back to the configuration flag when no snapshot is available yet).
+     */
+    @Override
+    public Map<String, Object> getSystemTopology() {
+        final var monitor = new MonitorCall("getSystemTopology()");
+        final Map<String, Object> topology = new HashMap<>();
+
+        // Master: own host plus every locally-running plugin (ref/name/port/status), read live from this JVM.
+        final Map<String, Object> masterInfo = new HashMap<>();
+        masterInfo.put("host", master.getRoot());
+        final List<Map<String, Object>> pluginInfos = new ArrayList<>();
+        try {
+            for (final var info : master.getPluginContainer().getPluginInfos()) {
+                final Map<String, Object> pluginInfo = new HashMap<>();
+                pluginInfo.put("ref", info.getRef());
+                pluginInfo.put("name", info.getName());
+                final var plugin = master.getPluginContainer().getPlugin(info.getRef());
+                pluginInfo.put("port", plugin instanceof final ecmwf.common.plugin.ServerPlugin serverPlugin
+                        ? serverPlugin.getPort() : null);
+                pluginInfo.put("status", master.getPluginContainer().getPluginStatus(info.getRef()));
+                pluginInfos.add(pluginInfo);
+            }
+        } catch (final Throwable t) {
+            _log.warn("getSystemTopology: listing Master plugins", t);
+        }
+        masterInfo.put("plugins", pluginInfos);
+        topology.put("master", masterInfo);
+
+        // Database: host parsed from the configured alias (e.g. "sequential://dbhost/ecpds"); reachability is
+        // implied by this call having reached the Master at all.
+        final Map<String, Object> databaseInfo = new HashMap<>();
+        var dbHost = Cnf.at("DataBase", "alias", System.getProperty("database.alias", ""));
+        final var schemeSep = dbHost.indexOf("://");
+        if (schemeSep != -1) {
+            dbHost = dbHost.substring(schemeSep + 3);
+        }
+        final var pathSep = dbHost.indexOf('/');
+        if (pathSep != -1) {
+            dbHost = dbHost.substring(0, pathSep);
+        }
+        databaseInfo.put("host", dbHost.isBlank() ? "database" : dbHost);
+        databaseInfo.put("up", true);
+        topology.put("database", databaseInfo);
+
+        // DataMovers: configured host/port/active flag, plus the latest availability snapshot (last few minutes).
+        final List<Map<String, Object>> movers = new ArrayList<>();
+        for (final TransferServer server : master.getECpdsBase().getTransferServerArray()) {
+            final Map<String, Object> moverInfo = new HashMap<>();
+            moverInfo.put("name", server.getName());
+            moverInfo.put("host", server.getHost());
+            moverInfo.put("port", server.getPort());
+            final var active = server.getActive();
+            moverInfo.put("active", active);
+            var up = active;
+            try {
+                final var snapshots = master.getECpdsBase().getMoverAvailabilitySnapshots(server.getName(), 1);
+                if (!snapshots.isEmpty()) {
+                    up = snapshots.get(snapshots.size() - 1)[1] == 1;
+                }
+            } catch (final Throwable t) {
+                // No snapshot yet (e.g. mover just added) — keep the configuration flag as a best-effort fallback.
+            }
+            moverInfo.put("up", up);
+            movers.add(moverInfo);
+        }
+        topology.put("movers", movers);
+
+        return monitor.done(topology);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Returns availability snapshots for a DataMover from the database.
      */
     @Override
