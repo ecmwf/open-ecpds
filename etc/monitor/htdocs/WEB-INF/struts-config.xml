@@ -677,6 +677,9 @@
 			<forward name="success"
 				path=".pds.transfer.destination.metadata" />
 		</action>
+		<action path="/transfer/destination/hostsStatus/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.GetDestinationHostsStatusJsonAction">
+		</action>
 		<action path="/transfer/destination/metadata/*/*"
 			parameter="{1}|{2}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.GetDestinationMetaDataAction"

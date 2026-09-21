@@ -73,9 +73,9 @@
                 on different machines.</li>
             <li><strong>Arrows</strong> show the direction of the control connection between two components (e.g.
                 Master&nbsp;&rarr;&nbsp;Database, Master&nbsp;&rarr;&nbsp;Data&nbsp;Mover).</li>
-            <li>For the Master and Monitor, the <strong>ports</strong> shown are every network plugin/protocol
-                currently loaded in that JVM (e.g. <code>ecpds</code>, <code>ftp</code>, <code>http</code>) together
-                with its listening port and live status.</li>
+            <li>For the Master, Monitor, and each connected Data Mover, the <strong>ports</strong> shown are every
+                network plugin/protocol currently loaded in that JVM (e.g. <code>ecproxy</code>, <code>ftp</code>,
+                <code>http</code>) together with its listening port and live status.</li>
             <li>A Data Mover shown <strong>greyed out with a dashed border</strong> is currently reporting as
                 <strong>down</strong> (its most recent availability check failed, or it is disabled in its
                 configuration) — the rest of the diagram keeps working normally around it.</li>
@@ -86,10 +86,11 @@
                 <i class="bi bi-arrows-fullscreen"></i> button to expand it to fullscreen.</li>
         </ul>
         <p class="mb-0 text-muted small">
-            Note: per-DataMover protocol ports (FTP/HTTP/SFTP/S3/...) and a live list of every connected Monitor
-            instance are not yet surfaced here — only this Monitor's own host/ports are shown, and Data Movers are
-            shown with their single registration host/port. Database reachability is inferred from the fact the
-            Master answered this request at all, not from a separate live probe.
+            Note: a live list of every connected Monitor instance is not yet surfaced here — only this Monitor's own
+            host/ports are shown. A Data Mover's per-plugin ports are only available while it is actively connected
+            to the Master; if it currently isn't, only its single registration host/port is shown instead. Database
+            reachability is inferred from the fact the Master answered this request at all, not from a separate live
+            probe.
         </p>
     </div>
 </div>
@@ -203,6 +204,7 @@
             { selector: "node[kind='master']", style: { "background-color": pal.master } },
             { selector: "node[kind='monitor']", style: { "background-color": pal.monitor } },
             { selector: "node[kind='database']", style: { "background-color": pal.database, "shape": "round-hexagon" } },
+            { selector: "node[kind='mover']", style: { "height": 58 } },
             { selector: "node[kind='mover'][up]", style: { "background-color": pal.moverUp } },
             { selector: "node[kind='mover'][!up]", style: {
                 "background-color": pal.moverDown, "border-style": "dashed", "text-opacity": 0.85
@@ -223,9 +225,17 @@
         return h.length > 22 ? h.substring(0, 20) + "\u2026" : h;
     }
 
+    function pluginPortsLabel(p) {
+        if (p.ports && p.ports.length) { return p.ports.join("/"); }
+        return p.port != null ? String(p.port) : "";
+    }
+
     function pluginSummary(plugins) {
         if (!plugins || !plugins.length) { return ""; }
-        return plugins.map(function (p) { return p.ref + (p.port != null ? (":" + p.port) : ""); }).join(", ");
+        return plugins.map(function (p) {
+            var ports = pluginPortsLabel(p);
+            return p.ref + (ports ? (":" + ports) : "");
+        }).join(", ");
     }
 
     function buildElements(data) {
@@ -255,16 +265,20 @@
         } });
 
         var dbHostId = hostNodeId(database.host);
+        var dbLabel = "Database\n" + (database.host || "") + (database.port ? (":" + database.port) : "");
         nodes.push({ data: {
-            id: "database", kind: "database", parent: dbHostId, label: "Database\n" + (database.host || ""),
+            id: "database", kind: "database", parent: dbHostId, label: dbLabel,
             details: JSON.stringify(database)
         } });
-        edges.push({ data: { id: "e-master-db", source: "master", target: "database", label: "JDBC" } });
+        edges.push({ data: {
+            id: "e-master-db", source: "master", target: "database",
+            label: database.port ? ("JDBC:" + database.port) : "JDBC"
+        } });
 
         var monitorHostId = hostNodeId(monitor.host);
         nodes.push({ data: {
             id: "monitor", kind: "monitor", parent: monitorHostId,
-            label: (monitor.nickName || "Monitor") + "\n" + pluginSummary(monitor.plugins),
+            label: "Monitor Server\n" + pluginSummary(monitor.plugins),
             details: JSON.stringify(monitor)
         } });
         edges.push({ data: { id: "e-monitor-master", source: "monitor", target: "master", label: "RMI" } });
@@ -273,15 +287,21 @@
             var moverHostId = hostNodeId(mover.host);
             var nodeId = "mover:" + mover.name;
             var up = !!mover.up;
+            var portsLabel = mover.plugins && mover.plugins.length
+                ? pluginSummary(mover.plugins)
+                : (mover.port ? ("ecproxy:" + mover.port) : "");
             nodes.push({ data: {
                 id: nodeId, kind: "mover", parent: moverHostId, up: up,
-                label: mover.name + "\n" + (mover.host || "") + (mover.port ? (":" + mover.port) : ""),
+                label: "Data Mover\n" + mover.name + (portsLabel ? ("\n" + portsLabel) : ""),
                 details: JSON.stringify(mover)
             } });
             edges.push({ data: {
                 id: "e-master-mover-" + idx, source: "master", target: nodeId,
-                label: mover.port ? ("ecpds:" + mover.port) : "", down: !up
+                label: mover.port ? ("ecproxy:" + mover.port) : "", down: !up
             } });
+            if (mover.rmiConnected) {
+                edges.push({ data: { id: "e-mover-master-" + idx, source: nodeId, target: "master", label: "RMI" } });
+            }
         });
 
         return nodes.concat(edges);
@@ -291,9 +311,10 @@
         var details;
         try { details = JSON.parse(node.data("details") || "{}"); } catch (e) { details = {}; }
         var kind = node.data("kind");
-        var title = { master: "Master Server", monitor: "Monitor", database: "Database", mover: "Data Mover" }[kind]
+        var title = { master: "Master Server", monitor: "Monitor Server", database: "Database", mover: "Data Mover" }[kind]
             || "Details";
-        document.getElementById("topoDetailTitle").textContent = title + (details.name ? (" \u2014 " + details.name) : "");
+        var subName = details.name || details.nickName;
+        document.getElementById("topoDetailTitle").textContent = title + (subName ? (" \u2014 " + subName) : "");
         var body = document.getElementById("topoDetailBody");
         body.innerHTML = "";
         function addRow(label, value) {
@@ -309,10 +330,16 @@
         }
         if (kind === "database") {
             addRow("Reachable", details.up ? "Yes" : "No");
+            if (details.nodes && details.nodes.length > 1) {
+                addRow("Cluster nodes", details.nodes.map(function (n) {
+                    return n.host + (n.port ? (":" + n.port) : "");
+                }).join(", "));
+            }
         }
         if (details.plugins && details.plugins.length) {
             details.plugins.forEach(function (p) {
-                addRow((p.name || p.ref) + " plugin", (p.port != null ? ("port " + p.port + ", ") : "") + (p.status || "unknown"));
+                var ports = pluginPortsLabel(p);
+                addRow((p.name || p.ref) + " plugin", (ports ? ("port " + ports + ", ") : "") + (p.status || "unknown"));
             });
         }
         document.getElementById("topoDetailPanel").style.display = "block";
@@ -328,16 +355,38 @@
         cy.on("tap", "node[kind!='host']", function (evt) { showDetail(evt.target); });
     }
 
+    function elementIdSignature(elements) {
+        // Used to detect whether the topology's shape (which nodes/edges exist) changed between
+        // refreshes, as opposed to just data (status/labels) changing on the same nodes/edges.
+        return elements.map(function (el) { return el.data.id; }).sort().join("|");
+    }
+
     function render(data) {
         var hasAny = data && (data.master || (data.movers && data.movers.length));
         document.getElementById("topoEmptyState").style.display = hasAny ? "none" : "flex";
         if (!hasAny) { return; }
         if (!cy) { initCy(); }
         cy.style(buildStyle());
-        cy.elements().remove();
-        cy.add(buildElements(data));
-        cy.layout({ name: "cose", animate: false, padding: 30, nodeDimensionsIncludeLabels: true }).run();
-        cy.fit(undefined, 30);
+
+        var elements = buildElements(data);
+        var signature = elementIdSignature(elements);
+        var sameShape = cy.scratch("_topoSignature") === signature && cy.elements().length > 0;
+
+        if (sameShape) {
+            // Same components/hosts as last time: update each element's data/classes in place so
+            // positions are preserved - avoids reshuffling the force-directed layout (and the
+            // resulting crossed/overlapping edges) on every periodic auto-refresh.
+            elements.forEach(function (el) {
+                var ele = cy.getElementById(el.data.id);
+                if (ele.length) { ele.data(el.data); }
+            });
+        } else {
+            cy.elements().remove();
+            cy.add(elements);
+            cy.layout({ name: "cose", animate: false, padding: 30, nodeDimensionsIncludeLabels: true }).run();
+            cy.fit(undefined, 30);
+        }
+        cy.scratch("_topoSignature", signature);
 
         var moverCount = (data.movers || []).length;
         var upCount = (data.movers || []).filter(function (m) { return m.up; }).length;
@@ -348,13 +397,30 @@
 
     function refresh(manual) {
         fetch("/do/monitoring/topology/data", { cache: "no-store" })
-            .then(function (resp) { if (!resp.ok) { throw new Error("HTTP " + resp.status); } return resp.json(); })
+            .then(function (resp) {
+                if (!resp.ok) { throw new Error("HTTP " + resp.status); }
+                // A logged-out/expired session is served the HTML login page (still HTTP 200) instead of JSON, so
+                // detect that here and surface a clear "please reload/login" message instead of retrying forever.
+                var contentType = resp.headers.get("content-type") || "";
+                if (contentType.indexOf("json") === -1) {
+                    throw new Error("SESSION_EXPIRED");
+                }
+                return resp.json();
+            })
             .then(function (data) {
                 render(data);
             })
             .catch(function (err) {
                 console.error("Failed to load system topology", err);
-                document.getElementById("topoSubtitle").textContent = "Failed to load topology - will retry";
+                var sessionExpired = err && err.message === "SESSION_EXPIRED";
+                if (sessionExpired && refreshTimer) {
+                    // No point polling further until the user logs back in - stop burning requests.
+                    clearInterval(refreshTimer);
+                    refreshTimer = null;
+                }
+                document.getElementById("topoSubtitle").textContent = sessionExpired
+                    ? "Session expired - please reload the page to log in again"
+                    : "Failed to load topology - will retry";
             });
     }
 

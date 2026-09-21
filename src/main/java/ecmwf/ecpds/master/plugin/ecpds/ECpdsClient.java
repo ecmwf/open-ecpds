@@ -49,6 +49,8 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -88,6 +90,14 @@ public final class ECpdsClient {
 
     /** The Constant CHALLENGE_SIZE. */
     private static final int CHALLENGE_SIZE = 32;
+
+    /**
+     * The size, in bytes, of the Base64-encoded challenge as sent on the wire by the server (the server Base64 encodes
+     * the raw {@link #CHALLENGE_SIZE}-byte challenge before writing it to the socket - see
+     * {@link ecmwf.common.plugin.SimplePlugin#startConnection(java.net.Socket)}), so this is what must actually be read
+     * from the stream, not {@link #CHALLENGE_SIZE} raw bytes.
+     */
+    private static final int BASE64_ENCODED_CHALLENGE_SIZE = 4 * ((CHALLENGE_SIZE + 2) / 3);
 
     /**
      * Hide the default constructor!
@@ -134,12 +144,27 @@ public final class ECpdsClient {
      */
     private static void handleChallenge(final InputStream input, final OutputStream output) throws IOException {
         if (!SECRET.isEmpty()) {
-            // Receive challenge from server
-            byte[] challenge = new byte[CHALLENGE_SIZE];
-            int bytesRead = input.read(challenge);
-            if (bytesRead != CHALLENGE_SIZE) {
-                // The challenge is not fully read
-                throw new IOException("Incomplete challenge");
+            // Receive the Base64-encoded challenge from the server (the server encodes the raw challenge bytes
+            // before sending them - see SimplePlugin#startConnection), so we must read the encoded size and decode
+            // it back to the original bytes before computing the HMAC, exactly like the "ecpds" CLI (C) client does.
+            final byte[] encodedChallenge = new byte[BASE64_ENCODED_CHALLENGE_SIZE];
+            var totalRead = 0;
+            while (totalRead < BASE64_ENCODED_CHALLENGE_SIZE) {
+                final var bytesRead = input.read(encodedChallenge, totalRead,
+                        BASE64_ENCODED_CHALLENGE_SIZE - totalRead);
+                if (bytesRead < 0) {
+                    throw new IOException("Incomplete challenge");
+                }
+                totalRead += bytesRead;
+            }
+            final byte[] challenge;
+            try {
+                challenge = Base64.getDecoder().decode(new String(encodedChallenge, StandardCharsets.UTF_8));
+            } catch (final IllegalArgumentException e) {
+                throw new IOException("Invalid Base64 challenge", e);
+            }
+            if (challenge.length != CHALLENGE_SIZE) {
+                throw new IOException("Decoded challenge size mismatch");
             }
             // Compute response
             byte[] response = computeResponse(challenge);

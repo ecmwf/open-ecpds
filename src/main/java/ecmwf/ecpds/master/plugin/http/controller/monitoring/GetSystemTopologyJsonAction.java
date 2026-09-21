@@ -104,12 +104,18 @@ public class GetSystemTopologyJsonAction extends PDSAction {
                     pluginNode.put("ref", info.getRef());
                     pluginNode.put("name", info.getName());
                     final var plugin = container.getPlugin(info.getRef());
-                    if (plugin instanceof final ServerPlugin serverPlugin) {
-                        pluginNode.put("port", serverPlugin.getPort());
+                    final var status = container.getPluginStatus(info.getRef());
+                    final var ports = plugin instanceof final ServerPlugin serverPlugin
+                            ? java.util.List.of(serverPlugin.getPort())
+                            : "ON".equals(status) ? fallbackPluginPorts(info.getRef()) : java.util.List.<Integer> of();
+                    if (ports.size() == 1) {
+                        pluginNode.put("port", ports.get(0));
                     } else {
                         pluginNode.putNull("port");
                     }
-                    pluginNode.put("status", container.getPluginStatus(info.getRef()));
+                    final var portsArray = pluginNode.putArray("ports");
+                    ports.forEach(portsArray::add);
+                    pluginNode.put("status", status);
                 }
             }
         } catch (final Throwable t) {
@@ -124,6 +130,56 @@ public class GetSystemTopologyJsonAction extends PDSAction {
             // Response already committed or I/O error — nothing to recover
         }
         return null;
+    }
+
+    /**
+     * Gets the listening port(s) for a network plugin that does not extend {@link ServerPlugin} (e.g. HTTP/HTTPS,
+     * MQTT/MQTTS and SSH, which each manage their own embedded server rather than using the simple accept-loop
+     * abstraction {@code ServerPlugin} represents), read directly from the same configuration section that plugin
+     * itself uses at startup — this executes inside this same Monitor JVM, exactly like the {@code host} lookup above,
+     * so it always reads this Monitor's own local configuration, never another component's. Only called by the caller
+     * when {@link ecmwf.common.plugin.PluginContainer} reports that plugin's live status as {@code "ON"}, so a plugin
+     * that is configured but failed to start never gets a port shown. Returns an empty list for any other/unknown
+     * plugin ref.
+     *
+     * @param ref
+     *            the plugin reference (the key used in the {@code [PluginList]} configuration section)
+     *
+     * @return the ports configured for that plugin, if any
+     */
+    private static java.util.List<Integer> fallbackPluginPorts(final String ref) {
+        final java.util.List<Integer> ports = new java.util.ArrayList<>();
+        switch (ref) {
+        case "http" -> {
+            // This Monitor's own HttpPlugin (ecmwf.ecpds.master.plugin.http.HttpPlugin) binds its HTTPS port from
+            // the [MonitorPlugin] section (there is no separate plain-HTTP listener here, unlike the Data Mover's
+            // HttpPlugin which uses its own [HttpPlugin] http/https keys).
+            final var https = Cnf.at("MonitorPlugin", "https", -1);
+            if (https > 0) {
+                ports.add(https);
+            }
+        }
+        case "mqtt" -> {
+            final var mqtt = Cnf.at("MqttPlugin", "mqtt", -1);
+            final var mqtts = Cnf.at("MqttPlugin", "mqtts", -1);
+            if (mqtt > 0) {
+                ports.add(mqtt);
+            }
+            if (mqtts > 0) {
+                ports.add(mqtts);
+            }
+        }
+        case "ssh" -> {
+            final var port = Cnf.at("SshPlugin", "port", -1);
+            if (port > 0) {
+                ports.add(port);
+            }
+        }
+        default -> {
+            // No known fallback for this plugin ref.
+        }
+        }
+        return ports;
     }
 
     /**

@@ -105,7 +105,7 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
     private static final Logger _log = LogManager.getLogger(HttpPlugin.class);
 
     /** The Constant NAME. */
-    private static final String NAME = "MonitorPlugin";
+    private static final String NAME = "HttpPlugin";
 
     /** The Constant VERSION. */
     private static final String VERSION = Version.getFullVersion();

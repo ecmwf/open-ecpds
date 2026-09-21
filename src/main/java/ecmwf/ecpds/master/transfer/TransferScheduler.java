@@ -2991,6 +2991,17 @@ public final class TransferScheduler extends MBeanScheduler {
         }
 
         /**
+         * Gets a live status snapshot of every Dissemination Host configured for this destination (active connection
+         * count per host, plus which one is currently selected for new dispatches and its remaining per-host retry
+         * budget). See {@link HostProvider#getHostsStatus()}.
+         *
+         * @return one map per configured host
+         */
+        public java.util.List<Map<String, Object>> getHostsStatus() {
+            return _provider.getHostsStatus();
+        }
+
+        /**
          * Get the list of TransferServers which can be used to transmit this DataTransfer. If the DataTransfer was
          * already retrieved on one TransferServer then move it at the top of the list.
          *
@@ -4418,6 +4429,39 @@ public final class TransferScheduler extends MBeanScheduler {
          */
         int getRetryCount() {
             return _value.getStartCount();
+        }
+
+        /**
+         * Gets a live snapshot of every host configured for this destination: how many connections this destination
+         * currently has open on each one (independent hosts can be simultaneously in-flight when
+         * {@code MAX CONNECTIONS > 1} and a mid-flight failure has already caused a switch for new dispatches), plus,
+         * for the one host currently selected for new dispatches, its remaining per-host retry budget (how many failed
+         * attempts are left, on that same host, before the scheduler moves on to the next host in priority order - the
+         * same {@code _retry} countdown consumed in {@link #next(DataTransfer)}). Connection counts and retry budgets
+         * are tracked per-destination (each destination using a given {@code Host} gets its own independent
+         * {@link HostElement}), so a host shared by several destinations never mixes their figures.
+         *
+         * @return one map per configured host, each with {@code "hostName"}, {@code "activeConnections"},
+         *         {@code "selected"} and, only when {@code "selected"} is {@code true}, {@code "retriesUsed"} and
+         *         {@code "retriesTotal"} entries
+         */
+        java.util.List<Map<String, Object>> getHostsStatus() {
+            final java.util.List<Map<String, Object>> statuses = new java.util.ArrayList<>();
+            for (final var element : _hosts) {
+                final Map<String, Object> status = new java.util.LinkedHashMap<>();
+                final var selected = element == _host;
+                status.put("hostName", element.getHostName());
+                status.put("activeConnections", element._count);
+                status.put("selected", selected);
+                if (selected) {
+                    final var total = element._host.getRetryCount();
+                    final var used = Math.max(0, Math.min(total, total - element._retry));
+                    status.put("retriesUsed", used);
+                    status.put("retriesTotal", total);
+                }
+                statuses.add(status);
+            }
+            return statuses;
         }
 
         /**

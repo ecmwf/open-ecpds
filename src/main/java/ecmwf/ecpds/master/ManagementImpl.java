@@ -3229,6 +3229,108 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * Gets the listening port(s) for a network plugin that does not extend {@link ecmwf.common.plugin.ServerPlugin}
+     * (e.g. HTTP/HTTPS, MQTT/MQTTS and SSH, which each manage their own embedded server rather than using the simple
+     * accept-loop abstraction {@code ServerPlugin} represents), read directly from the same configuration section that
+     * plugin itself uses at startup. Only called by the caller when {@link ecmwf.common.plugin.PluginContainer} reports
+     * that plugin's live status as {@code "ON"}, so a plugin that is configured but failed to start (or was never
+     * registered on this component to begin with) never gets a port shown. Returns an empty list for any other/unknown
+     * plugin ref.
+     *
+     * @param ref
+     *            the plugin reference (the key used in the {@code [PluginList]} configuration section)
+     *
+     * @return the ports configured for that plugin, if any
+     */
+    private static List<Integer> fallbackPluginPorts(final String ref) {
+        final List<Integer> ports = new ArrayList<>();
+        switch (ref) {
+        case "http" -> {
+            final var http = Cnf.at("HttpPlugin", "http", -1);
+            final var https = Cnf.at("HttpPlugin", "https", -1);
+            if (http > 0) {
+                ports.add(http);
+            }
+            if (https > 0) {
+                ports.add(https);
+            }
+        }
+        case "mqtt" -> {
+            final var mqtt = Cnf.at("MqttPlugin", "mqtt", -1);
+            final var mqtts = Cnf.at("MqttPlugin", "mqtts", -1);
+            if (mqtt > 0) {
+                ports.add(mqtt);
+            }
+            if (mqtts > 0) {
+                ports.add(mqtts);
+            }
+        }
+        case "ssh" -> {
+            final var port = Cnf.at("SshPlugin", "port", -1);
+            if (port > 0) {
+                ports.add(port);
+            }
+        }
+        default -> {
+            // No known fallback for this plugin ref.
+        }
+        }
+        return ports;
+    }
+
+    /**
+     * Parses the {@code DataBase.alias} configuration value into its individual host/port node(s). Handles both a plain
+     * single-host alias (e.g. {@code "jdbc:mysql://dbhost:3306/ecpds"}) and a MySQL/MariaDB failover cluster alias with
+     * several comma-separated hosts (e.g. {@code "//host1:3309,host2:3309,host3:3309/ecpds?failOverReadOnly=false"}),
+     * stripping any {@code scheme://} or bare leading {@code //}, then the trailing {@code /database?params} part,
+     * before splitting the remaining host-list on commas. Each entry is split on its last {@code :} to separate host
+     * from port; a missing/invalid port is left as {@code null}. Returns an empty list if the alias is blank or has no
+     * host part.
+     *
+     * @param alias
+     *            the {@code DataBase.alias} configuration/system-property value
+     *
+     * @return the list of {@code {host, port}} node maps, in the order configured (first is the primary)
+     */
+    private static List<Map<String, Object>> parseDatabaseNodes(final String alias) {
+        final List<Map<String, Object>> nodes = new ArrayList<>();
+        if (alias == null || alias.isBlank()) {
+            return nodes;
+        }
+        var hostList = alias;
+        final var schemeSep = hostList.indexOf("://");
+        if (schemeSep != -1) {
+            hostList = hostList.substring(schemeSep + 3);
+        } else if (hostList.startsWith("//")) {
+            hostList = hostList.substring(2);
+        }
+        final var pathSep = hostList.indexOf('/');
+        if (pathSep != -1) {
+            hostList = hostList.substring(0, pathSep);
+        }
+        for (final var hostPort : hostList.split(",")) {
+            if (hostPort.isBlank()) {
+                continue;
+            }
+            final var colon = hostPort.lastIndexOf(':');
+            final Map<String, Object> node = new HashMap<>();
+            if (colon > 0) {
+                node.put("host", hostPort.substring(0, colon));
+                try {
+                    node.put("port", Integer.valueOf(hostPort.substring(colon + 1)));
+                } catch (final NumberFormatException e) {
+                    node.put("port", null);
+                }
+            } else {
+                node.put("host", hostPort);
+                node.put("port", null);
+            }
+            nodes.add(node);
+        }
+        return nodes;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * Builds the system topology snapshot: the Master's own host/plugins (read live and locally, from this same JVM's
@@ -3253,9 +3355,13 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                 pluginInfo.put("ref", info.getRef());
                 pluginInfo.put("name", info.getName());
                 final var plugin = master.getPluginContainer().getPlugin(info.getRef());
-                pluginInfo.put("port", plugin instanceof final ecmwf.common.plugin.ServerPlugin serverPlugin
-                        ? serverPlugin.getPort() : null);
-                pluginInfo.put("status", master.getPluginContainer().getPluginStatus(info.getRef()));
+                final var status = master.getPluginContainer().getPluginStatus(info.getRef());
+                final List<Integer> ports = plugin instanceof final ecmwf.common.plugin.ServerPlugin serverPlugin
+                        ? java.util.List.of(serverPlugin.getPort())
+                        : "ON".equals(status) ? fallbackPluginPorts(info.getRef()) : List.of();
+                pluginInfo.put("port", ports.size() == 1 ? ports.get(0) : null);
+                pluginInfo.put("ports", ports);
+                pluginInfo.put("status", status);
                 pluginInfos.add(pluginInfo);
             }
         } catch (final Throwable t) {
@@ -3264,19 +3370,20 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         masterInfo.put("plugins", pluginInfos);
         topology.put("master", masterInfo);
 
-        // Database: host parsed from the configured alias (e.g. "sequential://dbhost/ecpds"); reachability is
-        // implied by this call having reached the Master at all.
+        // Database: host(s)/port(s) parsed from the configured alias (e.g. a single
+        // "jdbc:mysql://dbhost:3306/ecpds" or a failover cluster like
+        // "//host1:3309,host2:3309,host3:3309/ecpds?failOverReadOnly=false"); reachability is implied by the fact
+        // this very call reached the Master, which cannot serve most requests without a working database connection.
         final Map<String, Object> databaseInfo = new HashMap<>();
-        var dbHost = Cnf.at("DataBase", "alias", System.getProperty("database.alias", ""));
-        final var schemeSep = dbHost.indexOf("://");
-        if (schemeSep != -1) {
-            dbHost = dbHost.substring(schemeSep + 3);
+        final var dbNodes = parseDatabaseNodes(Cnf.at("DataBase", "alias", System.getProperty("database.alias", "")));
+        if (dbNodes.isEmpty()) {
+            databaseInfo.put("host", "database");
+            databaseInfo.put("port", null);
+        } else {
+            databaseInfo.put("host", dbNodes.get(0).get("host"));
+            databaseInfo.put("port", dbNodes.get(0).get("port"));
         }
-        final var pathSep = dbHost.indexOf('/');
-        if (pathSep != -1) {
-            dbHost = dbHost.substring(0, pathSep);
-        }
-        databaseInfo.put("host", dbHost.isBlank() ? "database" : dbHost);
+        databaseInfo.put("nodes", dbNodes);
         databaseInfo.put("up", true);
         topology.put("database", databaseInfo);
 
@@ -3299,11 +3406,36 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                 // No snapshot yet (e.g. mover just added) — keep the configuration flag as a best-effort fallback.
             }
             moverInfo.put("up", up);
+            // If this Data Mover currently has a live, Mover-initiated control connection to this Master (the same
+            // kind of persistent connection this Monitor itself uses), fetch its own live plugin/port list over that
+            // existing MoverInterface RMI connection - the Master already talks to this Data Mover this way for
+            // every other management operation, so this adds no new channel.
+            final var moverConnection = master.getDataMoverInterface(server.getName());
+            moverInfo.put("rmiConnected", moverConnection != null);
+            if (moverConnection != null) {
+                try {
+                    moverInfo.put("plugins", moverConnection.getNetworkPluginInfos());
+                } catch (final Throwable t) {
+                    _log.warn("getSystemTopology: listing plugins for DataMover {}", server.getName(), t);
+                }
+            }
             movers.add(moverInfo);
         }
         topology.put("movers", movers);
 
         return monitor.done(topology);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Gets a live status snapshot of every Dissemination Host configured for the given destination.
+     */
+    @Override
+    public java.util.List<Map<String, Object>> getDestinationHostsStatus(final String destinationName)
+            throws MasterException {
+        final var monitor = new MonitorCall("getDestinationHostsStatus(" + destinationName + ")");
+        return monitor.done(master.getTransferScheduler().getDestinationThread(destinationName).getHostsStatus());
     }
 
     /**

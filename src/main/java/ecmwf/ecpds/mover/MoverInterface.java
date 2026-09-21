@@ -29,6 +29,7 @@ package ecmwf.ecpds.mover;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.List;
+import java.util.Map;
 
 import javax.script.ScriptException;
 
@@ -696,6 +697,20 @@ public interface MoverInterface extends ClientInterface {
      *             the remote exception
      */
     String getECproxyAddressAndPort() throws RemoteException;
+
+    /**
+     * Gets the list of network plugins currently loaded in this Data Mover's own JVM (e.g. {@code ecproxy},
+     * {@code http}, {@code ftp}, {@code ssh}, {@code mqtt}), each described by a map with {@code ref}, {@code name},
+     * {@code port} (or {@code null} if not a {@link ecmwf.common.plugin.ServerPlugin}) and {@code status} entries. Used
+     * by the Master Server (and, through it, the Monitor's System Topology page) to display this Data Mover's full set
+     * of listening ports without requiring the Monitor to contact the Data Mover directly.
+     *
+     * @return the plugin infos
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    List<Map<String, Object>> getNetworkPluginInfos() throws RemoteException;
 
     /**
      * Compute the used and total capacity for each file system in the data repository.

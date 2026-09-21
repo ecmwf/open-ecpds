@@ -45,7 +45,7 @@
 				</c:if>
 				<c:set var="disseminationHostBottleneck" value="${disseminationHost.name.maxConnections lt destination.maxConnections}" scope="page" />
 				<c:set var="disseminationHostOverProvisioned" value="${disseminationHost.name.maxConnections gt destination.maxConnections}" scope="page" />
-				<tr>
+				<tr data-host-name="${disseminationHost.name.name}">
 					<td>
 						<c:if test="${disseminationHost.name.active}">
 							<a title="This Host is Activated (id=${disseminationHost.name.name})"
@@ -65,6 +65,7 @@
 							<i class="bi bi-info-circle-fill text-info ms-1" style="font-size:0.75rem;cursor:pointer;"
 								title="This host allows up to ${disseminationHost.name.maxConnections} parallel connection(s), higher than the Destination's ${destination.maxConnections}. The Destination's limit is more restrictive, so the effective limit for transfers through this host is capped at ${destination.maxConnections}; the extra capacity on this host is unused."></i>
 						</c:if>
+						<span class="host-live-status"></span>
 					</td>
 					<td>${disseminationHost.value}</td>
 					<c:if test="${not empty ecpdsCanHandleHosts}">
@@ -112,7 +113,41 @@
 				columnDefs:   [{ type: 'num', targets: 1 }<c:if test="${not empty ecpdsCanHandleHosts}">, { orderable: false, targets: -1 }</c:if>],
 				language:     { emptyTable: 'No matching records found.' }
 			});
+			refreshDisseminationHostsStatus();
 		});
+
+		function refreshDisseminationHostsStatus() {
+			fetch('/do/transfer/destination/hostsStatus/<c:out value="${destination.name}"/>', { credentials: 'same-origin' })
+				.then(function (resp) {
+					var ct = resp.headers.get('content-type') || '';
+					if (!resp.ok || ct.indexOf('application/json') === -1) {
+						throw new Error('not JSON'); // e.g. session expired - silently skip this optional widget
+					}
+					return resp.json();
+				})
+				.then(function (statuses) {
+					(statuses || []).forEach(function (status) {
+						var row = document.querySelector('#disseminationHostsTable tr[data-host-name="' + status.hostName + '"] .host-live-status');
+						if (!row) { return; }
+						row.innerHTML = '';
+						var connBadge = document.createElement('span');
+						connBadge.className = 'badge rounded-pill text-bg-secondary ms-1';
+						connBadge.title = 'Connections this destination currently has open on this host (other destinations sharing this host are counted separately)';
+						connBadge.textContent = status.activeConnections + ' active';
+						row.appendChild(connBadge);
+						if (status.selected) {
+							var selBadge = document.createElement('span');
+							selBadge.className = 'badge rounded-pill text-bg-primary ms-1';
+							selBadge.title = 'This is the host currently selected for new dispatches. It will fail over to the next host in priority order after '
+								+ (status.retriesTotal - status.retriesUsed) + ' more failed attempt(s) ('
+								+ status.retriesUsed + '/' + status.retriesTotal + ' retries used).';
+							selBadge.textContent = 'selected \u2014 ' + status.retriesUsed + '/' + status.retriesTotal + ' retries';
+							row.appendChild(selBadge);
+						}
+					});
+				})
+				.catch(function () { /* best-effort widget: leave rows unchanged on any failure */ });
+		}
 		</script>
 	</div>
 

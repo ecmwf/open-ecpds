@@ -67,9 +67,11 @@ final class AccessControl {
         final var url1 = new Url("/do/transfer/destination/" + destinationName);
         final var url2 = new Url("/do/transfer/destination/operations/" + destinationName + "/");
         final var url3 = new Url("/do/transfer/destination/metadata/" + destinationName);
+        final var url4 = new Url("/do/transfer/destination/hostsStatus/" + destinationName);
         base.insert(url1, false);
         base.insert(url2, false);
         base.insert(url3, false);
+        base.insert(url4, false);
         // Create the main category!
         final var category = new Category();
         category.setActive(true);
@@ -80,12 +82,14 @@ final class AccessControl {
         base.insert(new CatUrl(category.getId(), url1.getName()), false);
         base.insert(new CatUrl(category.getId(), url2.getName()), false);
         base.insert(new CatUrl(category.getId(), url3.getName()), false);
+        base.insert(new CatUrl(category.getId(), url4.getName()), false);
         // Associate the URLs with the "operations" category!
         for (final Category c : base.getCategoryArray()) {
             if ("operations".equals(c.getName())) {
                 base.insert(new CatUrl(c.getId(), url1.getName()), false);
                 base.insert(new CatUrl(c.getId(), url2.getName()), false);
                 base.insert(new CatUrl(c.getId(), url3.getName()), false);
+                base.insert(new CatUrl(c.getId(), url4.getName()), false);
                 break;
             }
         }
@@ -109,10 +113,11 @@ final class AccessControl {
         final var url1 = new Url("/do/transfer/destination/" + destinationName);
         final var url2 = new Url("/do/transfer/destination/operations/" + destinationName + "/");
         final var url3 = new Url("/do/transfer/destination/metadata/" + destinationName);
+        final var url4 = new Url("/do/transfer/destination/hostsStatus/" + destinationName);
         // Remove all the associations with the Categories!
         for (final CatUrl cu : base.getCatUrlArray()) {
             if (url1.getName().equals(cu.getUrlName()) || url2.getName().equals(cu.getUrlName())
-                    || url3.getName().equals(cu.getUrlName())) {
+                    || url3.getName().equals(cu.getUrlName()) || url4.getName().equals(cu.getUrlName())) {
                 base.remove(cu);
             }
         }
@@ -138,6 +143,7 @@ final class AccessControl {
         base.remove(url1);
         base.remove(url2);
         base.remove(url3);
+        base.remove(url4);
     }
 
     /**
@@ -159,6 +165,7 @@ final class AccessControl {
         final var url1 = "/do/transfer/destination/";
         final var url2 = "/do/transfer/destination/operations/";
         final var url3 = "/do/transfer/destination/metadata/";
+        final var url4 = "/do/transfer/destination/hostsStatus/";
         for (final Url url : base.getUrlArray()) {
             final var name = url.getName();
             String destinationName = null;
@@ -166,6 +173,8 @@ final class AccessControl {
                 destinationName = name.substring(url2.length(), name.length() - 1);
             } else if (name.startsWith(url3)) {
                 destinationName = name.substring(url3.length());
+            } else if (name.startsWith(url4)) {
+                destinationName = name.substring(url4.length());
             } else {
                 if (name.startsWith(url1)) {
                     destinationName = name.substring(url1.length());
@@ -211,12 +220,13 @@ final class AccessControl {
                     category.setName(destinationName + " operations");
                     base.insert(category, true);
                 }
-                // Define both URL
+                // Define all URLs
                 final var urla = url1 + destinationName;
                 final var urlb = url2 + destinationName + "/";
                 final var urlc = url3 + destinationName;
+                final var urld = url4 + destinationName;
                 // Associate the URLs with the main category if not yet done!
-                for (final String urlName : new String[] { urla, urlb, urlc }) {
+                for (final String urlName : new String[] { urla, urlb, urlc, urld }) {
                     final var url = new Url(urlName);
                     if (base.getUrlObject(urlName) == null) {
                         base.insert(url, false);
@@ -230,7 +240,7 @@ final class AccessControl {
                 // yet done!
                 for (final Category c : base.getCategoryArray()) {
                     if ("operations".equals(c.getName())) {
-                        for (final String url : new String[] { urla, urlb, urlc }) {
+                        for (final String url : new String[] { urla, urlb, urlc, urld }) {
                             final var catUrl = new CatUrl(c.getId(), url);
                             if (base.getCatUrlObject(c.getId(), catUrl.getUrlName()) == null) {
                                 base.insert(catUrl, false);

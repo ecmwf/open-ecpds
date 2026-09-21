@@ -1367,6 +1367,18 @@ final class ManagementProxy implements ManagementInterface {
     /**
      * {@inheritDoc}
      *
+     * Gets the destination hosts status.
+     */
+    @Override
+    public java.util.List<Map<String, Object>> getDestinationHostsStatus(final String destinationName)
+            throws MasterException, RemoteException {
+        final var monitor = new MonitorCall("getDestinationHostsStatus(" + destinationName + ")");
+        return monitor.done(managementInterface.getDestinationHostsStatus(destinationName));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Returns availability snapshots for a DataMover.
      */
     @Override

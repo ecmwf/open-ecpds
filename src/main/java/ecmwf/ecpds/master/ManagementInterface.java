@@ -1522,6 +1522,29 @@ public interface ManagementInterface extends Remote {
     Map<String, Object> getSystemTopology() throws MasterException, RemoteException;
 
     /**
+     * Returns a live status snapshot of every Dissemination Host configured for the given destination: the number of
+     * connections that destination currently has open on each host (independent hosts can be simultaneously in-flight
+     * when {@code MAX CONNECTIONS > 1} and a mid-flight failure already caused a switch for new dispatches), plus, for
+     * the one host currently selected for new dispatches, its remaining per-host retry budget before the scheduler
+     * moves on to the next host in priority order. Intended to let the Monitor UI highlight, on the destination's Hosts
+     * table, which host is active and how close it is to failing over.
+     *
+     * @param destinationName
+     *            the destination name
+     *
+     * @return one map per configured host, each with {@code "hostName"}, {@code "activeConnections"},
+     *         {@code "selected"} and, only when {@code "selected"} is {@code true}, {@code "retriesUsed"} and
+     *         {@code "retriesTotal"} entries
+     *
+     * @throws ecmwf.ecpds.master.MasterException
+     *             the master exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    java.util.List<Map<String, Object>> getDestinationHostsStatus(String destinationName)
+            throws MasterException, RemoteException;
+
+    /**
      * Returns availability snapshots for the given DataMover from the database.
      *
      * <p>
