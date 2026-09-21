@@ -1858,4 +1858,23 @@ public interface ManagementInterface extends Remote {
      *             the remote exception
      */
     Map<String, GeoPoint> getGeoLocations(String[] hostNames) throws RemoteException;
+
+    /**
+     * Gets a live snapshot of overall Data Portal activity - the FTP/HTTP/SFTP/S3/WebDAV interface used directly by
+     * IncomingUsers, as opposed to the Dissemination/Acquisition traffic between a DataMover and a Destination Host
+     * (see {@link #getLiveTransfers()} for that) - for display on the "Live ECPDS Earth" globe visualisation.
+     *
+     * <p>
+     * Backed by {@link DataPortalActivityRegistry} and {@link MasterServer#getIncomingConnectionsCount()}; cheap,
+     * memory-only, no DataMover RMI calls at query time.
+     * </p>
+     *
+     * @return a {@code long[3]} array: {@code [0]} is the number of currently open incoming connections (Data Portal
+     *         sessions) across every DataMover, {@code [1]} is the current bytes-in/sec rate (uploads by
+     *         IncomingUsers), and {@code [2]} is the current bytes-out/sec rate (downloads by IncomingUsers)
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    long[] getDataPortalActivity() throws RemoteException;
 }

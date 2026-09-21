@@ -18,21 +18,26 @@
 .globe-badge-disconnected{background:rgba(220,53,69,.15);color:#dc3545;}
 #globeHeader .title-group i{font-size:1.4rem;}
 #globeHeader .title-text{font-size:1.05rem;font-weight:600;line-height:1.15;}
+#globeHeader .title-text .btn{font-size:.75rem;margin-left:.35rem;vertical-align:1px;}
 #globeHeader .subtitle{font-size:.76rem;color:var(--bs-secondary-color,#6c757d);}
-#globeKpiRow{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-top:.65rem;}
-@media (max-width: 900px){#globeKpiRow{grid-template-columns:repeat(2,1fr);}}
-.globe-kpi-card{background:var(--bs-tertiary-bg,#f8f9fa);border:1px solid var(--bs-border-color);border-radius:10px;padding:.6rem .8rem;display:flex;align-items:center;gap:.65rem;min-height:64px;}
-.globe-kpi-icon{font-size:1.3rem;color:#0dcaf0;flex-shrink:0;width:28px;text-align:center;}
-.globe-kpi-value{font-size:1.25rem;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums;}
-.globe-kpi-label{font-size:.7rem;color:var(--bs-secondary-color,#6c757d);text-transform:uppercase;letter-spacing:.03em;}
-.globe-kpi-text{display:flex;flex-direction:column;gap:1px;min-width:0;}
-.globe-kpi-gauge{gap:.5rem;}
-.globe-gauge-svg{width:52px;height:34px;flex-shrink:0;}
-.globe-gauge-arc-bg{fill:none;stroke:var(--bs-border-color,#dee2e6);stroke-width:9;stroke-linecap:round;}
-.globe-gauge-arc{fill:none;stroke:#38bdf8;stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .8s ease,stroke .8s ease;}
-#globeContainer{position:relative;width:100%;height:calc(100vh - 340px);min-height:420px;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.15);}
+#globeContainer{position:relative;width:100%;height:70vh;min-height:420px;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.15);}
 #globeLegend{position:absolute;left:10px;top:10px;z-index:10;background:rgba(20,25,30,.72);color:#eee;border-radius:8px;padding:.5rem .75rem;font-size:.78rem;line-height:1.5;backdrop-filter:blur(2px);}
 #globeLegend .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;}
+#globeBottomRightPanels{position:absolute;right:10px;bottom:10px;z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-height:calc(100% - 20px);pointer-events:none;}
+#globeBottomRightPanels>div{pointer-events:auto;position:static;}
+#globeStatsPanel{width:410px;max-width:min(410px,92vw);max-height:calc(100% - 20px);overflow:auto;background:linear-gradient(160deg,rgba(22,27,34,.9),rgba(14,18,24,.86));color:#eee;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:.7rem;font-size:.74rem;line-height:1.3;backdrop-filter:blur(6px);box-shadow:0 8px 28px rgba(0,0,0,.4);}
+.globe-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;}
+.globe-stats-row+.globe-stats-row{margin-top:.5rem;}
+@media (max-width: 480px){.globe-stats-row{grid-template-columns:repeat(2,1fr);}}
+.globe-stat-tile{display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:.5rem .25rem .55rem;min-height:92px;box-sizing:border-box;text-align:center;}
+.globe-stat-graphic{flex:1 1 auto;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;}
+.globe-stat-tile i{font-size:1.3rem;color:#38bdf8;}
+.globe-stat-text{display:flex;flex-direction:column;align-items:center;line-height:1.15;max-width:100%;}
+.globe-stat-value{font-size:.9rem;font-weight:700;font-variant-numeric:tabular-nums;color:#fff;overflow-wrap:break-word;max-width:100%;}
+.globe-stat-label{font-size:.62rem;color:#9aa5b1;text-transform:uppercase;letter-spacing:.02em;margin-top:1px;white-space:nowrap;}
+.globe-stat-gauge .globe-gauge-svg{width:58px;height:34px;filter:drop-shadow(0 0 3px rgba(56,189,248,.35));}
+.globe-gauge-arc-bg{fill:none;stroke:rgba(255,255,255,.14);stroke-width:9;stroke-linecap:round;}
+.globe-gauge-arc{fill:none;stroke:#38bdf8;stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .8s ease,stroke .8s ease;}
 #globeRightPanels{position:absolute;right:10px;top:10px;z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-height:calc(100% - 20px);pointer-events:none;}
 #globeRightPanels>div{pointer-events:auto;position:static;}
 #globeInfoPanel{width:290px;max-width:80vw;background:rgba(20,25,30,.86);color:#eee;border-radius:8px;padding:.75rem 1rem;font-size:.82rem;display:none;box-shadow:0 4px 16px rgba(0,0,0,.35);}
@@ -41,7 +46,7 @@
 #globeInfoPanel dl{margin:0;}
 #globeInfoPanel dt{color:#aaa;font-weight:400;}
 #globeInfoPanel dd{margin-bottom:.35rem;word-break:break-all;}
-#globeOriginWarning{position:absolute;right:10px;bottom:34px;z-index:10;max-width:min(230px,55vw);background:rgba(20,25,30,.86);color:#eee;border-radius:8px;padding:.5rem .7rem;font-size:.76rem;line-height:1.35;display:none;box-shadow:0 4px 16px rgba(0,0,0,.35);}
+#globeOriginWarning{max-width:min(230px,55vw);background:rgba(20,25,30,.86);color:#eee;border-radius:8px;padding:.5rem .7rem;font-size:.76rem;line-height:1.35;display:none;box-shadow:0 4px 16px rgba(0,0,0,.35);}
 #globeOriginWarning i{margin-right:.35rem;color:#997404;}
 #globeOriginWarningDetail{color:#aaa;font-size:.9em;margin-top:.15rem;word-break:break-word;}
 #globeOriginWarning a{color:#9fd6ff;}
@@ -54,13 +59,50 @@
 .country-flag{font-size:1.15rem;cursor:default;}
 .country-flyto-btn{margin-left:6px;cursor:pointer;color:#9fd6ff;font-size:.85rem;}
 .country-flyto-btn:hover{color:#fff;}
+.globe-muted-text{color:#bbb;}
+
+/* All the floating overlay panels above default to a dark glass look, since they sit on top of the globe/space
+   imagery which is dark regardless of page theme. That works fine while the page itself is in dark mode, but reads
+   as an odd mismatch in the (default) light theme, so give them a light/day glass variant that follows the same
+   "[data-bs-theme=light] #id{...}" pattern already used elsewhere in this app (see layout.jsp/ecpds.css) - the
+   combined id+attribute selector naturally wins over the plain id rules above without needing !important. Elements
+   whose color is instead set dynamically inline by JS (the active gauge arc / battery fill, both re-colored per
+   reading via semantic thresholds) are intentionally left alone since those semantic colors already read fine on
+   either background.  */
+[data-bs-theme=light] #globeLegend{background:#f6f8fa;color:#1b1f24;box-shadow:0 2px 8px rgba(0,0,0,.18);}
+[data-bs-theme=light] #globeStatsPanel{background:linear-gradient(160deg,#ffffff,#eef1f4);color:#1b1f24;border-color:rgba(0,0,0,.08);box-shadow:0 8px 24px rgba(0,0,0,.18);}
+[data-bs-theme=light] .globe-stat-tile{background:rgba(0,0,0,.035);border-color:rgba(0,0,0,.07);}
+[data-bs-theme=light] .globe-stat-value{color:#1b1f24;}
+[data-bs-theme=light] .globe-stat-label{color:#57606a;}
+[data-bs-theme=light] .globe-gauge-arc-bg{stroke:rgba(0,0,0,.12);}
+[data-bs-theme=light] #globeInfoPanel{background:#f6f8fa;color:#1b1f24;box-shadow:0 4px 14px rgba(0,0,0,.18);}
+[data-bs-theme=light] #globeInfoPanel h6{color:#0969da;}
+[data-bs-theme=light] #globeInfoPanel dt{color:#57606a;}
+[data-bs-theme=light] #globeInfoPanel .close-btn{color:#57606a;}
+[data-bs-theme=light] #globeOriginWarning{background:#f6f8fa;color:#1b1f24;box-shadow:0 4px 14px rgba(0,0,0,.18);}
+[data-bs-theme=light] #globeOriginWarning i{color:#997404;}
+[data-bs-theme=light] #globeOriginWarningDetail{color:#57606a;}
+[data-bs-theme=light] #globeOriginWarning a{color:#0969da;}
+[data-bs-theme=light] #globeCountryTable{background:#f6f8fa;color:#1b1f24;box-shadow:0 4px 14px rgba(0,0,0,.18);}
+[data-bs-theme=light] .globe-country-table-title{color:#0969da;}
+[data-bs-theme=light] #globeCountryTable th{color:#0969da;background:#f6f8fa;}
+[data-bs-theme=light] .country-flyto-btn{color:#0969da;}
+[data-bs-theme=light] .country-flyto-btn:hover{color:#000;}
+[data-bs-theme=light] .globe-muted-text{color:#57606a;}
 </style>
 
 <div id="globeHeader">
     <div class="title-group">
         <i class="bi bi-globe2 text-info"></i>
         <div>
-            <div class="title-text"><%=System.getProperty("monitor.nickName")%> Live Earth</div>
+            <div class="title-text">
+                <%=System.getProperty("monitor.nickName")%> Live Earth
+                <button class="btn btn-link btn-sm text-muted p-0 align-baseline" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#globeInfoCollapse"
+                    aria-expanded="false" title="About this page">
+                  <i class="bi bi-info-circle"></i>
+                </button>
+            </div>
             <div class="subtitle" id="globeSubtitle">Connecting...</div>
         </div>
     </div>
@@ -141,6 +183,45 @@
     </div>
 </div>
 
+<div class="collapse mb-3" id="globeInfoCollapse">
+  <div class="px-3 py-2 border-bottom border-top" style="font-size:.82rem;background:var(--bs-tertiary-bg,#e9ecef);border-top-width:3px!important;border-top-color:var(--bs-primary,#0d6efd)!important;border-radius:6px;">
+    <strong class="d-block mb-1">About the Live Earth page</strong>
+    <p class="mb-2">
+        This page visualises, in real time over a 3D globe, the traffic flowing between this
+        <%=System.getProperty("monitor.nickName")%> installation and the Transfer Hosts/Destinations it exchanges
+        data with (via the DataMovers' Dissemination and Acquisition transfers), plus the overall activity of the
+        Data Portal (the FTP/HTTP/SFTP/S3/WebDAV interface used directly by Incoming Users). Everything on the globe
+        and in the panels below updates live over a WebSocket feed refreshed every few seconds - no page reload
+        needed.
+    </p>
+    <ul class="mb-2 ps-3">
+        <li><strong>Arcs and points</strong> &mdash; an arc is drawn between a Transfer Host and either the origin
+        marker (this installation's own location) or a Proxy Host, with the arrow pointing in the direction data is
+        flowing: origin &rarr; host for Dissemination (data pushed out), host &rarr; origin for Acquisition (data
+        pulled in). Colours follow the legend shown in the top-left corner of the globe.</li>
+        <li><strong>Per host / per country</strong> and <strong>Dissemination / Acquisition</strong> (top-right
+        icons) let you group and filter which arcs are shown.</li>
+        <li><strong>Labels</strong> toggles country/town name overlays; the fullscreen button expands the globe to
+        fill the whole browser window.</li>
+    </ul>
+    <strong class="d-block mb-1">Data Portal Activity panel (bottom-right)</strong>
+    <ul class="mb-0 ps-3">
+        <li><strong>Transfers</strong> &mdash; number of Dissemination/Acquisition transfers currently active
+        (matches the current Direction filter).</li>
+        <li><strong>Hosts</strong> &mdash; number of distinct Transfer Hosts with at least one active transfer.</li>
+        <li><strong>Throughput</strong> &mdash; combined instantaneous transfer rate across all currently active
+        transfers.</li>
+        <li><strong>24h total</strong> &mdash; total volume transferred over the last 24 hours.</li>
+        <li><strong>Sessions</strong> &mdash; number of Incoming Users currently connected to the Data Portal (FTP/
+        HTTP/SFTP/S3/WebDAV), across every DataMover.</li>
+        <li><strong>Data in / Data out</strong> &mdash; combined instantaneous upload/download rate of every open
+        Data Portal session, across every DataMover.</li>
+        <li><strong>Storage</strong> &mdash; aggregate used/total disk space across every DataMover volume, shown as
+        a percentage (hover the tile for the exact used/total figures).</li>
+    </ul>
+  </div>
+</div>
+
 <div id="globeContainer">
     <div id="cesiumContainer" style="width:100%;height:100%;"></div>
     <div id="globeLegend">
@@ -149,8 +230,8 @@
         <div><span class="dot" style="background:#ef4444;"></span>Failed / retransmitting</div>
         <div><span class="dot" style="background:#ffd166;"></span>OpenECPDS location</div>
         <div><span class="dot" style="background:#a78bfa;"></span>Proxy Host location</div>
-        <div style="margin-top:.25rem;color:#bbb;max-width:160px;">Arrows point in the direction data is flowing</div>
-        <div id="globeUnresolvedNote" style="display:none;margin-top:.35rem;color:#bbb;max-width:160px;font-size:.72rem;line-height:1.3;">
+        <div class="globe-muted-text" style="margin-top:.25rem;max-width:160px;">Arrows point in the direction data is flowing</div>
+        <div id="globeUnresolvedNote" class="globe-muted-text" style="display:none;margin-top:.35rem;max-width:160px;font-size:.72rem;line-height:1.3;">
             <i class="bi bi-exclamation-triangle" style="color:#d9a441;margin-right:.3rem;"></i><span id="globeUnresolvedNoteText"></span>
         </div>
     </div>
@@ -168,44 +249,94 @@
             </table>
         </div>
     </div>
+    <div id="globeBottomRightPanels">
     <div id="globeOriginWarning">
         <i class="bi bi-exclamation-triangle-fill"></i><strong>OpenECPDS location not configured.</strong>
         <div id="globeOriginWarningDetail"></div>
         <auth:link basePathKey="admin.basepath" href="/origin">Configure &rarr;</auth:link>
     </div>
-</div>
-
-<div id="globeKpiRow">
-    <div class="globe-kpi-card">
-        <i class="bi bi-arrow-left-right globe-kpi-icon"></i>
-        <div class="globe-kpi-text">
-            <span class="globe-kpi-value" id="kpiTransfers">0</span>
-            <span class="globe-kpi-label">Active transfers</span>
+    <div id="globeStatsPanel">
+        <div class="globe-stats-row">
+            <div class="globe-stat-tile">
+                <div class="globe-stat-graphic"><i class="bi bi-arrow-left-right"></i></div>
+                <div class="globe-stat-text">
+                    <span class="globe-stat-value" id="kpiTransfers">0</span>
+                    <span class="globe-stat-label">Transfers</span>
+                </div>
+            </div>
+            <div class="globe-stat-tile">
+                <div class="globe-stat-graphic"><i class="bi bi-hdd-network"></i></div>
+                <div class="globe-stat-text">
+                    <span class="globe-stat-value" id="kpiHosts">0</span>
+                    <span class="globe-stat-label">Hosts</span>
+                </div>
+            </div>
+            <div class="globe-stat-tile globe-stat-gauge">
+                <div class="globe-stat-graphic">
+                    <svg class="globe-gauge-svg" viewBox="0 0 120 68">
+                        <path class="globe-gauge-arc-bg" d="M10,62 A50,50 0 0 1 110,62"></path>
+                        <path class="globe-gauge-arc" id="gaugeArc" d="M10,62 A50,50 0 0 1 110,62"></path>
+                    </svg>
+                </div>
+                <div class="globe-stat-text">
+                    <span class="globe-stat-value" id="kpiThroughput">0 bps</span>
+                    <span class="globe-stat-label">Throughput</span>
+                </div>
+            </div>
+            <div class="globe-stat-tile">
+                <div class="globe-stat-graphic"><i class="bi bi-hdd-stack"></i></div>
+                <div class="globe-stat-text">
+                    <span class="globe-stat-value" id="kpiBytes">0 B</span>
+                    <span class="globe-stat-label">24h total</span>
+                </div>
+            </div>
+        </div>
+        <div class="globe-stats-row">
+            <div class="globe-stat-tile">
+                <div class="globe-stat-graphic"><i class="bi bi-people-fill"></i></div>
+                <div class="globe-stat-text">
+                    <span class="globe-stat-value" id="kpiSessions">0</span>
+                    <span class="globe-stat-label">Sessions</span>
+                </div>
+            </div>
+            <div class="globe-stat-tile globe-stat-gauge">
+                <div class="globe-stat-graphic">
+                    <svg class="globe-gauge-svg" viewBox="0 0 120 68">
+                        <path class="globe-gauge-arc-bg" d="M10,62 A50,50 0 0 1 110,62"></path>
+                        <path class="globe-gauge-arc" id="gaugeArcIn" d="M10,62 A50,50 0 0 1 110,62"></path>
+                    </svg>
+                </div>
+                <div class="globe-stat-text">
+                    <span class="globe-stat-value" id="kpiDataIn">0 bps</span>
+                    <span class="globe-stat-label">Data in</span>
+                </div>
+            </div>
+            <div class="globe-stat-tile globe-stat-gauge">
+                <div class="globe-stat-graphic">
+                    <svg class="globe-gauge-svg" viewBox="0 0 120 68">
+                        <path class="globe-gauge-arc-bg" d="M10,62 A50,50 0 0 1 110,62"></path>
+                        <path class="globe-gauge-arc" id="gaugeArcOut" d="M10,62 A50,50 0 0 1 110,62"></path>
+                    </svg>
+                </div>
+                <div class="globe-stat-text">
+                    <span class="globe-stat-value" id="kpiDataOut">0 bps</span>
+                    <span class="globe-stat-label">Data out</span>
+                </div>
+            </div>
+            <div class="globe-stat-tile globe-stat-gauge" id="storageTile">
+                <div class="globe-stat-graphic">
+                    <svg class="globe-gauge-svg" viewBox="0 0 120 68">
+                        <path class="globe-gauge-arc-bg" d="M10,62 A50,50 0 0 1 110,62"></path>
+                        <path class="globe-gauge-arc" id="gaugeArcStorage" d="M10,62 A50,50 0 0 1 110,62"></path>
+                    </svg>
+                </div>
+                <div class="globe-stat-text">
+                    <span class="globe-stat-value" id="kpiStoragePct">0%</span>
+                    <span class="globe-stat-label">Storage</span>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="globe-kpi-card">
-        <i class="bi bi-hdd-network globe-kpi-icon"></i>
-        <div class="globe-kpi-text">
-            <span class="globe-kpi-value" id="kpiHosts">0</span>
-            <span class="globe-kpi-label">Active hosts</span>
-        </div>
-    </div>
-    <div class="globe-kpi-card globe-kpi-gauge">
-        <svg class="globe-gauge-svg" viewBox="0 0 120 68">
-            <path class="globe-gauge-arc-bg" d="M10,62 A50,50 0 0 1 110,62"></path>
-            <path class="globe-gauge-arc" id="gaugeArc" d="M10,62 A50,50 0 0 1 110,62"></path>
-        </svg>
-        <div class="globe-kpi-text">
-            <span class="globe-kpi-value" id="kpiThroughput">0 bps</span>
-            <span class="globe-kpi-label">Combined throughput</span>
-        </div>
-    </div>
-    <div class="globe-kpi-card">
-        <i class="bi bi-hdd-stack globe-kpi-icon"></i>
-        <div class="globe-kpi-text">
-            <span class="globe-kpi-value" id="kpiBytes">0 B</span>
-            <span class="globe-kpi-label">Transferred (24h)</span>
-        </div>
     </div>
 </div>
 
@@ -213,6 +344,67 @@
 <script>
 (async function () {
     "use strict";
+
+    // Sizes the globe container to fill exactly the remaining viewport height below it (rather than a hardcoded
+    // "calc(100vh - Npx)" guess, which would need constant recalibration whenever the surrounding page chrome
+    // changes), so there is never a leftover blank gap - nor an overflow requiring page scroll - beneath it. Kept
+    // effortlessly correct across page zoom levels, browser chrome, and any future header/breadcrumb changes.
+    //
+    // The page also has a fixed, always-on-top "#bottomfooter" bar (see ecpds.css's "clears the fixed bottomfooter"
+    // padding on #contentDiv) which does not push page content up the way a normal in-flow footer would, so its
+    // height has to be subtracted here explicitly too - otherwise the container would be sized as if it could use
+    // the full viewport height, and its bottom portion would end up rendered underneath that fixed footer.
+    var globeContainerEl = document.getElementById("globeContainer");
+    function resizeGlobeContainer() {
+        if (document.fullscreenElement === globeContainerEl) {
+            // The Fullscreen API already makes the element fill the whole screen; do not fight it.
+            globeContainerEl.style.height = "";
+            return;
+        }
+        var top = globeContainerEl.getBoundingClientRect().top;
+        var footerEl = document.getElementById("bottomfooter");
+        var footerHeight = footerEl ? footerEl.getBoundingClientRect().height : 44;
+        var breathingRoom = 16;
+        var available = window.innerHeight - top - footerHeight - breathingRoom;
+        globeContainerEl.style.height = Math.max(420, available) + "px";
+    }
+    // Deliberately not called immediately at parse-time: this early in the page load, surrounding chrome/fonts/
+    // images (and the fixed footer) haven't settled into their final layout yet, so an immediate measurement would
+    // be wrong - briefly sizing the container too tall and letting its bottom peek out from under the fixed footer
+    // until the corrected size kicked in on "load". Instead we simply keep the CSS default (70vh/min 420px, see
+    // "#globeContainer" above) as the very first paint, which already looks reasonable, and only replace it once
+    // with an accurate pixel height after everything has truly finished loading - so there is no visible resize
+    // flash at all.
+    //
+    // Note this page's own inline script (this one) runs and registers below *before* the outer layout.jsp's
+    // closing script does, because this content is nested inside "#contentDiv" - and that outer script is what
+    // reveals "#contentDiv" (kept "display:none" behind a loading overlay until then) via a jQuery "load" handler.
+    // Multiple listeners on the same event fire in registration order, so naively also listening for "load" here
+    // would run *before* "#contentDiv" is actually shown, measuring a hidden (zero-size) container and computing a
+    // bogus height. Instead, poll on animation frames until the container genuinely has real layout (non-zero
+    // rect), which is agnostic to whichever mechanism/timing reveals it.
+    function waitUntilVisibleThenResize(attemptsLeft) {
+        if (globeContainerEl.getBoundingClientRect().height > 0) {
+            resizeGlobeContainer();
+            return;
+        }
+        if (attemptsLeft <= 0) {
+            return;
+        }
+        requestAnimationFrame(function() { waitUntilVisibleThenResize(attemptsLeft - 1); });
+    }
+    window.addEventListener("load", function() { waitUntilVisibleThenResize(120); });
+    window.addEventListener("resize", resizeGlobeContainer);
+    document.addEventListener("fullscreenchange", resizeGlobeContainer);
+    // Expanding/collapsing the "About this page" info card above shifts everything below it (including this
+    // container's own top offset), so it needs the same re-measure as an actual window resize - both at the start
+    // and the end of the Bootstrap collapse animation, since the container's "top" keeps changing throughout it.
+    var globeInfoCollapseEl = document.getElementById("globeInfoCollapse");
+    if (globeInfoCollapseEl) {
+        ["show.bs.collapse", "hide.bs.collapse", "shown.bs.collapse", "hidden.bs.collapse"].forEach(function (evt) {
+            globeInfoCollapseEl.addEventListener(evt, resizeGlobeContainer);
+        });
+    }
 
     // No Cesium Ion token: use the low-resolution offline "Natural Earth II" imagery bundled with Cesium so the
     // globe works fully self-hosted, with no external network dependency and no Ion account required.
@@ -273,8 +465,31 @@
         selectionIndicator: false,
         fullscreenButton: false
     });
-    viewer.scene.globe.enableLighting = false;
     viewer.scene.skyAtmosphere.show = true;
+
+    // Makes the globe itself look like night when the page's own dark theme is selected. Real per-pixel sun
+    // lighting (Cesium shades the hemisphere facing away from the sun, based on the actual current date/time) is
+    // what genuinely produces a convincing day/night terminator here, so this does not need a separate offline
+    // "night lights" imagery layer (Cesium doesn't bundle one, and this page deliberately avoids any imagery that
+    // would require internet access) - just that shader-level lighting switched on, plus a bit of extra dimming/
+    // desaturation and a darker atmospheric glow so the unlit hemisphere reads clearly darker rather than merely
+    // "shaded". The light theme keeps the previous fully-lit, flat look untouched.
+    var globeImageryLayer = viewer.imageryLayers.get(0);
+    function applyThemeToGlobeVisuals() {
+        var isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+        viewer.scene.globe.enableLighting = isDark;
+        globeImageryLayer.brightness = isDark ? 0.55 : 1.0;
+        globeImageryLayer.contrast = isDark ? 1.1 : 1.0;
+        globeImageryLayer.saturation = isDark ? 0.8 : 1.0;
+        viewer.scene.skyAtmosphere.brightnessShift = isDark ? -0.4 : 0.0;
+        viewer.scene.skyAtmosphere.hueShift = isDark ? -0.05 : 0.0;
+    }
+    applyThemeToGlobeVisuals();
+    // Lets toggling the theme (via the header's sun/moon button) re-tint the globe live, with no page reload -
+    // mirrors the same "[data-bs-theme] MutationObserver" pattern already used by the other chart pages.
+    new MutationObserver(applyThemeToGlobeVisuals)
+        .observe(document.documentElement, { attributes: true, attributeFilter: ["data-bs-theme"] });
+
     var points = viewer.scene.primitives.add(new Cesium.PointPrimitiveCollection());
     var arcs = viewer.scene.primitives.add(new Cesium.PolylineCollection());
 
@@ -523,6 +738,19 @@
     var bytesLast24hDissemination = 0;
     var bytesLast24hAcquisition = 0;
 
+    // Data Portal (IncomingUser FTP/HTTP/SFTP/S3/WebDAV) activity, maintained server-side by
+    // DataPortalActivityRegistry and pushed with every "snapshot" message: current open session count, plus a live
+    // 5-second rolling bytes/sec rate in each direction (not a cumulative total, unlike bytesLast24h above).
+    var dataPortalSessions = 0;
+    var dataPortalBytesInPerSecond = 0;
+    var dataPortalBytesOutPerSecond = 0;
+
+    // Aggregate used/total bytes across every volume of every DataMover, maintained server-side by
+    // ManagementInterface#getMoverVolumeUsage() (a cheap, periodically-refreshed cache, no live DataMover RMI calls),
+    // pushed with every "snapshot" message and used to drive the "Mover storage used" progress bar.
+    var moverStorageUsedBytes = 0;
+    var moverStorageTotalBytes = 0;
+
     // The raw sample list from the most recent "snapshot" message (every direction), kept so switching
     // directionMode (see setDirectionMode()) can redraw instantly without waiting for the next poll.
     var rawSamples = [];
@@ -538,6 +766,10 @@
     // pinned at a peak seen minutes ago.
     var gaugeMax = 1e6; // starts at 1 Mbps
     var gaugeArcLength = null;
+
+    // Per-gauge state (ceiling + cached arc length) for the two new Data Portal in/out speed-meters, keyed by SVG
+    // element id, so the same generic updateGauge() logic below can drive all three gauges without duplication.
+    var gaugeState = Object.create(null);
 
     function niceCeil(value) {
         if (value <= 0) {
@@ -566,6 +798,76 @@
         var pct = Cesium.Math.clamp(rateBitsPerSecond / gaugeMax, 0, 1);
         arc.style.strokeDashoffset = gaugeArcLength * (1 - pct);
         arc.style.stroke = pct < 0.6 ? "#38bdf8" : pct < 0.85 ? "#ffd166" : "#ef4444";
+    }
+
+    // Generic version of updateGauge() above, used for any additional gauge identified by its SVG element id (the
+    // original updateGauge()/gaugeMax/gaugeArcLength are left untouched to avoid disturbing the existing
+    // "Combined throughput" gauge's behaviour/state).
+    function updateGaugeById(arcId, rateBitsPerSecond) {
+        var state = gaugeState[arcId];
+        if (!state) {
+            state = { max: 1e6, arcLength: null };
+            gaugeState[arcId] = state;
+        }
+        var arc = document.getElementById(arcId);
+        if (!arc) {
+            return;
+        }
+        if (state.arcLength === null) {
+            state.arcLength = arc.getTotalLength();
+            arc.style.strokeDasharray = state.arcLength;
+            arc.style.strokeDashoffset = state.arcLength;
+        }
+        if (rateBitsPerSecond > state.max) {
+            state.max = niceCeil(rateBitsPerSecond);
+        } else if (rateBitsPerSecond < state.max * 0.3) {
+            state.max = Math.max(niceCeil(rateBitsPerSecond * 1.5), 1e6);
+        }
+        var pct = Cesium.Math.clamp(rateBitsPerSecond / state.max, 0, 1);
+        arc.style.strokeDashoffset = state.arcLength * (1 - pct);
+        arc.style.stroke = pct < 0.6 ? "#38bdf8" : pct < 0.85 ? "#ffd166" : "#ef4444";
+    }
+
+    // Percentage-based sibling of updateGaugeById() above, for gauges that already have a fixed, known 0-100 range
+    // (e.g. storage used) rather than an open-ended rate needing the auto-scaling "niceCeil" ceiling logic - reuses
+    // the same arc element/visual language (and the same 75%/90% amber/red thresholds already used elsewhere on
+    // this page for absolute capacity, as opposed to the 60%/85%-of-ceiling thresholds used for rate gauges) so it
+    // reads as just another member of the same gauge family rather than a one-off widget.
+    var percentGaugeArcLength = Object.create(null);
+    function updatePercentGaugeById(arcId, pct) {
+        var arc = document.getElementById(arcId);
+        if (!arc) {
+            return;
+        }
+        if (percentGaugeArcLength[arcId] === undefined) {
+            percentGaugeArcLength[arcId] = arc.getTotalLength();
+            arc.style.strokeDasharray = percentGaugeArcLength[arcId];
+        }
+        var clamped = Cesium.Math.clamp(pct / 100, 0, 1);
+        arc.style.strokeDashoffset = percentGaugeArcLength[arcId] * (1 - clamped);
+        arc.style.stroke = pct < 75 ? "#38bdf8" : pct < 90 ? "#ffd166" : "#ef4444";
+    }
+
+    // Drives the "Data Portal Activity" KPI row (open sessions, data in/out gauges, storage gauge), all fields of
+    // which come straight from the server-pushed "snapshot" message rather than from lastSamples, so this is called
+    // directly from the WebSocket onmessage handler rather than from updateKpis().
+    function updateDataPortalKpis() {
+        document.getElementById("kpiSessions").textContent = dataPortalSessions.toLocaleString();
+        var bpsIn = dataPortalBytesInPerSecond * 8;
+        var bpsOut = dataPortalBytesOutPerSecond * 8;
+        document.getElementById("kpiDataIn").textContent = formatRate(bpsIn);
+        document.getElementById("kpiDataOut").textContent = formatRate(bpsOut);
+        updateGaugeById("gaugeArcIn", bpsIn);
+        updateGaugeById("gaugeArcOut", bpsOut);
+
+        var pct = moverStorageTotalBytes > 0
+            ? Cesium.Math.clamp((moverStorageUsedBytes / moverStorageTotalBytes) * 100, 0, 100)
+            : 0;
+        var pctRounded = Math.round(pct * 10) / 10;
+        document.getElementById("kpiStoragePct").textContent = pctRounded + "%";
+        updatePercentGaugeById("gaugeArcStorage", pct);
+        document.getElementById("storageTile").title = "Storage used: " + formatBytes(moverStorageUsedBytes) +
+            " / " + formatBytes(moverStorageTotalBytes);
     }
 
     // Picks the rolling 24h bytes total matching the current directionMode.
@@ -1158,7 +1460,7 @@
         });
         rows.sort(function (a, b) { return b.agg.activeCount - a.agg.activeCount || b.agg.totalRate - a.agg.totalRate; });
         if (rows.length === 0) {
-            tbody.innerHTML = "<tr><td colspan=\"3\" style=\"color:#999;\">No active transfers</td></tr>";
+            tbody.innerHTML = "<tr><td colspan=\"3\" class=\"globe-muted-text\">No active transfers</td></tr>";
             return;
         }
         tbody.innerHTML = rows.map(function (r) {
@@ -1312,8 +1614,24 @@
                 if (typeof msg.bytes24hAcquisition === "number") {
                     bytesLast24hAcquisition = msg.bytes24hAcquisition;
                 }
+                if (typeof msg.dataPortalSessions === "number") {
+                    dataPortalSessions = msg.dataPortalSessions;
+                }
+                if (typeof msg.dataPortalBytesInPerSecond === "number") {
+                    dataPortalBytesInPerSecond = msg.dataPortalBytesInPerSecond;
+                }
+                if (typeof msg.dataPortalBytesOutPerSecond === "number") {
+                    dataPortalBytesOutPerSecond = msg.dataPortalBytesOutPerSecond;
+                }
+                if (typeof msg.moverStorageUsedBytes === "number") {
+                    moverStorageUsedBytes = msg.moverStorageUsedBytes;
+                }
+                if (typeof msg.moverStorageTotalBytes === "number") {
+                    moverStorageTotalBytes = msg.moverStorageTotalBytes;
+                }
                 applyOrigin(msg);
                 applySnapshot(msg.transfers || []);
+                updateDataPortalKpis();
             }
         };
     }

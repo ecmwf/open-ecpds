@@ -2690,6 +2690,7 @@ public final class MasterServer extends ECaccessProvider
     public void updateIncomingConnectionIds(final String serverName,
             final List<IncomingConnection> incomingConnections) {
         final var previous = incomingConnectionIds.put(serverName, incomingConnections);
+        DataPortalActivityRegistry.getInstance().recordConnections(serverName, incomingConnections);
         if (isNotEmpty(incomingConnections)) {
             final var newCounts = new HashMap<String, Integer>();
             for (final IncomingConnection c : incomingConnections) {
@@ -3256,8 +3257,19 @@ public final class MasterServer extends ECaccessProvider
      * connection list does not permanently inflate the per-user counts.
      */
     private void _rebuildConfirmedConnectionCounts() {
-        // Evict stale entries for servers that have disconnected since their last heartbeat.
-        incomingConnectionIds.keySet().removeIf(serverName -> getDataMoverInterface(serverName) == null);
+        // Evict stale entries for servers that have disconnected since their last heartbeat, also pruning their
+        // per-connection byte-rate tracking state from DataPortalActivityRegistry so it does not linger forever.
+        final var staleServers = new ArrayList<String>();
+        incomingConnectionIds.keySet().removeIf(serverName -> {
+            final var stale = getDataMoverInterface(serverName) == null;
+            if (stale) {
+                staleServers.add(serverName);
+            }
+            return stale;
+        });
+        for (final var serverName : staleServers) {
+            DataPortalActivityRegistry.getInstance().removeServer(serverName);
+        }
         final var totals = new HashMap<String, Integer>();
         for (final var list : incomingConnectionIds.values()) {
             if (isNotEmpty(list)) {
@@ -3268,6 +3280,24 @@ public final class MasterServer extends ECaccessProvider
         }
         // Atomic volatile reference swap — readers see either the old or the new complete map.
         _confirmedConnectionCounts = new ConcurrentHashMap<>(totals);
+    }
+
+    /**
+     * Gets the total number of currently open incoming (Data Portal) connections across every connected DataMover, i.e.
+     * every FTP/HTTP/SFTP/S3/WebDAV session currently open on the Data Portal. Used by the "Live ECPDS Earth" globe
+     * visualisation's Data Portal activity KPIs. Cheap: just sums the sizes of the already-maintained per-DataMover
+     * snapshots, no DataMover RMI calls at query time.
+     *
+     * @return the total number of currently open incoming connections
+     */
+    public int getIncomingConnectionsCount() {
+        var total = 0;
+        for (final var list : incomingConnectionIds.values()) {
+            if (isNotEmpty(list)) {
+                total += list.size();
+            }
+        }
+        return total;
     }
 
     /**

@@ -1523,4 +1523,10 @@ final class ManagementProxy implements ManagementInterface {
     public Map<String, GeoPoint> getGeoLocations(final String[] hostNames) throws RemoteException {
         return managementInterface.getGeoLocations(hostNames);
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public long[] getDataPortalActivity() throws RemoteException {
+        return managementInterface.getDataPortalActivity();
+    }
 }

@@ -114,6 +114,21 @@ public class GlobeWebSocket implements WebSocketListener {
     /** Latest known rolling-24h transferred-bytes total for Acquisition only, refreshed by the poller. */
     private static volatile long bytesLast24hAcquisition;
 
+    /** Latest known number of currently open Data Portal (incoming) connections, refreshed by the poller. */
+    private static volatile long dataPortalSessions;
+
+    /** Latest known Data Portal bytes-in/sec rate (uploads by IncomingUsers), refreshed by the poller. */
+    private static volatile long dataPortalBytesInPerSecond;
+
+    /** Latest known Data Portal bytes-out/sec rate (downloads by IncomingUsers), refreshed by the poller. */
+    private static volatile long dataPortalBytesOutPerSecond;
+
+    /** Latest known total used/total bytes across every volume of every DataMover, refreshed by the poller. */
+    private static volatile long moverStorageUsedBytes;
+
+    /** Latest known total capacity in bytes across every volume of every DataMover, refreshed by the poller. */
+    private static volatile long moverStorageTotalBytes;
+
     /**
      * Names of every currently active ProxyHost (a Data Mover reachable only through another Data Mover's REST
      * interface, without a direct RMI connection to the MasterServer), refreshed by the poller. Used to decide which
@@ -121,6 +136,12 @@ public class GlobeWebSocket implements WebSocketListener {
      * only ProxyHosts, since they are the ones physically located elsewhere.
      */
     private static volatile Set<String> activeProxyHostNames = Set.of();
+
+    /** How many poll cycles between refreshes of the (cheaper-to-be-conservative-with) mover disk usage snapshot. */
+    private static final int STORAGE_POLL_EVERY_N_CYCLES = 5;
+
+    /** Poll cycle counter, used to throttle {@link ManagementInterface#getMoverVolumeUsage(String)} calls. */
+    private static volatile long pollCycle;
 
     static {
         POOL.setRemoveOnCancelPolicy(true);
@@ -281,6 +302,42 @@ public class GlobeWebSocket implements WebSocketListener {
             } catch (final Exception e) {
                 LOG.debug("Fetching active ProxyHost names", e);
             }
+            try {
+                final var activity = mi.getDataPortalActivity();
+                if (activity != null && activity.length == 3) {
+                    dataPortalSessions = activity[0];
+                    dataPortalBytesInPerSecond = activity[1];
+                    dataPortalBytesOutPerSecond = activity[2];
+                }
+            } catch (final Exception e) {
+                LOG.debug("Fetching Data Portal activity", e);
+            }
+            // The mover disk usage snapshot only changes slowly (it is itself a periodically refreshed cache on the
+            // MasterServer side), so it is only refreshed every few poll cycles rather than on every 3s tick.
+            if (pollCycle++ % STORAGE_POLL_EVERY_N_CYCLES == 0) {
+                try {
+                    final var usage = mi.getMoverVolumeUsage(null);
+                    var usedTotal = 0L;
+                    var capacityTotal = 0L;
+                    if (usage != null) {
+                        for (final long[][] vols : usage.values()) {
+                            if (vols == null || vols.length != 2) {
+                                continue;
+                            }
+                            for (final var used : vols[0]) {
+                                usedTotal += used;
+                            }
+                            for (final var total : vols[1]) {
+                                capacityTotal += total;
+                            }
+                        }
+                    }
+                    moverStorageUsedBytes = usedTotal;
+                    moverStorageTotalBytes = capacityTotal;
+                } catch (final Exception e) {
+                    LOG.debug("Fetching mover disk usage", e);
+                }
+            }
             final var samples = mi.getLiveTransfers();
             resolveGeoLocations(mi, samples != null ? samples : new LiveTransferSample[0]);
             return samples != null ? samples : new LiveTransferSample[0];
@@ -315,6 +372,11 @@ public class GlobeWebSocket implements WebSocketListener {
         node.put("bytes24h", bytesLast24h);
         node.put("bytes24hDissemination", bytesLast24hDissemination);
         node.put("bytes24hAcquisition", bytesLast24hAcquisition);
+        node.put("dataPortalSessions", dataPortalSessions);
+        node.put("dataPortalBytesInPerSecond", dataPortalBytesInPerSecond);
+        node.put("dataPortalBytesOutPerSecond", dataPortalBytesOutPerSecond);
+        node.put("moverStorageUsedBytes", moverStorageUsedBytes);
+        node.put("moverStorageTotalBytes", moverStorageTotalBytes);
         // Re-sent on every poll (not just at connect) so a client whose page is already open picks up the
         // MasterServer's origin location as soon as it becomes resolvable, without needing to reconnect.
         addOriginFields(node);

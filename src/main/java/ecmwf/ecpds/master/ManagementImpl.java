@@ -3811,4 +3811,14 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         }
         return result;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long[] getDataPortalActivity() throws RemoteException {
+        final var registry = DataPortalActivityRegistry.getInstance();
+        return new long[] { master.getIncomingConnectionsCount(), Math.round(registry.getBytesInPerSecond()),
+                Math.round(registry.getBytesOutPerSecond()) };
+    }
 }
