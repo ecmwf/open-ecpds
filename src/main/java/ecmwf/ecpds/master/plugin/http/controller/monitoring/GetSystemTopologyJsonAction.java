@@ -41,6 +41,8 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -58,6 +60,9 @@ import ecmwf.web.model.users.User;
  * Serves the system topology (Master/DataMovers/Database/this Monitor) as JSON for the topology diagram.
  */
 public class GetSystemTopologyJsonAction extends PDSAction {
+
+    /** The Constant _log. */
+    private static final Logger _log = LogManager.getLogger(GetSystemTopologyJsonAction.class);
 
     /** Shared Jackson mapper (thread-safe). */
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -77,6 +82,12 @@ public class GetSystemTopologyJsonAction extends PDSAction {
         try {
             topology = MasterManager.getMI().getSystemTopology();
         } catch (final Exception e) {
+            // Should now be rare - ManagementImpl#getSystemTopology() itself defensively catches/times-out every
+            // per-Mover/per-Monitor probe internally so a single unreachable component cannot reach this point.
+            // Logged (rather than silently swallowed as before) so any future occurrence - e.g. the Master itself
+            // being unreachable, or an entirely unexpected error - leaves a clear trace instead of just showing
+            // "No topology data available yet." with nothing to diagnose from.
+            _log.warn("Failed to retrieve system topology from the Master", e);
             topology = Map.of();
         }
         root.putPOJO("master", topology.get("master"));

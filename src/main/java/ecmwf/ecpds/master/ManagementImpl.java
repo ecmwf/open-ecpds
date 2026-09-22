@@ -142,6 +142,31 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     private static final transient long CERT_STATUS_TTL = Timer.ONE_HOUR;
 
     /**
+     * How long {@link #_callWithTimeout(java.util.concurrent.Callable, Object)} waits for a single live RMI probe (e.g.
+     * a Data Mover or Monitor's {@code getNetworkPluginInfos()}) before giving up on it and returning the supplied
+     * fallback instead. Bounds the worst case for {@link #getSystemTopology()}: without this, a single unreachable/hung
+     * component (stale TCP connection, firewalled network path, etc.) could block that whole per-item RMI call more or
+     * less indefinitely, and since deployments with many movers/monitors are proportionally more likely to have at
+     * least one such connection at any given time, the risk of the overall topology response stalling grows with the
+     * size of the estate, not just with an individual bad actor.
+     */
+    private static final transient long TOPOLOGY_PROBE_TIMEOUT_MS = Cnf.durationAt("Server",
+            "systemTopologyProbeTimeout", 3 * Timer.ONE_SECOND);
+
+    /**
+     * Small daemon-thread pool dedicated to bounding the live RMI probes made by {@link #getSystemTopology()}. Kept
+     * separate from any other executor in this class so a burst of slow/hung probes (e.g. many Data Movers timing out
+     * at once) cannot starve unrelated work; sized generously since these tasks are short-lived and I/O-bound (either
+     * they return almost immediately, or they are abandoned after {@link #TOPOLOGY_PROBE_TIMEOUT_MS}).
+     */
+    private static final transient java.util.concurrent.ExecutorService TOPOLOGY_PROBE_EXECUTOR = java.util.concurrent.Executors
+            .newCachedThreadPool(runnable -> {
+                final var thread = new Thread(runnable, "TopologyProbe");
+                thread.setDaemon(true);
+                return thread;
+            });
+
+    /**
      * Cached overall certificate status: "OK", "WARNING" (self-signed or expiring soon), or "ERROR" (expired). Volatile
      * so that reads from different threads always see the latest value without requiring synchronisation on the read
      * path.
@@ -3281,6 +3306,32 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * Runs a single potentially-blocking live RMI probe (e.g. {@code getNetworkPluginInfos()} on a Data Mover or
+     * Monitor) on {@link #TOPOLOGY_PROBE_EXECUTOR}, waiting at most {@link #TOPOLOGY_PROBE_TIMEOUT_MS} for it to
+     * complete. If the probe does not finish in time, times out, is interrupted, or throws, the supplied
+     * {@code fallback} is returned instead and the underlying task is left to complete or fail in the background (its
+     * result is simply discarded) rather than blocking the caller any further.
+     *
+     * @param <T>
+     *            the type of value the probe returns
+     * @param probe
+     *            the live RMI call to attempt
+     * @param fallback
+     *            the value to return if the probe does not complete within the timeout, or fails
+     *
+     * @return the probe's result, or {@code fallback}
+     */
+    private static <T> T _callWithTimeout(final java.util.concurrent.Callable<T> probe, final T fallback) {
+        final var future = TOPOLOGY_PROBE_EXECUTOR.submit(probe);
+        try {
+            return future.get(TOPOLOGY_PROBE_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
+        } catch (final Throwable t) {
+            future.cancel(true);
+            return fallback;
+        }
+    }
+
+    /**
      * {@inheritDoc}
      *
      * Builds the system topology snapshot: the Master's own host/plugins (read live and locally, from this same JVM's
@@ -3322,21 +3373,36 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         // Monitors: every ECpds Monitor instance currently connected to this Master (there can be more than one for
         // HA/scale-out), each queried live over its own existing MonitorInterface RMI connection for its own
         // host/plugins/ports - mirrors how DataMovers are listed below.
+        //
+        // Every step below is deliberately defensive (per-item try/catch, plus an outer try/catch around the whole
+        // enumeration) and every live RMI call is time-bounded via _callWithTimeout(): a single unreachable/hung
+        // Monitor or DataMover must never be able to stall - or, worse, entirely blank out - the topology response
+        // for everyone else. Without this, one bad connection turns "No topology data available yet." into a
+        // permanent state for the whole page, and that risk only grows with the number of connected components.
         final List<Map<String, Object>> monitors = new ArrayList<>();
-        for (final var monitorRoot : master.getClientRoots("ECpdsMonitor")) {
-            final Map<String, Object> monitorInfo = new HashMap<>();
-            monitorInfo.put("name", monitorRoot);
-            monitorInfo.put("host", master.getClientHost("ECpdsMonitor", monitorRoot));
-            final var monitorConnection = master.getMonitorInterface(monitorRoot);
-            monitorInfo.put("rmiConnected", monitorConnection != null);
-            if (monitorConnection != null) {
+        try {
+            for (final var monitorRoot : master.getClientRoots("ECpdsMonitor")) {
                 try {
-                    monitorInfo.put("plugins", monitorConnection.getNetworkPluginInfos());
+                    final Map<String, Object> monitorInfo = new HashMap<>();
+                    monitorInfo.put("name", monitorRoot);
+                    monitorInfo.put("host", master.getClientHost("ECpdsMonitor", monitorRoot));
+                    final var monitorConnection = master.getMonitorInterface(monitorRoot);
+                    monitorInfo.put("rmiConnected", monitorConnection != null);
+                    if (monitorConnection != null) {
+                        try {
+                            monitorInfo.put("plugins",
+                                    _callWithTimeout(monitorConnection::getNetworkPluginInfos, List.of()));
+                        } catch (final Throwable t) {
+                            _log.warn("getSystemTopology: listing plugins for Monitor {}", monitorRoot, t);
+                        }
+                    }
+                    monitors.add(monitorInfo);
                 } catch (final Throwable t) {
-                    _log.warn("getSystemTopology: listing plugins for Monitor {}", monitorRoot, t);
+                    _log.warn("getSystemTopology: processing Monitor {}", monitorRoot, t);
                 }
             }
-            monitors.add(monitorInfo);
+        } catch (final Throwable t) {
+            _log.warn("getSystemTopology: listing connected Monitors", t);
         }
         topology.put("monitors", monitors);
 
@@ -3358,39 +3424,53 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         topology.put("database", databaseInfo);
 
         // DataMovers: configured host/port/active flag, plus the latest availability snapshot (last few minutes).
+        // See the comment above the Monitors loop: same defensive/time-bounded approach, since this list can be much
+        // longer (and is exactly the case reported to grow large enough to expose the missing safeguards).
         final List<Map<String, Object>> movers = new ArrayList<>();
-        for (final TransferServer server : master.getECpdsBase().getTransferServerArray()) {
-            final Map<String, Object> moverInfo = new HashMap<>();
-            moverInfo.put("name", server.getName());
-            moverInfo.put("host", server.getHost());
-            moverInfo.put("port", server.getPort());
-            moverInfo.put("transferGroup", server.getTransferGroupName());
-            final var active = server.getActive();
-            moverInfo.put("active", active);
-            var up = active;
-            try {
-                final var snapshots = master.getECpdsBase().getMoverAvailabilitySnapshots(server.getName(), 1);
-                if (!snapshots.isEmpty()) {
-                    up = snapshots.get(snapshots.size() - 1)[1] == 1;
-                }
-            } catch (final Throwable t) {
-                // No snapshot yet (e.g. mover just added) — keep the configuration flag as a best-effort fallback.
-            }
-            moverInfo.put("up", up);
-            // If this Data Mover currently has a live, Mover-initiated control connection to this Master (the same
-            // kind of persistent connection this Monitor itself uses), fetch its own live plugin/port list over that
-            // existing MoverInterface RMI connection - the Master already talks to this Data Mover this way for
-            // every other management operation, so this adds no new channel.
-            final var moverConnection = master.getDataMoverInterface(server.getName());
-            moverInfo.put("rmiConnected", moverConnection != null);
-            if (moverConnection != null) {
+        try {
+            for (final TransferServer server : master.getECpdsBase().getTransferServerArray()) {
                 try {
-                    moverInfo.put("plugins", moverConnection.getNetworkPluginInfos());
+                    final Map<String, Object> moverInfo = new HashMap<>();
+                    moverInfo.put("name", server.getName());
+                    moverInfo.put("host", server.getHost());
+                    moverInfo.put("port", server.getPort());
+                    moverInfo.put("transferGroup", server.getTransferGroupName());
+                    final var active = server.getActive();
+                    moverInfo.put("active", active);
+                    var up = active;
+                    try {
+                        final var snapshots = master.getECpdsBase().getMoverAvailabilitySnapshots(server.getName(), 1);
+                        if (!snapshots.isEmpty()) {
+                            up = snapshots.get(snapshots.size() - 1)[1] == 1;
+                        }
+                    } catch (final Throwable t) {
+                        // No snapshot yet (e.g. mover just added) — keep the configuration flag as a best-effort
+                        // fallback.
+                    }
+                    moverInfo.put("up", up);
+                    // If this Data Mover currently has a live, Mover-initiated control connection to this Master
+                    // (the same kind of persistent connection this Monitor itself uses), fetch its own live
+                    // plugin/port list over that existing MoverInterface RMI connection - the Master already talks
+                    // to this Data Mover this way for every other management operation, so this adds no new
+                    // channel. Time-bounded (see _callWithTimeout) so a single unresponsive Data Mover cannot stall
+                    // the rest of this loop.
+                    final var moverConnection = master.getDataMoverInterface(server.getName());
+                    moverInfo.put("rmiConnected", moverConnection != null);
+                    if (moverConnection != null) {
+                        try {
+                            moverInfo.put("plugins",
+                                    _callWithTimeout(moverConnection::getNetworkPluginInfos, List.of()));
+                        } catch (final Throwable t) {
+                            _log.warn("getSystemTopology: listing plugins for DataMover {}", server.getName(), t);
+                        }
+                    }
+                    movers.add(moverInfo);
                 } catch (final Throwable t) {
-                    _log.warn("getSystemTopology: listing plugins for DataMover {}", server.getName(), t);
+                    _log.warn("getSystemTopology: processing DataMover {}", server.getName(), t);
                 }
             }
-            movers.add(moverInfo);
+        } catch (final Throwable t) {
+            _log.warn("getSystemTopology: listing DataMovers", t);
         }
         topology.put("movers", movers);
 
