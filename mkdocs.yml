@@ -87,6 +87,7 @@ nav:
       - ECPDS CLI: getting-started/ecpds-cli.md
   - Architecture:
       - Overview: architecture/overview.md
+      - Centralised vs. Federated: architecture/federation-vs-centralization.md
       - Components: architecture/components.md
       - Failover Mechanism: architecture/failover.md
       - Data Transfer Lifecycle: architecture/data-transfer-lifecycle.md
