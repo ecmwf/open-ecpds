@@ -29,6 +29,7 @@ nohup=nohup
 pidof=pidof
 ps=ps
 rm=rm
+sleep=sleep
 ulimit=ulimit
 wc=wc
 
