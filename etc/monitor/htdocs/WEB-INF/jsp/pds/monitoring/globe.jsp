@@ -383,6 +383,10 @@
         var breathingRoom = 16;
         var available = window.innerHeight - top - footerHeight - breathingRoom;
         globeContainerEl.style.height = Math.max(420, available) + "px";
+        // Re-measure the country table's height cap (see adjustCountryTableMaxHeight() below) any time the overall
+        // layout is re-measured too (load, resize, fullscreen toggle, "About this page" collapse) - it depends on
+        // the on-screen position of two other corner panels, which any of those events can shift.
+        adjustCountryTableMaxHeight();
     }
     // Deliberately not called immediately at parse-time: this early in the page load, surrounding chrome/fonts/
     // images (and the fixed footer) haven't settled into their final layout yet, so an immediate measurement would
@@ -412,6 +416,28 @@
     window.addEventListener("load", function() { waitUntilVisibleThenResize(120); });
     window.addEventListener("resize", resizeGlobeContainer);
     document.addEventListener("fullscreenchange", resizeGlobeContainer);
+
+    // The "Transfers by country" table (top-right, see "#globeCountryTable" above) and the KPI panel (bottom-right,
+    // see "#globeStatsPanel") live in two independent absolutely-positioned corner stacks with no layout awareness
+    // of each other, so a long country list (CSS "max-height:42%" of its own column) can visually run right down
+    // into - or under - the KPI card below it once there are enough countries with active transfers. Rather than
+    // guessing a fixed height that would either waste space (few countries) or still overlap (many countries, or a
+    // taller KPI panel/warning banner pushing it down), measure both stacks' actual on-screen position and cap the
+    // table so its own bottom always stops a small gap above wherever the KPI stack currently begins.
+    function adjustCountryTableMaxHeight() {
+        var table = document.getElementById("globeCountryTable");
+        var bottomPanels = document.getElementById("globeBottomRightPanels");
+        if (!table || !bottomPanels) {
+            return;
+        }
+        var tableTop = table.getBoundingClientRect().top;
+        var bottomPanelsTop = bottomPanels.getBoundingClientRect().top;
+        var gap = 14;
+        var available = bottomPanelsTop - tableTop - gap;
+        // Ignore nonsensical measurements (e.g. the table not laid out/visible yet) and fall back to the CSS
+        // default (42%) rather than collapsing the table to near-nothing.
+        table.style.maxHeight = available > 80 ? available + "px" : "";
+    }
     // Expanding/collapsing the "About this page" info card above shifts everything below it (including this
     // container's own top offset), so it needs the same re-measure as an actual window resize - both at the start
     // and the end of the Bootstrap collapse animation, since the container's "top" keeps changing throughout it.
@@ -1101,6 +1127,10 @@
             document.getElementById("globeOriginWarningDetail").textContent = msg.originHost || "";
             document.getElementById("globeOriginWarning").style.display = "block";
         }
+        // The origin warning banner sits above the KPI panel in the same bottom-right stack, so showing/hiding it
+        // shifts that stack's top edge - re-measure the country table cap (see adjustCountryTableMaxHeight()) so it
+        // stays accurate even if a poll message toggles this banner while "Per country" is already selected.
+        adjustCountryTableMaxHeight();
     }
 
     function removeHost(name) {
@@ -1502,6 +1532,11 @@
         viewMode = mode;
         localStorage.setItem(VIEW_MODE_PREF_KEY, mode);
         document.getElementById("globeCountryTable").style.display = mode === "country" ? "block" : "none";
+        if (mode === "country") {
+            // Only meaningful once the table is actually visible/laid out; re-measure now rather than waiting for
+            // the next resize event so the cap is already correct on the very first frame it's shown.
+            adjustCountryTableMaxHeight();
+        }
         applySnapshot(rawSamples);
     }
 
@@ -1718,6 +1753,9 @@
         statsToggleIcon.className = isOpen ? "bi bi-x-lg" : "bi bi-graph-up";
         statsToggleLabel.textContent = isOpen ? "Globe" : "KPIs";
         statsToggleBtn.title = isOpen ? "Hide the KPI panel and show the globe" : "Show the KPI panel";
+        // Opening/closing the KPI panel changes the bottom-right stack's height (and, on very short phone screens,
+        // its top edge) - keep the country table's height cap (see adjustCountryTableMaxHeight()) in sync.
+        adjustCountryTableMaxHeight();
     });
 }());
 </script>
