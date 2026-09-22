@@ -3229,56 +3229,6 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
-     * Gets the listening port(s) for a network plugin that does not extend {@link ecmwf.common.plugin.ServerPlugin}
-     * (e.g. HTTP/HTTPS, MQTT/MQTTS and SSH, which each manage their own embedded server rather than using the simple
-     * accept-loop abstraction {@code ServerPlugin} represents), read directly from the same configuration section that
-     * plugin itself uses at startup. Only called by the caller when {@link ecmwf.common.plugin.PluginContainer} reports
-     * that plugin's live status as {@code "ON"}, so a plugin that is configured but failed to start (or was never
-     * registered on this component to begin with) never gets a port shown. Returns an empty list for any other/unknown
-     * plugin ref.
-     *
-     * @param ref
-     *            the plugin reference (the key used in the {@code [PluginList]} configuration section)
-     *
-     * @return the ports configured for that plugin, if any
-     */
-    private static List<Integer> fallbackPluginPorts(final String ref) {
-        final List<Integer> ports = new ArrayList<>();
-        switch (ref) {
-        case "http" -> {
-            final var http = Cnf.at("HttpPlugin", "http", -1);
-            final var https = Cnf.at("HttpPlugin", "https", -1);
-            if (http > 0) {
-                ports.add(http);
-            }
-            if (https > 0) {
-                ports.add(https);
-            }
-        }
-        case "mqtt" -> {
-            final var mqtt = Cnf.at("MqttPlugin", "mqtt", -1);
-            final var mqtts = Cnf.at("MqttPlugin", "mqtts", -1);
-            if (mqtt > 0) {
-                ports.add(mqtt);
-            }
-            if (mqtts > 0) {
-                ports.add(mqtts);
-            }
-        }
-        case "ssh" -> {
-            final var port = Cnf.at("SshPlugin", "port", -1);
-            if (port > 0) {
-                ports.add(port);
-            }
-        }
-        default -> {
-            // No known fallback for this plugin ref.
-        }
-        }
-        return ports;
-    }
-
-    /**
      * Parses the {@code DataBase.alias} configuration value into its individual host/port node(s). Handles both a plain
      * single-host alias (e.g. {@code "jdbc:mysql://dbhost:3306/ecpds"}) and a MySQL/MariaDB failover cluster alias with
      * several comma-separated hosts (e.g. {@code "//host1:3309,host2:3309,host3:3309/ecpds?failOverReadOnly=false"}),
@@ -3356,9 +3306,8 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                 pluginInfo.put("name", info.getName());
                 final var plugin = master.getPluginContainer().getPlugin(info.getRef());
                 final var status = master.getPluginContainer().getPluginStatus(info.getRef());
-                final List<Integer> ports = plugin instanceof final ecmwf.common.plugin.ServerPlugin serverPlugin
-                        ? java.util.List.of(serverPlugin.getPort())
-                        : "ON".equals(status) ? fallbackPluginPorts(info.getRef()) : List.of();
+                final List<Integer> ports = plugin != null && "ON".equals(status) ? plugin.getListeningPorts()
+                        : List.of();
                 pluginInfo.put("port", ports.size() == 1 ? ports.get(0) : null);
                 pluginInfo.put("ports", ports);
                 pluginInfo.put("status", status);
@@ -3369,6 +3318,27 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         }
         masterInfo.put("plugins", pluginInfos);
         topology.put("master", masterInfo);
+
+        // Monitors: every ECpds Monitor instance currently connected to this Master (there can be more than one for
+        // HA/scale-out), each queried live over its own existing MonitorInterface RMI connection for its own
+        // host/plugins/ports - mirrors how DataMovers are listed below.
+        final List<Map<String, Object>> monitors = new ArrayList<>();
+        for (final var monitorRoot : master.getClientRoots("ECpdsMonitor")) {
+            final Map<String, Object> monitorInfo = new HashMap<>();
+            monitorInfo.put("name", monitorRoot);
+            monitorInfo.put("host", master.getClientHost("ECpdsMonitor", monitorRoot));
+            final var monitorConnection = master.getMonitorInterface(monitorRoot);
+            monitorInfo.put("rmiConnected", monitorConnection != null);
+            if (monitorConnection != null) {
+                try {
+                    monitorInfo.put("plugins", monitorConnection.getNetworkPluginInfos());
+                } catch (final Throwable t) {
+                    _log.warn("getSystemTopology: listing plugins for Monitor {}", monitorRoot, t);
+                }
+            }
+            monitors.add(monitorInfo);
+        }
+        topology.put("monitors", monitors);
 
         // Database: host(s)/port(s) parsed from the configured alias (e.g. a single
         // "jdbc:mysql://dbhost:3306/ecpds" or a failover cluster like
@@ -3394,6 +3364,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
             moverInfo.put("name", server.getName());
             moverInfo.put("host", server.getHost());
             moverInfo.put("port", server.getPort());
+            moverInfo.put("transferGroup", server.getTransferGroupName());
             final var active = server.getActive();
             moverInfo.put("active", active);
             var up = active;

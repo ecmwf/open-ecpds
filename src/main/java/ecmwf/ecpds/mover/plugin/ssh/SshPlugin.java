@@ -41,6 +41,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import net.i2p.crypto.eddsa.EdDSASecurityProvider;
@@ -146,6 +147,17 @@ public final class SshPlugin extends PluginThread {
     @Override
     public String getVersion() {
         return VERSION;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns this plugin's own listening port, read directly from this plugin's own configuration - only while
+     * actually started (the server field is only non-null once running).
+     */
+    @Override
+    public List<Integer> getListeningPorts() {
+        return server != null ? List.of(port) : List.of();
     }
 
     /**

@@ -113,6 +113,12 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
     /** The httpServer. */
     private Server httpServer = null;
 
+    /**
+     * The port this plugin is actually listening on once started, for {@link #getListeningPorts()} - populated directly
+     * from this plugin's own live configuration, not re-derived elsewhere.
+     */
+    private volatile List<Integer> listeningPorts = List.of();
+
     /** The statisticsHandler. */
     private StatisticsHandler statisticsHandler = null;
 
@@ -161,6 +167,17 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
     @Override
     public String getVersion() {
         return VERSION;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns the https port this plugin is actually listening on, read directly from this plugin's own live state
+     * (populated once {@link #start()} has successfully bound it) rather than re-derived from configuration elsewhere.
+     */
+    @Override
+    public List<Integer> getListeningPorts() {
+        return listeningPorts;
     }
 
     /**
@@ -417,6 +434,7 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
             httpServer.start();
             // Now we can wait
             waitForMasterConnection(Cnf.at("MonitorPlugin", "initialiseEventHandler", true));
+            listeningPorts = List.of(httpsPort);
             started = true;
         } catch (final Throwable t) {
             _log.error("Starting the plugin", t);
@@ -769,6 +787,7 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
                 unSubscribe(ResetProductEvent.NAME);
                 unSubscribe(ResetDestinationProductEvent.NAME);
                 httpServer = null;
+                listeningPorts = List.of();
             }
         }
     }

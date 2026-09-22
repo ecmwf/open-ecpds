@@ -33,6 +33,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -353,6 +354,18 @@ public abstract class ServerPlugin extends PluginThread {
      * @return the port
      */
     public abstract int getPort();
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns this plugin's own single listening port (as reported by {@link #getPort()}), read directly from the
+     * plugin's own live state.
+     */
+    @Override
+    public List<Integer> getListeningPorts() {
+        final var port = getPort();
+        return port > 0 ? List.of(port) : List.of();
+    }
 
     /**
      * Gets the inet address.

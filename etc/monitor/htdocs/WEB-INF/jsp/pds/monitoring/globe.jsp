@@ -24,7 +24,7 @@
 #globeLegend{position:absolute;left:10px;top:10px;z-index:10;background:rgba(20,25,30,.72);color:#eee;border-radius:8px;padding:.5rem .75rem;font-size:.78rem;line-height:1.5;backdrop-filter:blur(2px);}
 #globeLegend .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;}
 #globeBottomRightPanels{position:absolute;right:10px;bottom:10px;z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-height:calc(100% - 20px);pointer-events:none;}
-#globeBottomRightPanels>div{pointer-events:auto;position:static;}
+#globeBottomRightPanels>div,#globeBottomRightPanels>button{pointer-events:auto;position:static;}
 #globeStatsPanel{width:410px;max-width:min(410px,92vw);max-height:calc(100% - 20px);overflow:auto;background:linear-gradient(160deg,rgba(22,27,34,.9),rgba(14,18,24,.86));color:#eee;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:.7rem;font-size:.74rem;line-height:1.3;backdrop-filter:blur(6px);box-shadow:0 8px 28px rgba(0,0,0,.4);}
 .globe-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;}
 .globe-stats-row+.globe-stats-row{margin-top:.5rem;}
@@ -38,6 +38,19 @@
 .globe-stat-gauge .globe-gauge-svg{width:58px;height:34px;filter:drop-shadow(0 0 3px rgba(56,189,248,.35));}
 .globe-gauge-arc-bg{fill:none;stroke:rgba(255,255,255,.14);stroke-width:9;stroke-linecap:round;}
 .globe-gauge-arc{fill:none;stroke:#38bdf8;stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .8s ease,stroke .8s ease;}
+/* On narrow (phone) screens the KPI panel at ~92vw width would otherwise sit on top of and hide almost the entire
+   globe. #globeStatsToggleBtn stays hidden and unused above the breakpoint (desktop/tablet keep today's
+   always-visible panel, unchanged) and only appears below it, replacing the panel with a small pill the user taps
+   to show/hide the KPIs on demand - so on a phone it is always either "see the globe" or "see the KPIs", never both
+   fighting for the same space. */
+#globeStatsToggleBtn{display:none;}
+@media (max-width:700px){
+    #globeStatsToggleBtn{display:flex;align-items:center;justify-content:center;gap:.35rem;height:36px;padding:0 .85rem;border-radius:18px;background:rgba(20,25,30,.86);color:#9fd6ff;border:1px solid rgba(255,255,255,.12);box-shadow:0 4px 14px rgba(0,0,0,.35);font-size:.76rem;font-weight:600;cursor:pointer;}
+    #globeStatsToggleBtn i{font-size:.95rem;}
+    #globeStatsPanel{display:none;}
+    #globeStatsPanel.globe-stats-open{display:block;}
+}
+[data-bs-theme=light] #globeStatsToggleBtn{background:#f6f8fa;color:#0969da;border-color:rgba(0,0,0,.08);box-shadow:0 4px 14px rgba(0,0,0,.18);}
 #globeRightPanels{position:absolute;right:10px;top:10px;z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-height:calc(100% - 20px);pointer-events:none;}
 #globeRightPanels>div{pointer-events:auto;position:static;}
 #globeInfoPanel{width:290px;max-width:80vw;background:rgba(20,25,30,.86);color:#eee;border-radius:8px;padding:.75rem 1rem;font-size:.82rem;display:none;box-shadow:0 4px 16px rgba(0,0,0,.35);}
@@ -337,6 +350,9 @@
             </div>
         </div>
     </div>
+    <button type="button" id="globeStatsToggleBtn" title="Show/hide the KPI panel">
+        <i class="bi bi-graph-up"></i><span id="globeStatsToggleLabel">KPIs</span>
+    </button>
     </div>
 </div>
 
@@ -1688,6 +1704,20 @@
         var isFullscreen = !!document.fullscreenElement;
         fullscreenIcon.className = isFullscreen ? "bi bi-fullscreen-exit" : "bi bi-arrows-fullscreen";
         fullscreenBtn.title = isFullscreen ? "Exit full screen" : "Toggle full screen";
+    });
+
+    // Phone-only KPI panel toggle (see the "@media (max-width:700px)" rules above): the panel itself defaults to
+    // hidden below that breakpoint via CSS alone, so this just flips it open/closed on demand and keeps the button's
+    // icon/label in sync - never fighting the globe for screen space on a small device.
+    var statsPanel = document.getElementById("globeStatsPanel");
+    var statsToggleBtn = document.getElementById("globeStatsToggleBtn");
+    var statsToggleIcon = statsToggleBtn.querySelector("i");
+    var statsToggleLabel = document.getElementById("globeStatsToggleLabel");
+    statsToggleBtn.addEventListener("click", function () {
+        var isOpen = statsPanel.classList.toggle("globe-stats-open");
+        statsToggleIcon.className = isOpen ? "bi bi-x-lg" : "bi bi-graph-up";
+        statsToggleLabel.textContent = isOpen ? "Globe" : "KPIs";
+        statsToggleBtn.title = isOpen ? "Hide the KPI panel and show the globe" : "Show the KPI panel";
     });
 }());
 </script>

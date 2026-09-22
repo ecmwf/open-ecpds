@@ -126,6 +126,19 @@ public abstract class PluginThread extends ConfigurableRunnable implements MBean
     public abstract String getPluginName();
 
     /**
+     * Gets the port(s) this plugin is actually listening on, read directly from the plugin's own live state (as opposed
+     * to re-deriving it from configuration by plugin ref/name, which is fragile and breaks whenever a plugin's
+     * configuration section name differs from what a caller assumes). Subclasses that open one or more network
+     * listeners should override this to return their actual bound port(s); the default returns an empty list, meaning
+     * "no listening port to report" (e.g. a plugin with no network listener of its own).
+     *
+     * @return the listening port(s), or an empty list if none/not applicable
+     */
+    public List<Integer> getListeningPorts() {
+        return List.of();
+    }
+
+    /**
      * Gets the param.
      *
      * @param name

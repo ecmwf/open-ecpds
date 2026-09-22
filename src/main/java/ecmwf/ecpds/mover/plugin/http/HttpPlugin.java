@@ -28,6 +28,7 @@ package ecmwf.ecpds.mover.plugin.http;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.management.AttributeNotFoundException;
@@ -106,6 +107,13 @@ public final class HttpPlugin extends PluginThread implements HttpCertificatePro
     /** Type of the active keystore (PKCS12 / JKS). */
     private String activeKeystoreType = null;
 
+    /**
+     * The port(s) this plugin is actually listening on once started (http and/or https), for
+     * {@link #getListeningPorts()} - populated directly from this plugin's own live configuration, not re-derived
+     * elsewhere.
+     */
+    private volatile List<Integer> listeningPorts = List.of();
+
     static {
         // Prevent Jetty from rewriting headers:
         // https://bugs.eclipse.org/bugs/show_bug.cgi?id=414449
@@ -142,6 +150,18 @@ public final class HttpPlugin extends PluginThread implements HttpCertificatePro
     @Override
     public String getVersion() {
         return VERSION;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns the http and/or https port(s) this plugin is actually listening on, read directly from this plugin's own
+     * live state (populated once {@link #start()} has successfully bound them) rather than re-derived from
+     * configuration elsewhere.
+     */
+    @Override
+    public List<Integer> getListeningPorts() {
+        return listeningPorts;
     }
 
     /**
@@ -484,6 +504,14 @@ public final class HttpPlugin extends PluginThread implements HttpCertificatePro
             server.addBeanToAllConnectors(statsHandler);
             // Starting the server
             server.start();
+            final List<Integer> ports = new ArrayList<>();
+            if (httpPort >= 0) {
+                ports.add(httpPort);
+            }
+            if (httpsPort >= 0) {
+                ports.add(httpsPort);
+            }
+            listeningPorts = List.copyOf(ports);
             return true;
         } catch (final Exception e) {
             _log.error("Starting the plugin", e);
@@ -693,6 +721,7 @@ public final class HttpPlugin extends PluginThread implements HttpCertificatePro
                 _log.warn(e);
             } finally {
                 server = null;
+                listeningPorts = List.of();
             }
         }
     }

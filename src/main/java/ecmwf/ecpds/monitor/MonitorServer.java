@@ -254,4 +254,38 @@ public final class MonitorServer extends StarterServer implements MonitorInterfa
             throw new RemoteException("Certificate deployment failed", e);
         }
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Lists every network plugin currently loaded in this Monitor's own JVM, read directly from its own plugin
+     * container (no RMI involved on this end - the caller, the Master Server, reaches this over the existing
+     * MonitorInterface RMI connection).
+     */
+    @Override
+    public java.util.List<java.util.Map<String, Object>> getNetworkPluginInfos() {
+        final java.util.List<java.util.Map<String, Object>> pluginInfos = new java.util.ArrayList<>();
+        final var container = getPluginContainer();
+        if (container == null) {
+            return pluginInfos;
+        }
+        try {
+            for (final var info : container.getPluginInfos()) {
+                final java.util.Map<String, Object> pluginInfo = new java.util.HashMap<>();
+                pluginInfo.put("ref", info.getRef());
+                pluginInfo.put("name", info.getName());
+                final var plugin = container.getPlugin(info.getRef());
+                final var status = container.getPluginStatus(info.getRef());
+                final var ports = plugin != null && "ON".equals(status) ? plugin.getListeningPorts()
+                        : java.util.List.<Integer> of();
+                pluginInfo.put("port", ports.size() == 1 ? ports.get(0) : null);
+                pluginInfo.put("ports", ports);
+                pluginInfo.put("status", status);
+                pluginInfos.add(pluginInfo);
+            }
+        } catch (final Throwable t) {
+            _log.warn("getNetworkPluginInfos: listing Monitor plugins", t);
+        }
+        return pluginInfos;
+    }
 }

@@ -1139,56 +1139,6 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * Gets the listening port(s) for a network plugin that does not extend {@link ecmwf.common.plugin.ServerPlugin}
-     * (e.g. HTTP/HTTPS, MQTT/MQTTS and SSH, which each manage their own embedded server rather than using the simple
-     * accept-loop abstraction {@code ServerPlugin} represents), read directly from the same configuration section that
-     * plugin itself uses at startup. Only called by the caller when {@link ecmwf.common.plugin.PluginContainer} reports
-     * that plugin's live status as {@code "ON"}, so a plugin that is configured but failed to start (or was never
-     * registered on this component to begin with) never gets a port shown. Returns an empty list for any other/unknown
-     * plugin ref.
-     *
-     * @param ref
-     *            the plugin reference (the key used in the {@code [PluginList]} configuration section)
-     *
-     * @return the ports configured for that plugin, if any
-     */
-    private static List<Integer> fallbackPluginPorts(final String ref) {
-        final List<Integer> ports = new ArrayList<>();
-        switch (ref) {
-        case "http" -> {
-            final var http = Cnf.at("HttpPlugin", "http", -1);
-            final var https = Cnf.at("HttpPlugin", "https", -1);
-            if (http > 0) {
-                ports.add(http);
-            }
-            if (https > 0) {
-                ports.add(https);
-            }
-        }
-        case "mqtt" -> {
-            final var mqtt = Cnf.at("MqttPlugin", "mqtt", -1);
-            final var mqtts = Cnf.at("MqttPlugin", "mqtts", -1);
-            if (mqtt > 0) {
-                ports.add(mqtt);
-            }
-            if (mqtts > 0) {
-                ports.add(mqtts);
-            }
-        }
-        case "ssh" -> {
-            final var port = Cnf.at("SshPlugin", "port", -1);
-            if (port > 0) {
-                ports.add(port);
-            }
-        }
-        default -> {
-            // No known fallback for this plugin ref.
-        }
-        }
-        return ports;
-    }
-
-    /**
      * {@inheritDoc}
      *
      * Lists every network plugin currently loaded in this Data Mover's own JVM, read directly from its own plugin
@@ -1205,9 +1155,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 pluginInfo.put("name", info.getName());
                 final var plugin = getPluginContainer().getPlugin(info.getRef());
                 final var status = getPluginContainer().getPluginStatus(info.getRef());
-                final List<Integer> ports = plugin instanceof final ecmwf.common.plugin.ServerPlugin serverPlugin
-                        ? java.util.List.of(serverPlugin.getPort())
-                        : "ON".equals(status) ? fallbackPluginPorts(info.getRef()) : List.of();
+                final List<Integer> ports = plugin != null && "ON".equals(status) ? plugin.getListeningPorts()
+                        : List.of();
                 pluginInfo.put("port", ports.size() == 1 ? ports.get(0) : null);
                 pluginInfo.put("ports", ports);
                 pluginInfo.put("status", status);

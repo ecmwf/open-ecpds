@@ -29,6 +29,7 @@ package ecmwf.ecpds.mover.plugin.mqtt;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -68,6 +69,13 @@ public class MqttPlugin extends PluginThread implements HttpCertificateProvider 
     private EmbeddedHiveMQ server;
 
     /**
+     * The port(s) this plugin is actually listening on once started (mqtt and/or mqtts), for
+     * {@link #getListeningPorts()} - populated directly from this plugin's own live configuration, not re-derived
+     * elsewhere.
+     */
+    private volatile List<Integer> listeningPorts = List.of();
+
+    /**
      * Instantiates a new http plugin.
      *
      * @param ref
@@ -97,6 +105,18 @@ public class MqttPlugin extends PluginThread implements HttpCertificateProvider 
     @Override
     public String getVersion() {
         return VERSION;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns the mqtt and/or mqtts port(s) this plugin is actually listening on, read directly from this plugin's own
+     * live state (populated once {@link #start()} has successfully started) rather than re-derived from configuration
+     * elsewhere.
+     */
+    @Override
+    public List<Integer> getListeningPorts() {
+        return listeningPorts;
     }
 
     /**
@@ -158,6 +178,16 @@ public class MqttPlugin extends PluginThread implements HttpCertificateProvider 
                 started.set(false);
                 return null;
             }).join();
+            if (started.get()) {
+                final List<Integer> ports = new java.util.ArrayList<>();
+                if (mqttPort >= 0) {
+                    ports.add(mqttPort);
+                }
+                if (mqttsPort >= 0) {
+                    ports.add(mqttsPort);
+                }
+                listeningPorts = List.copyOf(ports);
+            }
             return started.get();
         } catch (final Exception e) {
             _log.error("Starting the plugin", e);
@@ -197,6 +227,7 @@ public class MqttPlugin extends PluginThread implements HttpCertificateProvider 
                 _log.warn(e);
             } finally {
                 server = null;
+                listeningPorts = List.of();
             }
         }
     }

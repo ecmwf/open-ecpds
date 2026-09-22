@@ -156,6 +156,41 @@ public abstract class ECaccessProvider extends ECaccessServer implements Provide
     }
 
     /**
+     * Gets the root names of every client currently registered for the given service (e.g. {@code "DataMover"} or
+     * {@code "ECpdsMonitor"}), so that callers can enumerate and query all connected instances of a given service type,
+     * not just one known by name in advance.
+     *
+     * @param service
+     *            the service name
+     *
+     * @return the roots of every client registered for that service
+     */
+    public List<String> getClientRoots(final String service) {
+        final List<String> roots = new ArrayList<>();
+        for (final ClientElement element : _repository.getList()) {
+            if (service.equals(element.getService())) {
+                roots.add(element.getRoot());
+            }
+        }
+        return roots;
+    }
+
+    /**
+     * Gets the host used by the given client to connect, as recorded when it registered/authenticated.
+     *
+     * @param service
+     *            the service name
+     * @param root
+     *            the root
+     *
+     * @return the host, or {@code null} if not currently registered
+     */
+    public String getClientHost(final String service, final String root) {
+        final var element = _repository.getValue(service + "/" + root);
+        return element != null ? element.getHost() : null;
+    }
+
+    /**
      * Gets the client interface.
      *
      * @param <T>

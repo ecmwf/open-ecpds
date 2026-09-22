@@ -17,7 +17,7 @@
 #topoCy{position:absolute;inset:0;width:100%;height:100%;}
 #topoLegend{position:absolute;left:10px;top:10px;z-index:10;background:var(--bs-body-bg);color:var(--bs-body-color);border:1px solid var(--bs-border-color);border-radius:8px;padding:.5rem .75rem;font-size:.76rem;line-height:1.55;box-shadow:0 2px 8px rgba(0,0,0,.12);}
 #topoLegend .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;}
-#topoDetailPanel{position:absolute;right:10px;top:10px;z-index:10;width:280px;max-width:80vw;background:var(--bs-body-bg);color:var(--bs-body-color);border:1px solid var(--bs-border-color);border-radius:8px;padding:.75rem 1rem;font-size:.82rem;display:none;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+#topoDetailPanel{position:absolute;right:10px;top:10px;z-index:10;width:280px;max-width:80vw;max-height:calc(100vh - 20px);overflow-y:auto;background:var(--bs-body-bg);color:var(--bs-body-color);border:1px solid var(--bs-border-color);border-radius:8px;padding:.75rem 1rem;font-size:.82rem;display:none;box-shadow:0 4px 16px rgba(0,0,0,.2);}
 #topoDetailPanel h6{color:#0d6efd;margin-bottom:.4rem;}
 #topoDetailPanel .close-btn{position:absolute;top:6px;right:8px;cursor:pointer;color:var(--bs-secondary-color,#6c757d);}
 #topoDetailPanel dl{margin:0;}
@@ -79,18 +79,22 @@
             <li>A Data Mover shown <strong>greyed out with a dashed border</strong> is currently reporting as
                 <strong>down</strong> (its most recent availability check failed, or it is disabled in its
                 configuration) — the rest of the diagram keeps working normally around it.</li>
+            <li>A Data Mover's ring color reflects its <strong>TransferGroup</strong> - Data Movers sharing the
+                same group get the same ring color, making it easy to spot which ones back the same group.</li>
             <li>Click any node to see its full details (host, ports, status) in the panel on the right.</li>
+            <li>Drag any box to rearrange the diagram to your liking - your layout is remembered on this browser
+                between visits, including after navigating away and coming back.</li>
             <li>The <strong>15s/30s/1m/5m/Off</strong> pills control how often the diagram refreshes itself
                 automatically (remembered on this browser between visits); use the
                 <i class="bi bi-arrow-clockwise"></i> button to refresh immediately regardless, and the
                 <i class="bi bi-arrows-fullscreen"></i> button to expand it to fullscreen.</li>
         </ul>
         <p class="mb-0 text-muted small">
-            Note: a live list of every connected Monitor instance is not yet surfaced here — only this Monitor's own
-            host/ports are shown. A Data Mover's per-plugin ports are only available while it is actively connected
-            to the Master; if it currently isn't, only its single registration host/port is shown instead. Database
-            reachability is inferred from the fact the Master answered this request at all, not from a separate live
-            probe.
+            Note: every connected Monitor instance is shown (there can be more than one for HA/scale-out setups), not
+            just the one serving the current page. A Data Mover's per-plugin ports are only available while it is
+            actively connected to the Master; if it currently isn't, only its single registration host/port is shown
+            instead. Database reachability is inferred from the fact the Master answered this request at all, not
+            from a separate live probe.
         </p>
     </div>
 </div>
@@ -209,6 +213,12 @@
             { selector: "node[kind='mover'][!up]", style: {
                 "background-color": pal.moverDown, "border-style": "dashed", "text-opacity": 0.85
             } },
+            // Colors the ring around each Data Mover node by its TransferGroup (data(groupColor) is a hex string
+            // computed per-group in JS - see groupColorFor()), so movers sharing the same TransferGroup are
+            // visually identifiable at a glance regardless of where they end up in the layout.
+            { selector: "node[kind='mover'][groupColor]", style: {
+                "border-width": 4, "border-color": "data(groupColor)"
+            } },
             { selector: "edge", style: {
                 "curve-style": "bezier", "width": 2, "line-color": pal.edge, "target-arrow-color": pal.edge,
                 "target-arrow-shape": "triangle", "arrow-scale": 1, "label": "data(label)", "font-size": 9,
@@ -238,6 +248,27 @@
         }).join(", ");
     }
 
+    // Fixed, high-contrast palette cycled deterministically by TransferGroup name (via a simple string hash), so
+    // the same group always gets the same color across refreshes/reloads without needing any server-side mapping.
+    var GROUP_COLOR_PALETTE = [
+        "#e6194b", "#3cb44b", "#ffe119", "#4363d8", "#f58231", "#911eb4",
+        "#46f0f0", "#f032e6", "#bcf60c", "#fabebe", "#008080", "#e6beff",
+        "#9a6324", "#800000", "#aaffc3", "#808000", "#ffd8b1", "#000075"
+    ];
+
+    var groupColorCache = {};
+    function groupColorFor(groupName) {
+        if (!groupName) { return null; }
+        if (groupColorCache[groupName]) { return groupColorCache[groupName]; }
+        var hash = 0;
+        for (var i = 0; i < groupName.length; i++) {
+            hash = (hash * 31 + groupName.charCodeAt(i)) >>> 0;
+        }
+        var color = GROUP_COLOR_PALETTE[hash % GROUP_COLOR_PALETTE.length];
+        groupColorCache[groupName] = color;
+        return color;
+    }
+
     function buildElements(data) {
         var nodes = [];
         var edges = [];
@@ -254,7 +285,7 @@
 
         var master = data.master || {};
         var database = data.database || {};
-        var monitor = data.monitor || {};
+        var monitors = data.monitors || [];
         var movers = data.movers || [];
 
         var masterHostId = hostNodeId(master.host);
@@ -265,7 +296,7 @@
         } });
 
         var dbHostId = hostNodeId(database.host);
-        var dbLabel = "Database\n" + (database.host || "") + (database.port ? (":" + database.port) : "");
+        var dbLabel = "Database" + (database.port ? ("\n:" + database.port) : "");
         nodes.push({ data: {
             id: "database", kind: "database", parent: dbHostId, label: dbLabel,
             details: JSON.stringify(database)
@@ -275,13 +306,16 @@
             label: database.port ? ("JDBC:" + database.port) : "JDBC"
         } });
 
-        var monitorHostId = hostNodeId(monitor.host);
-        nodes.push({ data: {
-            id: "monitor", kind: "monitor", parent: monitorHostId,
-            label: "Monitor Server\n" + pluginSummary(monitor.plugins),
-            details: JSON.stringify(monitor)
-        } });
-        edges.push({ data: { id: "e-monitor-master", source: "monitor", target: "master", label: "RMI" } });
+        monitors.forEach(function (monitor, idx) {
+            var monitorHostId = hostNodeId(monitor.host);
+            var nodeId = monitors.length > 1 ? ("monitor:" + (monitor.name || idx)) : "monitor";
+            nodes.push({ data: {
+                id: nodeId, kind: "monitor", parent: monitorHostId,
+                label: "Monitor Server\n" + pluginSummary(monitor.plugins),
+                details: JSON.stringify(monitor)
+            } });
+            edges.push({ data: { id: "e-monitor-master-" + idx, source: nodeId, target: "master", label: "RMI" } });
+        });
 
         movers.forEach(function (mover, idx) {
             var moverHostId = hostNodeId(mover.host);
@@ -290,11 +324,15 @@
             var portsLabel = mover.plugins && mover.plugins.length
                 ? pluginSummary(mover.plugins)
                 : (mover.port ? ("ecproxy:" + mover.port) : "");
-            nodes.push({ data: {
+            var moverData = {
                 id: nodeId, kind: "mover", parent: moverHostId, up: up,
+                transferGroup: mover.transferGroup || "",
                 label: "Data Mover\n" + mover.name + (portsLabel ? ("\n" + portsLabel) : ""),
                 details: JSON.stringify(mover)
-            } });
+            };
+            var groupColor = groupColorFor(mover.transferGroup);
+            if (groupColor) { moverData.groupColor = groupColor; }
+            nodes.push({ data: moverData });
             edges.push({ data: {
                 id: "e-master-mover-" + idx, source: "master", target: nodeId,
                 label: mover.port ? ("ecproxy:" + mover.port) : "", down: !up
@@ -325,6 +363,7 @@
         if (details.host) { addRow("Host", details.host); }
         if (details.port) { addRow("Port", String(details.port)); }
         if (kind === "mover") {
+            if (details.transferGroup) { addRow("Transfer Group", details.transferGroup); }
             addRow("Enabled", details.active ? "Yes" : "No");
             addRow("Status", details.up ? "Up" : "Down");
         }
@@ -345,6 +384,84 @@
         document.getElementById("topoDetailPanel").style.display = "block";
     }
 
+    // Node positions the user has manually dragged, remembered across page visits/reloads (same pattern as
+    // REFRESH_STORAGE_KEY below) - keyed by node id, storing raw Cytoscape model coordinates. Since the diagram is
+    // always re-fit (scaled/panned) to the container after being laid out, coordinates remain a faithful relative
+    // arrangement even if the browser window size differs from when they were saved.
+    var NODE_POSITIONS_STORAGE_KEY = "topoNodePositions";
+
+    function loadSavedPositions() {
+        try {
+            return JSON.parse(localStorage.getItem(NODE_POSITIONS_STORAGE_KEY)) || {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function saveAllPositions() {
+        if (!cy) { return; }
+        var saved = loadSavedPositions();
+        cy.nodes("[kind!='host']").forEach(function (node) {
+            var pos = node.position();
+            saved[node.id()] = { x: pos.x, y: pos.y };
+        });
+        try {
+            localStorage.setItem(NODE_POSITIONS_STORAGE_KEY, JSON.stringify(saved));
+        } catch (e) {
+            // Storage full/unavailable - the rearrangement simply won't be remembered next time.
+        }
+    }
+
+    // Default first-time layout (used only for a node id that has no saved position yet): Master Server top-center,
+    // Database top-right, Monitor Server(s) top-left, and Data Movers along the bottom. A Monitor sharing a host
+    // with a Data Mover or the Master is grouped with it instead (same host = same box), so in practice this only
+    // places a Monitor top-left when it runs on its own dedicated host - i.e. it isn't "external" to anything else.
+    // Data Movers sharing the same TransferGroup are placed next to each other along the bottom row.
+    function computeDefaultPositions(nodes) {
+        var childrenByHost = {};
+        nodes.forEach(function (n) {
+            if (n.data.kind && n.data.kind !== "host" && n.data.parent) {
+                (childrenByHost[n.data.parent] = childrenByHost[n.data.parent] || []).push(n);
+            }
+        });
+        var BUCKET_RANK = { master: 0, database: 1, mover: 2, monitor: 3 };
+        var BUCKET_NAME = { master: "top-center", database: "top-right", mover: "bottom", monitor: "top-left" };
+        var hostsByBucket = { "top-left": [], "top-center": [], "top-right": [], bottom: [] };
+        Object.keys(childrenByHost).forEach(function (hostId) {
+            var bestKind = "monitor";
+            var bestRank = 99;
+            childrenByHost[hostId].forEach(function (n) {
+                var rank = BUCKET_RANK[n.data.kind];
+                if (rank !== undefined && rank < bestRank) { bestRank = rank; bestKind = n.data.kind; }
+            });
+            hostsByBucket[BUCKET_NAME[bestKind]].push(hostId);
+        });
+        hostsByBucket.bottom.sort(function (a, b) {
+            function groupOf(hostId) {
+                var mover = childrenByHost[hostId].filter(function (n) { return n.data.kind === "mover"; })[0];
+                return (mover && mover.data.transferGroup) || "";
+            }
+            return groupOf(a).localeCompare(groupOf(b)) || a.localeCompare(b);
+        });
+
+        var BUCKET_BASE_X = { "top-left": 60, "top-center": 640, "top-right": 1200, bottom: 60 };
+        var BUCKET_Y = { "top-left": 80, "top-center": 80, "top-right": 80, bottom: 440 };
+        var HOST_SPACING_X = 260;
+        var CHILD_SPACING_Y = 90;
+
+        var positions = {};
+        Object.keys(hostsByBucket).forEach(function (bucket) {
+            hostsByBucket[bucket].forEach(function (hostId, hostIdx) {
+                var x = BUCKET_BASE_X[bucket] + hostIdx * HOST_SPACING_X;
+                var y = BUCKET_Y[bucket];
+                childrenByHost[hostId].forEach(function (n, childIdx) {
+                    positions[n.data.id] = { x: x, y: y + childIdx * CHILD_SPACING_Y };
+                });
+            });
+        });
+        return positions;
+    }
+
     function initCy() {
         cy = cytoscape({
             container: document.getElementById("topoCy"),
@@ -353,6 +470,9 @@
             wheelSensitivity: 0.2
         });
         cy.on("tap", "node[kind!='host']", function (evt) { showDetail(evt.target); });
+        // Persist manual rearrangement (dragging a node, or a whole host box which drags its children with it) so
+        // it survives navigating away and back, or reloading the page.
+        cy.on("dragfree", "node", function () { saveAllPositions(); });
     }
 
     function elementIdSignature(elements) {
@@ -381,10 +501,16 @@
                 if (ele.length) { ele.data(el.data); }
             });
         } else {
+            var savedPositions = loadSavedPositions();
+            var defaultPositions = computeDefaultPositions(elements.filter(function (el) { return !el.data.source; }));
+            elements.forEach(function (el) {
+                if (el.data.source) { return; } // edge, not a node
+                var pos = savedPositions[el.data.id] || defaultPositions[el.data.id];
+                if (pos) { el.position = { x: pos.x, y: pos.y }; }
+            });
             cy.elements().remove();
             cy.add(elements);
-            cy.layout({ name: "cose", animate: false, padding: 30, nodeDimensionsIncludeLabels: true }).run();
-            cy.fit(undefined, 30);
+            cy.layout({ name: "preset", fit: true, padding: 30 }).run();
         }
         cy.scratch("_topoSignature", signature);
 

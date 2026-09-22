@@ -98,4 +98,17 @@ public interface MonitorInterface extends HandlerInterface {
      */
     @Override
     void reloadHttpCertificate() throws RemoteException;
+
+    /**
+     * Lists every network plugin currently loaded in this Monitor's own JVM (ref/name/port/status), read directly from
+     * its own plugin container - mirrors {@code MoverInterface#getNetworkPluginInfos()}, allowing the Master to report
+     * every connected Monitor instance's own plugins/ports in the System Topology diagram, not just the one instance
+     * that happens to be serving a given web request.
+     *
+     * @return the list of plugin info maps
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    java.util.List<java.util.Map<String, Object>> getNetworkPluginInfos() throws RemoteException;
 }

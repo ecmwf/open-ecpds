@@ -23,8 +23,9 @@ package ecmwf.ecpds.master.plugin.http.controller.monitoring;
  *
  * Returns a JSON snapshot of the OpenECPDS system topology for the "System Topology" diagram: the Master Server
  * (host and locally-running plugins/ports), the database (host and reachability), every known DataMover (host,
- * port, enabled/up state) and the Monitor instance actually serving this request (its own host, plus its own
- * locally-running plugins/ports, exactly like the Master's are reported).
+ * port, enabled/up state) and every Monitor instance currently connected to the Master (there can be more than one
+ * for HA/scale-out setups), each with its own host plus its own locally-running plugins/ports, exactly like the
+ * Master's are reported.
  *
  * URL pattern (registered in struts-config.xml):
  *   GET /do/monitoring/topology/data
@@ -46,7 +47,6 @@ import org.apache.struts.action.ActionMapping;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import ecmwf.common.plugin.ServerPlugin;
 import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
@@ -83,43 +83,17 @@ public class GetSystemTopologyJsonAction extends PDSAction {
         root.putPOJO("database", topology.get("database"));
         root.putPOJO("movers", topology.get("movers"));
 
-        // This Monitor instance (the one actually serving this request): its own configured host identity, plus its
-        // own locally-running plugins/ports — read directly from this JVM, no RMI call needed (unlike the Master's,
-        // which comes from the Master's own JVM via the call above).
-        final var monitorNode = root.putObject("monitor");
-        String host;
-        try {
-            host = Cnf.at("Login", "hostName", InetAddress.getLocalHost().getHostName());
-        } catch (final Exception e) {
-            host = "monitor";
-        }
-        monitorNode.put("host", host);
-        monitorNode.put("nickName", System.getProperty("monitor.nickName", "Monitor"));
-        final var monitorPlugins = monitorNode.putArray("plugins");
-        try {
-            final var container = getPluginContainer();
-            if (container != null) {
-                for (final var info : container.getPluginInfos()) {
-                    final var pluginNode = monitorPlugins.addObject();
-                    pluginNode.put("ref", info.getRef());
-                    pluginNode.put("name", info.getName());
-                    final var plugin = container.getPlugin(info.getRef());
-                    final var status = container.getPluginStatus(info.getRef());
-                    final var ports = plugin instanceof final ServerPlugin serverPlugin
-                            ? java.util.List.of(serverPlugin.getPort())
-                            : "ON".equals(status) ? fallbackPluginPorts(info.getRef()) : java.util.List.<Integer> of();
-                    if (ports.size() == 1) {
-                        pluginNode.put("port", ports.get(0));
-                    } else {
-                        pluginNode.putNull("port");
-                    }
-                    final var portsArray = pluginNode.putArray("ports");
-                    ports.forEach(portsArray::add);
-                    pluginNode.put("status", status);
-                }
-            }
-        } catch (final Throwable t) {
-            // Best-effort: an empty plugins array is an acceptable degraded response.
+        // Every ECpds Monitor instance currently connected to the Master (there can be more than one for HA/scale-out
+        // setups), each with its own host/plugins/ports read live over its own MonitorInterface RMI connection - see
+        // ManagementImpl#getSystemTopology(). Falls back below to this instance's own local info only if the Master
+        // could not report any connected monitor (e.g. this instance is not yet registered, or the call above failed).
+        @SuppressWarnings("unchecked")
+        final var monitorsFromMaster = (java.util.List<Map<String, Object>>) topology.get("monitors");
+        final var monitorsNode = root.putArray("monitors");
+        if (monitorsFromMaster != null && !monitorsFromMaster.isEmpty()) {
+            monitorsFromMaster.forEach(monitorsNode::addPOJO);
+        } else {
+            monitorsNode.addPOJO(buildLocalMonitorInfo());
         }
 
         try {
@@ -133,53 +107,48 @@ public class GetSystemTopologyJsonAction extends PDSAction {
     }
 
     /**
-     * Gets the listening port(s) for a network plugin that does not extend {@link ServerPlugin} (e.g. HTTP/HTTPS,
-     * MQTT/MQTTS and SSH, which each manage their own embedded server rather than using the simple accept-loop
-     * abstraction {@code ServerPlugin} represents), read directly from the same configuration section that plugin
-     * itself uses at startup — this executes inside this same Monitor JVM, exactly like the {@code host} lookup above,
-     * so it always reads this Monitor's own local configuration, never another component's. Only called by the caller
-     * when {@link ecmwf.common.plugin.PluginContainer} reports that plugin's live status as {@code "ON"}, so a plugin
-     * that is configured but failed to start never gets a port shown. Returns an empty list for any other/unknown
-     * plugin ref.
+     * Builds this Monitor instance's own host identity plus its own locally-running plugins/ports, read directly from
+     * this JVM (no RMI call needed). Used only as a fallback when the Master could not report any connected Monitor
+     * instance (e.g. this instance is not registered as an {@code ECpdsMonitor} client, or the RMI call failed), so the
+     * topology diagram always shows at least this one.
      *
-     * @param ref
-     *            the plugin reference (the key used in the {@code [PluginList]} configuration section)
-     *
-     * @return the ports configured for that plugin, if any
+     * @return a map with {@code host}, {@code name}, {@code nickName} and {@code plugins} keys
      */
-    private static java.util.List<Integer> fallbackPluginPorts(final String ref) {
-        final java.util.List<Integer> ports = new java.util.ArrayList<>();
-        switch (ref) {
-        case "http" -> {
-            // This Monitor's own HttpPlugin (ecmwf.ecpds.master.plugin.http.HttpPlugin) binds its HTTPS port from
-            // the [MonitorPlugin] section (there is no separate plain-HTTP listener here, unlike the Data Mover's
-            // HttpPlugin which uses its own [HttpPlugin] http/https keys).
-            final var https = Cnf.at("MonitorPlugin", "https", -1);
-            if (https > 0) {
-                ports.add(https);
+    private Map<String, Object> buildLocalMonitorInfo() {
+        final Map<String, Object> monitorInfo = new java.util.HashMap<>();
+        String host;
+        try {
+            host = Cnf.at("Login", "hostName", InetAddress.getLocalHost().getHostName());
+        } catch (final Exception e) {
+            host = "monitor";
+        }
+        monitorInfo.put("host", host);
+        monitorInfo.put("name", host);
+        monitorInfo.put("nickName", System.getProperty("monitor.nickName", "Monitor"));
+        monitorInfo.put("rmiConnected", false);
+        final java.util.List<Map<String, Object>> pluginInfos = new java.util.ArrayList<>();
+        try {
+            final var container = getPluginContainer();
+            if (container != null) {
+                for (final var info : container.getPluginInfos()) {
+                    final Map<String, Object> pluginInfo = new java.util.HashMap<>();
+                    pluginInfo.put("ref", info.getRef());
+                    pluginInfo.put("name", info.getName());
+                    final var plugin = container.getPlugin(info.getRef());
+                    final var status = container.getPluginStatus(info.getRef());
+                    final var ports = plugin != null && "ON".equals(status) ? plugin.getListeningPorts()
+                            : java.util.List.<Integer> of();
+                    pluginInfo.put("port", ports.size() == 1 ? ports.get(0) : null);
+                    pluginInfo.put("ports", ports);
+                    pluginInfo.put("status", status);
+                    pluginInfos.add(pluginInfo);
+                }
             }
+        } catch (final Throwable t) {
+            // Best-effort: an empty plugins array is an acceptable degraded response.
         }
-        case "mqtt" -> {
-            final var mqtt = Cnf.at("MqttPlugin", "mqtt", -1);
-            final var mqtts = Cnf.at("MqttPlugin", "mqtts", -1);
-            if (mqtt > 0) {
-                ports.add(mqtt);
-            }
-            if (mqtts > 0) {
-                ports.add(mqtts);
-            }
-        }
-        case "ssh" -> {
-            final var port = Cnf.at("SshPlugin", "port", -1);
-            if (port > 0) {
-                ports.add(port);
-            }
-        }
-        default -> {
-            // No known fallback for this plugin ref.
-        }
-        }
-        return ports;
+        monitorInfo.put("plugins", pluginInfos);
+        return monitorInfo;
     }
 
     /**
