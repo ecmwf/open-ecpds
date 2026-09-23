@@ -164,10 +164,83 @@ public class GetAllBadTransfersJsonAction extends PDSAction {
     }
 
     private static String buildStatusHtml(final DataTransfer transfer) {
+        String statusText;
         try {
-            return escapeHtml(transfer.getFormattedStatus());
+            statusText = transfer.getDetailedStatus();
         } catch (final Exception e) {
-            return escapeHtml(transfer.getStatusCode());
+            statusText = transfer.getStatusCode();
+        }
+        if (statusText == null) {
+            statusText = "";
+        }
+        final var escaped = escapeHtml(statusText);
+        // Extract base status (before any "-username" suffix) for colour selection and display, same convention
+        // as the Destination transfer list (see GetDestinationTransferListJsonAction.buildStatusHtml).
+        final var base = statusText.contains("-") ? statusText.substring(0, statusText.indexOf('-')).trim()
+                : statusText.trim();
+        final var baseEscaped = escapeHtml(base);
+        if (transfer.getExpired() && transfer.getDeleted()) {
+            final var expiry = transfer.getExpiryDate();
+            final var expStr = expiry != null ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(expiry)
+                    : "";
+            return "<span class=\"badge bg-danger\" title=\"Data Transfer expired on " + escapeHtml(expStr) + "\">"
+                    + baseEscaped + "</span>";
+        }
+        if (transfer.getDeleted()) {
+            return "<span class=\"badge bg-danger\" title=\"Data Transfer deleted\">" + baseEscaped + "</span>";
+        }
+        final String cls;
+        switch (base) {
+        case "Done":
+            cls = "badge bg-success";
+            break;
+        case "Transferring":
+        case "Fetching":
+        case "Arriving":
+            cls = "badge bg-primary";
+            break;
+        case "Queued":
+        case "Preset":
+        case "StandBy":
+        case "ReQueued":
+            cls = "badge bg-warning text-dark";
+            break;
+        case "Failed":
+            cls = "badge bg-danger";
+            break;
+        case "Stopped":
+        case "Interrupted":
+        default:
+            cls = "badge bg-secondary";
+            break;
+        }
+        // Show only base status in badge; full text (including any "-username" suffix) in tooltip
+        final boolean hasUid = statusText.contains("-");
+        final String uid = hasUid ? statusText.substring(statusText.indexOf('-') + 1).trim() : null;
+        final String tooltip = hasUid ? escapeHtml(base + " \u00b7 " + uidRelation(transfer.getStatusCode()) + uid)
+                : escaped;
+        final String userIcon = hasUid ? " <i class=\"bi bi-person-fill\" style=\"font-size:0.75em;\"></i>" : "";
+        final String style = hasUid ? " style=\"display:inline-flex;align-items:center;gap:3px;\"" : "";
+        return "<span class=\"" + cls + "\"" + style + " title=\"" + tooltip + "\">" + baseEscaped + userIcon
+                + "</span>";
+    }
+
+    /**
+     * Returns the appropriate preposition for the uid tooltip depending on whether the status represents a direct user
+     * action ("by") or an outcome triggered by a prior user action ("initiated by").
+     */
+    private static String uidRelation(final String statusCode) {
+        if (statusCode == null) {
+            return "by ";
+        }
+        switch (statusCode) {
+        case "RETR": // ReQueued
+        case "HOLD": // Standby
+        case "STOP": // Stopped
+        case "SCHE": // Scheduled
+            return "by ";
+        default: // EXEC, DONE, FAIL, WAIT, INTR, FETC, INIT …
+            return "initiated by ";
         }
     }
 

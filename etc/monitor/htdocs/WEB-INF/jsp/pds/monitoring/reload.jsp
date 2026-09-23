@@ -113,7 +113,7 @@
       <span class="text-muted" style="font-size:0.75rem;">|</span>
       <a href="/do/monitoring/summary/${productStatus.product}" class="btn btn-sm btn-outline-secondary"
          title="View all cycles of ${productStatus.product}">
-        <i class="bi bi-layers-fill"></i> All cycles
+        <i class="bi bi-layers-fill"></i> All Cycles
       </a>
     </c:if>
         <%-- Page selector (only on the main monitoring page, not product detail) --%>
@@ -139,6 +139,9 @@
             <a class="page-pill" href="?page=" title="Display All Pages">All</a>
           </c:otherwise>
         </c:choose>
+        <span class="text-muted" style="font-size:0.75rem;">|</span>
+        <a class="page-pill" href="/do/monitoring/summary/" style="width:auto;padding:2px 8px;"
+           title="View all cycles for all products">All Cycles and Products</a>
       </div>
     </c:if>
   </div>

@@ -1756,6 +1756,18 @@
         fullscreenIcon.className = isFullscreen ? "bi bi-fullscreen-exit" : "bi bi-arrows-fullscreen";
         fullscreenBtn.title = isFullscreen ? "Exit full screen" : "Toggle full screen";
     });
+    // Many mobile browsers (most notably iOS Safari) don't implement the Fullscreen API for arbitrary elements at
+    // all (only <video> supports it there), so the button above would silently do nothing on those devices. Feature
+    // -detect support up front and hide the button entirely when it wouldn't work, rather than leave a dead control
+    // around.
+    (function () {
+        var docEl = document.documentElement;
+        var fullscreenSupported = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled) &&
+            !!(docEl.requestFullscreen || docEl.webkitRequestFullscreen);
+        if (!fullscreenSupported) {
+            fullscreenBtn.style.display = "none";
+        }
+    }());
 
     // Phone-only KPI panel toggle (see the "@media (max-width:700px)" rules above): the panel itself defaults to
     // hidden below that breakpoint via CSS alone, so this just flips it open/closed on demand and keeps the button's

@@ -1901,6 +1901,24 @@ public interface DataBaseInterface extends Remote {
 
     ApiPermission[] getApiPermissionsForClient(String clientId) throws DataBaseException, RemoteException;
 
+    /**
+     * Checks whether the API client encoded in the given "clientId:secret" credentials string is active, has a matching
+     * secret, and is granted a permission pattern that matches the given service name - throwing a
+     * {@link DataBaseException} (and recording an {@link ApiEvent}) if not. Used by the REST API (v1) to gate access to
+     * a given service the same way the legacy SOAP/RMI API does via the internal {@code checkUser()}.
+     *
+     * @param userNameAndPassword
+     *            the "clientId:secret" credentials string
+     * @param service
+     *            the service name to check permission for
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             if the client is unknown/inactive, the secret is invalid, or no permission pattern matches
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void checkApiPermission(String userNameAndPassword, String service) throws DataBaseException, RemoteException;
+
     void addApiEvent(ApiEvent event) throws DataBaseException, RemoteException;
 
     ApiEvent[] getApiEventsForClient(String clientId, int maxRows) throws DataBaseException, RemoteException;

@@ -81,9 +81,18 @@ public class GetSummaryDisplayAction extends PDSAction {
         final ArrayList<?> params = ECMWFActionForm.getPathParameters(mapping, request);
         final var ses = (MonitoringSessionActionForm) form;
         if (params.isEmpty()) {
-            throw new ECMWFActionFormException("Unsupported Feature. Please contact the development team.");
-        }
-        if (params.size() == 1) {
+            // Merged "all products, all cycles/times" view (bare /monitoring/summary route): gather every
+            // product/cycle currently known and combine their step statii into one table. The extra "Prod" column
+            // added by product.jsp (gated on the "allProducts" attribute set below) keeps rows from different
+            // products identifiable once merged together.
+            final List<ProductStepStatus> stepStatii = new ArrayList<>();
+            for (final var ps : ProductStatusHome.findFromMemory().values()) {
+                stepStatii.addAll(ProductStepStatusHome.findAll(ps.getProduct(), ps.getTime()));
+            }
+            putDataForHeader(request, ses, null, "", stepStatii, false, null);
+            request.setAttribute("productStepStatii", stepStatii);
+            request.setAttribute("allProducts", true);
+        } else if (params.size() == 1) {
             // Merged "all cycles/times" view: for products configured (Product Descriptions) to group all their
             // cycles onto a single page instead of one page per cycle. Gather every cycle currently known for
             // the product and combine their step statii into one table.
@@ -162,7 +171,13 @@ public class GetSummaryDisplayAction extends PDSAction {
             final boolean onecolumn, final String currentType) throws MonitoringException, TransferException {
         final List<ProductStatus> products = new ArrayList<>(ProductStatusHome.findFromMemory().values());
         Collections.sort(products, new ProductStatusComparator());
-        if (time == null || time.isBlank()) {
+        if (product == null) {
+            // Merged "all products, all cycles" view: synthesize a single ProductStatus (worst status, earliest
+            // scheduled, most recent update) across every product/cycle currently known.
+            request.setAttribute("productStatus",
+                    products.isEmpty() ? null : MonitoringRequest.mergeProductStatuses("All Products", products));
+            request.setAttribute("productNameAndTime", "All Products");
+        } else if (time == null || time.isBlank()) {
             // Merged "all cycles" view: synthesize a single ProductStatus (worst status, earliest scheduled,
             // most recent update) from every cycle currently known for the product.
             final List<ProductStatus> cycles = new ArrayList<>();

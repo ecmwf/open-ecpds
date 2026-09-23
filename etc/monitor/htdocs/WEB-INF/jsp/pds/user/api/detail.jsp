@@ -206,7 +206,7 @@ $(document).ready(function () {
       'getDestinationMetaFields','getDestinationMetaValuesByDestination','setDestinationMetaValues',
       'incomingUserAdd','incomingUserAdd2','incomingUserList','incomingUserDel',
       'incomingAssociationAdd','incomingAssociationDel','incomingAssociationList',
-      'incomingCategoryAdd','updateHostOption'
+      'incomingCategoryAdd','updateHostOption','monitoringSummaryList'
     ];
 
     function _apiPermSelectAll(checked) {
@@ -409,6 +409,17 @@ $(document).ready(function () {
           <div class="d-flex flex-column gap-1 ps-1">
             <div class="form-check mb-0"><input class="form-check-input api-perm-chk" type="checkbox" id="apc-incomingCategoryAdd" data-group="other" value="incomingCategoryAdd"><label class="form-check-label small font-monospace" for="apc-incomingCategoryAdd">incomingCategoryAdd</label></div>
             <div class="form-check mb-0"><input class="form-check-input api-perm-chk" type="checkbox" id="apc-updateHostOption" data-group="other" value="updateHostOption"><label class="form-check-label small font-monospace" for="apc-updateHostOption">updateHostOption</label></div>
+          </div>
+        </div>
+
+        <%-- Monitoring group --%>
+        <div class="col-md-6 col-xl-4">
+          <div class="d-flex align-items-center gap-1 mb-1">
+            <i class="bi bi-graph-up text-primary" style="font-size:0.8rem"></i>
+            <span class="small fw-semibold">Monitoring</span>
+          </div>
+          <div class="d-flex flex-column gap-1 ps-1">
+            <div class="form-check mb-0"><input class="form-check-input api-perm-chk" type="checkbox" id="apc-monitoringSummaryList" data-group="monitoring" value="monitoringSummaryList"><label class="form-check-label small font-monospace" for="apc-monitoringSummaryList">monitoringSummaryList</label></div>
           </div>
         </div>
       </div>

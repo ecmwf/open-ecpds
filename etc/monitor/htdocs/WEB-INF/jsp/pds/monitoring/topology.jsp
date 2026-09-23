@@ -13,10 +13,39 @@
 .topo-icon-btn i{display:inline-flex;align-items:center;justify-content:center;width:100%;height:100%;}
 .topo-icon-btn:hover{background:var(--bs-tertiary-bg,#f1f3f5);color:var(--bs-body-color,#212529);}
 .topo-icon-btn:focus{outline:none;box-shadow:0 0 0 .15rem rgba(13,202,240,.35);}
+.topo-icon-btn:disabled{opacity:.35;cursor:not-allowed;}
+.topo-icon-btn:disabled:hover{background:transparent;color:var(--bs-secondary-color,#6c757d);}
+/* Small dot shown on the Filter button whenever the current filter hides at least one component type/group,
+   so it's obvious at a glance that the diagram isn't showing everything. */
+#topoFilterBtn{position:relative;}
+#topoFilterBtn.topo-filter-active::after{content:"";position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#dc3545;}
+#topoFilterGroupList .form-check{margin-bottom:.25rem;}
+#topoFilterGroupList .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;}
+/* On narrow (phone) screens the 4 icon buttons (Refresh now / Fit all / Reset layout / Fullscreen) don't fit
+   next to the refresh-interval pills and end up overlapping/hidden off the right edge. Collapse them into a
+   "..." dropdown menu below that breakpoint instead (same idea as the destination page's mobile actions menu). */
+#topoActionsToggle{display:none;}
+@media (max-width:700px){
+    #topoIconBar,#topoIconBarSep{display:none !important;}
+    #topoActionsToggle{display:inline-block;}
+    /* actions-group normally shrinks to fit its (now much shorter) visible content, leaving "ms-auto" on the
+       toggle with no spare room to push into - force it to fill the wrapped row so the toggle actually lands
+       flush against the right edge instead of right after the refresh-interval pills. */
+    #topoHeader .actions-group{width:100%;}
+}
 #topoContainer{position:relative;width:100%;height:70vh;min-height:420px;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.15);background:var(--bs-tertiary-bg,#f8f9fa);border:1px solid var(--bs-border-color);}
 #topoCy{position:absolute;inset:0;width:100%;height:100%;}
 #topoLegend{position:absolute;left:10px;top:10px;z-index:10;background:var(--bs-body-bg);color:var(--bs-body-color);border:1px solid var(--bs-border-color);border-radius:8px;padding:.5rem .75rem;font-size:.76rem;line-height:1.55;box-shadow:0 2px 8px rgba(0,0,0,.12);}
 #topoLegend .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;}
+/* On narrow (phone) screens, collapse the legend to a small toggle pill (mirrors the same pattern used on
+   globe.jsp) so it doesn't cover a large part of the diagram. Desktop/tablet keep the legend always visible. */
+#topoLegendToggleBtn{display:none;}
+@media (max-width:700px){
+    #topoLegendToggleBtn{display:flex;align-items:center;justify-content:center;gap:.35rem;height:36px;padding:0 .85rem;border-radius:18px;background:var(--bs-body-bg);color:var(--bs-body-color);border:1px solid var(--bs-border-color);box-shadow:0 4px 14px rgba(0,0,0,.18);font-size:.76rem;font-weight:600;cursor:pointer;position:absolute;left:10px;top:10px;z-index:10;}
+    #topoLegendToggleBtn i{font-size:.95rem;}
+    #topoLegend{display:none;}
+    #topoLegend.topo-legend-open{display:block;top:56px;}
+}
 #topoDetailPanel{position:absolute;right:10px;top:10px;z-index:10;width:280px;max-width:80vw;max-height:calc(100vh - 20px);overflow-y:auto;background:var(--bs-body-bg);color:var(--bs-body-color);border:1px solid var(--bs-border-color);border-radius:8px;padding:.75rem 1rem;font-size:.82rem;display:none;box-shadow:0 4px 16px rgba(0,0,0,.2);}
 #topoDetailPanel h6{color:#0d6efd;margin-bottom:.4rem;}
 #topoDetailPanel .close-btn{position:absolute;top:6px;right:8px;cursor:pointer;color:var(--bs-secondary-color,#6c757d);}
@@ -51,10 +80,61 @@
             <a href="#" class="date-pill topo-refresh-pill" data-value="300">5m</a>
             <a href="#" class="date-pill topo-refresh-pill" data-value="0">Off</a>
         </div>
-        <span class="text-muted" style="font-size:0.75rem;">|</span>
+        <span class="text-muted" id="topoIconBarSep" style="font-size:0.75rem;">|</span>
+        <div class="d-flex align-items-center gap-1" id="topoIconBar">
         <button class="topo-icon-btn" id="topoRefreshBtn" title="Refresh now"><i class="bi bi-arrow-clockwise"></i></button>
         <button class="topo-icon-btn" id="topoFitAllBtn" title="Zoom out to see all Data Movers"><i class="bi bi-arrows-angle-expand"></i></button>
+        <button class="topo-icon-btn" id="topoResetLayoutBtn" title="Reset layout (undo manual rearranging)"><i class="bi bi-diagram-2"></i></button>
         <button class="topo-icon-btn" id="topoFullscreenBtn" title="Toggle fullscreen"><i class="bi bi-arrows-fullscreen"></i></button>
+        </div>
+        <div class="d-flex align-items-center gap-2 ms-auto" id="topoTrailingActions">
+        <div class="dropdown" id="topoActionsToggle">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="topoActionsBtn"
+                    data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" title="Actions">
+                <i class="bi bi-three-dots"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" id="topoActionsMenu" aria-labelledby="topoActionsBtn"></ul>
+        </div>
+        <span class="text-muted" style="font-size:0.75rem;">|</span>
+        <div class="dropdown" id="topoFilterToggle">
+            <button class="topo-icon-btn" type="button" id="topoFilterBtn"
+                    data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
+                    title="Filter which components are shown">
+                <i class="bi bi-funnel"></i>
+            </button>
+            <div class="dropdown-menu p-3" id="topoFilterMenu" style="min-width:230px;" aria-labelledby="topoFilterBtn">
+                <div class="fw-semibold mb-2" style="font-size:.8rem;">Show components</div>
+                <div class="form-check mb-1">
+                    <input class="form-check-input" type="checkbox" id="topoFilterMaster">
+                    <label class="form-check-label" for="topoFilterMaster" style="font-size:.82rem;">Master Server</label>
+                </div>
+                <div class="form-check mb-1">
+                    <input class="form-check-input" type="checkbox" id="topoFilterMonitors">
+                    <label class="form-check-label" for="topoFilterMonitors" style="font-size:.82rem;">Monitor(s)</label>
+                </div>
+                <div class="form-check mb-1">
+                    <input class="form-check-input" type="checkbox" id="topoFilterDatabase">
+                    <label class="form-check-label" for="topoFilterDatabase" style="font-size:.82rem;">Database</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="topoFilterMovers">
+                    <label class="form-check-label" for="topoFilterMovers" style="font-size:.82rem;">Data Movers</label>
+                </div>
+                <div id="topoFilterGroupsWrap" class="ms-3 ps-2 border-start">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="text-muted" style="font-size:.72rem;">Transfer Groups</span>
+                        <span>
+                            <a href="#" id="topoFilterGroupsAll" style="font-size:.7rem;">All</a> /
+                            <a href="#" id="topoFilterGroupsNone" style="font-size:.7rem;">None</a>
+                        </span>
+                    </div>
+                    <div id="topoFilterGroupList" style="max-height:160px;overflow-y:auto;"></div>
+                </div>
+                <hr class="my-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary w-100" id="topoFilterResetBtn">Reset filter</button>
+            </div>
+        </div>
+        </div>
     </div>
 </div>
 
@@ -104,7 +184,7 @@
     <div id="topoCy"></div>
     <div id="topoEmptyState">
         <i class="bi bi-diagram-3"></i>
-        <div>No topology data available yet.</div>
+        <div id="topoEmptyStateMessage">No topology data available yet.</div>
     </div>
     <div id="topoLegend">
         <div><span class="dot" style="background:#0d6efd;"></span>Master Server</div>
@@ -113,6 +193,9 @@
         <div><span class="dot" style="background:#198754;"></span>Data Mover (up)</div>
         <div><span class="dot" style="background:#adb5bd;"></span>Data Mover (down)</div>
     </div>
+    <button type="button" id="topoLegendToggleBtn" title="Show the legend">
+        <i class="bi bi-info-circle"></i><span id="topoLegendToggleLabel">Legend</span>
+    </button>
     <div id="topoDetailPanel">
         <span class="close-btn" onclick="document.getElementById('topoDetailPanel').style.display='none';">&times;</span>
         <h6 id="topoDetailTitle">Details</h6>
@@ -385,6 +468,140 @@
         document.getElementById("topoDetailPanel").style.display = "block";
     }
 
+    // Which component types/Transfer Groups are currently shown (see the Filter dropdown in the toolbar), remembered
+    // across page visits/reloads the same way node positions and the refresh interval already are. "groups: null"
+    // means "all groups" (the default) - it's only materialized into an explicit array once the user actually
+    // unchecks one, so any Transfer Group added later is included automatically rather than silently hidden.
+    var FILTERS_STORAGE_KEY = "topoFilters";
+    var DEFAULT_FILTERS = { master: true, monitors: true, database: true, movers: true, groups: null };
+
+    function loadFilters() {
+        try {
+            var saved = JSON.parse(localStorage.getItem(FILTERS_STORAGE_KEY));
+            if (saved && typeof saved === "object") {
+                return {
+                    master: saved.master !== false,
+                    monitors: saved.monitors !== false,
+                    database: saved.database !== false,
+                    movers: saved.movers !== false,
+                    groups: Array.isArray(saved.groups) ? saved.groups : null
+                };
+            }
+        } catch (e) {
+            // Storage unavailable/corrupt - fall through to defaults.
+        }
+        return { master: true, monitors: true, database: true, movers: true, groups: null };
+    }
+
+    var topoFilters = loadFilters();
+
+    function saveFilters() {
+        try {
+            localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(topoFilters));
+        } catch (e) {
+            // Storage full/unavailable - the filter simply won't be remembered next time.
+        }
+    }
+
+    // Removes nodes/edges hidden by the current filter from a just-built element list: Master/Monitor(s)/Database
+    // are dropped wholesale per their checkbox, Data Movers additionally per the Transfer Group checklist, any edge
+    // referencing a now-missing node is dropped along with it (this is how, e.g., unchecking Master Server also
+    // removes the Master<->Mover arrows without any extra bookkeeping), and any "host" compound box left with no
+    // remaining visible child is dropped too so it doesn't show up as an empty outline.
+    function applyFilters(elements) {
+        var nodesById = {};
+        elements.forEach(function (el) { if (!el.data.source) { nodesById[el.data.id] = el; } });
+        function isVisible(el) {
+            var kind = el.data.kind;
+            if (kind === "master") { return topoFilters.master; }
+            if (kind === "monitor") { return topoFilters.monitors; }
+            if (kind === "database") { return topoFilters.database; }
+            if (kind === "mover") {
+                if (!topoFilters.movers) { return false; }
+                return !topoFilters.groups || topoFilters.groups.indexOf(el.data.transferGroup || "") !== -1;
+            }
+            return true; // "host" - decided below, once we know whether any child of it survives
+        }
+        var excludedIds = {};
+        Object.keys(nodesById).forEach(function (id) {
+            var el = nodesById[id];
+            if (el.data.kind !== "host" && !isVisible(el)) { excludedIds[id] = true; }
+        });
+        var hostHasVisibleChild = {};
+        Object.keys(nodesById).forEach(function (id) {
+            var el = nodesById[id];
+            if (el.data.kind && el.data.kind !== "host" && el.data.parent && !excludedIds[id]) {
+                hostHasVisibleChild[el.data.parent] = true;
+            }
+        });
+        Object.keys(nodesById).forEach(function (id) {
+            var el = nodesById[id];
+            if (el.data.kind === "host" && !hostHasVisibleChild[id]) { excludedIds[id] = true; }
+        });
+        return elements.filter(function (el) {
+            return el.data.source
+                ? !excludedIds[el.data.source] && !excludedIds[el.data.target]
+                : !excludedIds[el.data.id];
+        });
+    }
+
+    // Distinct Transfer Group names currently reported by the Movers (blank/ungrouped movers are represented by "").
+    function currentGroupNames(data) {
+        var seen = {};
+        var names = [];
+        (data.movers || []).forEach(function (m) {
+            var g = m.transferGroup || "";
+            if (!seen[g]) { seen[g] = true; names.push(g); }
+        });
+        names.sort(function (a, b) { return a.localeCompare(b); });
+        return names;
+    }
+
+    // Rebuilds the Transfer Group checklist inside the Filter dropdown from the latest data (cheap - only a
+    // handful of groups typically exist - so it's simply redone on every render() rather than diffed).
+    function rebuildGroupFilterList(data) {
+        var container = document.getElementById("topoFilterGroupList");
+        var names = currentGroupNames(data);
+        container.innerHTML = "";
+        names.forEach(function (g) {
+            var included = !topoFilters.groups || topoFilters.groups.indexOf(g) !== -1;
+            var domId = "topoFilterGroup-" + (g ? g.replace(/[^a-zA-Z0-9_-]/g, "_") : "none");
+            var wrap = document.createElement("div");
+            wrap.className = "form-check";
+            wrap.innerHTML = '<input class="form-check-input" type="checkbox" id="' + domId + '"' + (included ? " checked" : "") + '>'
+                + '<label class="form-check-label" for="' + domId + '" style="font-size:.78rem;">'
+                + '<span class="dot" style="background:' + (groupColorFor(g) || "#6c757d") + ';"></span>'
+                + (g || "(No group)") + "</label>";
+            container.appendChild(wrap);
+            wrap.querySelector("input").addEventListener("change", function () {
+                if (topoFilters.groups === null) { topoFilters.groups = names.slice(); }
+                var idx = topoFilters.groups.indexOf(g);
+                if (this.checked && idx === -1) { topoFilters.groups.push(g); }
+                if (!this.checked && idx !== -1) { topoFilters.groups.splice(idx, 1); }
+                if (names.every(function (n) { return topoFilters.groups.indexOf(n) !== -1; })) {
+                    topoFilters.groups = null; // every known group checked again -> back to "all" (auto-includes future groups)
+                }
+                saveFilters();
+                syncFilterUiState();
+                render(lastRenderData, false);
+            });
+        });
+    }
+
+    // Reflects the current topoFilters state onto the checkboxes/badge, without triggering their change handlers.
+    function syncFilterUiState() {
+        document.getElementById("topoFilterMaster").checked = topoFilters.master;
+        document.getElementById("topoFilterMonitors").checked = topoFilters.monitors;
+        document.getElementById("topoFilterDatabase").checked = topoFilters.database;
+        document.getElementById("topoFilterMovers").checked = topoFilters.movers;
+        var groupsWrap = document.getElementById("topoFilterGroupsWrap");
+        groupsWrap.style.opacity = topoFilters.movers ? "1" : ".5";
+        groupsWrap.querySelectorAll("input").forEach(function (cb) { cb.disabled = !topoFilters.movers; });
+        var isDefault = topoFilters.master && topoFilters.monitors && topoFilters.database && topoFilters.movers
+            && topoFilters.groups === null;
+        document.getElementById("topoFilterBtn").classList.toggle("topo-filter-active", !isDefault);
+    }
+
     // Node positions the user has manually dragged, remembered across page visits/reloads (same pattern as
     // REFRESH_STORAGE_KEY below) - keyed by node id, storing raw Cytoscape model coordinates. Since the diagram is
     // always re-fit (scaled/panned) to the container after being laid out, coordinates remain a faithful relative
@@ -413,11 +630,34 @@
         }
     }
 
+    // Raw JSON from the last successful /do/monitoring/topology/data fetch, kept around purely so the
+    // "Reset layout" toolbar button (see resetLayout()) can rebuild the diagram on demand without waiting for
+    // the next auto-refresh tick.
+    var lastRenderData = null;
+
+    // Discards any manually-dragged positions (both this browser's saved ones and whatever the user just dragged
+    // in the current view) and re-lays the diagram out from scratch using computeDefaultPositions() - i.e. Master/
+    // Monitor/Database/Data-Mover-by-TransferGroup, exactly as a brand new visit to this page would look.
+    function resetLayout() {
+        try {
+            localStorage.removeItem(NODE_POSITIONS_STORAGE_KEY);
+        } catch (e) {
+            // Storage unavailable - nothing was saved anyway, so there's nothing to clear.
+        }
+        if (!cy || !lastRenderData) { return; }
+        topoFittedAll = false;
+        render(lastRenderData, true);
+    }
+
     // Default first-time layout (used only for a node id that has no saved position yet): Master Server top-center,
-    // Database top-right, Monitor Server(s) top-left, and Data Movers along the bottom. A Monitor sharing a host
-    // with a Data Mover or the Master is grouped with it instead (same host = same box), so in practice this only
-    // places a Monitor top-left when it runs on its own dedicated host - i.e. it isn't "external" to anything else.
-    // Data Movers sharing the same TransferGroup are placed next to each other along the bottom row.
+    // Database top-right, Monitor Server(s) top-left, and Data Movers below. A Monitor sharing a host with a Data
+    // Mover or the Master is grouped with it instead (same host = same box), so in practice this only places a
+    // Monitor top-left when it runs on its own dedicated host - i.e. it isn't "external" to anything else.
+    // Data Movers are arranged in vertical columns by TransferGroup (one column per group, movers of that group
+    // stacked top-to-bottom within it), with the group columns themselves laid out left-to-right below the Master
+    // Server - rather than one long horizontal row - so the diagram stays as narrow/scannable as possible even with
+    // many movers, and every mover in a given group (already colour-coded via groupColorFor()) is visually grouped
+    // together too.
     function computeDefaultPositions(nodes) {
         var childrenByHost = {};
         nodes.forEach(function (n) {
@@ -437,21 +677,25 @@
             });
             hostsByBucket[BUCKET_NAME[bestKind]].push(hostId);
         });
+
+        function groupOf(hostId) {
+            var mover = childrenByHost[hostId].filter(function (n) { return n.data.kind === "mover"; })[0];
+            return (mover && mover.data.transferGroup) || "";
+        }
         hostsByBucket.bottom.sort(function (a, b) {
-            function groupOf(hostId) {
-                var mover = childrenByHost[hostId].filter(function (n) { return n.data.kind === "mover"; })[0];
-                return (mover && mover.data.transferGroup) || "";
-            }
             return groupOf(a).localeCompare(groupOf(b)) || a.localeCompare(b);
         });
 
-        var BUCKET_BASE_X = { "top-left": 60, "top-center": 640, "top-right": 1200, bottom: 60 };
-        var BUCKET_Y = { "top-left": 80, "top-center": 80, "top-right": 80, bottom: 440 };
+        var BUCKET_BASE_X = { "top-left": 60, "top-center": 640, "top-right": 1200 };
+        // Monitor(s) top-left and the Database top-right sit a bit *above* the Master Server itself (lower Y),
+        // rather than all three sharing the same row - so the Master reads as the visually central/anchor node,
+        // flanked by (and slightly below) the other two rather than lined up flatly alongside them.
+        var BUCKET_Y = { "top-left": 40, "top-center": 110, "top-right": 40 };
         var HOST_SPACING_X = 260;
         var CHILD_SPACING_Y = 90;
 
         var positions = {};
-        Object.keys(hostsByBucket).forEach(function (bucket) {
+        ["top-left", "top-center", "top-right"].forEach(function (bucket) {
             hostsByBucket[bucket].forEach(function (hostId, hostIdx) {
                 var x = BUCKET_BASE_X[bucket] + hostIdx * HOST_SPACING_X;
                 var y = BUCKET_Y[bucket];
@@ -459,6 +703,33 @@
                     positions[n.data.id] = { x: x, y: y + childIdx * CHILD_SPACING_Y };
                 });
             });
+        });
+
+        // Bottom bucket (Data Movers): one column per TransferGroup, hosts of that group stacked vertically within
+        // it (hostsByBucket.bottom is already sorted group-then-host, so column order follows group name order,
+        // blank/ungrouped movers first). A running per-group Y cursor (rather than a uniform "row index * spacing")
+        // correctly accounts for hosts that have more than one child stacked inside them (e.g. a Monitor co-located
+        // with a Data Mover on the same host). The vertical spacing here is deliberately larger than
+        // CHILD_SPACING_Y above: each Data Mover sits inside its own "host" box (dashed border, DNS name label
+        // floating just above it via text-valign:top/text-margin-y), which needs more headroom than a bare node
+        // does or the label of one mover collides with the box of the mover stacked right above it.
+        var BOTTOM_BASE_X = 60;
+        var BOTTOM_BASE_Y = 440;
+        var GROUP_SPACING_X = 260;
+        var MOVER_SPACING_Y = 150;
+        var groupColumnIndex = {};
+        var groupYCursor = {};
+        hostsByBucket.bottom.forEach(function (hostId) {
+            var g = groupOf(hostId);
+            if (!(g in groupColumnIndex)) {
+                groupColumnIndex[g] = Object.keys(groupColumnIndex).length;
+                groupYCursor[g] = BOTTOM_BASE_Y;
+            }
+            var x = BOTTOM_BASE_X + groupColumnIndex[g] * GROUP_SPACING_X;
+            childrenByHost[hostId].forEach(function (n, childIdx) {
+                positions[n.data.id] = { x: x, y: groupYCursor[g] + childIdx * MOVER_SPACING_Y };
+            });
+            groupYCursor[g] += childrenByHost[hostId].length * MOVER_SPACING_Y;
         });
         return positions;
     }
@@ -505,26 +776,85 @@
         if (topRow.length && topRow.length < cy.nodes().length) {
             cy.fit(topRow, 40);
             // Don't let a lone Master box (few/no other top-row elements) zoom in ridiculously far either.
-            if (cy.zoom() > 1.3) { cy.zoom(1.3); cy.center(topRow); }
+            if (cy.zoom() > 1.3) { cy.zoom(1.3); }
+            alignTopRow(topRow);
         } else {
             cy.fit(cy.elements(), 30);
         }
+    }
+
+    // cy.fit()/cy.center() place their target elements dead-centre of the viewport - fine when the target *is*
+    // the whole diagram, but here it wastes roughly half of any leftover width/height as pure empty margin above
+    // and to the left of the top row, instead of using the whole container to preview the Data Mover groups that
+    // extend further down (and to the right, one column per TransferGroup) below/beside it. Anchor the top row's
+    // own top-left corner near the container's top-left corner (small fixed padding) instead.
+    function alignTopRow(topRow) {
+        var PADDING = 40;
+        var zoom = cy.zoom();
+        var bb = topRow.boundingBox();
+        var pan = cy.pan();
+        var renderedLeft = bb.x1 * zoom + pan.x;
+        var renderedTop = bb.y1 * zoom + pan.y;
+        cy.pan({ x: pan.x + (PADDING - renderedLeft), y: pan.y + (PADDING - renderedTop) });
     }
 
     function fitAll() {
         cy.fit(cy.elements(), 30);
     }
 
-    function render(data) {
+    // "Fit all"/"zoom back" only make sense when there's at least one Data Mover currently on the diagram -
+    // otherwise the "top row" *is* the whole diagram, and toggling between the two view modes does nothing.
+    // Disable the button in that case (e.g. the Filter dropdown has Data Movers unchecked), and snap the toggle
+    // itself back to its default "zoom out" state/icon so it isn't left showing "zoom back" for a view that no
+    // longer exists.
+    function updateFitAllBtnState(hasVisibleMovers) {
+        var btn = document.getElementById("topoFitAllBtn");
+        btn.disabled = !hasVisibleMovers;
+        if (!hasVisibleMovers) {
+            topoFittedAll = false;
+            btn.querySelector("i").className = "bi bi-arrows-angle-expand";
+            btn.title = "No Data Movers shown - adjust the Filter to zoom out";
+        } else {
+            btn.title = topoFittedAll ? "Zoom back to Master/Monitor/Database" : "Zoom out to see all Data Movers";
+        }
+    }
+
+    function render(data, forceDefault) {
         var hasAny = data && (data.master || (data.movers && data.movers.length));
-        document.getElementById("topoEmptyState").style.display = hasAny ? "none" : "flex";
-        if (!hasAny) { return; }
+        if (!hasAny) {
+            document.getElementById("topoEmptyStateMessage").textContent = "No topology data available yet.";
+            document.getElementById("topoEmptyState").style.display = "flex";
+            return;
+        }
+        lastRenderData = data;
         if (!cy) { initCy(); }
         cy.style(buildStyle());
+        rebuildGroupFilterList(data);
 
-        var elements = buildElements(data);
+        var moverCount = (data.movers || []).length;
+        var upCount = (data.movers || []).filter(function (m) { return m.up; }).length;
+        document.getElementById("topoSubtitle").textContent = moverCount
+            ? (upCount + "/" + moverCount + " Data Movers up")
+            : "No Data Movers registered";
+
+        var elements = applyFilters(buildElements(data));
+        updateFitAllBtnState(elements.some(function (el) { return !el.data.source && el.data.kind === "mover"; }));
+        if (!elements.length) {
+            // Every component type/Transfer Group is currently unchecked in the Filter dropdown: nothing to lay
+            // out, so clear the canvas and show a distinct message rather than the generic "no data" one.
+            if (cy) { cy.elements().remove(); }
+            cy.scratch("_topoSignature", null);
+            document.getElementById("topoEmptyStateMessage").textContent = "No components match the current filter.";
+            document.getElementById("topoEmptyState").style.display = "flex";
+            return;
+        }
+        document.getElementById("topoEmptyState").style.display = "none";
+
         var signature = elementIdSignature(elements);
-        var sameShape = cy.scratch("_topoSignature") === signature && cy.elements().length > 0;
+        // forceDefault (see resetLayout()) always takes the "rebuild from scratch" branch below, even when the
+        // shape hasn't changed, so a manual "Reset layout" request also works when nothing else about the
+        // topology changed since the last refresh.
+        var sameShape = !forceDefault && cy.scratch("_topoSignature") === signature && cy.elements().length > 0;
 
         if (sameShape) {
             // Same components/hosts as last time: update each element's data/classes in place so
@@ -535,7 +865,7 @@
                 if (ele.length) { ele.data(el.data); }
             });
         } else {
-            var savedPositions = loadSavedPositions();
+            var savedPositions = forceDefault ? {} : loadSavedPositions();
             var defaultPositions = computeDefaultPositions(elements.filter(function (el) { return !el.data.source; }));
             elements.forEach(function (el) {
                 if (el.data.source) { return; } // edge, not a node
@@ -554,12 +884,6 @@
             fitTopRow();
         }
         cy.scratch("_topoSignature", signature);
-
-        var moverCount = (data.movers || []).length;
-        var upCount = (data.movers || []).filter(function (m) { return m.up; }).length;
-        document.getElementById("topoSubtitle").textContent = moverCount
-            ? (upCount + "/" + moverCount + " Data Movers up")
-            : "No Data Movers registered";
     }
 
     function refresh(manual) {
@@ -606,6 +930,49 @@
             this.title = "Zoom out to see all Data Movers";
         }
     });
+    document.getElementById("topoResetLayoutBtn").addEventListener("click", function () {
+        resetLayout();
+        // Also restore this toolbar button's own icon/label back to its "top row" default, since resetLayout()
+        // always re-fits to the top row (see resetLayout()/topoFittedAll = false above).
+        var fitAllBtn = document.getElementById("topoFitAllBtn");
+        fitAllBtn.querySelector("i").className = "bi bi-arrows-angle-expand";
+        fitAllBtn.title = "Zoom out to see all Data Movers";
+    });
+    // Filter dropdown: Master/Monitors/Database/Movers checkboxes (the Transfer Group checklist itself is wired
+    // per-checkbox inside rebuildGroupFilterList(), since it's rebuilt from the data on every render()).
+    [["topoFilterMaster", "master"], ["topoFilterMonitors", "monitors"], ["topoFilterDatabase", "database"],
+        ["topoFilterMovers", "movers"]].forEach(function (pair) {
+        document.getElementById(pair[0]).addEventListener("change", function () {
+            topoFilters[pair[1]] = this.checked;
+            saveFilters();
+            syncFilterUiState();
+            if (lastRenderData) { render(lastRenderData, false); }
+        });
+    });
+    document.getElementById("topoFilterGroupsAll").addEventListener("click", function (evt) {
+        evt.preventDefault();
+        topoFilters.groups = null;
+        saveFilters();
+        syncFilterUiState();
+        rebuildGroupFilterList(lastRenderData || {});
+        if (lastRenderData) { render(lastRenderData, false); }
+    });
+    document.getElementById("topoFilterGroupsNone").addEventListener("click", function (evt) {
+        evt.preventDefault();
+        topoFilters.groups = [];
+        saveFilters();
+        syncFilterUiState();
+        rebuildGroupFilterList(lastRenderData || {});
+        if (lastRenderData) { render(lastRenderData, false); }
+    });
+    document.getElementById("topoFilterResetBtn").addEventListener("click", function () {
+        topoFilters = { master: true, monitors: true, database: true, movers: true, groups: null };
+        saveFilters();
+        syncFilterUiState();
+        rebuildGroupFilterList(lastRenderData || {});
+        if (lastRenderData) { render(lastRenderData, false); }
+    });
+    syncFilterUiState();
     document.getElementById("topoFullscreenBtn").addEventListener("click", function () {
         var el = document.getElementById("topoContainer");
         if (!document.fullscreenElement) {
@@ -614,6 +981,19 @@
             (document.exitFullscreen || document.webkitExitFullscreen || function () {}).call(document);
         }
     });
+    // Many mobile browsers (most notably iOS Safari) don't implement the Fullscreen API for arbitrary elements
+    // at all (only <video> supports it there), so the button above silently does nothing on those devices. Feature
+    // -detect support up front and hide the button entirely when it wouldn't work, rather than leave a dead control
+    // around - it's then also automatically left out of the mobile "..." actions menu (see rebuildTopoActionsMenu()
+    // below, which skips any icon-bar button that isn't visible).
+    (function () {
+        var docEl = document.documentElement;
+        var fullscreenSupported = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled) &&
+            !!(docEl.requestFullscreen || docEl.webkitRequestFullscreen);
+        if (!fullscreenSupported) {
+            document.getElementById("topoFullscreenBtn").style.display = "none";
+        }
+    }());
     document.addEventListener("fullscreenchange", function () {
         if (cy) { cy.resize(); topoFittedAll ? fitAll() : fitTopRow(); }
     });
@@ -648,6 +1028,48 @@
 
     refresh(false);
     applyRefreshInterval(savedRefreshSeconds);
+    // Phone-only legend toggle (see the "@media (max-width:700px)" rules above): the legend defaults to hidden
+    // below that breakpoint via CSS alone, replaced by this small pill - so it never covers a large chunk of the
+    // diagram on a small device unless the user explicitly asks to see it.
+    var topoLegendPanel = document.getElementById("topoLegend");
+    var topoLegendToggleBtn = document.getElementById("topoLegendToggleBtn");
+    var topoLegendToggleIcon = topoLegendToggleBtn.querySelector("i");
+    var topoLegendToggleLabel = document.getElementById("topoLegendToggleLabel");
+    topoLegendToggleBtn.addEventListener("click", function () {
+        var isOpen = topoLegendPanel.classList.toggle("topo-legend-open");
+        topoLegendToggleIcon.className = isOpen ? "bi bi-x-lg" : "bi bi-info-circle";
+        topoLegendToggleLabel.textContent = isOpen ? "Hide" : "Legend";
+        topoLegendToggleBtn.title = isOpen ? "Hide the legend" : "Show the legend";
+    });
+
+    // Mobile "..." actions menu (see the "@media (max-width:700px)" rule above): mirrors the icon-bar buttons
+    // (Refresh now / Fit all / Reset layout / Fullscreen) so they stay reachable on phones, where the bar itself
+    // is hidden because it doesn't fit next to the refresh-interval pills. Rebuilt every time the menu is opened
+    // so it always reflects the live icon/title of each button (e.g. the Fit-all button toggles between
+    // "Zoom out to see all Data Movers" and "Zoom back to Master/Monitor/Database").
+    var topoActionsMenuEl = document.getElementById("topoActionsMenu");
+    var topoActionsToggleEl = document.getElementById("topoActionsToggle");
+    function rebuildTopoActionsMenu() {
+        topoActionsMenuEl.innerHTML = "";
+        Array.from(document.getElementById("topoIconBar").querySelectorAll("button.topo-icon-btn")).forEach(function (btn) {
+            if (btn.style.display === "none") { return; }
+            var li = document.createElement("li");
+            var item = document.createElement("a");
+            item.href = "#";
+            item.className = "dropdown-item d-flex align-items-center gap-2" + (btn.disabled ? " disabled" : "");
+            item.title = btn.title;
+            var icon = btn.querySelector("i");
+            item.innerHTML = (icon ? '<i class="' + icon.className + '"></i>' : "") + "<span>" + btn.title + "</span>";
+            item.addEventListener("click", function (evt) {
+                evt.preventDefault();
+                if (!btn.disabled) { btn.click(); }
+            });
+            li.appendChild(item);
+            topoActionsMenuEl.appendChild(li);
+        });
+    }
+    topoActionsToggleEl.addEventListener("show.bs.dropdown", rebuildTopoActionsMenu);
+
     window.addEventListener("beforeunload", function () { if (refreshTimer) { clearInterval(refreshTimer); } });
 }());
 </script>

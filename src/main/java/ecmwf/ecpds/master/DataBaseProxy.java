@@ -2523,6 +2523,15 @@ final class DataBaseProxy implements DataBaseInterface {
 
     /** {@inheritDoc} */
     @Override
+    public void checkApiPermission(final String userNameAndPassword, final String service)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("checkApiPermission(" + service + ")");
+        dataBaseInterface.checkApiPermission(userNameAndPassword, service);
+        monitor.done();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public void addApiEvent(final ApiEvent event) throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("addApiEvent()");
         dataBaseInterface.addApiEvent(event);

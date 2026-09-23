@@ -4060,17 +4060,58 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                 if (hostName == null || hostName.isBlank() || result.containsKey(hostName)) {
                     continue;
                 }
-                try {
-                    final var geo = DataBaseImpl.resolveGeoIp(hostName);
-                    if (geo != null && geo.latitude() != null && geo.longitude() != null) {
-                        result.put(hostName, new GeoPoint(geo.latitude(), geo.longitude(), geo.country()));
+                var geo = _resolveGeoIpQuietly(hostName);
+                if ((geo == null || geo.latitude() == null || geo.longitude() == null)) {
+                    // hostName did not resolve as-is - this is expected for ProxyHost/Continental Data Mover
+                    // entries (see getActiveProxyHostNames()), whose "name" is their registered logical root
+                    // identifier (see MoverServer#getRoot(), typically the [Login] "root" setting), matching the
+                    // *name* of the associated Proxy-type Host entity (see the "Continental Data Movers"
+                    // architecture doc) - not a DNS-resolvable hostname or IP address in its own right, and not
+                    // necessarily related to any TransferServer entry either, since a Continental Data Mover talks
+                    // to the Master purely over its REST control channel and is never registered as an RMI-backed
+                    // TransferServer. Look up that Host entity by name and reuse its own already-resolved location
+                    // instead, so Continental Data Movers get a marker on the "Live ECPDS Earth" globe just like
+                    // any other Host.
+                    try {
+                        final var proxyHost = master.getECpdsBase().getHost(hostName);
+                        final var location = proxyHost != null ? proxyHost.getHostLocation() : null;
+                        if (location != null && location.getLatitude() != null && location.getLongitude() != null) {
+                            // getHost() above already resolved/cached this Host's location (auto GeoIP lookup by
+                            // its own configured hostname/IP, any [GeoIP] forced override, or its manually-entered
+                            // coordinates) - reuse it as-is rather than re-resolving.
+                            geo = new DataBaseImpl.GeoIpResult(location.getLatitude(), location.getLongitude(), null,
+                                    null, null, null);
+                        }
+                    } catch (final Exception e) {
+                        _log.debug("Looking up Host for GeoIP fallback: {}", hostName, e);
                     }
-                } catch (final Exception e) {
-                    _log.debug("Resolving geolocation for {}", hostName, e);
+                }
+                if (geo != null && geo.latitude() != null && geo.longitude() != null) {
+                    result.put(hostName, new GeoPoint(geo.latitude(), geo.longitude(), geo.country()));
                 }
             }
         }
         return result;
+    }
+
+    /**
+     * Resolves a single hostName's geolocation via {@link DataBaseImpl#resolveGeoIp(String)}, returning {@code null}
+     * instead of throwing on any failure (e.g. the name/address cannot be resolved via DNS) - a thin wrapper used by
+     * {@link #getGeoLocations(String[])} to attempt more than one candidate hostName per entry without duplicating its
+     * try/catch/logging.
+     *
+     * @param hostName
+     *            the host name or address to resolve
+     *
+     * @return the resolved {@link ecmwf.ecpds.master.DataBaseImpl.GeoIpResult GeoIpResult}, or {@code null}
+     */
+    private static DataBaseImpl.GeoIpResult _resolveGeoIpQuietly(final String hostName) {
+        try {
+            return DataBaseImpl.resolveGeoIp(hostName);
+        } catch (final Exception e) {
+            _log.debug("Resolving geolocation for {}", hostName, e);
+            return null;
+        }
     }
 
     /**

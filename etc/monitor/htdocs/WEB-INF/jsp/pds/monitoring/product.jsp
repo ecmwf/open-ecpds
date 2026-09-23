@@ -157,7 +157,7 @@ th {
 	    _updateProductLayoutBtn();
 	}
 	document.addEventListener("DOMContentLoaded", function () {
-		sortTable(2); // Sort by 'Type' column when the page loads
+		sortTable(${allProducts ? 1 : 0} + 2); // Sort by 'Type' column when the page loads
 		// Apply saved layout preference
 		if (_pLayout === 'single') {
 		    var tables = document.querySelectorAll('.sortableTable');
@@ -178,6 +178,9 @@ th {
 			<span class="mon-label">Product</span>
 			<span class="mon-value">
 				<c:choose>
+					<c:when test="${allProducts}">
+						All Products <span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted">All cycles</span>
+					</c:when>
 					<c:when test="${not empty productStatus.time}">
 						<a href="<bean:message key="monitoring.basepath"/>/summary/${productName}/${productStatus.time}">${productStatus.time}-${productName}</a><c:if test="${not empty step and not empty type}">, Step <u>${step}</u>, Type <u>${type}</u></c:if>
 					</c:when>
@@ -246,6 +249,10 @@ th {
 	<c:set var="arrival" value="${empty step ? 'Arrival' : 'Update'}"/>
 	<c:set var="totalSteps" value="${fn:length(productStepStatii)}"/>
 	<c:set var="splitIndex" value="${totalSteps % 2 == 0 ? totalSteps / 2 : (totalSteps + 1) / 2}"/>
+	<%-- When showing all products merged onto one page (bare /monitoring/summary), an extra "Prod" column is
+	     added before the others so rows from different products stay identifiable; colOffset shifts every other
+	     column's sortTable() index accordingly. --%>
+	<c:set var="colOffset" value="${allProducts ? 1 : 0}"/>
 
 	<%-- Shared thead macro --%>
 	<div class="d-flex gap-2 align-items-start">
@@ -253,13 +260,16 @@ th {
 	<table class="sortableTable table table-sm table-striped table-hover table-bordered align-middle" style="font-size:0.78rem; white-space:nowrap;">
 		<thead class="table-info">
 			<tr>
-				<th onclick="sortTable(0)" data-order="asc" style="cursor:pointer;" title="Sort by Time (UTC)">T <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-				<th onclick="sortTable(1)" data-order="asc" style="cursor:pointer;" title="Sort by Step">Step <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-				<th onclick="sortTable(2)" data-order="asc" style="cursor:pointer;" title="Sort by Type">Type <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-				<th onclick="sortTable(3)" data-order="asc" style="cursor:pointer;" title="Sort by Notification">Notif. <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-				<th onclick="sortTable(4)" data-order="asc" style="cursor:pointer;" title="Sort by ${arrival} Time (UTC)">${arrival} <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-				<th onclick="sortTable(5)" data-order="asc" style="cursor:pointer;" title="Sort by Schedule (UTC)">Sched. <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-				<th onclick="sortTable(6)" data-order="asc" style="cursor:pointer;" title="Sort by Before">Before <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+				<c:if test="${allProducts}">
+				<th onclick="sortTable(0)" data-order="asc" style="cursor:pointer;" title="Sort by Product">Prod <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+				</c:if>
+				<th onclick="sortTable(${colOffset + 0})" data-order="asc" style="cursor:pointer;" title="Sort by Time (UTC)">T <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+				<th onclick="sortTable(${colOffset + 1})" data-order="asc" style="cursor:pointer;" title="Sort by Step">Step <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+				<th onclick="sortTable(${colOffset + 2})" data-order="asc" style="cursor:pointer;" title="Sort by Type">Type <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+				<th onclick="sortTable(${colOffset + 3})" data-order="asc" style="cursor:pointer;" title="Sort by Notification">Notif. <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+				<th onclick="sortTable(${colOffset + 4})" data-order="asc" style="cursor:pointer;" title="Sort by ${arrival} Time (UTC)">${arrival} <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+				<th onclick="sortTable(${colOffset + 5})" data-order="asc" style="cursor:pointer;" title="Sort by Schedule (UTC)">Sched. <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+				<th onclick="sortTable(${colOffset + 6})" data-order="asc" style="cursor:pointer;" title="Sort by Before">Before <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
 				<th class="text-center" title="Status"></th>
 			</tr>
 		</thead>
@@ -271,19 +281,30 @@ th {
 					<table class="sortableTable table table-sm table-striped table-hover table-bordered align-middle" style="font-size:0.78rem; white-space:nowrap;">
 						<thead class="table-info">
 							<tr>
-								<th onclick="sortTable(0)" data-order="asc" style="cursor:pointer;" title="Sort by Time (UTC)">T <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-								<th onclick="sortTable(1)" data-order="asc" style="cursor:pointer;" title="Sort by Step">Step <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-								<th onclick="sortTable(2)" data-order="asc" style="cursor:pointer;" title="Sort by Type">Type <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-								<th onclick="sortTable(3)" data-order="asc" style="cursor:pointer;" title="Sort by Notification">Notif. <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-								<th onclick="sortTable(4)" data-order="asc" style="cursor:pointer;" title="Sort by ${arrival} Time (UTC)">${arrival} <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-								<th onclick="sortTable(5)" data-order="asc" style="cursor:pointer;" title="Sort by Schedule (UTC)">Sched. <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
-								<th onclick="sortTable(6)" data-order="asc" style="cursor:pointer;" title="Sort by Before">Before <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+								<c:if test="${allProducts}">
+								<th onclick="sortTable(0)" data-order="asc" style="cursor:pointer;" title="Sort by Product">Prod <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+								</c:if>
+								<th onclick="sortTable(${colOffset + 0})" data-order="asc" style="cursor:pointer;" title="Sort by Time (UTC)">T <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+								<th onclick="sortTable(${colOffset + 1})" data-order="asc" style="cursor:pointer;" title="Sort by Step">Step <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+								<th onclick="sortTable(${colOffset + 2})" data-order="asc" style="cursor:pointer;" title="Sort by Type">Type <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+								<th onclick="sortTable(${colOffset + 3})" data-order="asc" style="cursor:pointer;" title="Sort by Notification">Notif. <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+								<th onclick="sortTable(${colOffset + 4})" data-order="asc" style="cursor:pointer;" title="Sort by ${arrival} Time (UTC)">${arrival} <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+								<th onclick="sortTable(${colOffset + 5})" data-order="asc" style="cursor:pointer;" title="Sort by Schedule (UTC)">Sched. <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
+								<th onclick="sortTable(${colOffset + 6})" data-order="asc" style="cursor:pointer;" title="Sort by Before">Before <i class="bi bi-arrow-down-up text-muted" style="font-size:0.6rem;"></i></th>
 								<th class="text-center" title="Status"></th>
 							</tr>
 						</thead>
 						<tbody>
 				</c:if>
 				<tr>
+						<c:if test="${allProducts}">
+						<td class="text-nowrap">
+							<a title="See all cycles for this product"
+							   href="<bean:message key="monitoring.basepath"/>/summary/${stepStatus.product}">
+								${stepStatus.product}
+							</a>
+						</td>
+						</c:if>
 						<td class="text-nowrap">${stepStatus.time}</td>
 						<td class="text-nowrap">
 							<a title="See history for Product, Time, Step and Type"

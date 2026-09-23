@@ -892,6 +892,27 @@ public final class ECpdsApplication extends Application {
         }
 
         /**
+         * Gets the raw generation status code (e.g. "DONE", "INIT", or blank if not yet known) - as opposed to
+         * {@link #getStatus()} which returns the human-friendly label shown in the web interface.
+         *
+         * @return the status code
+         */
+        public String getStatusCode() {
+            return pss.getGenerationStatusCode();
+        }
+
+        /**
+         * Gets the numeric generation status level used to colour the status dot in the web interface (see
+         * {@code GenerationMonitoringStatus.STATUS_*} constants: -1 none, 1..4 on schedule/ahead by decreasing margin,
+         * 5 not received).
+         *
+         * @return the status level
+         */
+        public int getStatusLevel() {
+            return pss.getGenerationStatus();
+        }
+
+        /**
          * Gets the minutes before schedule.
          *
          * @return the minutes before schedule

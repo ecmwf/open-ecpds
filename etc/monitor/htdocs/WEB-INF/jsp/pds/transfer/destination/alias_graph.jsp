@@ -598,8 +598,10 @@
     }
   });
 
-  /* Hide the fullscreen button if the Fullscreen API is not supported */
-  if (!document.documentElement.requestFullscreen) {
+  /* Hide the fullscreen button if the Fullscreen API is not supported (most notably iOS Safari, which doesn't
+     implement it for arbitrary elements at all - only <video> supports it there). */
+  if (!((document.fullscreenEnabled || document.webkitFullscreenEnabled) &&
+        (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen))) {
     var fsBtn = el('_agFsBtn');
     if (fsBtn) { fsBtn.style.display = 'none'; }
   }

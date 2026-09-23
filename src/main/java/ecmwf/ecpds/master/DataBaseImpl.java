@@ -2408,6 +2408,11 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     }
 
     @Override
+    public void checkApiPermission(final String userNameAndPassword, final String service) throws DataBaseException {
+        checkUser(userNameAndPassword, service);
+    }
+
+    @Override
     public void addApiEvent(final ApiEvent event) throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("addApiEvent()");
         ecpds.insert(event, false);

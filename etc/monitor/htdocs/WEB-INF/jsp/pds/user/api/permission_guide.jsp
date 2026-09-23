@@ -66,6 +66,7 @@
           <tr><td><code>incomingAssociationList</code></td><td>Incoming Associations</td><td>List all incoming-user/destination associations.</td></tr>
           <tr><td><code>incomingCategoryAdd</code></td><td>Incoming Associations</td><td>Add a category to an incoming user.</td></tr>
           <tr><td><code>updateHostOption</code></td><td>Other</td><td>Update a configuration option on a transfer host.</td></tr>
+          <tr><td><code>monitoringSummaryList</code></td><td>Monitoring</td><td>Read the product monitoring summary (REST <code>v1/monitoring/summary</code>, <code>v1/monitoring/summary/{product}</code>, <code>v1/monitoring/summary/{product}/{time}</code> and the step/type history) - the same data shown in the web interface at <code>/do/monitoring/summary/</code>.</td></tr>
         </tbody>
       </table>
     </div>

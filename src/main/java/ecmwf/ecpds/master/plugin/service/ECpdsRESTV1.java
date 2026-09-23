@@ -27,7 +27,9 @@ package ecmwf.ecpds.master.plugin.service;
  */
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +59,9 @@ import ecmwf.common.database.DestinationBackup;
 import ecmwf.common.text.BASE64Coder;
 import ecmwf.common.version.Version;
 import ecmwf.ecpds.master.MasterManager;
+import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStepStatusHome;
+import ecmwf.ecpds.master.plugin.http.model.monitoring.ProductStepStatus;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 
 /**
@@ -67,6 +71,15 @@ import ecmwf.ecpds.master.transfer.DestinationOption;
 public final class ECpdsRESTV1 {
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(ECpdsRESTV1.class);
+
+    /**
+     * The service name used to gate access to every {@code monitoring/summary*} endpoint below - a single permission
+     * covers the merged all-products/all-cycles list, the per-product all-cycles list, the per-product/cycle list and
+     * the per-step/type history, since they're all just different scopes/filters of the same underlying "read the
+     * product monitoring summary" data. Shown as a checkbox in the API client Service Permissions guide
+     * ({@code /do/user/api/{clientId}}).
+     */
+    private static final String MONITORING_SUMMARY_SERVICE = "monitoringSummaryList";
 
     // Version
 
@@ -916,7 +929,100 @@ public final class ECpdsRESTV1 {
     }
 
     /**
-     * Monitoring status list.
+     * Monitoring summary list - every product/cycle currently known, optionally narrowed down with the
+     * {@code product}/{@code time}/{@code step}/{@code type}/{@code status} query filters. Mirrors the merged "All
+     * Cycles and Products" view available in the web interface at {@code /do/monitoring/summary/}.
+     *
+     * @param authString
+     *            the auth string
+     * @param request
+     *            the request
+     * @param product
+     *            optional product name filter (exact match, case-insensitive)
+     * @param time
+     *            optional cycle/time filter (exact match, case-insensitive)
+     * @param step
+     *            optional step filter (exact match)
+     * @param type
+     *            optional product type filter (exact match, case-insensitive)
+     * @param status
+     *            optional raw generation status code filter (e.g. "DONE"), case-insensitive
+     *
+     * @return the response
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("monitoring/summary")
+    public Response summaryList(@HeaderParam("authorization") final String authString,
+            @Context final HttpServletRequest request, @QueryParam("product") final String product,
+            @QueryParam("time") final String time, @QueryParam("step") final String step,
+            @QueryParam("type") final String type, @QueryParam("status") final String status) {
+        _log.debug("summaryList");
+        try {
+            final var userNameAndPassword = _getUserNameAndPassword(authString, request);
+            MasterManager.getDB().checkApiPermission(userNameAndPassword, MONITORING_SUMMARY_SERVICE);
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("stepStatusList", _filterAndConvert(_findAllStepStatii(), product, time, step, type, status));
+            return message.getResponse();
+        } catch (final WebApplicationException w) {
+            _log.warn("summaryList", w);
+            throw w;
+        } catch (final Throwable t) {
+            _log.warn("summaryList", t);
+            return RESTMessage.getErrorMessage(t).getResponse();
+        }
+    }
+
+    /**
+     * Monitoring summary list for a single product - every cycle currently known for it, optionally narrowed down with
+     * the {@code time}/{@code step}/{@code type}/{@code status} query filters. Mirrors the merged "All Cycles" view
+     * available in the web interface at {@code /do/monitoring/summary/{product}}.
+     *
+     * @param authString
+     *            the auth string
+     * @param request
+     *            the request
+     * @param product
+     *            the product
+     * @param time
+     *            optional cycle/time filter (exact match, case-insensitive)
+     * @param step
+     *            optional step filter (exact match)
+     * @param type
+     *            optional product type filter (exact match, case-insensitive)
+     * @param status
+     *            optional raw generation status code filter (e.g. "DONE"), case-insensitive
+     *
+     * @return the response
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("monitoring/summary/{product}")
+    public Response summaryListForProduct(@HeaderParam("authorization") final String authString,
+            @Context final HttpServletRequest request, @PathParam("product") final String product,
+            @QueryParam("time") final String time, @QueryParam("step") final String step,
+            @QueryParam("type") final String type, @QueryParam("status") final String status) {
+        _log.debug("summaryListForProduct");
+        try {
+            final var userNameAndPassword = _getUserNameAndPassword(authString, request);
+            MasterManager.getDB().checkApiPermission(userNameAndPassword, MONITORING_SUMMARY_SERVICE);
+            _checkParameter("product", product);
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("stepStatusList",
+                    _filterAndConvert(_findAllStepStatiiForProduct(product), null, time, step, type, status));
+            return message.getResponse();
+        } catch (final WebApplicationException w) {
+            _log.warn("summaryListForProduct", w);
+            throw w;
+        } catch (final Throwable t) {
+            _log.warn("summaryListForProduct", t);
+            return RESTMessage.getErrorMessage(t).getResponse();
+        }
+    }
+
+    /**
+     * Monitoring status list for a single product/cycle, optionally narrowed down with the
+     * {@code step}/{@code type}/{@code status} query filters.
      *
      * @param authString
      *            the auth string
@@ -926,6 +1032,12 @@ public final class ECpdsRESTV1 {
      *            the product
      * @param time
      *            the time
+     * @param step
+     *            optional step filter (exact match)
+     * @param type
+     *            optional product type filter (exact match, case-insensitive)
+     * @param status
+     *            optional raw generation status code filter (e.g. "DONE"), case-insensitive
      *
      * @return the response
      */
@@ -934,15 +1046,17 @@ public final class ECpdsRESTV1 {
     @Path("monitoring/summary/{product}/{time}")
     public Response stepStatusList(@HeaderParam("authorization") final String authString,
             @Context final HttpServletRequest request, @PathParam("product") final String product,
-            @PathParam("time") final String time) {
+            @PathParam("time") final String time, @QueryParam("step") final String step,
+            @QueryParam("type") final String type, @QueryParam("status") final String status) {
         _log.debug("stepStatusList");
         try {
-            _getUserNameAndPassword(authString, request);
+            final var userNameAndPassword = _getUserNameAndPassword(authString, request);
+            MasterManager.getDB().checkApiPermission(userNameAndPassword, MONITORING_SUMMARY_SERVICE);
             _checkParameter("product", product);
             _checkParameter("time", time);
             final var message = RESTMessage.getSuccessMessage();
             message.put("stepStatusList",
-                    ECpdsApplication.toProductStepStatusForRESTList(ProductStepStatusHome.findAll(product, time)));
+                    _filterAndConvert(ProductStepStatusHome.findAll(product, time), null, null, step, type, status));
             return message.getResponse();
         } catch (final WebApplicationException w) {
             _log.warn("stepStatusList", w);
@@ -954,7 +1068,7 @@ public final class ECpdsRESTV1 {
     }
 
     /**
-     * Monitoring status list.
+     * Monitoring status history list.
      *
      * @param authString
      *            the auth string
@@ -980,7 +1094,8 @@ public final class ECpdsRESTV1 {
             @PathParam("type") final String type) {
         _log.debug("stepStatusHistoryList");
         try {
-            _getUserNameAndPassword(authString, request);
+            final var userNameAndPassword = _getUserNameAndPassword(authString, request);
+            MasterManager.getDB().checkApiPermission(userNameAndPassword, MONITORING_SUMMARY_SERVICE);
             _checkParameter("product", product);
             _checkParameter("time", time);
             _checkParameter("step", step);
@@ -1128,6 +1243,100 @@ public final class ECpdsRESTV1 {
     }
 
     // Utilities
+
+    /**
+     * Every product/cycle currently known to the monitoring subsystem (the in-memory {@link ProductStatusHome} cache),
+     * each expanded into its full list of step statuses - i.e. the same data merged together for the "All Cycles and
+     * Products" web view at {@code /do/monitoring/summary/}.
+     *
+     * @return the collection
+     *
+     * @throws ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException
+     *             the monitoring exception
+     */
+    private static Collection<ProductStepStatus> _findAllStepStatii() throws Exception {
+        final List<ProductStepStatus> result = new ArrayList<>();
+        for (final var ps : ProductStatusHome.findFromMemory().values()) {
+            result.addAll(ProductStepStatusHome.findAll(ps.getProduct(), ps.getTime()));
+        }
+        return result;
+    }
+
+    /**
+     * Every cycle currently known for the given product, each expanded into its full list of step statuses - i.e. the
+     * same data merged together for the "All Cycles" web view at {@code /do/monitoring/summary/{product}}.
+     *
+     * @param product
+     *            the product
+     *
+     * @return the collection
+     *
+     * @throws ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException
+     *             the monitoring exception
+     */
+    private static Collection<ProductStepStatus> _findAllStepStatiiForProduct(final String product) throws Exception {
+        final List<ProductStepStatus> result = new ArrayList<>();
+        for (final var ps : ProductStatusHome.findFromMemory().values()) {
+            if (product.equals(ps.getProduct())) {
+                result.addAll(ProductStepStatusHome.findAll(product, ps.getTime()));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Applies the optional {@code product}/{@code time}/{@code step}/{@code type}/{@code status} filters (each
+     * {@code null}/blank filter is ignored) to the given step statuses, then converts the result to the REST- friendly
+     * bean list. String filters match case-insensitively; {@code status} matches the raw generation status code (e.g.
+     * "DONE"), not the human-friendly label.
+     *
+     * @param list
+     *            the unfiltered step statuses
+     * @param product
+     *            optional product name filter
+     * @param time
+     *            optional cycle/time filter
+     * @param step
+     *            optional step filter (must be numeric if provided)
+     * @param type
+     *            optional product type filter
+     * @param status
+     *            optional raw generation status code filter
+     *
+     * @return the filtered, REST-friendly list
+     */
+    private static List<ECpdsApplication.ProductStepStatusForREST> _filterAndConvert(
+            final Collection<ProductStepStatus> list, final String product, final String time, final String step,
+            final String type, final String status) {
+        Long stepValue = null;
+        if (step != null && !step.isBlank()) {
+            try {
+                stepValue = Long.parseLong(step);
+            } catch (final NumberFormatException e) {
+                throw _newException(Status.PRECONDITION_FAILED, "'step' has to be a number");
+            }
+        }
+        final List<ProductStepStatus> filtered = new ArrayList<>();
+        for (final var pss : list) {
+            if (product != null && !product.isBlank() && !product.equalsIgnoreCase(pss.getProduct())) {
+                continue;
+            }
+            if (time != null && !time.isBlank() && !time.equalsIgnoreCase(pss.getTime())) {
+                continue;
+            }
+            if (stepValue != null && stepValue.longValue() != pss.getStep()) {
+                continue;
+            }
+            if (type != null && !type.isBlank() && !type.equalsIgnoreCase(pss.getType())) {
+                continue;
+            }
+            if (status != null && !status.isBlank() && !status.equalsIgnoreCase(pss.getGenerationStatusCode())) {
+                continue;
+            }
+            filtered.add(pss);
+        }
+        return ECpdsApplication.toProductStepStatusForRESTList(filtered);
+    }
 
     /**
      * Gets the user name.

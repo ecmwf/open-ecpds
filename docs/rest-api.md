@@ -53,7 +53,21 @@ If the `Authorization` header is missing or malformed, the API returns `401 Unau
 
 ## Permission Configuration
 
-API users and their allowed operations are defined in the OpenECPDS properties file under the `[API]` section. The format is:
+!!! tip "Prefer the API Client web interface"
+    The recommended way to create and manage API clients is the **API Client Server Permissions** page
+    (`/do/user/api`) in the web interface, rather than editing the `[API]` section of the properties file
+    directly. When a client is created there, a random secret is generated and shown to you **once**; only
+    its hash is stored server-side, and it can be reset at any time without editing configuration files or
+    restarting the server. Permissions can also be toggled per-service from the same page. Setting plaintext
+    passwords directly in the properties file still works (for backward compatibility, and for values already
+    provisioned at startup), but is **not recommended** since the password is stored and distributed in clear
+    text wherever that configuration file is deployed.
+
+API users and their allowed operations can also be defined in the OpenECPDS properties file under the `[API]`
+section — this is mainly useful for bootstrapping the first client(s) before the web interface is available, or
+for automated deployments that provision configuration files. Entries found here are migrated into the
+database-backed API client store on startup (and then manageable from `/do/user/api` like any other client).
+The format is:
 
 ```ini
 [API]
@@ -96,6 +110,13 @@ Allow a user to submit data files and manage destination backups:
 ```ini
 [API]
 datapipeline=pipepass:datafilePut|datafileDel|datafileSize|destinationBackup.*
+```
+
+Allow a user to only read the product monitoring summary (e.g. an operator-facing tool or dashboard):
+
+```ini
+[API]
+ops=opspass:monitoringSummaryList
 ```
 
 !!! note "No permissions = no access"
@@ -664,9 +685,73 @@ Sets a configuration option on a host. The `name` parameter uses dot-notation `<
 
 ### Monitoring
 
+#### `GET /v1/monitoring/summary`
+
+Returns the merged step-status list for **every product and cycle** currently known (the same data shown in the
+web interface's "All Cycles and Products" view at `/do/monitoring/summary/`), optionally narrowed down with the
+query filters below.
+
+**Query parameters:**
+
+| Parameter | Required | Description |
+|---|---|---|
+| `product` | ❌ | Product name filter (exact match, case-insensitive) |
+| `time` | ❌ | Cycle/reference time filter (exact match, case-insensitive, e.g. `00`, `12`) |
+| `step` | ❌ | Step filter (integer, as string) |
+| `type` | ❌ | Step type filter (e.g. `FC`), case-insensitive |
+| `status` | ❌ | Raw generation status code filter (e.g. `DONE`, `INIT`), case-insensitive |
+
+**Service name:** `monitoringSummaryList`
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "stepStatusList": [
+    {
+      "product": "DisseminationProducts", "time": "00", "buffer": 0, "step": 0, "type": "FC",
+      "status": "Done", "statusCode": "DONE", "statusLevel": 1,
+      "arrivalTime": 1732012345, "scheduledTime": 1732012000, "lastUpdate": 1732012345,
+      "productTime": 1731984000, "minutesBeforeSchedule": 5
+    },
+    ...
+  ]
+}
+```
+
+---
+
+#### `GET /v1/monitoring/summary/{product}`
+
+Returns the merged step-status list for **every cycle** currently known for one product (the same data shown in
+the web interface's "All Cycles" view at `/do/monitoring/summary/{product}`), optionally narrowed down with the
+query filters below.
+
+**Path parameters:**
+
+| Parameter | Description |
+|---|---|
+| `product` | Product name (e.g. `DisseminationProducts`) |
+
+**Query parameters:**
+
+| Parameter | Required | Description |
+|---|---|---|
+| `time` | ❌ | Cycle/reference time filter (exact match, case-insensitive) |
+| `step` | ❌ | Step filter (integer, as string) |
+| `type` | ❌ | Step type filter, case-insensitive |
+| `status` | ❌ | Raw generation status code filter, case-insensitive |
+
+**Service name:** `monitoringSummaryList`
+
+**Response:** same shape as `GET /v1/monitoring/summary` above.
+
+---
+
 #### `GET /v1/monitoring/summary/{product}/{time}`
 
-Returns the current monitoring step-status summary for a given product and reference time.
+Returns the current monitoring step-status summary for a given product and reference time, optionally narrowed
+down with the query filters below.
 
 **Path parameters:**
 
@@ -675,7 +760,15 @@ Returns the current monitoring step-status summary for a given product and refer
 | `product` | Product name (e.g. `DisseminationProducts`) |
 | `time` | Reference time string (e.g. `00`, `12`) |
 
-**Service name:** *(basic auth only)*
+**Query parameters:**
+
+| Parameter | Required | Description |
+|---|---|---|
+| `step` | ❌ | Step filter (integer, as string) |
+| `type` | ❌ | Step type filter, case-insensitive |
+| `status` | ❌ | Raw generation status code filter, case-insensitive |
+
+**Service name:** `monitoringSummaryList`
 
 **Response:**
 ```json
@@ -703,7 +796,7 @@ Returns the historical status list for a specific product step.
 | `step` | Step number (integer, as string) |
 | `type` | Step type (e.g. `FC`) |
 
-**Service name:** *(basic auth only)*
+**Service name:** `monitoringSummaryList`
 
 **Response:**
 ```json
