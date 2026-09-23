@@ -35,6 +35,23 @@ Authorization: Basic <base64(username:password)>
     curl -u apiuser:secret https://<host>/ecpds/v1/version
     ```
 
+    !!! tip "Pretty-print the JSON response"
+        Responses are returned as a single line of compact JSON. Pipe `curl`'s output through
+        [`jq`](https://jqlang.github.io/jq/) (or `python3 -m json.tool` if `jq` is not installed) to format it:
+
+        ```bash
+        curl -sk -u apiuser:secret https://<host>/ecpds/v1/monitoring/summary | jq .
+        # or, without jq:
+        curl -sk -u apiuser:secret https://<host>/ecpds/v1/monitoring/summary | python3 -m json.tool
+        ```
+
+        `jq` can also filter/reshape the output directly, e.g. to list only the product and status of each entry:
+
+        ```bash
+        curl -sk -u apiuser:secret https://<host>/ecpds/v1/monitoring/summary \
+          | jq '.stepStatusList[] | {product, time, step, type, status}'
+        ```
+
 === "Python"
 
     ```python
