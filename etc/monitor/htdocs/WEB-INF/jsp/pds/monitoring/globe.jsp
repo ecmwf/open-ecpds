@@ -23,6 +23,19 @@
 #globeContainer{position:relative;width:100%;height:70vh;min-height:420px;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.15);}
 #globeLegend{position:absolute;left:10px;top:10px;z-index:10;background:rgba(20,25,30,.72);color:#eee;border-radius:8px;padding:.5rem .75rem;font-size:.78rem;line-height:1.5;backdrop-filter:blur(2px);}
 #globeLegend .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;}
+/* On narrow (phone) screens the legend's full text (5 lines of colour keys plus the "Arrows point..." /
+   unresolved-transfers notes) is wide/tall enough to cover a large fraction of the globe. Mirror the KPI panel's
+   collapse-to-pill pattern below the same breakpoint: #globeLegendToggleBtn stays hidden and unused above it
+   (desktop/tablet keep today's always-visible legend, unchanged) and only appears below it, replacing the legend
+   with a small pill the user taps to show/hide it on demand. */
+#globeLegendToggleBtn{display:none;}
+@media (max-width:700px){
+    #globeLegendToggleBtn{display:flex;align-items:center;justify-content:center;gap:.35rem;height:36px;padding:0 .85rem;border-radius:18px;background:rgba(20,25,30,.86);color:#9fd6ff;border:1px solid rgba(255,255,255,.12);box-shadow:0 4px 14px rgba(0,0,0,.35);font-size:.76rem;font-weight:600;cursor:pointer;position:absolute;left:10px;top:10px;z-index:10;}
+    #globeLegendToggleBtn i{font-size:.95rem;}
+    #globeLegend{display:none;}
+    #globeLegend.globe-legend-open{display:block;top:56px;}
+}
+[data-bs-theme=light] #globeLegendToggleBtn{background:#f6f8fa;color:#0969da;border-color:rgba(0,0,0,.08);box-shadow:0 4px 14px rgba(0,0,0,.18);}
 #globeBottomRightPanels{position:absolute;right:10px;bottom:10px;z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-height:calc(100% - 20px);pointer-events:none;}
 #globeBottomRightPanels>div,#globeBottomRightPanels>button{pointer-events:auto;position:static;}
 #globeStatsPanel{width:410px;max-width:min(410px,92vw);max-height:calc(100% - 20px);overflow:auto;background:linear-gradient(160deg,rgba(22,27,34,.9),rgba(14,18,24,.86));color:#eee;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:.7rem;font-size:.74rem;line-height:1.3;backdrop-filter:blur(6px);box-shadow:0 8px 28px rgba(0,0,0,.4);}
@@ -248,6 +261,9 @@
             <i class="bi bi-exclamation-triangle" style="color:#d9a441;margin-right:.3rem;"></i><span id="globeUnresolvedNoteText"></span>
         </div>
     </div>
+    <button type="button" id="globeLegendToggleBtn" title="Show/hide the legend">
+        <i class="bi bi-info-circle"></i><span id="globeLegendToggleLabel">Legend</span>
+    </button>
     <div id="globeRightPanels">
         <div id="globeInfoPanel">
             <span class="close-btn" onclick="document.getElementById('globeInfoPanel').style.display='none';">&times;</span>
@@ -1756,6 +1772,20 @@
         // Opening/closing the KPI panel changes the bottom-right stack's height (and, on very short phone screens,
         // its top edge) - keep the country table's height cap (see adjustCountryTableMaxHeight()) in sync.
         adjustCountryTableMaxHeight();
+    });
+
+    // Phone-only legend toggle (see the "@media (max-width:700px)" rules above): the legend itself defaults to
+    // hidden below that breakpoint via CSS alone, replaced by this small pill - so it never covers a large chunk of
+    // the globe on a small device unless the user explicitly asks to see it.
+    var legendPanel = document.getElementById("globeLegend");
+    var legendToggleBtn = document.getElementById("globeLegendToggleBtn");
+    var legendToggleIcon = legendToggleBtn.querySelector("i");
+    var legendToggleLabel = document.getElementById("globeLegendToggleLabel");
+    legendToggleBtn.addEventListener("click", function () {
+        var isOpen = legendPanel.classList.toggle("globe-legend-open");
+        legendToggleIcon.className = isOpen ? "bi bi-x-lg" : "bi bi-info-circle";
+        legendToggleLabel.textContent = isOpen ? "Hide" : "Legend";
+        legendToggleBtn.title = isOpen ? "Hide the legend and show the globe" : "Show the legend";
     });
 }());
 </script>

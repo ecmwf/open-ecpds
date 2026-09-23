@@ -53,6 +53,7 @@
         </div>
         <span class="text-muted" style="font-size:0.75rem;">|</span>
         <button class="topo-icon-btn" id="topoRefreshBtn" title="Refresh now"><i class="bi bi-arrow-clockwise"></i></button>
+        <button class="topo-icon-btn" id="topoFitAllBtn" title="Zoom out to see all Data Movers"><i class="bi bi-arrows-angle-expand"></i></button>
         <button class="topo-icon-btn" id="topoFullscreenBtn" title="Toggle fullscreen"><i class="bi bi-arrows-fullscreen"></i></button>
     </div>
 </div>
@@ -481,6 +482,39 @@
         return elements.map(function (el) { return el.data.id; }).sort().join("|");
     }
 
+    // See the "fit: true" -> fitTopRow() switch below: which host boxes belong to the "bottom" (Data Mover) row
+    // is decided the same way as in computeDefaultPositions() - any host that has a Data Mover child is a Data
+    // Mover host, regardless of whether a Monitor also happens to share that same host.
+    var topoFittedAll = false;
+
+    function computeBottomHostIds() {
+        var ids = {};
+        cy.nodes("[kind='mover']").forEach(function (n) {
+            var parent = n.data("parent");
+            if (parent) { ids[parent] = true; }
+        });
+        return ids;
+    }
+
+    function fitTopRow() {
+        var bottomHostIds = computeBottomHostIds();
+        var topRow = cy.nodes().filter(function (n) {
+            var hostId = n.data("kind") === "host" ? n.id() : n.data("parent");
+            return !(hostId && bottomHostIds[hostId]);
+        });
+        if (topRow.length && topRow.length < cy.nodes().length) {
+            cy.fit(topRow, 40);
+            // Don't let a lone Master box (few/no other top-row elements) zoom in ridiculously far either.
+            if (cy.zoom() > 1.3) { cy.zoom(1.3); cy.center(topRow); }
+        } else {
+            cy.fit(cy.elements(), 30);
+        }
+    }
+
+    function fitAll() {
+        cy.fit(cy.elements(), 30);
+    }
+
     function render(data) {
         var hasAny = data && (data.master || (data.movers && data.movers.length));
         document.getElementById("topoEmptyState").style.display = hasAny ? "none" : "flex";
@@ -510,7 +544,14 @@
             });
             cy.elements().remove();
             cy.add(elements);
-            cy.layout({ name: "preset", fit: true, padding: 30 }).run();
+            cy.layout({ name: "preset" }).run();
+            // Was "fit: true" (fit the *whole* diagram into the viewport) - but with lots of Data Movers that
+            // squeezes the Master/Monitor/Database boxes down to an unreadably tiny size just so all the movers
+            // fit too. Zoom to the top row instead (see fitTopRow()) so those boxes stay legible on first paint;
+            // the movers laid out below simply extend past the bottom of the viewport, reachable by dragging/
+            // scrolling (standard Cytoscape panning, already enabled) - "Fit all" in the toolbar undoes this.
+            topoFittedAll = false;
+            fitTopRow();
         }
         cy.scratch("_topoSignature", signature);
 
@@ -551,6 +592,20 @@
     }
 
     document.getElementById("topoRefreshBtn").addEventListener("click", function () { refresh(true); });
+    document.getElementById("topoFitAllBtn").addEventListener("click", function () {
+        if (!cy) { return; }
+        topoFittedAll = !topoFittedAll;
+        var icon = this.querySelector("i");
+        if (topoFittedAll) {
+            fitAll();
+            icon.className = "bi bi-arrows-angle-contract";
+            this.title = "Zoom back to Master/Monitor/Database";
+        } else {
+            fitTopRow();
+            icon.className = "bi bi-arrows-angle-expand";
+            this.title = "Zoom out to see all Data Movers";
+        }
+    });
     document.getElementById("topoFullscreenBtn").addEventListener("click", function () {
         var el = document.getElementById("topoContainer");
         if (!document.fullscreenElement) {
@@ -559,7 +614,9 @@
             (document.exitFullscreen || document.webkitExitFullscreen || function () {}).call(document);
         }
     });
-    document.addEventListener("fullscreenchange", function () { if (cy) { cy.resize(); cy.fit(undefined, 30); } });
+    document.addEventListener("fullscreenchange", function () {
+        if (cy) { cy.resize(); topoFittedAll ? fitAll() : fitTopRow(); }
+    });
 
     new MutationObserver(function () { if (cy) { cy.style(buildStyle()); } }).observe(document.documentElement, {
         attributes: true, attributeFilter: ["data-bs-theme"]
