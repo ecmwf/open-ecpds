@@ -45,3 +45,11 @@ Enabling **Group all cycles/times into one page** on a product's generic entry i
 
 - <i class="bi bi-exclamation-triangle-fill text-warning"></i> is shown next to a product/type that does not currently exist in the [monitoring interface](../monitor-ui/monitoring.md) — for example a typo, or a product that is no longer active. Use the **Unknown only** filter to isolate these, and **Delete All Unknown** to clean them up in bulk.
 - **Import from Monitoring** scans every product/type pair currently visible in the monitoring interface and adds a blank entry (empty Description/Tips) for any pair not yet configured here, ready to be filled in via Edit.
+
+---
+
+## Related
+
+- [Monitoring](../monitor-ui/monitoring.md)
+- [Data Ownership & Catalogue](../architecture/data-ownership-and-catalogue.md)
+- [REST API — Monitoring](../rest-api.md#monitoring)

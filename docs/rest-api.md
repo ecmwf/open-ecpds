@@ -938,3 +938,10 @@ provisioning=Prov&key77:incomingUser.*|incomingCategory.*|incomingAssociation.*
     - Use `|` to separate multiple allowed service names.
     - Java regex is used — `.*` and `\b` are valid; test patterns carefully.
     - Service names are **case-sensitive** and must match exactly as documented above.
+
+## Related
+
+- [OpenECPDS Entities](concepts/entities.md)
+- [Product Descriptions](administration/product-descriptions.md)
+- [Data Ownership & Catalogue](architecture/data-ownership-and-catalogue.md)
+- [Monitoring](monitor-ui/monitoring.md)

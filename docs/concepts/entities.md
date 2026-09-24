@@ -121,3 +121,4 @@ or written to. Its behaviour is host-type-specific — see
 - [Object Storage](object-storage.md)
 - [Transfer Modules](../transfer-modules/index.md)
 - [Lifecycle of a Data Transfer](../architecture/data-transfer-lifecycle.md)
+- [Data Ownership & Catalogue](../architecture/data-ownership-and-catalogue.md)

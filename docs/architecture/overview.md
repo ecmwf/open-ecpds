@@ -44,6 +44,12 @@ See [Components](components.md) for a detailed description of each.
 - **[Continental Data Movers](continental-data-movers.md)** — geographically
   distributed movers that optimise dissemination by reducing latency and pre-replicating
   data.
+- **[Centralised vs. Federated](federation-vs-centralization.md)** — how a centrally
+  operated OpenECPDS service compares to organisations running their own independent
+  instances, and why the two are compatible rather than competing.
+- **[Data Ownership & Catalogue](data-ownership-and-catalogue.md)** — how OpenECPDS'
+  product/destination metadata and end-to-end traceability complement (rather than
+  replace) dedicated product catalogue systems.
 
 ## Modularity & protocols
 

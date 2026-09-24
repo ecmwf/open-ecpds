@@ -71,6 +71,9 @@ protocols.
 - **Full setup:** [System Requirements](getting-started/requirements.md) → [Installation](getting-started/installation.md) → [First Run](getting-started/first-run.md).
 - **Understand the system:** [Architecture Overview](architecture/overview.md) and
   [Key Concepts](concepts/entities.md).
+- **Centralised or federated?** See [Centralised vs. Federated](architecture/federation-vs-centralization.md)
+  and [Data Ownership & Catalogue](architecture/data-ownership-and-catalogue.md) for how OpenECPDS
+  fits into different organisational and operating models.
 - **Configure transfers:** [Transfer Modules](transfer-modules/index.md) and the
   [Host Directory Field](host-directory/index.md).
 - **Operate & monitor:** [Event Logging](event-logging/overview.md) and the

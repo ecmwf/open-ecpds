@@ -148,3 +148,4 @@ speak the same open standards.
 - [Global Reach](../global-reach.md)
 - [Kubernetes Deployment](../deployment/kubernetes.md)
 - [Standalone Container](../getting-started/standalone.md)
+- [Data Ownership & Catalogue](data-ownership-and-catalogue.md)

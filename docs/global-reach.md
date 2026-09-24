@@ -45,3 +45,4 @@ operational activities.
 
 - [Continental Data Movers](architecture/continental-data-movers.md)
 - [Illustrative Physical Infrastructure](deployment/infrastructure.md)
+- [Centralised vs. Federated](architecture/federation-vs-centralization.md)

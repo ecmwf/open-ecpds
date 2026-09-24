@@ -416,3 +416,5 @@ Recommended path:
 - [Transfer Modules](transfer-modules/index.md)
 - [REST API](rest-api.md)
 - [Global Reach](global-reach.md)
+- [Centralised vs. Federated](architecture/federation-vs-centralization.md)
+- [Data Ownership & Catalogue](architecture/data-ownership-and-catalogue.md)
