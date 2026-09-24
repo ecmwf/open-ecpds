@@ -1480,6 +1480,27 @@ public final class RESTServer {
                     setup != null ? setup.get(ECtransOptions.USER_PORTAL_MSG_TOP, msgTop) : msgTop);
             Format.replaceAll(sb, "${msgDown}",
                     setup != null ? setup.get(ECtransOptions.USER_PORTAL_MSG_DOWN, msgDown) : msgDown);
+            try {
+                final List<ecmwf.common.database.SystemMessage> activeMessages = mover.getMasterInterface()
+                        .getActiveSystemMessages();
+                final var msb = new StringBuilder();
+                for (final var m : activeMessages) {
+                    final var level = m.getLevel();
+                    final var cssClass = "info".equals(level) ? "portal-notice" : "portal-warning";
+                    final var icon = "danger".equals(level) ? "bi-exclamation-octagon-fill"
+                            : "warning".equals(level) ? "bi-exclamation-triangle-fill" : "bi-info-circle-fill";
+                    msb.append("<div class=\"").append(cssClass).append(" mb-2\"><i class=\"bi ").append(icon)
+                            .append("\"></i><div><div style=\"white-space:pre-wrap;\">")
+                            .append(escapeHtml(m.getMessage()))
+                            .append("</div><div style=\"font-size:0.85em;opacity:0.85;\">")
+                            .append("<i class=\"bi bi-clock-history\"></i> ")
+                            .append(escapeHtml(m.getFormattedTimeframe())).append("</div></div></div>");
+                }
+                Format.replaceAll(sb, "${systemMessages}", msb.toString());
+            } catch (final Throwable t) {
+                _log.warn("getActiveSystemMessages", t);
+                Format.replaceAll(sb, "${systemMessages}", "");
+            }
             final var accessGuide = setup == null || setup.getBoolean(ECtransOptions.USER_PORTAL_ACCESS_GUIDE);
             Format.replaceAll(sb, "${accessGuide}", String.valueOf(accessGuide));
             final var disabledProtocols = setup != null ? setup.getString(ECtransOptions.USER_PORTAL_DISABLED_PROTOCOLS)

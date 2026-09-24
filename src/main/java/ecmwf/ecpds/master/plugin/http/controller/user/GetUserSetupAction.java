@@ -51,6 +51,7 @@ public class GetUserSetupAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
+        setActiveSystemMessages(request);
         return mapping.findForward("success");
     }
 }

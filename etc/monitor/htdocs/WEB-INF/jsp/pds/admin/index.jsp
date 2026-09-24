@@ -28,6 +28,8 @@
     </div>
 </div>
 
+<jsp:include page="/WEB-INF/jsp/pds/common/system_messages_banner.jsp" />
+
 <% if (capNotSet) { %>
 <div class="alert alert-warning d-flex align-items-start gap-3 mb-4" role="alert">
     <i class="bi bi-key-fill flex-shrink-0 mt-1" style="font-size:1.2rem;"></i>
@@ -245,6 +247,20 @@
             <span class="tool-title">Product Descriptions</span>
             <p class="tool-desc">Add or remove a short text description for each product, made available as the
             <code>{{DESCRIPTION}}</code> placeholder inside the Product Messages.</p>
+        </div>
+    </div>
+    </div>
+    </auth:link>
+
+    <auth:link basePathKey="admin.basepath" href="/systemmessages">
+    <div class="col">
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
+        <i class="bi bi-megaphone-fill text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title">System Messages</span>
+            <p class="tool-desc">Define time-bounded warning/maintenance banners shown to every user on the
+            Monitor UI landing page and the Data Portal. They appear and disappear automatically based on the
+            configured start/end time.</p>
         </div>
     </div>
     </div>

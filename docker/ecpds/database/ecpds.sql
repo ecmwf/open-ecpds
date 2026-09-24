@@ -1670,6 +1670,25 @@ CREATE TABLE `PRODUCT_METADATA` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `SYSTEM_MESSAGE`
+--
+
+DROP TABLE IF EXISTS `SYSTEM_MESSAGE`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `SYSTEM_MESSAGE` (
+  `SYM_ID` bigint(20) NOT NULL AUTO_INCREMENT,
+  `SYM_MESSAGE` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `SYM_LEVEL` varchar(16) NOT NULL DEFAULT 'warning',
+  `SYM_START_TIME` decimal(20,0) NOT NULL,
+  `SYM_END_TIME` decimal(20,0) NOT NULL,
+  `SYM_CREATED_BY` varchar(128) DEFAULT NULL,
+  `SYM_CREATED_AT` decimal(20,0) NOT NULL,
+  PRIMARY KEY (`SYM_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `PRODUCT_STATUS`
 --
 

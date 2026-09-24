@@ -251,4 +251,29 @@ public abstract class PDSAction extends ECMWFAction {
     public boolean match(final ModelBean b, final String what) {
         return b.getId().toLowerCase().contains(what);
     }
+
+    /**
+     * Sets the {@code activeSystemMessages} request attribute to the list of currently-active
+     * {@link ecmwf.common.database.SystemMessage} entries (Admin Tasks &rarr; System Messages), so that the
+     * time-bounded warning/maintenance banner can be rendered just below the introduction card on every main menu page
+     * (Monitor UI landing page, Data Files, Data Transfers, Users, Admin). Never throws; sets an empty list on any
+     * error.
+     *
+     * @param request
+     *            the request
+     */
+    protected static void setActiveSystemMessages(final HttpServletRequest request) {
+        try {
+            final var now = System.currentTimeMillis();
+            final var active = new java.util.ArrayList<ecmwf.common.database.SystemMessage>();
+            for (final var message : ecmwf.ecpds.master.MasterManager.getDB().getSystemMessages()) {
+                if (message.isActiveAt(now)) {
+                    active.add(message);
+                }
+            }
+            request.setAttribute("activeSystemMessages", active);
+        } catch (final Exception e) {
+            request.setAttribute("activeSystemMessages", java.util.Collections.emptyList());
+        }
+    }
 }

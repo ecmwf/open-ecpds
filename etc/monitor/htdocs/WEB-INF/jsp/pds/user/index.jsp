@@ -13,6 +13,8 @@
     </div>
 </div>
 
+<jsp:include page="/WEB-INF/jsp/pds/common/system_messages_banner.jsp" />
+
 <%-- Web Access group --%>
 <h6 class="text-muted fw-semibold mb-2 d-flex align-items-center gap-2">
     <i class="bi bi-person-gear"></i> Web Access

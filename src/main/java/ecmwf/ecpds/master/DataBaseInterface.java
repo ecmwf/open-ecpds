@@ -2973,6 +2973,46 @@ public interface DataBaseInterface extends Remote {
     void deleteProductMetadata(String product, String type) throws DataBaseException, RemoteException;
 
     /**
+     * Gets all configured system messages (warning/maintenance banners), stored in the SYSTEM_MESSAGE table, managed
+     * from the Monitor UI (Admin Tasks &rarr; System Messages), most recently created first.
+     *
+     * @return the list of all configured system messages (empty if none have been configured)
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    List<ecmwf.common.database.SystemMessage> getSystemMessages() throws DataBaseException, RemoteException;
+
+    /**
+     * Adds or updates a system message. If the message's id is &lt;= 0 a new message is created; otherwise the existing
+     * message with that id is updated.
+     *
+     * @param message
+     *            the system message
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void saveSystemMessage(ecmwf.common.database.SystemMessage message) throws DataBaseException, RemoteException;
+
+    /**
+     * Removes a system message by id.
+     *
+     * @param id
+     *            the message id
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void deleteSystemMessage(long id) throws DataBaseException, RemoteException;
+
+    /**
      * Hard-deletes all DATA_TRANSFER, TRANSFER_HISTORY and DATA_FILE records from the database immediately, without
      * waiting for the scheduled purge cycle. Handles FK dependencies (TRANSFER_STATISTICS, TRANSFER_HISTORY,
      * PUBLICATION, METADATA_VALUE) in the correct order.

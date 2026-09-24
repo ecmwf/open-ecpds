@@ -5602,6 +5602,85 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Gets all configured system messages (warning/maintenance banners), most recently created first.
+     *
+     * @return the system message list
+     */
+    public List<SystemMessage> getSystemMessageList() {
+        final List<SystemMessage> list = new ArrayList<>();
+        try (var it = getAll(SystemMessage.class)) {
+            while (it.hasNext()) {
+                list.add(it.next());
+            }
+            list.sort((a, b) -> Long.compare(b.getCreatedAt(), a.getCreatedAt()));
+        } catch (final Exception e) {
+            _log.warn("getSystemMessageList", e);
+        }
+        logSqlRequest("getSystemMessageList", list.size());
+        return list;
+    }
+
+    /**
+     * Gets the system messages currently active (i.e. whose start/end window contains the current time), most recently
+     * created first.
+     *
+     * @return the active system message list
+     */
+    public List<SystemMessage> getActiveSystemMessageList() {
+        final var now = System.currentTimeMillis();
+        final List<SystemMessage> list = new ArrayList<>();
+        for (final var message : getSystemMessageList()) {
+            if (message.isActiveAt(now)) {
+                list.add(message);
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Inserts or updates a system message. If the message has no id (id &lt;= 0) it is inserted (a new id is
+     * generated); otherwise the existing row with that id is updated.
+     *
+     * @param message
+     *            the system message
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void saveSystemMessage(final SystemMessage message) throws DataBaseException {
+        try {
+            if (message.getId() <= 0) {
+                tryInsert(message, true);
+            } else {
+                update(message);
+            }
+        } catch (final Exception e) {
+            _log.warn("saveSystemMessage", e);
+            throw new DataBaseException("saveSystemMessage", e);
+        }
+    }
+
+    /**
+     * Deletes a system message by id. Does nothing if no such message exists.
+     *
+     * @param id
+     *            the message id
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void removeSystemMessage(final long id) throws DataBaseException {
+        try {
+            final var message = new SystemMessage();
+            message.setId(id);
+            remove(message);
+        } catch (final Exception e) {
+            _log.warn("removeSystemMessage", e);
+            throw new DataBaseException("removeSystemMessage", e);
+        }
+    }
+
+    /**
      * Marks all non-deleted DATA_TRANSFER rows as deleted and eligible for purge (both expiry thresholds satisfied).
      * Used by the test-environment reset feature to prepare all transfers for removal by purgeDataBase.
      *

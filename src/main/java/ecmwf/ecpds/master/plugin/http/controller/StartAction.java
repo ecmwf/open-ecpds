@@ -79,14 +79,13 @@ public class StartAction extends PDSAction {
 
         request.setAttribute("hasAdmin", user.hasAccess(getResource(request, "admin.basepath")));
 
-        try {
-            request.setAttribute("certStatus", MasterManager.getMI().getOverallCertStatus());
-        } catch (final Exception e) {
-            request.setAttribute("certStatus", "UNKNOWN");
-        }
-
         final boolean hasAdmin = Boolean.TRUE.equals(request.getAttribute("hasAdmin"));
         if (hasAdmin) {
+            try {
+                request.setAttribute("certStatus", MasterManager.getMI().getOverallCertStatus());
+            } catch (final Exception e) {
+                request.setAttribute("certStatus", "UNKNOWN");
+            }
             try {
                 request.setAttribute("criticalPasswordNotSet", !MasterManager.getDB().hasCriticalActionPassword());
             } catch (final Exception e) {
@@ -111,6 +110,9 @@ public class StartAction extends PDSAction {
         }
 
         request.setAttribute("title", System.getProperty("monitor.title"));
+
+        setActiveSystemMessages(request);
+
         return mapping.findForward("success");
     }
 }

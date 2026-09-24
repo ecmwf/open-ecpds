@@ -80,6 +80,8 @@
 
 </div>
 
+<jsp:include page="/WEB-INF/jsp/pds/common/system_messages_banner.jsp" />
+
 <% if (_capNotSet) { %>
 <div class="alert alert-warning d-flex align-items-start gap-3 mb-4" role="alert">
     <i class="bi bi-key-fill flex-shrink-0 mt-1" style="font-size:1.2rem;"></i>
@@ -198,6 +200,7 @@
                 <auth:link basePathKey="admin.basepath" href="/origin" wrappingTags="li"><i class="bi <%=_originIconClass%>"></i>Origin Location</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/productmessages" wrappingTags="li"><i class="bi bi-envelope-paper-fill"></i>Product Messages</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/productdescriptions" wrappingTags="li"><i class="bi bi-card-list"></i>Product Descriptions</auth:link>
+                <auth:link basePathKey="admin.basepath" href="/systemmessages" wrappingTags="li"><i class="bi bi-megaphone-fill"></i>System Messages</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/purge" wrappingTags="li"><i class="bi bi-trash3-fill"></i> Purge All Data</auth:link>
             </ul>
         </div>

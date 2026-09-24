@@ -208,6 +208,7 @@ import ecmwf.common.database.HostStats;
 import ecmwf.common.database.IncomingConnection;
 import ecmwf.common.database.IncomingUser;
 import ecmwf.common.database.PortalTraffic;
+import ecmwf.common.database.SystemMessage;
 import ecmwf.common.database.Publication;
 import ecmwf.common.database.SchedulerValue;
 import ecmwf.common.database.TransferGroup;
@@ -930,6 +931,11 @@ public final class MasterServer extends ECaccessProvider
             _log.warn("getPortalTraffic userId={} hours={}", userId, hours, e);
             throw new RemoteException("getPortalTraffic", e);
         }
+    }
+
+    @Override
+    public List<SystemMessage> getActiveSystemMessages() throws RemoteException {
+        return getECpdsBase().getActiveSystemMessageList();
     }
 
     /**

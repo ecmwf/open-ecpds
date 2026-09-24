@@ -2798,6 +2798,48 @@ final class DataBaseProxy implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
+    public List<ecmwf.common.database.SystemMessage> getSystemMessages() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getSystemMessages()");
+        try {
+            return monitor.done(dataBaseInterface.getSystemMessages());
+        } catch (final RemoteException e) {
+            throw new DataBaseException("getSystemMessages", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void saveSystemMessage(final ecmwf.common.database.SystemMessage message)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("saveSystemMessage(" + message.getId() + ")");
+        try {
+            dataBaseInterface.saveSystemMessage(message);
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("saveSystemMessage", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteSystemMessage(final long id) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteSystemMessage(" + id + ")");
+        try {
+            dataBaseInterface.deleteSystemMessage(id);
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("deleteSystemMessage", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public int deleteAllDataImmediately() throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("deleteAllDataImmediately()");
         try {

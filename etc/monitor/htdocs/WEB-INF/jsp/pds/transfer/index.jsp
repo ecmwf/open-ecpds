@@ -12,6 +12,8 @@
     </div>
 </div>
 
+<jsp:include page="/WEB-INF/jsp/pds/common/system_messages_banner.jsp" />
+
 <div class="row row-cols-1 row-cols-md-2 g-3">
 
     <auth:link basePathKey="transfer.basepath" href="/data">

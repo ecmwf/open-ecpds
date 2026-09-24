@@ -267,6 +267,18 @@ public interface MasterInterface extends ProviderInterface {
     List<ecmwf.common.database.PortalTraffic> getPortalTraffic(String userId, int hours) throws RemoteException;
 
     /**
+     * Returns the system messages (warning/maintenance banners) currently active, i.e. whose configured start/end
+     * window contains the current time. Used to render a banner on the Data Portal (in addition to the Monitor UI's own
+     * landing page, which reads directly from the database).
+     *
+     * @return the list of currently active system messages (empty if none)
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    List<ecmwf.common.database.SystemMessage> getActiveSystemMessages() throws RemoteException;
+
+    /**
      * Return a hash of the specified incoming user (the string is in the form userid:password).
      *
      * @param incomingUser

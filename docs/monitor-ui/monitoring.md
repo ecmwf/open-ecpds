@@ -64,6 +64,7 @@ All the data behind the diagram is fetched by the Monitor from the Master over t
 ## Related
 
 - [Product Descriptions](../administration/product-descriptions.md)
+- [System Messages](../administration/system-messages.md)
 - [Data Ownership & Catalogue](../architecture/data-ownership-and-catalogue.md)
 - [REST API — Monitoring](../rest-api.md#monitoring)
 - [Data Files & Infrastructure](data-files.md)

@@ -84,6 +84,8 @@
 		wrappingTags="tr,td"><i class="bi bi-envelope-paper-fill"></i> Product Messages</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/productdescriptions"
 		wrappingTags="tr,td"><i class="bi bi-card-list"></i> Product Descriptions</auth:link>
+	<auth:link basePathKey="admin.basepath" href="/systemmessages"
+		wrappingTags="tr,td"><i class="bi bi-megaphone-fill"></i> System Messages</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/purge"
 		wrappingTags="tr,td"><i class="bi bi-trash3-fill"></i> Purge All Data</auth:link>
 </table>

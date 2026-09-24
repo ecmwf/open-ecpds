@@ -132,6 +132,31 @@
 		</property>
 	</class>
 
+	<class name="SystemMessage" table="SYSTEM_MESSAGE">
+		<id name="SYM_ID" type="java.lang.Long">
+			<column name="SYM_ID" />
+			<generator class="increment" />
+		</id>
+		<property name="SYM_MESSAGE" type="java.lang.String">
+			<column name="SYM_MESSAGE" />
+		</property>
+		<property name="SYM_LEVEL" type="java.lang.String">
+			<column name="SYM_LEVEL" />
+		</property>
+		<property name="SYM_START_TIME" type="java.math.BigDecimal">
+			<column name="SYM_START_TIME" />
+		</property>
+		<property name="SYM_END_TIME" type="java.math.BigDecimal">
+			<column name="SYM_END_TIME" />
+		</property>
+		<property name="SYM_CREATED_BY" type="java.lang.String">
+			<column name="SYM_CREATED_BY" />
+		</property>
+		<property name="SYM_CREATED_AT" type="java.math.BigDecimal">
+			<column name="SYM_CREATED_AT" />
+		</property>
+	</class>
+
 	<class name="PolicyAssociation" table="POLICY_ASSOCIATION">
 		<cache usage="read-write" />
 		<composite-id>

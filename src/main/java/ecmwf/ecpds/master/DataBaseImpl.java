@@ -4654,6 +4654,36 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<ecmwf.common.database.SystemMessage> getSystemMessages() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getSystemMessages()");
+        return monitor.done(ecpds.getSystemMessageList());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void saveSystemMessage(final ecmwf.common.database.SystemMessage message)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("saveSystemMessage(" + message.getId() + ")");
+        ecpds.saveSystemMessage(message);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteSystemMessage(final long id) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteSystemMessage(" + id + ")");
+        ecpds.removeSystemMessage(id);
+        monitor.done();
+    }
+
+    /**
      * Computes the SHA-256 hex digest of the given plaintext string (UTF-8 encoded).
      *
      * {@inheritDoc}

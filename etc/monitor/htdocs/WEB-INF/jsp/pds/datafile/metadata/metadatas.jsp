@@ -9,12 +9,7 @@ style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left
 <span>Metadata attributes attached to data files and transfers. Each entry records a field name and its associated value for a specific data file.</span>
 </div>
 
-<c:if test="${empty attributes}">
-    <div class="alert">No Meta Data found.</div>
-</c:if>
-
-<c:if test="${not empty attributes}">
-    <div class="card border-0 shadow-sm mt-3">
+<div class="card border-0 shadow-sm mt-3">
     <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
         <i class="bi bi-database text-primary"></i>
         <span class="fw-semibold">
@@ -76,7 +71,7 @@ style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left
             searching: true,
             order:     [[0, 'asc']],
             dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>',
-            language: { info: 'Showing _START_-_END_ of _TOTAL_' }
+            language: { info: 'Showing _START_-_END_ of _TOTAL_', emptyTable: 'No matching records found.' }
         });
         $('#metaAttrSearch').on('keyup', function() { table.search(this.value).draw(); });
         var _savedPageLen = (function() { try { var v = parseInt(localStorage.getItem('metaAttrPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 50; } catch(e) { return 50; } })();
@@ -88,4 +83,3 @@ style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left
         });
     });
     </script>
-</c:if>

@@ -62,6 +62,7 @@ Workflow steps:
 ## Related
 
 - [ECPDS command-line Tool](ecpds-cli.md)
+- [System Messages](../administration/system-messages.md) — service-wide banners shown on the Data Portal
 - [Data Users](data-users.md) — Portal Service modes, authentication, admin management
 - [Data User Options](data-portal-user-options.md) — per-user `portal.*` configuration
 - [Portal Transfer Module](../transfer-modules/portal.md)

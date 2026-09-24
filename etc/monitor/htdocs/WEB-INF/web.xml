@@ -59,6 +59,14 @@
       <param-name>logVerbosityLevel</param-name>
       <param-value>DEBUG</param-value>
     </init-param>
+    <init-param>
+      <param-name>compilerSourceVM</param-name>
+      <param-value>17</param-value>
+    </init-param>
+    <init-param>
+      <param-name>compilerTargetVM</param-name>
+      <param-value>17</param-value>
+    </init-param>
  </servlet>
 
   <!-- Standard Action Servlet Mapping -->

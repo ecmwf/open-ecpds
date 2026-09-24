@@ -215,7 +215,7 @@ Full documentation is published at **[ecmwf.github.io/open-ecpds](https://ecmwf.
 | [Deployment](https://ecmwf.github.io/open-ecpds/deployment/kubernetes/) | Kubernetes, physical infrastructure, container registry, releasing |
 | [Concepts](https://ecmwf.github.io/open-ecpds/concepts/entities/) | Entities, host types, protocols, plugin infrastructure, object storage, destination/host/web-user options, additional features |
 | [Monitor UI](https://ecmwf.github.io/open-ecpds/monitor-ui/overview/) | Monitoring, destinations, hosts, transfer history, data files, transfer methods & modules, users, administration |
-| [Administration](https://ecmwf.github.io/open-ecpds/administration/certificates/) | TLS certificate management, mover control-channel security, TOTP authentication, critical action password, purge all data, product descriptions |
+| [Administration](https://ecmwf.github.io/open-ecpds/administration/certificates/) | TLS certificate management, mover control-channel security, TOTP authentication, critical action password, purge all data, product descriptions, system messages |
 | [Use Cases](https://ecmwf.github.io/open-ecpds/use-cases/ecpds-cli/) | CLI tool, data portal, data users, web users, data user options, acquisition, acquisition options, dissemination |
 | [Transfer Modules](https://ecmwf.github.io/open-ecpds/transfer-modules/) | FTP, FTPS, SFTP, HTTP/S, WebDAV, S3, GCS, Azure Blob, ECauth, Portal, Test |
 | [Host Directory](https://ecmwf.github.io/open-ecpds/host-directory/) | Acquisition, dissemination, replication, source, backup, proxy scripts |
