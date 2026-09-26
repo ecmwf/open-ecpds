@@ -23,9 +23,10 @@ package ecmwf.common.database;
  *
  * Represents a system-wide, time-bounded warning/maintenance message stored in the SYSTEM_MESSAGE table. Managed from
  * the Monitor UI (Admin Tasks &rarr; System Messages) and shown as a banner on the Monitor UI landing page
- * ({@code /do/start}) and on the Data Portal, to every user, for as long as the current time falls within the
- * message's start/end window. Messages are never displayed outside their window and require no manual cleanup, though
- * they remain listed in the admin page (for history) until explicitly deleted.
+ * ({@code /do/start}) and on the Data Portal, to every user, from the moment it is created until the end of the
+ * message's start/end window (the start time being when the service may become unavailable, the message is shown in
+ * advance to warn users). Messages stop being displayed automatically once their window has ended and require no
+ * manual cleanup, though they remain listed in the admin page (for history) until explicitly deleted.
  *
  * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
@@ -134,7 +135,9 @@ public class SystemMessage extends DataBaseObject {
     }
 
     /**
-     * Checks if this message is currently active, i.e. the given time falls within its start/end window (inclusive).
+     * Checks if this message should currently be displayed, i.e. its end time has not yet passed (inclusive). A message
+     * is displayed as soon as it is created, including before its start time, so that users are warned in advance of
+     * an upcoming outage/maintenance window; it disappears once the window has ended.
      *
      * @param now
      *            the current time, in millis since epoch
@@ -142,7 +145,7 @@ public class SystemMessage extends DataBaseObject {
      * @return true, if this message should currently be displayed
      */
     public boolean isActiveAt(final long now) {
-        return now >= getStartTime() && now <= getEndTime();
+        return now <= getEndTime();
     }
 
     /** Formatter for the start/end window, e.g. "24 Sep 2026, 12:30" (date omitted from the end if same day). */

@@ -44,8 +44,8 @@ import ecmwf.web.model.users.User;
  *
  * Admin action for managing system-wide, time-bounded warning/maintenance messages, stored in the SYSTEM_MESSAGE
  * database table. Each message has a start and end time; it is automatically shown as a banner on the Monitor UI
- * landing page ({@code /do/start}) and on the Data Portal for as long as the current time falls within that window, and
- * automatically stops being shown once it expires &mdash; no manual cleanup is required for display purposes, though
+ * landing page ({@code /do/start}) and on the Data Portal from the moment it is created (so users are warned in advance
+ * of the start time) until its end time, and automatically stops being shown once it expires &mdash; no manual cleanup is required for display purposes, though
  * expired entries remain listed here (for history/audit) until explicitly deleted.
  *
  * GET /admin/systemmessages &rarr; list all messages (HTML page) POST /admin/systemmessages/save &rarr; add or update a

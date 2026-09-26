@@ -5621,8 +5621,8 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
-     * Gets the system messages currently active (i.e. whose start/end window contains the current time), most recently
-     * created first.
+     * Gets the system messages currently displayed (i.e. whose end time has not yet passed, including those whose
+     * start time is still in the future), most recently created first.
      *
      * @return the active system message list
      */

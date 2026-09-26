@@ -11,8 +11,9 @@
 style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-left:4px solid #6c757d;">
 <i class="bi bi-megaphone-fill text-secondary flex-shrink-0"></i>
 <span>Time-bounded warning/maintenance messages, shown as a banner to every user on the Monitor UI landing page
-(<code>/do/start</code>) and on the Data Portal, for as long as the current time falls within the configured
-start/end window. Messages appear and disappear automatically &mdash; no manual cleanup is required for display
+(<code>/do/start</code>) and on the Data Portal, from the moment they are created until the end of the configured
+start/end window &mdash; so users are warned in advance that the service may be unavailable from the start time.
+Messages disappear automatically once their window has ended &mdash; no manual cleanup is required for display
 purposes, though entries remain listed below (for history) until deleted.</span>
 </div>
 
@@ -55,8 +56,8 @@ purposes, though entries remain listed below (for history) until deleted.</span>
   </div>
   <select id="smStatusFilter" class="form-select form-select-sm" style="width:auto">
     <option value="">All statuses</option>
-    <option value="Active">Active</option>
-    <option value="Scheduled">Scheduled</option>
+    <option value="Upcoming">Upcoming</option>
+    <option value="In progress">In progress</option>
     <option value="Expired">Expired</option>
   </select>
   <button type="button" class="btn btn-sm btn-outline-success" onclick="smOpenAdd()">
@@ -82,7 +83,7 @@ purposes, though entries remain listed below (for history) until deleted.</span>
   <c:forEach var="m" items="${systemMessages}">
   <%
       final ecmwf.common.database.SystemMessage _m = (ecmwf.common.database.SystemMessage) pageContext.getAttribute("m");
-      final String _status = _m.getEndTime() < smNow ? "Expired" : _m.getStartTime() > smNow ? "Scheduled" : "Active";
+      final String _status = _m.getEndTime() < smNow ? "Expired" : _m.getStartTime() > smNow ? "Upcoming" : "In progress";
       pageContext.setAttribute("smStatus", _status);
       final java.text.SimpleDateFormat _sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm");
       _sdf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
@@ -91,7 +92,7 @@ purposes, though entries remain listed below (for history) until deleted.</span>
   %>
   <tr data-sm-id="${m.id}" data-sm-message="<c:out value="${m.message}"/>" data-sm-level="${m.level}"
       data-sm-start="${m.startTime}" data-sm-end="${m.endTime}">
-      <td><span class="badge badge-status-${smStatus == 'Active' ? 'active' : smStatus == 'Scheduled' ? 'scheduled' : 'expired'}"><c:out value="${smStatus}"/></span></td>
+      <td><span class="badge badge-status-${smStatus == 'In progress' ? 'active' : smStatus == 'Upcoming' ? 'scheduled' : 'expired'}"><c:out value="${smStatus}"/></span></td>
       <td><span class="badge badge-level-${m.level}"><c:out value="${m.level}"/></span></td>
       <td><div class="sm-cell-truncate" title="<c:out value="${m.message}"/>"><c:out value="${m.message}"/></div></td>
       <td class="text-nowrap text-muted" style="font-size:0.78rem;"><c:out value="${smStartFmt}"/></td>
@@ -147,7 +148,7 @@ purposes, though entries remain listed below (for history) until deleted.</span>
                   </div>
                 </div>
                 <div class="form-text text-muted mb-2">Times are in your browser's local timezone. The message is
-                    shown automatically while the current time is within this window, and disappears once it ends.</div>
+                    shown as soon as it is saved (to warn users in advance of the Start), and disappears once the End has passed.</div>
                 <div class="d-flex flex-wrap gap-1">
                     <span class="text-muted me-1" style="font-size:0.8rem;">Quick duration:</span>
                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="smQuickDuration(1)">+1h</button>
