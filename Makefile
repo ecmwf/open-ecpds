@@ -143,11 +143,15 @@ dev: .dev-cntnr .run login ## Build, run and login into the development containe
 
 .run: ## Run the development container (*) [ARCH=amd64|arm64]
 	@$(call is-dev-container,true,outside)
+	@mkdir -p "$(HOME)/.claude"
+	@[ -f "$(HOME)/.claude/.claude.json" ] || echo '{"hasCompletedOnboarding": true}' > "$(HOME)/.claude/.claude.json"
 	@$(DOCKER) run -d \
 		--platform linux/$(ARCH) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v $(HOME)/.kube:/root/.kube \
 		-v $(HOME)/.copilot:/root/.copilot \
+		-v $(HOME)/.claude:/root/.claude \
+		-e CLAUDE_CONFIG_DIR=/root/.claude \
 		-v $(HOME)/.ssh:/root/.ssh \
 		-v $(WORKSPACE):/workspaces \
 		-e DOCKER_HOST_WORKSPACE=$(DOCKER_HOST_WORKSPACE) \
@@ -158,15 +162,14 @@ dev: .dev-cntnr .run login ## Build, run and login into the development containe
 		$(IMAGE_NAME) \
 		sleep infinity
 
-login: ## Log in to the running development container (*) with GitHub Copilot token
+login: ## Log in to the running development container (*) with GitHub Copilot and Claude Code tokens
 	@$(call is-dev-container,true,outside)
 	@$(call check-dev-container)
-	@[ -n "$$GH_TOKEN" ] && TOKEN="$$GH_TOKEN" || TOKEN="$$GITHUB_TOKEN"; \
-	if [ -n "$$TOKEN" ]; then \
-		$(DOCKER) exec -it -w $(WORKDIR) $(CONTAINER_NAME) env GH_TOKEN=$$TOKEN /bin/bash; \
-	else \
-		$(DOCKER) exec -it -w $(WORKDIR) $(CONTAINER_NAME) /bin/bash; \
-	fi
+	@ENVS=""; \
+	TOKEN="$${GH_TOKEN:-$$GITHUB_TOKEN}"; \
+	[ -n "$$TOKEN" ] && ENVS="$$ENVS GH_TOKEN=$$TOKEN"; \
+	[ -n "$$CLAUDE_CODE_OAUTH_TOKEN" ] && ENVS="$$ENVS CLAUDE_CODE_OAUTH_TOKEN=$$CLAUDE_CODE_OAUTH_TOKEN"; \
+	$(DOCKER) exec -it -w $(WORKDIR) $(CONTAINER_NAME) env $$ENVS /bin/bash
 
 rm-dev: ## Stop the development container, then remove both its container and image. (*) [ARCH=amd64|arm64]
 	@$(call is-dev-container,true,outside)

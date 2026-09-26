@@ -76,5 +76,8 @@ ENV IN_DEV_CONTAINER=true
 # Install GitHub Copilot CLI
 RUN curl -fsSL https://gh.io/copilot-install | bash
 
+# Install Anthropic Claude Code CLI
+RUN curl -fsSL https://claude.ai/install.sh | bash
+
 # Optional: clean up DNF caches
 RUN dnf clean all
