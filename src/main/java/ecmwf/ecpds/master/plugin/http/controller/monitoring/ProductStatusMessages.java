@@ -18,6 +18,11 @@
 
 package ecmwf.ecpds.master.plugin.http.controller.monitoring;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
 /**
  * ECMWF Product Data Store (OpenECPDS) Project
  *
@@ -28,8 +33,12 @@ package ecmwf.ecpds.master.plugin.http.controller.monitoring;
  * hardcoded in the JSP page.
  *
  * <p>
- * Both messages support the {@code {{PRODUCT}}} and {@code {{CYCLE}}} placeholders, substituted at render time with the
- * product name and cycle/time currently being viewed (e.g. "GENFO" and "06" for
+ * Each message has two variants, selected depending on whether the product/cycle currently being viewed is a "grouped"
+ * page (a product configured to show all its cycles/times on a single page, see
+ * {@code ecmwf.common.database.ProductMetadata#isGroupTimes}) or a regular single-cycle page: the ungrouped variant
+ * supports {@code {{CYCLE}}} (a single cycle/time, e.g. "06"), while the grouped variant supports {@code {{CYCLES}}}
+ * (every cycle/time currently shown, e.g. "00-03,06-07,12"). Both variants also support the {@code {{PRODUCT}}}
+ * placeholder, substituted at render time with the product name currently being viewed (e.g. "GENFO" for
  * {@code /do/monitoring/summary/GENFO/06}).
  *
  * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
@@ -40,17 +49,36 @@ package ecmwf.ecpds.master.plugin.http.controller.monitoring;
  */
 public final class ProductStatusMessages {
 
-    /** SYS_CONFIG parameter name for the "Products Delay" message. */
+    /** SYS_CONFIG parameter name for the ungrouped "Products Delay" message. */
     public static final String DELAY_MESSAGE_NAME = "productDelayMessage";
 
-    /** SYS_CONFIG parameter name for the "Products Resumed" message. */
+    /** SYS_CONFIG parameter name for the ungrouped "Products Resumed" message. */
     public static final String RESUMED_MESSAGE_NAME = "productResumedMessage";
+
+    /** SYS_CONFIG parameter name for the grouped-page variant of the "Products Delay" message. */
+    public static final String DELAY_MESSAGE_GROUPED_NAME = "productDelayMessageGrouped";
+
+    /** SYS_CONFIG parameter name for the grouped-page variant of the "Products Resumed" message. */
+    public static final String RESUMED_MESSAGE_GROUPED_NAME = "productResumedMessageGrouped";
+
+    /**
+     * SYS_CONFIG parameter name for the flag controlling whether the {@code {{CYCLES}}} placeholder is compacted into
+     * ranges (e.g. "00-03,06-07,12") on grouped pages. Stored as the string "true"/"false"; unset (or any value other
+     * than "false") means enabled.
+     */
+    public static final String COMPACT_CYCLE_LISTS_NAME = "compactCycleLists";
 
     /** Placeholder replaced with the product name (e.g. "GENFO") currently being viewed. */
     public static final String PRODUCT_PLACEHOLDER = "{{PRODUCT}}";
 
-    /** Placeholder replaced with the cycle/time (e.g. "06") currently being viewed. */
+    /** Placeholder replaced with the single cycle/time (e.g. "06") currently being viewed. */
     public static final String CYCLE_PLACEHOLDER = "{{CYCLE}}";
+
+    /**
+     * Placeholder replaced with every cycle/time currently shown (e.g. "00-03,06-07,12" on a grouped page, or the same
+     * single value as {@link #CYCLE_PLACEHOLDER} on a regular page).
+     */
+    public static final String CYCLES_PLACEHOLDER = "{{CYCLES}}";
 
     /**
      * Placeholder replaced with the free-text description configured for the current product (Admin Tasks &rarr;
@@ -85,6 +113,41 @@ public final class ProductStatusMessages {
             Kind regards
             ECMWF Duty Manager""";
 
+    /**
+     * Built-in default text for the grouped-page variant of the "Products Delay" message (used until an administrator
+     * customizes it). Identical to {@link #DEFAULT_DELAY_MESSAGE} except it refers to the (plural) {@code {{CYCLES}}}
+     * currently shown instead of a single {@code {{CYCLE}}}.
+     */
+    public static final String DEFAULT_DELAY_MESSAGE_GROUPED = """
+            Dear colleagues,
+
+            << Due to if known and not commercially or infrastructure sensitive, please give some information of the reason for the delay, the or otherwise The >> dissemination of ECMWF {{PRODUCT}} products for the {{CYCLES}}Z cycles will be delayed <<estimate time if possible>>.
+
+            Our teams and partners are actively working to restore services.
+
+            (Preferable to give a time stamp if and when appropriate, eg The next update will be at xx:xx UTC) / As soon as we have further details, we will inform you by email <<or other channel if email/system vulnerable?>>.
+
+            For more up-to-date information, you may please refer to ECMWF service status page at http://www.ecmwf.int/en/service-status.
+
+            Our sincere apologies for the inconvenience caused by this delay.
+
+            Kind regards
+
+            ECMWF Duty Manager""";
+
+    /**
+     * Built-in default text for the grouped-page variant of the "Products Resumed" message (used until an administrator
+     * customizes it). Identical to {@link #DEFAULT_RESUMED_MESSAGE} except it refers to the (plural) {@code {{CYCLES}}}
+     * currently shown instead of a single {@code {{CYCLE}}}.
+     */
+    public static final String DEFAULT_RESUMED_MESSAGE_GROUPED = """
+            Dear colleagues,
+            I am pleased to inform you that the issues we encountered earlier
+            within the operational production for the {{PRODUCT}} {{CYCLES}}Z cycles have been resolved and the dissemination of products has started.
+            Our sincere apologies for the inconvenience caused by this delay.
+            Kind regards
+            ECMWF Duty Manager""";
+
     private ProductStatusMessages() {
         // Hiding constructor!
     }
@@ -92,6 +155,7 @@ public final class ProductStatusMessages {
     /**
      * Replaces the {@code {{PRODUCT}}} and {@code {{CYCLE}}} placeholders, if present, with the actual product name and
      * cycle/time currently being viewed (e.g. "GENFO" and "06" for {@code /do/monitoring/summary/GENFO/06}). The
+     * {@code {{CYCLES}}} placeholder, if present, is substituted with the same single cycle/time value, and the
      * {@code {{DESCRIPTION}}} placeholder, if present, is replaced with an empty string.
      *
      * @param text
@@ -110,7 +174,8 @@ public final class ProductStatusMessages {
     /**
      * Replaces the {@code {{PRODUCT}}}, {@code {{CYCLE}}} and {@code {{DESCRIPTION}}} placeholders, if present, with
      * the actual product name, cycle/time and configured product description currently being viewed (e.g. "GENFO" and
-     * "06" for {@code /do/monitoring/summary/GENFO/06}).
+     * "06" for {@code /do/monitoring/summary/GENFO/06}). The {@code {{CYCLES}}} placeholder, if present, is substituted
+     * with the same single cycle/time value.
      *
      * @param text
      *            the plain-text message, possibly containing placeholders
@@ -126,12 +191,103 @@ public final class ProductStatusMessages {
      */
     public static String substitutePlaceholders(final String text, final String product, final String cycle,
             final String description) {
+        return substitutePlaceholders(text, product, cycle, cycle, description);
+    }
+
+    /**
+     * Replaces the {@code {{PRODUCT}}}, {@code {{CYCLE}}}, {@code {{CYCLES}}} and {@code {{DESCRIPTION}}} placeholders,
+     * if present, with the actual product name, single cycle/time, full list of cycles/times currently shown, and
+     * configured product description (e.g. "GENFO", "06", "00-03,06-07,12" for a grouped page).
+     *
+     * @param text
+     *            the plain-text message, possibly containing placeholders
+     * @param product
+     *            the product name to substitute for {@link #PRODUCT_PLACEHOLDER}
+     * @param cycle
+     *            the single cycle/time to substitute for {@link #CYCLE_PLACEHOLDER} (typically empty on a grouped page,
+     *            where there is no single cycle)
+     * @param cycles
+     *            the cycle/time list to substitute for {@link #CYCLES_PLACEHOLDER}
+     * @param description
+     *            the product description to substitute for {@link #DESCRIPTION_PLACEHOLDER}, or {@code null} if none
+     *            has been configured (substituted with an empty string in that case)
+     *
+     * @return the message with placeholders replaced
+     */
+    public static String substitutePlaceholders(final String text, final String product, final String cycle,
+            final String cycles, final String description) {
         if (text == null) {
             return null;
         }
         return text.replace(PRODUCT_PLACEHOLDER, product != null ? product : "")
                 .replace(CYCLE_PLACEHOLDER, cycle != null ? cycle : "")
+                .replace(CYCLES_PLACEHOLDER, cycles != null ? cycles : "")
                 .replace(DESCRIPTION_PLACEHOLDER, description != null ? description : "");
+    }
+
+    /**
+     * Compacts a collection of cycle/time codes into a comma-separated list of ranges, e.g.
+     * {@code [00,01,02,03,06,07,12]} &rarr; {@code "00-03,06-07,12"}: consecutive integer values are collapsed into a
+     * single {@code "first-last"} entry (preserving the original, e.g. zero-padded, text of each endpoint), while
+     * isolated values are kept as-is. Falls back to a plain, sorted, comma-separated list (no compaction) if any code
+     * is not a plain (optionally zero-padded) non-negative integer.
+     *
+     * @param cycles
+     *            the cycle/time codes (e.g. {@code "00"}, {@code "06"}, {@code "12"}), in any order
+     *
+     * @return the compacted (or, on fallback, plain sorted) comma-separated list, or an empty string if {@code cycles}
+     *         is {@code null} or empty
+     */
+    public static String compactCycleList(final Collection<String> cycles) {
+        if (cycles == null || cycles.isEmpty()) {
+            return "";
+        }
+        final Map<Integer, String> sorted = new TreeMap<>();
+        try {
+            for (final var cycle : cycles) {
+                final var trimmed = cycle.trim();
+                sorted.put(Integer.valueOf(trimmed), trimmed);
+            }
+        } catch (final NumberFormatException e) {
+            return String.join(",", new TreeSet<>(cycles));
+        }
+        final var sb = new StringBuilder();
+        Integer rangeStart = null;
+        Integer rangeEnd = null;
+        String rangeStartText = null;
+        String rangeEndText = null;
+        for (final var entry : sorted.entrySet()) {
+            final var value = entry.getKey();
+            final var text = entry.getValue();
+            if (rangeStart == null || value != rangeEnd + 1) {
+                appendRange(sb, rangeStartText, rangeEndText, rangeStart, rangeEnd);
+                rangeStart = value;
+                rangeStartText = text;
+            }
+            rangeEnd = value;
+            rangeEndText = text;
+        }
+        appendRange(sb, rangeStartText, rangeEndText, rangeStart, rangeEnd);
+        return sb.toString();
+    }
+
+    /**
+     * Appends one {@code "first"} or {@code "first-last"} entry (comma-separated from any previous entry) to the
+     * in-progress {@link #compactCycleList} result. No-op if {@code startText} is {@code null} (nothing accumulated
+     * yet).
+     */
+    private static void appendRange(final StringBuilder sb, final String startText, final String endText,
+            final Integer start, final Integer end) {
+        if (startText == null) {
+            return;
+        }
+        if (sb.length() > 0) {
+            sb.append(',');
+        }
+        sb.append(startText);
+        if (!end.equals(start)) {
+            sb.append('-').append(endText);
+        }
     }
 
     /**

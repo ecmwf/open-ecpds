@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
@@ -171,6 +172,9 @@ public class GetSummaryDisplayAction extends PDSAction {
             final boolean onecolumn, final String currentType) throws MonitoringException, TransferException {
         final List<ProductStatus> products = new ArrayList<>(ProductStatusHome.findFromMemory().values());
         Collections.sort(products, new ProductStatusComparator());
+        // Only populated for the "merged, all cycles of one product" (grouped) branch below; used to build the
+        // {{CYCLES}} placeholder and to select the grouped variant of the delay/resumed messages.
+        SortedSet<String> cycleTimes = null;
         if (product == null) {
             // Merged "all products, all cycles" view: synthesize a single ProductStatus (worst status, earliest
             // scheduled, most recent update) across every product/cycle currently known.
@@ -181,9 +185,11 @@ public class GetSummaryDisplayAction extends PDSAction {
             // Merged "all cycles" view: synthesize a single ProductStatus (worst status, earliest scheduled,
             // most recent update) from every cycle currently known for the product.
             final List<ProductStatus> cycles = new ArrayList<>();
+            cycleTimes = new TreeSet<>();
             for (final var ps : products) {
                 if (product.equals(ps.getProduct())) {
                     cycles.add(ps);
+                    cycleTimes.add(ps.getTime());
                 }
             }
             request.setAttribute("productStatus",
@@ -203,46 +209,63 @@ public class GetSummaryDisplayAction extends PDSAction {
             request.setAttribute("stepsPerColumn", stepStatiiSize / 2 + 1);
         }
         request.setAttribute("nearestToScheduleIndex", MonitoringRequest.getNearestToScheduleIndex(products));
-        putProductStatusMessages(request, product, time, stepStatii, currentType);
+        putProductStatusMessages(request, product, time, stepStatii, currentType, cycleTimes);
     }
 
     /**
      * Sets the "ECMWFProductsDelay" and "ECMWFProducts" request attributes consumed by product.jsp to pre-fill the
      * Outlook deeplink email bodies, as well as "productTips" (the Tips text for the current product/type, if any).
      * Fetches the current (possibly customized) messages from the database, falling back to the built-in defaults if
-     * they have not been customized, or if the database cannot be reached. The {@code {{PRODUCT}}} and
+     * they have not been customized, or if the database cannot be reached. On a grouped page (see {@code cycleTimes}),
+     * the grouped variant of each message is used instead of the regular one. The {@code {{PRODUCT}}} and
      * {@code {{CYCLE}}} placeholders, if present, are replaced with the actual product name and cycle/time currently
-     * being viewed (e.g. "GENFO" and "06"). The {@code {{DESCRIPTION}}} placeholder is replaced with a bullet list of
-     * the descriptions configured (Admin Tasks &rarr; Product Descriptions) for each distinct product type currently
-     * shown in the table (falling back to the generic, all-types description when no type-specific one is configured),
-     * or with the plain generic description when no type-specific rows apply.
+     * being viewed (e.g. "GENFO" and "06"); {@code {{CYCLES}}} is replaced with every cycle/time currently shown
+     * (compacted into ranges unless disabled, e.g. "00-03,06-07,12"), or with the same single value as
+     * {@code {{CYCLE}}} when not on a grouped page. The {@code {{DESCRIPTION}}} placeholder is replaced with a bullet
+     * list of the descriptions configured (Admin Tasks &rarr; Product Descriptions) for each distinct product type
+     * currently shown in the table (falling back to the generic, all-types description when no type-specific one is
+     * configured), or with the plain generic description when no type-specific rows apply.
      *
      * @param request
      *            the request
      * @param product
      *            the product name (e.g. "GENFO")
      * @param time
-     *            the cycle/time (e.g. "06")
+     *            the cycle/time (e.g. "06"), or blank on a grouped ("all cycles") page
      * @param stepStatii
      *            the product step statii currently shown in the table, used to determine the distinct product types
      * @param currentType
      *            the single product type currently being viewed, or {@code null} on the product/cycle overview page
+     * @param cycleTimes
+     *            every cycle/time currently shown, if this is a grouped ("all cycles") page, or {@code null}/empty
+     *            otherwise
      */
     private static final void putProductStatusMessages(final HttpServletRequest request, final String product,
-            final String time, final Collection<ProductStepStatus> stepStatii, final String currentType) {
-        var delayMessage = ProductStatusMessages.DEFAULT_DELAY_MESSAGE;
-        var resumedMessage = ProductStatusMessages.DEFAULT_RESUMED_MESSAGE;
+            final String time, final Collection<ProductStepStatus> stepStatii, final String currentType,
+            final Collection<String> cycleTimes) {
+        final var grouped = cycleTimes != null && !cycleTimes.isEmpty();
+        var delayMessage = grouped ? ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED
+                : ProductStatusMessages.DEFAULT_DELAY_MESSAGE;
+        var resumedMessage = grouped ? ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED
+                : ProductStatusMessages.DEFAULT_RESUMED_MESSAGE;
         String description = null;
         String tips = null;
+        var compactCycleLists = true;
         try {
             final var db = MasterManager.getDB();
-            final var storedDelayMessage = db.getProductStatusMessage(ProductStatusMessages.DELAY_MESSAGE_NAME);
+            final var storedDelayMessage = db.getProductStatusMessage(grouped
+                    ? ProductStatusMessages.DELAY_MESSAGE_GROUPED_NAME : ProductStatusMessages.DELAY_MESSAGE_NAME);
             if (storedDelayMessage != null) {
                 delayMessage = storedDelayMessage;
             }
-            final var storedResumedMessage = db.getProductStatusMessage(ProductStatusMessages.RESUMED_MESSAGE_NAME);
+            final var storedResumedMessage = db.getProductStatusMessage(grouped
+                    ? ProductStatusMessages.RESUMED_MESSAGE_GROUPED_NAME : ProductStatusMessages.RESUMED_MESSAGE_NAME);
             if (storedResumedMessage != null) {
                 resumedMessage = storedResumedMessage;
+            }
+            final var compactFlag = db.getProductStatusMessage(ProductStatusMessages.COMPACT_CYCLE_LISTS_NAME);
+            if (compactFlag != null) {
+                compactCycleLists = !"false".equals(compactFlag);
             }
             if (product != null) {
                 final var metadata = db.getProductMetadata(product);
@@ -253,8 +276,13 @@ public class GetSummaryDisplayAction extends PDSAction {
         } catch (final Exception e) {
             // Database not reachable or an error occurred: silently fall back to the built-in defaults.
         }
-        delayMessage = ProductStatusMessages.substitutePlaceholders(delayMessage, product, time, description);
-        resumedMessage = ProductStatusMessages.substitutePlaceholders(resumedMessage, product, time, description);
+        final var cyclesText = grouped
+                ? compactCycleLists ? ProductStatusMessages.compactCycleList(cycleTimes) : String.join(",", cycleTimes)
+                : time;
+        delayMessage = ProductStatusMessages.substitutePlaceholders(delayMessage, product, time, cyclesText,
+                description);
+        resumedMessage = ProductStatusMessages.substitutePlaceholders(resumedMessage, product, time, cyclesText,
+                description);
         request.setAttribute("ECMWFProductsDelay", ProductStatusMessages.encodeForEmailBody(delayMessage));
         request.setAttribute("ECMWFProducts", ProductStatusMessages.encodeForEmailBody(resumedMessage));
         request.setAttribute("productTips", tips);

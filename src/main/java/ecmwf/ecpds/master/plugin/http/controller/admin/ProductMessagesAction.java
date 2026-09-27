@@ -21,15 +21,18 @@ package ecmwf.ecpds.master.plugin.http.controller.admin;
 /**
  * ECMWF Product Data Store (OpenECPDS) Project
  *
- * Handles the "Product Status Messages" admin page. Lets administrators edit the two pre-filled email bodies used on
- * the product monitoring page (product.jsp) to notify recipients of a dissemination delay, or that dissemination has
- * resumed. The messages are stored as plain text in the SYS_CONFIG database table (group "ProductStatus") instead of
- * being hardcoded in the JSP, so they can be adapted to each site's needs without a code change.
+ * Handles the "Product Status Messages" admin page. Lets administrators edit the pre-filled email bodies used on the
+ * product monitoring page (product.jsp) to notify recipients of a dissemination delay, or that dissemination has
+ * resumed &mdash; each with a separate "grouped" variant, used instead of the regular one on a grouped ("all cycles")
+ * product page &mdash; plus the flag controlling whether the {@code {{CYCLES}}} placeholder is compacted into ranges.
+ * The messages/flag are stored as plain text in the SYS_CONFIG database table (group "ProductStatus") instead of being
+ * hardcoded in the JSP, so they can be adapted to each site's needs without a code change.
  *
  * <p>
  * GET: shows the form, pre-filled with the current (customized or built-in default) messages.
  * <p>
- * POST: stores the submitted messages (an empty submission resets a message back to its built-in default).
+ * POST: stores the submitted messages (an empty submission resets a message back to its built-in default) and the
+ * compaction flag.
  *
  * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  * @version 6.7.7
@@ -73,6 +76,9 @@ public class ProductMessagesAction extends PDSAction {
         if ("POST".equalsIgnoreCase(request.getMethod())) {
             final var delayMessage = request.getParameter("delayMessage");
             final var resumedMessage = request.getParameter("resumedMessage");
+            final var delayMessageGrouped = request.getParameter("delayMessageGrouped");
+            final var resumedMessageGrouped = request.getParameter("resumedMessageGrouped");
+            final var compactCycleLists = "on".equals(request.getParameter("compactCycleLists"));
             try {
                 if (isBlankOrDefault(delayMessage, ProductStatusMessages.DEFAULT_DELAY_MESSAGE)) {
                     db.resetProductStatusMessage(ProductStatusMessages.DELAY_MESSAGE_NAME);
@@ -84,6 +90,23 @@ public class ProductMessagesAction extends PDSAction {
                 } else {
                     db.setProductStatusMessage(ProductStatusMessages.RESUMED_MESSAGE_NAME, resumedMessage);
                 }
+                if (isBlankOrDefault(delayMessageGrouped, ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED)) {
+                    db.resetProductStatusMessage(ProductStatusMessages.DELAY_MESSAGE_GROUPED_NAME);
+                } else {
+                    db.setProductStatusMessage(ProductStatusMessages.DELAY_MESSAGE_GROUPED_NAME, delayMessageGrouped);
+                }
+                if (isBlankOrDefault(resumedMessageGrouped, ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED)) {
+                    db.resetProductStatusMessage(ProductStatusMessages.RESUMED_MESSAGE_GROUPED_NAME);
+                } else {
+                    db.setProductStatusMessage(ProductStatusMessages.RESUMED_MESSAGE_GROUPED_NAME,
+                            resumedMessageGrouped);
+                }
+                if (compactCycleLists) {
+                    // true is the default: no need to keep a row for it.
+                    db.resetProductStatusMessage(ProductStatusMessages.COMPACT_CYCLE_LISTS_NAME);
+                } else {
+                    db.setProductStatusMessage(ProductStatusMessages.COMPACT_CYCLE_LISTS_NAME, "false");
+                }
                 request.setAttribute("pmSuccess", "Product Status Messages saved successfully.");
             } catch (final Exception e) {
                 request.setAttribute("pmError", "Failed to store the messages: " + e.getMessage());
@@ -94,12 +117,24 @@ public class ProductMessagesAction extends PDSAction {
         try {
             final var delayMessage = db.getProductStatusMessage(ProductStatusMessages.DELAY_MESSAGE_NAME);
             final var resumedMessage = db.getProductStatusMessage(ProductStatusMessages.RESUMED_MESSAGE_NAME);
+            final var delayMessageGrouped = db
+                    .getProductStatusMessage(ProductStatusMessages.DELAY_MESSAGE_GROUPED_NAME);
+            final var resumedMessageGrouped = db
+                    .getProductStatusMessage(ProductStatusMessages.RESUMED_MESSAGE_GROUPED_NAME);
+            final var compactCycleLists = db.getProductStatusMessage(ProductStatusMessages.COMPACT_CYCLE_LISTS_NAME);
             request.setAttribute("delayMessage",
                     delayMessage != null ? delayMessage : ProductStatusMessages.DEFAULT_DELAY_MESSAGE);
             request.setAttribute("resumedMessage",
                     resumedMessage != null ? resumedMessage : ProductStatusMessages.DEFAULT_RESUMED_MESSAGE);
+            request.setAttribute("delayMessageGrouped", delayMessageGrouped != null ? delayMessageGrouped
+                    : ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED);
+            request.setAttribute("resumedMessageGrouped", resumedMessageGrouped != null ? resumedMessageGrouped
+                    : ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED);
             request.setAttribute("delayMessageCustomized", delayMessage != null);
             request.setAttribute("resumedMessageCustomized", resumedMessage != null);
+            request.setAttribute("delayMessageGroupedCustomized", delayMessageGrouped != null);
+            request.setAttribute("resumedMessageGroupedCustomized", resumedMessageGrouped != null);
+            request.setAttribute("compactCycleLists", !"false".equals(compactCycleLists));
         } catch (final Exception e) {
             request.setAttribute("pmError", "Unable to load the current messages: " + e.getMessage());
             setDefaults(request);
@@ -114,8 +149,13 @@ public class ProductMessagesAction extends PDSAction {
     private static void setDefaults(final HttpServletRequest request) {
         request.setAttribute("delayMessage", ProductStatusMessages.DEFAULT_DELAY_MESSAGE);
         request.setAttribute("resumedMessage", ProductStatusMessages.DEFAULT_RESUMED_MESSAGE);
+        request.setAttribute("delayMessageGrouped", ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED);
+        request.setAttribute("resumedMessageGrouped", ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED);
         request.setAttribute("delayMessageCustomized", Boolean.FALSE);
         request.setAttribute("resumedMessageCustomized", Boolean.FALSE);
+        request.setAttribute("delayMessageGroupedCustomized", Boolean.FALSE);
+        request.setAttribute("resumedMessageGroupedCustomized", Boolean.FALSE);
+        request.setAttribute("compactCycleLists", Boolean.TRUE);
     }
 
     /**

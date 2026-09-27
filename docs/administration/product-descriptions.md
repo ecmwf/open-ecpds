@@ -23,7 +23,7 @@ In other words, the generic entry is the **default/fallback**: it is only used f
 | Field | Purpose |
 |---|---|
 | **Product** / **Type** | Identify the entry. Type blank = generic/default entry for the product. |
-| **Description** | Used to build the `{{DESCRIPTION}}` placeholder in [Product Messages](../monitor-ui/monitoring.md), rendered as a bullet list across the distinct types currently shown on the product's monitoring page — one bullet per type, *unless every type currently resolves to the exact same text* (e.g. only a generic entry is configured), in which case it is shown once, as plain text, instead of a repetitive list. |
+| **Description** | Used to build the `{{DESCRIPTION}}` placeholder in [Product Status Messages](product-status-messages.md), rendered as a bullet list across the distinct types currently shown on the product's monitoring page — one bullet per type, *unless every type currently resolves to the exact same text* (e.g. only a generic entry is configured), in which case it is shown once, as plain text, instead of a repetitive list. |
 | **Tips** | Same default/override and bullet-list-or-plain-text behaviour as Description, but shown as an expandable **ⓘ** info card on the product's monitoring page (e.g. `/do/monitoring/summary/GOPER/06/0/AN`) instead of in an email message. |
 | **Group all cycles/times into one page** | Only meaningful — and only editable — on the **generic** (blank Type) entry of a product. See [Grouped Monitoring Pages](#grouped-monitoring-pages) below. |
 
@@ -38,6 +38,7 @@ Enabling **Group all cycles/times into one page** on a product's generic entry i
 - Merges every cycle of that product into a **single pill** on `/do/monitoring`, shown with a <i class="bi bi-layers-fill"></i> layers icon instead of a `T-Product` time prefix.
 - The merged pill's colour reflects the **worst status** across all of the product's cycles (ignoring cycles with no data at all, unless every cycle has none), and it is positioned in the header using the **earliest scheduled** cycle among them.
 - Links to a single page, `/do/monitoring/summary/{product}` (no time in the URL), listing every cycle/time for that product together in one table instead of one page per cycle.
+- The **Email Notifications** card on that page (Products Delay/Resumed, Copy BCC Emails) aggregates the BCC contacts registered against every individual cycle of the product, and uses the **Grouped** variant of the [Product Status Messages](product-status-messages.md#grouped-vs-ungrouped-variants) — with `{{CYCLES}}` (e.g. `00-03,06-07,12`) in place of a single `{{CYCLE}}`.
 
 ---
 
@@ -50,6 +51,7 @@ Enabling **Group all cycles/times into one page** on a product's generic entry i
 
 ## Related
 
+- [Product Status Messages](product-status-messages.md)
 - [Monitoring](../monitor-ui/monitoring.md)
 - [Data Ownership & Catalogue](../architecture/data-ownership-and-catalogue.md)
 - [REST API — Monitoring](../rest-api.md#monitoring)

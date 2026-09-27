@@ -3,8 +3,11 @@
 <%
     final String pmError   = (String) request.getAttribute("pmError");
     final String pmSuccess = (String) request.getAttribute("pmSuccess");
-    final boolean delayCustomized   = Boolean.TRUE.equals(request.getAttribute("delayMessageCustomized"));
-    final boolean resumedCustomized = Boolean.TRUE.equals(request.getAttribute("resumedMessageCustomized"));
+    final boolean delayCustomized          = Boolean.TRUE.equals(request.getAttribute("delayMessageCustomized"));
+    final boolean resumedCustomized        = Boolean.TRUE.equals(request.getAttribute("resumedMessageCustomized"));
+    final boolean delayGroupedCustomized   = Boolean.TRUE.equals(request.getAttribute("delayMessageGroupedCustomized"));
+    final boolean resumedGroupedCustomized = Boolean.TRUE.equals(request.getAttribute("resumedMessageGroupedCustomized"));
+    final boolean compactCycleLists        = !Boolean.FALSE.equals(request.getAttribute("compactCycleLists"));
 %>
 
 <%-- Header: title + info button --%>
@@ -31,9 +34,17 @@
         <li><strong>Storage</strong> &mdash; stored in the database, so they can be customized per site without a
         code change. Clearing a field (submitting it empty or unchanged from the default) reverts it to the built-in
         default text. Changes take effect immediately on the Product Status page for all users.</li>
-        <li><strong>Placeholders</strong> &mdash; <code>{{PRODUCT}}</code> and <code>{{CYCLE}}</code> are replaced
-        with the product and cycle of the page the message is sent from (e.g. <code>GENFO</code> and <code>06</code>
-        on <code>/do/monitoring/summary/GENFO/06</code>).</li>
+        <li><strong>Grouped vs. Ungrouped</strong> &mdash; each message below has two variants. The
+        <strong>Grouped</strong> variant is used instead of the <strong>Ungrouped</strong> one on a product's
+        merged, all-cycles page (<code>/do/monitoring/summary/{product}</code>, no cycle in the URL) &mdash; i.e. a
+        product with <a href="/do/admin/productdescriptions">"Group all cycles/times into one page"</a> enabled.
+        Every other page (a single product/cycle) always uses the Ungrouped variant.</li>
+        <li><strong>Placeholders</strong> &mdash; <code>{{PRODUCT}}</code> is replaced with the product of the page
+        the message is sent from (e.g. <code>GENFO</code>). <code>{{CYCLE}}</code> is replaced with the single
+        cycle being viewed (e.g. <code>06</code> on <code>/do/monitoring/summary/GENFO/06</code>; empty on a grouped
+        page, which has no single cycle). <code>{{CYCLES}}</code> is replaced with every cycle currently shown
+        (e.g. <code>00-03,06-07,12</code> on a grouped page; the same single value as <code>{{CYCLE}}</code>
+        otherwise) &mdash; see <strong>Cycle List Formatting</strong> below.</li>
         <li><strong>Description placeholder</strong> &mdash; <code>{{DESCRIPTION}}</code> is replaced with the
         description(s) configured under <a href="/do/admin/productdescriptions">Admin Tasks &rarr; Product
         Descriptions</a> for the current product: a plain text if only one type applies (or a type-independent
@@ -70,46 +81,77 @@
 <form method="post" action="/do/admin/productmessages">
 
     <div class="card shadow-sm mb-4" id="delayCard">
-        <div class="card-header fw-semibold d-flex align-items-center justify-content-between">
+        <div class="card-header fw-semibold d-flex align-items-center justify-content-between flex-wrap gap-2">
             <span><i class="bi bi-hourglass-split me-2"></i>Products Delay Message</span>
-            <span class="d-flex align-items-center gap-1">
+            <span class="d-flex align-items-center gap-2">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Products Delay Message body variant">
+              <button type="button" class="btn btn-outline-secondary active" data-variant="ungrouped"
+                      onclick="pmSetVariant('delay','ungrouped')">Ungrouped</button>
+              <button type="button" class="btn btn-outline-secondary" data-variant="grouped"
+                      onclick="pmSetVariant('delay','grouped')">Grouped</button>
+            </div>
             <span id="delayDirtyBadge" class="badge text-bg-warning" style="display:none;">
                 <i class="bi bi-pencil-fill me-1"></i>Unsaved changes
             </span>
-            <% if (delayCustomized) { %>
-            <span class="badge text-bg-info">Customized</span>
-            <% } else { %>
-            <span class="badge text-bg-secondary">Default</span>
-            <% } %>
+            <span id="delayCustomizedBadge" class="badge <%= delayCustomized ? "text-bg-info" : "text-bg-secondary" %>"
+                  data-ungrouped-customized="<%= delayCustomized %>" data-grouped-customized="<%= delayGroupedCustomized %>">
+                <%= delayCustomized ? "Customized" : "Default" %>
+            </span>
             </span>
         </div>
         <div class="card-body">
-            <label for="delayMessage" class="form-label fw-semibold">Message body</label>
+            <label class="form-label fw-semibold" id="delayVariantLabel">Message body <span
+                class="text-muted fw-normal">(Ungrouped &mdash; uses <code>{{CYCLE}}</code>)</span></label>
             <textarea class="form-control" id="delayMessage" name="delayMessage" rows="12"
                       style="font-family:monospace; font-size:0.85rem;"><c:out value="${delayMessage}" /></textarea>
+            <textarea class="form-control" id="delayMessageGrouped" name="delayMessageGrouped" rows="12"
+                      style="font-family:monospace; font-size:0.85rem; display:none;"><c:out value="${delayMessageGrouped}" /></textarea>
             <div class="form-text text-muted">Supports the <code>&lt;&lt;...&gt;&gt;</code> placeholder markers to
             highlight text that should be edited before sending.</div>
         </div>
     </div>
 
     <div class="card shadow-sm mb-4" id="resumedCard">
-        <div class="card-header fw-semibold d-flex align-items-center justify-content-between">
+        <div class="card-header fw-semibold d-flex align-items-center justify-content-between flex-wrap gap-2">
             <span><i class="bi bi-check2-circle me-2"></i>Products Resumed Message</span>
-            <span class="d-flex align-items-center gap-1">
+            <span class="d-flex align-items-center gap-2">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Products Resumed Message body variant">
+              <button type="button" class="btn btn-outline-secondary active" data-variant="ungrouped"
+                      onclick="pmSetVariant('resumed','ungrouped')">Ungrouped</button>
+              <button type="button" class="btn btn-outline-secondary" data-variant="grouped"
+                      onclick="pmSetVariant('resumed','grouped')">Grouped</button>
+            </div>
             <span id="resumedDirtyBadge" class="badge text-bg-warning" style="display:none;">
                 <i class="bi bi-pencil-fill me-1"></i>Unsaved changes
             </span>
-            <% if (resumedCustomized) { %>
-            <span class="badge text-bg-info">Customized</span>
-            <% } else { %>
-            <span class="badge text-bg-secondary">Default</span>
-            <% } %>
+            <span id="resumedCustomizedBadge" class="badge <%= resumedCustomized ? "text-bg-info" : "text-bg-secondary" %>"
+                  data-ungrouped-customized="<%= resumedCustomized %>" data-grouped-customized="<%= resumedGroupedCustomized %>">
+                <%= resumedCustomized ? "Customized" : "Default" %>
+            </span>
             </span>
         </div>
         <div class="card-body">
-            <label for="resumedMessage" class="form-label fw-semibold">Message body</label>
+            <label class="form-label fw-semibold" id="resumedVariantLabel">Message body <span
+                class="text-muted fw-normal">(Ungrouped &mdash; uses <code>{{CYCLE}}</code>)</span></label>
             <textarea class="form-control" id="resumedMessage" name="resumedMessage" rows="8"
                       style="font-family:monospace; font-size:0.85rem;"><c:out value="${resumedMessage}" /></textarea>
+            <textarea class="form-control" id="resumedMessageGrouped" name="resumedMessageGrouped" rows="8"
+                      style="font-family:monospace; font-size:0.85rem; display:none;"><c:out value="${resumedMessageGrouped}" /></textarea>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4" id="cycleFormatCard">
+        <div class="card-header fw-semibold"><i class="bi bi-list-ol me-2"></i>Cycle List Formatting</div>
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="compactCycleLists" name="compactCycleLists"
+                       <%= compactCycleLists ? "checked" : "" %>>
+                <label class="form-check-label" for="compactCycleLists">Automatically compact grouped cycle lists in
+                the <code>{{CYCLES}}</code> placeholder</label>
+            </div>
+            <div class="form-text text-muted">When enabled (default), a long list of cycles is collapsed into ranges
+            for readability, e.g. <code>00,01,02,03,06,07,12</code> becomes <code>00-03,06-07,12</code>. Disable to
+            always show the complete, uncompacted list.</div>
         </div>
     </div>
 
@@ -128,8 +170,10 @@
   if (!form) return;
 
   var fields = [
-    { textarea: 'delayMessage',   badge: 'delayDirtyBadge',   card: 'delayCard' },
-    { textarea: 'resumedMessage', badge: 'resumedDirtyBadge', card: 'resumedCard' }
+    { textarea: 'delayMessage',          badge: 'delayDirtyBadge',   card: 'delayCard' },
+    { textarea: 'delayMessageGrouped',   badge: 'delayDirtyBadge',   card: 'delayCard' },
+    { textarea: 'resumedMessage',        badge: 'resumedDirtyBadge', card: 'resumedCard' },
+    { textarea: 'resumedMessageGrouped', badge: 'resumedDirtyBadge', card: 'resumedCard' }
   ];
 
   fields.forEach(function(f) {
@@ -184,4 +228,41 @@
     });
   }, true);
 }());
+
+// Ungrouped/Grouped message body toggle: shows the matching textarea and re-labels/re-badges the card.
+function pmSetVariant(which, variant) {
+  var grouped = variant === 'grouped';
+  var ungroupedEl = document.getElementById(which + 'Message');
+  var groupedEl = document.getElementById(which + 'MessageGrouped');
+  var label = document.getElementById(which + 'VariantLabel');
+  var badge = document.getElementById(which + 'CustomizedBadge');
+  if (!ungroupedEl || !groupedEl) return;
+  ungroupedEl.style.display = grouped ? 'none' : '';
+  groupedEl.style.display   = grouped ? '' : 'none';
+  if (label) {
+    label.innerHTML = 'Message body <span class="text-muted fw-normal">(' +
+      (grouped ? 'Grouped &mdash; uses <code>{{CYCLES}}</code>' : 'Ungrouped &mdash; uses <code>{{CYCLE}}</code>') +
+      ')</span>';
+  }
+  var card = ungroupedEl.closest('.card');
+  if (card) {
+    card.querySelectorAll('[data-variant]').forEach(function(b) {
+      b.classList.toggle('active', b.getAttribute('data-variant') === variant);
+    });
+  }
+  if (badge) {
+    var customized = badge.getAttribute(grouped ? 'data-grouped-customized' : 'data-ungrouped-customized') === 'true';
+    badge.textContent = customized ? 'Customized' : 'Default';
+    badge.className = 'badge ' + (customized ? 'text-bg-info' : 'text-bg-secondary');
+  }
+  try { localStorage.setItem('pm' + which + 'Variant', variant); } catch (e) {}
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  ['delay', 'resumed'].forEach(function(which) {
+    var variant = 'ungrouped';
+    try { variant = localStorage.getItem('pm' + which + 'Variant') || 'ungrouped'; } catch (e) {}
+    pmSetVariant(which, variant);
+  });
+});
 </script>

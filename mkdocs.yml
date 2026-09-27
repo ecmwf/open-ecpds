@@ -126,6 +126,7 @@ nav:
       - Critical Action Password: administration/critical-password.md
       - Purge All Data: administration/purge.md
       - Product Descriptions: administration/product-descriptions.md
+      - Product Status Messages: administration/product-status-messages.md
       - System Messages: administration/system-messages.md
   - Use Cases:
       - ECPDS Command-line Tool: use-cases/ecpds-cli.md

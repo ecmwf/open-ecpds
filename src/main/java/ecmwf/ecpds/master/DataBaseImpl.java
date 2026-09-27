@@ -4549,9 +4549,12 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         monitor.done();
     }
 
-    /** The set of recognized product status message names (defense-in-depth against arbitrary SYS_CONFIG writes). */
+    /**
+     * The set of recognized product status SYS_CONFIG names (defense-in-depth against arbitrary SYS_CONFIG writes): the
+     * ungrouped and grouped-page variants of the two notification messages, plus the cycle-list compaction flag.
+     */
     private static final Set<String> PRODUCT_STATUS_MESSAGE_NAMES = Set.of("productDelayMessage",
-            "productResumedMessage");
+            "productResumedMessage", "productDelayMessageGrouped", "productResumedMessageGrouped", "compactCycleLists");
 
     /**
      * {@inheritDoc}

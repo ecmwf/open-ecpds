@@ -46,6 +46,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -512,21 +513,37 @@ public class MonitoringRequest {
     }
 
     /**
-     * Gets the contacts.
+     * Gets the contacts, keyed by {@code "product@time"} (matching {@link #refreshContactsList}). For products
+     * configured to group all their cycles/times onto a single monitoring page (see {@link #loadGroupedProductNames}),
+     * also synthesizes an aggregated entry keyed {@code "product@"} (empty time), whose value is the union of the
+     * emails registered against every individual cycle of that product &mdash; this is the key the grouped monitoring
+     * page ({@code product.jsp}, whose merged {@code productStatus.time} is empty) looks up, so the Email Notifications
+     * card is shown there too instead of never matching any contact.
      *
      * @return the contacts
      */
     public Map<String, String> getContacts() {
         final Map<String, String> result = new HashMap<>();
+        final var groupedProducts = loadGroupedProductNames();
+        final Map<String, Set<String>> groupedEmails = new HashMap<>();
         synchronized (contacts) {
-            for (final String product : contacts.keySet()) {
-                final var contactList = contacts.get(product);
+            for (final String key : contacts.keySet()) {
+                final var contactList = contacts.get(key);
                 final var sb = new StringBuilder();
                 for (final String contact : contactList.emailList.keySet()) {
                     sb.append(sb.length() > 0 ? "," : "").append(contact);
                 }
-                result.put(product, sb.toString());
+                result.put(key, sb.toString());
+                final var at = key.lastIndexOf('@');
+                final var product = at >= 0 ? key.substring(0, at) : key;
+                if (groupedProducts.contains(product)) {
+                    groupedEmails.computeIfAbsent(product, _ -> new LinkedHashSet<>())
+                            .addAll(contactList.emailList.keySet());
+                }
             }
+        }
+        for (final var e : groupedEmails.entrySet()) {
+            result.put(e.getKey() + "@", String.join(",", e.getValue()));
         }
         return result;
     }
@@ -694,16 +711,7 @@ public class MonitoringRequest {
      * @return a new map: ungrouped entries unchanged, plus one merged entry per grouped product
      */
     private Map<String, ProductStatus> mergeGroupedProducts(final Map<String, ProductStatus> source) {
-        final var groupedProducts = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-        try {
-            for (final var m : ecmwf.ecpds.master.MasterManager.getDB().getProductMetadata()) {
-                if (m.isGeneric() && m.isGroupTimes()) {
-                    groupedProducts.add(m.getProduct());
-                }
-            }
-        } catch (final Exception e) {
-            log.warn("mergeGroupedProducts: failed to load grouped product names", e);
-        }
+        final var groupedProducts = loadGroupedProductNames();
         if (groupedProducts.isEmpty()) {
             return source;
         }
@@ -720,6 +728,29 @@ public class MonitoringRequest {
             result.put(e.getKey() + "@", mergeProductStatuses(e.getKey(), e.getValue()));
         }
         return result;
+    }
+
+    /**
+     * Loads the names of every product configured (via the generic entry in Product Descriptions) to have all its
+     * cycles/times grouped into a single monitoring page instead of one page per cycle/time. Used both to merge
+     * {@link ProductStatus} entries ({@link #mergeGroupedProducts}) and to aggregate BCC contacts across all of a
+     * grouped product's cycles ({@link #getContacts}). Returns an empty set if the list cannot be loaded (e.g. database
+     * unavailable).
+     *
+     * @return the case-insensitive set of grouped product names
+     */
+    private static Set<String> loadGroupedProductNames() {
+        final var groupedProducts = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        try {
+            for (final var m : ecmwf.ecpds.master.MasterManager.getDB().getProductMetadata()) {
+                if (m.isGeneric() && m.isGroupTimes()) {
+                    groupedProducts.add(m.getProduct());
+                }
+            }
+        } catch (final Exception e) {
+            log.warn("loadGroupedProductNames: failed to load grouped product names", e);
+        }
+        return groupedProducts;
     }
 
     /**

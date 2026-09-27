@@ -389,16 +389,16 @@ th {
     <div class="card mt-4 border-secondary-subtle">
         <div class="card-header py-2 px-3 d-flex align-items-center gap-2">
             <i class="bi bi-envelope-fill text-secondary"></i>
-            <span class="fw-semibold text-secondary" style="font-size:0.82rem;">Email Notifications &mdash; ${productStatus.time}-${productStatus.product}</span>
+            <span class="fw-semibold text-secondary" style="font-size:0.82rem;">Email Notifications &mdash; ${productNameAndTime}</span>
         </div>
         <div class="card-body py-2 px-3 d-flex align-items-center flex-wrap gap-2">
             <a id="delayEmail" target="_blank"
-               title="Open Outlook: Products Delay Email for ${productStatus.time}-${productStatus.product}"
+               title="Open Outlook: Products Delay Email for ${productNameAndTime}"
                class="btn btn-sm btn-outline-warning">
                 <i class="bi bi-exclamation-triangle-fill me-1"></i>Products Delay
             </a>
             <a id="productEmail" target="_blank"
-               title="Open Outlook: Products Resumed Email for ${productStatus.time}-${productStatus.product}"
+               title="Open Outlook: Products Resumed Email for ${productNameAndTime}"
                class="btn btn-sm btn-outline-success">
                 <i class="bi bi-check-circle-fill me-1"></i>Products Resumed
             </a>
@@ -445,14 +445,14 @@ th {
 
         setHrefForSendingEmail(
             document.getElementById('delayEmail'),
-            'op_delay_ecmwf@lists.ecmwf.int,ecpds-product-${productStatus.time}-${productStatus.product}@ecmwf.int',
-            'ECMWF Products Delay (${productStatus.time}-${productStatus.product})',
+            'op_delay_ecmwf@lists.ecmwf.int,ecpds-product-${productNameAndTime}@ecmwf.int',
+            'ECMWF Products Delay (${productNameAndTime})',
             '${ECMWFProductsDelay}');
 
         setHrefForSendingEmail(
             document.getElementById('productEmail'),
-            'op_delay_ecmwf@lists.ecmwf.int,ecpds-product-${productStatus.time}-${productStatus.product}@ecmwf.int',
-            'ECMWF Products (${productStatus.time}-${productStatus.product})',
+            'op_delay_ecmwf@lists.ecmwf.int,ecpds-product-${productNameAndTime}@ecmwf.int',
+            'ECMWF Products (${productNameAndTime})',
             '${ECMWFProducts}');
     </script>
 </c:if>
