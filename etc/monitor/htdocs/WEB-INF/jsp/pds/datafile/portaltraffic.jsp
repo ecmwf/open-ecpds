@@ -86,6 +86,13 @@ function ptFmtBytes(b) {
   return b+' B';
 }
 function ptFmtRate(r) { return r.toFixed(3)+' Mbps'; }
+function ptFmtCount(n) {
+  if (n >= 1e12) return (n/1e12).toFixed(2)+'T';
+  if (n >= 1e9)  return (n/1e9).toFixed(2)+'B';
+  if (n >= 1e6)  return (n/1e6).toFixed(2)+'M';
+  if (n >= 1e3)  return (n/1e3).toFixed(1)+'K';
+  return n.toLocaleString();
+}
 
 const ptRateIn  = ptBytesIn.map((v,i)  => ptRate(v, ptDurationIn[i]));
 const ptRateOut = ptBytesOut.map((v,i) => ptRate(v, ptDurationOut[i]));
@@ -148,7 +155,9 @@ function ptUpdateStats() {
     if (ptRateIn[i]  > peakIn)  peakIn  = ptRateIn[i];
     if (ptRateOut[i] > peakOut) peakOut = ptRateOut[i];
   });
-  document.getElementById('ptStatConn').textContent    = totalConn.toLocaleString();
+  var ptConnEl = document.getElementById('ptStatConn');
+  ptConnEl.textContent = ptFmtCount(totalConn);
+  ptConnEl.title       = totalConn.toLocaleString();
   document.getElementById('ptStatIn').textContent      = ptFmtBytes(totalIn);
   document.getElementById('ptStatOut').textContent     = ptFmtBytes(totalOut);
   document.getElementById('ptStatPeakIn').textContent  = ptFmtRate(peakIn);
@@ -262,23 +271,23 @@ function ptSetView(v) {
 <div class="d-flex flex-wrap gap-3 mb-4">
   <div class="traffic-stat-card" style="background:var(--bs-tertiary-bg);border:1px solid var(--bs-border-color);border-radius:8px;padding:0.75rem 1.25rem;flex:1;min-width:120px;">
     <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;color:var(--bs-secondary-color);letter-spacing:0.04em;"><i class="bi bi-person-fill-up me-1"></i>Total Connections</div>
-    <div style="font-size:1.1rem;font-weight:700;" id="ptStatConn">&mdash;</div>
+    <div style="font-size:1.1rem;font-weight:700;overflow-wrap:anywhere;" id="ptStatConn">&mdash;</div>
   </div>
   <div class="traffic-stat-card" style="background:var(--bs-tertiary-bg);border:1px solid var(--bs-border-color);border-radius:8px;padding:0.75rem 1.25rem;flex:1;min-width:120px;">
     <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;color:var(--bs-secondary-color);letter-spacing:0.04em;"><i class="bi bi-cloud-upload me-1"></i>Total Uploaded</div>
-    <div style="font-size:1.1rem;font-weight:700;" id="ptStatIn">&mdash;</div>
+    <div style="font-size:1.1rem;font-weight:700;overflow-wrap:anywhere;" id="ptStatIn">&mdash;</div>
   </div>
   <div class="traffic-stat-card" style="background:var(--bs-tertiary-bg);border:1px solid var(--bs-border-color);border-radius:8px;padding:0.75rem 1.25rem;flex:1;min-width:120px;">
     <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;color:var(--bs-secondary-color);letter-spacing:0.04em;"><i class="bi bi-cloud-download me-1"></i>Total Downloaded</div>
-    <div style="font-size:1.1rem;font-weight:700;" id="ptStatOut">&mdash;</div>
+    <div style="font-size:1.1rem;font-weight:700;overflow-wrap:anywhere;" id="ptStatOut">&mdash;</div>
   </div>
   <div class="traffic-stat-card" style="background:var(--bs-tertiary-bg);border:1px solid var(--bs-border-color);border-radius:8px;padding:0.75rem 1.25rem;flex:1;min-width:120px;">
     <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;color:var(--bs-secondary-color);letter-spacing:0.04em;"><i class="bi bi-trophy-fill me-1 text-warning"></i>Peak Upload</div>
-    <div style="font-size:1.1rem;font-weight:700;" id="ptStatPeakIn">&mdash;</div>
+    <div style="font-size:1.1rem;font-weight:700;overflow-wrap:anywhere;" id="ptStatPeakIn">&mdash;</div>
   </div>
   <div class="traffic-stat-card" style="background:var(--bs-tertiary-bg);border:1px solid var(--bs-border-color);border-radius:8px;padding:0.75rem 1.25rem;flex:1;min-width:120px;">
     <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;color:var(--bs-secondary-color);letter-spacing:0.04em;"><i class="bi bi-trophy-fill me-1 text-success"></i>Peak Download</div>
-    <div style="font-size:1.1rem;font-weight:700;" id="ptStatPeakOut">&mdash;</div>
+    <div style="font-size:1.1rem;font-weight:700;overflow-wrap:anywhere;" id="ptStatPeakOut">&mdash;</div>
   </div>
 </div>
 
