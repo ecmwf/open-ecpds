@@ -139,6 +139,11 @@ ops=opspass:monitoringSummaryList
 !!! note "No permissions = no access"
     If a username is not listed in the `[API]` section, or the operation does not match the regex, the request is rejected with a `DataBaseException: User not authorized` error.
 
+!!! note "`showSensitiveInfo` — a special, non-gating permission"
+    Unlike every other service name, `showSensitiveInfo` doesn't gate access to an endpoint - it controls
+    whether sensitive fields are *included* in responses the client is already permitted to receive. It's
+    disabled by default. See [Sensitive Fields](#sensitive-fields) below.
+
 ---
 
 ## Response Format
@@ -156,6 +161,20 @@ Error responses include `"status": "error"` and a `"message"` field:
 ```
 
 HTTP-level errors (auth failures, missing parameters) return standard HTTP status codes (`400`, `401`, `403`, `412`) with a plain-text body.
+
+---
+
+## Sensitive Fields
+
+Some objects returned by this API carry credentials or other sensitive values: a `Host`'s password
+(`GET /v1/destination/backup[/{name}]`), an incoming user's password (`GET /v1/incoming/user/list`), and
+any destination-metadata field configured with type `password` (`GET /v1/destination/{name}/metadata`).
+
+By default, these values are omitted from the JSON response even when the client is otherwise permitted to
+call the endpoint. To include them, grant the client the `showSensitiveInfo` service permission (a checkbox
+in the **Data Visibility** group on `/do/user/api/{clientId}`, or `.*` in the `[API]` regex). This permission
+is independent from — and does not replace — the permission needed to call the endpoint itself; it only
+changes what an already-successful response contains.
 
 ---
 
@@ -235,6 +254,9 @@ Lists all incoming users, optionally filtered by destination.
 | `destination` | ❌ | Filter users associated with this destination name |
 
 **Service name:** `incomingUserList`
+
+Each user's `password` field is included only if the client also has the `showSensitiveInfo` permission
+(see [Sensitive Fields](#sensitive-fields)) — omitted otherwise.
 
 **Response:**
 ```json
@@ -520,6 +542,9 @@ Returns all metadata values for a destination grouped by category. Fields with n
 
 **Service name:** `getDestinationMetaValuesByDestination`
 
+Fields of type `password` are included only if the client also has the `showSensitiveInfo` permission
+(see [Sensitive Fields](#sensitive-fields)) — omitted entirely otherwise.
+
 **Response:**
 ```json
 {
@@ -626,6 +651,9 @@ Returns backup data for a set of destinations, optionally filtered.
 
 **Service name:** `destinationBackupList`
 
+Each host's `passwd` field is included only if the client also has the `showSensitiveInfo` permission
+(see [Sensitive Fields](#sensitive-fields)) — omitted otherwise.
+
 ---
 
 #### `GET /v1/destination/backup/{name}`
@@ -639,6 +667,8 @@ Returns backup data for a single destination.
 | `name` | Destination name |
 
 **Service name:** `destinationBackupList`
+
+Same `showSensitiveInfo` behaviour for host passwords as above.
 
 ---
 

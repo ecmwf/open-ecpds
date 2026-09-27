@@ -198,8 +198,14 @@ public final class ECpdsApplication extends Application {
 
     /**
      * The Interface IncomingUserMixIn.
+     *
+     * <p>
+     * {@code password} is deliberately not ignored here - it needs to reach the response object so that it can be
+     * included or redacted per request, based on the caller's {@code showSensitiveInfo} API permission (see
+     * {@code ECpdsRESTV1.incomingUserList}). A static, per-class Jackson mixin has no per-request context, so it can't
+     * make that decision itself.
      */
-    @JsonIgnoreProperties({ "collectionSize", "connections", "password", "data", "active", "authorizedSSHKeys" })
+    @JsonIgnoreProperties({ "collectionSize", "connections", "data", "active", "authorizedSSHKeys" })
     public interface IncomingUserMixIn {
 
         /**

@@ -81,6 +81,16 @@ public final class ECpdsRESTV1 {
      */
     private static final String MONITORING_SUMMARY_SERVICE = "monitoringSummaryList";
 
+    /**
+     * The service name used to gate whether sensitive fields (e.g. {@code Host}/{@code IncomingUser} passwords, and
+     * destination-metadata fields of type {@code password}) are included in otherwise-permitted JSON responses. Unlike
+     * every other service name checked via {@link ecmwf.ecpds.master.DataBaseInterface#checkApiPermission}, this one is
+     * checked via the non-throwing {@link ecmwf.ecpds.master.DataBaseInterface#hasApiPermission} - its absence never
+     * fails a request, it only redacts sensitive fields. Disabled by default (no permission pattern matches it out of
+     * the box). Shown as a checkbox in the API client Service Permissions guide ({@code /do/user/api/{clientId}}).
+     */
+    private static final String SHOW_SENSITIVE_INFO_SERVICE = "showSensitiveInfo";
+
     // Version
 
     /**
@@ -224,8 +234,14 @@ public final class ECpdsRESTV1 {
         _log.debug("incomingUserList");
         try {
             final var userNameAndPassword = _getUserNameAndPassword(authString, request);
+            final var userList = MasterManager.getDB().incomingUserList(userNameAndPassword, destination);
+            if (!MasterManager.getDB().hasApiPermission(userNameAndPassword, SHOW_SENSITIVE_INFO_SERVICE)) {
+                for (final var incomingUser : userList) {
+                    incomingUser.setPassword(null);
+                }
+            }
             final var message = RESTMessage.getSuccessMessage();
-            message.put("userList", MasterManager.getDB().incomingUserList(userNameAndPassword, destination));
+            message.put("userList", userList);
             return message.getResponse();
         } catch (final WebApplicationException w) {
             _log.warn("incomingUserList", w);
@@ -468,6 +484,8 @@ public final class ECpdsRESTV1 {
             final var fields = MasterManager.getDB().getDestinationMetaFields(userNameAndPassword);
             final var rawValues = MasterManager.getDB().getDestinationMetaValuesByDestination(userNameAndPassword,
                     name);
+            final var showSensitiveInfo = MasterManager.getDB().hasApiPermission(userNameAndPassword,
+                    SHOW_SENSITIVE_INFO_SERVICE);
             // Build fieldId → list of values map
             final var valuesByField = new java.util.LinkedHashMap<Integer, java.util.List<String>>();
             for (final var v : rawValues) {
@@ -477,6 +495,10 @@ public final class ECpdsRESTV1 {
             final var STRUCTURED = java.util.Set.of("contact", "mail-group", "switchboard");
             final var metadata = new java.util.LinkedHashMap<String, java.util.LinkedHashMap<String, Object>>();
             for (final var f : fields) {
+                if (!showSensitiveInfo && "password".equals(f.getType())) {
+                    // Never export a password field's plaintext value without the showSensitiveInfo permission.
+                    continue;
+                }
                 final var category = f.getCategory() != null ? f.getCategory() : "General";
                 final var group = metadata.computeIfAbsent(category,
                         _ -> new java.util.LinkedHashMap<String, Object>());
@@ -725,8 +747,10 @@ public final class ECpdsRESTV1 {
         _log.debug("getDestinationBackup");
         try {
             final var userNameAndPassword = _getUserNameAndPassword(authString, request);
+            final var backup = MasterManager.getDB().getDestinationBackup(userNameAndPassword, id, iso, type, null);
+            _redactBackupHostPasswordsIfNotPermitted(userNameAndPassword, backup);
             final var message = RESTMessage.getSuccessMessage();
-            message.put("backup", MasterManager.getDB().getDestinationBackup(userNameAndPassword, id, iso, type, null));
+            message.put("backup", backup);
             return message.getResponse();
         } catch (final WebApplicationException w) {
             _log.warn("getDestinationBackup", w);
@@ -758,9 +782,10 @@ public final class ECpdsRESTV1 {
         try {
             final var userNameAndPassword = _getUserNameAndPassword(authString, request);
             _checkParameter("name", name);
+            final var backup = MasterManager.getDB().getDestinationBackup(userNameAndPassword, null, null, null, name);
+            _redactBackupHostPasswordsIfNotPermitted(userNameAndPassword, backup);
             final var message = RESTMessage.getSuccessMessage();
-            message.put("backup",
-                    MasterManager.getDB().getDestinationBackup(userNameAndPassword, null, null, null, name));
+            message.put("backup", backup);
             return message.getResponse();
         } catch (final WebApplicationException w) {
             _log.warn("getDestinationBackup", w);
@@ -1415,6 +1440,40 @@ public final class ECpdsRESTV1 {
     private static void _checkParameter(final String name, final Object value) {
         if (value == null) {
             throw _newException(Status.PRECONDITION_FAILED, "Missing parameter: " + name);
+        }
+    }
+
+    /**
+     * Nulls out {@link ecmwf.common.database.Host#getPasswd()} on every host reachable from the given backup (through
+     * each destination's associations) unless the caller has been granted the {@link #SHOW_SENSITIVE_INFO_SERVICE}
+     * permission. Safe to mutate: by the time {@code backup} reaches this REST plugin it has already crossed RMI as a
+     * deep, disconnected copy of whatever the master server holds, so this never touches the master's live, shared,
+     * in-memory objects.
+     *
+     * @param userNameAndPassword
+     *            the "clientId:secret" credentials string
+     * @param backup
+     *            the backup to redact in place
+     *
+     * @throws Exception
+     *             if the permission check itself fails
+     */
+    private static void _redactBackupHostPasswordsIfNotPermitted(final String userNameAndPassword,
+            final DestinationBackup backup) throws Exception {
+        if (backup == null || backup.getDestinations() == null
+                || MasterManager.getDB().hasApiPermission(userNameAndPassword, SHOW_SENSITIVE_INFO_SERVICE)) {
+            return;
+        }
+        for (final var destinationList : backup.getDestinations()) {
+            if (destinationList.getAssociations() == null) {
+                continue;
+            }
+            for (final var association : destinationList.getAssociations()) {
+                final var host = association.getHost();
+                if (host != null) {
+                    host.setPasswd(null);
+                }
+            }
         }
     }
 

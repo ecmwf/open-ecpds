@@ -1919,6 +1919,26 @@ public interface DataBaseInterface extends Remote {
      */
     void checkApiPermission(String userNameAndPassword, String service) throws DataBaseException, RemoteException;
 
+    /**
+     * Same check as {@link #checkApiPermission(String, String)}, but returns a boolean instead of throwing - used where
+     * the absence of a permission should only change what a response contains (e.g. redacting sensitive fields), not
+     * fail the whole request.
+     *
+     * @param userNameAndPassword
+     *            the "clientId:secret" credentials string
+     * @param service
+     *            the service name to check permission for
+     *
+     * @return {@code true} if the client is active, has a matching secret, and is granted a permission pattern matching
+     *         the given service name
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    boolean hasApiPermission(String userNameAndPassword, String service) throws DataBaseException, RemoteException;
+
     void addApiEvent(ApiEvent event) throws DataBaseException, RemoteException;
 
     ApiEvent[] getApiEventsForClient(String clientId, int maxRows) throws DataBaseException, RemoteException;

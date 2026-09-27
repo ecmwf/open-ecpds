@@ -206,7 +206,7 @@ $(document).ready(function () {
       'getDestinationMetaFields','getDestinationMetaValuesByDestination','setDestinationMetaValues',
       'incomingUserAdd','incomingUserAdd2','incomingUserList','incomingUserDel',
       'incomingAssociationAdd','incomingAssociationDel','incomingAssociationList',
-      'incomingCategoryAdd','updateHostOption','monitoringSummaryList'
+      'incomingCategoryAdd','updateHostOption','monitoringSummaryList','showSensitiveInfo'
     ];
 
     function _apiPermSelectAll(checked) {
@@ -420,6 +420,21 @@ $(document).ready(function () {
           </div>
           <div class="d-flex flex-column gap-1 ps-1">
             <div class="form-check mb-0"><input class="form-check-input api-perm-chk" type="checkbox" id="apc-monitoringSummaryList" data-group="monitoring" value="monitoringSummaryList"><label class="form-check-label small font-monospace" for="apc-monitoringSummaryList">monitoringSummaryList</label></div>
+          </div>
+        </div>
+
+        <%-- Data Visibility group - not a call gate, see tooltip --%>
+        <div class="col-md-6 col-xl-4">
+          <div class="d-flex align-items-center gap-1 mb-1">
+            <i class="bi bi-eye text-primary" style="font-size:0.8rem"></i>
+            <span class="small fw-semibold">Data Visibility</span>
+          </div>
+          <div class="d-flex flex-column gap-1 ps-1">
+            <div class="form-check mb-0">
+              <input class="form-check-input api-perm-chk" type="checkbox" id="apc-showSensitiveInfo" data-group="datavisibility" value="showSensitiveInfo">
+              <label class="form-check-label small font-monospace" for="apc-showSensitiveInfo"
+                     title="Include sensitive fields (e.g. host and incoming-user passwords, and destination-metadata fields of type &quot;password&quot;) in REST JSON responses. Disabled by default. This does not grant access to any service - it only controls whether sensitive fields are included in responses already permitted by other checkboxes.">showSensitiveInfo</label>
+            </div>
           </div>
         </div>
       </div>
