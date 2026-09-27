@@ -26,6 +26,8 @@ package ecmwf.common.monitor.module;
  * @since 2024-07-01
  */
 
+import java.io.IOException;
+
 import org.apache.logging.log4j.LogManager;
 
 import org.apache.logging.log4j.Logger;
@@ -34,6 +36,7 @@ import ecmwf.common.monitor.MonitorException;
 import ecmwf.common.monitor.MonitorInterface;
 import ecmwf.common.monitor.MonitorManager;
 import ecmwf.common.opsview.OpsViewManager;
+import ecmwf.common.opsview.OpsViewManagerException;
 
 /**
  * The Class OpsviewProvider.
@@ -66,6 +69,23 @@ public final class OpsviewProvider implements MonitorInterface {
         } catch (final Throwable t) {
             _log.warn("Cannot send notification (hostname=" + realHostname + ",service=" + service + ",status=" + status
                     + ",message=" + message + ")", t);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Adds/replaces the notes attached to a destination/host. Unlike {@link #sendMessage}, errors are propagated
+     * (wrapped in a {@link MonitorException}) rather than swallowed: this is invoked from a direct, user-initiated
+     * action (the "Export Notes" button on the Destination Metadata page), so the caller needs to know whether it
+     * actually succeeded.
+     */
+    @Override
+    public void addNotes(final String destination, final String metadata) throws MonitorException {
+        try {
+            OpsViewManager.addNotes(destination, metadata);
+        } catch (final OpsViewManagerException | IOException e) {
+            throw new MonitorException(e.getMessage());
         }
     }
 }

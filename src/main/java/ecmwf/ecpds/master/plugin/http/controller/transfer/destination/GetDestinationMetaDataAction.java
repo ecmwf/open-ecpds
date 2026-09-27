@@ -29,6 +29,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import ecmwf.common.monitor.MonitorManager;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
@@ -69,24 +70,9 @@ public class GetDestinationMetaDataAction extends PDSAction {
                 request.setAttribute("destPropErrors", GetDestinationListJsonAction.hasPropertyErrors(destination));
             } catch (final Exception ignored) {
             }
-            // Determine if user may edit metadata: admin path access OR allowed category
-            var canEditMeta = false;
-            try {
-                canEditMeta = user.hasAccess("/do/admin/metafields");
-            } catch (final Exception ignored) {
-            }
-            if (!canEditMeta) {
-                try {
-                    for (final Object c : user.getCategories()) {
-                        if (c instanceof Category cat && _META_EDIT_CATEGORIES.contains(cat.getName())) {
-                            canEditMeta = true;
-                            break;
-                        }
-                    }
-                } catch (final Exception ignored) {
-                }
-            }
+            final var canEditMeta = canEditMeta(user);
             request.setAttribute("canEditMeta", canEditMeta);
+            request.setAttribute("monitorActivated", MonitorManager.isActivated());
             // Load metadata fields (filter by destination DES_TYPE via junction table) and existing values
             try {
                 final var db = MasterManager.getDB();
@@ -130,5 +116,35 @@ public class GetDestinationMetaDataAction extends PDSAction {
         } else {
             throw new ECMWFActionFormException("Unsupported number of parameters: " + params);
         }
+    }
+
+    /**
+     * Determines whether the given user may edit destination metadata: admin path access OR an allowed category
+     * ({@link #_META_EDIT_CATEGORIES}). Shared with every action that mutates destination metadata (saving values,
+     * exporting Opsview notes), so the permission check only lives in one place.
+     *
+     * @param user
+     *            the user
+     *
+     * @return true, if the user may edit destination metadata
+     */
+    static boolean canEditMeta(final User user) {
+        var canEditMeta = false;
+        try {
+            canEditMeta = user.hasAccess("/do/admin/metafields");
+        } catch (final Exception ignored) {
+        }
+        if (!canEditMeta) {
+            try {
+                for (final Object c : user.getCategories()) {
+                    if (c instanceof Category cat && _META_EDIT_CATEGORIES.contains(cat.getName())) {
+                        canEditMeta = true;
+                        break;
+                    }
+                }
+            } catch (final Exception ignored) {
+            }
+        }
+        return canEditMeta;
     }
 }

@@ -80,6 +80,7 @@ public class SaveDestinationMetaDataAction extends PDSAction {
                     if (pos != null) {
                         v.setPosition(Integer.parseInt(String.valueOf(pos)));
                     }
+                    v.setIncludeInNotes(Boolean.TRUE.equals(m.get("DMV_INCLUDE_IN_NOTES")));
                     v.setBy(by);
                     values.add(v);
                 }

@@ -238,6 +238,30 @@ public final class MonitorManager implements Serializable {
     }
 
     /**
+     * Adds/replaces the notes attached to a destination/host, via the configured {@link MonitorInterface} provider.
+     * Requires monitoring to be activated ({@code Monitor.activated}, see {@link #isActivated()}), exactly like every
+     * other notification sent through this class.
+     *
+     * @param destination
+     *            the destination
+     * @param metadata
+     *            the notes text
+     *
+     * @throws MonitorException
+     *             the monitor exception
+     */
+    public static synchronized void addNotes(final String destination, final String metadata) throws MonitorException {
+        checkIfIsActivated();
+        try {
+            getProvider().addNotes(destination, metadata);
+        } catch (final MonitorException e) {
+            throw e;
+        } catch (final Exception e) {
+            throw new MonitorException(e.getMessage());
+        }
+    }
+
+    /**
      * Update.
      *
      * @param status

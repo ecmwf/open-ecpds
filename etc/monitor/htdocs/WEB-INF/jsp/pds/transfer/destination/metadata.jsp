@@ -14,6 +14,10 @@
 .dmf-field-label { font-size: 0.82rem; font-weight: 600; color: var(--bs-body-color); }
 .dmf-readonly-value { font-size: 0.9rem; padding: 0.15rem 0; color: var(--bs-body-color); word-break: break-word; }
 .dmf-readonly-empty { font-size: 0.85rem; color: var(--bs-secondary-color); font-style: italic; }
+.dmf-notes-check { cursor: pointer; }
+/* "Include in Notes" only makes sense for a field that currently has a value - hidden along with the rest of
+   an empty field's controls, tracked live via the same data-empty attribute "Hide empty" already maintains. */
+.dmf-field-item[data-empty="true"] .dmf-notes-check { display: none; }
 </style>
 
 <div class="card border-0 shadow-sm mt-3">
@@ -27,6 +31,12 @@
       </button>
       </c:if>
       <span id="dmfSaveStatus" class="dmf-save-status text-muted"></span>
+      <c:if test="${canEditMeta && monitorActivated}">
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="dmfExportNotesBtn"
+              onclick="dmfExportNotes()" title="Export fields flagged &quot;Include in Notes&quot; to Opsview">
+        <i class="bi bi-send-check me-1"></i>Export Notes
+      </button>
+      </c:if>
       <c:if test="${canEditMeta}">
       <div class="btn-group btn-group-sm">
         <button type="button" class="btn btn-primary" id="dmfSaveBtn" onclick="dmfSave()" disabled>
@@ -86,10 +96,19 @@
 
         <div class="dmf-field-item col-12<c:choose><c:when test="${field.type == 'contact' or field.type == 'mail-group' or field.type == 'switchboard' or field.type == 'textarea'}"> col-md-6</c:when><c:otherwise> col-sm-6 col-lg-4</c:otherwise></c:choose>"
              id="dmf-group-${field.id}" data-type="${field.type}" data-max-occurs="${field.maxOccurs}">
-          <div class="dmf-field-label">
-            ${field.label}
-            <c:if test="${not empty field.tooltip}">
-              <i class="bi bi-question-circle text-muted ms-1 dmf-tip-icon" data-tip="${field.tooltip}" onclick="dmfTipToggle(this);event.stopPropagation();" style="cursor:pointer;font-weight:normal;font-size:0.8rem" tabindex="0"></i>
+          <div class="dmf-field-label d-flex align-items-center justify-content-between flex-wrap gap-1">
+            <span>
+              ${field.label}
+              <c:if test="${not empty field.tooltip}">
+                <i class="bi bi-question-circle text-muted ms-1 dmf-tip-icon" data-tip="${field.tooltip}" onclick="dmfTipToggle(this);event.stopPropagation();" style="cursor:pointer;font-weight:normal;font-size:0.8rem" tabindex="0"></i>
+              </c:if>
+            </span>
+            <c:if test="${canEditMeta && field.type != 'password'}">
+            <div class="form-check form-check-inline dmf-notes-check mb-0" style="font-size:0.72rem;"
+                 title="Include this field's value(s) when exporting Opsview notes">
+              <input type="checkbox" class="form-check-input dmf-notes-checkbox" id="dmf-notes-${field.id}">
+              <label class="form-check-label text-muted fw-normal" for="dmf-notes-${field.id}">Include in Notes</label>
+            </div>
             </c:if>
           </div>
           <div id="dmf-values-${field.id}">
@@ -128,7 +147,7 @@ var dmfCanEdit = ${canEditMeta};
                             .replace("\t","\\t") + "\"";
 %>
   if (!dmfData[${val.fieldId}]) dmfData[${val.fieldId}] = [];
-  dmfData[${val.fieldId}].push({id: ${val.id}, value: <%= _json %>, position: ${val.position}});
+  dmfData[${val.fieldId}].push({id: ${val.id}, value: <%= _json %>, position: ${val.position}, includeInNotes: ${val.includeInNotes}});
 </c:forEach>
 
 var dmfDestination = '${destination.name}';
@@ -269,11 +288,13 @@ function dmfCollect() {
     var fieldId = parseInt(container.id.replace('dmf-values-',''));
     var group = container.closest('[id^="dmf-group-"]');
     var fieldType = group ? (group.dataset.type || 'text') : 'text';
+    var notesCheckbox = document.getElementById('dmf-notes-' + fieldId);
+    var includeInNotes = !!(notesCheckbox && notesCheckbox.checked);
     var rows = container.querySelectorAll('.dmf-row');
     rows.forEach(function(row, pos) {
       var val = dmfReadInput(row, fieldType);
       if (val && val.trim()) {
-        result.push({DMF_ID: fieldId, DMV_VALUE: val, DMV_POSITION: pos});
+        result.push({DMF_ID: fieldId, DMV_VALUE: val, DMV_POSITION: pos, DMV_INCLUDE_IN_NOTES: includeInNotes});
       }
     });
   });
@@ -308,6 +329,39 @@ function dmfSave() {
       status.textContent = 'Network error';
       status.className = 'dmf-save-status text-danger';
       btn.disabled = false;
+    });
+}
+
+// Exports every field flagged "Include in Notes" (see dmfCollect()'s DMV_INCLUDE_IN_NOTES) as an Opsview
+// note for this destination. Acts on the last *saved* state (like Import XML already does), not any
+// in-progress unsaved edits - the button is disabled while dirty (see dmfSetDirty()/dmfClearDirty()) so
+// this is never ambiguous.
+function dmfExportNotes() {
+  var btn = document.getElementById('dmfExportNotesBtn');
+  var status = document.getElementById('dmfSaveStatus');
+  if (!btn) return;
+  btn.disabled = true;
+  status.textContent = 'Exporting notes...';
+  status.className = 'dmf-save-status text-muted';
+  fetch('<c:url value="/do/transfer/destination/metadata/exportnotes"/>', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+    body: JSON.stringify({destination: dmfDestination})
+  }).then(function(r) { return r.json(); })
+    .then(function(data) {
+      btn.disabled = _dmfDirty;
+      if (data.success) {
+        status.textContent = 'Notes exported ✓';
+        status.className = 'dmf-save-status text-success';
+        setTimeout(function(){ status.textContent=''; }, 4000);
+      } else {
+        status.textContent = 'Error: ' + (data.error || 'unknown');
+        status.className = 'dmf-save-status text-danger';
+      }
+    }).catch(function(e) {
+      btn.disabled = _dmfDirty;
+      status.textContent = 'Network error';
+      status.className = 'dmf-save-status text-danger';
     });
 }
 
@@ -360,6 +414,11 @@ function dmfSave() {
 var _dmfDirty = false;
 
 function dmfSetDirty() {
+  var exportBtn = document.getElementById('dmfExportNotesBtn');
+  if (exportBtn) {
+    exportBtn.disabled = true;
+    exportBtn.title = 'Save your changes first';
+  }
   if (_dmfDirty) return;
   _dmfDirty = true;
   var btn = document.getElementById('dmfSaveBtn');
@@ -384,6 +443,11 @@ function dmfClearDirty() {
     btn.classList.remove('btn-warning');
     btn.classList.add('btn-primary');
     btn.title = '';
+  }
+  var exportBtn = document.getElementById('dmfExportNotesBtn');
+  if (exportBtn) {
+    exportBtn.disabled = false;
+    exportBtn.title = 'Export fields flagged "Include in Notes" to Opsview';
   }
 }
 
@@ -477,11 +541,20 @@ document.addEventListener('DOMContentLoaded', function() {
     var fieldType = group.dataset.type || 'text';
     var maxOccurs = parseInt(group.dataset.maxOccurs || '1');
     dmfRenderGroup(fieldId, fieldType, maxOccurs);
+    // Seed the "Include in Notes" checkbox from the loaded values (all rows of a field are forced to
+    // carry the same flag on save - see dmfCollect() - so the first row is representative).
+    var notesCheckbox = document.getElementById('dmf-notes-' + fieldId);
+    if (notesCheckbox) {
+      var vals = dmfData[fieldId] || [];
+      notesCheckbox.checked = vals.length > 0 && !!vals[0].includeInNotes;
+    }
   });
-  // Detect any input/change in the form and mark dirty
+  // Detect any input/change in the form and mark dirty; also re-evaluate which fields are empty so the
+  // "Include in Notes" checkbox (hidden for empty fields, see the .dmf-notes-check CSS rule) appears/
+  // disappears live while typing rather than only when "Hide empty" is toggled.
   if (dmfCanEdit) {
-    document.getElementById('dmfForm').addEventListener('input', dmfSetDirty);
-    document.getElementById('dmfForm').addEventListener('change', dmfSetDirty);
+    document.getElementById('dmfForm').addEventListener('input', function() { dmfSetDirty(); dmfMarkEmpty(); });
+    document.getElementById('dmfForm').addEventListener('change', function() { dmfSetDirty(); dmfMarkEmpty(); });
   }
   // Mark empty fields and restore hide-empty state
   dmfMarkEmpty();

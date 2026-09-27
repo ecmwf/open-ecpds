@@ -1756,6 +1756,7 @@
 		<property name="DMV_POSITION" type="int">                         <column name="DMV_POSITION" />              </property>
 		<property name="DMV_UPDATED"  type="java.sql.Timestamp">          <column name="DMV_UPDATED"  />              </property>
 		<property name="DMV_BY"       type="java.lang.String">            <column name="DMV_BY"       length="64" />  </property>
+		<property name="DMV_INCLUDE_IN_NOTES" type="boolean">              <column name="DMV_INCLUDE_IN_NOTES" />      </property>
 		<many-to-one name="destinationMetaField" class="DestinationMetaField"
 			not-found="ignore" update="false" insert="false">
 			<column name="DMF_ID" />

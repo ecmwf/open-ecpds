@@ -56,6 +56,9 @@ public class DestinationMetaValue extends DataBaseObject {
     /** The dmv by. */
     protected String DMV_BY;
 
+    /** Whether this value should be included when exporting this destination's metadata as Opsview notes. */
+    protected boolean DMV_INCLUDE_IN_NOTES = false;
+
     /** The destination meta field. */
     protected DestinationMetaField destinationMetaField;
 
@@ -226,6 +229,35 @@ public class DestinationMetaValue extends DataBaseObject {
      */
     public void setBy(final String v) {
         DMV_BY = v;
+    }
+
+    /**
+     * Checks if this value should be included when exporting this destination's metadata as Opsview notes.
+     *
+     * @return the include in notes
+     */
+    public boolean getIncludeInNotes() {
+        return DMV_INCLUDE_IN_NOTES;
+    }
+
+    /**
+     * Sets whether this value should be included when exporting this destination's metadata as Opsview notes.
+     *
+     * @param v
+     *            the new include in notes
+     */
+    public void setIncludeInNotes(final boolean v) {
+        DMV_INCLUDE_IN_NOTES = v;
+    }
+
+    /**
+     * Sets whether this value should be included when exporting this destination's metadata as Opsview notes.
+     *
+     * @param v
+     *            the new include in notes
+     */
+    public void setIncludeInNotes(final String v) {
+        DMV_INCLUDE_IN_NOTES = "1".equals(v) || "true".equalsIgnoreCase(v);
     }
 
     /**

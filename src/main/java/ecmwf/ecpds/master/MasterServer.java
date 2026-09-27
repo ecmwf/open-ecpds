@@ -4571,7 +4571,7 @@ public final class MasterServer extends ECaccessProvider
                 if (progressInterface != null) {
                     // We found it!
                     progressInterface.update(root, byteSent);
-                    _offerAcquisitionLiveSample(progressInterface, root, byteSent);
+                    _offerAcquisitionLiveSample(progressInterface, root, byteSent, LiveTransferSample.STATUS_ACTIVE);
                 } else {
                     // Not found so it should be interrupted on the Mover (e.g. the
                     // retrieval has been interrupted because it was too slow)!
@@ -4588,14 +4588,23 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Feeds an Acquisition retrieval's progress into the {@link LiveTransferRegistry}, for the "Live ECPDS Earth" globe
-     * visualisation, when the given {@link ProgressInterface} is a genuine Acquisition retrieval (see
-     * {@link ProgressInterface#isAcquisition()}) and the registry currently has at least one interested listener (see
-     * {@link LiveTransferRegistry#isEnabled()}). Best-effort: any error is logged and swallowed, since this is purely a
-     * visualisation feed and must never affect the retrieval itself. Uses the negated {@code dataFileId} as the
-     * sample's transfer id, since Acquisition retrieval is tracked per-DataFile (not per-DataTransfer) and this keeps
-     * it from colliding with genuine DataTransfer ids (always positive) used by Dissemination samples in the same
-     * registry.
+     * Feeds an Acquisition retrieval's progress - or its terminal outcome - into the {@link LiveTransferRegistry}, for
+     * the "Live ECPDS Earth" globe visualisation, when the given {@link ProgressInterface} is a genuine Acquisition
+     * retrieval (see {@link ProgressInterface#isAcquisition()}) and the registry currently has at least one interested
+     * listener (see {@link LiveTransferRegistry#isEnabled()}). Best-effort: any error is logged and swallowed, since
+     * this is purely a visualisation feed and must never affect the retrieval itself. Uses the negated
+     * {@code dataFileId} as the sample's transfer id, since Acquisition retrieval is tracked per-DataFile (not
+     * per-DataTransfer) and this keeps it from colliding with genuine DataTransfer ids (always positive) used by
+     * Dissemination samples in the same registry.
+     *
+     * <p>
+     * Sending the terminal ({@link LiveTransferSample#STATUS_DONE}/{@link LiveTransferSample#STATUS_FAILED}) call once
+     * the retrieval finishes (see the {@code DownloadThread.configurableRun()} {@code finally} block) - mirroring what
+     * the DataMover-side {@code MoverServer} already does for Dissemination samples - matters for more than tidying up
+     * the "Active Transfers" marker promptly: without it, {@link LiveTransferRegistry}'s per-transfer last-known-bytes
+     * baseline for this id is never reset, so a retried Acquisition of the same DataFile would have its already-
+     * counted bytes subtracted from (and therefore silently missing from) the rolling 24h total once the retry's
+     * cumulative count re-passes the previous attempt's high-water mark.
      *
      * @param progressInterface
      *            the progress interface for the retrieval this update relates to
@@ -4603,9 +4612,12 @@ public final class MasterServer extends ECaccessProvider
      *            the name of the DataMover performing the retrieval
      * @param byteSent
      *            the number of bytes retrieved so far
+     * @param status
+     *            one of {@link LiveTransferSample#STATUS_ACTIVE}, {@link LiveTransferSample#STATUS_DONE} or
+     *            {@link LiveTransferSample#STATUS_FAILED}
      */
     private void _offerAcquisitionLiveSample(final ProgressInterface progressInterface, final String root,
-            final long byteSent) {
+            final long byteSent, final String status) {
         if (!progressInterface.isAcquisition() || !LiveTransferRegistry.getInstance().isEnabled()) {
             return;
         }
@@ -4618,8 +4630,7 @@ public final class MasterServer extends ECaccessProvider
                             progressInterface.getDestinationName(), source != null ? source.getName() : null,
                             source != null ? source.getNickname() : null, source != null ? source.getHost() : null,
                             source != null ? source.getTransferMethodName() : null, progressInterface.getFileSize(),
-                            byteSent, duration, rate, LiveTransferSample.STATUS_ACTIVE,
-                            LiveTransferSample.DIRECTION_ACQUISITION) });
+                            byteSent, duration, rate, status, LiveTransferSample.DIRECTION_ACQUISITION) });
         } catch (final Throwable t) {
             _log.debug("Building LiveTransferSample for Acquisition DataFile-{}", progressInterface.getDataFileId(), t);
         }
@@ -13486,6 +13497,21 @@ public final class MasterServer extends ECaccessProvider
                         base.tryUpdate(transfer);
                     }
                 } finally {
+                    // Terminal notification for the "Live ECPDS Earth" globe visualisation (see
+                    // _offerAcquisitionLiveSample): no-ops for a non-Acquisition retrieval (_acquisition is only true
+                    // for a genuine Acquisition DownloadThread) or if the registry has no interested listener. Without
+                    // this, a retried Acquisition of the same DataFile would silently undercount the rolling 24h
+                    // bytes total (see the method's Javadoc), and the "Active Transfers" marker would only clear once
+                    // it goes stale rather than immediately. Wrapped separately (rather than relying solely on
+                    // _offerAcquisitionLiveSample's own try/catch) since getByteSent() is evaluated as an argument
+                    // *before* that method is entered - any exception there must not prevent _toRemove.add(key) below
+                    // from running.
+                    try {
+                        _offerAcquisitionLiveSample(this, _root, getByteSent(),
+                                complete ? LiveTransferSample.STATUS_DONE : LiveTransferSample.STATUS_FAILED);
+                    } catch (final Throwable t) {
+                        _log.debug("Sending terminal LiveTransferSample for DataFile-{}", key, t);
+                    }
                     _toRemove.add(key);
                     _log.info("DataFile " + key + " downloaded: " + complete);
                 }

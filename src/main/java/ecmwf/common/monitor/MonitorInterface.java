@@ -46,4 +46,24 @@ public interface MonitorInterface {
      *             the exception
      */
     void sendMessage(String name, String service, int status, String message) throws Exception;
+
+    /**
+     * Adds/replaces the notes attached to a destination/host. A {@code default} method (rather than a second abstract
+     * one) so that {@link #sendMessage} remains this interface's only abstract method - existing providers set up as a
+     * lambda (a single-method functional interface, e.g. a DataMover relaying {@code sendMessage} calls to the
+     * MasterServer over its REST proxy) keep compiling unchanged, and simply don't support notes: the default throws
+     * {@link UnsupportedOperationException}, which {@link MonitorManager#addNotes} turns into a
+     * {@link MonitorException} for the caller.
+     *
+     * @param destination
+     *            the destination
+     * @param metadata
+     *            the metadata
+     *
+     * @throws java.lang.Exception
+     *             the exception
+     */
+    default void addNotes(String destination, String metadata) throws Exception {
+        throw new UnsupportedOperationException("addNotes not supported by this MonitorInterface provider");
+    }
 }
