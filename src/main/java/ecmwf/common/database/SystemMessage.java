@@ -136,8 +136,8 @@ public class SystemMessage extends DataBaseObject {
 
     /**
      * Checks if this message should currently be displayed, i.e. its end time has not yet passed (inclusive). A message
-     * is displayed as soon as it is created, including before its start time, so that users are warned in advance of
-     * an upcoming outage/maintenance window; it disappears once the window has ended.
+     * is displayed as soon as it is created, including before its start time, so that users are warned in advance of an
+     * upcoming outage/maintenance window; it disappears once the window has ended.
      *
      * @param now
      *            the current time, in millis since epoch
