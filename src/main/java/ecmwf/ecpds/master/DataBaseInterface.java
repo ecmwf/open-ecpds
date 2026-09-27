@@ -2379,6 +2379,85 @@ public interface DataBaseInterface extends Remote {
     Collection<WebUser> getUsersPerCategoryId(String categoryId) throws DataBaseException, RemoteException;
 
     /**
+     * Web user add. Creates or updates a web (admin console) user. Does not grant any ACL category - a fresh user
+     * cannot access anything behind the console's Category/Resource ACL until an administrator assigns one via
+     * {@code /do/user/user}.
+     *
+     * @param user
+     *            the user
+     * @param id
+     *            the id
+     * @param password
+     *            the password
+     * @param name
+     *            the common name; {@code null} or empty leaves it unset on creation, or unchanged on update
+     * @param active
+     *            whether the user should be active; {@code null} or empty keeps the default (inactive) on creation, or
+     *            leaves it unchanged on update
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void webUserAdd(String user, String id, String password, String name, String active)
+            throws DataBaseException, RemoteException;
+
+    /**
+     * Web user add2. Creates a new web (admin console) user with a generated password. Fails if the id already exists.
+     * Does not grant any ACL category (see {@link #webUserAdd}).
+     *
+     * @param user
+     *            the user
+     * @param id
+     *            the id
+     * @param name
+     *            the common name
+     * @param active
+     *            whether the user should be active; {@code null} or empty defaults to {@code false}
+     *
+     * @return the generated password
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    String webUserAdd2(String user, String id, String name, String active) throws DataBaseException, RemoteException;
+
+    /**
+     * Web user list. Lists all active web (admin console) users, optionally filtered by ACL category id.
+     *
+     * @param user
+     *            the user
+     * @param category
+     *            the category id filter; {@code null} or empty lists every active web user
+     *
+     * @return the collection
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Collection<WebUser> webUserList(String user, String category) throws DataBaseException, RemoteException;
+
+    /**
+     * Web user del. Deletes an existing web (admin console) user.
+     *
+     * @param user
+     *            the user
+     * @param id
+     *            the id
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void webUserDel(String user, String id) throws DataBaseException, RemoteException;
+
+    /**
      * Incoming user del.
      *
      * @param user

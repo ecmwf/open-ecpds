@@ -3380,6 +3380,175 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     }
 
     /**
+     * Web user del. Delete an existing web (admin console) user.
+     *
+     * @param user
+     *            the user
+     * @param id
+     *            the id
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    @Override
+    public void webUserDel(final String user, final String id) throws DataBaseException, RemoteException {
+        checkUser(user, "webUserDel");
+        final var monitor = new MonitorCall("webUserDel(" + user + "," + id + ")");
+        final var webUser = ecpds.getWebUserObject(id);
+        if (webUser == null) {
+            throw new DataBaseException("User " + id + " not found");
+        }
+        ecpds.removeWebUser(webUser);
+        monitor.done();
+    }
+
+    /**
+     * Web user add. Create or update a web (admin console) user. Does not grant any ACL category - a fresh user cannot
+     * access anything behind the console's Category/Resource ACL until an administrator assigns one via
+     * {@code /do/user/user}.
+     *
+     * @param user
+     *            the user
+     * @param id
+     *            the id
+     * @param password
+     *            the password
+     * @param name
+     *            the common name
+     * @param active
+     *            whether the user should be active; {@code null} or empty keeps the default (inactive) on creation, or
+     *            leaves it unchanged on update
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    @Override
+    public void webUserAdd(final String user, final String id, final String password, final String name,
+            final String active) throws DataBaseException, RemoteException {
+        checkUser(user, "webUserAdd");
+        final var monitor = new MonitorCall(
+                "webUserAdd(" + user + "," + id + "," + password + "," + name + "," + active + ")");
+        // Let's check if it is a valid user-id?
+        if (!Format.isValidId(id, ".")) {
+            throw new DataBaseException("Userid " + id + " not valid (only letters, digits and '.' are allowed)");
+        }
+        var webUser = ecpds.getWebUserObject(id);
+        if (webUser == null) {
+            // It does not exists yet so we create it with all the default values!
+            if (password == null || password.isEmpty()) {
+                throw new DataBaseException("Password is required to create user " + id);
+            }
+            webUser = new WebUser();
+            webUser.setId(id);
+            webUser.setPassword(password);
+            webUser.setName(name);
+            // It is not active yet by default, unless explicitly requested!
+            webUser.setActive(active != null && !active.isEmpty() && Boolean.parseBoolean(active));
+        } else {
+            // We just update the info!
+            if (password != null) {
+                webUser.setPassword(password);
+            }
+            if (name != null) {
+                webUser.setName(name);
+            }
+            if (active != null && !active.isEmpty()) {
+                webUser.setActive(active);
+            }
+        }
+        try {
+            master.saveWebUser(webUser);
+        } catch (final MasterException e) {
+            throw new DataBaseException("saveWebUser", e);
+        }
+        monitor.done();
+    }
+
+    /**
+     * Web user add 2. Create a new web (admin console) user with a generated password. Fails if the id already exists.
+     * Does not grant any ACL category (see {@link #webUserAdd}).
+     *
+     * @param user
+     *            the user
+     * @param id
+     *            the id
+     * @param name
+     *            the common name
+     * @param active
+     *            whether the user should be active; {@code null} or empty defaults to {@code false}
+     *
+     * @return the generated password
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    @Override
+    public String webUserAdd2(final String user, final String id, final String name, final String active)
+            throws DataBaseException, RemoteException {
+        checkUser(user, "webUserAdd2");
+        final var monitor = new MonitorCall("webUserAdd2(" + user + "," + id + "," + name + "," + active + ")");
+        // Let's check if it is a valid user-id?
+        if (!Format.isValidId(id, ".")) {
+            throw new DataBaseException("Userid " + id + " not valid (only letters, digits and '.' are allowed)");
+        }
+        if (ecpds.getWebUserObject(id) != null) {
+            throw new DataBaseException("Id " + id + " already exists");
+        }
+        // We generate a password!
+        final var password = randomString(8);
+        final var webUser = new WebUser();
+        webUser.setId(id);
+        webUser.setPassword(password);
+        webUser.setName(name);
+        // Not active yet by default, unless explicitly requested - unlike incomingUserAdd2, since an admin console
+        // account carries a higher blast radius than a data-portal one, even though it holds no ACL category yet!
+        webUser.setActive(active != null && !active.isEmpty() && Boolean.parseBoolean(active));
+        try {
+            master.saveWebUser(webUser);
+        } catch (final MasterException e) {
+            throw new DataBaseException("saveWebUser", e);
+        }
+        return monitor.done(password);
+    }
+
+    /**
+     * Web user list. List all active web (admin console) users, optionally filtered by ACL category id.
+     *
+     * @param user
+     *            the user
+     * @param category
+     *            the category id filter; {@code null} or empty lists every active web user
+     *
+     * @return the collection
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    @Override
+    public Collection<WebUser> webUserList(final String user, final String category)
+            throws DataBaseException, RemoteException {
+        checkUser(user, "webUserList");
+        final var monitor = new MonitorCall("webUserList(" + user + "," + category + ")");
+        final Collection<WebUser> candidates = category != null && !category.isEmpty()
+                ? ecpds.getUsersPerCategoryId(category) : List.of(ecpds.getWebUserArray());
+        final List<WebUser> result = new ArrayList<>();
+        for (final WebUser webUser : candidates) {
+            if (webUser != null && webUser.getActive()) {
+                result.add(webUser);
+            }
+        }
+        return monitor.done(result);
+    }
+
+    /**
      * Allow checking if the user is allowed to use the ECPDS API service.
      *
      * @param userNameAndPassword

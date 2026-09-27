@@ -67,7 +67,11 @@
           <tr><td><code>incomingCategoryAdd</code></td><td>Incoming Associations</td><td>Add a category to an incoming user.</td></tr>
           <tr><td><code>updateHostOption</code></td><td>Other</td><td>Update a configuration option on a transfer host.</td></tr>
           <tr><td><code>monitoringSummaryList</code></td><td>Monitoring</td><td>Read the product monitoring summary (REST <code>v1/monitoring/summary</code>, <code>v1/monitoring/summary/{product}</code>, <code>v1/monitoring/summary/{product}/{time}</code> and the step/type history) - the same data shown in the web interface at <code>/do/monitoring/summary/</code>.</td></tr>
-          <tr><td><code>showSensitiveInfo</code></td><td>Data Visibility</td><td>Include sensitive fields (host and incoming-user passwords, and destination-metadata fields of type <code>password</code>) in otherwise-permitted REST JSON responses. See note below - this one does not gate access to any service.</td></tr>
+          <tr><td><code>showSensitiveInfo</code></td><td>Data Visibility</td><td>Include sensitive fields (host, incoming-user and web-user passwords, and destination-metadata fields of type <code>password</code>) in otherwise-permitted REST JSON responses. See note below - this one does not gate access to any service.</td></tr>
+          <tr><td><code>webUserAdd</code></td><td>Web Users</td><td>Create or update a web (admin console) user. Grants no ACL category - the account cannot access anything in the console until an administrator assigns a role via <code>/do/user/user</code>.</td></tr>
+          <tr><td><code>webUserAdd2</code></td><td>Web Users</td><td>Create a new web (admin console) user with a generated password. Fails if the id already exists. Grants no ACL category.</td></tr>
+          <tr><td><code>webUserList</code></td><td>Web Users</td><td>List all active web (admin console) user accounts, optionally filtered by ACL category.</td></tr>
+          <tr><td><code>webUserDel</code></td><td>Web Users</td><td>Delete a web (admin console) user account.</td></tr>
         </tbody>
       </table>
     </div>
@@ -79,7 +83,7 @@
       <li class="mb-1"><strong>Custom patterns</strong> are free-form regex patterns. A single pattern can cover many services at once (e.g. <code>datafile(.*)</code> covers all three datafile services).</li>
       <li class="mb-1">When a custom pattern already covers a known service, the corresponding checkbox is shown as <strong>checked and greyed out</strong>. The checkbox cannot be unchecked independently — remove the custom pattern first.</li>
       <li class="mb-1">Access is granted if <em>any</em> permission pattern (checkbox or custom) matches the requested service name. There is no explicit deny; removing all matching patterns removes access.</li>
-      <li><code>showSensitiveInfo</code> is not a call gate - it doesn't grant access to any endpoint. It only controls whether responses the client is <em>already</em> permitted to receive also include sensitive fields such as host and incoming-user passwords, and destination-metadata fields of type <code>password</code>. Disabled by default; those fields are simply omitted when it's unchecked.</li>
+      <li><code>showSensitiveInfo</code> is not a call gate - it doesn't grant access to any endpoint. It only controls whether responses the client is <em>already</em> permitted to receive also include sensitive fields such as host, incoming-user and web-user passwords, and destination-metadata fields of type <code>password</code>. Disabled by default; those fields are simply omitted when it's unchecked.</li>
     </ul>
 
     <%-- Tips --%>

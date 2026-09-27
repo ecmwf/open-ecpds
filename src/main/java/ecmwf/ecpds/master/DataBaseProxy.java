@@ -2224,6 +2224,68 @@ final class DataBaseProxy implements DataBaseInterface {
     /**
      * {@inheritDoc}
      *
+     * Web user del.
+     */
+    @Override
+    public void webUserDel(final String user, final String id) throws DataBaseException, RemoteException {
+        if (isEmpty(user) || isEmpty(id)) {
+            throw new DataBaseException("Invalid parameter(s) for webUserDel");
+        }
+        final var monitor = new MonitorCall("webUserDel(" + user + "," + id + ")");
+        dataBaseInterface.webUserDel(user, id);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Web user add.
+     */
+    @Override
+    public void webUserAdd(final String user, final String id, final String password, final String name,
+            final String active) throws DataBaseException, RemoteException {
+        if (isEmpty(user) || isEmpty(id)) {
+            throw new DataBaseException("Invalid parameter(s) for webUserAdd");
+        }
+        final var monitor = new MonitorCall(
+                "webUserAdd(" + user + "," + id + "," + password + "," + name + "," + active + ")");
+        dataBaseInterface.webUserAdd(user, id, password, name, active);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Web user add 2.
+     */
+    @Override
+    public String webUserAdd2(final String user, final String id, final String name, final String active)
+            throws DataBaseException, RemoteException {
+        if (isEmpty(user) || isEmpty(id)) {
+            throw new DataBaseException("Invalid parameter(s) for webUserAdd2");
+        }
+        final var monitor = new MonitorCall("webUserAdd2(" + user + "," + id + "," + name + "," + active + ")");
+        return monitor.done(dataBaseInterface.webUserAdd2(user, id, name, active));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Web user list.
+     */
+    @Override
+    public Collection<WebUser> webUserList(final String user, final String category)
+            throws DataBaseException, RemoteException {
+        if (isEmpty(user)) {
+            throw new DataBaseException("Invalid parameter(s) for webUserList");
+        }
+        final var monitor = new MonitorCall("webUserList(" + user + "," + category + ")");
+        return monitor.done(dataBaseInterface.webUserList(user, category));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Incoming user del.
      */
     @Override

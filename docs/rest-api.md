@@ -167,8 +167,9 @@ HTTP-level errors (auth failures, missing parameters) return standard HTTP statu
 ## Sensitive Fields
 
 Some objects returned by this API carry credentials or other sensitive values: a `Host`'s password
-(`GET /v1/destination/backup[/{name}]`), an incoming user's password (`GET /v1/incoming/user/list`), and
-any destination-metadata field configured with type `password` (`GET /v1/destination/{name}/metadata`).
+(`GET /v1/destination/backup[/{name}]`), an incoming user's password (`GET /v1/incoming/user/list`), a
+web user's password (`GET /v1/web/user/list`), and any destination-metadata field configured with type
+`password` (`GET /v1/destination/{name}/metadata`).
 
 By default, these values are omitted from the JSON response even when the client is otherwise permitted to
 call the endpoint. To include them, grant the client the `showSensitiveInfo` service permission (a checkbox
@@ -385,6 +386,102 @@ Lists all destination associations for an incoming user.
   "status": "ok",
   "associationList": ["destination_a", "destination_b"]
 }
+```
+
+---
+
+### Web Users
+
+These endpoints manage **web (admin console) user** accounts — the identity used to log into the
+ECPDS web interface itself, gated by its own Category/Resource ACL. This is a distinct concept from
+an *Incoming User* (a data-portal/dissemination account, managed above): a web user's password lets
+someone sign in to the console, but a freshly created one is granted **no ACL category**, so it
+cannot access anything there until an administrator assigns it a role from `/do/user/user` — these
+endpoints create/list/delete the account only, never its roles.
+
+#### `POST /v1/web/user/add`
+
+Creates a new web user with a password, or updates an existing one.
+
+**Query parameters:**
+
+| Parameter | Required | Description |
+|---|---|---|
+| `id` | ✅ | Username for the web user |
+| `pass` | ✅ on creation, ❌ on update | Password. Required when creating a new user; on update, an omitted/empty value leaves the existing password unchanged |
+| `name` | ❌ | Common (display) name. On update, an omitted/empty value leaves it unchanged |
+| `active` | ❌ | `true`/`false`. Whether the user can authenticate. Defaults to `false` on creation; on update, an omitted/empty value leaves the existing flag unchanged |
+
+**Service name:** `webUserAdd`
+
+**Response:**
+```json
+{ "status": "ok" }
+```
+
+---
+
+#### `POST /v1/web/user/add2`
+
+Creates a new web user with a generated password. Fails if the id already exists.
+
+**Query parameters:**
+
+| Parameter | Required | Description |
+|---|---|---|
+| `id` | ✅ | Username |
+| `name` | ❌ | Common (display) name |
+| `active` | ❌ | `true`/`false`. Whether the user can authenticate. Defaults to `false` if omitted |
+
+**Service name:** `webUserAdd2`
+
+**Response:**
+```json
+{ "status": "ok", "pass": "aB3xQ9zK" }
+```
+
+---
+
+#### `GET /v1/web/user/list`
+
+Lists all active web users, optionally filtered by ACL category.
+
+**Query parameters:**
+
+| Parameter | Required | Description |
+|---|---|---|
+| `category` | ❌ | Filter to users granted this ACL category id |
+
+**Service name:** `webUserList`
+
+Each user's `password` field is included only if the client also has the `showSensitiveInfo`
+permission (see [Sensitive Fields](#sensitive-fields)) — omitted otherwise.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "userList": ["user1", "user2"]
+}
+```
+
+---
+
+#### `DELETE /v1/web/user/del/{id}`
+
+Deletes a web user account.
+
+**Path parameters:**
+
+| Parameter | Description |
+|---|---|
+| `id` | Username of the web user to delete |
+
+**Service name:** `webUserDel`
+
+**Response:**
+```json
+{ "status": "ok" }
 ```
 
 ---

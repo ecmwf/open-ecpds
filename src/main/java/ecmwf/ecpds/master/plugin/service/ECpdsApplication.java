@@ -62,6 +62,7 @@ import ecmwf.common.database.ECtransModule;
 import ecmwf.common.database.Host;
 import ecmwf.common.database.IncomingUser;
 import ecmwf.common.database.TransferMethod;
+import ecmwf.common.database.WebUser;
 import ecmwf.ecpds.master.plugin.http.model.monitoring.ProductStepStatus;
 
 /**
@@ -96,6 +97,7 @@ public final class ECpdsApplication extends Application {
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         addMixInAnnotations(mapper, Destination.class, DestinationMixIn.class);
         addMixInAnnotations(mapper, IncomingUser.class, IncomingUserMixIn.class);
+        addMixInAnnotations(mapper, WebUser.class, WebUserMixIn.class);
         addMixInAnnotations(mapper, Association.class, AssociationMixIn.class);
         addMixInAnnotations(mapper, Alias.class, AliasMixIn.class);
         addMixInAnnotations(mapper, Host.class, HostMixIn.class);
@@ -266,6 +268,35 @@ public final class ECpdsApplication extends Application {
          */
         @JsonSetter("lastLoginDate")
         void setLastLogin(java.sql.Timestamp param);
+    }
+
+    /**
+     * The Interface WebUserMixIn.
+     *
+     * <p>
+     * {@code password} is deliberately not ignored here, for the same reason as on {@link IncomingUserMixIn} - it needs
+     * to reach the response object so it can be included or redacted per request, based on the caller's
+     * {@code showSensitiveInfo} API permission (see {@code ECpdsRESTV1.webUserList}). {@code environment} is the
+     * internal ECtrans/web-monitor UI-state blob, not meant for API consumers.
+     */
+    @JsonIgnoreProperties({ "collectionSize", "environment" })
+    public interface WebUserMixIn {
+
+        /**
+         * Gets the last login.
+         *
+         * @return the last login
+         */
+        @JsonProperty("lastLoginDate")
+        java.sql.Timestamp getLastLogin();
+
+        /**
+         * Gets the last login host.
+         *
+         * @return the last login host
+         */
+        @JsonProperty("lastLoginInfo")
+        String getLastLoginHost();
     }
 
     /**

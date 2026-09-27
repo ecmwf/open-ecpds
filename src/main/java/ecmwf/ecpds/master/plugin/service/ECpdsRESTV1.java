@@ -285,6 +285,159 @@ public final class ECpdsRESTV1 {
     }
 
     /**
+     * Web user add. Creates or updates a web (admin console) user. Does not grant any ACL category - the account cannot
+     * access anything behind the console's Category/Resource ACL until an administrator assigns one via
+     * {@code /do/user/user}.
+     *
+     * @param authString
+     *            the auth string
+     * @param request
+     *            the request
+     * @param id
+     *            the id
+     * @param pass
+     *            the password
+     * @param name
+     *            the common name
+     * @param active
+     *            the active
+     *
+     * @return the response
+     */
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("web/user/add")
+    public Response webUserAdd(@HeaderParam("authorization") final String authString,
+            @Context final HttpServletRequest request, @QueryParam("id") final String id,
+            @QueryParam("pass") final String pass, @QueryParam("name") final String name,
+            @QueryParam("active") final String active) {
+        _log.debug("webUserAdd");
+        try {
+            final var userNameAndPassword = _getUserNameAndPassword(authString, request);
+            _checkParameter("id", id);
+            MasterManager.getDB().webUserAdd(userNameAndPassword, id, pass, name, active);
+            return RESTMessage.getSuccessMessage().getResponse();
+        } catch (final WebApplicationException w) {
+            _log.warn("webUserAdd", w);
+            throw w;
+        } catch (final Throwable t) {
+            _log.warn("webUserAdd", t);
+            return RESTMessage.getErrorMessage(t).getResponse();
+        }
+    }
+
+    /**
+     * Web user add 2. Creates a new web (admin console) user with a generated password. Does not grant any ACL category
+     * (see {@link #webUserAdd}).
+     *
+     * @param authString
+     *            the auth string
+     * @param request
+     *            the request
+     * @param id
+     *            the id
+     * @param name
+     *            the common name
+     * @param active
+     *            the active
+     *
+     * @return the response
+     */
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("web/user/add2")
+    public Response webUserAdd2(@HeaderParam("authorization") final String authString,
+            @Context final HttpServletRequest request, @QueryParam("id") final String id,
+            @QueryParam("name") final String name, @QueryParam("active") final String active) {
+        _log.debug("webUserAdd2");
+        try {
+            final var userNameAndPassword = _getUserNameAndPassword(authString, request);
+            _checkParameter("id", id);
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("pass", MasterManager.getDB().webUserAdd2(userNameAndPassword, id, name, active));
+            return message.getResponse();
+        } catch (final WebApplicationException w) {
+            _log.warn("webUserAdd2", w);
+            throw w;
+        } catch (final Throwable t) {
+            _log.warn("webUserAdd2", t);
+            return RESTMessage.getErrorMessage(t).getResponse();
+        }
+    }
+
+    /**
+     * Web user list. Lists all active web (admin console) users, optionally filtered by ACL category id. Each user's
+     * {@code password} field is included only if the client also has the {@link #SHOW_SENSITIVE_INFO_SERVICE}
+     * permission - omitted otherwise, same treatment as {@link #incomingUserList}.
+     *
+     * @param authString
+     *            the auth string
+     * @param request
+     *            the request
+     * @param category
+     *            the category
+     *
+     * @return the response
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("web/user/list")
+    public Response webUserList(@HeaderParam("authorization") final String authString,
+            @Context final HttpServletRequest request, @QueryParam("category") final String category) {
+        _log.debug("webUserList");
+        try {
+            final var userNameAndPassword = _getUserNameAndPassword(authString, request);
+            final var userList = MasterManager.getDB().webUserList(userNameAndPassword, category);
+            if (!MasterManager.getDB().hasApiPermission(userNameAndPassword, SHOW_SENSITIVE_INFO_SERVICE)) {
+                for (final var webUser : userList) {
+                    webUser.setPassword(null);
+                }
+            }
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("userList", userList);
+            return message.getResponse();
+        } catch (final WebApplicationException w) {
+            _log.warn("webUserList", w);
+            throw w;
+        } catch (final Throwable t) {
+            _log.warn("webUserList", t);
+            return RESTMessage.getErrorMessage(t).getResponse();
+        }
+    }
+
+    /**
+     * Web user del.
+     *
+     * @param authString
+     *            the auth string
+     * @param request
+     *            the request
+     * @param id
+     *            the id
+     *
+     * @return the response
+     */
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("web/user/del/{id}")
+    public Response webUserDel(@HeaderParam("authorization") final String authString,
+            @Context final HttpServletRequest request, @PathParam("id") final String id) {
+        _log.debug("webUserDel");
+        try {
+            final var userNameAndPassword = _getUserNameAndPassword(authString, request);
+            _checkParameter("id", id);
+            MasterManager.getDB().webUserDel(userNameAndPassword, id);
+            return RESTMessage.getSuccessMessage().getResponse();
+        } catch (final WebApplicationException w) {
+            _log.warn("webUserDel", w);
+            throw w;
+        } catch (final Throwable t) {
+            _log.warn("webUserDel", t);
+            return RESTMessage.getErrorMessage(t).getResponse();
+        }
+    }
+
+    /**
      * Incoming category add.
      *
      * @param authString

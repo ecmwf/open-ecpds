@@ -206,7 +206,8 @@ $(document).ready(function () {
       'getDestinationMetaFields','getDestinationMetaValuesByDestination','setDestinationMetaValues',
       'incomingUserAdd','incomingUserAdd2','incomingUserList','incomingUserDel',
       'incomingAssociationAdd','incomingAssociationDel','incomingAssociationList',
-      'incomingCategoryAdd','updateHostOption','monitoringSummaryList','showSensitiveInfo'
+      'incomingCategoryAdd','updateHostOption','monitoringSummaryList','showSensitiveInfo',
+      'webUserAdd','webUserAdd2','webUserList','webUserDel'
     ];
 
     function _apiPermSelectAll(checked) {
@@ -384,6 +385,23 @@ $(document).ready(function () {
           </div>
         </div>
 
+        <%-- Web Users group - admin console accounts, distinct from Incoming Users --%>
+        <div class="col-md-6 col-xl-4">
+          <div class="d-flex align-items-center gap-1 mb-1">
+            <i class="bi bi-person-badge text-primary" style="font-size:0.8rem"></i>
+            <span class="small fw-semibold">Web Users</span>
+            <a href="#" class="ms-2 small text-muted text-decoration-none" onclick="_apiPermSelectGroup('webuser',true);return false;">all</a>
+            <span class="text-muted small">/</span>
+            <a href="#" class="small text-muted text-decoration-none" onclick="_apiPermSelectGroup('webuser',false);return false;">none</a>
+          </div>
+          <div class="d-flex flex-column gap-1 ps-1">
+            <div class="form-check mb-0"><input class="form-check-input api-perm-chk" type="checkbox" id="apc-webUserAdd" data-group="webuser" value="webUserAdd"><label class="form-check-label small font-monospace" for="apc-webUserAdd">webUserAdd</label></div>
+            <div class="form-check mb-0"><input class="form-check-input api-perm-chk" type="checkbox" id="apc-webUserAdd2" data-group="webuser" value="webUserAdd2"><label class="form-check-label small font-monospace" for="apc-webUserAdd2">webUserAdd2</label></div>
+            <div class="form-check mb-0"><input class="form-check-input api-perm-chk" type="checkbox" id="apc-webUserList" data-group="webuser" value="webUserList"><label class="form-check-label small font-monospace" for="apc-webUserList">webUserList</label></div>
+            <div class="form-check mb-0"><input class="form-check-input api-perm-chk" type="checkbox" id="apc-webUserDel" data-group="webuser" value="webUserDel"><label class="form-check-label small font-monospace" for="apc-webUserDel">webUserDel</label></div>
+          </div>
+        </div>
+
         <%-- Incoming Associations group --%>
         <div class="col-md-6 col-xl-4">
           <div class="d-flex align-items-center gap-1 mb-1">
@@ -433,7 +451,7 @@ $(document).ready(function () {
             <div class="form-check mb-0">
               <input class="form-check-input api-perm-chk" type="checkbox" id="apc-showSensitiveInfo" data-group="datavisibility" value="showSensitiveInfo">
               <label class="form-check-label small font-monospace" for="apc-showSensitiveInfo"
-                     title="Include sensitive fields (e.g. host and incoming-user passwords, and destination-metadata fields of type &quot;password&quot;) in REST JSON responses. Disabled by default. This does not grant access to any service - it only controls whether sensitive fields are included in responses already permitted by other checkboxes.">showSensitiveInfo</label>
+                     title="Include sensitive fields (e.g. host, incoming-user and web-user passwords, and destination-metadata fields of type &quot;password&quot;) in REST JSON responses. Disabled by default. This does not grant access to any service - it only controls whether sensitive fields are included in responses already permitted by other checkboxes.">showSensitiveInfo</label>
             </div>
           </div>
         </div>
