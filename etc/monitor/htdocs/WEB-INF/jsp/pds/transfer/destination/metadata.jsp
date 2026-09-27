@@ -14,10 +14,11 @@
 .dmf-field-label { font-size: 0.82rem; font-weight: 600; color: var(--bs-body-color); }
 .dmf-readonly-value { font-size: 0.9rem; padding: 0.15rem 0; color: var(--bs-body-color); word-break: break-word; }
 .dmf-readonly-empty { font-size: 0.85rem; color: var(--bs-secondary-color); font-style: italic; }
-.dmf-notes-check { cursor: pointer; }
+.dmf-notes-toggle { cursor: pointer; font-weight: normal; font-size: 0.72rem; color: var(--bs-secondary-color); white-space: nowrap; margin-bottom: 0; }
+.dmf-notes-toggle .form-check-input { margin-top: 0; }
 /* "Include in Notes" only makes sense for a field that currently has a value - hidden along with the rest of
    an empty field's controls, tracked live via the same data-empty attribute "Hide empty" already maintains. */
-.dmf-field-item[data-empty="true"] .dmf-notes-check { display: none; }
+.dmf-field-item[data-empty="true"] .dmf-notes-toggle { display: none; }
 </style>
 
 <div class="card border-0 shadow-sm mt-3">
@@ -96,19 +97,18 @@
 
         <div class="dmf-field-item col-12<c:choose><c:when test="${field.type == 'contact' or field.type == 'mail-group' or field.type == 'switchboard' or field.type == 'textarea'}"> col-md-6</c:when><c:otherwise> col-sm-6 col-lg-4</c:otherwise></c:choose>"
              id="dmf-group-${field.id}" data-type="${field.type}" data-max-occurs="${field.maxOccurs}">
-          <div class="dmf-field-label d-flex align-items-center justify-content-between flex-wrap gap-1">
-            <span>
+          <div class="dmf-field-label d-flex align-items-center gap-1">
+            <span class="flex-grow-1" style="min-width:0;">
               ${field.label}
               <c:if test="${not empty field.tooltip}">
                 <i class="bi bi-question-circle text-muted ms-1 dmf-tip-icon" data-tip="${field.tooltip}" onclick="dmfTipToggle(this);event.stopPropagation();" style="cursor:pointer;font-weight:normal;font-size:0.8rem" tabindex="0"></i>
               </c:if>
             </span>
             <c:if test="${canEditMeta && field.type != 'password'}">
-            <div class="form-check form-check-inline dmf-notes-check mb-0" style="font-size:0.72rem;"
-                 title="Include this field's value(s) when exporting Opsview notes">
-              <input type="checkbox" class="form-check-input dmf-notes-checkbox" id="dmf-notes-${field.id}">
-              <label class="form-check-label text-muted fw-normal" for="dmf-notes-${field.id}">Include in Notes</label>
-            </div>
+            <label class="dmf-notes-toggle d-flex align-items-center gap-1 flex-shrink-0"
+                   title="Include this field's value(s) when exporting Opsview notes">
+              <input type="checkbox" class="form-check-input" id="dmf-notes-${field.id}">Include in Notes
+            </label>
             </c:if>
           </div>
           <div id="dmf-values-${field.id}">
@@ -427,11 +427,6 @@ function dmfSetDirty() {
     btn.classList.remove('btn-primary');
     btn.classList.add('btn-warning');
     btn.title = 'You have unsaved changes';
-  }
-  var status = document.getElementById('dmfSaveStatus');
-  if (status) {
-    status.textContent = 'Unsaved changes';
-    status.className = 'dmf-save-status text-warning fw-semibold';
   }
 }
 
