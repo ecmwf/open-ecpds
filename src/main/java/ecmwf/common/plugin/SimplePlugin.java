@@ -34,6 +34,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
@@ -65,6 +66,29 @@ public abstract class SimplePlugin extends ServerPlugin {
 
     /** The Constant RESPONSE_SIZE. */
     private static final int RESPONSE_SIZE = 32;
+
+    /**
+     * The Constant SECURE_RANDOM. Shared across all connections (SecureRandom is thread-safe) and seeded from a
+     * non-blocking algorithm where available, instead of instantiating a plain {@code new SecureRandom()} per
+     * connection: on hosts where the JVM's configured {@code securerandom.source} points at a blocking entropy device
+     * (e.g. {@code /dev/random}), doing that on every single accepted connection lets an unlucky connection block
+     * indefinitely - before a single challenge byte is written - the moment the entropy pool runs dry, which showed up
+     * as DataMover connections that accept at the TCP level but silently never respond.
+     */
+    private static final SecureRandom SECURE_RANDOM = _newSecureRandom();
+
+    /**
+     * _new secure random.
+     *
+     * @return a non-blocking-seeded SecureRandom if the platform provides one, otherwise the JVM default.
+     */
+    private static SecureRandom _newSecureRandom() {
+        try {
+            return SecureRandom.getInstance("NativePRNGNonBlocking");
+        } catch (final NoSuchAlgorithmException e) {
+            return new SecureRandom();
+        }
+    }
 
     /** The _in. */
     private InputStream _in = null;
@@ -158,8 +182,7 @@ public abstract class SimplePlugin extends ServerPlugin {
             _log.debug("Challenge-response authentication");
             // Generate challenge
             var challenge = new byte[CHALLENGE_SIZE];
-            var secureRandom = new SecureRandom();
-            secureRandom.nextBytes(challenge);
+            SECURE_RANDOM.nextBytes(challenge);
             var challengeStr = Base64.getEncoder().encodeToString(challenge);
             // Send challenge to client
             _out.write(challengeStr.getBytes(StandardCharsets.UTF_8));
