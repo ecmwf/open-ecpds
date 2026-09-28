@@ -85,6 +85,15 @@ public final class ECpdsClient {
     /** The Constant _port. */
     private static final int PORT = Cnf.at("ECpdsPlugin", "port", Cnf.at("Ports", "ecpds", 6640));
 
+    /**
+     * The Constant SO_TIMEOUT. Applied to every socket this client opens to the master or to a DataMover, so that a
+     * peer which stops responding mid-exchange (e.g. a wedged/unreachable DataMover) causes a blocking read to fail
+     * with a {@link java.net.SocketTimeoutException} instead of hanging the calling thread - and, on the acquisition
+     * path, the lock it holds on the master - forever. Each successful read resets the timer, so a slow but progressing
+     * transfer is not affected.
+     */
+    private static final int SO_TIMEOUT = Cnf.at("ECpdsClient", "soTimeOut", 60000);
+
     /** The Constant SECRET. */
     private static final String SECRET = Cnf.at("Security", "cliSharedSecret", "");
 
@@ -327,6 +336,7 @@ public final class ECpdsClient {
         try {
             long fileSize = -1;
             masterSocket = new Socket(HOST, PORT);
+            masterSocket.setSoTimeout(SO_TIMEOUT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
             final var masterInput = masterSocket.getInputStream();
             final var masterOutput = masterSocket.getOutputStream();
@@ -416,6 +426,7 @@ public final class ECpdsClient {
                         final var ecproxyPort = Short.parseShort(ecproxyAddress.substring(index + 1));
                         ecproxyAddress = ecproxyAddress.substring(0, index);
                         moverSocket = new Socket(ecproxyAddress, ecproxyPort);
+                        moverSocket.setSoTimeout(SO_TIMEOUT);
                         _log.debug("Connected to mover {}:{}", ecproxyAddress, ecproxyPort);
                         final var moverInput = moverSocket.getInputStream();
                         final var moverOutput = moverSocket.getOutputStream();
@@ -446,7 +457,9 @@ public final class ECpdsClient {
                         write(mover, "BYE");
                         break;
                     } catch (final Throwable t) {
-                        // try the next mover in the list
+                        // Abort rather than trying the next mover: "in" is a general InputStream that has already
+                        // been partially consumed by the failed copy above, so it can't be safely replayed to
+                        // another mover without risking a truncated/corrupt upload.
                         _log.debug("Communicating with ecproxy: {}", currentEcproxy, t);
                         throw new IOException("Communicating with ecproxy: " + currentEcproxy + ": " + t.getMessage());
                     } finally {
@@ -527,6 +540,7 @@ public final class ECpdsClient {
         Socket masterSocket = null;
         try {
             masterSocket = new Socket(HOST, PORT);
+            masterSocket.setSoTimeout(SO_TIMEOUT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
             final var masterInput = masterSocket.getInputStream();
             final var masterOutput = masterSocket.getOutputStream();
@@ -592,6 +606,7 @@ public final class ECpdsClient {
                         final var ecproxyPort = Short.parseShort(ecproxyAddress.substring(index + 1));
                         ecproxyAddress = ecproxyAddress.substring(0, index);
                         moverSocket = new Socket(ecproxyAddress, ecproxyPort);
+                        moverSocket.setSoTimeout(SO_TIMEOUT);
                         _log.debug("Connected to mover {}:{}", ecproxyAddress, ecproxyPort);
                         final var moverInput = moverSocket.getInputStream();
                         final var moverOutput = moverSocket.getOutputStream();
@@ -622,9 +637,11 @@ public final class ECpdsClient {
                         write(mover, "BYE");
                         break;
                     } catch (final Throwable t) {
-                        // try the next mover in the list
+                        // The body is a byte[], so it can be safely re-sent from scratch to the next mover in the
+                        // list (unlike the InputStream-based put() overloads, where a partially-streamed source
+                        // can't be replayed).
                         _log.debug("Communicating with ecproxy: {}", currentEcproxy, t);
-                        throw new IOException("Communicating with ecproxy: " + currentEcproxy + ": " + t.getMessage());
+                        continue;
                     } finally {
                         StreamPlugThread.closeQuietly(moverSocket);
                     }
@@ -706,6 +723,7 @@ public final class ECpdsClient {
         Socket masterSocket = null;
         try {
             masterSocket = new Socket(HOST, PORT);
+            masterSocket.setSoTimeout(SO_TIMEOUT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
             final var masterInput = masterSocket.getInputStream();
             final var masterOutput = masterSocket.getOutputStream();
@@ -772,6 +790,7 @@ public final class ECpdsClient {
         Socket masterSocket = null;
         try {
             masterSocket = new Socket(HOST, PORT);
+            masterSocket.setSoTimeout(SO_TIMEOUT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
             final var masterInput = masterSocket.getInputStream();
             final var masterOutput = masterSocket.getOutputStream();
@@ -803,6 +822,7 @@ public final class ECpdsClient {
         Socket masterSocket = null;
         try {
             masterSocket = new Socket(HOST, PORT);
+            masterSocket.setSoTimeout(SO_TIMEOUT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
             final var masterInput = masterSocket.getInputStream();
             final var masterOutput = masterSocket.getOutputStream();
@@ -833,6 +853,7 @@ public final class ECpdsClient {
         Socket masterSocket = null;
         try {
             masterSocket = new Socket(HOST, PORT);
+            masterSocket.setSoTimeout(SO_TIMEOUT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
             final var masterInput = masterSocket.getInputStream();
             final var masterOutput = masterSocket.getOutputStream();
@@ -863,6 +884,7 @@ public final class ECpdsClient {
         Socket masterSocket = null;
         try {
             masterSocket = new Socket(HOST, PORT);
+            masterSocket.setSoTimeout(SO_TIMEOUT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
             final var masterInput = masterSocket.getInputStream();
             final var masterOutput = masterSocket.getOutputStream();
@@ -894,6 +916,7 @@ public final class ECpdsClient {
         Socket masterSocket = null;
         try {
             masterSocket = new Socket(HOST, PORT);
+            masterSocket.setSoTimeout(SO_TIMEOUT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
             final var masterInput = masterSocket.getInputStream();
             final var masterOutput = masterSocket.getOutputStream();
@@ -941,6 +964,7 @@ public final class ECpdsClient {
         Socket masterSocket = null;
         try {
             masterSocket = new Socket(HOST, PORT);
+            masterSocket.setSoTimeout(SO_TIMEOUT);
             _log.debug("Connected to master {}:{}", HOST, PORT);
             final var masterInput = masterSocket.getInputStream();
             final var masterOutput = masterSocket.getOutputStream();
@@ -1003,6 +1027,7 @@ public final class ECpdsClient {
                             final var ecproxyPort = Short.parseShort(ecproxyAddress.substring(pos + 1));
                             ecproxyAddress = ecproxyAddress.substring(0, pos);
                             moverSocket = new Socket(ecproxyAddress, ecproxyPort);
+                            moverSocket.setSoTimeout(SO_TIMEOUT);
                             _log.debug("Connected to mover {}:{}", ecproxyAddress, ecproxyPort);
                             final var moverInput = moverSocket.getInputStream();
                             final var moverOutput = moverSocket.getOutputStream();
@@ -1028,7 +1053,9 @@ public final class ECpdsClient {
                             write(mover, "BYE");
                             break;
                         } catch (final Throwable t) {
-                            // try the next mover in the list
+                            // Abort rather than trying the next mover: "in" is a general InputStream that has
+                            // already been partially consumed by the failed copy above, so it can't be safely
+                            // replayed to another mover without risking a truncated/corrupt upload.
                             _log.debug("Communicating with ecproxy: {}", currentEcproxy, t);
                             throw new IOException(
                                     "Communicating with ecproxy: " + currentEcproxy + ": " + t.getMessage());
