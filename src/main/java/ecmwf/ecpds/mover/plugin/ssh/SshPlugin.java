@@ -44,10 +44,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import net.i2p.crypto.eddsa.EdDSASecurityProvider;
-import net.i2p.crypto.eddsa.spec.EdDSAGenParameterSpec;
-import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable;
-
 import javax.management.AttributeNotFoundException;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanException;
@@ -230,10 +226,11 @@ public final class SshPlugin extends PluginThread {
             return;
         }
         _log.info("No SSH host keys found in {}; auto-generating default key pairs", keysDir);
-        generateHostKey(keysDir, "ecdsa", "EC", null, new ECGenParameterSpec("secp521r1"), 0);
-        generateHostKey(keysDir, "ed25519", "EdDSA", new EdDSASecurityProvider(),
-                new EdDSAGenParameterSpec(EdDSANamedCurveTable.ED_25519), 0);
-        generateHostKey(keysDir, "rsa", "RSA", null, null, 4096);
+        generateHostKey(keysDir, "ecdsa", "EC", new ECGenParameterSpec("secp521r1"), 0);
+        // "Ed25519" has been natively supported by the JDK's own security providers since JDK 15 (JEP 339), so no
+        // external provider/parameter spec (formerly net.i2p.crypto:eddsa) is needed to generate this key.
+        generateHostKey(keysDir, "ed25519", "Ed25519", null, 0);
+        generateHostKey(keysDir, "rsa", "RSA", null, 4096);
     }
 
     /**
@@ -242,10 +239,8 @@ public final class SshPlugin extends PluginThread {
      * where POSIX permissions are supported.
      */
     private static void generateHostKey(final Path keysDir, final String name, final String algorithm,
-            final java.security.Provider provider, final AlgorithmParameterSpec spec, final int keySize)
-            throws IOException, GeneralSecurityException {
-        final var kpg = provider != null ? KeyPairGenerator.getInstance(algorithm, provider)
-                : KeyPairGenerator.getInstance(algorithm);
+            final AlgorithmParameterSpec spec, final int keySize) throws IOException, GeneralSecurityException {
+        final var kpg = KeyPairGenerator.getInstance(algorithm);
         if (spec != null)
             kpg.initialize(spec);
         else if (keySize > 0)
