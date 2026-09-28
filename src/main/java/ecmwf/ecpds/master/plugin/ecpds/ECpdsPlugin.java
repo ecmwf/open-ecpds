@@ -1513,18 +1513,26 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     @Override
     public void releaseConnection(final Socket socket, final boolean close) {
         try {
-            if (groupBy == null && newDataFile && currentTransfer != null && currentTransfer.getDataFile() != null) {
+            // newDataFile is only cleared once byeReq() has fully applied the new DataTransfer(s), so it
+            // is still true here whenever the connection is released after a DataFile/DataTransfer(s) was
+            // inserted (putReq()) but byeReq() never completed - whether that is because the connection to
+            // a groupBy==null (push) client was aborted mid-transfer before it could send BYE, or because
+            // byeReq() itself threw partway through (e.g. for a groupBy!=null acquisition/notification
+            // registration, where byeReq() is called synchronously from putReq()). Left alone, such a
+            // DataTransfer would stay stuck at INIT ("Arriving") forever, since duplicate-detection does not
+            // filter by status.
+            if (newDataFile && currentTransfer != null && currentTransfer.getDataFile() != null) {
                 _log.warn("Removing DataFile and corresponding DataTransfer(s)");
                 try {
                     MASTER.removeDataFileAndDataTransfers(currentTransfer.getDataFile(), userName,
-                            "from the ecpds command-line");
+                            groupBy == null ? "from the ecpds command-line" : "after a failed registration (byeReq)");
                 } catch (final Exception e) {
                     _log.warn("Removing DataFile and DataTransfer(s)", e);
                 }
             }
         } finally {
             if (key != null) {
-                MASTER.unlockTransfer(key);
+                MASTER.unlockTransfer(key, this);
             }
         }
         super.releaseConnection(socket, close);

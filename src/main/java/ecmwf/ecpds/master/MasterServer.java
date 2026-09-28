@@ -1336,15 +1336,20 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Unlock the data transfer and associated data file for the specified unique key.
+     * Unlock the data transfer and associated data file for the specified unique key, provided the caller is the one
+     * who currently holds the lock. A caller whose own {@link #lockTransfer(String, ProgressInterface)} call was
+     * rejected (i.e. someone else already held the key) must not be able to evict the actual owner's lock while it is
+     * still in-flight - that race let two concurrent registrations for the same key both slip through and create
+     * duplicate DataFile/DataTransfer rows.
      *
      * @param key
      *            the unique key of the data transfer
+     * @param plugin
+     *            the plugin releasing the lock; only removed if it is the current owner
      */
-    public void unlockTransfer(final String key) {
-        final var progress = currentTransfers.remove(key);
-        if (progress != null) {
-            currentDataFiles.remove(progress.getDataFileId());
+    public void unlockTransfer(final String key, final ProgressInterface plugin) {
+        if (currentTransfers.remove(key, plugin)) {
+            currentDataFiles.remove(plugin.getDataFileId());
         }
         if (currentTransfers.size() == 0) {
             // Just to make sure we don't have left over!
