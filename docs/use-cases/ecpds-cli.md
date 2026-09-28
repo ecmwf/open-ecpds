@@ -143,6 +143,16 @@ guards against a completely different threat: a network peer that can reach the 
 Server's `ecpds` command port but does not hold the shared secret cannot open a session
 at all, regardless of which user account it claims to be.
 
+This is the same challenge-response code path used by every plain-socket `ecpds`/`ecproxy`
+connection, not just the CLI binary's. In particular, the Master Server itself acts as a
+*client* of it whenever it pushes an acquired/notified file straight to a Data Mover (the
+internal `ECpdsClient` used by the Acquisition scheduler) - so a Data Mover must be
+configured with the **same** `cliSharedSecret`/`CLI_SHARED_SECRET` value as the Master
+Server whenever one is set, or those pushes will fail: the Master Server will sit waiting
+for a challenge the Mover never sends, until its socket read timeout
+(`[ECpdsClient] soTimeOut`, default 60s) fires and aborts the transfer. See
+[Data Mover configuration](#data-mover-configuration-for-master-initiated-pushes) below.
+
 The protocol is symmetric with the one used to secure the
 [mover/master REST control channel](../administration/mover-control-channel-security.md):
 
@@ -160,8 +170,9 @@ entirely and the connection proceeds straight to the IncomingUser/ECUSER checks 
     This channel is configured with its own `[Security] cliSharedSecret` option, distinct
     from the `[Security] rccSharedSecret` option used by the
     [mover/master REST control channel](../administration/mover-control-channel-security.md).
-    The two protect unrelated connections (this one is a direct socket between the
-    `ecpds` CLI binary and the Master Server; the other is an HTTPS/JSON relay between
+    The two protect unrelated connections (this one is a plain socket challenge-response,
+    used both by the `ecpds` CLI binary talking to the Master Server and by the Master
+    Server talking to a Data Mover; the other is an HTTPS/JSON relay between
     Proxy/Continental Data Movers and a regular Data Mover) and do **not** need to share
     the same value.
 
@@ -199,6 +210,37 @@ ecpds \
     identical to the Master Server's `[Security] cliSharedSecret`. A mismatch causes the
     connection to be rejected immediately, before the IncomingUser/ECUSER checks are
     even attempted.
+
+### Data Mover configuration (for Master-initiated pushes)
+
+Whenever `cliSharedSecret` is set on the Master Server, every Data Mover it can push files
+to directly (e.g. for an Acquisition Host configured to submit the retrieved content
+inline, rather than scheduling it for later retrieval) must be given the **same** value,
+since the Master Server goes through this exact challenge-response as a client of the
+Mover's `ecproxy` port:
+
+```properties
+# etc/mover/conf/ecmwf.properties
+[Security]
+cliSharedSecret=${clisharedsecret.value}
+```
+
+```bash
+# mover.cnf, or the CLI_SHARED_SECRET container/environment variable
+export CLI_SHARED_SECRET="dboUz95GH4U8LihvnJPGfBce5/rFJdbYXoZesRXBIyQ="
+```
+
+!!! danger "An unconfigured Mover fails silently, not immediately"
+    Unlike a genuine value **mismatch** (rejected immediately, as above), a Data Mover
+    that has **no** `cliSharedSecret` configured at all does not reject the connection -
+    it simply never writes a challenge, because it does not know one is expected. The
+    Master Server then sits waiting for challenge bytes that will never arrive, until its
+    own socket read timeout (`[ECpdsClient] soTimeOut`, default 60s) fires. Symptoms are a
+    `SocketTimeoutException` / `"Communicating with ecproxy: ..."` on the Master Server,
+    a `"Read error" - java.io.IOException: Connection closed` on the Mover once the Master
+    gives up and closes its side, and the affected DataTransfer(s) stuck in `Arriving`
+    until they are `-requeue`d, `force`d or `purge`d - so always configure this secret on
+    every Data Mover the Master Server can push to, not just on the Master Server itself.
 
 ## Command-line reference
 

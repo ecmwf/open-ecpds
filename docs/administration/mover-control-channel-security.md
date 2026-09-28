@@ -29,9 +29,12 @@ The signature is enabled by configuring a shared secret — the
 identically on every Data Mover and every Proxy/Continental Data Mover that
 need to talk to each other. The Master Server itself does not need it, since
 it is not a party to this REST channel. This is a **separate** secret from
-`[Security] cliSharedSecret`, which protects the unrelated `ecpds` CLI ↔
-Master Server channel (see [Related](#related) below) — the two must not be
-confused, and do not need to share the same value.
+`[Security] cliSharedSecret`, which protects the unrelated plain-socket
+challenge-response used both by the `ecpds` CLI binary and by the Master
+Server's own connections to a Data Mover (see [Related](#related) below) —
+the two must not be confused, and do not need to share the same value. Unlike
+`rccSharedSecret`, `cliSharedSecret` **is** needed on every Data Mover the
+Master Server pushes files to directly, not only on the Master Server.
 
 Just like the existing keystore password, the value is **not** hardcoded
 directly in `ecmwf.properties`. It is read from a JVM system property that
@@ -114,4 +117,7 @@ easily keeps clocks within this window, even across continents.
 - [TLS Certificate Management](certificates.md)
 - [`ecpds` CLI shared-secret challenge-response](../use-cases/ecpds-cli.md#shared-secret-challenge-response-transport-level-optional) —
   a separate `[Security] cliSharedSecret` option protects the unrelated, plain-socket
-  channel between the `ecpds` CLI binary and the Master Server.
+  channel between the `ecpds` CLI binary and the Master Server, and equally the Master
+  Server's own connections to a Data Mover — see
+  [Data Mover configuration](../use-cases/ecpds-cli.md#data-mover-configuration-for-master-initiated-pushes)
+  for the Mover-side setup this requires.
