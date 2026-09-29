@@ -103,6 +103,8 @@ import ecmwf.common.technical.WakeupThread;
 import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.ChangeHostEvent;
 import ecmwf.ecpds.master.DestinationStep;
+import ecmwf.ecpds.master.LiveTransferRegistry;
+import ecmwf.ecpds.master.LiveTransferSample;
 import ecmwf.ecpds.master.MasterException;
 import ecmwf.ecpds.master.MasterServer;
 import ecmwf.ecpds.master.StatusUpdate;
@@ -1519,6 +1521,49 @@ public final class TransferScheduler extends MBeanScheduler {
     }
 
     /**
+     * Pushes a single {@link LiveTransferSample} for a Replication/Backup/Proxy Host push, so it shows up on the "Live
+     * ECPDS Earth" globe and counts toward the Dissemination throughput KPIs the same way a regular Dissemination Host
+     * push already does (see {@code MoverServer._offerLiveSample()}). Unlike that per-chunk streaming path,
+     * {@code replicate()} is a single blocking RMI call with no incremental progress, so only one, already-terminal
+     * sample is emitted here, once the call has returned (or failed) - there is no separate "ACTIVE" sample.
+     *
+     * @param transfer
+     *            the DataTransfer being replicated/backed up/proxied
+     * @param targetHost
+     *            the target Host (Replication/Backup/Proxy)
+     * @param moverName
+     *            the DataMover which performed the push
+     * @param fileSize
+     *            the DataFile's total size
+     * @param bytesSent
+     *            the number of bytes actually confirmed sent - 0 on a failed attempt, since a failed
+     *            {@code replicate()} call confirms nothing was actually delivered (see the DataFile's size going
+     *            through as "sent" on every failed attempt/retry inflated the 24h/Throughput KPIs while the DataMover's
+     *            http5 libraries were mismatched and every attempt failed instantly and repeatedly)
+     * @param duration
+     *            the duration, in milliseconds, of the {@code replicate()} call
+     * @param status
+     *            one of {@link LiveTransferSample#STATUS_DONE} or {@link LiveTransferSample#STATUS_FAILED}
+     */
+    private static void _offerReplicationLiveSample(final DataTransfer transfer, final Host targetHost,
+            final String moverName, final long fileSize, final long bytesSent, final long duration,
+            final String status) {
+        if (!LiveTransferRegistry.getInstance().isEnabled()) {
+            return;
+        }
+        try {
+            final var rate = duration > 0 ? (double) bytesSent * 8000 / duration : -1;
+            LiveTransferRegistry.getInstance()
+                    .update(new LiveTransferSample[] { new LiveTransferSample(transfer.getId(), moverName,
+                            transfer.getDestinationName(), targetHost.getName(), targetHost.getNickname(),
+                            targetHost.getHost(), targetHost.getTransferMethodName(), fileSize, bytesSent, duration,
+                            rate, status, LiveTransferSample.DIRECTION_DISSEMINATION) });
+        } catch (final Throwable t) {
+            _log.debug("Building LiveTransferSample for replicated DataTransfer {}", transfer.getId(), t);
+        }
+    }
+
+    /**
      * The Class ReplicateResult.
      */
     public static final class ReplicateResult {
@@ -1614,6 +1659,7 @@ public final class TransferScheduler extends MBeanScheduler {
                         rr.message = "Current HostForReplication not found?";
                         _log.warn(rr.message);
                     }
+                    final var replicationStartTime = System.currentTimeMillis();
                     try {
                         _log.debug("Replicating DataFile " + rr.dataFile.getId() + " from " + sourceMoverName + " to "
                                 + targetMoverName + " using " + hostForReplication.getNickname());
@@ -1621,8 +1667,20 @@ public final class TransferScheduler extends MBeanScheduler {
                                 hostsForSourceList.toArray(new Host[hostsForSourceList.size()]));
                         rr.transferServers.add("DataMover=" + targetMoverName);
                         replicated = true;
+                        _offerReplicationLiveSample(transfer, hostForReplication, targetMoverName,
+                                rr.dataFile.getSize(), rr.dataFile.getSize(),
+                                System.currentTimeMillis() - replicationStartTime, LiveTransferSample.STATUS_DONE);
                     } catch (final Throwable t) {
                         final var message = "Replicating DataFile " + rr.dataFile.getId() + " on " + targetMoverName;
+                        // 0 bytes, not rr.dataFile.getSize() - the call failed, so nothing was actually confirmed
+                        // sent; reporting the full file size here would inflate the 24h/Throughput KPIs by a whole
+                        // file's worth on every failed attempt, including every retry of a transfer that never
+                        // succeeds (this is exactly what happened while the DataMover's http5 libraries were
+                        // mismatched: every proxy/backup/replicate attempt using the http module failed instantly
+                        // and repeatedly, each one still counting a full "sent" file).
+                        _offerReplicationLiveSample(transfer, hostForReplication, targetMoverName,
+                                rr.dataFile.getSize(), 0, System.currentTimeMillis() - replicationStartTime,
+                                LiveTransferSample.STATUS_FAILED);
                         if (Thread.interrupted()) {
                             rr.message = message + " interrupted";
                             _log.warn(rr.message);
@@ -1748,6 +1806,7 @@ public final class TransferScheduler extends MBeanScheduler {
                         hostsForSource.add(hostForSource);
                     }
                 }
+                final var backupStartTime = System.currentTimeMillis();
                 try {
                     _log.debug(hostType + " DataFile " + rr.dataFile.getId() + " from " + moverName + " to "
                             + hostForBackup.getNickname());
@@ -1756,7 +1815,13 @@ public final class TransferScheduler extends MBeanScheduler {
                     rr.transferServer = "DataMover=" + moverName;
                     rr.hostForBackup = hostForBackup;
                     rr.complete = true;
+                    _offerReplicationLiveSample(transfer, hostForBackup, moverName, rr.dataFile.getSize(),
+                            rr.dataFile.getSize(), System.currentTimeMillis() - backupStartTime,
+                            LiveTransferSample.STATUS_DONE);
                 } catch (final Throwable t) {
+                    // 0 bytes sent, not rr.dataFile.getSize() - see the matching comment in replicate() above.
+                    _offerReplicationLiveSample(transfer, hostForBackup, moverName, rr.dataFile.getSize(), 0,
+                            System.currentTimeMillis() - backupStartTime, LiveTransferSample.STATUS_FAILED);
                     if (Thread.interrupted()) {
                         rr.message = hostType + " interrupted on DataMover=" + moverName + " using Host="
                                 + hostForBackup.getName() + " (" + hostForBackup.getNickname() + ")";

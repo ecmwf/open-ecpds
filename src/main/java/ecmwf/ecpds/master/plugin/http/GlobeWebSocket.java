@@ -29,6 +29,7 @@ package ecmwf.ecpds.master.plugin.http;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
@@ -44,10 +45,12 @@ import org.eclipse.jetty.ee8.websocket.api.WriteCallback;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ecmwf.common.database.HostMapData;
 import ecmwf.ecpds.master.GeoPoint;
 import ecmwf.ecpds.master.LiveTransferSample;
 import ecmwf.ecpds.master.ManagementInterface;
 import ecmwf.ecpds.master.MasterManager;
+import ecmwf.ecpds.master.transfer.HostOption;
 
 /**
  * WebSocket endpoint streaming live data-transfer events to the "Live ECPDS Earth" globe visualisation.
@@ -136,6 +139,18 @@ public class GlobeWebSocket implements WebSocketListener {
      * only ProxyHosts, since they are the ones physically located elsewhere.
      */
     private static volatile Set<String> activeProxyHostNames = Set.of();
+
+    /**
+     * Every currently enabled Host of type {@link ecmwf.ecpds.master.transfer.HostOption#PROXY} ("Proxy Host" in the
+     * Destination Hosts sense - a Destination's own configured target Host - not to be confused with the unrelated
+     * {@link #activeProxyHostNames} above, a Data Mover reachable only through another Data Mover's REST interface).
+     * Refreshed by the poller (see {@link #STORAGE_POLL_EVERY_N_CYCLES}, reused here since the Host list changes as
+     * rarely as mover disk usage does). Shown as a persistent marker on the globe regardless of current transfer
+     * activity, since simply being an enabled, reachable target is meaningful on its own here - unlike Backup/
+     * Replication Hosts, which are usually internal to the local network and are only ever shown transiently, as an
+     * arc, while actually being used (and only then if GeoIP can resolve them to somewhere remote at all).
+     */
+    private static volatile List<HostMapData> enabledProxyTypeHosts = List.of();
 
     /** How many poll cycles between refreshes of the (cheaper-to-be-conservative-with) mover disk usage snapshot. */
     private static final int STORAGE_POLL_EVERY_N_CYCLES = 5;
@@ -337,6 +352,18 @@ public class GlobeWebSocket implements WebSocketListener {
                 } catch (final Exception e) {
                     LOG.debug("Fetching mover disk usage", e);
                 }
+                // Enabled Proxy-type Hosts change as rarely as the Host list itself, so this piggy-backs on the same
+                // throttled cadence as the mover disk usage snapshot above rather than a dedicated counter. Queried
+                // straight from the DB (not a ManagementInterface RMI call, unlike everything else in this method)
+                // since it reuses the same "Host Map" query (see GetHostMapJsonAction) that already resolves each
+                // Host's location (GeoIP or manual entry) server-side - no separate geolocation step is needed here.
+                try {
+                    enabledProxyTypeHosts = MasterManager.getDB()
+                            .getHostsForMap("All", "All", "All", HostOption.PROXY, "").stream()
+                            .filter(HostMapData::active).toList();
+                } catch (final Exception e) {
+                    LOG.debug("Fetching enabled Proxy Hosts", e);
+                }
             }
             final var samples = mi.getLiveTransfers();
             resolveGeoLocations(mi, samples != null ? samples : new LiveTransferSample[0]);
@@ -398,6 +425,19 @@ public class GlobeWebSocket implements WebSocketListener {
                 proxyHostNode.put("lon", location.longitude());
                 proxyHostsArray.add(proxyHostNode);
             }
+        }
+        // Every currently enabled Proxy-type Host (a Destination's own configured target Host, not a relay Data
+        // Mover - see the field's javadoc), independent of whether it currently has any transfer arc, so it gets a
+        // persistent marker just for being an enabled, reachable target - unlike Backup/Replication Hosts, which
+        // stay arc-only (see TransferScheduler#_offerReplicationLiveSample).
+        final var proxyDestinationHostsArray = node.putArray("proxyDestinationHosts");
+        for (final var host : enabledProxyTypeHosts) {
+            final var hostNode = JSON.createObjectNode();
+            hostNode.put("name", host.id());
+            hostNode.put("label", host.nickname() != null && !host.nickname().isBlank() ? host.nickname() : host.id());
+            hostNode.put("lat", host.lat());
+            hostNode.put("lon", host.lon());
+            proxyDestinationHostsArray.add(hostNode);
         }
         sendText(node.toString());
     }

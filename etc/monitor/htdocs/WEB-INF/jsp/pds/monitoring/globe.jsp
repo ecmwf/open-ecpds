@@ -227,7 +227,10 @@
         <li><strong>Arcs and points</strong> &mdash; an arc is drawn between a Transfer Host and either the origin
         marker (this installation's own location) or a Proxy Host, with the arrow pointing in the direction data is
         flowing: origin &rarr; host for Dissemination (data pushed out), host &rarr; origin for Acquisition (data
-        pulled in). Colours follow the legend shown in the top-left corner of the globe.</li>
+        pulled in). Every enabled Proxy-type Host gets its own persistent marker regardless of current traffic;
+        Backup/Replication Hosts only ever show transiently, as an arc, while actually in use (and only when
+        resolvable to a location outside the local network). Colours follow the legend shown in the top-left corner
+        of the globe.</li>
         <li><strong>Per host / per country</strong> and <strong>Dissemination / Acquisition</strong> (top-right
         icons) let you group and filter which arcs are shown.</li>
         <li><strong>Labels</strong> toggles country/town name overlays; the map icon switches between the 3D globe
@@ -260,6 +263,7 @@
         <div><span class="dot" style="background:#ef4444;"></span>Failed / retransmitting</div>
         <div><span class="dot" style="background:#ffd166;"></span>OpenECPDS location</div>
         <div><span class="dot" style="background:#a78bfa;"></span>Proxy Host location</div>
+        <div><span class="dot" style="background:#fb923c;"></span>Enabled Proxy Host (Destination)</div>
         <div class="globe-muted-text" style="margin-top:.25rem;max-width:160px;">Arrows point in the direction data is flowing</div>
         <div id="globeUnresolvedNote" class="globe-muted-text" style="display:none;margin-top:.35rem;max-width:160px;font-size:.72rem;line-height:1.3;">
             <i class="bi bi-exclamation-triangle" style="color:#d9a441;margin-right:.3rem;"></i><span id="globeUnresolvedNoteText"></span>
@@ -577,6 +581,7 @@
     };
     var ORIGIN_COLOR = Cesium.Color.fromCssColorString("#ffd166");
     var PROXY_HOST_COLOR = Cesium.Color.fromCssColorString("#a78bfa");
+    var PROXY_DESTINATION_HOST_COLOR = Cesium.Color.fromCssColorString("#fb923c");
     var TERMINAL_FADE_MS = 2500;
     var ORIGIN_PIXEL_SIZE = 12;
     var MOVER_PIXEL_SIZE = 10;
@@ -592,6 +597,11 @@
     // server (see the "proxyHosts" snapshot field/applySnapshot()), never for ordinary, directly-connected Data
     // Movers. Present regardless of current traffic; removed (with a fade) only once the server stops reporting it.
     var movers = Object.create(null);
+    // hostName -> { point, lat, lon, removeTimeout } - one entry per currently enabled Host of type "Proxy" (a
+    // Destination's own configured target Host - see the "proxyDestinationHosts" snapshot field/applySnapshot()).
+    // Not to be confused with "movers" above, which tracks a completely different concept (relay Data Movers).
+    // Present regardless of current traffic; removed (with a fade) only once the Host is disabled/deleted.
+    var proxyDestinationHosts = Object.create(null);
 
     // Whether arcs/markers are grouped per target Host ("host", the default - one arc per Host) or per resolved
     // destination country ("country" - one aggregated arc per country, plus a small breakdown table), the latter
@@ -837,6 +847,10 @@
     // so setViewMode()/setDirectionMode() can redraw Proxy Host markers instantly too, instead of them briefly
     // disappearing (or not reappearing) until the next poll.
     var lastProxyHosts = [];
+
+    // The "proxyDestinationHosts" list from the most recent "snapshot" message, kept for the same reason as
+    // lastProxyHosts above.
+    var lastProxyDestinationHosts = [];
 
     // The direction-filtered sample list (see applyDirectionFilter()), used everywhere else (KPI cards, arc/marker
     // grouping, country table) so the whole page consistently reflects only the currently selected direction(s),
@@ -1233,6 +1247,48 @@
         }
     }
 
+    function removeProxyDestinationHost(name) {
+        var h = proxyDestinationHosts[name];
+        if (!h) {
+            return;
+        }
+        if (h.removeTimeout) {
+            clearTimeout(h.removeTimeout);
+        }
+        if (h.point) {
+            points.remove(h.point);
+        }
+        delete proxyDestinationHosts[name];
+    }
+
+    // Adds/updates the marker for one enabled Proxy-type Host. Purely a "here is this Host, and it is enabled"
+    // marker - unlike upsertHost, no arc is drawn for it just for existing (an arc still appears separately,
+    // through the normal Host arc machinery, whenever it actually has traffic). Kept on the globe for as long as
+    // the server keeps reporting the Host as enabled (see applySnapshot()'s byProxyDestinationHost/removeTimeout
+    // handling below) - not tied to whether it currently has any traffic.
+    function upsertProxyDestinationHost(name, lat, lon, label) {
+        var existing = proxyDestinationHosts[name];
+        if (existing && existing.removeTimeout) {
+            clearTimeout(existing.removeTimeout);
+            existing.removeTimeout = null;
+        }
+        if (!existing) {
+            var point = points.add({
+                position: Cesium.Cartesian3.fromDegrees(lon, lat),
+                pixelSize: MOVER_PIXEL_SIZE,
+                color: PROXY_DESTINATION_HOST_COLOR,
+                outlineColor: Cesium.Color.WHITE,
+                outlineWidth: 2
+            });
+            point.proxyDestinationHostName = label || name;
+            proxyDestinationHosts[name] = { point: point, lat: lat, lon: lon, label: label, removeTimeout: null };
+        } else {
+            existing.lat = lat;
+            existing.lon = lon;
+            existing.label = label;
+        }
+    }
+
     // Aggregates every transfer currently reported for one Host (or, in country view, every transfer to every
     // Host within one country) into the counters the marker/arc/panel need.
     function aggregateTransfers(transferMap) {
@@ -1425,9 +1481,10 @@
     // next one. Only the grouping matching the current viewMode is actually turned into Cesium arcs/markers - the
     // other one's Cesium primitives (if any are still left over from before a mode switch) are defensively cleared
     // on every call.
-    function applySnapshot(samples, proxyHosts) {
+    function applySnapshot(samples, proxyHosts, proxyDestinationHostsList) {
         rawSamples = samples;
         lastProxyHosts = proxyHosts || [];
+        lastProxyDestinationHosts = proxyDestinationHostsList || [];
         lastSamples = directionMode === "both" ? samples : samples.filter(function (s) {
             return (s.direction || "DISSEMINATION").toLowerCase() === directionMode;
         });
@@ -1442,6 +1499,13 @@
         (proxyHosts || []).forEach(function (p) {
             if (p && p.name && typeof p.lat === "number" && typeof p.lon === "number") {
                 byMover[p.name] = { lat: p.lat, lon: p.lon };
+            }
+        });
+        // Same idea as byMover above, but for enabled Proxy-type Hosts (see upsertProxyDestinationHost()).
+        var byProxyDestinationHost = Object.create(null);
+        (proxyDestinationHostsList || []).forEach(function (p) {
+            if (p && p.name && typeof p.lat === "number" && typeof p.lon === "number") {
+                byProxyDestinationHost[p.name] = { lat: p.lat, lon: p.lon, label: p.label };
             }
         });
         var byCountry = Object.create(null);
@@ -1507,6 +1571,17 @@
         Object.keys(movers).forEach(function (name) {
             if (!byMover[name] && !movers[name].removeTimeout) {
                 movers[name].removeTimeout = setTimeout(function () { removeMover(name); }, TERMINAL_FADE_MS);
+            }
+        });
+        Object.keys(byProxyDestinationHost).forEach(function (name) {
+            var h = byProxyDestinationHost[name];
+            upsertProxyDestinationHost(name, h.lat, h.lon, h.label);
+        });
+        // Same fade-out-then-remove treatment as Proxy Host relay markers above, once a Host stops being reported
+        // as an enabled Proxy-type Host (disabled or deleted).
+        Object.keys(proxyDestinationHosts).forEach(function (name) {
+            if (!byProxyDestinationHost[name] && !proxyDestinationHosts[name].removeTimeout) {
+                proxyDestinationHosts[name].removeTimeout = setTimeout(function () { removeProxyDestinationHost(name); }, TERMINAL_FADE_MS);
             }
         });
         updateCountryTable(byCountry);
@@ -1583,7 +1658,7 @@
             // the next resize event so the cap is already correct on the very first frame it's shown.
             adjustCountryTableMaxHeight();
         }
-        applySnapshot(rawSamples, lastProxyHosts);
+        applySnapshot(rawSamples, lastProxyHosts, lastProxyDestinationHosts);
     }
 
     // Switches which direction(s) of transfer to monitor ("both"/"dissemination"/"acquisition"), redrawing
@@ -1596,7 +1671,7 @@
         directionMode = mode;
         localStorage.setItem(DIRECTION_MODE_PREF_KEY, mode);
         document.getElementById("globeDirectionBtn").classList.toggle("active", mode !== "both");
-        applySnapshot(rawSamples, lastProxyHosts);
+        applySnapshot(rawSamples, lastProxyHosts, lastProxyDestinationHosts);
     }
 
     function formatBytes(n) {
@@ -1727,7 +1802,7 @@
                     moverStorageTotalBytes = msg.moverStorageTotalBytes;
                 }
                 applyOrigin(msg);
-                applySnapshot(msg.transfers || [], msg.proxyHosts || []);
+                applySnapshot(msg.transfers || [], msg.proxyHosts || [], msg.proxyDestinationHosts || []);
                 updateDataPortalKpis();
             }
         };
