@@ -569,8 +569,9 @@
     // countryCode -> { arc, point, lat, lon, hostCount, transfers: {transferId: sample}, agg, removeTimeout, pulsePhase }
     // - only populated/rendered while viewMode === "country" (see setViewMode()).
     var countries = Object.create(null);
-    // moverName -> { point, lat, lon, transferIds: Set, removeTimeout } - only for Proxy Hosts (see
-    // isProxyHost on each transfer sample), never for ordinary, directly-connected Data Movers.
+    // moverName -> { point, lat, lon, removeTimeout } - one entry per Proxy Host currently reported active by the
+    // server (see the "proxyHosts" snapshot field/applySnapshot()), never for ordinary, directly-connected Data
+    // Movers. Present regardless of current traffic; removed (with a fade) only once the server stops reporting it.
     var movers = Object.create(null);
 
     // Whether arcs/markers are grouped per target Host ("host", the default - one arc per Host) or per resolved
@@ -812,6 +813,11 @@
     // The raw sample list from the most recent "snapshot" message (every direction), kept so switching
     // directionMode (see setDirectionMode()) can redraw instantly without waiting for the next poll.
     var rawSamples = [];
+
+    // The "proxyHosts" list from the most recent "snapshot" message, kept for the same reason as rawSamples above -
+    // so setViewMode()/setDirectionMode() can redraw Proxy Host markers instantly too, instead of them briefly
+    // disappearing (or not reappearing) until the next poll.
+    var lastProxyHosts = [];
 
     // The direction-filtered sample list (see applyDirectionFilter()), used everywhere else (KPI cards, arc/marker
     // grouping, country table) so the whole page consistently reflects only the currently selected direction(s),
@@ -1183,11 +1189,14 @@
 
     // Adds/updates the marker for one Proxy Host. Unlike Hosts, no arc is drawn from the marker itself (the arc to
     // the target Host is drawn by upsertHost, starting from this same location via aggregateHost's arcOrigin) - this
-    // is purely the "here is where this Proxy Host physically is" marker.
-    function upsertMover(name, lat, lon, hasActive) {
+    // is purely the "here is where this Proxy Host physically is" marker. Kept on the globe for as long as the
+    // server keeps reporting this name as an active Proxy Host (see applySnapshot()'s byMover/removeTimeout
+    // handling below) - not tied to whether it currently has any traffic.
+    function upsertMover(name, lat, lon) {
         var existing = movers[name];
         if (existing && existing.removeTimeout) {
             clearTimeout(existing.removeTimeout);
+            existing.removeTimeout = null;
         }
         if (!existing) {
             var point = points.add({
@@ -1199,11 +1208,9 @@
             });
             point.moverName = name;
             movers[name] = { point: point, lat: lat, lon: lon, removeTimeout: null };
-        }
-        if (!hasActive) {
-            // No more active transfers currently going through this Proxy Host: fade the marker out shortly
-            // instead of leaving it on the globe forever.
-            movers[name].removeTimeout = setTimeout(function () { removeMover(name); }, TERMINAL_FADE_MS);
+        } else {
+            existing.lat = lat;
+            existing.lon = lon;
         }
     }
 
@@ -1399,13 +1406,25 @@
     // next one. Only the grouping matching the current viewMode is actually turned into Cesium arcs/markers - the
     // other one's Cesium primitives (if any are still left over from before a mode switch) are defensively cleared
     // on every call.
-    function applySnapshot(samples) {
+    function applySnapshot(samples, proxyHosts) {
         rawSamples = samples;
+        lastProxyHosts = proxyHosts || [];
         lastSamples = directionMode === "both" ? samples : samples.filter(function (s) {
             return (s.direction || "DISSEMINATION").toLowerCase() === directionMode;
         });
         var byHost = Object.create(null);
+        // Proxy Host markers come straight from the server's independent "proxyHosts" list (every ProxyHost
+        // currently connected/heartbeating to the MasterServer), not from transfer samples - so a Proxy Host with
+        // zero current traffic still gets a persistent marker instead of only appearing while it happens to be
+        // relaying data. Per-transfer sample fields (sample.isProxyHost/moverLat/moverLon) are still used below by
+        // aggregateTransfers() to draw an active transfer's arc starting from the Proxy Host rather than the
+        // MasterServer's own location - that is unrelated to whether a marker exists for it.
         var byMover = Object.create(null);
+        (proxyHosts || []).forEach(function (p) {
+            if (p && p.name && typeof p.lat === "number" && typeof p.lon === "number") {
+                byMover[p.name] = { lat: p.lat, lon: p.lon };
+            }
+        });
         var byCountry = Object.create(null);
         var unresolvedActiveCount = 0;
         lastSamples.forEach(function (sample) {
@@ -1420,17 +1439,6 @@
                 group = byHost[sample.host] = { lat: sample.hostLat, lon: sample.hostLon, label: sample.hostLabel, transfers: Object.create(null) };
             }
             group.transfers[sample.transferId] = sample;
-            // Only Proxy Hosts get their own marker - ordinary, directly-connected Data Movers are intentionally
-            // not shown (they are considered co-located with the MasterServer itself).
-            if (sample.isProxyHost && sample.mover && sample.moverLat !== undefined && sample.moverLon !== undefined) {
-                var mGroup = byMover[sample.mover];
-                if (!mGroup) {
-                    mGroup = byMover[sample.mover] = { lat: sample.moverLat, lon: sample.moverLon, hasActive: false };
-                }
-                if (sample.status === "ACTIVE") {
-                    mGroup.hasActive = true;
-                }
-            }
             if (sample.hostCountry) {
                 var cGroup = byCountry[sample.hostCountry];
                 if (!cGroup) {
@@ -1472,11 +1480,14 @@
         }
         Object.keys(byMover).forEach(function (name) {
             var m = byMover[name];
-            upsertMover(name, m.lat, m.lon, m.hasActive);
+            upsertMover(name, m.lat, m.lon);
         });
+        // A Proxy Host only disappears from the globe once it drops out of the server's active list entirely
+        // (disconnected/heartbeat expired) - not merely because it currently has no traffic - and even then fades
+        // out the same way a Host marker does, rather than vanishing abruptly.
         Object.keys(movers).forEach(function (name) {
             if (!byMover[name] && !movers[name].removeTimeout) {
-                removeMover(name);
+                movers[name].removeTimeout = setTimeout(function () { removeMover(name); }, TERMINAL_FADE_MS);
             }
         });
         updateCountryTable(byCountry);
@@ -1553,7 +1564,7 @@
             // the next resize event so the cap is already correct on the very first frame it's shown.
             adjustCountryTableMaxHeight();
         }
-        applySnapshot(rawSamples);
+        applySnapshot(rawSamples, lastProxyHosts);
     }
 
     // Switches which direction(s) of transfer to monitor ("both"/"dissemination"/"acquisition"), redrawing
@@ -1566,7 +1577,7 @@
         directionMode = mode;
         localStorage.setItem(DIRECTION_MODE_PREF_KEY, mode);
         document.getElementById("globeDirectionBtn").classList.toggle("active", mode !== "both");
-        applySnapshot(rawSamples);
+        applySnapshot(rawSamples, lastProxyHosts);
     }
 
     function formatBytes(n) {
@@ -1697,7 +1708,7 @@
                     moverStorageTotalBytes = msg.moverStorageTotalBytes;
                 }
                 applyOrigin(msg);
-                applySnapshot(msg.transfers || []);
+                applySnapshot(msg.transfers || [], msg.proxyHosts || []);
                 updateDataPortalKpis();
             }
         };

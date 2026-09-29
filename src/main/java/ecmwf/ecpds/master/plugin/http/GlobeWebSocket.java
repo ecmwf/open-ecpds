@@ -384,6 +384,21 @@ public class GlobeWebSocket implements WebSocketListener {
         for (final LiveTransferSample sample : samples) {
             array.add(toNode(sample));
         }
+        // Every currently active (connected/heartbeating) ProxyHost, independent of whether it has any transfer
+        // sample right now, so the frontend can show a persistent marker for it as soon as it is known to the
+        // MasterServer rather than only while it happens to be relaying traffic (see resolveGeoLocations(), which
+        // resolves every one of these names too, and the frontend's applySnapshot()/upsertMover()).
+        final var proxyHostsArray = node.putArray("proxyHosts");
+        for (final var name : activeProxyHostNames) {
+            final var location = resolveHost(name);
+            if (location != null) {
+                final var proxyHostNode = JSON.createObjectNode();
+                proxyHostNode.put("name", name);
+                proxyHostNode.put("lat", location.latitude());
+                proxyHostNode.put("lon", location.longitude());
+                proxyHostsArray.add(proxyHostNode);
+            }
+        }
         sendText(node.toString());
     }
 
@@ -488,8 +503,12 @@ public class GlobeWebSocket implements WebSocketListener {
             if (hostKey != null && !hostKey.isBlank() && !GEO_CACHE.containsKey(hostKey)) {
                 unresolved.add(hostKey);
             }
-            final var moverName = sample.getMoverName();
-            if (moverName != null && activeProxyHostNames.contains(moverName) && !GEO_CACHE.containsKey(moverName)) {
+        }
+        // Resolve every currently active ProxyHost's own location too, not just ones referenced by a live transfer
+        // sample right now, so a ProxyHost with no traffic yet still gets a marker on the globe (see
+        // sendSnapshot()'s "proxyHosts" array).
+        for (final var moverName : activeProxyHostNames) {
+            if (moverName != null && !moverName.isBlank() && !GEO_CACHE.containsKey(moverName)) {
                 unresolved.add(moverName);
             }
         }
