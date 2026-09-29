@@ -292,7 +292,16 @@
             { selector: "node[kind='master']", style: { "background-color": pal.master } },
             { selector: "node[kind='monitor']", style: { "background-color": pal.monitor } },
             { selector: "node[kind='database']", style: { "background-color": pal.database, "shape": "round-hexagon" } },
-            { selector: "node[kind='mover']", style: { "height": 58 } },
+            // Data Mover boxes list one "plugin:port" entry per running plugin (ecproxy, ftp, http, ...), so the
+            // ports line's length varies per-server and a fixed height clips it on movers running several
+            // plugins. Cytoscape's own "label" auto-sizing keyword would grow the box to fit, but its dimensions
+            // are resolved lazily (on the next render pass) rather than synchronously when the node is added -
+            // an edge connected to a node whose "label" size hasn't resolved yet renders against a stale (zero)
+            // bounding box and looks like a missing arrow until something else dirties that node (e.g. dragging
+            // it). "boxHeight" is a plain number computed synchronously in buildElements() (see
+            // estimateLabelLines()) - like node position, it's available immediately, so edges route correctly
+            // from the very first render instead of only after a manual nudge.
+            { selector: "node[kind='mover']", style: { "height": "data(boxHeight)" } },
             { selector: "node[kind='mover'][up]", style: { "background-color": pal.moverUp } },
             { selector: "node[kind='mover'][!up]", style: {
                 "background-color": pal.moverDown, "border-style": "dashed", "text-opacity": 0.85
@@ -330,6 +339,32 @@
             var ports = pluginPortsLabel(p);
             return p.ref + (ports ? (":" + ports) : "");
         }).join(", ");
+    }
+
+    // Rough estimate of how many lines a Cytoscape "text-wrap:wrap" label will render as, so a mover box's
+    // height can be sized to fit *before* the node is added (see the comment on node[kind='mover'] in
+    // buildStyle()) instead of relying on Cytoscape's own lazy "label"-size resolution, which isn't ready in
+    // time for edges connected to a freshly-added node. Doesn't need to be pixel-exact - only to never
+    // undercount, since Cytoscape will still wrap/clip the actual text to fit the real "text-max-width".
+    var CHARS_PER_LINE = 15;
+    function estimateLabelLines(label) {
+        var totalLines = 0;
+        label.split("\n").forEach(function (segment) {
+            if (!segment) { totalLines += 1; return; }
+            var lineLen = 0;
+            var lines = 1;
+            segment.split(" ").forEach(function (word) {
+                var addLen = (lineLen ? 1 : 0) + word.length;
+                if (lineLen > 0 && lineLen + addLen > CHARS_PER_LINE) {
+                    lines += 1;
+                    lineLen = word.length;
+                } else {
+                    lineLen += addLen;
+                }
+            });
+            totalLines += lines;
+        });
+        return totalLines;
     }
 
     // Fixed, high-contrast palette cycled deterministically by TransferGroup name (via a simple string hash), so
@@ -408,10 +443,15 @@
             var portsLabel = mover.plugins && mover.plugins.length
                 ? pluginSummary(mover.plugins)
                 : (mover.port ? ("ecproxy:" + mover.port) : "");
+            var moverLabel = "Data Mover\n" + mover.name + (portsLabel ? ("\n" + portsLabel) : "");
+            // Base height (58) is the original fixed box size, already comfortable for the common 3-line case
+            // (Data Mover / name / ports) - only grow it when the ports line wraps past that.
+            var moverLines = estimateLabelLines(moverLabel);
             var moverData = {
                 id: nodeId, kind: "mover", parent: moverHostId, up: up,
                 transferGroup: mover.transferGroup || "",
-                label: "Data Mover\n" + mover.name + (portsLabel ? ("\n" + portsLabel) : ""),
+                label: moverLabel,
+                boxHeight: Math.max(58, 58 + (moverLines - 3) * 14),
                 details: JSON.stringify(mover)
             };
             var groupColor = groupColorFor(mover.transferGroup);
