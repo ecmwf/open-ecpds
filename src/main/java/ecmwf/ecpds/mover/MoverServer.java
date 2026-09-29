@@ -1639,7 +1639,15 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     @Override
     public void check(final long ticket) throws RemoteException {
         try {
-            ticketRepository.check(ticket, Cnf.at("Other", "ticketWaitDuration", 20 * Timer.ONE_MINUTE));
+            // By the time this is called, the actual byte transfer through ECproxyPlugin's ticket-based data
+            // channel has already happened (or failed) - this just waits for that already-in-flight/just-finished
+            // connection to mark the ticket completed. The data connection itself is bounded by a much shorter
+            // socket timeout (ECproxyPlugin's ticketReq(), 60s by default), so this only needs enough margin over
+            // that to account for cleanup/scheduling latency - not the 20 minutes it defaulted to before, which
+            // just meant a wedged/failed ticket (e.g. no completion signal ever arriving) hung every caller up the
+            // chain - the RMI caller, and whatever originally triggered it - for that whole time instead of failing
+            // fast.
+            ticketRepository.check(ticket, Cnf.at("Other", "ticketWaitDuration", 2 * Timer.ONE_MINUTE));
         } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }

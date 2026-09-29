@@ -342,8 +342,10 @@ final class AttachmentAccessImpl extends CallBackObject implements DataAccessInt
     public void check(final ProxySocket proxy) throws MasterException, IOException {
         final var monitor = new MonitorCall(
                 "check(" + proxy.getDataHost() + ":" + proxy.getDataPort() + "->" + proxy.getTicket() + ")");
+        // See the matching comment on MoverServer.check(long) for why 2 minutes (not the original 20) is the right
+        // default here: this is a post-hoc completion check for a ticket whose data transfer already happened.
         master.getTicketRepository().check(proxy.getTicket(),
-                Cnf.at("Other", "ticketWaitDuration", 20 * Timer.ONE_MINUTE));
+                Cnf.at("Other", "ticketWaitDuration", 2 * Timer.ONE_MINUTE));
         monitor.done();
     }
 }
