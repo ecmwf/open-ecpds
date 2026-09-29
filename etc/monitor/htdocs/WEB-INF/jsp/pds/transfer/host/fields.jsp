@@ -323,7 +323,7 @@ labelProperty="name" />
 </button>
 <span class="ms-auto d-flex align-items-center gap-1">
 <span style="position:relative;display:inline-block">
-<button type="button" id="testDir" name="testDir" class="btn btn-sm btn-outline-secondary">Test on Server</button>
+<button type="button" id="testDir" name="testDir" data-host-type="${requestScope[actionFormName].type}" class="btn btn-sm btn-outline-secondary">Test on Server</button>
 <span id="testDirOverlay" style="display:none;position:absolute;inset:0;cursor:not-allowed"
   data-bs-toggle="tooltip" data-bs-title="Fix the errors in the editor before testing"></span>
 </span>
@@ -1121,7 +1121,7 @@ oninput="validateMailInput(this); toggleMailRows()" />
 			e.preventDefault();
 			try {
 				if (document.getElementById('istext') && document.getElementById('istext').checked) {
-					testDirTextOnServer(editorDir, _testDirHostId);
+					testDirTextOnServerPreflight(editorDir, _testDirHostId);
 				} else {
 					var lang = document.getElementById('ispython') && document.getElementById('ispython').checked ? 'python' : 'js';
 					testSourceServerPreflight(editorDir, _testDirHostId, lang);

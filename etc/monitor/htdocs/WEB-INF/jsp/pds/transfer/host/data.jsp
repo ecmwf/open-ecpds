@@ -177,7 +177,7 @@ table.fields > tbody > tr > th {
 <auth:if basePathKey="host.basepath" paths="/edit/insert_form">
 <auth:then>
 <span class="ms-auto" style="position:relative;display:inline-block">
-<button type="button" id="testDir" name="testDir" class="btn btn-sm btn-outline-secondary">Test on Server</button>
+<button type="button" id="testDir" name="testDir" data-host-type="${host.type}" class="btn btn-sm btn-outline-secondary">Test on Server</button>
 </span>
 </auth:then>
 </auth:if>
@@ -699,7 +699,7 @@ JavaScript
 				e.preventDefault();
 				try {
 					if (document.getElementById('istext') && document.getElementById('istext').checked) {
-						testDirTextOnServer(editorDir, hostId);
+						testDirTextOnServerPreflight(editorDir, hostId);
 					} else {
 						var lang = document.getElementById('ispython') && document.getElementById('ispython').checked ? 'python' : 'js';
 						testSourceServerPreflight(editorDir, hostId, lang);

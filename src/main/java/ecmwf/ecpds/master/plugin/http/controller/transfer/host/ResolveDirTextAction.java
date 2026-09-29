@@ -5,10 +5,17 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.host;
  *
  * Resolves all static placeholder tokens in a plain-text Directory field and returns the resolved
  * text as JSON. Substitutes $host[...], $transferMethod[...], $ectransModule[...], and $date /
- * $dirdate tokens using the current date — without running a script on a DataMover.
+ * $dirdate tokens using the current date — without running a script on a DataMover. When a transferId
+ * or valuesJson parameter is supplied, also substitutes the transfer-specific placeholder families
+ * ($dataFile[...], $dataTransfer[...], $destination[...], $country[...], $transferServer[...],
+ * $transferGroup[...], $moverName) a Dissemination host's Directory template is built from - see
+ * MasterServer.resolveDirText(Host, String, String, String).
  *
  * Accepts POST to /do/transfer/host/edit/resolveDirText/{hostId} with parameters:
- *   text — the plain-text directory content
+ *   text        — the plain-text directory content
+ *   transferId  — (optional) id of a DataTransfer whose fields should be substituted
+ *   valuesJson  — (optional) JSON object of explicit placeholder to value overrides, used instead of
+ *                 transferId when supplied
  *
  * Returns JSON: {"output": "..."} or {"error": "..."}
  *
@@ -62,6 +69,8 @@ public class ResolveDirTextAction extends PDSAction {
         try {
             final var hostId = ECMWFActionForm.getPathParameter(mapping, request, 0);
             final var text = request.getParameter("text");
+            final var transferId = request.getParameter("transferId");
+            final var valuesJson = request.getParameter("valuesJson");
 
             if (hostId == null || hostId.isBlank()) {
                 writeError(response, result, "Missing host ID");
@@ -85,7 +94,7 @@ public class ResolveDirTextAction extends PDSAction {
             _log.debug("ResolveDirText: host={}", hostId);
 
             final var session = Util.getECpdsSessionFromObject(user);
-            result.put("output", MasterManager.getMI().resolveDirText(session, host, text));
+            result.put("output", MasterManager.getMI().resolveDirText(session, host, text, transferId, valuesJson));
 
         } catch (final Exception e) {
             _log.warn("ResolveDirText error", e);

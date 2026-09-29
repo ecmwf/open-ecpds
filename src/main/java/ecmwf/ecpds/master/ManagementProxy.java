@@ -802,6 +802,22 @@ final class ManagementProxy implements ManagementInterface {
     /**
      * {@inheritDoc}
      *
+     * Resolve all static and transfer-specific placeholder tokens in a plain-text Directory field.
+     */
+    @Override
+    public String resolveDirText(final ECpdsSession session, final Host host, final String text,
+            final String transferId, final String valuesJson) throws MasterException, DataBaseException, IOException {
+        if (session == null || host == null || text == null) {
+            throw new MasterException("Invalid parameter(s) for resolveDirText");
+        }
+        final var monitor = new MonitorCall(
+                "resolveDirText(" + session.getWebUser().getName() + "," + host.getName() + ")");
+        return monitor.done(managementInterface.resolveDirText(session, host, text, transferId, valuesJson));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Fetch the raw content of a remote URL/path via the host's configured ECtrans module on the DataMover.
      */
     @Override

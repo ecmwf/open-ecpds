@@ -2707,6 +2707,29 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     /**
      * {@inheritDoc}
      *
+     * Resolve all static and transfer-specific placeholder tokens in a plain-text Directory field.
+     */
+    @Override
+    public String resolveDirText(final ECpdsSession session, final Host host, final String text,
+            final String transferId, final String valuesJson) throws MasterException, DataBaseException, IOException {
+        final var monitor = new MonitorCall(
+                "resolveDirText(" + session.getWebUser().getName() + "," + host.getName() + ")");
+        final var action = master.startECpdsAction(session, "resolveDirText", host);
+        Exception exception = null;
+        try {
+            return monitor.done(master.resolveDirText(host, text, transferId, valuesJson));
+        } catch (final Exception e) {
+            exception = e;
+            _log.warn(e);
+            throw new MasterException(e.getMessage());
+        } finally {
+            master.logECpdsAction(action, null, exception);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Fetch the raw content of a remote URL/path via the host's configured ECtrans module on the DataMover.
      */
     @Override

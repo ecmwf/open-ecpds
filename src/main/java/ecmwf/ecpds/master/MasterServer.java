@@ -181,6 +181,9 @@ import javax.management.NotCompliantMBeanException;
 import javax.management.timer.Timer;
 import javax.script.ScriptException;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.graalvm.polyglot.Value;
@@ -189,6 +192,7 @@ import ecmwf.common.callback.RemoteInputStreamImp;
 import ecmwf.common.database.Alias;
 import ecmwf.common.database.Association;
 import ecmwf.common.database.ChangeLog;
+import ecmwf.common.database.Country;
 import ecmwf.common.database.DBIterator;
 import ecmwf.common.database.DataBase;
 import ecmwf.common.database.DataBaseException;
@@ -283,6 +287,9 @@ public final class MasterServer extends ECaccessProvider
 
     /** The Constant _log. */
     private static final transient Logger _log = LogManager.getLogger(MasterServer.class);
+
+    /** JSON mapper used by {@link #resolveManualValues(String, String)} to parse the supplied values map. */
+    private static final ObjectMapper _JSON_MAPPER = new ObjectMapper();
 
     /** The Constant host outputs. */
     private static final transient String HOST_OUTPUTS = Cnf.at("Server", "hostoutputs") + File.separator;
@@ -2641,6 +2648,176 @@ public final class MasterServer extends ECaccessProvider
         }
         matcher.appendTail(result);
         return result.toString();
+    }
+
+    /**
+     * Same as {@link #resolveDirText(Host, String)}, but also substitutes transfer-specific placeholders
+     * ($dataFile[...], $dataTransfer[...], $destination[...], $country[...], $transferServer[...], $transferGroup[...],
+     * $moverName) — the token families a Dissemination host's Directory field template is actually built from (see the
+     * Directory Guide), which the host-only substitutions above never touch. Without either {@code transferId} or
+     * {@code valuesJson}, behaves exactly like the two-argument overload.
+     *
+     * @param host
+     *            the host whose fields are used for substitution
+     * @param text
+     *            the plain-text directory content
+     * @param transferId
+     *            optional id of a DataTransfer whose fields should be substituted; ignored if {@code valuesJson} is
+     *            also supplied
+     * @param valuesJson
+     *            optional JSON object of explicit placeholder to value overrides (e.g. {"$dataFile[original]":
+     *            "myfile.grib"}), used instead of {@code transferId} when supplied
+     *
+     * @return the resolved text
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public String resolveDirText(final Host host, final String text, final String transferId, final String valuesJson)
+            throws DataBaseException {
+        final var resolved = resolveDirText(host, text);
+        if (valuesJson != null && !valuesJson.isBlank()) {
+            return resolveManualValues(resolved, valuesJson);
+        }
+        if (transferId != null && !transferId.isBlank()) {
+            return resolveTransferPlaceholders(resolved, transferId);
+        }
+        return resolved;
+    }
+
+    /**
+     * Resolves all transfer-specific placeholders by loading the DataTransfer with the given id and substituting
+     * $dataFile[...], $dataTransfer[...], $destination[...], $country[...], $transferGroup[...], $transferServer[...],
+     * and $moverName — exactly matching the production substitutions performed by TransferManagement.getTargetName().
+     * Shared by {@link #resolveDirText(Host, String, String, String)} (Directory field preview) and
+     * {@code TestScriptAction} (Directory script preview).
+     *
+     * @param text
+     *            the text containing placeholder tokens
+     * @param transferId
+     *            the DataTransfer id to resolve placeholders from
+     *
+     * @return the text with every resolvable placeholder substituted; returned unchanged (logged, not thrown) if the
+     *         transfer cannot be loaded
+     */
+    public String resolveTransferPlaceholders(final String text, final String transferId) {
+        try {
+            final var transfer = getDataTransfer(Long.parseLong(transferId.trim()));
+            final var target = new File(_dirTextNullSafe(transfer.getTarget()));
+            final var status = StatusFactory.getDataTransferStatusName(false, transfer.getStatusCode());
+            final var sb = new StringBuilder(text);
+
+            // $moverName — use transfer server name as proxy (actual mover is allocated at runtime)
+            try {
+                final var server = transfer.getTransferServer();
+                Format.replaceAll(sb, "$moverName", server.getName());
+                Format.replaceAll(sb, "$transferServer[name]", server.getName());
+                Format.replaceAll(sb, "$transferServer[host]", server.getHost());
+                Format.replaceAll(sb, "$transferServer[port]", server.getPort());
+                try {
+                    final var group = server.getTransferGroup();
+                    Format.replaceAll(sb, "$transferGroup[name]", group.getName());
+                    Format.replaceAll(sb, "$transferGroup[comment]", group.getComment());
+                } catch (final Exception ignored) {
+                }
+            } catch (final Exception ignored) {
+                Format.replaceAll(sb, "$moverName", "");
+            }
+
+            try {
+                final var dest = transfer.getDestination();
+                Format.replaceAll(sb, "$destination[name]", dest.getName());
+                Format.replaceAll(sb, "$destination[comment]", dest.getComment());
+                Format.replaceAll(sb, "$destination[userMail]", dest.getUserMail());
+                try {
+                    final Country country = dest.getCountry();
+                    Format.replaceAll(sb, "$country[name]", country.getName());
+                    Format.replaceAll(sb, "$country[iso]", country.getIso());
+                } catch (final Exception ignored) {
+                }
+            } catch (final Exception ignored) {
+            }
+
+            try {
+                final var file = transfer.getDataFile();
+                Format.replaceAll(sb, "$dataFile[timeStep]", file.getTimeStep());
+                Format.replaceAll(sb, "$dataFile[arrivedTime]", _dirTextToString(file.getArrivedTime()));
+                Format.replaceAll(sb, "$dataFile[id]", Long.toString(transfer.getDataFileId()));
+                Format.replaceAll(sb, "$dataFile[original]", file.getOriginal());
+                Format.replaceAll(sb, "$dataFile[source]", file.getSource());
+                Format.replaceAll(sb, "$dataFile[formatSize]", Format.formatSize(file.getSize()));
+                Format.replaceAll(sb, "$dataFile[size]", file.getSize());
+                Format.replaceAll(sb, "$dataFile[timeBase]", _dirTextToString(file.getTimeBase()));
+                Format.replaceAll(sb, "$dataFile[timeFile]", _dirTextToString(file.getTimeFile()));
+                Format.replaceAll(sb, "$dataFile[metaTime]", file.getMetaTime());
+                Format.replaceAll(sb, "$dataFile[metaStream]", file.getMetaStream());
+                Format.replaceAll(sb, "$dataFile[checksum]", _dirTextNullSafe(file.getChecksum()));
+            } catch (final Exception ignored) {
+            }
+
+            Format.replaceAll(sb, "$dataTransfer[target]", _dirTextNullSafe(transfer.getTarget()));
+            Format.replaceAll(sb, "$dataTransfer[id]", transferId);
+            Format.replaceAll(sb, "$dataTransfer[comment]", _dirTextNullSafe(transfer.getComment()));
+            Format.replaceAll(sb, "$dataTransfer[identity]", _dirTextNullSafe(transfer.getIdentity()));
+            Format.replaceAll(sb, "$dataTransfer[priority]", transfer.getPriority());
+            Format.replaceAll(sb, "$dataTransfer[scheduled]", _dirTextToString(transfer.getScheduledTime()));
+            Format.replaceAll(sb, "$dataTransfer[statusCode]", _dirTextNullSafe(status));
+            Format.replaceAll(sb, "$dataTransfer[name]", target.getName());
+            Format.replaceAll(sb, "$dataTransfer[path]", _dirTextNullSafe(target.getPath()));
+            Format.replaceAll(sb, "$dataTransfer[parent]", _dirTextNullSafe(target.getParent()));
+            Format.replaceAll(sb, "$dataTransfer[asap]", transfer.getAsap());
+            return sb.toString();
+        } catch (final Exception e) {
+            _log.warn("Could not resolve transfer placeholders for transferId={}: {}", transferId, e.getMessage());
+            return text;
+        }
+    }
+
+    /**
+     * Resolves manually supplied placeholder values from a JSON map. Expects JSON like: {"$dataFile[original]":
+     * "myfile.grib", "$dataTransfer[target]": "out.grib"}. Shared by
+     * {@link #resolveDirText(Host, String, String, String)} and {@code TestScriptAction}.
+     *
+     * @param text
+     *            the text containing placeholder tokens
+     * @param valuesJson
+     *            JSON object mapping placeholder tokens to their literal replacement values
+     *
+     * @return the text with every supplied placeholder substituted; returned unchanged (logged, not thrown) if
+     *         {@code valuesJson} cannot be parsed
+     */
+    public static String resolveManualValues(final String text, final String valuesJson) {
+        try {
+            final Map<String, String> values = _JSON_MAPPER.readValue(valuesJson,
+                    new TypeReference<Map<String, String>>() {
+                    });
+            final var sb = new StringBuilder(text);
+            for (final var entry : values.entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null) {
+                    Format.replaceAll(sb, entry.getKey(), entry.getValue());
+                }
+            }
+            return sb.toString();
+        } catch (final Exception e) {
+            _log.warn("Could not apply manual placeholder values: {}", e.getMessage());
+            return text;
+        }
+    }
+
+    /**
+     * Null-safe {@link Object#toString()}, returning {@code ""} for a {@code null} value. Used by
+     * {@link #resolveTransferPlaceholders(String, String)}.
+     */
+    private static String _dirTextNullSafe(final Object v) {
+        return v != null ? v.toString() : "";
+    }
+
+    /**
+     * Null-safe {@link java.util.Date#toString()}, returning {@code ""} for a {@code null} value. Used by
+     * {@link #resolveTransferPlaceholders(String, String)}.
+     */
+    private static String _dirTextToString(final java.util.Date d) {
+        return d != null ? d.toString() : "";
     }
 
     /**

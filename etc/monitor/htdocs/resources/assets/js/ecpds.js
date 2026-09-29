@@ -564,10 +564,14 @@ var _testDirRunning = false;
  * Resolve placeholder tokens in a plain-text Directory field on the server and show the result.
  * Calls /do/transfer/host/edit/resolveDirText/{hostId} — no DataMover required.
  *
- * @param {object} aceEditor - ACE editor instance containing the plain-text directory content
- * @param {string} hostId    - Host primary key
+ * @param {object} aceEditor      - ACE editor instance containing the plain-text directory content
+ * @param {string} hostId         - Host primary key
+ * @param {string} [transferId]   - id of a DataTransfer whose $dataFile[...]/$dataTransfer[...]/$destination[...]/
+ *                                  etc. values should be substituted (Dissemination hosts only - see
+ *                                  testDirTextOnServerPreflight())
+ * @param {object} [manualValues] - explicit placeholder -> value map, used instead of transferId
  */
-function testDirTextOnServer(aceEditor, hostId) {
+function testDirTextOnServer(aceEditor, hostId, transferId, manualValues) {
   if (_testDirRunning) return;
   _testDirRunning = true;
   var text = aceEditor.getValue();
@@ -578,7 +582,10 @@ function testDirTextOnServer(aceEditor, hostId) {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Resolving\u2026';
   }
-  var params = new URLSearchParams({ text: text });
+  var paramObj = { text: text };
+  if (transferId) paramObj.transferId = transferId;
+  if (manualValues) paramObj.valuesJson = JSON.stringify(manualValues);
+  var params = new URLSearchParams(paramObj);
   var controller = new AbortController();
   var timeoutId = setTimeout(function() { controller.abort(); }, 30000);
   fetch('/do/transfer/host/edit/resolveDirText/' + encodeURIComponent(hostId), {
@@ -607,7 +614,7 @@ function testDirTextOnServer(aceEditor, hostId) {
       } else {
         var output = data.output && data.output.length > 0 ? data.output : '(empty output)';
         _renderWithLineNumbers(el, output);
-        var urls = _extractPathsFromOutput(output);
+        var urls = _hostSupportsFilePreview() ? _extractPathsFromOutput(output) : [];
         if (urls.length > 0) {
           _showFetchBtn(true);
           if (fetchBtn) { fetchBtn._fetchUrls = urls; fetchBtn._fetchHostId = hostId; }
@@ -679,8 +686,8 @@ function testSourceServer(aceEditor, hostId, lang, transferId, manualValues) {
       } else {
         var output = data.output && data.output.length > 0 ? data.output : '(empty output)';
         _renderWithLineNumbers(el, output);
-        // Detect HTTP URLs in the output and show Fetch Content button if found
-        var urls = _extractPathsFromOutput(output);
+        // Detect HTTP URLs in the output and show Fetch Content button if found (Acquisition/Source only)
+        var urls = _hostSupportsFilePreview() ? _extractPathsFromOutput(output) : [];
         if (urls.length > 0) {
           _showFetchBtn(true);
           if (fetchBtn) { fetchBtn._fetchUrls = urls; fetchBtn._fetchHostId = hostId; }
@@ -1241,8 +1248,11 @@ function _showFetchBtn(show) {
   var copySimp = document.getElementById('testResultCopySimpleBtn');
   if (btn)      btn.style.display      = show ? '' : 'none';
   if (area)     area.style.display     = show ? '' : 'none';
-  // When file-content view is active the rich copy controls replace the simple one
-  if (copyFC)   copyFC.style.display   = show ? '' : 'none';
+  // testResultCopyControls carries Bootstrap's "d-flex" utility class, whose stylesheet rule is
+  // itself "display:flex!important" - a plain (non-important) inline "display:none" here would lose
+  // that specificity fight and leave the Raw/Pretty toggle visibly stuck on, so it must be set with
+  // matching !important priority to reliably hide it again once it has ever been shown.
+  if (copyFC)   copyFC.style.setProperty('display', show ? 'flex' : 'none', 'important');
   if (copySimp) copySimp.style.display = show ? 'none' : '';
 }
 
@@ -1285,28 +1295,73 @@ function _extractPlaceholders(script) {
 }
 
 /**
- * Pre-flight check before running a test script.
- * For Dissemination/non-Acquisition hosts: detects transfer-specific placeholders and
- * either presents a DataTransfer picker or a manual-values form before executing.
+ * Resolves the current host's type ("Acquisition", "Dissemination", etc.) from whichever page this script is
+ * running on. Tried in order:
+ *  1. A "select#type" element (the "Insert Host" form only) - checked first since it reflects whatever the user
+ *     currently has selected, which a static server-rendered attribute below could never do.
+ *  2. The "#testDir" button's own "data-host-type" attribute - set server-side on both the read-only host detail
+ *     page and the edit form for an *existing* host (see data.jsp/fields.jsp), neither of which render any
+ *     element with id="type" (that id only exists on the "Insert Host" form's <select> above), which is why a
+ *     plain document.getElementById('type') lookup here used to silently resolve to nothing - and, since the
+ *     resulting empty string is never "Acquisition"/"Source", made every saved host look like Dissemination for
+ *     pre-flight purposes (harmless for Acquisition, since its scripts never reference the transfer placeholders
+ *     this pre-flight looks for, but meant Dissemination's placeholder resolution only ever ran "by accident"
+ *     rather than by an actual, verified type check).
+ *  3. An "input[name=type]" element (defensive fallback, matching fields.jsp's own getHostType() helper).
  *
- * @param {object} aceEditor - ACE editor instance
- * @param {string} hostId    - Host primary key
- * @param {string} lang      - "js" or "python"
+ * @returns {string} the host type, or "" if it could not be determined.
  */
-function testSourceServerPreflight(aceEditor, hostId, lang) {
-  if (_testDirRunning) return;
-  var script = aceEditor.getValue();
-  var hostTypeEl = document.getElementById('type');
-  var hostType = hostTypeEl ? hostTypeEl.value : '';
+function _getHostTypeForTest() {
+  var selectEl = document.getElementById('type');
+  if (selectEl && selectEl.tagName === 'SELECT') {
+    var selectedOption = selectEl.options[selectEl.selectedIndex];
+    return selectedOption ? selectedOption.value : '';
+  }
+  var testDirBtn = document.getElementById('testDir');
+  if (testDirBtn && testDirBtn.dataset.hostType) {
+    return testDirBtn.dataset.hostType;
+  }
+  var hiddenEl = document.querySelector('input[name="type"]');
+  return hiddenEl ? hiddenEl.value : '';
+}
+
+/**
+ * Whether the "Preview File Content" button makes sense for the current host: only for
+ * Acquisition/Source hosts, whose Directory field resolves to paths that already exist on the
+ * remote server and can genuinely be read back via ECtransGet. For a Dissemination (or Proxy/
+ * Replication/Backup) host the Directory field resolves to the *upload target* path - somewhere a
+ * file would be written, not read from - so "previewing" it would issue a get() against a write
+ * target and show unrelated or misleading content rather than an actual preview of the output.
+ */
+function _hostSupportsFilePreview() {
+  var hostType = _getHostTypeForTest();
+  return hostType === 'Acquisition' || hostType === 'Source';
+}
+
+/**
+ * Shared pre-flight logic used before running either a test script (Script mode) or resolving a plain-text
+ * Directory field (Plain Text mode) on a Dissemination/non-Acquisition host: detects transfer-specific
+ * placeholders in the given text and, if any are found, either presents a DataTransfer picker or a manual-values
+ * form before invoking runFn - otherwise runs immediately. Kept host-type/placeholder-agnostic of *how* the text
+ * is eventually run so both modes can share the same picker/manual-values modals (see _showPickTransferModal/
+ * _showManualValuesModal below) instead of duplicating this flow per mode.
+ *
+ * @param {string}   text     - the script or plain-text Directory field content to scan for placeholders
+ * @param {string}   hostId   - Host primary key
+ * @param {function} runFn    - called as runFn(transferId, manualValues) once ready to actually run; both
+ *                              arguments are null when no placeholder resolution is needed/possible.
+ */
+function _preflightAndRun(text, hostId, runFn) {
+  var hostType = _getHostTypeForTest();
   var isDissemination = hostType !== 'Acquisition' && hostType !== 'Source';
 
-  // Only intercept if the script has transfer-specific placeholders
-  if (!isDissemination || !_TRANSFER_PLACEHOLDER_RE.test(script)) {
-    testSourceServer(aceEditor, hostId, lang);
+  // Only intercept if the text has transfer-specific placeholders
+  if (!isDissemination || !_TRANSFER_PLACEHOLDER_RE.test(text)) {
+    runFn(null, null);
     return;
   }
 
-  var placeholders = _extractPlaceholders(script);
+  var placeholders = _extractPlaceholders(text);
 
   // Fetch today's transfers for this host
   fetch('/do/transfer/host/edit/recentTransfers/' + encodeURIComponent(hostId), {
@@ -1315,22 +1370,52 @@ function testSourceServerPreflight(aceEditor, hostId, lang) {
   .then(function(r) { return r.json(); })
   .then(function(transfers) {
     if (transfers && transfers.length > 0) {
-      _showPickTransferModal(aceEditor, hostId, lang, transfers, placeholders);
+      _showPickTransferModal(runFn, transfers, placeholders);
     } else {
-      _showManualValuesModal(aceEditor, hostId, lang, placeholders);
+      _showManualValuesModal(runFn, placeholders);
     }
   })
   .catch(function() {
     // Network error fetching transfers — fall back to manual entry
-    _showManualValuesModal(aceEditor, hostId, lang, placeholders);
+    _showManualValuesModal(runFn, placeholders);
   });
 }
 
-function _showPickTransferModal(aceEditor, hostId, lang, transfers, placeholders) {
+/**
+ * Pre-flight check before running a test script (Script mode). See _preflightAndRun() above.
+ *
+ * @param {object} aceEditor - ACE editor instance
+ * @param {string} hostId    - Host primary key
+ * @param {string} lang      - "js" or "python"
+ */
+function testSourceServerPreflight(aceEditor, hostId, lang) {
+  if (_testDirRunning) return;
+  _preflightAndRun(aceEditor.getValue(), hostId, function(transferId, manualValues) {
+    testSourceServer(aceEditor, hostId, lang, transferId, manualValues);
+  });
+}
+
+/**
+ * Pre-flight check before resolving a plain-text Directory field (Plain Text mode). See _preflightAndRun() above.
+ * Dissemination Directory templates reference the same $destination[...]/$dataFile[...]/$dataTransfer[...]/etc.
+ * placeholder families as a Script-mode test, so this needs the exact same DataTransfer-picker/manual-values
+ * flow, which testDirTextOnServer() alone (a direct, no-preflight call) never had.
+ *
+ * @param {object} aceEditor - ACE editor instance
+ * @param {string} hostId    - Host primary key
+ */
+function testDirTextOnServerPreflight(aceEditor, hostId) {
+  if (_testDirRunning) return;
+  _preflightAndRun(aceEditor.getValue(), hostId, function(transferId, manualValues) {
+    testDirTextOnServer(aceEditor, hostId, transferId, manualValues);
+  });
+}
+
+function _showPickTransferModal(runFn, transfers, placeholders) {
   var listEl = document.getElementById('testPickTransferList');
   var runBtn  = document.getElementById('testPickRunBtn');
   var manBtn  = document.getElementById('testPickManualBtn');
-  if (!listEl || !runBtn || !manBtn) { testSourceServer(aceEditor, hostId, lang); return; }
+  if (!listEl || !runBtn || !manBtn) { runFn(null, null); return; }
 
   // Build list
   listEl.innerHTML = '';
@@ -1362,23 +1447,23 @@ function _showPickTransferModal(aceEditor, hostId, lang, transfers, placeholders
   runBtn.addEventListener('click', function handler() {
     runBtn.removeEventListener('click', handler);
     bootstrap.Modal.getInstance(document.getElementById('testPickTransferModal')).hide();
-    testSourceServer(aceEditor, hostId, lang, selectedId, null);
+    runFn(selectedId, null);
   }, { once: true });
 
   manBtn.onclick = null;
   manBtn.addEventListener('click', function handler() {
     manBtn.removeEventListener('click', handler);
     bootstrap.Modal.getInstance(document.getElementById('testPickTransferModal')).hide();
-    _showManualValuesModal(aceEditor, hostId, lang, placeholders);
+    _showManualValuesModal(runFn, placeholders);
   }, { once: true });
 
   bootstrap.Modal.getOrCreateInstance(document.getElementById('testPickTransferModal')).show();
 }
 
-function _showManualValuesModal(aceEditor, hostId, lang, placeholders) {
+function _showManualValuesModal(runFn, placeholders) {
   var listEl = document.getElementById('testManualValuesList');
   var runBtn  = document.getElementById('testManualRunBtn');
-  if (!listEl || !runBtn) { testSourceServer(aceEditor, hostId, lang); return; }
+  if (!listEl || !runBtn) { runFn(null, null); return; }
 
   listEl.innerHTML = '';
   var inputs = {};
@@ -1401,7 +1486,7 @@ function _showManualValuesModal(aceEditor, hostId, lang, placeholders) {
       if (val && val.value.trim() !== '') values[ph] = val.value.trim();
     });
     bootstrap.Modal.getInstance(document.getElementById('testManualValuesModal')).hide();
-    testSourceServer(aceEditor, hostId, lang, null, Object.keys(values).length > 0 ? values : null);
+    runFn(null, Object.keys(values).length > 0 ? values : null);
   }, { once: true });
 
   bootstrap.Modal.getOrCreateInstance(document.getElementById('testManualValuesModal')).show();

@@ -870,6 +870,35 @@ public interface ManagementInterface extends Remote {
             throws MasterException, DataBaseException, IOException;
 
     /**
+     * Same as {@link #resolveDirText(ECpdsSession, Host, String)}, but also substitutes transfer-specific placeholders
+     * ($dataFile[...], $dataTransfer[...], $destination[...], $country[...], $transferServer[...], $transferGroup[...],
+     * $moverName) - the token families a Dissemination host's Directory field template is actually built from. Without
+     * either {@code transferId} or {@code valuesJson}, behaves exactly like the three-argument overload.
+     *
+     * @param session
+     *            the session
+     * @param host
+     *            the host whose fields are used for substitution
+     * @param text
+     *            the plain-text directory content
+     * @param transferId
+     *            optional id of a DataTransfer whose fields should be substituted; ignored if {@code valuesJson} is
+     *            also supplied
+     * @param valuesJson
+     *            optional JSON object of explicit placeholder to value overrides, used instead of {@code transferId}
+     *            when supplied
+     *
+     * @return the resolved text
+     *
+     * @throws MasterException
+     *             the master exception
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    String resolveDirText(ECpdsSession session, Host host, String text, String transferId, String valuesJson)
+            throws MasterException, DataBaseException, IOException;
+
+    /**
      * Fetch the raw content of a remote URL/path via the host's configured ECtrans module on the DataMover.
      *
      * @param session
