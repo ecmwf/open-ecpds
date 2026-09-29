@@ -229,30 +229,15 @@ print("/outgoing/" + host + "/" + stream + "/")</pre>
 
         <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-start gap-2">
           <i class="bi bi-info-circle flex-shrink-0 mt-1"></i>
-          <div>For <strong>${_dirGuideType}</strong> hosts the Directory field
-          specifies the <strong>base path</strong> used on the DataMover (or remote server) when
-          setting up the ECtrans destination. Only the <strong>first line</strong> is used; the
-          path is truncated at the first <code>$</code> character. Script mode is not supported
-          for this host type.</div>
+          <div>For <strong>${_dirGuideType}</strong> hosts the Directory field is a plain,
+          static <strong>base path</strong> &mdash; there is no scripting and no variable
+          substitution, so <strong>Test on Server</strong> is not available for this host type.</div>
         </div>
 
         <p class="small fw-semibold mb-1"><i class="bi bi-code-square text-primary me-1"></i>Format</p>
-        <p class="small text-muted mb-2">Enter a plain path. Only the first line is read. If the
-        path contains a <code>$</code> token the path is truncated there (the part before <code>$</code>
-        is used as <code>realDir</code>). Dissemination-style selector blocks starting with
-        <code>(</code> are skipped entirely.</p>
-        <pre class="small p-2 rounded mb-3" style="background:var(--bs-secondary-bg); white-space:pre-wrap;">/ecpds/data/store/</pre>
-
-        <p class="small fw-semibold mb-1"><i class="bi bi-braces text-primary me-1"></i>Variables</p>
-        <p class="small text-muted mb-2">Because the path is truncated at the first <code>$</code>,
-        substitution variables are <strong>not</strong> generally useful here. The raw string before
-        the first <code>$</code> is taken as the directory.</p>
-
-        <p class="small fw-semibold mb-1"><i class="bi bi-gear text-primary me-1"></i>Internal usage</p>
-        <p class="small text-muted mb-0">This value is passed to the ECtrans module as the
-        <code>dir</code> / <code>realDir</code> when the DataMover opens a connection for file
-        transfer. The exact interpretation depends on the ECtrans module configured for the
-        host's transfer method.</p>
+        <p class="small text-muted mb-0">Enter the path exactly as it should be used &mdash; plain
+        text only, no <code>$variables</code> and no JavaScript/Python.</p>
+        <pre class="small p-2 rounded mt-2 mb-0" style="background:var(--bs-secondary-bg); white-space:pre-wrap;">/ecpds/data/store/</pre>
 
       </c:otherwise>
 

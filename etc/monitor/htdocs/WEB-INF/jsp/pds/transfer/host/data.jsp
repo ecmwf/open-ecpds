@@ -192,8 +192,18 @@ table.fields > tbody > tr > th {
     Use the <em>Directory Guide</em> button for full details.
     <auth:if basePathKey="host.basepath" paths="/edit/insert_form">
     <auth:then>
+    <c:choose>
+    <c:when test="${host.type == 'Acquisition' || host.type == 'Dissemination'}">
     The <strong>Test on Server</strong> button sends the current content to the host server and runs it in
     the same environment as a real transfer &mdash; the result is displayed in a panel below the editor.
+    </c:when>
+    <c:otherwise>
+    The <strong>Test on Server</strong> button is <strong>deactivated</strong> for this host type: the
+    Directory field here is a plain, static base path &mdash; there is no scripting and no variable
+    substitution to test. It is only available for <strong>Acquisition</strong> and
+    <strong>Dissemination</strong> hosts.
+    </c:otherwise>
+    </c:choose>
     </auth:then>
     </auth:if>
   </div>
@@ -694,6 +704,15 @@ JavaScript
 		(function() {
 			var btn = document.getElementById('testDir');
 			if (!btn) return;
+			// The Directory field is only ever templated/scripted for Acquisition and Dissemination
+			// hosts; for other types it is a static, literal base path (see MoverServer.getMSUser())
+			// with no variable substitution or script evaluation, so there is nothing to test.
+			if (hostType !== 'Acquisition' && hostType !== 'Dissemination') {
+				btn.disabled = true;
+				btn.classList.add('disabled');
+				btn.title = 'Test on Server is not available for this host type — the Directory field is a static base path and is not evaluated';
+				return;
+			}
 			var hostId = '<c:out value="${host.id}"/>';
 			btn.addEventListener('click', function(e) {
 				e.preventDefault();

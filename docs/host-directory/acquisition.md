@@ -140,6 +140,10 @@ The **Test on Server** button in the Directory card header sends the current edi
 - For **Plain Text** mode: the listing spec lines are evaluated as-is against the remote host. Each line is resolved and the resulting remote paths are returned.
 - For **JavaScript** and **Python** modes: the script is executed on an allocated DataMover; its standard output is returned and displayed exactly as the scheduler would see it at runtime.
 
+**Preview File Content:**
+
+When the resolved output contains one or more file paths/URIs, a **Preview File Content** button appears below the result. Clicking it fetches the actual content of up to five of those paths — live, via the host's configured transfer module on the DataMover, the same `ECtransGet` mechanism used for real retrieval — and displays it with format detection (JSON/XML pretty-printing, syntax highlighting) and Raw/Pretty copy controls. This is only offered for Acquisition and Source hosts, since their Directory field resolves to paths that genuinely exist on the remote server; it is not available for Dissemination (or Replication/Backup/Proxy) hosts, whose Directory field instead resolves to the *destination* path a file would be written to, not one that can be meaningfully read back. The list of paths to fetch is shown in an editable textarea, so individual entries can be adjusted before fetching.
+
 **Tips:**
 
 - All `$host[…]`, `$transferMethod[…]`, and `$date` variables are substituted before execution, so the output reflects real runtime values.

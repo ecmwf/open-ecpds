@@ -330,7 +330,7 @@ labelProperty="name" />
 </span>
 </div>
 <div class="collapse" id="testDirInfoPanel">
-  <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;">
+  <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;" id="testDirInfoScriptable">
     <i class="bi bi-info-circle-fill me-1"></i>
     <strong>Test on Server</strong> sends the current Directory script to the host server and runs it
     in the same environment used during real transfers. The result &mdash; the resolved directory path &mdash;
@@ -338,14 +338,21 @@ labelProperty="name" />
     or Python expression returns the expected path before saving. The button is disabled while the
     editor contains errors.
   </div>
+  <div class="alert alert-warning border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;display:none" id="testDirInfoNotScriptable">
+    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+    <strong>Test on Server</strong> is <strong>deactivated</strong> for this host type: the Directory field
+    here is a plain, static base path &mdash; there is no scripting and no variable substitution to test
+    (see the <em>Directory Guide</em> button above for details). It is only available for
+    <strong>Acquisition</strong> and <strong>Dissemination</strong> hosts.
+  </div>
 </div>
 <div class="card-body">
 <div class="row g-3">
 <div class="col-12">
 <div id='dirType'>
-<input type='radio' id='istext' name='dirType' />Plain Text <input
-type='radio' id='isjs' name='dirType' />JavaScript <input
-type='radio' id='ispython' name='dirType' />Python
+<span class="dirTypeOpt" style="margin-right:0.75em"><input type='radio' id='istext' name='dirType' />Plain Text</span>
+<span class="dirTypeOpt dirTypeScriptOpt" style="margin-right:0.75em"><input type='radio' id='isjs' name='dirType' />JavaScript</span>
+<span class="dirTypeOpt dirTypeScriptOpt"><input type='radio' id='ispython' name='dirType' />Python</span>
 </div>
 <small id="dirTypeMismatchWarning" style="display:none;color:var(--bs-warning-text-emphasis)">
   <i class="bi bi-exclamation-triangle-fill"></i> <span id="dirTypeMismatchText"></span>
@@ -1099,19 +1106,56 @@ oninput="validateMailInput(this); toggleMailRows()" />
 				$('#dirParametersDiss').toggle(str === "" || str === "Dissemination");
 				$('#dirParametersAcq').toggle(str === "Acquisition");
 				_updateHostTypeIcon(str);
+				updateDirModeForHostType();
 			});
 	_updateHostTypeIcon($('select[name="type"]').find(":selected").val());
 
 	$('#is' + getEditorType(editorDir)).prop('checked', true);
 
+	// The Directory field is only ever templated/scripted for Acquisition and Dissemination hosts;
+	// for Replication/Source/Backup/Proxy (and an as-yet-unselected type) it is used as a static,
+	// literal base path (see MoverServer.getMSUser()) - no variables, no script evaluation - so
+	// JavaScript/Python mode and Test on Server are not meaningful there.
+	function _isDirScriptableHostType(type) {
+		return type === "" || type === "Acquisition" || type === "Dissemination";
+	}
+
+	function _setTestDirOverlayTitle(title) {
+		var overlayEl = document.getElementById('testDirOverlay');
+		if (!overlayEl) return;
+		overlayEl.setAttribute('data-bs-title', title);
+		if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+			var tt = bootstrap.Tooltip.getInstance(overlayEl);
+			if (tt) tt.dispose();
+			bootstrap.Tooltip.getOrCreateInstance(overlayEl);
+		}
+	}
+
+	function updateDirModeForHostType() {
+		var scriptable = _isDirScriptableHostType(getHostType());
+		$('.dirTypeScriptOpt').toggle(scriptable);
+		if (!scriptable && !$('#istext').is(':checked')) {
+			$('#istext').prop('checked', true).trigger('change');
+		}
+		$('#testDirInfoScriptable').toggle(scriptable);
+		$('#testDirInfoNotScriptable').toggle(!scriptable);
+		updateTestDirBtn();
+	}
+
 	function updateTestDirBtn() {
 		if (typeof _testDirRunning !== 'undefined' && _testDirRunning) return;
+		var scriptable = _isDirScriptableHostType(getHostType());
 		var hasError = editorDir.getSession().getAnnotations().some(function(a) { return a.type === 'error'; });
-		$('#testDir').prop('disabled', hasError).toggleClass('disabled', hasError);
-		$('#testDirOverlay').toggle(hasError);
+		var disabled = hasError || !scriptable;
+		$('#testDir').prop('disabled', disabled).toggleClass('disabled', disabled);
+		$('#testDirOverlay').toggle(disabled);
+		_setTestDirOverlayTitle(scriptable
+			? 'Fix the errors in the editor before testing'
+			: 'Test on Server is not available for this host type — the Directory field is a static base path and is not evaluated');
 		applyAnnotationMarkers(editorDir, 'hostDirCardHeader');
 	}
 	editorDir.getSession().on('changeAnnotation', updateTestDirBtn);
+	updateDirModeForHostType();
 
 	// Wire up Test on Server button via event listener (more reliable than onclick attribute)
 	(function() {

@@ -63,11 +63,19 @@ The **Test on Server** button in the Directory card header sends the current edi
 - For **Plain Text** and selector-syntax modes: the template is evaluated with a representative set of runtime variables and the resulting path is returned.
 - For **JavaScript** and **Python** modes: the script is executed on an allocated DataMover; the return value or printed output is used as the resolved path, exactly as at transfer time.
 
+**Picking values for `$dataFile[…]`/`$dataTransfer[…]`/`$destination[…]`/`$country[…]`/`$transferServer[…]`/`$transferGroup[…]`/`$moverName`:**
+
+Since these tokens only have real values in the context of an actual transfer, testing a template or script that references any of them triggers a pre-flight step before the test runs:
+
+- If the host's associated Destination(s) currently have DataTransfers — including ones not yet dispatched, such as **StandBy** (on hold) or **Queued** ones — a picker lists them so you can select one; its metadata is then used to resolve the tokens.
+- Otherwise, or if you'd rather not pick a specific transfer (a **Manual** button is always available from the picker), a form lets you fill in a value for each token found in the editor by hand. Leaving a field blank keeps the literal placeholder in the output.
+
 **Tips:**
 
 - All `$host[…]`, `$dataFile[…]`, `$dataTransfer[…]`, and `$destination[…]` variables are substituted before execution, so the output reflects real runtime values.
 - The button is **disabled** while the editor contains validation errors — fix those first.
 - Use this to verify that your path template or script produces the correct target directory before saving.
+- Unlike on Acquisition hosts, there is no **Preview File Content** option here: a Dissemination Directory template resolves to the path a file *would be written to*, not an existing file to read back, so previewing it would mean issuing a read against a write target rather than showing you anything meaningful about the actual output.
 
 
 
