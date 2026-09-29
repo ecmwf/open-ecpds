@@ -203,6 +203,9 @@
         <button type="button" id="globeRecenterBtn" class="globe-icon-btn" title="Re-center on OpenECPDS location">
             <i class="bi bi-crosshair"></i>
         </button>
+        <button type="button" id="globeMapModeBtn" class="globe-icon-btn" title="Switch to flat map view">
+            <i class="bi bi-map"></i>
+        </button>
         <button type="button" id="globeFullscreenBtn" class="globe-icon-btn" title="Toggle full screen">
             <i class="bi bi-arrows-fullscreen"></i>
         </button>
@@ -213,7 +216,7 @@
   <div class="px-3 py-2 border-bottom border-top" style="font-size:.82rem;background:var(--bs-tertiary-bg,#e9ecef);border-top-width:3px!important;border-top-color:var(--bs-primary,#0d6efd)!important;border-radius:6px;">
     <strong class="d-block mb-1">About the Live Earth page</strong>
     <p class="mb-2">
-        This page visualises, in real time over a 3D globe, the traffic flowing between this
+        This page visualises, in real time over a 3D globe (or a flat 2D map, see below), the traffic flowing between this
         <%=System.getProperty("monitor.nickName")%> installation and the Transfer Hosts/Destinations it exchanges
         data with (via the DataMovers' Dissemination and Acquisition transfers), plus the overall activity of the
         Data Portal (the FTP/HTTP/SFTP/S3/WebDAV interface used directly by Incoming Users). Everything on the globe
@@ -227,7 +230,8 @@
         pulled in). Colours follow the legend shown in the top-left corner of the globe.</li>
         <li><strong>Per host / per country</strong> and <strong>Dissemination / Acquisition</strong> (top-right
         icons) let you group and filter which arcs are shown.</li>
-        <li><strong>Labels</strong> toggles country/town name overlays; the fullscreen button expands the globe to
+        <li><strong>Labels</strong> toggles country/town name overlays; the map icon switches between the 3D globe
+        and a flat 2D map (same arcs and markers, just reprojected); the fullscreen button expands the view to
         fill the whole browser window.</li>
     </ul>
     <strong class="d-block mb-1">Data Portal Activity panel (bottom-right)</strong>
@@ -464,6 +468,14 @@
         });
     }
 
+    // Whether the scene is shown as a 3D globe (the default) or morphed to a flat 2D map - both are natively
+    // supported by Cesium's Scene (morphTo2D()/morphTo3D()), reprojecting the very same primitives (arcs, host/
+    // proxy markers, labels) with no separate rendering code needed. Persisted across reloads like the view/
+    // direction/label preferences declared further below. Declared up here (rather than alongside those) so it is
+    // already assigned before the initial-load morph applied right after the viewer is created below.
+    var SCENE_MODE_PREF_KEY = "globeSceneMode";
+    var sceneMode = localStorage.getItem(SCENE_MODE_PREF_KEY) === "2D" ? "2D" : "3D";
+
     // No Cesium Ion token: use the low-resolution offline "Natural Earth II" imagery bundled with Cesium so the
     // globe works fully self-hosted, with no external network dependency and no Ion account required.
     Cesium.Ion.defaultAccessToken = undefined;
@@ -547,6 +559,13 @@
     // mirrors the same "[data-bs-theme] MutationObserver" pattern already used by the other chart pages.
     new MutationObserver(applyThemeToGlobeVisuals)
         .observe(document.documentElement, { attributes: true, attributeFilter: ["data-bs-theme"] });
+
+    // Apply the persisted 2D/3D preference up front, with a zero-second (instant) morph so the very first render
+    // already shows the right mode instead of briefly flashing the 3D globe first. See the globeMapModeBtn wiring
+    // further below for the interactive toggle.
+    if (sceneMode === "2D") {
+        viewer.scene.morphTo2D(0);
+    }
 
     var points = viewer.scene.primitives.add(new Cesium.PointPrimitiveCollection());
     var arcs = viewer.scene.primitives.add(new Cesium.PolylineCollection());
@@ -1751,6 +1770,25 @@
         viewer.camera.flyTo({
             destination: Cesium.Cartesian3.fromDegrees(lon, lat, 4000000)
         });
+    });
+
+    var mapModeBtn = document.getElementById("globeMapModeBtn");
+    var mapModeIcon = mapModeBtn.querySelector("i");
+    function applyMapModeButtonState() {
+        mapModeIcon.className = sceneMode === "2D" ? "bi bi-globe2" : "bi bi-map";
+        mapModeBtn.title = sceneMode === "2D" ? "Switch to 3D globe view" : "Switch to flat map view";
+        mapModeBtn.classList.toggle("active", sceneMode === "2D");
+    }
+    applyMapModeButtonState();
+    mapModeBtn.addEventListener("click", function () {
+        sceneMode = sceneMode === "2D" ? "3D" : "2D";
+        localStorage.setItem(SCENE_MODE_PREF_KEY, sceneMode);
+        if (sceneMode === "2D") {
+            viewer.scene.morphTo2D(1.0);
+        } else {
+            viewer.scene.morphTo3D(1.0);
+        }
+        applyMapModeButtonState();
     });
 
     var fullscreenBtn = document.getElementById("globeFullscreenBtn");
