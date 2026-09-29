@@ -146,6 +146,36 @@ public interface ManagementInterface extends Remote {
     MonitorManager getMonitorManager(String destinationName) throws MonitorException, MasterException, RemoteException;
 
     /**
+     * Checks whether Opsview monitoring is activated ({@code [Monitor] activated} in the Master Server's own
+     * ecmwf.properties - see {@link ecmwf.common.monitor.MonitorManager#isActivated()}). Opsview connectivity is only
+     * ever configured on the Master Server, so this must be checked here rather than locally in whichever process is
+     * actually rendering the calling page (e.g. the Monitor plugin).
+     *
+     * @return true, if Opsview monitoring is activated
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    boolean isMonitorActivated() throws RemoteException;
+
+    /**
+     * Exports a destination-metadata note to Opsview ({@link ecmwf.common.monitor.MonitorManager#addNotes}). Runs
+     * entirely within the Master Server process, the only one configured with Opsview connectivity - callers (e.g. the
+     * Monitor plugin's Destination Metadata page) must never talk to Opsview directly.
+     *
+     * @param destinationName
+     *            the destination name
+     * @param metadata
+     *            the note body
+     *
+     * @throws ecmwf.common.monitor.MonitorException
+     *             the monitor exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void exportDestinationMetaNotes(String destinationName, String metadata) throws MonitorException, RemoteException;
+
+    /**
      * Gets the destination status.
      *
      * @param destinationName

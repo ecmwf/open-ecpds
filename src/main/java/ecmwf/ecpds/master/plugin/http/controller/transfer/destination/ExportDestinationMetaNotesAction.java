@@ -23,9 +23,11 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
  *
  * Exports the destination metadata fields flagged "Include in Notes" ({@link
  * ecmwf.common.database.DestinationMetaValue#getIncludeInNotes()}) as an Opsview note, via
- * {@link MonitorManager#addNotes}. Triggered by the "Export Notes" button on the Destination Metadata page
- * (only shown when {@link MonitorManager#isActivated()} and the viewer can edit metadata - both re-checked here,
- * server-side). Returns JSON: {@code {"success":true}} or {@code {"success":false,"error":"..."}}, same contract as
+ * {@link ecmwf.ecpds.master.ManagementInterface#exportDestinationMetaNotes}. Triggered by the "Export Notes" button
+ * on the Destination Metadata page (only shown when {@link ecmwf.ecpds.master.ManagementInterface#isMonitorActivated()}
+ * and the viewer can edit metadata - both re-checked here, server-side). Both calls go via RMI to the Master Server,
+ * the only process with Opsview connectivity configured - this plugin never talks to Opsview directly. Returns JSON:
+ * {@code {"success":true}} or {@code {"success":false,"error":"..."}}, same contract as
  * {@link SaveDestinationMetaDataAction}.
  *
  * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
@@ -53,7 +55,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ecmwf.common.database.DestinationMetaField;
 import ecmwf.common.database.DestinationMetaValue;
-import ecmwf.common.monitor.MonitorManager;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.web.controller.ECMWFActionFormException;
@@ -81,7 +82,7 @@ public class ExportDestinationMetaNotesAction extends PDSAction {
             throws ECMWFActionFormException {
         response.setContentType("application/json;charset=UTF-8");
         try {
-            if (!MonitorManager.isActivated()) {
+            if (!MasterManager.getMI().isMonitorActivated()) {
                 throw new IllegalStateException("Monitoring is not activated");
             }
             if (!GetDestinationMetaDataAction.canEditMeta(user)) {
@@ -93,7 +94,7 @@ public class ExportDestinationMetaNotesAction extends PDSAction {
                 throw new IllegalArgumentException("Missing destination");
             }
             final var noteBody = buildNoteBody(destinationName);
-            MonitorManager.addNotes(destinationName, noteBody);
+            MasterManager.getMI().exportDestinationMetaNotes(destinationName, noteBody);
             response.getWriter().write("{\"success\":true}");
         } catch (final Exception e) {
             _log.warn("ExportDestinationMetaNotesAction", e);

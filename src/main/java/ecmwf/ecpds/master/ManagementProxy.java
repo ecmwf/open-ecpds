@@ -168,6 +168,30 @@ final class ManagementProxy implements ManagementInterface {
     /**
      * {@inheritDoc}
      *
+     * Checks if is monitor activated.
+     */
+    @Override
+    public boolean isMonitorActivated() throws RemoteException {
+        final var monitor = new MonitorCall("isMonitorActivated()");
+        return monitor.done(managementInterface.isMonitorActivated());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Export destination meta notes.
+     */
+    @Override
+    public void exportDestinationMetaNotes(final String destinationName, final String metadata)
+            throws MonitorException, RemoteException {
+        final var monitor = new MonitorCall("exportDestinationMetaNotes(" + destinationName + ")");
+        managementInterface.exportDestinationMetaNotes(destinationName, metadata);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Gets the destination status.
      */
     @Override

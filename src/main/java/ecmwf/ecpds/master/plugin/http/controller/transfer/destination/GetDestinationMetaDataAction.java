@@ -29,7 +29,6 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
-import ecmwf.common.monitor.MonitorManager;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
@@ -72,7 +71,14 @@ public class GetDestinationMetaDataAction extends PDSAction {
             }
             final var canEditMeta = canEditMeta(user);
             request.setAttribute("canEditMeta", canEditMeta);
-            request.setAttribute("monitorActivated", MonitorManager.isActivated());
+            // Opsview connectivity only exists on the Master Server, so this has to be asked via RMI rather than
+            // checked locally - defaults to "not activated" (hiding Export Notes) if Master is unreachable.
+            var monitorActivated = false;
+            try {
+                monitorActivated = MasterManager.getMI().isMonitorActivated();
+            } catch (final Exception ignored) {
+            }
+            request.setAttribute("monitorActivated", monitorActivated);
             // Load metadata fields (filter by destination DES_TYPE via junction table) and existing values
             try {
                 final var db = MasterManager.getDB();

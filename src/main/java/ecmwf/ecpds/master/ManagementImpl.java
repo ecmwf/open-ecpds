@@ -1096,6 +1096,29 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Checks if is monitor activated.
+     */
+    @Override
+    public boolean isMonitorActivated() {
+        return MonitorManager.isActivated();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Export destination meta notes.
+     */
+    @Override
+    public void exportDestinationMetaNotes(final String destinationName, final String metadata)
+            throws MonitorException {
+        final var monitor = new MonitorCall("exportDestinationMetaNotes(" + destinationName + ")");
+        MonitorManager.addNotes(destinationName, metadata);
+        monitor.done();
+    }
+
+    /**
      * Gets the destination size.
      *
      * @param destinationName
