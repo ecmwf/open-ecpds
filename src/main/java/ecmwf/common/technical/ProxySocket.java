@@ -35,8 +35,13 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.util.Base64;
 import java.util.Hashtable;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 
@@ -63,6 +68,27 @@ public final class ProxySocket implements Serializable, Closeable {
 
     /** The Constant _factory. */
     private static final SocketFactory _factory = _getSocketFactory();
+
+    /**
+     * The Constant SECRET. Every socket this class opens talks to an {@code ECproxyPlugin} listener, which (like every
+     * {@code ecmwf.common.plugin.SimplePlugin}-based plugin) runs the HMAC-SHA256 challenge-response from
+     * {@code SimplePlugin#startConnection(Socket)} on every accepted connection - not only "control" connections -
+     * whenever a cliSharedSecret is configured. This class previously ignored that handshake entirely and sent its own
+     * command (a "T"/"P"/"O"/"F"/"C" ticket op) as the very first bytes, so as soon as cliSharedSecret was wired up on
+     * the Data Mover it would misread the first byte of the server's challenge as the ticket response (e.g. "not found
+     * (G)") and fail - leaving the ticket it had just registered stuck, since nothing would ever get far enough to mark
+     * it completed. See {@code SimplePlugin#SECRET} and {@code ECpdsClient#SECRET}, which this mirrors.
+     */
+    private static final String SECRET = Cnf.at("Security", "cliSharedSecret", "");
+
+    /** The Constant CHALLENGE_SIZE. Must match {@code SimplePlugin#CHALLENGE_SIZE}. */
+    private static final int CHALLENGE_SIZE = 32;
+
+    /**
+     * The Constant BASE64_ENCODED_CHALLENGE_SIZE. The server Base64-encodes the raw challenge before writing it, so
+     * this is how many bytes must be read off the wire before decoding.
+     */
+    private static final int BASE64_ENCODED_CHALLENGE_SIZE = 4 * ((CHALLENGE_SIZE + 2) / 3);
 
     /** The _data host. */
     private final String _dataHost;
@@ -180,6 +206,7 @@ public final class ProxySocket implements Serializable, Closeable {
         final var host = Cnf.at("ProxySocket", "host", socketConfig.getPublicAddress());
         final var port = Cnf.at("ProxySocket", "port", 646);
         final var socket = _getCustomizedSocket(socketConfig, host, port);
+        _handleChallenge(socket);
         _dataPort = 0;
         _dataHost = null;
         _isDirect = false;
@@ -312,6 +339,7 @@ public final class ProxySocket implements Serializable, Closeable {
         final var socket = _getCustomizedSocket(socketConfig, dataHost, dataPort);
         final var soTimeOut = socket.getSoTimeout();
         socket.setSoTimeout(180000);
+        _handleChallenge(socket);
         final var ps = new PrintStream(socket.getOutputStream());
         final var in = socket.getInputStream();
         if (!isDirect) {
@@ -373,6 +401,51 @@ public final class ProxySocket implements Serializable, Closeable {
             }
         }
         return socket;
+    }
+
+    /**
+     * Performs the client side of {@code SimplePlugin}'s HMAC-SHA256 challenge-response, if a cliSharedSecret is
+     * configured. Must be called immediately after connecting and before any protocol byte is written, since the server
+     * sends its challenge unprompted as the first thing on the wire.
+     *
+     * @param socket
+     *            the freshly connected socket
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred, or that the challenge-response failed.
+     */
+    private static void _handleChallenge(final Socket socket) throws IOException {
+        if (SECRET.isEmpty()) {
+            return;
+        }
+        final var in = socket.getInputStream();
+        final var encodedChallenge = new byte[BASE64_ENCODED_CHALLENGE_SIZE];
+        var totalRead = 0;
+        while (totalRead < BASE64_ENCODED_CHALLENGE_SIZE) {
+            final var bytesRead = in.read(encodedChallenge, totalRead, BASE64_ENCODED_CHALLENGE_SIZE - totalRead);
+            if (bytesRead < 0) {
+                throw new IOException("Incomplete challenge");
+            }
+            totalRead += bytesRead;
+        }
+        final byte[] challenge;
+        try {
+            challenge = Base64.getDecoder().decode(new String(encodedChallenge, StandardCharsets.UTF_8));
+        } catch (final IllegalArgumentException e) {
+            throw new IOException("Invalid Base64 challenge", e);
+        }
+        if (challenge.length != CHALLENGE_SIZE) {
+            throw new IOException("Decoded challenge size mismatch");
+        }
+        try {
+            final var mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(SECRET.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            final var out = socket.getOutputStream();
+            out.write(mac.doFinal(challenge));
+            out.flush();
+        } catch (final GeneralSecurityException e) {
+            throw new IOException("Error computing challenge response", e);
+        }
     }
 
     /**
@@ -606,6 +679,7 @@ public final class ProxySocket implements Serializable, Closeable {
         final var host = Cnf.at("ProxySocket", "host", socketConfig.getPublicAddress());
         final var port = Cnf.at("ProxySocket", "port", 646);
         final var socket = _getCustomizedSocket(socketConfig, host, port);
+        _handleChallenge(socket);
         final var ps = new PrintStream(socket.getOutputStream());
         final var in = socket.getInputStream();
         final var name = getName();
@@ -655,6 +729,7 @@ public final class ProxySocket implements Serializable, Closeable {
         final var host = Cnf.at("ProxySocket", "host", socketConfig.getPublicAddress());
         final var port = Cnf.at("ProxySocket", "port", 646);
         final var socket = _getCustomizedSocket(socketConfig, host, port);
+        _handleChallenge(socket);
         final var ps = new PrintStream(socket.getOutputStream());
         final var in = socket.getInputStream();
         final var name = getName();

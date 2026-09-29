@@ -465,12 +465,17 @@ public final class ECproxyPlugin extends SimplePlugin {
                     }
                     setCloseOnExit(false);
                     setLoop(false);
-                } catch (final IOException e) {
+                } catch (final Throwable t) {
+                    // Catch every Throwable, not just IOException: whatever goes wrong here, ectransTicket MUST be
+                    // marked completed, or the caller (e.g. MasterServer callback into MoverServer.check(ticket))
+                    // is left waiting on AbstractTicket.close() for the full ticketWaitDuration (20m by default),
+                    // hanging everything upstream (the RMI caller, and whatever originally triggered it) for that
+                    // whole time instead of failing fast.
                     final var message = "Processing ticket " + ticket;
                     StreamPlugThread.closeQuietly(socket);
-                    ectransTicket.setError(message, e);
+                    ectransTicket.setError(message, t);
                     ectransTicket.completed();
-                    _log.warn(message, e);
+                    _log.warn(message, t);
                 }
             } else if (genericTicket instanceof FileDescriptorTicket) {
                 ThreadService.setCookieIfNotAlreadySet("FileDescriptorTicket-" + ticket);
@@ -494,12 +499,15 @@ public final class ECproxyPlugin extends SimplePlugin {
                     setCloseOnExit(false);
                     setLoop(false);
                     plug.execute();
-                } catch (final IOException e) {
+                } catch (final Throwable t) {
+                    // See the matching comment in the ECaccessTicket branch above: any Throwable here (not just
+                    // IOException) must still mark descTicket completed, or MoverServer.check(ticket) is left
+                    // blocked for up to ticketWaitDuration.
                     final var message = "Processing ticket " + ticket;
                     StreamPlugThread.closeQuietly(socket);
-                    descTicket.setError(message, e);
+                    descTicket.setError(message, t);
                     descTicket.completed();
-                    _log.warn(message, e);
+                    _log.warn(message, t);
                 }
             } else {
                 _log.error("Ticket not valid (" + ticket + ")");
