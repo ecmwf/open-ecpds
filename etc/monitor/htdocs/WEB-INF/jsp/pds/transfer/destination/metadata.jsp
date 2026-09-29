@@ -305,8 +305,6 @@ function dmfSave() {
   var btn = document.getElementById('dmfSaveBtn');
   var status = document.getElementById('dmfSaveStatus');
   btn.disabled = true;
-  status.textContent = 'Saving...';
-  status.className = 'dmf-save-status text-muted';
   var values = dmfCollect();
   fetch('<c:url value="/do/transfer/destination/metadata/save"/>', {
     method: 'POST',
@@ -316,10 +314,7 @@ function dmfSave() {
     .then(function(data) {
       if (data.success) {
         dmfClearDirty();
-        status.textContent = 'Saved \u2713';
-        status.className = 'dmf-save-status text-success';
         if (_dmfHideEmpty) { dmfMarkEmpty(); dmfApplyHideEmpty(true); }
-        setTimeout(function(){ status.textContent=''; }, 4000);
       } else {
         status.textContent = 'Error: ' + (data.error || 'unknown');
         status.className = 'dmf-save-status text-danger';
