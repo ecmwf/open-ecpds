@@ -4812,7 +4812,8 @@ public final class MasterServer extends ECaccessProvider
                             progressInterface.getDestinationName(), source != null ? source.getName() : null,
                             source != null ? source.getNickname() : null, source != null ? source.getHost() : null,
                             source != null ? source.getTransferMethodName() : null, progressInterface.getFileSize(),
-                            byteSent, duration, rate, status, LiveTransferSample.DIRECTION_ACQUISITION) });
+                            byteSent, duration, rate, status, LiveTransferSample.DIRECTION_ACQUISITION,
+                            source != null ? source.getType() : null) });
         } catch (final Throwable t) {
             _log.debug("Building LiveTransferSample for Acquisition DataFile-{}", progressInterface.getDataFileId(), t);
         }

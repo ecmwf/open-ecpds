@@ -1557,7 +1557,7 @@ public final class TransferScheduler extends MBeanScheduler {
                     .update(new LiveTransferSample[] { new LiveTransferSample(transfer.getId(), moverName,
                             transfer.getDestinationName(), targetHost.getName(), targetHost.getNickname(),
                             targetHost.getHost(), targetHost.getTransferMethodName(), fileSize, bytesSent, duration,
-                            rate, status, LiveTransferSample.DIRECTION_DISSEMINATION) });
+                            rate, status, LiveTransferSample.DIRECTION_DISSEMINATION, targetHost.getType()) });
         } catch (final Throwable t) {
             _log.debug("Building LiveTransferSample for replicated DataTransfer {}", transfer.getId(), t);
         }

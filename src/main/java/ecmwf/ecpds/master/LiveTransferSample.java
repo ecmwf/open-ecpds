@@ -109,6 +109,17 @@ public final class LiveTransferSample implements Serializable {
      */
     private final String direction;
 
+    /**
+     * The target/source Host's actual type ({@code ecmwf.ecpds.master.transfer.HostOption} - one of "Dissemination",
+     * "Acquisition", "Replication", "Source", "Backup" or "Proxy"), so the globe UI can filter/group by the real Host
+     * type rather than only by {@link #direction} - several of these types share the same direction (e.g. Replication/
+     * Backup/Proxy are all {@link #DIRECTION_DISSEMINATION} pushes, same as an ordinary Dissemination Host) but are
+     * still meaningfully distinct to filter on individually. May be {@code null} for samples from a code path that
+     * predates this field (older DataMovers) or where the Host's type genuinely couldn't be determined - the globe UI
+     * falls back to {@link #direction} in that case.
+     */
+    private final String hostType;
+
     /** Wall-clock time (epoch millis) at which the sample was taken. */
     private final long timestamp;
 
@@ -142,6 +153,8 @@ public final class LiveTransferSample implements Serializable {
      * @param direction
      *            one of {@link #DIRECTION_DISSEMINATION} or {@link #DIRECTION_ACQUISITION}; defaults to
      *            {@link #DIRECTION_DISSEMINATION} if {@code null}
+     * @param hostType
+     *            the target/source Host's actual type (see {@link #hostType}); may be {@code null}
      */
     @JsonCreator
     public LiveTransferSample(@JsonProperty("transferId") final long transferId,
@@ -152,7 +165,8 @@ public final class LiveTransferSample implements Serializable {
             @JsonProperty("fileSize") final long fileSize, @JsonProperty("byteSent") final long byteSent,
             @JsonProperty("duration") final long duration,
             @JsonProperty("rateBitsPerSecond") final double rateBitsPerSecond,
-            @JsonProperty("status") final String status, @JsonProperty("direction") final String direction) {
+            @JsonProperty("status") final String status, @JsonProperty("direction") final String direction,
+            @JsonProperty("hostType") final String hostType) {
         this.transferId = transferId;
         this.moverName = moverName;
         this.destinationName = destinationName;
@@ -166,6 +180,7 @@ public final class LiveTransferSample implements Serializable {
         this.rateBitsPerSecond = rateBitsPerSecond;
         this.status = status;
         this.direction = direction != null ? direction : DIRECTION_DISSEMINATION;
+        this.hostType = hostType;
         this.timestamp = System.currentTimeMillis();
     }
 
@@ -221,6 +236,10 @@ public final class LiveTransferSample implements Serializable {
         return direction;
     }
 
+    public String getHostType() {
+        return hostType;
+    }
+
     public long getTimestamp() {
         return timestamp;
     }
@@ -240,6 +259,6 @@ public final class LiveTransferSample implements Serializable {
                 + destinationName + ", hostName=" + hostName + ", hostNickname=" + hostNickname + ", hostAddress="
                 + hostAddress + ", protocol=" + protocol + ", fileSize=" + Format.formatSize(fileSize) + ", byteSent="
                 + Format.formatSize(byteSent) + ", duration=" + Format.formatDuration(duration) + ", status=" + status
-                + ", direction=" + direction + "]";
+                + ", direction=" + direction + ", hostType=" + hostType + "]";
     }
 }

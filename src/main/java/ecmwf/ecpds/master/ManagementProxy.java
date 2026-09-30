@@ -1583,6 +1583,12 @@ final class ManagementProxy implements ManagementInterface {
 
     /** {@inheritDoc} */
     @Override
+    public ProxyHostStatus[] getEnabledProxyHosts() throws RemoteException {
+        return managementInterface.getEnabledProxyHosts();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public Map<String, GeoPoint> getGeoLocations(final String[] hostNames) throws RemoteException {
         return managementInterface.getGeoLocations(hostNames);
     }

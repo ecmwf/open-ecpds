@@ -155,27 +155,45 @@
             </ul>
         </div>
         <div class="dropdown d-inline-block">
-            <button type="button" id="globeDirectionBtn" class="globe-icon-btn" title="Monitor Dissemination and/or Acquisition"
+            <button type="button" id="globeHostTypeBtn" class="globe-icon-btn" title="Filter by Transfer Host type"
                     data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                 <i class="bi bi-arrow-left-right"></i>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end p-2" style="min-width:190px;" aria-labelledby="globeDirectionBtn">
+            <ul class="dropdown-menu dropdown-menu-end p-2" style="min-width:190px;" aria-labelledby="globeHostTypeBtn" id="globeHostTypeList">
                 <li>
                     <div class="form-check mb-1">
-                        <input class="form-check-input" type="radio" name="globeDirectionRadio" id="globeDirectionBoth" value="both">
-                        <label class="form-check-label" for="globeDirectionBoth" style="font-size:.85rem;">Dissemination + Acquisition</label>
+                        <input class="form-check-input globe-host-type-check" type="checkbox" id="globeHostTypeDissemination" value="Dissemination">
+                        <label class="form-check-label" for="globeHostTypeDissemination" style="font-size:.85rem;">Dissemination</label>
                     </div>
                 </li>
                 <li>
                     <div class="form-check mb-1">
-                        <input class="form-check-input" type="radio" name="globeDirectionRadio" id="globeDirectionDiss" value="dissemination">
-                        <label class="form-check-label" for="globeDirectionDiss" style="font-size:.85rem;">Dissemination only</label>
+                        <input class="form-check-input globe-host-type-check" type="checkbox" id="globeHostTypeAcquisition" value="Acquisition">
+                        <label class="form-check-label" for="globeHostTypeAcquisition" style="font-size:.85rem;">Acquisition</label>
+                    </div>
+                </li>
+                <li>
+                    <div class="form-check mb-1">
+                        <input class="form-check-input globe-host-type-check" type="checkbox" id="globeHostTypeReplication" value="Replication">
+                        <label class="form-check-label" for="globeHostTypeReplication" style="font-size:.85rem;">Replication</label>
+                    </div>
+                </li>
+                <li>
+                    <div class="form-check mb-1">
+                        <input class="form-check-input globe-host-type-check" type="checkbox" id="globeHostTypeSource" value="Source">
+                        <label class="form-check-label" for="globeHostTypeSource" style="font-size:.85rem;">Source</label>
+                    </div>
+                </li>
+                <li>
+                    <div class="form-check mb-1">
+                        <input class="form-check-input globe-host-type-check" type="checkbox" id="globeHostTypeBackup" value="Backup">
+                        <label class="form-check-label" for="globeHostTypeBackup" style="font-size:.85rem;">Backup</label>
                     </div>
                 </li>
                 <li>
                     <div class="form-check mb-0">
-                        <input class="form-check-input" type="radio" name="globeDirectionRadio" id="globeDirectionAcq" value="acquisition">
-                        <label class="form-check-label" for="globeDirectionAcq" style="font-size:.85rem;">Acquisition only</label>
+                        <input class="form-check-input globe-host-type-check" type="checkbox" id="globeHostTypeProxy" value="Proxy">
+                        <label class="form-check-label" for="globeHostTypeProxy" style="font-size:.85rem;">Proxy</label>
                     </div>
                 </li>
             </ul>
@@ -225,14 +243,20 @@
     </p>
     <ul class="mb-2 ps-3">
         <li><strong>Arcs and points</strong> &mdash; an arc is drawn between a Transfer Host and either the origin
-        marker (this installation's own location) or a Proxy Host, with the arrow pointing in the direction data is
-        flowing: origin &rarr; host for Dissemination (data pushed out), host &rarr; origin for Acquisition (data
-        pulled in). Every enabled Proxy-type Host gets its own persistent marker regardless of current traffic;
-        Backup/Replication Hosts only ever show transiently, as an arc, while actually in use (and only when
-        resolvable to a location outside the local network). Colours follow the legend shown in the top-left corner
-        of the globe.</li>
-        <li><strong>Per host / per country</strong> and <strong>Dissemination / Acquisition</strong> (top-right
-        icons) let you group and filter which arcs are shown.</li>
+        marker (this installation's own location) or a Continental Mover, with the arrow pointing in the direction
+        data is flowing: origin &rarr; host for Dissemination (data pushed out), host &rarr; origin for Acquisition
+        (data pulled in). A Destination associated with a Proxy-type Host has its files replicated from the local
+        Data Movers to a Continental Mover first (origin &rarr; Continental Mover, shown under the <strong>Proxy</strong>
+        filter) and is then disseminated from that Continental Mover when possible, falling back to a local Data
+        Mover otherwise (Continental Mover &rarr; target Host, shown under <strong>Dissemination</strong>). Every
+        enabled Proxy Host gets its Continental Mover's own persistent marker regardless of current traffic, even
+        while not currently connected (shown dimmed in that case, see the legend);
+        Backup/Replication/Source Hosts only ever show transiently, as an arc, while actually in use (and only when
+        resolvable to a location outside the local network). Colours follow the legend shown in the top-left corner of the
+        globe.</li>
+        <li><strong>Per host / per country</strong> groups arcs; the <strong>Host Type filter</strong> (top-right,
+        arrows icon) lets you show/hide any combination of Dissemination, Acquisition, Replication, Source, Backup
+        and Proxy.</li>
         <li><strong>Labels</strong> toggles country/town name overlays; the map icon switches between the 3D globe
         and a flat 2D map (same arcs and markers, just reprojected); the fullscreen button expands the view to
         fill the whole browser window.</li>
@@ -262,8 +286,8 @@
         <div><span class="dot" style="background:#22c55e;"></span>Completed</div>
         <div><span class="dot" style="background:#ef4444;"></span>Failed / retransmitting</div>
         <div><span class="dot" style="background:#ffd166;"></span>OpenECPDS location</div>
-        <div><span class="dot" style="background:#a78bfa;"></span>Proxy Host location</div>
-        <div><span class="dot" style="background:#fb923c;"></span>Enabled Proxy Host (Destination)</div>
+        <div><span class="dot" style="background:#a78bfa;"></span>Continental Mover (connected)</div>
+        <div><span class="dot" style="background:#a78bfa;opacity:.35;"></span>Continental Mover (not connected)</div>
         <div class="globe-muted-text" style="margin-top:.25rem;max-width:160px;">Arrows point in the direction data is flowing</div>
         <div id="globeUnresolvedNote" class="globe-muted-text" style="display:none;margin-top:.35rem;max-width:160px;font-size:.72rem;line-height:1.3;">
             <i class="bi bi-exclamation-triangle" style="color:#d9a441;margin-right:.3rem;"></i><span id="globeUnresolvedNoteText"></span>
@@ -320,7 +344,7 @@
                     <span class="globe-stat-label">Throughput</span>
                 </div>
             </div>
-            <div class="globe-stat-tile">
+            <div class="globe-stat-tile" title="Overall total across every Host type - not affected by the Host Type filter">
                 <div class="globe-stat-graphic"><i class="bi bi-hdd-stack"></i></div>
                 <div class="globe-stat-text">
                     <span class="globe-stat-value" id="kpiBytes">0 B</span>
@@ -581,7 +605,6 @@
     };
     var ORIGIN_COLOR = Cesium.Color.fromCssColorString("#ffd166");
     var PROXY_HOST_COLOR = Cesium.Color.fromCssColorString("#a78bfa");
-    var PROXY_DESTINATION_HOST_COLOR = Cesium.Color.fromCssColorString("#fb923c");
     var TERMINAL_FADE_MS = 2500;
     var ORIGIN_PIXEL_SIZE = 12;
     var MOVER_PIXEL_SIZE = 10;
@@ -593,15 +616,11 @@
     // countryCode -> { arc, point, lat, lon, hostCount, transfers: {transferId: sample}, agg, removeTimeout, pulsePhase }
     // - only populated/rendered while viewMode === "country" (see setViewMode()).
     var countries = Object.create(null);
-    // moverName -> { point, lat, lon, removeTimeout } - one entry per Proxy Host currently reported active by the
-    // server (see the "proxyHosts" snapshot field/applySnapshot()), never for ordinary, directly-connected Data
-    // Movers. Present regardless of current traffic; removed (with a fade) only once the server stops reporting it.
+    // moverName -> { point, lat, lon, removeTimeout } - one entry per Continental Mover (a Data Mover reached only
+    // via a Proxy-type Host, physically located elsewhere - see the "proxyHosts" snapshot field/applySnapshot())
+    // currently reported active by the server, never for ordinary, directly-connected local Data Movers. Present
+    // regardless of current traffic; removed (with a fade) only once the server stops reporting it.
     var movers = Object.create(null);
-    // hostName -> { point, lat, lon, removeTimeout } - one entry per currently enabled Host of type "Proxy" (a
-    // Destination's own configured target Host - see the "proxyDestinationHosts" snapshot field/applySnapshot()).
-    // Not to be confused with "movers" above, which tracks a completely different concept (relay Data Movers).
-    // Present regardless of current traffic; removed (with a fade) only once the Host is disabled/deleted.
-    var proxyDestinationHosts = Object.create(null);
 
     // Whether arcs/markers are grouped per target Host ("host", the default - one arc per Host) or per resolved
     // destination country ("country" - one aggregated arc per country, plus a small breakdown table), the latter
@@ -610,15 +629,31 @@
     var VIEW_MODE_PREF_KEY = "globeViewMode";
     var viewMode = localStorage.getItem(VIEW_MODE_PREF_KEY) === "country" ? "country" : "host";
 
-    // Which direction(s) of transfer to monitor: "both" (default), "dissemination" (data pushed out to a Host) or
-    // "acquisition" (data pulled in from a Host). Filters the raw sample list (see applyDirectionFilter()) before
-    // any arc/marker grouping or KPI counting happens, so every part of the page (arcs, country table, KPI cards)
-    // consistently reflects only the selected direction(s). Persisted across reloads via localStorage, like
-    // viewMode above.
-    var DIRECTION_MODE_PREF_KEY = "globeDirectionMode";
-    var directionMode = localStorage.getItem(DIRECTION_MODE_PREF_KEY) || "both";
-    if (["both", "dissemination", "acquisition"].indexOf(directionMode) === -1) {
-        directionMode = "both";
+    // Which Transfer Host type(s) to monitor - Dissemination/Acquisition/Replication/Source/Backup/Proxy. Filters
+    // the raw sample list (see applySnapshot()) before any arc/marker grouping or KPI counting happens, so every
+    // part of the page (arcs, country table, KPI cards) consistently reflects only the selected type(s).
+    // Replaces the older, coarser "Dissemination/Acquisition/Both" direction toggle - several of those types
+    // (Replication/Backup/Proxy) all push data the same way a Dissemination Host does, so a plain push/pull split
+    // could no longer tell them apart. Persisted across reloads via localStorage, like viewMode above.
+    var ALL_HOST_TYPES = ["Dissemination", "Acquisition", "Replication", "Source", "Backup", "Proxy"];
+    var HOST_TYPE_FILTER_PREF_KEY = "globeHostTypeFilter";
+    var selectedHostTypes = (function () {
+        try {
+            var saved = JSON.parse(localStorage.getItem(HOST_TYPE_FILTER_PREF_KEY));
+            if (Array.isArray(saved) && saved.length) {
+                return new Set(saved.filter(function (t) { return ALL_HOST_TYPES.indexOf(t) !== -1; }));
+            }
+        } catch (e) {
+            // Not set yet, or corrupted - fall through to the default (everything shown).
+        }
+        return new Set(ALL_HOST_TYPES);
+    })();
+
+    // Best-effort Host type for a sample that predates this field (e.g. a DataMover not yet upgraded) - falls back
+    // to the coarser direction it already carries, so it still lands in either the Dissemination or Acquisition
+    // checkbox's bucket instead of being silently dropped by the filter.
+    function sampleHostType(s) {
+        return s.hostType || ((s.direction || "DISSEMINATION") === "ACQUISITION" ? "Acquisition" : "Dissemination");
     }
 
     // Optional country/city name labels, provisioned lazily/in the background by GlobeLabelsProvisioner (see
@@ -692,26 +727,19 @@
     document.getElementById(viewMode === "country" ? "globeViewModeCountry" : "globeViewModeHost").checked = true;
     document.getElementById("globeViewModeBtn").classList.toggle("active", viewMode === "country");
 
-    // Direction-mode dropdown wiring (see setDirectionMode() further below). The button is marked "active"
-    // whenever a single direction (rather than "Both") is selected.
-    document.getElementById("globeDirectionBoth").addEventListener("change", function () {
-        if (this.checked) {
-            setDirectionMode("both");
-        }
+    // Host Type filter dropdown wiring (see setHostTypeFilter() further below). The button is marked "active"
+    // whenever at least one type is unchecked (i.e. something is currently hidden).
+    function updateHostTypeBtnState() {
+        document.getElementById("globeHostTypeBtn").classList.toggle("active", selectedHostTypes.size < ALL_HOST_TYPES.length);
+    }
+    ALL_HOST_TYPES.forEach(function (type) {
+        var checkbox = document.getElementById("globeHostType" + type);
+        checkbox.checked = selectedHostTypes.has(type);
+        checkbox.addEventListener("change", function () {
+            setHostTypeFilter(type, this.checked);
+        });
     });
-    document.getElementById("globeDirectionDiss").addEventListener("change", function () {
-        if (this.checked) {
-            setDirectionMode("dissemination");
-        }
-    });
-    document.getElementById("globeDirectionAcq").addEventListener("change", function () {
-        if (this.checked) {
-            setDirectionMode("acquisition");
-        }
-    });
-    document.getElementById({ both: "globeDirectionBoth", dissemination: "globeDirectionDiss",
-        acquisition: "globeDirectionAcq" }[directionMode]).checked = true;
-    document.getElementById("globeDirectionBtn").classList.toggle("active", directionMode !== "both");
+    updateHostTypeBtnState();
     document.getElementById("globeCountryTable").style.display = viewMode === "country" ? "block" : "none";
 
     // Renders a name as a small rounded "pill" (plain text on a translucent rounded-rect background, optionally
@@ -819,9 +847,10 @@
 
     // Total bytes transferred over the last rolling 24h, maintained server-side by the MasterServer (see
     // LiveTransferRegistry#getBytesLast24h()) and pushed with every "snapshot" message, so every open globe page -
-    // and every reconnect - shows the exact same, always-on figures rather than a per-connection counter. Kept as
-    // three separate totals (combined/Dissemination/Acquisition) so the "Transferred (24h)" KPI can match whichever
-    // direction is currently selected (see directionMode/updateKpis()).
+    // and every reconnect - shows the exact same, always-on figure rather than a per-connection counter. The
+    // Dissemination/Acquisition-only variants are still sent by the server (bucketed by push/pull direction, not
+    // by the finer Host Type the globe now filters by) but are no longer surfaced as a separate KPI - see
+    // currentBytesLast24h().
     var bytesLast24h = 0;
     var bytesLast24hDissemination = 0;
     var bytesLast24hAcquisition = 0;
@@ -839,21 +868,17 @@
     var moverStorageUsedBytes = 0;
     var moverStorageTotalBytes = 0;
 
-    // The raw sample list from the most recent "snapshot" message (every direction), kept so switching
-    // directionMode (see setDirectionMode()) can redraw instantly without waiting for the next poll.
+    // The raw sample list from the most recent "snapshot" message (every Host type), kept so toggling the Host
+    // Type filter (see setHostTypeFilter()) can redraw instantly without waiting for the next poll.
     var rawSamples = [];
 
     // The "proxyHosts" list from the most recent "snapshot" message, kept for the same reason as rawSamples above -
-    // so setViewMode()/setDirectionMode() can redraw Proxy Host markers instantly too, instead of them briefly
-    // disappearing (or not reappearing) until the next poll.
+    // so setViewMode()/setHostTypeFilter() can redraw Continental Mover markers instantly too, instead of them
+    // briefly disappearing (or not reappearing) until the next poll.
     var lastProxyHosts = [];
 
-    // The "proxyDestinationHosts" list from the most recent "snapshot" message, kept for the same reason as
-    // lastProxyHosts above.
-    var lastProxyDestinationHosts = [];
-
-    // The direction-filtered sample list (see applyDirectionFilter()), used everywhere else (KPI cards, arc/marker
-    // grouping, country table) so the whole page consistently reflects only the currently selected direction(s),
+    // The Host-Type-filtered sample list (see applySnapshot()), used everywhere else (KPI cards, arc/marker
+    // grouping, country table) so the whole page consistently reflects only the currently selected Host type(s),
     // independent of whether the MasterServer's own origin location or any target Host's geolocation has been
     // resolved yet (geolocation is only needed to actually place a marker/arc on the globe, not to count activity).
     var lastSamples = [];
@@ -967,18 +992,15 @@
             " / " + formatBytes(moverStorageTotalBytes);
     }
 
-    // Picks the rolling 24h bytes total matching the current directionMode.
+    // The rolling 24h bytes total is a single, MasterServer-side counter bucketed only by push/pull direction (see
+    // LiveTransferRegistry#getBytesLast24h()), not by the finer-grained Host type the globe now filters by - so
+    // unlike the other KPI cards (computed client-side from the currently filtered lastSamples), this one always
+    // shows the overall, unfiltered total regardless of the current Host Type filter selection.
     function currentBytesLast24h() {
-        if (directionMode === "dissemination") {
-            return bytesLast24hDissemination;
-        }
-        if (directionMode === "acquisition") {
-            return bytesLast24hAcquisition;
-        }
         return bytesLast24h;
     }
 
-    // Counts straight from the last direction-filtered sample list (see lastSamples above), not from the `hosts`
+    // Counts straight from the last Host-Type-filtered sample list (see lastSamples above), not from the `hosts`
     // map used for marker placement, so these figures stay accurate even while the origin and/or target Host
     // locations are not (yet) resolved.
     function updateKpis() {
@@ -1082,7 +1104,7 @@
         return (pixelDiameter / 2) * metersPerPixel;
     }
 
-    // Builds the (trimmed) arc positions between a marker's origin (the MasterServer/Proxy Host location, stored
+    // Builds the (trimmed) arc positions between a marker's origin (the MasterServer/Continental Mover location, stored
     // as {lat, lon, pixelSize}) and its destination Host (lat/lon, destPixelSize), oriented so the arrowhead (see
     // "PolylineArrow" material in upsertHost()/upsertCountry()) always points in the actual direction data is
     // flowing: origin -> Host for Dissemination (data pushed out), Host -> origin for Acquisition (data pulled
@@ -1220,12 +1242,20 @@
         delete movers[name];
     }
 
-    // Adds/updates the marker for one Proxy Host. Unlike Hosts, no arc is drawn from the marker itself (the arc to
-    // the target Host is drawn by upsertHost, starting from this same location via aggregateHost's arcOrigin) - this
-    // is purely the "here is where this Proxy Host physically is" marker. Kept on the globe for as long as the
-    // server keeps reporting this name as an active Proxy Host (see applySnapshot()'s byMover/removeTimeout
-    // handling below) - not tied to whether it currently has any traffic.
-    function upsertMover(name, lat, lon) {
+    // Adds/updates the marker for one enabled Proxy Host, i.e. its Continental Mover. Unlike Hosts, no arc is drawn
+    // from the marker itself (the arc to the target Host is drawn by upsertHost, starting from this same location
+    // via aggregateHost's arcOrigin) - this is purely the "here is where this Continental Mover is" marker. Kept on
+    // the globe for as long as its Proxy Host stays enabled (see applySnapshot()'s byMover/removeTimeout handling
+    // below) - not tied to whether it currently has any traffic, or even to whether it is currently connected:
+    // "connected" only dims the marker (see moverColor()) rather than hiding it, so a configured Continental Mover
+    // that happens to be temporarily offline is still visible as "known but not currently reachable".
+    function moverColor(connected) {
+        return connected ? PROXY_HOST_COLOR : PROXY_HOST_COLOR.withAlpha(0.35);
+    }
+    function moverOutlineColor(connected) {
+        return connected ? Cesium.Color.WHITE : Cesium.Color.WHITE.withAlpha(0.35);
+    }
+    function upsertMover(name, lat, lon, connected) {
         var existing = movers[name];
         if (existing && existing.removeTimeout) {
             clearTimeout(existing.removeTimeout);
@@ -1235,57 +1265,20 @@
             var point = points.add({
                 position: Cesium.Cartesian3.fromDegrees(lon, lat),
                 pixelSize: MOVER_PIXEL_SIZE,
-                color: PROXY_HOST_COLOR,
-                outlineColor: Cesium.Color.WHITE,
+                color: moverColor(connected),
+                outlineColor: moverOutlineColor(connected),
                 outlineWidth: 2
             });
             point.moverName = name;
-            movers[name] = { point: point, lat: lat, lon: lon, removeTimeout: null };
+            movers[name] = { point: point, lat: lat, lon: lon, connected: connected, removeTimeout: null };
         } else {
             existing.lat = lat;
             existing.lon = lon;
-        }
-    }
-
-    function removeProxyDestinationHost(name) {
-        var h = proxyDestinationHosts[name];
-        if (!h) {
-            return;
-        }
-        if (h.removeTimeout) {
-            clearTimeout(h.removeTimeout);
-        }
-        if (h.point) {
-            points.remove(h.point);
-        }
-        delete proxyDestinationHosts[name];
-    }
-
-    // Adds/updates the marker for one enabled Proxy-type Host. Purely a "here is this Host, and it is enabled"
-    // marker - unlike upsertHost, no arc is drawn for it just for existing (an arc still appears separately,
-    // through the normal Host arc machinery, whenever it actually has traffic). Kept on the globe for as long as
-    // the server keeps reporting the Host as enabled (see applySnapshot()'s byProxyDestinationHost/removeTimeout
-    // handling below) - not tied to whether it currently has any traffic.
-    function upsertProxyDestinationHost(name, lat, lon, label) {
-        var existing = proxyDestinationHosts[name];
-        if (existing && existing.removeTimeout) {
-            clearTimeout(existing.removeTimeout);
-            existing.removeTimeout = null;
-        }
-        if (!existing) {
-            var point = points.add({
-                position: Cesium.Cartesian3.fromDegrees(lon, lat),
-                pixelSize: MOVER_PIXEL_SIZE,
-                color: PROXY_DESTINATION_HOST_COLOR,
-                outlineColor: Cesium.Color.WHITE,
-                outlineWidth: 2
-            });
-            point.proxyDestinationHostName = label || name;
-            proxyDestinationHosts[name] = { point: point, lat: lat, lon: lon, label: label, removeTimeout: null };
-        } else {
-            existing.lat = lat;
-            existing.lon = lon;
-            existing.label = label;
+            if (existing.connected !== connected) {
+                existing.connected = connected;
+                existing.point.color = moverColor(connected);
+                existing.point.outlineColor = moverOutlineColor(connected);
+            }
         }
     }
 
@@ -1481,31 +1474,24 @@
     // next one. Only the grouping matching the current viewMode is actually turned into Cesium arcs/markers - the
     // other one's Cesium primitives (if any are still left over from before a mode switch) are defensively cleared
     // on every call.
-    function applySnapshot(samples, proxyHosts, proxyDestinationHostsList) {
+    function applySnapshot(samples, proxyHosts) {
         rawSamples = samples;
         lastProxyHosts = proxyHosts || [];
-        lastProxyDestinationHosts = proxyDestinationHostsList || [];
-        lastSamples = directionMode === "both" ? samples : samples.filter(function (s) {
-            return (s.direction || "DISSEMINATION").toLowerCase() === directionMode;
+        lastSamples = selectedHostTypes.size === ALL_HOST_TYPES.length ? samples : samples.filter(function (s) {
+            return selectedHostTypes.has(sampleHostType(s));
         });
         var byHost = Object.create(null);
-        // Proxy Host markers come straight from the server's independent "proxyHosts" list (every ProxyHost
-        // currently connected/heartbeating to the MasterServer), not from transfer samples - so a Proxy Host with
-        // zero current traffic still gets a persistent marker instead of only appearing while it happens to be
-        // relaying data. Per-transfer sample fields (sample.isProxyHost/moverLat/moverLon) are still used below by
-        // aggregateTransfers() to draw an active transfer's arc starting from the Proxy Host rather than the
-        // MasterServer's own location - that is unrelated to whether a marker exists for it.
+        // Continental Mover markers come straight from the server's independent "proxyHosts" list (every one
+        // currently enabled Proxy Host), not from transfer samples - so a Continental Mover with zero current
+        // traffic, or even one that is not currently connected at all, still gets a persistent marker (dimmed
+        // while not connected, see upsertMover()) instead of only appearing while it happens to be relaying data.
+        // Per-transfer sample fields (sample.isProxyHost/moverLat/moverLon) are still used below by
+        // aggregateTransfers() to draw an active transfer's arc starting from the Continental Mover rather than
+        // the MasterServer's own location - that is unrelated to whether a marker exists for it.
         var byMover = Object.create(null);
         (proxyHosts || []).forEach(function (p) {
             if (p && p.name && typeof p.lat === "number" && typeof p.lon === "number") {
-                byMover[p.name] = { lat: p.lat, lon: p.lon };
-            }
-        });
-        // Same idea as byMover above, but for enabled Proxy-type Hosts (see upsertProxyDestinationHost()).
-        var byProxyDestinationHost = Object.create(null);
-        (proxyDestinationHostsList || []).forEach(function (p) {
-            if (p && p.name && typeof p.lat === "number" && typeof p.lon === "number") {
-                byProxyDestinationHost[p.name] = { lat: p.lat, lon: p.lon, label: p.label };
+                byMover[p.name] = { lat: p.lat, lon: p.lon, connected: !!p.connected };
             }
         });
         var byCountry = Object.create(null);
@@ -1563,25 +1549,15 @@
         }
         Object.keys(byMover).forEach(function (name) {
             var m = byMover[name];
-            upsertMover(name, m.lat, m.lon);
+            upsertMover(name, m.lat, m.lon, m.connected);
         });
-        // A Proxy Host only disappears from the globe once it drops out of the server's active list entirely
-        // (disconnected/heartbeat expired) - not merely because it currently has no traffic - and even then fades
-        // out the same way a Host marker does, rather than vanishing abruptly.
+        // A Continental Mover only disappears from the globe once its Proxy Host is disabled/deleted - not merely
+        // because it currently has no traffic, and not merely because it is not currently connected (it still
+        // shows, dimmed - see upsertMover()) - and even then fades out the same way a Host marker does, rather
+        // than vanishing abruptly.
         Object.keys(movers).forEach(function (name) {
             if (!byMover[name] && !movers[name].removeTimeout) {
                 movers[name].removeTimeout = setTimeout(function () { removeMover(name); }, TERMINAL_FADE_MS);
-            }
-        });
-        Object.keys(byProxyDestinationHost).forEach(function (name) {
-            var h = byProxyDestinationHost[name];
-            upsertProxyDestinationHost(name, h.lat, h.lon, h.label);
-        });
-        // Same fade-out-then-remove treatment as Proxy Host relay markers above, once a Host stops being reported
-        // as an enabled Proxy-type Host (disabled or deleted).
-        Object.keys(proxyDestinationHosts).forEach(function (name) {
-            if (!byProxyDestinationHost[name] && !proxyDestinationHosts[name].removeTimeout) {
-                proxyDestinationHosts[name].removeTimeout = setTimeout(function () { removeProxyDestinationHost(name); }, TERMINAL_FADE_MS);
             }
         });
         updateCountryTable(byCountry);
@@ -1658,20 +1634,25 @@
             // the next resize event so the cap is already correct on the very first frame it's shown.
             adjustCountryTableMaxHeight();
         }
-        applySnapshot(rawSamples, lastProxyHosts, lastProxyDestinationHosts);
+        applySnapshot(rawSamples, lastProxyHosts);
     }
 
-    // Switches which direction(s) of transfer to monitor ("both"/"dissemination"/"acquisition"), redrawing
-    // immediately from the last received (unfiltered) snapshot so the switch feels instant, and refreshing the
-    // "Transferred (24h)" KPI to match (see currentBytesLast24h()).
-    function setDirectionMode(mode) {
-        if (["both", "dissemination", "acquisition"].indexOf(mode) === -1) {
+    // Toggles one Host type on/off in the filter, redrawing immediately from the last received (unfiltered)
+    // snapshot so the switch feels instant. Refuses to uncheck the last remaining type (an empty filter would just
+    // show a blank globe with no way to tell why) - the checkbox is reverted instead.
+    function setHostTypeFilter(type, checked) {
+        if (!checked && selectedHostTypes.size <= 1 && selectedHostTypes.has(type)) {
+            document.getElementById("globeHostType" + type).checked = true;
             return;
         }
-        directionMode = mode;
-        localStorage.setItem(DIRECTION_MODE_PREF_KEY, mode);
-        document.getElementById("globeDirectionBtn").classList.toggle("active", mode !== "both");
-        applySnapshot(rawSamples, lastProxyHosts, lastProxyDestinationHosts);
+        if (checked) {
+            selectedHostTypes.add(type);
+        } else {
+            selectedHostTypes.delete(type);
+        }
+        localStorage.setItem(HOST_TYPE_FILTER_PREF_KEY, JSON.stringify(Array.from(selectedHostTypes)));
+        updateHostTypeBtnState();
+        applySnapshot(rawSamples, lastProxyHosts);
     }
 
     function formatBytes(n) {
@@ -1802,7 +1783,7 @@
                     moverStorageTotalBytes = msg.moverStorageTotalBytes;
                 }
                 applyOrigin(msg);
-                applySnapshot(msg.transfers || [], msg.proxyHosts || [], msg.proxyDestinationHosts || []);
+                applySnapshot(msg.transfers || [], msg.proxyHosts || []);
                 updateDataPortalKpis();
             }
         };

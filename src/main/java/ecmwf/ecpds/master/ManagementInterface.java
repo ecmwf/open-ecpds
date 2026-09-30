@@ -1943,6 +1943,19 @@ public interface ManagementInterface extends Remote {
     String[] getActiveProxyHostNames() throws RemoteException;
 
     /**
+     * Gets every currently enabled Proxy-type Host, for display as a persistent Continental Mover marker on the "Live
+     * ECPDS Earth" globe visualisation - unlike {@link #getActiveProxyHostNames()}, this is driven purely by Host
+     * configuration, not by whether its Continental Mover is currently connected, so a configured-but-offline one still
+     * gets a marker (dimmed, rather than not shown at all).
+     *
+     * @return every enabled Proxy-type Host, with its own address and current connected status
+     *
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    ProxyHostStatus[] getEnabledProxyHosts() throws RemoteException;
+
+    /**
      * Resolves the geolocation of each of the given Host names, for display on the "Live ECPDS Earth" globe
      * visualisation. Delegates to {@link DataBaseImpl#resolveGeoIp(String)} on the MasterServer side (the only place
      * the GeoIP2 database is available), including any {@code [GeoIP]} {@code forced.*} override, so the Monitor JVM

@@ -595,6 +595,9 @@ public enum ECtransOptions {
     /** The host proxy use destination filter. */
     HOST_PROXY_USE_DESTINATION_FILTER("useDestinationFilter", Boolean.class, false),
 
+    /** The host proxy root, identifying the Continental Data Mover reached through this Proxy-type Host. */
+    HOST_PROXY_ROOT("root", String.class, STRING_NONE),
+
     /** The host retrieval interrupt slow. */
     HOST_RETRIEVAL_INTERRUPT_SLOW("interruptSlow", Boolean.class, false),
 

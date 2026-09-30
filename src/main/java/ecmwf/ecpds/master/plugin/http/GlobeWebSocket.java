@@ -29,7 +29,6 @@ package ecmwf.ecpds.master.plugin.http;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
@@ -45,12 +44,11 @@ import org.eclipse.jetty.ee8.websocket.api.WriteCallback;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import ecmwf.common.database.HostMapData;
 import ecmwf.ecpds.master.GeoPoint;
 import ecmwf.ecpds.master.LiveTransferSample;
 import ecmwf.ecpds.master.ManagementInterface;
 import ecmwf.ecpds.master.MasterManager;
-import ecmwf.ecpds.master.transfer.HostOption;
+import ecmwf.ecpds.master.ProxyHostStatus;
 
 /**
  * WebSocket endpoint streaming live data-transfer events to the "Live ECPDS Earth" globe visualisation.
@@ -133,24 +131,26 @@ public class GlobeWebSocket implements WebSocketListener {
     private static volatile long moverStorageTotalBytes;
 
     /**
-     * Names of every currently active ProxyHost (a Data Mover reachable only through another Data Mover's REST
-     * interface, without a direct RMI connection to the MasterServer), refreshed by the poller. Used to decide which
-     * movers get their own marker on the globe: ordinary, directly-connected Data Movers are intentionally not shown,
-     * only ProxyHosts, since they are the ones physically located elsewhere.
+     * Names of every currently active ProxyHost, i.e. a Continental Data Mover: a Data Mover physically located
+     * elsewhere, reachable from the local Data Movers only through a Proxy-type Host's REST interface (never a direct
+     * RMI connection to the MasterServer, unlike an ordinary local Data Mover). A Destination associated with a
+     * Proxy-type Host has its files replicated from the local Data Movers to this Continental Mover first;
+     * dissemination to the real target Host is then attempted from the Continental Mover (if the replica made it
+     * there), falling back to a local Data Mover otherwise - see {@code isProxyHost}/{@code arcOrigin} in globe.jsp's
+     * aggregateTransfers() for how that fallback is reflected as a shifted arc origin. Refreshed by the poller. Only
+     * used for that arc-origin-shift matching, keyed by root identifier - see {@link #enabledProxyHosts} for the
+     * (differently sourced) Continental Mover markers themselves.
      */
     private static volatile Set<String> activeProxyHostNames = Set.of();
 
     /**
-     * Every currently enabled Host of type {@link ecmwf.ecpds.master.transfer.HostOption#PROXY} ("Proxy Host" in the
-     * Destination Hosts sense - a Destination's own configured target Host - not to be confused with the unrelated
-     * {@link #activeProxyHostNames} above, a Data Mover reachable only through another Data Mover's REST interface).
-     * Refreshed by the poller (see {@link #STORAGE_POLL_EVERY_N_CYCLES}, reused here since the Host list changes as
-     * rarely as mover disk usage does). Shown as a persistent marker on the globe regardless of current transfer
-     * activity, since simply being an enabled, reachable target is meaningful on its own here - unlike Backup/
-     * Replication Hosts, which are usually internal to the local network and are only ever shown transiently, as an
-     * arc, while actually being used (and only then if GeoIP can resolve them to somewhere remote at all).
+     * Every currently enabled Proxy-type Host, refreshed by the poller (see {@link #STORAGE_POLL_EVERY_N_CYCLES},
+     * reused here since the Host list changes as rarely as mover disk usage does). Unlike {@link #activeProxyHostNames}
+     * above, this is driven purely by Host configuration, not by whether its Continental Mover is currently connected -
+     * so a configured-but-offline one still gets a marker on the globe (dimmed, see globe.jsp's upsertMover()), rather
+     * than not showing at all.
      */
-    private static volatile List<HostMapData> enabledProxyTypeHosts = List.of();
+    private static volatile ProxyHostStatus[] enabledProxyHosts = new ProxyHostStatus[0];
 
     /** How many poll cycles between refreshes of the (cheaper-to-be-conservative-with) mover disk usage snapshot. */
     private static final int STORAGE_POLL_EVERY_N_CYCLES = 5;
@@ -352,15 +352,9 @@ public class GlobeWebSocket implements WebSocketListener {
                 } catch (final Exception e) {
                     LOG.debug("Fetching mover disk usage", e);
                 }
-                // Enabled Proxy-type Hosts change as rarely as the Host list itself, so this piggy-backs on the same
-                // throttled cadence as the mover disk usage snapshot above rather than a dedicated counter. Queried
-                // straight from the DB (not a ManagementInterface RMI call, unlike everything else in this method)
-                // since it reuses the same "Host Map" query (see GetHostMapJsonAction) that already resolves each
-                // Host's location (GeoIP or manual entry) server-side - no separate geolocation step is needed here.
                 try {
-                    enabledProxyTypeHosts = MasterManager.getDB()
-                            .getHostsForMap("All", "All", "All", HostOption.PROXY, "").stream()
-                            .filter(HostMapData::active).toList();
+                    final var proxyHostsStatus = mi.getEnabledProxyHosts();
+                    enabledProxyHosts = proxyHostsStatus != null ? proxyHostsStatus : new ProxyHostStatus[0];
                 } catch (final Exception e) {
                     LOG.debug("Fetching enabled Proxy Hosts", e);
                 }
@@ -411,33 +405,21 @@ public class GlobeWebSocket implements WebSocketListener {
         for (final LiveTransferSample sample : samples) {
             array.add(toNode(sample));
         }
-        // Every currently active (connected/heartbeating) ProxyHost, independent of whether it has any transfer
-        // sample right now, so the frontend can show a persistent marker for it as soon as it is known to the
-        // MasterServer rather than only while it happens to be relaying traffic (see resolveGeoLocations(), which
-        // resolves every one of these names too, and the frontend's applySnapshot()/upsertMover()).
+        // Every currently enabled Proxy Host, independent of whether its Continental Mover is currently connected
+        // or has any transfer sample right now, so the frontend can show a persistent marker for it as soon as it
+        // is configured, dimmed while not connected (see resolveGeoLocations(), which resolves every one of these
+        // addresses too, and the frontend's applySnapshot()/upsertMover()).
         final var proxyHostsArray = node.putArray("proxyHosts");
-        for (final var name : activeProxyHostNames) {
-            final var location = resolveHost(name);
+        for (final var proxyHost : enabledProxyHosts) {
+            final var location = resolveHost(proxyHost.address());
             if (location != null) {
                 final var proxyHostNode = JSON.createObjectNode();
-                proxyHostNode.put("name", name);
+                proxyHostNode.put("name", proxyHost.name());
                 proxyHostNode.put("lat", location.latitude());
                 proxyHostNode.put("lon", location.longitude());
+                proxyHostNode.put("connected", proxyHost.connected());
                 proxyHostsArray.add(proxyHostNode);
             }
-        }
-        // Every currently enabled Proxy-type Host (a Destination's own configured target Host, not a relay Data
-        // Mover - see the field's javadoc), independent of whether it currently has any transfer arc, so it gets a
-        // persistent marker just for being an enabled, reachable target - unlike Backup/Replication Hosts, which
-        // stay arc-only (see TransferScheduler#_offerReplicationLiveSample).
-        final var proxyDestinationHostsArray = node.putArray("proxyDestinationHosts");
-        for (final var host : enabledProxyTypeHosts) {
-            final var hostNode = JSON.createObjectNode();
-            hostNode.put("name", host.id());
-            hostNode.put("label", host.nickname() != null && !host.nickname().isBlank() ? host.nickname() : host.id());
-            hostNode.put("lat", host.lat());
-            hostNode.put("lon", host.lon());
-            proxyDestinationHostsArray.add(hostNode);
         }
         sendText(node.toString());
     }
@@ -489,6 +471,9 @@ public class GlobeWebSocket implements WebSocketListener {
         node.put("status", sample.getStatus());
         node.put("timestamp", sample.getTimestamp());
         node.put("direction", sample.getDirection());
+        if (sample.getHostType() != null && !sample.getHostType().isBlank()) {
+            node.put("hostType", sample.getHostType());
+        }
         final var location = resolveHost(hostGeoKey(sample));
         if (location != null) {
             node.put("hostLat", location.latitude());
@@ -545,11 +530,20 @@ public class GlobeWebSocket implements WebSocketListener {
             }
         }
         // Resolve every currently active ProxyHost's own location too, not just ones referenced by a live transfer
-        // sample right now, so a ProxyHost with no traffic yet still gets a marker on the globe (see
-        // sendSnapshot()'s "proxyHosts" array).
+        // sample right now, needed for the arc-origin-shift matching in toNode() (moverLat/moverLon) - not for the
+        // Continental Mover markers themselves, which are resolved from enabledProxyHosts below instead.
         for (final var moverName : activeProxyHostNames) {
             if (moverName != null && !moverName.isBlank() && !GEO_CACHE.containsKey(moverName)) {
                 unresolved.add(moverName);
+            }
+        }
+        // Resolve every enabled Proxy Host's own address too, not just ones referenced by a live transfer sample
+        // right now, so a configured-but-currently-idle (or offline) one still gets a marker on the globe (see
+        // sendSnapshot()'s "proxyHosts" array).
+        for (final var proxyHost : enabledProxyHosts) {
+            final var address = proxyHost.address();
+            if (address != null && !address.isBlank() && !GEO_CACHE.containsKey(address)) {
+                unresolved.add(address);
             }
         }
         if (unresolved.isEmpty()) {
