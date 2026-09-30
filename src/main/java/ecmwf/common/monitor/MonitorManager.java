@@ -244,16 +244,19 @@ public final class MonitorManager implements Serializable {
      *
      * @param destination
      *            the destination
+     * @param type
+     *            the destination's type ({@code ecmwf.ecpds.master.transfer.DestinationOption})
      * @param metadata
      *            the notes text
      *
      * @throws MonitorException
      *             the monitor exception
      */
-    public static synchronized void addNotes(final String destination, final String metadata) throws MonitorException {
+    public static synchronized void addNotes(final String destination, final int type, final String metadata)
+            throws MonitorException {
         checkIfIsActivated();
         try {
-            getProvider().addNotes(destination, metadata);
+            getProvider().addNotes(destination, type, metadata);
         } catch (final MonitorException e) {
             throw e;
         } catch (final Exception e) {

@@ -92,8 +92,13 @@ public final class OpsViewManager {
     /** The Constant URL_CONFIG. */
     private static final String URL_HOST = Cnf.at("OpsViewManager", "urlHost", URL + "/rest/config/host");
 
-    /** The Constant URL_NOTES. */
-    private static final String URL_NOTES = Cnf.at("OpsViewManager", "urlNotes", URL + "/rest/notes/host");
+    /**
+     * The Constant URL_NOTES. Notes are attached to a "service" entry (named {@code "Destination: <name>"}) under the
+     * Opsview "host" object named after the Acquisition/Dissemination/Other filter (see {@link #getFilter(int)}) - the
+     * same host/service pair {@link #detail} already uses for status updates - so this goes through the "service" notes
+     * endpoint, not the "host" one (see {@link #addNotes}).
+     */
+    private static final String URL_NOTES = Cnf.at("OpsViewManager", "urlNotes", URL + "/rest/notes/service");
 
     /** The Constant URL_RELOAD. */
     private static final String URL_RELOAD = Cnf.at("OpsViewManager", "urlReload", URL + "/rest/reload");
@@ -386,14 +391,17 @@ public final class OpsViewManager {
      *
      * @param destination
      *            the destination
+     * @param type
+     *            the destination's type ({@code ecmwf.ecpds.master.transfer.DestinationOption})
      *
      * @throws OpsViewManagerException
      *             the ops view manager exception
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    public static void clearNotes(final String destination) throws OpsViewManagerException, IOException {
-        addNotes(destination, null);
+    public static void clearNotes(final String destination, final int type)
+            throws OpsViewManagerException, IOException {
+        addNotes(destination, type, null);
     }
 
     /**
@@ -401,6 +409,10 @@ public final class OpsViewManager {
      *
      * @param destination
      *            the destination
+     * @param type
+     *            the destination's type ({@code ecmwf.ecpds.master.transfer.DestinationOption}), used to pick the
+     *            Acquisition/Dissemination/Other filter Opsview host this Destination's "service" lives under (see
+     *            {@link #getFilter(int)})
      * @param metadata
      *            the metadata
      *
@@ -409,7 +421,7 @@ public final class OpsViewManager {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    public static void addNotes(final String destination, final String metadata)
+    public static void addNotes(final String destination, final int type, final String metadata)
             throws OpsViewManagerException, IOException {
         final var lastTry = getLastTry();
         do {
@@ -419,14 +431,18 @@ public final class OpsViewManager {
                 _log.debug("{}ing notes for {}", clear ? "Clear" : "Add", destination);
                 final var notes = OBJECT_MAPPER.createObjectNode();
                 notes.put("note", clear ? "" : metadata);
-                // "/rest/notes/host/{id}" expects Opsview's own numeric object id, not a hostname - since we only
-                // know the Destination/hostname, we have to use the documented "?hostname=" lookup form instead
-                // (see the Opsview REST API "Notes" reference), or every request 404s.
-                final var hostname = getDestinationName(destination);
-                final var url = URL_NOTES + "?hostname=" + hostname;
+                // Matches the proven, already-working detail()/sendMessage() pattern (see
+                // TransferScheduler#_getMonitorManager and OpsviewProvider#sendMessage): the Acquisition/
+                // Dissemination/Other filter (see getFilter(int)) is the Opsview "host", and each Destination is a
+                // "service" under it, named "Destination: <name>" - so this has to go through
+                // "/rest/notes/service?hostname=<filter>&servicename=Destination: <name>" (the documented Opsview
+                // REST API lookup form for a Service), not "/rest/notes/host".
+                final var hostname = getFilter(type);
+                final var servicename = "Destination: " + getDestinationName(destination);
+                final var url = URL_NOTES + "?hostname=" + hostname + "&servicename=" + servicename;
                 try (final var response = send(URL_NOTES, "PUT",
-                        Map.of("X-Opsview-Username", USER, "X-Opsview-Token", token), Map.of("hostname", hostname),
-                        notes)) {
+                        Map.of("X-Opsview-Username", USER, "X-Opsview-Token", token),
+                        Map.of("hostname", hostname, "servicename", servicename), notes)) {
                     final var code = response.getStatusCode();
                     if (code != 200) {
                         _log.warn("URL: {}, Code: {}, Message: {}", url, code, response.getMessage());

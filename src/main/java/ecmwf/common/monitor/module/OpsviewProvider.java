@@ -81,9 +81,9 @@ public final class OpsviewProvider implements MonitorInterface {
      * actually succeeded.
      */
     @Override
-    public void addNotes(final String destination, final String metadata) throws MonitorException {
+    public void addNotes(final String destination, final int type, final String metadata) throws MonitorException {
         try {
-            OpsViewManager.addNotes(destination, metadata);
+            OpsViewManager.addNotes(destination, type, metadata);
         } catch (final OpsViewManagerException | IOException e) {
             throw new MonitorException(e.getMessage());
         }

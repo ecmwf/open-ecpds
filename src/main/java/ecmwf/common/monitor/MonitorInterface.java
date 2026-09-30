@@ -57,13 +57,16 @@ public interface MonitorInterface {
      *
      * @param destination
      *            the destination
+     * @param type
+     *            the destination's type ({@code ecmwf.ecpds.master.transfer.DestinationOption}), used by providers that
+     *            group destinations by type (e.g. Opsview's Acquisition/Dissemination/Other filters)
      * @param metadata
      *            the metadata
      *
      * @throws java.lang.Exception
      *             the exception
      */
-    default void addNotes(String destination, String metadata) throws Exception {
+    default void addNotes(String destination, int type, String metadata) throws Exception {
         throw new UnsupportedOperationException("addNotes not supported by this MonitorInterface provider");
     }
 }
