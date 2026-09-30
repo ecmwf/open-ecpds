@@ -43,6 +43,8 @@ import org.eclipse.jetty.ee8.websocket.api.WriteCallback;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 import ecmwf.ecpds.master.GeoPoint;
 import ecmwf.ecpds.master.LiveTransferSample;
@@ -97,8 +99,15 @@ public class GlobeWebSocket implements WebSocketListener {
     /** The shared poll task, running only while at least one client is connected. */
     private static volatile ScheduledFuture<?> pollTask;
 
-    /** Host name to resolved {@link GeoPoint} cache, shared across connections. */
-    private static final ConcurrentHashMap<String, GeoPoint> GEO_CACHE = new ConcurrentHashMap<>();
+    /**
+     * Host name/address to resolved {@link GeoPoint} cache, shared across connections. Expires entries after a bounded
+     * time (rather than caching forever, like a plain Map would) so that manually correcting a Host's location - or its
+     * address changing - is picked up here within a few minutes instead of needing a Monitor restart; mirrors the same
+     * TTL-cache pattern already used for the Host Map page's own GeoIP results (see
+     * {@code GetHostMapJsonAction#GEOJSON_CACHE}).
+     */
+    private static final Cache<String, GeoPoint> GEO_CACHE = CacheBuilder.newBuilder()
+            .expireAfterWrite(5, TimeUnit.MINUTES).build();
 
     /** Latest known MasterServer origin location, refreshed by the poller; {@code null} until first resolved. */
     private static volatile double[] originLocation;
@@ -489,7 +498,24 @@ public class GlobeWebSocket implements WebSocketListener {
             if (moverLocation != null) {
                 node.put("moverLat", moverLocation.latitude());
                 node.put("moverLon", moverLocation.longitude());
+            } else {
+                // isProxyHost is correctly true, but the arc-origin shift will silently NOT happen for this sample
+                // (falls back to the plain OpenECPDS origin) because this mover's location never resolved - most
+                // likely the proxy.root fallback in ManagementImpl#getGeoLocations() didn't match anything for this
+                // exact moverName.
+                LOG.debug("ProxyHost '{}' matched activeProxyHostNames but its location did not resolve "
+                        + "(check proxy.root on the matching Proxy-type Host) - arc origin will stay at OpenECPDS "
+                        + "for transfer {}", moverName, sample.getTransferId());
             }
+        } else if (moverName != null && LiveTransferSample.DIRECTION_DISSEMINATION.equals(sample.getDirection())) {
+            // Debug-only visibility into why a Dissemination sample's arc origin was NOT shifted: either this
+            // mover is genuinely a local, directly-connected Data Mover (expected, not an error), or it is a
+            // Continental Mover whose self-reported root identifier does not currently appear in
+            // activeProxyHostNames (e.g. its heartbeat is not currently registered on the MasterServer).
+            LOG.debug(
+                    "Dissemination sample for transfer {} was pushed by mover '{}', which is not in the current "
+                            + "activeProxyHostNames list ({}) - arc origin stays at OpenECPDS",
+                    sample.getTransferId(), moverName, activeProxyHostNames);
         }
         return node;
     }
@@ -525,7 +551,7 @@ public class GlobeWebSocket implements WebSocketListener {
         final Set<String> unresolved = new HashSet<>();
         for (final var sample : samples) {
             final var hostKey = hostGeoKey(sample);
-            if (hostKey != null && !hostKey.isBlank() && !GEO_CACHE.containsKey(hostKey)) {
+            if (hostKey != null && !hostKey.isBlank() && GEO_CACHE.getIfPresent(hostKey) == null) {
                 unresolved.add(hostKey);
             }
         }
@@ -533,7 +559,7 @@ public class GlobeWebSocket implements WebSocketListener {
         // sample right now, needed for the arc-origin-shift matching in toNode() (moverLat/moverLon) - not for the
         // Continental Mover markers themselves, which are resolved from enabledProxyHosts below instead.
         for (final var moverName : activeProxyHostNames) {
-            if (moverName != null && !moverName.isBlank() && !GEO_CACHE.containsKey(moverName)) {
+            if (moverName != null && !moverName.isBlank() && GEO_CACHE.getIfPresent(moverName) == null) {
                 unresolved.add(moverName);
             }
         }
@@ -542,7 +568,7 @@ public class GlobeWebSocket implements WebSocketListener {
         // sendSnapshot()'s "proxyHosts" array).
         for (final var proxyHost : enabledProxyHosts) {
             final var address = proxyHost.address();
-            if (address != null && !address.isBlank() && !GEO_CACHE.containsKey(address)) {
+            if (address != null && !address.isBlank() && GEO_CACHE.getIfPresent(address) == null) {
                 unresolved.add(address);
             }
         }
@@ -570,7 +596,7 @@ public class GlobeWebSocket implements WebSocketListener {
      * @return the resolved {@link GeoPoint}, or {@code null} if it is not (yet) resolved/cached
      */
     private static GeoPoint resolveHost(final String hostName) {
-        return hostName == null || hostName.isBlank() ? null : GEO_CACHE.get(hostName);
+        return hostName == null || hostName.isBlank() ? null : GEO_CACHE.getIfPresent(hostName);
     }
 
     /**
