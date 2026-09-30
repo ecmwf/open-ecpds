@@ -5,7 +5,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-010720
 
 ---
 
-## open-ecpds 8.2.0-28092026
+## open-ecpds 8.2.0-30092026
 
 - **Opsview: no longer forces a new login token on every kind of failure**: `OpsViewManager` (notes export, product status/service "Detail" pushes, and the periodic Destination-to-Opsview-filter sync) used to treat *any* failed request — a 404, a 500, a malformed response, a network error — as a possible sign of an expired token, forcing a fresh login and retrying once. Only an actual `401 Unauthorized` now triggers that; every other failure fails through on the first attempt, avoiding unnecessary repeated logins hitting the Opsview server for errors a new token would not have fixed anyway.
 - **Live ECPDS Earth: filter by Host type, Continental Mover markers, Replication/Backup/Proxy visibility**: The Dissemination/Acquisition direction toggle on `/do/monitoring/globe` is replaced by a Host Type filter, letting any combination of Dissemination, Acquisition, Replication, Source, Backup and Proxy be shown or hidden independently. Replication/Backup/Proxy Host transfers, previously invisible on the globe, now show as arcs like any other transfer. A Proxy Host's Continental Data Mover now gets a persistent marker (shown even with no current traffic) reliably placed at its actual location, via a new `proxy.root` Host option (documented in `ectrans-options.properties`, shown as a tooltip in the host editor) identifying which Continental Mover a Proxy Host points to — falling back to that Host's own address automatically when only one Proxy Host is configured.
