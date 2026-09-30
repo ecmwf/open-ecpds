@@ -1115,7 +1115,11 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     public void exportDestinationMetaNotes(final String destinationName, final String metadata)
             throws MonitorException {
         final var monitor = new MonitorCall("exportDestinationMetaNotes(" + destinationName + ")");
-        MonitorManager.addNotes(destinationName, metadata);
+        try {
+            MonitorManager.addNotes(destinationName, base.getDestination(destinationName).getType(), metadata);
+        } catch (final DataBaseException e) {
+            throw new MonitorException(e.getMessage());
+        }
         monitor.done();
     }
 
