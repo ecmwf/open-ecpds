@@ -546,8 +546,18 @@ public final class RESTServer {
         checkIsControlChannel(ui);
         checkParameter("name", name);
         try {
+            // The request body is JSON-encoded client-side (RESTClient#proxyHostIsAlive sends it through the
+            // shared send() helper, which JSON-serializes every body - including a bare String - producing a JSON
+            // string literal such as "ecpds-ny-dm3-green", quotes included). JAX-RS binds this unannotated String
+            // parameter to the raw request body text rather than running it through the JSON provider, so without
+            // decoding it here those quotes end up baked into the value used everywhere downstream
+            // (theProxyHostRepository, MasterServer#getActiveProxyHostNames()) - silently breaking every equality
+            // check against this name, e.g. the "Live ECPDS Earth" globe's arc-origin-shift for transfers
+            // disseminated from this Continental Mover, which never matches because it compares against the
+            // unquoted name reported elsewhere.
+            final var decodedName = new ObjectMapper().readValue(name, String.class);
             final var message = RESTMessage.getSuccessMessage();
-            message.put("restartTime", mover.getMasterProxy().proxyHostIsAlive(name));
+            message.put("restartTime", mover.getMasterProxy().proxyHostIsAlive(decodedName));
             return message.getResponse();
         } catch (final WebApplicationException w) {
             _log.warn("proxyHostIsAlive - {}", describe(w));

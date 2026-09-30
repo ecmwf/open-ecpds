@@ -492,7 +492,12 @@ public class GlobeWebSocket implements WebSocketListener {
             }
         }
         final var moverName = sample.getMoverName();
-        if (moverName != null && activeProxyHostNames.contains(moverName)) {
+        // Captured once into a local so the membership check below and the diagnostic log (if it fires) are
+        // guaranteed to see the exact same snapshot of this volatile, poller-updated field - reading the field
+        // twice separately could otherwise print a contradictory-looking log (e.g. "not in the list" followed by
+        // a printed list that does contain it), if the poller updates it in between the two reads.
+        final var currentActiveProxyHostNames = activeProxyHostNames;
+        if (moverName != null && currentActiveProxyHostNames.contains(moverName)) {
             node.put("isProxyHost", true);
             final var moverLocation = resolveHost(moverName);
             if (moverLocation != null) {
@@ -511,11 +516,15 @@ public class GlobeWebSocket implements WebSocketListener {
             // Debug-only visibility into why a Dissemination sample's arc origin was NOT shifted: either this
             // mover is genuinely a local, directly-connected Data Mover (expected, not an error), or it is a
             // Continental Mover whose self-reported root identifier does not currently appear in
-            // activeProxyHostNames (e.g. its heartbeat is not currently registered on the MasterServer).
+            // activeProxyHostNames (e.g. its heartbeat is not currently registered on the MasterServer). Also logs
+            // each name's length, so an invisible whitespace/encoding difference (same-looking string, different
+            // .equals()) would show up as a length mismatch instead of staying invisible.
             LOG.debug(
-                    "Dissemination sample for transfer {} was pushed by mover '{}', which is not in the current "
-                            + "activeProxyHostNames list ({}) - arc origin stays at OpenECPDS",
-                    sample.getTransferId(), moverName, activeProxyHostNames);
+                    "Dissemination sample for transfer {} was pushed by mover '{}' (length={}), which is not in "
+                            + "the current activeProxyHostNames list {} (lengths={}) - arc origin stays at OpenECPDS",
+                    sample.getTransferId(), moverName, moverName.length(), currentActiveProxyHostNames,
+                    currentActiveProxyHostNames.stream().map(n -> n == null ? "null" : String.valueOf(n.length()))
+                            .toList());
         }
         return node;
     }

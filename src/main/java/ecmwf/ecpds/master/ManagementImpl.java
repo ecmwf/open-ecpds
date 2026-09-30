@@ -4164,7 +4164,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                             final var setup = ECtransGroups.Module.HOST_PROXY.getECtransSetup(proxyHost.getData());
                             final var root = setup.getString(ECtransOptions.HOST_PROXY_ROOT);
                             if (hostName.equals(root)) {
-                                geo = _resolveGeoIpQuietly(proxyHost.getHost());
+                                geo = _resolveProxyHostLocation(proxyHost);
                                 unconfiguredCandidate = null;
                                 break;
                             }
@@ -4178,7 +4178,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                         // among several), so fall back to its address rather than showing nothing. With more than
                         // one unconfigured candidate there is no way to tell them apart, so this is skipped.
                         if (geo == null && unconfiguredCandidateCount == 1) {
-                            geo = _resolveGeoIpQuietly(unconfiguredCandidate.getHost());
+                            geo = _resolveProxyHostLocation(unconfiguredCandidate);
                         }
                     } catch (final Exception e) {
                         _log.debug("Looking up Proxy Host by proxy.root for GeoIP fallback: {}", hostName, e);
@@ -4210,6 +4210,29 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
             _log.debug("Resolving geolocation for {}", hostName, e);
             return null;
         }
+    }
+
+    /**
+     * Resolves a Proxy-type Host's own location, preferring its stored {@link ecmwf.common.database.HostLocation}
+     * (manually entered by an administrator, or previously auto-resolved and cached - the same source
+     * {@code getHostsForMap()}/the Host Map page already uses) over a fresh live GeoIP lookup of its raw address. A
+     * Continental Mover's Proxy Host is very often reachable only by a short, non-FQDN name (its {@code proxy.root}
+     * value has to match that exactly) that plain GeoIP cannot place on its own - which is exactly the case a manual
+     * location override exists for, so ignoring it here and re-resolving the address live would silently discard an
+     * administrator's correction every time.
+     *
+     * @param proxyHost
+     *            the Proxy-type Host to resolve
+     *
+     * @return the resolved location, or {@code null} if neither a stored location nor a live GeoIP lookup succeeded
+     */
+    private static DataBaseImpl.GeoIpResult _resolveProxyHostLocation(final Host proxyHost) {
+        final var location = proxyHost.getHostLocation();
+        if (location != null && location.getLatitude() != null && location.getLongitude() != null) {
+            return new DataBaseImpl.GeoIpResult(location.getLatitude(), location.getLongitude(), null, null, null,
+                    null);
+        }
+        return _resolveGeoIpQuietly(proxyHost.getHost());
     }
 
     /**

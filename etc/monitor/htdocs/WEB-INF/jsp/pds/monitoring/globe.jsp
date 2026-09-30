@@ -1272,8 +1272,11 @@
             point.moverName = name;
             movers[name] = { point: point, lat: lat, lon: lon, connected: connected, removeTimeout: null };
         } else {
-            existing.lat = lat;
-            existing.lon = lon;
+            if (existing.lat !== lat || existing.lon !== lon) {
+                existing.lat = lat;
+                existing.lon = lon;
+                existing.point.position = Cesium.Cartesian3.fromDegrees(lon, lat);
+            }
             if (existing.connected !== connected) {
                 existing.connected = connected;
                 existing.point.color = moverColor(connected);

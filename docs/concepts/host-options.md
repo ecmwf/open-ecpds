@@ -56,6 +56,7 @@ These options apply when a host uses a Continental Data Mover or proxy path.
 | `proxy.httpMoverUrl` | URL | *selected mover URL* | Alternative HTTP URL for the data mover used by the Continental Data Mover to report its activity. Useful when only one mover is reachable from the continental side |
 | `proxy.httpProxyUrl` | URL | *none* | HTTP proxy URL to use when connecting to the Continental Data Mover |
 | `proxy.modulo` | Integer | *none* | After unsuccessful transmissions on the Continental Data Mover, retry locally once every `proxy.modulo` attempts |
+| `proxy.root` | String | *none* | The Continental Data Mover's own `[Login]` `root` setting (falls back to its `hostName` if `root` isn't set there). Required so the Master Server can tell which Continental Data Mover this Proxy Host points to — used for its "Live ECPDS Earth" marker (shown persistently, even with no current traffic) and for shifting a dissemination arc to start from the Continental Data Mover once a file is sent from there. If left empty and this is the only enabled Proxy Host, its own address is used instead since there is no other candidate; with more than one enabled Proxy Host, this must be set on each one or the unconfigured ones simply won't get a marker |
 | `proxy.timeout` | Duration | *module default* | Connection timeout for the Continental Data Mover HTTP URL |
 | `proxy.useDestinationFilter` | Boolean | *disabled* | Reuse the destination's compression method, `ectrans.filterpattern` and `ectrans.filterMinimumSize` settings for replication to Proxy Movers |
 
@@ -65,6 +66,7 @@ These options apply when a host uses a Continental Data Mover or proxy path.
 proxy.httpMoverUrl = "https://dm-west.example.org:8443/openecpds"
 proxy.httpProxyUrl = "http://proxy.example.org:3128"
 proxy.modulo = "5"
+proxy.root = "ecpds-ny-dm3-green"
 proxy.timeout = "30s"
 proxy.useDestinationFilter = "yes"
 ```
