@@ -439,7 +439,11 @@ public final class OpsViewManager {
                 // REST API lookup form for a Service), not "/rest/notes/host".
                 final var hostname = getFilter(type);
                 final var servicename = "Destination: " + getDestinationName(destination);
-                final var url = URL_NOTES + "?hostname=" + hostname + "&servicename=" + servicename;
+                // For logging only (the actual request goes through send()/buildUri(), which already encodes query
+                // parameters correctly) - servicename contains a space and a colon ("Destination: <name>"), so this
+                // needs the same encoding to be a valid, copy-pasteable URL in the warning below.
+                final var url = URL_NOTES + "?hostname=" + URLEncoder.encode(hostname, StandardCharsets.UTF_8)
+                        + "&servicename=" + URLEncoder.encode(servicename, StandardCharsets.UTF_8);
                 try (final var response = send(URL_NOTES, "PUT",
                         Map.of("X-Opsview-Username", USER, "X-Opsview-Token", token),
                         Map.of("hostname", hostname, "servicename", servicename), notes)) {
