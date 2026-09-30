@@ -29,6 +29,7 @@ package ecmwf.ecpds.master;
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import ecmwf.common.text.Format;
@@ -40,7 +41,17 @@ import ecmwf.common.text.Format;
  * DataMover to the MasterServer so that it can be broadcast to "Live ECPDS Earth" globe visualisation clients. This is
  * intentionally decoupled from ECPDS's internal transfer machinery: it only carries the information the visualisation
  * needs (who/what/where/how-fast/how-much), not full DataTransfer/Host objects.
+ * <p>
+ * {@code @JsonIgnoreProperties(ignoreUnknown = true)} is required here: {@link #isTerminal()} is a derived getter (no
+ * backing field, not a constructor parameter), but Jackson's default bean introspection still serialises it as a
+ * "terminal" JSON property on the way out. A Continental/Proxy Data Mover pushing samples over its REST relay (see
+ * {@code RESTClient#updateLiveTransferStatistics}) round-trips through actual JSON, unlike a regular, RMI-connected
+ * Data Mover (native Java serialization) - without this annotation, the MasterServer's {@code @JsonCreator} constructor
+ * (which has no "terminal" parameter) rejects that field as unrecognised and the whole batch is dropped, silently
+ * losing every sample a Continental Mover reports.
+ * </p>
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public final class LiveTransferSample implements Serializable {
     private static final long serialVersionUID = 1L;
 

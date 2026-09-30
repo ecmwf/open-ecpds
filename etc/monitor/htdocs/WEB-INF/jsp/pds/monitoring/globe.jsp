@@ -1521,6 +1521,25 @@
                 cGroup.transfers[sample.transferId] = sample;
             }
         });
+        // Drawn before host/country markers below (both share the same "points" primitive collection): if a
+        // Continental Mover happens to sit at/near the same resolved location as an unrelated Host (e.g. both
+        // GeoIP-resolve to the same city), whichever marker is added to the collection last tends to win the
+        // depth tie and render on top - drawing movers first means the more operationally relevant, actively
+        // changing status marker (active/done/failed) always wins that tie instead of the mostly-static
+        // Continental Mover dot.
+        Object.keys(byMover).forEach(function (name) {
+            var m = byMover[name];
+            upsertMover(name, m.lat, m.lon, m.connected);
+        });
+        // A Continental Mover only disappears from the globe once its Proxy Host is disabled/deleted - not merely
+        // because it currently has no traffic, and not merely because it is not currently connected (it still
+        // shows, dimmed - see upsertMover()) - and even then fades out the same way a Host marker does, rather
+        // than vanishing abruptly.
+        Object.keys(movers).forEach(function (name) {
+            if (!byMover[name] && !movers[name].removeTimeout) {
+                movers[name].removeTimeout = setTimeout(function () { removeMover(name); }, TERMINAL_FADE_MS);
+            }
+        });
         if (viewMode === "host") {
             clearAllCountryEntities();
             Object.keys(byHost).forEach(function (name) {
@@ -1547,19 +1566,6 @@
                 }
             });
         }
-        Object.keys(byMover).forEach(function (name) {
-            var m = byMover[name];
-            upsertMover(name, m.lat, m.lon, m.connected);
-        });
-        // A Continental Mover only disappears from the globe once its Proxy Host is disabled/deleted - not merely
-        // because it currently has no traffic, and not merely because it is not currently connected (it still
-        // shows, dimmed - see upsertMover()) - and even then fades out the same way a Host marker does, rather
-        // than vanishing abruptly.
-        Object.keys(movers).forEach(function (name) {
-            if (!byMover[name] && !movers[name].removeTimeout) {
-                movers[name].removeTimeout = setTimeout(function () { removeMover(name); }, TERMINAL_FADE_MS);
-            }
-        });
         updateCountryTable(byCountry);
         updateUnresolvedNote(unresolvedActiveCount);
         updateKpis();
