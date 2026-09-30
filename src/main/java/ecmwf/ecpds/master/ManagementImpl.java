@@ -4115,7 +4115,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                 // proxy.root is matched exactly; with none configured, this Host can only be assumed connected
                 // when it is the sole enabled Proxy Host (no ambiguity) and at least one Continental Mover is
                 // currently connected at all.
-                final var connected = !root.isBlank() ? activeRoots.contains(root)
+                final var connected = root != null && !root.isBlank() ? activeRoots.contains(root)
                         : enabledProxyHosts.size() == 1 && !activeRoots.isEmpty();
                 result.add(new ProxyHostStatus(proxyHost.getName(), proxyHost.getHost(), connected));
             }
@@ -4164,7 +4164,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                                 unconfiguredCandidate = null;
                                 break;
                             }
-                            if (root.isBlank()) {
+                            if (root == null || root.isBlank()) {
                                 unconfiguredCandidate = proxyHost;
                                 unconfiguredCandidateCount++;
                             }
