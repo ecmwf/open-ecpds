@@ -400,9 +400,14 @@ public final class OpsViewManager {
                 _log.debug("{}ing notes for {}", clear ? "Clear" : "Add", destination);
                 final var notes = OBJECT_MAPPER.createObjectNode();
                 notes.put("note", clear ? "" : metadata);
-                final var url = URL_NOTES + "/" + getDestinationName(destination);
-                try (final var response = send(url, "PUT", Map.of("X-Opsview-Username", USER, "X-Opsview-Token", token),
-                        Map.of(), notes)) {
+                // "/rest/notes/host/{id}" expects Opsview's own numeric object id, not a hostname - since we only
+                // know the Destination/hostname, we have to use the documented "?hostname=" lookup form instead
+                // (see the Opsview REST API "Notes" reference), or every request 404s.
+                final var hostname = getDestinationName(destination);
+                final var url = URL_NOTES + "?hostname=" + hostname;
+                try (final var response = send(URL_NOTES, "PUT",
+                        Map.of("X-Opsview-Username", USER, "X-Opsview-Token", token), Map.of("hostname", hostname),
+                        notes)) {
                     final var code = response.getStatusCode();
                     if (code != 200) {
                         _log.warn("URL: {}, Code: {}, Message: {}", url, code, response.getMessage());
