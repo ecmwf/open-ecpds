@@ -157,6 +157,22 @@ public final class OpsViewManager {
     }
 
     /**
+     * Thrown only when an Opsview request fails with HTTP 401 (Unauthorized) - the only case where the cached token
+     * might genuinely be stale/expired, and where forcing a fresh one and retrying once is worth the extra login call
+     * to Opsview. Every other failure (any other HTTP status, a malformed response, a network error, ...) is a plain
+     * {@link IOException} instead, so it fails through on the first attempt without needlessly forcing a new token -
+     * repeatedly hammering Opsview's login endpoint for errors a fresh token would not fix anyway (e.g. a 404 from a
+     * wrong URL) was itself causing problems on the Opsview server side.
+     */
+    private static final class OpsViewAuthException extends IOException {
+        private static final long serialVersionUID = 1L;
+
+        OpsViewAuthException(final String message) {
+            super(message);
+        }
+    }
+
+    /**
      * Gets the destination name.
      *
      * @param destinationName
@@ -287,10 +303,13 @@ public final class OpsViewManager {
                 if (code != 200) {
                     _log.warn("URL: {}, Code: {}, Message: {}, Request: {}", URL_DETAIL, code, response.getMessage(),
                             request);
+                    if (code == 401) {
+                        throw new OpsViewAuthException("Detail request failed (unauthorized)");
+                    }
                     throw new IOException("Detail request failed");
                 }
                 break;
-            } catch (final IOException e) {
+            } catch (final OpsViewAuthException e) {
                 if (!lastTry.compareAndSet(false, true)) {
                     throw e;
                 }
@@ -411,11 +430,14 @@ public final class OpsViewManager {
                     final var code = response.getStatusCode();
                     if (code != 200) {
                         _log.warn("URL: {}, Code: {}, Message: {}", url, code, response.getMessage());
+                        if (code == 401) {
+                            throw new OpsViewAuthException("Notes request failed (unauthorized)");
+                        }
                         throw new IOException("Notes request failed");
                     }
                 }
                 break;
-            } catch (final IOException e) {
+            } catch (final OpsViewAuthException e) {
                 if (!lastTry.compareAndSet(false, true)) {
                     throw e;
                 }
@@ -452,6 +474,9 @@ public final class OpsViewManager {
                     if (code != 200) {
                         _log.warn("URL: {}, Code: {}, Message: {}, Request: {}", URL_HOST, code, response.getMessage(),
                                 filter);
+                        if (code == 401) {
+                            throw new OpsViewAuthException("Host request failed (unauthorized)");
+                        }
                         throw new IOException("Host request failed");
                     }
                     json = (ObjectNode) response.getEntity(JsonNode.class);
@@ -515,6 +540,9 @@ public final class OpsViewManager {
                     if (code != 200) {
                         _log.warn("URL: {}, Code: {}, Message: {}, Request: {}", URL_HOST, code, response.getMessage(),
                                 OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(json));
+                        if (code == 401) {
+                            throw new OpsViewAuthException("Host request failed (unauthorized)");
+                        }
                         throw new IOException("Host request failed");
                     }
                 }
@@ -523,11 +551,14 @@ public final class OpsViewManager {
                     final var code = response.getStatusCode();
                     if (code != 200) {
                         _log.warn("URL: {}, Code: {}, Message: {}", URL_RELOAD, code, response.getMessage());
+                        if (code == 401) {
+                            throw new OpsViewAuthException("Reload request failed (unauthorized)");
+                        }
                         throw new IOException("Reload request failed");
                     }
                 }
                 break;
-            } catch (final IOException e) {
+            } catch (final OpsViewAuthException e) {
                 if (!lastTry.compareAndSet(false, true)) {
                     throw e;
                 }
