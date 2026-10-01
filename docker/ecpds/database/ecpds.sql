@@ -2276,6 +2276,7 @@ CREATE TABLE IF NOT EXISTS `DESTINATION_META_FIELD_TYPE` (
 
 -- Metadata field definitions (dissemination + acquisition)
 INSERT IGNORE INTO `DESTINATION_META_FIELD` (`DMF_NAME`,`DMF_LABEL`,`DMF_TYPE`,`DMF_CATEGORY`,`DMF_TOOLTIP`,`DMF_MAX_OCCURS`,`DMF_POSITION`,`DMF_ACTIVE`) VALUES
+('opsviewNotes','Opsview Notes','markdown','General','Information for operators, rendered as HTML and included in the Opsview note when "Include in Notes" is enabled',1,5,1),
 ('organisationWebPage','Organisation Web Page','url','General','URL of the organisation web page',1,10,1),
 ('SADNumber','SAD Number','text','General','SAD contract number',1,20,1),
 ('contractId','Contract ID','text','General','Contract identifier',1,30,1),

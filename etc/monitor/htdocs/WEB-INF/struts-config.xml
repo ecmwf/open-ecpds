@@ -694,6 +694,10 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.ExportDestinationMetaNotesAction"
 			name="destinationDetailActionForm" scope="session">
 		</action>
+		<action path="/transfer/destination/metadata/previewmarkdown"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.PreviewMetaMarkdownAction"
+			name="destinationDetailActionForm" scope="session">
+		</action>
 		<action path="/transfer/destination/metadata/import/*"
 			parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.ImportDestinationMetaDataAction"

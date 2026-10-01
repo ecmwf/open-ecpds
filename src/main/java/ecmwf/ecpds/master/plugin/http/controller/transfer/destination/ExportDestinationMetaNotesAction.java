@@ -49,12 +49,14 @@ import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+import org.jsoup.nodes.Entities;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ecmwf.common.database.DestinationMetaField;
 import ecmwf.common.database.DestinationMetaValue;
+import ecmwf.common.text.MarkdownUtil;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.web.controller.ECMWFActionFormException;
@@ -108,14 +110,17 @@ public class ExportDestinationMetaNotesAction extends PDSAction {
     }
 
     /**
-     * Builds the Opsview note body: one line per field flagged "Include in Notes" (with at least one non-blank value),
-     * ordered the same way fields appear on the metadata page ({@link DestinationMetaField#getPosition()}). Password
-     * fields are always excluded, even if somehow flagged, since their plaintext value must never leave this system.
+     * Builds the Opsview note body: an HTML table with one row per field flagged "Include in Notes" (with at least one
+     * non-blank value), ordered the same way fields appear on the metadata page
+     * ({@link DestinationMetaField#getPosition()}). Password fields are always excluded, even if somehow flagged, since
+     * their plaintext value must never leave this system. Every value returned by {@link #formatValue} is already
+     * HTML-safe (either allow-listed HTML, for {@code markdown} fields, or escaped plain text, for everything else), so
+     * it is inserted here as-is.
      *
      * @param destinationName
      *            the destination name
      *
-     * @return the note body (possibly empty, if nothing is flagged/non-blank)
+     * @return the note body as an HTML fragment (possibly empty, if nothing is flagged/non-blank)
      *
      * @throws Exception
      *             if the metadata fields/values cannot be loaded
@@ -138,34 +143,42 @@ public class ExportDestinationMetaNotesAction extends PDSAction {
             valuesByField.computeIfAbsent(v.getFieldId(), k -> new ArrayList<>())
                     .add(formatValue(field.getType(), v.getValue()));
         }
+        if (valuesByField.isEmpty()) {
+            return "";
+        }
         final var orderedFieldIds = new ArrayList<>(valuesByField.keySet());
         orderedFieldIds
                 .sort((a, b) -> Integer.compare(fieldsById.get(a).getPosition(), fieldsById.get(b).getPosition()));
-        final var sb = new StringBuilder();
+        final var sb = new StringBuilder("<table>");
         for (final var fieldId : orderedFieldIds) {
-            if (sb.length() > 0) {
-                sb.append('\n');
-            }
-            sb.append(fieldsById.get(fieldId).getLabel()).append(": ")
-                    .append(String.join(", ", valuesByField.get(fieldId)));
+            final var field = fieldsById.get(fieldId);
+            final var separator = "markdown".equals(field.getType()) ? "<hr>" : ", ";
+            sb.append("<tr><td>").append(Entities.escape(field.getLabel())).append("</td><td>")
+                    .append(String.join(separator, valuesByField.get(fieldId))).append("</td></tr>");
         }
+        sb.append("</table>");
         return sb.toString();
     }
 
     /**
-     * Formats a stored metadata value for inclusion in an Opsview note, rendering the composite JSON types
+     * Formats a stored metadata value for inclusion in the HTML Opsview note body, rendering the composite JSON types
      * ({@code contact}/{@code mail-group}/{@code switchboard}) as human-readable text instead of raw JSON - mirrors the
-     * read-only rendering already done client-side in {@code metadata.jsp}'s {@code dmfRenderInput()}. Any other type
-     * is used as-is.
+     * read-only rendering already done client-side in {@code metadata.jsp}'s {@code dmfRenderInput()}. {@code markdown}
+     * fields are converted to allow-listed HTML via {@link MarkdownUtil#toSafeHtml}. Every other type is HTML-escaped
+     * as plain text. Either way, the returned string is always safe to insert directly into the note's HTML body.
      *
      * @param type
      *            the field type
      * @param rawValue
      *            the stored value
      *
-     * @return the formatted value
+     * @return the formatted, HTML-safe value
      */
     private static String formatValue(final String type, final String rawValue) {
+        if ("markdown".equals(type)) {
+            return MarkdownUtil.toSafeHtml(rawValue);
+        }
+        var text = rawValue;
         if ("contact".equals(type) || "mail-group".equals(type) || "switchboard".equals(type)) {
             try {
                 final var node = _mapper.readTree(rawValue);
@@ -175,13 +188,13 @@ public class ExportDestinationMetaNotesAction extends PDSAction {
                 addIfPresent(parts, node, "phone");
                 addIfPresent(parts, node, "fax");
                 if (!parts.isEmpty()) {
-                    return String.join(", ", parts);
+                    text = String.join(", ", parts);
                 }
             } catch (final Exception e) {
                 // Not valid JSON (or empty) - fall through to the raw value.
             }
         }
-        return rawValue;
+        return Entities.escape(text);
     }
 
     /**

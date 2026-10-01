@@ -651,6 +651,16 @@
 					<version>1.23.1</version>
 				</dependency>
 				<dependency>
+					<groupId>org.commonmark</groupId>
+					<artifactId>commonmark</artifactId>
+					<version>0.30.0</version>
+				</dependency>
+				<dependency>
+					<groupId>org.commonmark</groupId>
+					<artifactId>commonmark-ext-gfm-tables</artifactId>
+					<version>0.30.0</version>
+				</dependency>
+				<dependency>
 					<groupId>org.eclipse.paho</groupId>
 					<artifactId>org.eclipse.paho.mqttv5.client</artifactId>
 					<version>1.2.5</version>

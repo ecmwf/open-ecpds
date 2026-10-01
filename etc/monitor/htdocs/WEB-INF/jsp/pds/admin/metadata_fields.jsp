@@ -13,6 +13,10 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
 #mfTable td.td-type  { font-size: 0.82rem; }
 #mfTable td.td-cat   { font-size: 0.82rem; color: var(--bs-secondary-color); }
 .mf-inactive         { opacity: 0.45; }
+/* The shared select.form-select rule in ecpds.css sets width:auto, which lets a long option (e.g.
+   "markdown — rich text (Markdown)") size the closed box past its grid column and overlap the next one.
+   Restore the normal Bootstrap block-level sizing for the modal's own selects only. */
+#mfModal select.form-select { width: 100%; }
 </style>
 
 <div class="card border-0 shadow-sm mt-3">
@@ -71,7 +75,7 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
     <ul class="mb-1 ps-3">
       <li><strong>Name</strong> &mdash; unique identifier (no spaces); used as the key in JSON exports and XML imports.</li>
       <li><strong>Label</strong> &mdash; human-readable name shown on the destination metadata form.</li>
-      <li><strong>Type</strong> &mdash; input type: <em>text</em>, <em>textarea</em>, <em>email</em>, <em>url</em>, <em>phone</em>, <em>password</em>, <em>contact</em>, <em>mail-group</em>, <em>switchboard</em>.</li>
+      <li><strong>Type</strong> &mdash; input type: <em>text</em>, <em>textarea</em>, <em>markdown</em> (rich text, rendered as HTML when exported to Opsview notes), <em>email</em>, <em>url</em>, <em>phone</em>, <em>password</em>, <em>contact</em>, <em>mail-group</em>, <em>switchboard</em>.</li>
       <li><strong>Category</strong> &mdash; groups fields into sections on the destination metadata form.</li>
       <li><strong>Destination Types</strong> &mdash; restricts the field to specific destination types (Acquisition / Dissemination / Time Critical). Empty = applies to all types.</li>
       <li><strong>Max</strong> &mdash; maximum number of values per destination (&minus;1 = unlimited, 1 = single value).</li>
@@ -182,6 +186,7 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
             <select class="form-select form-select-sm" id="mfType">
               <option value="text">text — single line</option>
               <option value="textarea">textarea — multi-line</option>
+              <option value="markdown">markdown — rich text (Markdown)</option>
               <option value="url">url — web address</option>
               <option value="email">email — email address</option>
               <option value="phone">phone — phone number</option>

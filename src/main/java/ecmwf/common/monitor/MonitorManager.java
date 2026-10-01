@@ -240,7 +240,9 @@ public final class MonitorManager implements Serializable {
     /**
      * Adds/replaces the notes attached to a destination/host, via the configured {@link MonitorInterface} provider.
      * Requires monitoring to be activated ({@code Monitor.activated}, see {@link #isActivated()}), exactly like every
-     * other notification sent through this class.
+     * other notification sent through this class. Also honours {@code Monitor.dontSend} exactly like {@link #_status}
+     * does: when set, the note is logged (at debug level, if {@code Monitor.debug} is also set) instead of actually
+     * being sent to the provider - useful for testing the Export Notes flow without a real Opsview connection.
      *
      * @param destination
      *            the destination
@@ -255,6 +257,12 @@ public final class MonitorManager implements Serializable {
     public static synchronized void addNotes(final String destination, final int type, final String metadata)
             throws MonitorException {
         checkIfIsActivated();
+        if (_debug) {
+            _log.debug("Notes: " + destination + "," + type + "," + metadata);
+        }
+        if (_dontSend) {
+            return;
+        }
         try {
             getProvider().addNotes(destination, type, metadata);
         } catch (final MonitorException e) {

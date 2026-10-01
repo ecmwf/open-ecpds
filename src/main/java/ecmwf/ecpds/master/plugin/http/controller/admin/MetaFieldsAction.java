@@ -46,8 +46,8 @@ public class MetaFieldsAction extends PDSAction {
     private static final ObjectMapper _mapper = new ObjectMapper();
 
     /** Valid field types */
-    private static final java.util.Set<String> VALID_TYPES = java.util.Set.of("text", "textarea", "url", "email",
-            "phone", "password", "contact", "mail-group", "switchboard");
+    private static final java.util.Set<String> VALID_TYPES = java.util.Set.of("text", "textarea", "markdown", "url",
+            "email", "phone", "password", "contact", "mail-group", "switchboard");
 
     @Override
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
