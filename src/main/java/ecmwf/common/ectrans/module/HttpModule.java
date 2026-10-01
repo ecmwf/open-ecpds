@@ -166,6 +166,7 @@ import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.apache.hc.client5.http.cookie.CookieStore;
 import org.apache.hc.client5.http.entity.mime.HttpMultipartMode;
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+import org.apache.hc.client5.http.impl.DefaultRedirectStrategy;
 import org.apache.hc.client5.http.impl.auth.BasicAuthCache;
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
 import org.apache.hc.client5.http.impl.auth.BasicScheme;
@@ -184,6 +185,7 @@ import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.HttpRequest;
 import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.config.RegistryBuilder;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
@@ -417,6 +419,9 @@ public final class HttpModule extends TransferModule {
                 .setCircularRedirectsAllowed(getSetup().getBoolean(HOST_HTTP_ALLOW_CIRCULAR_REDIRECTS))
                 .setMaxRedirects(getSetup().getInteger(HOST_HTTP_MAX_REDIRECTS)).build();
         builder.setDefaultRequestConfig(requestConfig);
+        if (getSetup().getBoolean(HOST_HTTP_ALLOW_CROSS_AUTHORITY_AUTH_REDIRECT)) {
+            builder.setRedirectStrategy(new CrossAuthorityRedirectStrategy());
+        }
         // ----- Cookie store (persist across redirects/requests) -----
         cookieStore = new BasicCookieStore();
         builder.setDefaultCookieStore(cookieStore);
@@ -498,12 +503,9 @@ public final class HttpModule extends TransferModule {
             // Called here (after Basic Auth handling) so the token header always takes precedence.
             _refreshTokenIfNeeded(setup);
             // Default headers at client level (so we don't set them on each request)
-            final var allowCrossAuthorityAuthRedirect = getSetup()
-                    .getBoolean(HOST_HTTP_ALLOW_CROSS_AUTHORITY_AUTH_REDIRECT);
             final var defaults = new ArrayList<Header>(headersList.size());
             for (final var e : headersList.entrySet()) {
-                defaults.add(new BasicHeader(e.getKey(), e.getValue(),
-                        allowCrossAuthorityAuthRedirect && isAuthOrCookieHeader(e.getKey())));
+                defaults.add(new BasicHeader(e.getKey(), e.getValue()));
             }
             builder.setDefaultHeaders(defaults);
             httpClient = builder.build();
@@ -849,10 +851,18 @@ public final class HttpModule extends TransferModule {
         final var pr = new PrepareRequest(name);
         final var uri = encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
                 getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath());
-        final var request = getSetup().getBoolean(HOST_HTTP_USE_HEAD) ? new HttpHead(uri) : new HttpGet(uri);
+        final var useHead = getSetup().getBoolean(HOST_HTTP_USE_HEAD);
+        var request = useHead ? new HttpHead(uri) : new HttpGet(uri);
         ClassicHttpResponse sizeResponse = null;
         try {
-            sizeResponse = execute(pr.getHttpHost(), request, 200);
+            // See getElement() for why a HEAD request's redirect sometimes needs a GET fallback.
+            sizeResponse = useHead ? execute(pr.getHttpHost(), request, 200, 301, 302, 303, 307, 308)
+                    : execute(pr.getHttpHost(), request, 200);
+            if (useHead && sizeResponse.getCode() != 200) {
+                closeResponse(sizeResponse);
+                request = new HttpGet(uri);
+                sizeResponse = execute(pr.getHttpHost(), request, 200);
+            }
             final var entity = sizeResponse.getEntity();
             final long size;
             if (entity == null) {
@@ -1135,7 +1145,15 @@ public final class HttpModule extends TransferModule {
                     final var port = url.getPort();
                     targetHost = new HttpHost(url.getProtocol(), url.getHost(),
                             port != -1 ? port : url.getDefaultPort());
-                    path = url.getPath();
+                    // URL#getPath() only returns the path component - it drops the query string entirely (that's
+                    // URL#getQuery(), a separate accessor). get()/getElement()/size() use this path as-is unless
+                    // "http.hasParameters" is set, so for a full URL with a query string (e.g. a REST search/API
+                    // endpoint used as an Acquisition "directory", not a plain file path) this used to silently
+                    // strip it, turning e.g. ".../search/granules.csv?collection_concept_id=..." into just
+                    // "/search/granules.csv" - a request the remote server then rejects outright. There is no
+                    // legitimate case where dropping a full URL's own query string is the desired behaviour.
+                    final var query = url.getQuery();
+                    path = query != null && !query.isEmpty() ? url.getPath() + "?" + query : url.getPath();
                     alternativeHost = true;
                     if (_log.isDebugEnabled() && getDebug()) {
                         _log.debug("Target host: {}", targetHost.toURI());
@@ -1202,10 +1220,24 @@ public final class HttpModule extends TransferModule {
         final var path = pr.getPath();
         final var fullName = encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
                 getFullName(directory, getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath()));
-        final var request = getSetup().getBoolean(HOST_HTTP_USE_HEAD) ? new HttpHead(fullName) : new HttpGet(fullName);
+        final var useHead = getSetup().getBoolean(HOST_HTTP_USE_HEAD);
+        var request = useHead ? new HttpHead(fullName) : new HttpGet(fullName);
         ClassicHttpResponse getResponse = null;
         try {
-            getResponse = execute(pr.getHttpHost(), request, 200);
+            // Some servers (e.g. presigned-storage-URL redirects) don't send a usable Location header on a HEAD
+            // request's redirect response the way they do for GET, even though they should per spec - httpclient5
+            // then has nothing to follow and returns the raw 3xx (see RedirectStrategy#isRedirected(), which
+            // requires a Location header regardless of RedirectStrategy#isRedirectAllowed()). Accept the common
+            // redirect codes here instead of only 200 so that case comes back as a response instead of throwing,
+            // and fall back to GET - which these same servers do redirect correctly - to recover the real
+            // metadata, at the cost of the HEAD optimisation, only for the files that actually need it.
+            getResponse = useHead ? execute(pr.getHttpHost(), request, 200, 301, 302, 303, 307, 308)
+                    : execute(pr.getHttpHost(), request, 200);
+            if (useHead && getResponse.getCode() != 200) {
+                closeResponse(getResponse);
+                request = new HttpGet(fullName);
+                getResponse = execute(pr.getHttpHost(), request, 200);
+            }
             // Let's find out about the size!
             final long size;
             if (foundSize != null) {
@@ -2417,6 +2449,29 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
+     * Since httpclient5 5.6, {@code RedirectExec} refuses to follow a redirect to a different authority
+     * (scheme/host/port) at all whenever {@link org.apache.hc.client5.http.protocol.RedirectStrategy#isRedirectAllowed}
+     * returns {@code false} - which it now does, by default, whenever the request carries a non-"sensitive"
+     * {@code Authorization}/{@code Cookie} header, including one added automatically by the cookie store rather than by
+     * this module (e.g. a session cookie picked up from an earlier response on the same connection) - it leaves the
+     * redirect response (e.g. a {@code 301}/{@code 303}) unfollowed instead of silently stripping the header and
+     * proceeding. Many data providers legitimately redirect an authenticated/session-cookied request to a different
+     * host (a presigned storage URL, an https upgrade on a different port, a CDN, etc.), so this simply restores the
+     * permissive behaviour every httpclient5 version before 5.6 always had, used whenever
+     * {@code http.allowCrossAuthorityAuthRedirect} (on by default) is enabled on the Host - see {@link #connect}.
+     * Marking only the specific headers this module itself sets as "sensitive" was tried first but does not cover
+     * headers httpclient5 adds on its own (e.g. that automatic session cookie), so this overrides the check itself
+     * instead.
+     */
+    private static final class CrossAuthorityRedirectStrategy extends DefaultRedirectStrategy {
+        @Override
+        public boolean isRedirectAllowed(final HttpHost currentTarget, final HttpHost newTarget,
+                final HttpRequest request, final HttpContext context) {
+            return true;
+        }
+    }
+
+    /**
      * Execute the http request using high-level execute() (non-deprecated). Ensures the request URI is absolute by
      * resolving against the provided targetHost.
      *
@@ -2435,20 +2490,9 @@ public final class HttpModule extends TransferModule {
     private ClassicHttpResponse execute(final HttpHost targetHost, final HttpUriRequestBase httpRequest,
             final Integer... acceptedStatusCodes) throws IOException {
         try {
-            // Since httpclient5 5.6, RedirectExec refuses to follow a redirect to a different authority
-            // (scheme/host/port) at all if the request carries an Authorization/Cookie header that isn't
-            // flagged "sensitive" (see RedirectStrategy.isRedirectAllowed()) - it leaves the redirect response
-            // (e.g. a 303) unfollowed rather than silently stripping the header and proceeding. Many data
-            // providers (e.g. NASA Earthdata) legitimately 303-redirect an authenticated request to a different
-            // host (a presigned storage URL), so "http.allowCrossAuthorityAuthRedirect" (on by default) marks
-            // these as sensitive to keep following those redirects, same as every httpclient5 version before
-            // 5.6 always did; set it to false on a Host to opt into the newer, more restrictive default.
-            final var allowCrossAuthorityAuthRedirect = getSetup()
-                    .getBoolean(HOST_HTTP_ALLOW_CROSS_AUTHORITY_AUTH_REDIRECT);
             for (final String key : headersList.keySet().toArray(new String[0])) {
                 final var value = headersList.get(key);
-                httpRequest.setHeader(
-                        new BasicHeader(key, value, allowCrossAuthorityAuthRedirect && isAuthOrCookieHeader(key)));
+                httpRequest.setHeader(key, value);
             }
             // Ensure absolute URI (deprecated overloads with target host are avoided)
             makeAbsoluteUriIfNeeded(targetHost, httpRequest);
@@ -2506,20 +2550,6 @@ public final class HttpModule extends TransferModule {
             _log.warn("Processing {}", httpRequest.getRequestUri(), t);
             throw new IOException(Format.getMessage(t));
         }
-    }
-
-    /**
-     * Whether the given header name is one of the two names {@code RedirectStrategy.isRedirectAllowed()} (added in
-     * httpclient5 5.6) treats specially: a non-"sensitive" {@code Authorization}/{@code Cookie} header blocks following
-     * a redirect to a different authority entirely (see the {@link #execute} caller).
-     *
-     * @param name
-     *            the header name
-     *
-     * @return {@code true} if the header is "Authorization" or "Cookie" (case-insensitive)
-     */
-    private static boolean isAuthOrCookieHeader(final String name) {
-        return HttpHeaders.AUTHORIZATION.equalsIgnoreCase(name) || HttpHeaders.COOKIE.equalsIgnoreCase(name);
     }
 
     /**
