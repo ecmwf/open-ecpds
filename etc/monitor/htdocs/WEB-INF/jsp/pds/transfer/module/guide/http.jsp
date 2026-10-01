@@ -367,9 +367,11 @@ http.strict = "no"                     # strict hostname verification</pre>
 
         <div class="mb-3">
           <p class="small fw-semibold mb-1"><i class="bi bi-arrow-repeat text-info me-1"></i>Redirects &amp; compression</p>
-<pre class="bg-body-secondary rounded p-2 mb-0" style="font-size:0.75rem;white-space:pre-wrap">http.maxRedirects = "5"               # max redirects to follow (default: 5)
-http.allowCircularRedirects = "no"    # allow repeated redirects to the same URL
-http.enableContentCompression = "yes" # accept gzip / deflate responses</pre>
+<pre class="bg-body-secondary rounded p-2 mb-0" style="font-size:0.75rem;white-space:pre-wrap">http.maxRedirects = "5"                        # max redirects to follow (default: 5)
+http.allowCircularRedirects = "no"             # allow repeated redirects to the same URL
+http.allowCrossAuthorityAuthRedirect = "yes"   # keep following a redirect to a different host/scheme/port
+                                                # even with an Authorization/Cookie header set (default: yes)
+http.enableContentCompression = "yes"          # accept gzip / deflate responses</pre>
         </div>
 
         <hr class="my-2">

@@ -1340,6 +1340,16 @@ public enum ECtransOptions {
     /** The host http allow circular redirects. */
     HOST_HTTP_ALLOW_CIRCULAR_REDIRECTS("allowCircularRedirects", Boolean.class, false),
 
+    /**
+     * The host http allow cross authority auth redirect. Since httpclient5 5.6, a redirect to a different
+     * scheme/host/port is not followed at all if the request carries an Authorization/Cookie header, unless that header
+     * is flagged "sensitive" - this restores the behaviour of every httpclient5 version before 5.6 (and is needed by
+     * data providers, e.g. NASA Earthdata, that redirect an authenticated request to a different host such as a
+     * presigned storage URL). Defaults to {@code true}; set to {@code false} to opt back into the newer, more
+     * restrictive default for a given Host.
+     */
+    HOST_HTTP_ALLOW_CROSS_AUTHORITY_AUTH_REDIRECT("allowCrossAuthorityAuthRedirect", Boolean.class, true),
+
     /** The host http strict. */
     HOST_HTTP_STRICT("strict", Boolean.class, false),
 

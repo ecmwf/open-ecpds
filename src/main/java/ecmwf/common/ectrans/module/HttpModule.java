@@ -42,6 +42,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_TIME_STAMP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_USER_TIMEOUT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_TCP_WINDOW_CLAMP;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_ALLOW_CIRCULAR_REDIRECTS;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_ALLOW_CROSS_AUTHORITY_AUTH_REDIRECT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_ATTRIBUTE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_AUTHCACHE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_AUTHHEADER;
@@ -497,9 +498,12 @@ public final class HttpModule extends TransferModule {
             // Called here (after Basic Auth handling) so the token header always takes precedence.
             _refreshTokenIfNeeded(setup);
             // Default headers at client level (so we don't set them on each request)
+            final var allowCrossAuthorityAuthRedirect = getSetup()
+                    .getBoolean(HOST_HTTP_ALLOW_CROSS_AUTHORITY_AUTH_REDIRECT);
             final var defaults = new ArrayList<Header>(headersList.size());
             for (final var e : headersList.entrySet()) {
-                defaults.add(new BasicHeader(e.getKey(), e.getValue()));
+                defaults.add(new BasicHeader(e.getKey(), e.getValue(),
+                        allowCrossAuthorityAuthRedirect && isAuthOrCookieHeader(e.getKey())));
             }
             builder.setDefaultHeaders(defaults);
             httpClient = builder.build();
@@ -2431,9 +2435,20 @@ public final class HttpModule extends TransferModule {
     private ClassicHttpResponse execute(final HttpHost targetHost, final HttpUriRequestBase httpRequest,
             final Integer... acceptedStatusCodes) throws IOException {
         try {
+            // Since httpclient5 5.6, RedirectExec refuses to follow a redirect to a different authority
+            // (scheme/host/port) at all if the request carries an Authorization/Cookie header that isn't
+            // flagged "sensitive" (see RedirectStrategy.isRedirectAllowed()) - it leaves the redirect response
+            // (e.g. a 303) unfollowed rather than silently stripping the header and proceeding. Many data
+            // providers (e.g. NASA Earthdata) legitimately 303-redirect an authenticated request to a different
+            // host (a presigned storage URL), so "http.allowCrossAuthorityAuthRedirect" (on by default) marks
+            // these as sensitive to keep following those redirects, same as every httpclient5 version before
+            // 5.6 always did; set it to false on a Host to opt into the newer, more restrictive default.
+            final var allowCrossAuthorityAuthRedirect = getSetup()
+                    .getBoolean(HOST_HTTP_ALLOW_CROSS_AUTHORITY_AUTH_REDIRECT);
             for (final String key : headersList.keySet().toArray(new String[0])) {
                 final var value = headersList.get(key);
-                httpRequest.setHeader(key, value);
+                httpRequest.setHeader(
+                        new BasicHeader(key, value, allowCrossAuthorityAuthRedirect && isAuthOrCookieHeader(key)));
             }
             // Ensure absolute URI (deprecated overloads with target host are avoided)
             makeAbsoluteUriIfNeeded(targetHost, httpRequest);
@@ -2491,6 +2506,20 @@ public final class HttpModule extends TransferModule {
             _log.warn("Processing {}", httpRequest.getRequestUri(), t);
             throw new IOException(Format.getMessage(t));
         }
+    }
+
+    /**
+     * Whether the given header name is one of the two names {@code RedirectStrategy.isRedirectAllowed()} (added in
+     * httpclient5 5.6) treats specially: a non-"sensitive" {@code Authorization}/{@code Cookie} header blocks following
+     * a redirect to a different authority entirely (see the {@link #execute} caller).
+     *
+     * @param name
+     *            the header name
+     *
+     * @return {@code true} if the header is "Authorization" or "Cookie" (case-insensitive)
+     */
+    private static boolean isAuthOrCookieHeader(final String name) {
+        return HttpHeaders.AUTHORIZATION.equalsIgnoreCase(name) || HttpHeaders.COOKIE.equalsIgnoreCase(name);
     }
 
     /**

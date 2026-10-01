@@ -262,10 +262,19 @@ http.proxy = "http://proxy.example.com:8080"
 ### Redirects & compression
 
 ```properties
-http.maxRedirects = "5"               # max redirects to follow (default: 5)
-http.allowCircularRedirects = "no"    # allow repeated redirects to the same URL
-http.enableContentCompression = "yes" # accept gzip / deflate responses
+http.maxRedirects = "5"                      # max redirects to follow (default: 5)
+http.allowCircularRedirects = "no"           # allow repeated redirects to the same URL
+http.allowCrossAuthorityAuthRedirect = "yes" # keep following a redirect to a different host/scheme/port
+                                              # even with an Authorization/Cookie header set (default: yes)
+http.enableContentCompression = "yes"        # accept gzip / deflate responses
 ```
+
+Since `httpclient5` 5.6, a redirect to a different scheme/host/port is not followed at all if the request
+carries an `Authorization`/`Cookie` header, unless that header is explicitly flagged "sensitive" — this
+closes a potential credential-leak path, but also breaks data providers (e.g. NASA Earthdata) that
+legitimately 303-redirect an authenticated request to a different host, such as a presigned storage URL.
+`http.allowCrossAuthorityAuthRedirect` restores the behaviour of every `httpclient5` version before 5.6 by
+default; set it to `"no"` on a Host to opt into the newer, more restrictive default instead.
 
 ### Rate limiting & overload protection
 
