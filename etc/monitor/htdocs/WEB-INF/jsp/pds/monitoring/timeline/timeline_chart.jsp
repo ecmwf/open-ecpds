@@ -78,6 +78,7 @@ _dt.push({
   end:      ${tlEnd},
   inProg:   ${tlInProg},
   status:   '${t.statusCode}',
+  tries:    ${t.requeueCount + 1},
   priority: ${t.priority},
   host:     '${tlHost}',
   size:     ${t.size}
@@ -87,9 +88,14 @@ _dt.push({
 
 <%-- Header with toggle --%>
 <div class="d-flex justify-content-between align-items-center mt-2 mb-2 flex-wrap gap-2">
-  <h6 class="fw-semibold text-secondary mb-0">
-    <i class="bi bi-clock-history me-1"></i>Transfer Timeline &mdash;
-    <strong>${destination.name}</strong> &mdash; ${selectedDate}
+  <h6 class="fw-semibold text-secondary mb-0 d-flex align-items-center gap-1">
+    <span><i class="bi bi-clock-history me-1"></i>Transfer Timeline &mdash;
+    <strong>${destination.name}</strong> &mdash; ${selectedDate}</span>
+    <button class="btn btn-link btn-sm text-muted p-0" type="button"
+            data-bs-toggle="collapse" data-bs-target="#tlInfo"
+            aria-expanded="false" title="About this page">
+      <i class="bi bi-info-circle"></i>
+    </button>
   </h6>
   <div class="d-flex align-items-center gap-2 flex-wrap">
     <span class="text-muted" style="font-size:0.78rem;" id="tlStats"></span>
@@ -115,6 +121,30 @@ _dt.push({
     <button id="tlBtnExport" type="button" class="btn btn-sm btn-outline-secondary d-none" onclick="tlExportCsv()" title="Export as CSV">
       <i class="bi bi-download"></i> CSV
     </button>
+  </div>
+</div>
+
+<div class="collapse mb-2" id="tlInfo">
+  <div class="px-3 py-2 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+    <strong class="d-block mb-1">Transfer Timeline &mdash; overview</strong>
+    <p class="mb-1">Shows every Data Transfer scheduled or processed for <strong>${destination.name}</strong> on
+    <strong>${selectedDate}</strong>, laid out on a shared time axis (<strong>Chart</strong> view) or as a
+    filterable list (<strong>Table</strong> view) &mdash; use the buttons on the right to switch between them.</p>
+    <ul class="mb-1 ps-3">
+      <li><strong>Chart</strong> &mdash; one horizontal bar per transfer, coloured by status (see the legend below).
+      Drag to pan, scroll to browse rows, use the +/- buttons (or your scroll wheel) to zoom the time axis, and
+      click a bar to open that transfer.</li>
+      <li><strong>Table</strong> &mdash; the same transfers as rows; the text box above it filters by target, label,
+      status or host. The <strong>CSV</strong> button exports exactly what is currently listed.</li>
+    </ul>
+    <p class="mb-1">Key columns/fields, beyond the obvious ones (Label, Target, Start/End, Duration, Size, Host,
+    Priority):</p>
+    <ul class="mb-0 ps-3">
+      <li><strong>Status</strong> &mdash; Done, Executing, Stopped, Retrying, or Other (see the colour legend).</li>
+      <li><strong>Tries</strong> &mdash; how many attempts it took to reach the current status; <code>1</code> means
+      it got there with no requeue. Shown per-row (table/tooltip) and summarised at the top (e.g. "needed a
+      retry") when more than one transfer required a retry.</li>
+    </ul>
   </div>
 </div>
 
@@ -152,6 +182,7 @@ _dt.push({
           <th>Label</th>
           <th>Target</th>
           <th>Status</th>
+          <th title="How many attempts it took to reach the current status (1 = succeeded/reached on the first try, no requeue)">Tries</th>
           <th title="Start Time (UTC)">Start</th>
           <th title="End Time (UTC)">End</th>
           <th>Duration</th>
@@ -274,6 +305,11 @@ function tlBuildTable() {
     var badge = '<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:0.72rem;font-weight:600;background:'+_scbg(t.status)+';color:'+_sctxt(t.status)+';">'+t.status+'</span>';
     var link  = '<a href="'+_dtBase+'/'+t.id+'" style="font-family:monospace;font-size:0.78rem;">'+t.id+'</a>';
     var endTxt = t.end >= 0 ? _fmtMs(t.end) : (t.inProg ? '<em>running</em>' : '--');
+    // 1 try = succeeded/reached the current status with no requeue - the common case, kept visually quiet;
+    // anything higher is flagged in the "Retrying" colour so transfers that needed multiple attempts stand out.
+    var tries = t.tries > 1
+      ? '<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:0.72rem;font-weight:600;background:'+_scbg('RETR')+';color:'+_sctxt('RETR')+';">'+t.tries+'</span>'
+      : '<span class="text-muted">1</span>';
     rows.push(
       '<tr data-search="'+(t.label+' '+t.target+' '+t.status+' '+(t.host||'')).toLowerCase()+'">' +
       '<td class="text-muted">'+(i+1)+'</td>' +
@@ -281,6 +317,7 @@ function tlBuildTable() {
       '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+t.label+'">'+t.label+'</td>' +
       '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+t.target+'">'+t.target+'</td>' +
       '<td>'+badge+'</td>' +
+      '<td class="text-center">'+tries+'</td>' +
       '<td style="white-space:nowrap;">'+_fmtMs(t.start)+'</td>' +
       '<td style="white-space:nowrap;">'+endTxt+'</td>' +
       '<td style="white-space:nowrap;">'+_fmtDur(dur)+'</td>' +
@@ -316,13 +353,13 @@ function tlUpdateCount(vis) {
 // ---- CSV export -----------------------------------------------------------
 function tlExportCsv() {
   var now   = Date.now();
-  var lines = ['#,ID,Label,Target,Status,Start,End,Duration (s),Size (bytes),Host,Priority'];
+  var lines = ['#,ID,Label,Target,Status,Tries,Start,End,Duration (s),Size (bytes),Host,Priority'];
   _dt.forEach(function(t, i) {
     var end    = t.end >= 0 ? t.end : (t.inProg ? now : -1);
     var dur    = (end > 0 && t.start > 0) ? ((end - t.start)/1000).toFixed(1) : '';
     var endStr = t.end >= 0 ? _fmtMs(t.end) : (t.inProg ? 'running' : '');
     function q(v) { return '"'+String(v||'').replace(/"/g,'""')+'"'; }
-    lines.push([i+1, t.id, q(t.label), q(t.target), t.status,
+    lines.push([i+1, t.id, q(t.label), q(t.target), t.status, t.tries,
                 _fmtMs(t.start), endStr, dur, t.size>0?t.size:'', q(t.host||''), t.priority].join(','));
   });
   var blob = new Blob([lines.join('\n')], {type:'text/csv'});
@@ -434,6 +471,7 @@ function _tlEnsureChart() {
           '<b>' + tgt + '</b><br>' +
           'Label: <span style="color:#555;">' + t.label + '</span><br>' +
           'Status: <b style="color:' + _sc(t.status) + '">' + t.status + '</b><br>' +
+          'Tries: ' + (t.tries > 1 ? '<b style="color:' + _sc('RETR') + '">' + t.tries + '</b>' : '1') + '<br>' +
           'Start: ' + _fmtMs(t.start) + '<br>' +
           (t.end >= 0 ? 'End: ' + _fmtMs(t.end) : 'End: <em>running</em>') + '<br>' +
           'Duration: ' + _fmtDur(dur) + '<br>' +
@@ -562,17 +600,21 @@ function _tlInit() {
   var n   = _dt.length;
 
   // Stats bar
-  var nDone = 0, nExec = 0, nStop = 0, nRetr = 0;
+  var nDone = 0, nExec = 0, nStop = 0, nRetr = 0, nRetried = 0, maxTries = 1;
   _dt.forEach(function(t) {
     if      (t.status==='DONE') nDone++;
     else if (t.status==='EXEC') nExec++;
     else if (t.status==='STOP') nStop++;
     else if (t.status==='RETR') nRetr++;
+    if (t.tries > 1) nRetried++;
+    if (t.tries > maxTries) maxTries = t.tries;
   });
   var parts = [n+' transfers', nDone+' done'];
   if (nExec > 0) parts.push(nExec+' running');
   if (nStop > 0) parts.push(nStop+' stopped');
   if (nRetr > 0) parts.push(nRetr+' retrying');
+  // "Needed a retry" = took more than one try to reach its current status (see the "Tries" column/tooltip).
+  if (nRetried > 0) parts.push(nRetried+' needed a retry (max '+maxTries+' tries)');
   document.getElementById('tlStats').textContent = parts.join(' | ');
 
   if (n === 0) return;
