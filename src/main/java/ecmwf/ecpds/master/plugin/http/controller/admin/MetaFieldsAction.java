@@ -82,6 +82,16 @@ public class MetaFieldsAction extends PDSAction {
             // Serialize to JSON for safe JS embedding
             request.setAttribute("fieldTypeMapJson", _mapper.writeValueAsString(typeMap));
             request.setAttribute("usedFieldIdsJson", _mapper.writeValueAsString(usedIds));
+            // Default values are free text (can contain quotes/newlines, e.g. markdown) - carried to the modal via
+            // this JSON map (keyed by field id) rather than as an inline onclick string argument, since the latter
+            // is unsafe once HTML-entity-decoded attribute content is re-parsed as JS (see mfOpenEdit()).
+            final var defaultValueMap = new java.util.LinkedHashMap<Integer, String>();
+            for (final var f : fields) {
+                if (f.getDefaultValue() != null) {
+                    defaultValueMap.put(f.getId(), f.getDefaultValue());
+                }
+            }
+            request.setAttribute("defaultValueMapJson", _mapper.writeValueAsString(defaultValueMap));
             final var typesForJs = new java.util.ArrayList<java.util.Map<String, Object>>();
             for (final var t : destTypes) {
                 final var m = new java.util.LinkedHashMap<String, Object>();
@@ -96,6 +106,7 @@ public class MetaFieldsAction extends PDSAction {
             request.setAttribute("fieldTypeMapJson", "{}");
             request.setAttribute("usedFieldIdsJson", "[]");
             request.setAttribute("destTypesJson", "[]");
+            request.setAttribute("defaultValueMapJson", "{}");
             request.setAttribute("loadError", e.getMessage());
         }
         return mapping.findForward("success");
@@ -145,6 +156,9 @@ public class MetaFieldsAction extends PDSAction {
             final var tooltip = trimOrNull(body.get("DMF_TOOLTIP"));
             field.setTooltip(tooltip);
 
+            final var defaultValue = trimOrNull(body.get("DMF_DEFAULT_VALUE"));
+            field.setDefaultValue(defaultValue != null && !defaultValue.isBlank() ? defaultValue : null);
+
             final var maxOccurs = body.get("DMF_MAX_OCCURS");
             field.setMaxOccurs(maxOccurs != null ? Integer.parseInt(String.valueOf(maxOccurs)) : 1);
 
@@ -154,6 +168,10 @@ public class MetaFieldsAction extends PDSAction {
             final var active = body.get("DMF_ACTIVE");
             field.setActive(active == null || Boolean.parseBoolean(String.valueOf(active))
                     || "1".equals(String.valueOf(active)));
+
+            final var editable = body.get("DMF_EDITABLE");
+            field.setEditable(editable == null || Boolean.parseBoolean(String.valueOf(editable))
+                    || "1".equals(String.valueOf(editable)));
 
             final var db = MasterManager.getDB();
             db.saveDestinationMetaField(field);

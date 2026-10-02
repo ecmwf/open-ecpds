@@ -128,11 +128,15 @@
               <input type="checkbox" class="form-check-input" id="dmf-notes-${field.id}">Include in Notes
             </label>
             </c:if>
+            <c:if test="${not field.editable}">
+            <i class="bi bi-lock-fill text-muted flex-shrink-0" style="font-size:0.8rem"
+               title="Not editable at destination level — value is set centrally on /do/admin/metafields"></i>
+            </c:if>
           </div>
           <div id="dmf-values-${field.id}">
             <%-- Values rendered via JS from dmfData --%>
           </div>
-          <c:if test="${canEditMeta}">
+          <c:if test="${canEditMeta && field.editable}">
           <c:if test="${field.maxOccurs == -1 || field.maxOccurs > 1}">
             <button type="button" class="btn btn-link btn-sm p-0 dmf-add mt-1"
                     onclick="dmfAddValue(${field.id}, '${field.type}')">
@@ -217,6 +221,22 @@ var dmfCanEdit = ${canEditMeta};
   dmfData[${val.fieldId}].push({id: ${val.id}, value: <%= _json %>, position: ${val.position}, includeInNotes: ${val.includeInNotes}});
 </c:forEach>
 
+// Field definitions' default value (used to seed a field that has no value yet for this destination) and
+// whether each field may be customized at all at the destination level - see dmfRenderGroup()/dmfIsFieldEmpty().
+var dmfDefaults = {};
+var dmfEditableMap = {};
+<c:forEach var="field" items="${metaFields}"><%
+  ecmwf.common.database.DestinationMetaField _f =
+      (ecmwf.common.database.DestinationMetaField) pageContext.getAttribute("field");
+  String _rawDef = _f != null && _f.getDefaultValue() != null ? _f.getDefaultValue() : "";
+  String _jsonDef = "\"" + _rawDef.replace("\\","\\\\").replace("\"","\\\"")
+                            .replace("\n","\\n").replace("\r","\\r")
+                            .replace("\t","\\t") + "\"";
+%>
+  dmfDefaults[${field.id}] = <%= _jsonDef %>;
+  dmfEditableMap[${field.id}] = ${field.editable};
+</c:forEach>
+
 var dmfDestination = '${destination.name}';
 
 // markdown-field Ace editor instances, keyed by their container element id ("ace_dmf_<fieldId>_<idx>") -
@@ -228,8 +248,8 @@ function dmfEscape(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function dmfRenderInput(fieldId, fieldType, value, idx) {
-  if (!dmfCanEdit) {
+function dmfRenderInput(fieldId, fieldType, value, idx, forceReadOnly) {
+  if (!dmfCanEdit || forceReadOnly) {
     // Read-only display
     if (fieldType === 'contact' || fieldType === 'switchboard') {
       var obj = {};
@@ -330,11 +350,15 @@ function dmfReadInput(container, fieldType) {
   if (fieldType === 'textarea' || fieldType === 'markdown') {
     // For 'markdown', Ace creates its own hidden <textarea class="ace_text-input"> inside the editor (used
     // for keyboard/IME capture) which sits before our own sync textarea in document order - exclude it
-    // explicitly so this always reads our textarea, not Ace's internal one (which is normally empty).
-    return container.querySelector('textarea:not(.ace_text-input)').value;
+    // explicitly so this always reads our textarea, not Ace's internal one (which is normally empty). A
+    // locked field (see dmfRenderGroup()) renders read-only markup with no textarea at all - guard for that.
+    var ta = container.querySelector('textarea:not(.ace_text-input)');
+    return ta ? ta.value : '';
   } else if (fieldType === 'contact' || fieldType === 'mail-group' || fieldType === 'switchboard') {
+    var keyed = container.querySelectorAll('[data-key]');
+    if (keyed.length === 0) return ''; // locked field: no inputs rendered
     var obj = {};
-    container.querySelectorAll('[data-key]').forEach(function(el) { obj[el.dataset.key] = el.value; });
+    keyed.forEach(function(el) { obj[el.dataset.key] = el.value; });
     return JSON.stringify(obj);
   } else {
     return (container.querySelector('input') || {}).value || '';
@@ -345,20 +369,29 @@ function dmfRenderGroup(fieldId, fieldType, maxOccurs) {
   var container = document.getElementById('dmf-values-' + fieldId);
   if (!container) return;
   dmfDestroyMarkdownEditors(container);
-  var vals = dmfData[fieldId] || [];
-  if (vals.length === 0) vals = [{id:0, value:'', position:0}];
+  // A field not editable at the destination level always shows its central Default Value, live - any value a
+  // destination had saved before it was locked is ignored here (and is dropped on this destination's next save,
+  // since dmfCollect() can't read a value back out of the read-only markup rendered below).
+  var fieldEditable = dmfEditableMap[fieldId] !== false;
+  var vals;
+  if (fieldEditable) {
+    vals = dmfData[fieldId] || [];
+    if (vals.length === 0) vals = [{id:0, value: dmfDefaults[fieldId] || '', position:0}];
+  } else {
+    vals = [{id:0, value: dmfDefaults[fieldId] || '', position:0}];
+  }
   var html = '';
   vals.forEach(function(v, i) {
-    var canRemove = dmfCanEdit && (maxOccurs === -1 || maxOccurs > 1);
+    var canRemove = dmfCanEdit && fieldEditable && (maxOccurs === -1 || maxOccurs > 1);
     html += '<div class="dmf-row" data-idx="' + i + '">';
-    html += dmfRenderInput(fieldId, fieldType, v.value, i);
+    html += dmfRenderInput(fieldId, fieldType, v.value, i, !fieldEditable);
     if (canRemove) {
       html += '<button type="button" class="btn btn-sm btn-outline-danger dmf-remove" onclick="dmfRemoveRow(this)" title="Remove"><i class="bi bi-trash"></i></button>';
     }
     html += '</div>';
   });
   container.innerHTML = html;
-  if (fieldType === 'markdown') dmfInitMarkdownEditors(container);
+  if (fieldType === 'markdown' && fieldEditable) dmfInitMarkdownEditors(container);
 }
 
 function dmfAddValue(fieldId, fieldType) {
@@ -451,11 +484,17 @@ function dmfCollect() {
     var fieldId = parseInt(container.id.replace('dmf-values-',''));
     var group = container.closest('[id^="dmf-group-"]');
     var fieldType = group ? (group.dataset.type || 'text') : 'text';
+    var fieldEditable = dmfEditableMap[fieldId] !== false;
     var notesCheckbox = document.getElementById('dmf-notes-' + fieldId);
     var includeInNotes = !!(notesCheckbox && notesCheckbox.checked);
     var rows = container.querySelectorAll('.dmf-row');
     rows.forEach(function(row, pos) {
-      var val = dmfReadInput(row, fieldType);
+      // A locked field renders no input at all (see dmfRenderGroup()), so dmfReadInput() always returns ''
+      // here - substitute the live Default Value as a placeholder so "Include in Notes" can still be toggled
+      // and persisted for this destination. The export itself (ExportDestinationMetaNotesAction) ignores
+      // whatever ends up stored for DMV_VALUE on a locked field and always substitutes the live Default Value
+      // too, so this placeholder never actually surfaces anywhere by itself - it only keeps the row alive.
+      var val = fieldEditable ? dmfReadInput(row, fieldType) : (dmfDefaults[fieldId] || '');
       if (val && val.trim()) {
         result.push({DMF_ID: fieldId, DMV_VALUE: val, DMV_POSITION: pos, DMV_INCLUDE_IN_NOTES: includeInNotes});
       }
@@ -615,6 +654,12 @@ document.addEventListener('click', function(e) {
 var _dmfHideEmpty = false;
 
 function dmfIsFieldEmpty(fieldId) {
+  // A locked field is always rendered from its (live) Default Value, as read-only markup with no
+  // input/textarea at all - check that directly rather than falling into either branch below.
+  if (dmfEditableMap[fieldId] === false) {
+    var def = dmfDefaults[fieldId] || '';
+    return !def || !def.trim();
+  }
   // In edit mode, check actual live input values in the DOM
   if (dmfCanEdit) {
     var container = document.getElementById('dmf-values-' + fieldId);
@@ -734,7 +779,11 @@ function dmfDownloadJson() {
     var fieldType = fieldInfo.type || 'text';
     var key = fieldInfo.name || ('field_' + fieldId);
     var category = fieldInfo.category || 'General';
-    var raw = dmfData[parseInt(fieldId)] || [];
+    // A locked field has no per-destination value at all (see dmfRenderGroup()) - it always reflects its
+    // central Default Value, so substitute that here rather than any stale/absent dmfData entry.
+    var raw = dmfEditableMap[parseInt(fieldId)] === false
+      ? [{value: dmfDefaults[parseInt(fieldId)] || ''}]
+      : (dmfData[parseInt(fieldId)] || []);
     var values = [];
     raw.forEach(function(entry) {
       var val = entry.value;

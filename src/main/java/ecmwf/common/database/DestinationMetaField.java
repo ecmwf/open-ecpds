@@ -52,6 +52,9 @@ public class DestinationMetaField extends DataBaseObject {
     /** The dmf tooltip. */
     protected String DMF_TOOLTIP;
 
+    /** The dmf default value. */
+    protected String DMF_DEFAULT_VALUE;
+
     /** The dmf max occurs. */
     protected int DMF_MAX_OCCURS = 1;
 
@@ -60,6 +63,9 @@ public class DestinationMetaField extends DataBaseObject {
 
     /** The dmf active. */
     protected boolean DMF_ACTIVE = true;
+
+    /** The dmf editable. */
+    protected boolean DMF_EDITABLE = true;
 
     /**
      * Instantiates a new destination meta field.
@@ -192,6 +198,25 @@ public class DestinationMetaField extends DataBaseObject {
     }
 
     /**
+     * Gets the default value.
+     *
+     * @return the default value
+     */
+    public String getDefaultValue() {
+        return DMF_DEFAULT_VALUE;
+    }
+
+    /**
+     * Sets the default value.
+     *
+     * @param v
+     *            the new default value
+     */
+    public void setDefaultValue(final String v) {
+        DMF_DEFAULT_VALUE = v;
+    }
+
+    /**
      * Gets the max occurs.
      *
      * @return the max occurs
@@ -276,6 +301,35 @@ public class DestinationMetaField extends DataBaseObject {
      */
     public void setActive(final String v) {
         DMF_ACTIVE = "1".equals(v) || "true".equalsIgnoreCase(v);
+    }
+
+    /**
+     * Gets whether this field's value can be customized at the destination level.
+     *
+     * @return the editable
+     */
+    public boolean getEditable() {
+        return DMF_EDITABLE;
+    }
+
+    /**
+     * Sets whether this field's value can be customized at the destination level.
+     *
+     * @param v
+     *            the new editable
+     */
+    public void setEditable(final boolean v) {
+        DMF_EDITABLE = v;
+    }
+
+    /**
+     * Sets whether this field's value can be customized at the destination level.
+     *
+     * @param v
+     *            the new editable
+     */
+    public void setEditable(final String v) {
+        DMF_EDITABLE = "1".equals(v) || "true".equalsIgnoreCase(v);
     }
 
     /**

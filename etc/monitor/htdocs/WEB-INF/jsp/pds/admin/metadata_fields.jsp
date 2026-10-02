@@ -17,6 +17,14 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
    "markdown — rich text (Markdown)") size the closed box past its grid column and overlap the next one.
    Restore the normal Bootstrap block-level sizing for the modal's own selects only. */
 #mfModal select.form-select { width: 100%; }
+/* Markdown editor + live preview for the Default Value field when Type is "markdown" - same widget/classes
+   as the Destination Metadata page (metadata.jsp) for visual consistency. */
+.dmf-markdown-editor { min-height: 220px; border: 1px solid var(--bs-border-color); border-radius: var(--bs-border-radius-sm); }
+.dmf-markdown-preview { min-height: 220px; max-height: 400px; overflow: auto; border: 1px solid var(--bs-border-color); border-radius: var(--bs-border-radius-sm); padding: 0.5rem 0.75rem; font-size: 0.88rem; background: var(--bs-tertiary-bg); }
+.dmf-markdown-preview :is(h1,h2,h3) { font-size: 1.1rem; margin-top: 0.5rem; }
+.dmf-markdown-preview table { border-collapse: collapse; width: 100%; }
+.dmf-markdown-preview th, .dmf-markdown-preview td { border: 1px solid var(--bs-border-color); padding: 0.25rem 0.5rem; }
+.dmf-markdown-pane-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bs-secondary-color); margin-bottom: 0.15rem; }
 </style>
 
 <div class="card border-0 shadow-sm mt-3">
@@ -81,6 +89,8 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
       <li><strong>Max</strong> &mdash; maximum number of values per destination (&minus;1 = unlimited, 1 = single value).</li>
       <li><strong>Pos</strong> &mdash; display order within the category.</li>
       <li><strong>Active</strong> &mdash; inactive fields are hidden from destination metadata forms but their values are preserved.</li>
+      <li><strong>Default Value</strong> &mdash; optional. Used as a field's initial value the first time it's associated with a destination (i.e. before that destination has ever saved its own value for it).</li>
+      <li><strong>Editable at destination level</strong> &mdash; when off, the field is read-only on every destination's Metadata tab and always shows/exports the current Default Value above, kept live in sync with it (any value a destination had saved before being locked is no longer used, and is cleared the next time that destination's metadata is saved).</li>
       <li><strong>Unassigned only</strong> &mdash; shows only field definitions that have no values saved for any destination. Use with <em>Delete All Unassigned</em> to clean up unused definitions.</li>
     </ul>
   </div>
@@ -129,7 +139,7 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
       </td>
       <td class="text-center">
         <a href="#" class="btn btn-sm btn-outline-primary me-1" title="Edit this field"
-           onclick="mfOpenEdit(${f.id},'${f.name}','<c:out value="${f.label}" escapeXml="true"/>','${f.type}','<c:out value="${f.category}" escapeXml="true"/>','<c:out value="${f.tooltip}" escapeXml="true"/>',${f.maxOccurs},${f.position},${f.active});return false;">
+           onclick="mfOpenEdit(${f.id},'${f.name}','<c:out value="${f.label}" escapeXml="true"/>','${f.type}','<c:out value="${f.category}" escapeXml="true"/>','<c:out value="${f.tooltip}" escapeXml="true"/>',${f.maxOccurs},${f.position},${f.active},${f.editable});return false;">
           <i class="bi bi-pencil"></i>
         </a>
         <a href="#" class="btn btn-sm btn-outline-danger" title="Delete this field"
@@ -183,7 +193,7 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
           </div>
           <div class="col-md-4">
             <label class="form-label">Type <span class="text-danger">*</span></label>
-            <select class="form-select form-select-sm" id="mfType">
+            <select class="form-select form-select-sm" id="mfType" onchange="mfUpdateDefaultValueWidget()">
               <option value="text">text — single line</option>
               <option value="textarea">textarea — multi-line</option>
               <option value="markdown">markdown — rich text (Markdown)</option>
@@ -226,10 +236,35 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
               <label class="form-check-label" for="mfActive">Enabled</label>
             </div>
           </div>
+          <div class="col-md-4">
+            <label class="form-label">Editable at destination level</label>
+            <div class="form-check form-switch mt-1">
+              <input class="form-check-input" type="checkbox" role="switch" id="mfEditable" checked>
+              <label class="form-check-label" for="mfEditable">Allow override</label>
+            </div>
+          </div>
           <div class="col-12">
             <label class="form-label">Tooltip <small class="text-muted">(optional)</small></label>
             <input type="text" class="form-control form-control-sm" id="mfTooltip" maxlength="512"
                    placeholder="Help text shown next to the field label">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Default Value <small class="text-muted">(optional &mdash; used as this
+                field's initial value the first time it's associated with a destination; if <em>not</em> editable
+                at destination level, this value is always what's shown/exported, kept live in sync with this
+                setting)</small></label>
+            <textarea class="form-control form-control-sm" id="mfDefaultValue" rows="3"
+                      placeholder="Optional default value"></textarea>
+            <div class="row g-2 d-none" id="mfDefaultValueMarkdownRow">
+              <div class="col-12 col-md-6">
+                <div class="dmf-markdown-pane-label">Markdown</div>
+                <div class="dmf-markdown-editor" id="mfDefaultValueAce"></div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="dmf-markdown-pane-label">Preview</div>
+                <div class="dmf-markdown-preview" id="mfDefaultValuePreview"><span class="text-muted fst-italic">Preview&hellip;</span></div>
+              </div>
+            </div>
           </div>
           <div class="col-12">
             <label class="form-label">Applies To Destination Types
@@ -270,13 +305,25 @@ var _mfDeleteId = 0;
   if (_destTypesJson == null) _destTypesJson = "[]";
   String _fieldTypeMapJson = (String) request.getAttribute("fieldTypeMapJson");
   if (_fieldTypeMapJson == null) _fieldTypeMapJson = "{}";
+  String _defaultValueMapJson = (String) request.getAttribute("defaultValueMapJson");
+  if (_defaultValueMapJson == null) _defaultValueMapJson = "{}";
 %>
 var _mfDestTypes = <%=_destTypesJson%>;
 /* per-field type restrictions: {"fieldId": [desType, ...], ...} — keys are strings */
 var _mfTypeMap = <%=_fieldTypeMapJson%>;
+/* per-field default value: {"fieldId": "default text", ...} — keys are strings, free text (can contain
+   quotes/newlines), so it's carried here as a JSON blob rather than as an inline onclick string argument
+   (see mfOpenEdit()) */
+var _mfDefaultValueMap = <%=_defaultValueMapJson%>;
 
 document.addEventListener('DOMContentLoaded', function() {
   _mfModal = new bootstrap.Modal(document.getElementById('mfModal'));
+  // Ace mis-measures itself if initialized/reseeded while its container is still hidden (the modal's
+  // display:none before its fade-in finishes) - force a resize once it's actually visible, covering both a
+  // fresh Ace creation and a Type switch to "markdown" that happened before this fired.
+  document.getElementById('mfModal').addEventListener('shown.bs.modal', function() {
+    if (_mfDefaultValueEditor) _mfDefaultValueEditor.resize(true);
+  });
 
   /* populate Destination Types cells in table */
   <c:forEach var="f" items="${metaFields}">
@@ -372,16 +419,19 @@ function mfOpenAdd() {
   document.getElementById('mfType').value = 'text';
   document.getElementById('mfCategory').value = 'General';
   document.getElementById('mfTooltip').value = '';
+  document.getElementById('mfDefaultValue').value = '';
   document.getElementById('mfMaxOccurs').value = '1';
   document.getElementById('mfPosition').value = '0';
   document.getElementById('mfActive').checked = true;
+  document.getElementById('mfEditable').checked = true;
   _mfSelectedTypes = [];
   _mfChipsRender();
+  mfUpdateDefaultValueWidget();
   document.getElementById('mfSaveError').classList.add('d-none');
   _mfModal.show();
 }
 
-function mfOpenEdit(id, name, label, type, category, tooltip, maxOccurs, position, active) {
+function mfOpenEdit(id, name, label, type, category, tooltip, maxOccurs, position, active, editable) {
   document.getElementById('mfModalLabel').textContent = 'Edit Field Definition';
   document.getElementById('mfId').value = id;
   document.getElementById('mfName').value = name;
@@ -390,13 +440,70 @@ function mfOpenEdit(id, name, label, type, category, tooltip, maxOccurs, positio
   document.getElementById('mfType').value = type;
   document.getElementById('mfCategory').value = category;
   document.getElementById('mfTooltip').value = tooltip || '';
+  document.getElementById('mfDefaultValue').value = _mfDefaultValueMap[String(id)] || '';
   document.getElementById('mfMaxOccurs').value = maxOccurs;
   document.getElementById('mfPosition').value = position;
   document.getElementById('mfActive').checked = active;
+  document.getElementById('mfEditable').checked = editable;
   _mfSelectedTypes = (_mfTypeMap[String(id)] || []).slice();
   _mfChipsRender();
+  mfUpdateDefaultValueWidget();
   document.getElementById('mfSaveError').classList.add('d-none');
   _mfModal.show();
+}
+
+// Shows an Ace markdown editor + live preview for Default Value when Type is "markdown" (mirrors the
+// Destination Metadata page's own markdown fields - metadata.jsp's dmfInitMarkdownEditors()), instead of the
+// plain textarea otherwise. The plain textarea (#mfDefaultValue) stays the one true value holder read by
+// mfSave() either way - the editor just keeps it in sync on every keystroke. A single Ace instance is created
+// once and reused/reseeded on every subsequent open or Type switch, rather than destroyed and recreated.
+var _mfDefaultValueEditor = null;
+
+function mfPreviewDefaultValueMarkdown(markdown) {
+  var previewEl = document.getElementById('mfDefaultValuePreview');
+  if (!previewEl) return;
+  fetch('<c:url value="/do/transfer/destination/metadata/previewmarkdown"/>', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+    body: JSON.stringify({markdown: markdown})
+  }).then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        previewEl.innerHTML = (markdown || '').trim()
+          ? data.html : '<span class="text-muted fst-italic">Nothing to preview</span>';
+      } else {
+        previewEl.innerHTML = '<span class="text-danger">Preview error: ' + (data.error || 'unknown') + '</span>';
+      }
+    }).catch(function() {
+      previewEl.innerHTML = '<span class="text-danger">Network error</span>';
+    });
+}
+
+function mfUpdateDefaultValueWidget() {
+  var isMarkdown = document.getElementById('mfType').value === 'markdown';
+  var textarea = document.getElementById('mfDefaultValue');
+  var mdRow = document.getElementById('mfDefaultValueMarkdownRow');
+  if (!isMarkdown) {
+    textarea.classList.remove('d-none');
+    mdRow.classList.add('d-none');
+    return;
+  }
+  textarea.classList.add('d-none');
+  mdRow.classList.remove('d-none');
+  if (!_mfDefaultValueEditor) {
+    _mfDefaultValueEditor = getEditorProperties(false, false, 'mfDefaultValueAce', 'markdown');
+    var debounceTimer = null;
+    _mfDefaultValueEditor.getSession().on('change', function() {
+      var md = _mfDefaultValueEditor.getSession().getValue();
+      textarea.value = md;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(function() { mfPreviewDefaultValueMarkdown(md); }, 400);
+    });
+  }
+  // (Re)seed from the textarea every time this widget is shown - covers both a fresh open (mfOpenAdd()/
+  // mfOpenEdit() already set the textarea's value before calling this) and switching Type to "markdown" live.
+  _mfDefaultValueEditor.getSession().setValue(textarea.value || '');
+  mfPreviewDefaultValueMarkdown(textarea.value || '');
 }
 
 function mfSave() {
@@ -431,9 +538,11 @@ function mfSave() {
     DMF_TYPE:      document.getElementById('mfType').value,
     DMF_CATEGORY:  document.getElementById('mfCategory').value.trim() || 'General',
     DMF_TOOLTIP:   document.getElementById('mfTooltip').value.trim() || null,
+    DMF_DEFAULT_VALUE: document.getElementById('mfDefaultValue').value.trim() || null,
     DMF_MAX_OCCURS:parseInt(document.getElementById('mfMaxOccurs').value),
     DMF_POSITION:  parseInt(document.getElementById('mfPosition').value) || 0,
     DMF_ACTIVE:    document.getElementById('mfActive').checked,
+    DMF_EDITABLE:  document.getElementById('mfEditable').checked,
     DES_TYPES:     _mfSelectedTypes.slice()
   };
 

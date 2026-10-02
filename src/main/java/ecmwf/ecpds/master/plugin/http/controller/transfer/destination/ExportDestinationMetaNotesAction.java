@@ -121,9 +121,12 @@ public class ExportDestinationMetaNotesAction extends PDSAction {
      *
     <hr>
      * } so multiple fields don't visually run into each other. Password fields are always excluded, even if somehow
-     * flagged, since their plaintext value must never leave this system. Every value returned by {@link #formatValue}
-     * is already HTML-safe (either allow-listed HTML, for {@code markdown} fields, or escaped plain text, for
-     * everything else), so it is inserted here as-is.
+     * flagged, since their plaintext value must never leave this system. A field not editable at the destination level
+     * ({@link DestinationMetaField#getEditable}) always uses its current {@link DestinationMetaField#getDefaultValue}
+     * instead of the stored value, matching how it's displayed on the Destination Metadata page - the stored value only
+     * exists to carry the per-destination "Include in Notes" flag for such a field. Every value returned by
+     * {@link #formatValue} is already HTML-safe (either allow-listed HTML, for {@code markdown} fields, or escaped
+     * plain text, for everything else), so it is inserted here as-is.
      *
      * @param destinationName
      *            the destination name
@@ -141,15 +144,22 @@ public class ExportDestinationMetaNotesAction extends PDSAction {
         }
         final Map<Integer, List<String>> valuesByField = new LinkedHashMap<>();
         for (final DestinationMetaValue v : db.getDestinationMetaValuesByDestination(destinationName)) {
-            if (!v.getIncludeInNotes() || v.getValue() == null || v.getValue().isBlank()) {
+            if (!v.getIncludeInNotes()) {
                 continue;
             }
             final var field = fieldsById.get(v.getFieldId());
             if (field == null || "password".equals(field.getType())) {
                 continue; // never export a password field, even if somehow flagged
             }
+            // A field not editable at the destination level always reflects its central Default Value, live -
+            // never the stored value (which is just a placeholder kept so "Include in Notes" can still be
+            // toggled per destination; see metadata.jsp's dmfCollect()), consistent with how it's displayed.
+            final var rawValue = field.getEditable() ? v.getValue() : field.getDefaultValue();
+            if (rawValue == null || rawValue.isBlank()) {
+                continue;
+            }
             valuesByField.computeIfAbsent(v.getFieldId(), _ -> new ArrayList<>())
-                    .add(formatValue(field.getType(), v.getValue()));
+                    .add(formatValue(field.getType(), rawValue));
         }
         if (valuesByField.isEmpty()) {
             return "";

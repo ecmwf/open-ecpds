@@ -87,6 +87,13 @@ public final class MarkdownUtil {
         }
         final var document = PARSER.parse(markdown);
         final var html = RENDERER.render(document);
-        return Jsoup.clean(html, "", SAFELIST);
+        final var cleaned = Jsoup.clean(html, "", SAFELIST);
+        // Force every link to open in a new tab/page rather than navigating away from the current one - done as a
+        // post-processing pass (rather than relying on whatever the source produced) so it applies uniformly
+        // regardless of whether the link came from Markdown link syntax or raw inline HTML in the source, and
+        // "noopener noreferrer" is the standard safeguard for a target="_blank" link opened from content we rendered.
+        final var fragment = Jsoup.parseBodyFragment(cleaned);
+        fragment.body().select("a[href]").attr("target", "_blank").attr("rel", "noopener noreferrer");
+        return fragment.body().html();
     }
 }
