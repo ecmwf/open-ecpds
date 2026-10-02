@@ -1225,7 +1225,18 @@
             arcs.remove(h.arc);
         }
         if (h.point) {
-            points.remove(h.point);
+            var mover = movers[name];
+            if (h.mergedWithMover && mover && mover.point === h.point) {
+                // This point is shared with a still-present Continental Mover marker (see upsertHost()) - restore
+                // its normal, idle appearance instead of removing it outright, since the mover itself persists
+                // independently of this one transfer ending.
+                mover.point.pixelSize = MOVER_PIXEL_SIZE;
+                mover.point.color = moverColor(mover.connected);
+                mover.point.outlineColor = moverOutlineColor(mover.connected);
+                delete mover.point.hostName;
+            } else {
+                points.remove(h.point);
+            }
         }
         delete hosts[name];
         updateKpis();
@@ -1239,9 +1250,13 @@
         if (m.removeTimeout) {
             clearTimeout(m.removeTimeout);
         }
-        if (m.point) {
+        var h = hosts[name];
+        if (m.point && !(h && h.mergedWithMover && h.point === m.point)) {
             points.remove(m.point);
         }
+        // If a Host entry is still actively sharing this point (an in-progress transfer to this now-disabled Proxy
+        // Host), leave the point itself alone - removeHost() will correctly dispose of it once that transfer ends,
+        // since movers[name] will no longer exist by then.
         delete movers[name];
     }
 
@@ -1335,13 +1350,43 @@
         if (existing && existing.removeTimeout) {
             clearTimeout(existing.removeTimeout);
         }
-        if (existing) {
-            if (existing.arc) arcs.remove(existing.arc);
-            if (existing.point) points.remove(existing.point);
+        var destPixelSize = Cesium.Math.clamp(8 + agg.activeCount * 1.5, 8, 20);
+        // A replication/backup push TO a Proxy Host has that Proxy Host itself as its target "Host" - i.e. this
+        // name is simultaneously a Continental Mover marker (movers[name]) and a transfer's own target marker, at
+        // the exact same real-world location (not a coincidence - same Host record). Rather than layer a second,
+        // competing point on top of the mover's own (which used to make the mover's identity/hover name vanish for
+        // as long as the transfer was active - see removeHost()'s matching restore logic), reuse the mover's own
+        // point and recolour it to reflect the transfer instead.
+        var mover = movers[name];
+        var point;
+        if (mover) {
+            if (existing && existing.point && existing.point !== mover.point) {
+                points.remove(existing.point);
+            }
+            point = mover.point;
+            point.pixelSize = destPixelSize;
+            point.color = color;
+            point.outlineColor = Cesium.Color.WHITE;
+            point.outlineWidth = 1;
+            point.hostName = name;
+        } else {
+            if (existing && existing.point) {
+                points.remove(existing.point);
+            }
+            point = points.add({
+                position: Cesium.Cartesian3.fromDegrees(lon, lat),
+                pixelSize: destPixelSize,
+                color: color,
+                outlineColor: Cesium.Color.WHITE,
+                outlineWidth: 1
+            });
+            point.hostName = name;
+        }
+        if (existing && existing.arc) {
+            arcs.remove(existing.arc);
         }
         var arcOrigin = agg.arcOrigin || origin;
         var originPixelSize = agg.arcOrigin ? MOVER_PIXEL_SIZE : ORIGIN_PIXEL_SIZE;
-        var destPixelSize = Cesium.Math.clamp(8 + agg.activeCount * 1.5, 8, 20);
         var positions = directionalArcPositions({ lat: arcOrigin.lat, lon: arcOrigin.lon, pixelSize: originPixelSize },
             lat, lon, destPixelSize, agg.isAcquisition);
         var arc = arcs.add({
@@ -1349,18 +1394,10 @@
             width: rateWidth(agg.totalRate),
             material: arcMaterial(color)
         });
-        var point = points.add({
-            position: Cesium.Cartesian3.fromDegrees(lon, lat),
-            pixelSize: destPixelSize,
-            color: color,
-            outlineColor: Cesium.Color.WHITE,
-            outlineWidth: 1
-        });
-        point.hostName = name;
         var entry = {
             arc: arc, point: point, lat: lat, lon: lon, label: label || name, transfers: transferMap, agg: agg,
             arcOrigin: { lat: arcOrigin.lat, lon: arcOrigin.lon, pixelSize: originPixelSize },
-            destPixelSize: destPixelSize, isAcquisition: agg.isAcquisition,
+            destPixelSize: destPixelSize, isAcquisition: agg.isAcquisition, mergedWithMover: !!mover,
             removeTimeout: null, pulsePhase: existing ? existing.pulsePhase : Math.random() * Math.PI * 2
         };
         hosts[name] = entry;
@@ -1527,12 +1564,12 @@
                 cGroup.transfers[sample.transferId] = sample;
             }
         });
-        // Drawn before host/country markers below (both share the same "points" primitive collection): if a
-        // Continental Mover happens to sit at/near the same resolved location as an unrelated Host (e.g. both
-        // GeoIP-resolve to the same city), whichever marker is added to the collection last tends to win the
-        // depth tie and render on top - drawing movers first means the more operationally relevant, actively
-        // changing status marker (active/done/failed) always wins that tie instead of the mostly-static
-        // Continental Mover dot.
+        // Drawn before host/country markers below. For the common case of an unrelated Host coincidentally
+        // GeoIP-resolving near a Continental Mover, this ordering alone used to be the only mitigation (whichever
+        // point is added to the shared "points" collection last wins the depth tie). The one case that is NOT a
+        // coincidence - a replication/backup push whose target Host IS this same Proxy Host - is instead handled by
+        // upsertHost() reusing this exact point object rather than layering a second one on top of it (see its own
+        // comment), so this ordering only still matters as a fallback for genuine GeoIP coincidences.
         Object.keys(byMover).forEach(function (name) {
             var m = byMover[name];
             upsertMover(name, m.lat, m.lon, m.connected);
@@ -1726,15 +1763,24 @@
         renderInfoPanel(title, c.agg, samples);
     }
 
+    // scene.pick() of a primitive added via a *Collection (PointPrimitiveCollection, in our case "points") does NOT
+    // return that primitive directly - it returns a wrapper {primitive, collection, id}, with the actual
+    // PointPrimitive (and whichever custom "hostName"/"moverName"/"countryCode" property we attached to it in
+    // upsertHost()/upsertMover()/upsertCountry()) nested at .primitive. Reading those properties straight off the
+    // picked result itself (as earlier versions of this code did) always finds them undefined - confirmed via a
+    // DevTools console dump during a live debugging session, which showed exactly this {primitive, collection, id}
+    // shape with all three custom properties undefined on the wrapper.
+    function pickedPrimitive(picked) {
+        return Cesium.defined(picked) && Cesium.defined(picked.primitive) ? picked.primitive : undefined;
+    }
+
     var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     handler.setInputAction(function (movement) {
-        var picked = viewer.scene.pick(movement.position);
-        // scene.pick() returns the PointPrimitive itself (no .id was set on it), so the custom "hostName"/
-        // "countryCode" property we attached in upsertHost()/upsertCountry() is read directly.
-        if (Cesium.defined(picked) && Cesium.defined(picked.hostName)) {
-            showInfoPanel(picked.hostName);
-        } else if (Cesium.defined(picked) && Cesium.defined(picked.countryCode)) {
-            showCountryInfoPanel(picked.countryCode);
+        var primitive = pickedPrimitive(viewer.scene.pick(movement.position));
+        if (Cesium.defined(primitive) && Cesium.defined(primitive.hostName)) {
+            showInfoPanel(primitive.hostName);
+        } else if (Cesium.defined(primitive) && Cesium.defined(primitive.countryCode)) {
+            showCountryInfoPanel(primitive.countryCode);
         }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
@@ -1743,18 +1789,20 @@
     // which open a click info panel already).
     var hoverTooltip = document.getElementById("globeHoverTooltip");
     handler.setInputAction(function (movement) {
-        var picked = viewer.scene.pick(movement.endPosition);
-        if (Cesium.defined(picked) && Cesium.defined(picked.moverName)) {
-            var m = movers[picked.moverName];
-            hoverTooltip.textContent = picked.moverName + (m && !m.connected ? " (not connected)" : "");
+        var primitive = pickedPrimitive(viewer.scene.pick(movement.endPosition));
+        if (Cesium.defined(primitive) && Cesium.defined(primitive.moverName)) {
+            var m = movers[primitive.moverName];
+            var mergedHost = hosts[primitive.moverName];
+            var suffix = m && !m.connected ? " (not connected)" : (mergedHost ? " — transfer in progress" : "");
+            hoverTooltip.textContent = primitive.moverName + suffix;
             hoverTooltip.style.left = (movement.endPosition.x + 14) + "px";
             hoverTooltip.style.top = (movement.endPosition.y + 10) + "px";
             hoverTooltip.style.display = "block";
             viewer.scene.canvas.style.cursor = "pointer";
         } else {
             hoverTooltip.style.display = "none";
-            viewer.scene.canvas.style.cursor = Cesium.defined(picked) && Cesium.defined(picked.hostName)
-                || (Cesium.defined(picked) && Cesium.defined(picked.countryCode)) ? "pointer" : "default";
+            viewer.scene.canvas.style.cursor = Cesium.defined(primitive)
+                && (Cesium.defined(primitive.hostName) || Cesium.defined(primitive.countryCode)) ? "pointer" : "default";
         }
     }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 

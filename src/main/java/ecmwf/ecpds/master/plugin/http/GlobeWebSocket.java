@@ -428,6 +428,21 @@ public class GlobeWebSocket implements WebSocketListener {
                     proxyRootLocations = rootLocations;
                     soleUnconfiguredProxyHostLocation = unconfiguredCandidateCount == 1 ? unconfiguredCandidateGeo
                             : null;
+                    if (LOG.isDebugEnabled()) {
+                        final var summary = new StringBuilder();
+                        for (final var p : enabledProxyHosts) {
+                            if (summary.length() > 0) {
+                                summary.append("; ");
+                            }
+                            summary.append(p.name()).append("[root=").append(p.root()).append(", address=")
+                                    .append(p.address()).append(", lat=").append(p.latitude()).append(", lon=")
+                                    .append(p.longitude()).append(", connected=").append(p.connected()).append(']');
+                        }
+                        LOG.debug(
+                                "Refreshed {} enabled Proxy Host(s): {} - sole-unconfigured-candidate fallback "
+                                        + "location: {}",
+                                enabledProxyHosts.length, summary, soleUnconfiguredProxyHostLocation);
+                    }
                 } catch (final Exception e) {
                     LOG.debug("Fetching enabled Proxy Hosts", e);
                 }
@@ -552,6 +567,21 @@ public class GlobeWebSocket implements WebSocketListener {
             node.put("hostLon", location.longitude());
             if (location.country() != null && !location.country().isBlank()) {
                 node.put("hostCountry", location.country());
+            }
+            if (LOG.isDebugEnabled()) {
+                for (final var p : enabledProxyHosts) {
+                    if (p.latitude() != null && p.longitude() != null && location.latitude() == p.latitude()
+                            && location.longitude() == p.longitude()) {
+                        // Expected, not a bug, whenever this transfer's own target Host IS that Proxy Host (a
+                        // replication/backup push to it rather than a downstream dissemination past it) - see
+                        // globe.jsp's upsertHost(), which merges the two markers into one for exactly this case.
+                        LOG.debug("Target Host '{}' for transfer {} resolved to the same location ({}, {}) as enabled "
+                                + "Proxy Host '{}' - expected if this transfer's target is that Proxy Host " + "itself",
+                                sample.getHostName(), sample.getTransferId(), location.latitude(), location.longitude(),
+                                p.name());
+                        break;
+                    }
+                }
             }
         }
         final var moverName = sample.getMoverName();

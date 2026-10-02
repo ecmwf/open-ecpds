@@ -4121,9 +4121,21 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                 // currently connected at all.
                 final var connected = root != null && !root.isBlank() ? activeRoots.contains(root)
                         : enabledProxyHosts.size() == 1 && !activeRoots.isEmpty();
+                // getFilteredHosts() above is a hand-built, column-by-column raw query that never populates
+                // hostLocation on any Host it returns (unlike a normal Hibernate entity load) - re-fetch this one
+                // Host fully (the same way the Host edit page does, via base.getHost()) so its actual, manually-set
+                // location is available; fall back to the incomplete object (still resolves via live GeoIP through
+                // _resolveProxyHostLocation()) if that single-row lookup fails for any reason.
+                Host fullyLoadedProxyHost;
+                try {
+                    fullyLoadedProxyHost = base.getHost(proxyHost.getName());
+                } catch (final DataBaseException e) {
+                    _log.debug("Re-fetching Proxy Host '{}' for its location", proxyHost.getName(), e);
+                    fullyLoadedProxyHost = proxyHost;
+                }
                 // Resolved here, directly from this actual Host object, rather than left to the generic
                 // address-keyed getGeoLocations() - see ProxyHostStatus's own javadoc for why.
-                final var geo = _resolveProxyHostLocation(proxyHost);
+                final var geo = _resolveProxyHostLocation(fullyLoadedProxyHost);
                 result.add(new ProxyHostStatus(proxyHost.getName(), proxyHost.getHost(), connected, root,
                         geo != null ? geo.latitude() : null, geo != null ? geo.longitude() : null));
             }
