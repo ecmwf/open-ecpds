@@ -110,12 +110,20 @@ public class ExportDestinationMetaNotesAction extends PDSAction {
     }
 
     /**
-     * Builds the Opsview note body: an HTML table with one row per field flagged "Include in Notes" (with at least one
-     * non-blank value), ordered the same way fields appear on the metadata page
-     * ({@link DestinationMetaField#getPosition()}). Password fields are always excluded, even if somehow flagged, since
-     * their plaintext value must never leave this system. Every value returned by {@link #formatValue} is already
-     * HTML-safe (either allow-listed HTML, for {@code markdown} fields, or escaped plain text, for everything else), so
-     * it is inserted here as-is.
+     * Builds the Opsview note body: one block per field flagged "Include in Notes" (with at least one non-blank value),
+     * ordered the same way fields appear on the metadata page ({@link DestinationMetaField#getPosition()}). Each block
+     * is the field's label on its own line (bold), a {@code
+     *
+    <hr>
+     * }, then the value(s) in a small table - this reads far better than a single big label/value table once values
+     * start spanning several lines (e.g. {@code markdown} fields), which was the original layout. Blocks themselves are
+     * separated by a {@code
+     *
+    <hr>
+     * } so multiple fields don't visually run into each other. Password fields are always excluded, even if somehow
+     * flagged, since their plaintext value must never leave this system. Every value returned by {@link #formatValue}
+     * is already HTML-safe (either allow-listed HTML, for {@code markdown} fields, or escaped plain text, for
+     * everything else), so it is inserted here as-is.
      *
      * @param destinationName
      *            the destination name
@@ -140,7 +148,7 @@ public class ExportDestinationMetaNotesAction extends PDSAction {
             if (field == null || "password".equals(field.getType())) {
                 continue; // never export a password field, even if somehow flagged
             }
-            valuesByField.computeIfAbsent(v.getFieldId(), k -> new ArrayList<>())
+            valuesByField.computeIfAbsent(v.getFieldId(), _ -> new ArrayList<>())
                     .add(formatValue(field.getType(), v.getValue()));
         }
         if (valuesByField.isEmpty()) {
@@ -149,14 +157,17 @@ public class ExportDestinationMetaNotesAction extends PDSAction {
         final var orderedFieldIds = new ArrayList<>(valuesByField.keySet());
         orderedFieldIds
                 .sort((a, b) -> Integer.compare(fieldsById.get(a).getPosition(), fieldsById.get(b).getPosition()));
-        final var sb = new StringBuilder("<table>");
-        for (final var fieldId : orderedFieldIds) {
-            final var field = fieldsById.get(fieldId);
-            final var separator = "markdown".equals(field.getType()) ? "<hr>" : ", ";
-            sb.append("<tr><td>").append(Entities.escape(field.getLabel())).append("</td><td>")
-                    .append(String.join(separator, valuesByField.get(fieldId))).append("</td></tr>");
+        final var sb = new StringBuilder();
+        for (var i = 0; i < orderedFieldIds.size(); i++) {
+            final var field = fieldsById.get(orderedFieldIds.get(i));
+            final var valueSeparator = "markdown".equals(field.getType()) ? "<hr>" : ", ";
+            final var content = String.join(valueSeparator, valuesByField.get(orderedFieldIds.get(i)));
+            if (i > 0) {
+                sb.append("<hr>");
+            }
+            sb.append("<p><strong>").append(Entities.escape(field.getLabel())).append("</strong></p>").append("<hr>")
+                    .append("<table><tr><td>").append(content).append("</td></tr></table>");
         }
-        sb.append("</table>");
         return sb.toString();
     }
 

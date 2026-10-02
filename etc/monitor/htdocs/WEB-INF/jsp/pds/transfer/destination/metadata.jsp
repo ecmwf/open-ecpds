@@ -1,6 +1,7 @@
 <%@ page session="true" contentType="text/html;charset=UTF-8"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
 <jsp:include page="/WEB-INF/jsp/pds/transfer/destination/destination_header.jsp"/>
 
@@ -118,7 +119,7 @@
             <span class="flex-grow-1" style="min-width:0;">
               ${field.label}
               <c:if test="${not empty field.tooltip}">
-                <i class="bi bi-question-circle text-muted ms-1 dmf-tip-icon" data-tip="${field.tooltip}" onclick="dmfTipToggle(this);event.stopPropagation();" style="cursor:pointer;font-weight:normal;font-size:0.8rem" tabindex="0"></i>
+                <i class="bi bi-question-circle text-muted ms-1 dmf-tip-icon" data-tip="${fn:escapeXml(field.tooltip)}" onclick="dmfTipToggle(this);event.stopPropagation();" style="cursor:pointer;font-weight:normal;font-size:0.8rem" tabindex="0"></i>
               </c:if>
             </span>
             <c:if test="${canEditMeta && field.type != 'password'}">

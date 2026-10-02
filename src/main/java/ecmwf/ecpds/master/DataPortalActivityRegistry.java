@@ -110,7 +110,7 @@ public final class DataPortalActivityRegistry {
      *            the currently open incoming connections on that DataMover, or {@code null}/empty if none
      */
     public void recordConnections(final String serverName, final List<IncomingConnection> connections) {
-        final var previous = _lastKnownByServer.computeIfAbsent(serverName, k -> new ConcurrentHashMap<>());
+        final var previous = _lastKnownByServer.computeIfAbsent(serverName, _ -> new ConcurrentHashMap<>());
         final Set<String> currentIds = new HashSet<>();
         var deltaIn = 0L;
         var deltaOut = 0L;
