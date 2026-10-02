@@ -128,6 +128,7 @@ nav:
       - Product Descriptions: administration/product-descriptions.md
       - Product Status Messages: administration/product-status-messages.md
       - System Messages: administration/system-messages.md
+      - Destination Metadata: administration/destination-metadata.md
   - Use Cases:
       - ECPDS Command-line Tool: use-cases/ecpds-cli.md
       - Data Portal: use-cases/data-portal.md

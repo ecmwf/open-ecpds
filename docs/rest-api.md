@@ -578,6 +578,8 @@ Returns all countries that have at least one destination associated.
 
 The metadata endpoints allow reading and writing structured metadata fields attached to destinations. Fields are defined globally via the Metadata Field Definitions admin page (`/do/admin/metafields`). All metadata is grouped by **category** (e.g. `General`, `Contacts`, `Data`, `Storage`, `Documentation`, `Procedures`, `Alerts`) in both GET responses and PUT request bodies.
 
+See [Destination Metadata](../administration/destination-metadata.md) for why this feature exists, the field types available, and how the `defaultValue`/`editable` locking mechanism is meant to be used.
+
 #### `GET /v1/destination/metadata/fields`
 
 Returns all **active** metadata field definitions (name, label, type, category, default value, etc.). Use this as a reference catalogue of all available field names, their types, and their current default values.
