@@ -169,7 +169,8 @@ HTTP-level errors (auth failures, missing parameters) return standard HTTP statu
 Some objects returned by this API carry credentials or other sensitive values: a `Host`'s password
 (`GET /v1/destination/backup[/{name}]`), an incoming user's password (`GET /v1/incoming/user/list`), a
 web user's password (`GET /v1/web/user/list`), and any destination-metadata field configured with type
-`password` (`GET /v1/destination/{name}/metadata`).
+`password` — both its stored value (`GET /v1/destination/{name}/metadata`) and its field-level
+`defaultValue` (`GET /v1/destination/metadata/fields`).
 
 By default, these values are omitted from the JSON response even when the client is otherwise permitted to
 call the endpoint. To include them, grant the client the `showSensitiveInfo` service permission (a checkbox
@@ -579,7 +580,7 @@ The metadata endpoints allow reading and writing structured metadata fields atta
 
 #### `GET /v1/destination/metadata/fields`
 
-Returns all **active** metadata field definitions (name, label, type, category, etc.). Use this as a reference catalogue of all available field names and their types.
+Returns all **active** metadata field definitions (name, label, type, category, default value, etc.). Use this as a reference catalogue of all available field names, their types, and their current default values.
 
 **Parameters:** none
 
@@ -588,7 +589,7 @@ Returns all **active** metadata field definitions (name, label, type, category, 
 **Response:**
 ```json
 {
-  "status": "ok",
+  "success": "yes",
   "fields": [
     {
       "id": 1,
@@ -596,6 +597,11 @@ Returns all **active** metadata field definitions (name, label, type, category, 
       "label": "Organisation Web Page",
       "type": "url",
       "category": "General",
+      "tooltip": "The organisation's public web page",
+      "defaultValue": null,
+      "editable": true,
+      "maxOccurs": 1,
+      "position": 0,
       "active": true
     },
     {
@@ -604,6 +610,24 @@ Returns all **active** metadata field definitions (name, label, type, category, 
       "label": "Computer Operations",
       "type": "contact",
       "category": "Contacts",
+      "tooltip": null,
+      "defaultValue": null,
+      "editable": true,
+      "maxOccurs": -1,
+      "position": 1,
+      "active": true
+    },
+    {
+      "id": 12,
+      "name": "opsviewNotes",
+      "label": "Opsview Notes",
+      "type": "markdown",
+      "category": "Documentation",
+      "tooltip": "Information for operators, rendered as HTML and included in the Opsview note when flagged",
+      "defaultValue": "# Operational Notes\n\n_Nothing recorded yet._",
+      "editable": true,
+      "maxOccurs": 1,
+      "position": 0,
       "active": true
     },
     ...
@@ -611,12 +635,19 @@ Returns all **active** metadata field definitions (name, label, type, category, 
 }
 ```
 
+`defaultValue` is the value used to seed a field the first time it's associated with a destination; `editable` says
+whether a destination can override it (`false` means the field is locked and always shows/exports this
+`defaultValue`, kept live in sync with it — see `PUT /v1/destination/{name}/metadata` below). A `password`-type
+field's `defaultValue` is redacted (`null`) unless the client has the `showSensitiveInfo` permission (see
+[Sensitive Fields](#sensitive-fields)).
+
 **Field types:**
 
 | Type | Description |
 |---|---|
 | `text` | Plain text |
 | `textarea` | Multi-line text |
+| `markdown` | Markdown source, rendered to a restricted, safe HTML subset (headings, bold/italic, lists, links, code, tables) wherever it's exported (e.g. Opsview notes) |
 | `url` | URL string |
 | `email` | Email address |
 | `phone` | Phone number |
@@ -629,7 +660,11 @@ Returns all **active** metadata field definitions (name, label, type, category, 
 
 #### `GET /v1/destination/{name}/metadata`
 
-Returns all metadata values for a destination grouped by category. Fields with no value are included as `null`. Multi-value fields (e.g. multiple contacts) are returned as arrays.
+Returns all metadata values for a destination grouped by category. Fields with no value are included as `null`. Multi-value fields (e.g. multiple contacts) are returned as arrays. A field that is not editable at the destination level (see `editable` under `GET /v1/destination/metadata/fields`) always reflects that field definition's current `defaultValue` here, live — never a stale or stored per-destination value.
+
+A separate `includeInNotes` object, grouped the same way as `metadata`, says which fields are currently flagged to
+be included when this destination's metadata is exported to Opsview as notes (see
+`POST` on the Destination Metadata page's **Export Notes** button) — `true`/`false` per field name.
 
 **Path parameters:**
 
@@ -645,7 +680,7 @@ Fields of type `password` are included only if the client also has the `showSens
 **Response:**
 ```json
 {
-  "status": "ok",
+  "success": "yes",
   "destination": "hourly_aq",
   "exportedAt": "2026-07-13T09:00:00Z",
   "metadata": {
@@ -665,14 +700,20 @@ Fields of type `password` are included only if the client also has the `showSens
       "mailGroup": { "name": "ops-list", "email": "ops@example.org" }
     },
     "Documentation": {
-      "documentationUrl": "https://docs.example.org/"
+      "documentationUrl": "https://docs.example.org/",
+      "opsviewNotes": "# Operational Notes\n\n_Nothing recorded yet._"
     }
+  },
+  "includeInNotes": {
+    "General": { "organisationWebPage": false, "SADNumber": false, "contractId": false, "generalComments": false },
+    "Contacts": { "computerOperations": false, "meteorologists": false, "switchboard": false, "mailGroup": false },
+    "Documentation": { "documentationUrl": false, "opsviewNotes": true }
   }
 }
 ```
 
 !!! note
-    Structured field types (`contact`, `mail-group`, `switchboard`) are returned as nested JSON objects rather than raw strings. The exact keys available depend on the field type (see the table under `GET /v1/destination/metadata/fields`).
+    Structured field types (`contact`, `mail-group`, `switchboard`) are returned as nested JSON objects rather than raw strings. The exact keys available depend on the field type (see the table under `GET /v1/destination/metadata/fields`). `markdown` fields are returned as their raw Markdown source (not pre-rendered HTML).
 
 ---
 
@@ -681,6 +722,16 @@ Fields of type `password` are included only if the client also has the `showSens
 Replaces **all** metadata values for a destination. Existing values are removed and replaced atomically. The request body must use the same grouped-by-category structure as the GET response — you can GET, modify values, and PUT back without any format transformation.
 
 Fields set to `null` or omitted are skipped (no value stored). Multi-value fields accept either a single value or an array.
+
+A field that is not editable at the destination level (`editable: false`) silently ignores any value submitted for
+it in `metadata` (logged server-side, not an error) and always keeps using the field definition's current
+`defaultValue` instead — consistent with it being shown read-only on the Destination Metadata page. Its
+`includeInNotes` flag can still be set even though its content cannot be customised per destination.
+
+`includeInNotes` is optional and, like `metadata`, follows this endpoint's full-replace semantics: a field name
+*absent* from it is saved with the flag **off**, so a GET → edit → PUT round trip must resend `includeInNotes`
+exactly as returned by the GET if you want to preserve it — omitting it entirely clears every field's flag for
+that destination.
 
 **Path parameters:**
 
@@ -703,7 +754,13 @@ Fields set to `null` or omitted are skipped (no value stored). Multi-value field
         { "name": "Bob Jones",   "email": "bob@example.org" }
       ],
       "mailGroup": { "name": "ops-list", "email": "ops@example.org" }
+    },
+    "Documentation": {
+      "opsviewNotes": "# Operational Notes\n\n- Maintenance window: Sundays 02:00-04:00 UTC"
     }
+  },
+  "includeInNotes": {
+    "Documentation": { "opsviewNotes": true }
   }
 }
 ```
@@ -712,21 +769,24 @@ Fields set to `null` or omitted are skipped (no value stored). Multi-value field
 |---|---|---|
 | `metadata` | object | Required. Top-level object keyed by category name |
 | `metadata.<category>` | object | Field name → value mapping for that category |
-| `metadata.<category>.<fieldName>` | string / object / array / null | Value(s) for the field. Use field names from `/v1/destination/metadata/fields`. Structured types (`contact` etc.) are JSON objects. Multi-value fields accept an array. `null` means no value. |
+| `metadata.<category>.<fieldName>` | string / object / array / null | Value(s) for the field. Use field names from `/v1/destination/metadata/fields`. Structured types (`contact` etc.) are JSON objects. `markdown` fields are plain Markdown source strings. Multi-value fields accept an array. `null` means no value. Ignored for a field with `editable: false`. |
+| `includeInNotes` | object | Optional. Same category/field-name grouping as `metadata`. Field name → `true`/`false`. Omitted fields are saved as `false`. |
 
 **Service name:** `setDestinationMetaValues`
 
 **Response:**
 ```json
 {
-  "status": "ok",
+  "success": "yes",
   "destination": "hourly_aq",
   "count": 3
 }
 ```
 
 !!! tip "Round-trip workflow"
-    The simplest way to update metadata is: `GET` the current values, edit the returned `metadata` object, then `PUT` it back. The format is identical in both directions.
+    The simplest way to update metadata is: `GET` the current values, edit the returned `metadata` (and
+    `includeInNotes`) object(s), then `PUT` them back together. The format is identical in both directions — but
+    remember to resend `includeInNotes` too, since omitting it clears those flags (see above).
 
 ---
 

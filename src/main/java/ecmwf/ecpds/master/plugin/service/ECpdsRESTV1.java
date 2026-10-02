@@ -581,7 +581,10 @@ public final class ECpdsRESTV1 {
     }
 
     /**
-     * GET /v1/destination/metadata/fields Returns all active metadata field definitions.
+     * GET /v1/destination/metadata/fields Returns all active metadata field definitions. Each field's {@code
+     * defaultValue} is redacted (returned as {@code null}) when its {@code type} is {@code password} unless the caller
+     * also has the {@link #SHOW_SENSITIVE_INFO_SERVICE} permission, matching the redaction already applied to stored
+     * values by {@link #destinationMetadata}.
      *
      * @param authString
      *            the auth string
@@ -598,8 +601,27 @@ public final class ECpdsRESTV1 {
         _log.debug("destinationMetaFields");
         try {
             final var userNameAndPassword = _getUserNameAndPassword(authString, request);
+            final var showSensitiveInfo = MasterManager.getDB().hasApiPermission(userNameAndPassword,
+                    SHOW_SENSITIVE_INFO_SERVICE);
+            final var fields = new java.util.ArrayList<java.util.Map<String, Object>>();
+            for (final var f : MasterManager.getDB().getDestinationMetaFields(userNameAndPassword)) {
+                final var m = new java.util.LinkedHashMap<String, Object>();
+                m.put("id", f.getId());
+                m.put("name", f.getName());
+                m.put("label", f.getLabel());
+                m.put("type", f.getType());
+                m.put("category", f.getCategory());
+                m.put("tooltip", f.getTooltip());
+                m.put("defaultValue",
+                        !showSensitiveInfo && "password".equals(f.getType()) ? null : f.getDefaultValue());
+                m.put("editable", f.getEditable());
+                m.put("maxOccurs", f.getMaxOccurs());
+                m.put("position", f.getPosition());
+                m.put("active", f.getActive());
+                fields.add(m);
+            }
             final var message = RESTMessage.getSuccessMessage();
-            message.put("fields", MasterManager.getDB().getDestinationMetaFields(userNameAndPassword));
+            message.put("fields", fields);
             return message.getResponse();
         } catch (final WebApplicationException w) {
             _log.warn("destinationMetaFields", w);
@@ -614,7 +636,11 @@ public final class ECpdsRESTV1 {
      * GET /v1/destination/{name}/metadata Returns all metadata values for a destination grouped by category, matching
      * the structure of the UI JSON export. Each category contains field names mapped to their value(s); fields with no
      * value are included as null. Multi-value fields are returned as arrays. Structured types (contact, mail-group,
-     * switchboard) are parsed from JSON to nested objects.
+     * switchboard) are parsed from JSON to nested objects. A field not editable at the destination level always
+     * reflects the field definition's current {@code defaultValue} instead of any stored value, matching how it is
+     * displayed on the Destination Metadata page and exported to Opsview notes (see
+     * {@code ExportDestinationMetaNotesAction}). A separate {@code includeInNotes} object, grouped the same way, says
+     * which fields are currently flagged to be included in the Opsview notes export for this destination.
      *
      * @param authString
      *            the auth string
@@ -639,14 +665,15 @@ public final class ECpdsRESTV1 {
                     name);
             final var showSensitiveInfo = MasterManager.getDB().hasApiPermission(userNameAndPassword,
                     SHOW_SENSITIVE_INFO_SERVICE);
-            // Build fieldId → list of values map
-            final var valuesByField = new java.util.LinkedHashMap<Integer, java.util.List<String>>();
+            // Build fieldId → list of stored rows map
+            final var rowsByField = new java.util.LinkedHashMap<Integer, java.util.List<ecmwf.common.database.DestinationMetaValue>>();
             for (final var v : rawValues) {
-                valuesByField.computeIfAbsent(v.getFieldId(), _ -> new java.util.ArrayList<>()).add(v.getValue());
+                rowsByField.computeIfAbsent(v.getFieldId(), _ -> new java.util.ArrayList<>()).add(v);
             }
             // Build grouped structure: category → { fieldName → value/array/null }
             final var STRUCTURED = java.util.Set.of("contact", "mail-group", "switchboard");
             final var metadata = new java.util.LinkedHashMap<String, java.util.LinkedHashMap<String, Object>>();
+            final var includeInNotes = new java.util.LinkedHashMap<String, java.util.LinkedHashMap<String, Object>>();
             for (final var f : fields) {
                 if (!showSensitiveInfo && "password".equals(f.getType())) {
                     // Never export a password field's plaintext value without the showSensitiveInfo permission.
@@ -655,7 +682,16 @@ public final class ECpdsRESTV1 {
                 final var category = f.getCategory() != null ? f.getCategory() : "General";
                 final var group = metadata.computeIfAbsent(category,
                         _ -> new java.util.LinkedHashMap<String, Object>());
-                final var rawList = valuesByField.getOrDefault(f.getId(), java.util.List.of());
+                final var notesGroup = includeInNotes.computeIfAbsent(category,
+                        _ -> new java.util.LinkedHashMap<String, Object>());
+                final var rows = rowsByField.getOrDefault(f.getId(), java.util.List.of());
+                notesGroup.put(f.getName(), !rows.isEmpty() && rows.get(0).getIncludeInNotes());
+                // A field not editable at the destination level always reflects its current Default Value, live -
+                // never the stored value, which (if present) only exists to carry the includeInNotes flag above.
+                final var rawList = f.getEditable()
+                        ? rows.stream().map(ecmwf.common.database.DestinationMetaValue::getValue).toList()
+                        : (f.getDefaultValue() != null && !f.getDefaultValue().isBlank()
+                                ? java.util.List.of(f.getDefaultValue()) : java.util.List.<String> of());
                 final var parsed = new java.util.ArrayList<Object>();
                 for (final var raw : rawList) {
                     if (raw == null || raw.isBlank()) {
@@ -694,6 +730,7 @@ public final class ECpdsRESTV1 {
             message.put("destination", name);
             message.put("exportedAt", java.time.Instant.now().toString());
             message.put("metadata", metadata);
+            message.put("includeInNotes", includeInNotes);
             return message.getResponse();
         } catch (final WebApplicationException w) {
             _log.warn("destinationMetadata", w);
@@ -709,9 +746,14 @@ public final class ECpdsRESTV1 {
      *
      * <p>
      * Body (grouped format, matching the GET response):
-     * {@code {"metadata":{"General":{"organisationWebPage":"..."},"Contacts":{"computerOperations":[{"name":"...","email":"..."}]}}}}
+     * {@code {"metadata":{"General":{"organisationWebPage":"..."},"Contacts":{"computerOperations":[{"name":"...","email":"..."}]}},"includeInNotes":{"General":{"organisationWebPage":true}}}}
      * Field names are resolved to IDs via the DB field definitions. Null or missing fields are skipped (no value
-     * stored).
+     * stored). {@code includeInNotes} is optional - a field omitted from it is saved with the flag off, matching this
+     * endpoint's full-replace semantics (so a round-trip GET followed by PUT must resend it to keep it set). A field
+     * not editable at the destination level ({@link ecmwf.common.database.DestinationMetaField#getEditable()}) always
+     * has its submitted value(s) ignored (logged, not an error) in favour of the field definition's current {@code
+     * defaultValue} - matching the read-only rendering on the Destination Metadata page - so {@code includeInNotes} can
+     * still be set for it even though its content cannot be customised per destination.
      *
      * @param authString
      *            the auth string
@@ -741,47 +783,77 @@ public final class ECpdsRESTV1 {
             if (grouped == null) {
                 throw new IllegalArgumentException("Request body must contain a 'metadata' object grouped by category");
             }
-            final var fieldByName = new java.util.HashMap<String, ecmwf.common.database.DestinationMetaField>();
-            for (final var f : MasterManager.getDB().getDestinationMetaFields(userNameAndPassword)) {
-                fieldByName.put(f.getName(), f);
-            }
-            final var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            final var values = new java.util.ArrayList<ecmwf.common.database.DestinationMetaValue>();
+            // Flatten the submitted "metadata" into a field-name -> raw value(s) map.
+            final var rawByFieldName = new java.util.HashMap<String, Object>();
             for (final var categoryEntry : grouped.entrySet()) {
                 @SuppressWarnings("unchecked")
                 final var fieldMap = (Map<String, Object>) categoryEntry.getValue();
                 if (fieldMap == null) {
                     continue;
                 }
-                for (final var fieldEntry : fieldMap.entrySet()) {
-                    final var fieldName = fieldEntry.getKey();
-                    final var fieldDef = fieldByName.get(fieldName);
-                    if (fieldDef == null) {
-                        _log.warn("setDestinationMetadata: unknown field name '{}', skipping", fieldName);
+                rawByFieldName.putAll(fieldMap);
+            }
+            // Flatten the optional "includeInNotes" the same way - a field-name -> boolean map.
+            @SuppressWarnings("unchecked")
+            final var includeInNotesGrouped = (Map<String, Object>) body.get("includeInNotes");
+            final var includeInNotesByFieldName = new java.util.HashMap<String, Boolean>();
+            if (includeInNotesGrouped != null) {
+                for (final var categoryEntry : includeInNotesGrouped.entrySet()) {
+                    @SuppressWarnings("unchecked")
+                    final var fieldMap = (Map<String, Object>) categoryEntry.getValue();
+                    if (fieldMap == null) {
                         continue;
                     }
-                    final var raw = fieldEntry.getValue();
-                    if (raw == null) {
+                    for (final var fieldEntry : fieldMap.entrySet()) {
+                        includeInNotesByFieldName.put(fieldEntry.getKey(), Boolean.TRUE.equals(fieldEntry.getValue()));
+                    }
+                }
+            }
+            final var fieldByName = new java.util.HashMap<String, ecmwf.common.database.DestinationMetaField>();
+            for (final var f : MasterManager.getDB().getDestinationMetaFields(userNameAndPassword)) {
+                fieldByName.put(f.getName(), f);
+            }
+            for (final var fieldName : rawByFieldName.keySet()) {
+                if (!fieldByName.containsKey(fieldName)) {
+                    _log.warn("setDestinationMetadata: unknown field name '{}', skipping", fieldName);
+                }
+            }
+            final var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            final var values = new java.util.ArrayList<ecmwf.common.database.DestinationMetaValue>();
+            for (final var fieldDef : fieldByName.values()) {
+                final var fieldName = fieldDef.getName();
+                final var includeInNotes = includeInNotesByFieldName.getOrDefault(fieldName, false);
+                final Object raw;
+                if (!fieldDef.getEditable()) {
+                    if (rawByFieldName.containsKey(fieldName)) {
+                        _log.warn("setDestinationMetadata: field '{}' is not editable at the destination level, "
+                                + "ignoring submitted value(s)", fieldName);
+                    }
+                    raw = fieldDef.getDefaultValue();
+                } else {
+                    raw = rawByFieldName.get(fieldName);
+                }
+                if (raw == null) {
+                    continue;
+                }
+                final var items = raw instanceof java.util.List ? (java.util.List<?>) raw : java.util.List.of(raw);
+                var pos = 0;
+                for (final var item : items) {
+                    if (item == null) {
                         continue;
                     }
-                    final var items = raw instanceof java.util.List ? (java.util.List<?>) raw : java.util.List.of(raw);
-                    var pos = 0;
-                    for (final var item : items) {
-                        if (item == null) {
-                            continue;
-                        }
-                        final String strVal = item instanceof String ? ((String) item).trim()
-                                : mapper.writeValueAsString(item);
-                        if (strVal.isBlank()) {
-                            continue;
-                        }
-                        final var v = new ecmwf.common.database.DestinationMetaValue();
-                        v.setFieldId(fieldDef.getId());
-                        v.setValue(strVal);
-                        v.setPosition(pos++);
-                        v.setBy(user);
-                        values.add(v);
+                    final String strVal = item instanceof String ? ((String) item).trim()
+                            : mapper.writeValueAsString(item);
+                    if (strVal.isBlank()) {
+                        continue;
                     }
+                    final var v = new ecmwf.common.database.DestinationMetaValue();
+                    v.setFieldId(fieldDef.getId());
+                    v.setValue(strVal);
+                    v.setPosition(pos++);
+                    v.setIncludeInNotes(includeInNotes);
+                    v.setBy(user);
+                    values.add(v);
                 }
             }
             MasterManager.getDB().setDestinationMetaValues(userNameAndPassword, name, values);
