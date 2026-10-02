@@ -5682,8 +5682,18 @@ public final class MasterServer extends ECaccessProvider
         try (final var mutex = hostLocationMutexProvider.getMutex(hostId)) {
             synchronized (mutex.lock()) {
                 try {
+                    // A Proxy-type Host fronts a Continental Data Mover, typically reachable only by a short,
+                    // non-FQDN root identifier (see proxy.root/ECtransOptions#HOST_PROXY_ROOT) that plain DNS/GeoIP
+                    // can never place - so automatic (DNS/GeoIP-based) location discovery never applies to it,
+                    // regardless of its own automaticLocation setting, which is only meaningful for an ordinary,
+                    // directly-addressable Host. Without this, automaticLocation=true (the default for a newly
+                    // created Host) silently discards any manually-entered coordinates on every save/restart: the
+                    // DNS lookup below throws UnknownHostException, which is caught and merely logged, so nothing
+                    // is ever persisted - see ManagementImpl#_resolveProxyHostLocation's own javadoc for why a
+                    // manual override exists specifically for this case.
+                    final var isProxyHost = HostOption.PROXY.equals(host.getType());
                     // Is it configured for automatic location discovery?
-                    if (host.getAutomaticLocation()) {
+                    if (host.getAutomaticLocation() && !isProxyHost) {
                         // Update geolocation. If the IP is not defined then use the hostName to find
                         // the IP.
                         final var dnsName = host.getHost();
@@ -5727,7 +5737,8 @@ public final class MasterServer extends ECaccessProvider
                             _log.warn("Could not get geolocation for Host-{}: {}", hostId, hostIp, t);
                         }
                     } else {
-                        // Automatic location discovery disabled
+                        // Automatic location discovery disabled (or not applicable to this Host type) - persist
+                        // whatever is currently set, i.e. an administrator's manually-entered coordinates.
                         try {
                             getDataBase().update(hostLocation);
                         } catch (final Throwable t) {

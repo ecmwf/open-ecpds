@@ -72,6 +72,7 @@
 #globeInfoPanel dl{margin:0;}
 #globeInfoPanel dt{color:#aaa;font-weight:400;}
 #globeInfoPanel dd{margin-bottom:.35rem;word-break:break-all;}
+#globeHoverTooltip{position:absolute;z-index:20;background:rgba(20,25,30,.92);color:#eee;border-radius:5px;padding:.3rem .55rem;font-size:.76rem;line-height:1.2;display:none;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.35);white-space:nowrap;}
 #globeOriginWarning{max-width:min(230px,55vw);background:rgba(20,25,30,.86);color:#eee;border-radius:8px;padding:.5rem .7rem;font-size:.76rem;line-height:1.35;display:none;box-shadow:0 4px 16px rgba(0,0,0,.35);}
 #globeOriginWarning i{margin-right:.35rem;color:#997404;}
 #globeOriginWarningDetail{color:#aaa;font-size:.9em;margin-top:.15rem;word-break:break-word;}
@@ -105,6 +106,7 @@
 [data-bs-theme=light] #globeInfoPanel h6{color:#0969da;}
 [data-bs-theme=light] #globeInfoPanel dt{color:#57606a;}
 [data-bs-theme=light] #globeInfoPanel .close-btn{color:#57606a;}
+[data-bs-theme=light] #globeHoverTooltip{background:#f6f8fa;color:#1b1f24;box-shadow:0 2px 8px rgba(0,0,0,.18);}
 [data-bs-theme=light] #globeOriginWarning{background:#f6f8fa;color:#1b1f24;box-shadow:0 4px 14px rgba(0,0,0,.18);}
 [data-bs-theme=light] #globeOriginWarning i{color:#997404;}
 [data-bs-theme=light] #globeOriginWarningDetail{color:#57606a;}
@@ -281,6 +283,7 @@
 
 <div id="globeContainer">
     <div id="cesiumContainer" style="width:100%;height:100%;"></div>
+    <div id="globeHoverTooltip"></div>
     <div id="globeLegend">
         <div><span class="dot" style="background:#38bdf8;"></span>Active transfer</div>
         <div><span class="dot" style="background:#22c55e;"></span>Completed</div>
@@ -1734,6 +1737,26 @@
             showCountryInfoPanel(picked.countryCode);
         }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+    // Hover tooltip for Continental Mover markers, naming which mover a given marker is - these otherwise all look
+    // like identical purple dots, so there's no other way to tell them apart at a glance (unlike Host markers,
+    // which open a click info panel already).
+    var hoverTooltip = document.getElementById("globeHoverTooltip");
+    handler.setInputAction(function (movement) {
+        var picked = viewer.scene.pick(movement.endPosition);
+        if (Cesium.defined(picked) && Cesium.defined(picked.moverName)) {
+            var m = movers[picked.moverName];
+            hoverTooltip.textContent = picked.moverName + (m && !m.connected ? " (not connected)" : "");
+            hoverTooltip.style.left = (movement.endPosition.x + 14) + "px";
+            hoverTooltip.style.top = (movement.endPosition.y + 10) + "px";
+            hoverTooltip.style.display = "block";
+            viewer.scene.canvas.style.cursor = "pointer";
+        } else {
+            hoverTooltip.style.display = "none";
+            viewer.scene.canvas.style.cursor = Cesium.defined(picked) && Cesium.defined(picked.hostName)
+                || (Cesium.defined(picked) && Cesium.defined(picked.countryCode)) ? "pointer" : "default";
+        }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
     // ------------------------------------------------------------------
     // WebSocket connection with auto-reconnect (exponential backoff)

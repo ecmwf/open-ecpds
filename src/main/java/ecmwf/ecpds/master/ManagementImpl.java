@@ -4121,7 +4121,11 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                 // currently connected at all.
                 final var connected = root != null && !root.isBlank() ? activeRoots.contains(root)
                         : enabledProxyHosts.size() == 1 && !activeRoots.isEmpty();
-                result.add(new ProxyHostStatus(proxyHost.getName(), proxyHost.getHost(), connected));
+                // Resolved here, directly from this actual Host object, rather than left to the generic
+                // address-keyed getGeoLocations() - see ProxyHostStatus's own javadoc for why.
+                final var geo = _resolveProxyHostLocation(proxyHost);
+                result.add(new ProxyHostStatus(proxyHost.getName(), proxyHost.getHost(), connected, root,
+                        geo != null ? geo.latitude() : null, geo != null ? geo.longitude() : null));
             }
             return result.toArray(new ProxyHostStatus[0]);
         } catch (final Exception e) {
@@ -4135,55 +4139,20 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      */
     @Override
     public Map<String, GeoPoint> getGeoLocations(final String[] hostNames) throws RemoteException {
+        // Plain GeoIP resolution only, for the target Host addresses/names referenced by live transfer samples (see
+        // GlobeWebSocket#resolveGeoLocations()). A Continental Mover's own root identifier, and every enabled Proxy
+        // Host's own location, are resolved separately and more precisely by getEnabledProxyHosts() (which has the
+        // actual Host object in hand, so it can prefer a manually-stored location over a live GeoIP guess) - this
+        // method used to also guess a Proxy Host match for any hostName that failed to resolve here, but that
+        // applied indiscriminately to a real target Host address that simply failed to resolve too, occasionally
+        // (mis)resolving it to the same coincidental location as an unrelated Continental Mover.
         final Map<String, GeoPoint> result = new HashMap<>();
         if (hostNames != null) {
             for (final var hostName : hostNames) {
                 if (hostName == null || hostName.isBlank() || result.containsKey(hostName)) {
                     continue;
                 }
-                var geo = _resolveGeoIpQuietly(hostName);
-                if ((geo == null || geo.latitude() == null || geo.longitude() == null)) {
-                    // hostName did not resolve as-is - this is expected for ProxyHost/Continental Data Mover
-                    // entries (see getActiveProxyHostNames()), whose "name" is their registered logical root
-                    // identifier (see MoverServer#getRoot(), typically the [Login] "root" setting) - not a
-                    // DNS-resolvable hostname or IP address in its own right, and not necessarily related to any
-                    // TransferServer entry either, since a Continental Data Mover talks to the Master purely over
-                    // its REST control channel and is never registered as an RMI-backed TransferServer. That root
-                    // identifier does not have to match any Host's own name, so it cannot be used to look one up
-                    // directly - instead, find the Proxy-type Host whose proxy.root option (see
-                    // ECtransOptions#HOST_PROXY_ROOT) was explicitly set to this exact root identifier by an
-                    // administrator, and resolve its own address (HOS_HOST) the same way as any other Host, so
-                    // Continental Data Movers get a marker on the "Live ECPDS Earth" globe at the same location
-                    // their arcs already point to (see TransferScheduler#_offerReplicationLiveSample).
-                    try {
-                        final var proxyHosts = base.getFilteredHosts("All", "All", "All", HostOption.PROXY, "",
-                                new DataBaseCursor("0", "1", 0, Integer.MAX_VALUE));
-                        Host unconfiguredCandidate = null;
-                        var unconfiguredCandidateCount = 0;
-                        for (final var proxyHost : proxyHosts) {
-                            final var setup = ECtransGroups.Module.HOST_PROXY.getECtransSetup(proxyHost.getData());
-                            final var root = setup.getString(ECtransOptions.HOST_PROXY_ROOT);
-                            if (hostName.equals(root)) {
-                                geo = _resolveProxyHostLocation(proxyHost);
-                                unconfiguredCandidate = null;
-                                break;
-                            }
-                            if (root == null || root.isBlank()) {
-                                unconfiguredCandidate = proxyHost;
-                                unconfiguredCandidateCount++;
-                            }
-                        }
-                        // No explicit proxy.root matched this root identifier anywhere - if exactly one enabled
-                        // Proxy Host has proxy.root left unset, it is the only reasonable candidate (not a guess
-                        // among several), so fall back to its address rather than showing nothing. With more than
-                        // one unconfigured candidate there is no way to tell them apart, so this is skipped.
-                        if (geo == null && unconfiguredCandidateCount == 1) {
-                            geo = _resolveProxyHostLocation(unconfiguredCandidate);
-                        }
-                    } catch (final Exception e) {
-                        _log.debug("Looking up Proxy Host by proxy.root for GeoIP fallback: {}", hostName, e);
-                    }
-                }
+                final var geo = _resolveGeoIpQuietly(hostName);
                 if (geo != null && geo.latitude() != null && geo.longitude() != null) {
                     result.put(hostName, new GeoPoint(geo.latitude(), geo.longitude(), geo.country()));
                 }

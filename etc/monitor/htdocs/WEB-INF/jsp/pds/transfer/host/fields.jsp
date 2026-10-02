@@ -123,7 +123,7 @@ PROCEED ONLY IF YOU ARE CERTAIN OF THE IMPACT!!!!</b>
 <c:if test="${isInsert == 'true'}">
 <div class="col-sm-6">
 <label for="type" class="form-label mb-1">Type <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Select the Host Type" tabindex="0"></i></label>
-<select id="type" name="type" class="form-select form-select-sm">
+<select id="type" name="type" class="form-select form-select-sm" onchange="updateProxyLocationLock()">
 <c:forEach var="hostType"
 items="${requestScope[actionFormName].typeOptions}">
 <c:choose>
@@ -555,7 +555,7 @@ JavaScript
   <strong>Network Info page</strong> &mdash; the location is also used in the <em>Network Info</em> page when displaying MTR (My Traceroute) results on the map, allowing you to visualise the network path from the ECPDS server to this host and identify where latency or packet loss occurs along the route.
 </div>
 </div>
-<div class="card-body">
+<div class="card-body" data-host-type="${requestScope[actionFormName].type}">
 <div class="row g-3 align-items-end">
 <div class="col-sm-4">
 <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -565,6 +565,7 @@ JavaScript
 </div>
 <i class="bi bi-question-circle text-muted" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Try to get the latitude/longitude from the IP address" tabindex="0"></i>
 </div>
+<small id="proxyLocationNote" class="text-muted d-none">Not available for Proxy Hosts &mdash; a Continental Data Mover is typically reachable only by a short identifier that cannot be geo-resolved automatically, so its location is always set manually.</small>
 </div>
 <div class="col-sm-3">
 <label for="latitudeField" class="form-label mb-1">Latitude (&deg;)</label>
@@ -1336,6 +1337,25 @@ oninput="validateMailInput(this); toggleMailRows()" />
     	longitude.disabled = disabled;
     	if (pickBtn) pickBtn.disabled = disabled;
     }
+    // A Proxy Host fronts a Continental Data Mover, typically reachable only by a short identifier that plain
+    // DNS/GeoIP can never place (see MasterServer#updateLocation()) - so "Automatic Location" never applies to one,
+    // and is forced off/disabled here to match what the server itself now always does for this Host type.
+    function updateProxyLocationLock() {
+        var sel = document.getElementById("type");
+        var card = document.querySelector("[data-host-type]");
+        var currentType = sel ? sel.value : (card ? card.getAttribute("data-host-type") : "");
+        var isProxy = currentType === "Proxy";
+        var autoChk = document.getElementById("automaticLocation");
+        var note = document.getElementById("proxyLocationNote");
+        if (autoChk) {
+            if (isProxy) {
+                autoChk.checked = false;
+            }
+            autoChk.disabled = isProxy;
+        }
+        if (note) note.classList.toggle("d-none", !isProxy);
+        toggleLocationFields();
+    }
     /* ---- Map coordinate picker -------------------------------- */
     var _pickerMap = null, _pickerPin = null, _pickerSrc = null, _pickedLat = null, _pickedLon = null;
 
@@ -1409,7 +1429,7 @@ oninput="validateMailInput(this); toggleMailRows()" />
         bootstrap.Modal.getInstance(document.getElementById('mapPickerModal')).hide();
     }
 
-    toggleLocationFields();
+    updateProxyLocationLock();
     document.getElementById('automaticLocation').addEventListener('change', toggleLocationFields);
     window.onload = function() {
     	var mailInput = document.getElementById('userMailInput');
