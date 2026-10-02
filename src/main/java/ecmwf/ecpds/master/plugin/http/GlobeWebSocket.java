@@ -109,6 +109,19 @@ public class GlobeWebSocket implements WebSocketListener {
     private static final Cache<String, GeoPoint> GEO_CACHE = CacheBuilder.newBuilder()
             .expireAfterWrite(5, TimeUnit.MINUTES).build();
 
+    /**
+     * Names/addresses recently requested from {@link ManagementInterface#getGeoLocations(String[])} that came back
+     * unresolved (e.g. a Proxy Host's {@code proxy.root} value, which is "very often reachable only by a short,
+     * non-FQDN name" that plain DNS/GeoIP cannot place - see {@code ManagementImpl#_resolveProxyHostLocation}). Without
+     * this, such a name would never get cached in {@link #GEO_CACHE} (only successful resolutions are) and would be
+     * re-requested - triggering a fresh, blocking {@code InetAddress.getByName()} lookup on the MasterServer side - on
+     * every single {@value #POLL_PERIOD_SECONDS}s poll cycle and every new connection, forever. A short TTL (vs.
+     * {@link #GEO_CACHE}'s 5 minutes) still lets a just-corrected {@code proxy.root}/address be picked up reasonably
+     * promptly.
+     */
+    private static final Cache<String, Boolean> UNRESOLVABLE_CACHE = CacheBuilder.newBuilder()
+            .expireAfterWrite(1, TimeUnit.MINUTES).build();
+
     /** Latest known MasterServer origin location, refreshed by the poller; {@code null} until first resolved. */
     private static volatile double[] originLocation;
 
@@ -278,13 +291,21 @@ public class GlobeWebSocket implements WebSocketListener {
      * Polls the MasterServer once via RMI, and broadcasts the resulting snapshot to every connected client.
      */
     private static void pollAndBroadcast() {
+        final LiveTransferSample[] samples;
         try {
-            final var samples = pollNow();
-            for (final GlobeWebSocket client : CLIENTS) {
-                client.sendSnapshot(samples);
-            }
+            samples = pollNow();
         } catch (final Throwable t) {
             LOG.warn("Polling live transfers from MasterServer", t);
+            return;
+        }
+        for (final GlobeWebSocket client : CLIENTS) {
+            // Isolated per client: building/sending one client's snapshot must never prevent every other connected
+            // client (possibly ordered later in CLIENTS) from getting theirs in this same cycle.
+            try {
+                client.sendSnapshot(samples);
+            } catch (final Throwable t) {
+                LOG.warn("Sending snapshot to a globe client", t);
+            }
         }
     }
 
@@ -560,7 +581,8 @@ public class GlobeWebSocket implements WebSocketListener {
         final Set<String> unresolved = new HashSet<>();
         for (final var sample : samples) {
             final var hostKey = hostGeoKey(sample);
-            if (hostKey != null && !hostKey.isBlank() && GEO_CACHE.getIfPresent(hostKey) == null) {
+            if (hostKey != null && !hostKey.isBlank() && GEO_CACHE.getIfPresent(hostKey) == null
+                    && UNRESOLVABLE_CACHE.getIfPresent(hostKey) == null) {
                 unresolved.add(hostKey);
             }
         }
@@ -568,7 +590,8 @@ public class GlobeWebSocket implements WebSocketListener {
         // sample right now, needed for the arc-origin-shift matching in toNode() (moverLat/moverLon) - not for the
         // Continental Mover markers themselves, which are resolved from enabledProxyHosts below instead.
         for (final var moverName : activeProxyHostNames) {
-            if (moverName != null && !moverName.isBlank() && GEO_CACHE.getIfPresent(moverName) == null) {
+            if (moverName != null && !moverName.isBlank() && GEO_CACHE.getIfPresent(moverName) == null
+                    && UNRESOLVABLE_CACHE.getIfPresent(moverName) == null) {
                 unresolved.add(moverName);
             }
         }
@@ -577,7 +600,8 @@ public class GlobeWebSocket implements WebSocketListener {
         // sendSnapshot()'s "proxyHosts" array).
         for (final var proxyHost : enabledProxyHosts) {
             final var address = proxyHost.address();
-            if (address != null && !address.isBlank() && GEO_CACHE.getIfPresent(address) == null) {
+            if (address != null && !address.isBlank() && GEO_CACHE.getIfPresent(address) == null
+                    && UNRESOLVABLE_CACHE.getIfPresent(address) == null) {
                 unresolved.add(address);
             }
         }
@@ -588,6 +612,13 @@ public class GlobeWebSocket implements WebSocketListener {
             final var resolved = mi.getGeoLocations(unresolved.toArray(new String[0]));
             if (resolved != null) {
                 GEO_CACHE.putAll(resolved);
+            }
+            for (final var key : unresolved) {
+                if (resolved == null || !resolved.containsKey(key)) {
+                    // Requested but not returned - remember it as unresolvable for a while so it isn't retried (and
+                    // doesn't trigger another blocking MasterServer-side DNS/GeoIP lookup) on every poll cycle.
+                    UNRESOLVABLE_CACHE.put(key, Boolean.TRUE);
+                }
             }
         } catch (final Exception e) {
             LOG.debug("Resolving geolocations from MasterServer", e);
