@@ -97,12 +97,51 @@ want a newer version, you'll need to fetch it by URL instead of by Maven coordin
 
    **Hawtio itself has no authentication by default**, and `HawtioLauncher` doesn't
    enable it (`io.hawt.embedded.Main.call()` leaves `hawtio.authenticationEnabled`
-   unset/`false`) — so its own login can't be used. Instead, both
-   `deploy/kubernetes/docker-compose.yml` and the local dev stack
-   (`run/bin/ecpds/{Linux,Darwin}-ecpds/docker-compose.yml`, driven by `make start-hawtio`/
-   `stop-hawtio`) put a small `nginx:alpine` sidecar (`hawtio-proxy`) in front of it as an
-   HTTP Basic Auth gateway — nothing reaches Hawtio without passing that first. Hawtio
-   itself is also no longer published to the host directly; only `hawtio-proxy` is.
+   unset/`false`) — so its own login can't be used. Instead, the image includes an
+   nginx HTTP Basic Auth gateway: nothing reaches Hawtio without passing that first.
+   Both the deployment and local development Compose files use this integrated gateway.
+
+   **Single-container deployment:** nginx is now installed inside `ecpds/hawtio`.
+   Its authenticated gateway listens on port **8080**; Jetty is always bound to
+   **127.0.0.1:8081**, regardless of supplied `HAWTIO_HOST`/`HAWTIO_PORT` settings.
+   The entrypoint supervises both processes and stops the container if either exits.
+   Standalone deployments must set `HAWTIO_USER` and either `HAWTIO_PASSWORD` or
+   `HAWTIO_PASSWORD_FILE` (a readable, mounted secret file); missing credentials
+   prevent startup. Use TLS termination or an SSH tunnel outside trusted networks.
+
+   **Configuration files:** like Master, Monitor and Mover, the container sources
+   `/etc/ecpds/default/hawtio.cnf` first, then `/etc/ecpds/hawtio.cnf` at each startup.
+   These are trusted Bash configuration files: assignments override environment values,
+   and the local file overrides defaults. No `export` is needed. For example:
+
+   ```sh
+   HAWTIO_USER="hawtio"
+   HAWTIO_PASSWORD="replace-with-a-strong-password"
+   HAWTIO_PRESET_CONNECTIONS="master=http://localhost:2062/jolokia,monitor=http://localhost:3062/jolokia,mover=http://localhost:4062/jolokia"
+   JAVA_OPTS="-Dhawtio.proxyAllowlist=localhost,127.0.0.1"
+   ```
+
+   Protect files containing passwords with mode `0600`. Alternatively, set
+   `HAWTIO_PASSWORD_FILE` to a path **inside the container**; when non-empty, its
+   contents take precedence over `HAWTIO_PASSWORD`. Set it to `""` to disable an
+   inherited password-file setting when switching to a password in the `.cnf`.
+   Adjust the preset hosts and allowlist for servers on other machines.
+
+   Development Compose files mount `${ECPDS_ROOT_PATH}/etc/ecpds` read-only at
+   `/etc/ecpds` (default host path: `/etc/ecpds`); the deployment Compose file uses
+   the `etc-ecpds-hawtio` volume. ECaccess-J's `hawtio-update` mounts
+   `/ecpds/etc` at `/etc/ecpds`, configurable through `ECPDS_CONF_DIR`, and reads
+   the same files for installation settings. Existing `.cnf` credentials are preserved
+   rather than replaced with a generated password file.
+   After editing settings, restart the Hawtio container/service; no image rebuild is
+   needed for subsequent configuration changes.
+
+   When upgrading from the two-container setup, stop/remove the old `hawtio-proxy`
+   container (and disable its systemd service, if present) before starting the new image,
+   since it otherwise occupies port 8080. Compose users can use
+   `docker compose -f <compose-file> up -d --remove-orphans hawtio` after rebuilding.
+   ECaccess-J uses the same single-container layout; its deployment needs just one
+   `ecpds-hawtio` systemd service, with gateway credentials passed to the Hawtio container.
 
    These compose files default `HAWTIO_USER`/`HAWTIO_PASSWORD` to `hawtio` / `hawtio2021`,
    and `JOLOKIA_USER`/`JOLOKIA_PASSWORD` (for `master`/`monitor`/`mover`) to `jolokia` /
@@ -117,8 +156,8 @@ want a newer version, you'll need to fetch it by URL instead of by Maven coordin
    which `HawtioLauncher` parses and feeds to `Main.setConnections(...)`. No extra
    port needs to be published to the host for Jolokia, since Hawtio reaches the other
    containers directly over the `backbone` network (or `localhost`, for the Linux dev
-   stack, which uses host networking throughout — there, Hawtio itself listens on `8081`
-   instead of `8080`, since `hawtio-proxy` takes `8080`).
+   stack, which uses host networking throughout). On every platform, Jetty listens on
+   loopback port `8081` and the integrated gateway listens on `8080`.
    Note: this is upstream Hawtio behaviour, not something this image controls — on every
    fresh visit to the Hawtio home page (i.e. whenever there's no `?con=` in the URL),
    Hawtio doesn't just list the preset connections, it immediately opens each one as a

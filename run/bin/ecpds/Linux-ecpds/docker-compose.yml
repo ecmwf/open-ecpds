@@ -224,64 +224,24 @@ services:
   # connection as a browser tab on every fresh visit to the Hawtio home page (upstream
   # behaviour, not something this image controls) - see docs/monitoring/jmx-export.md.
   #
-  # Listens on 8081, not 8080 - the hawtio-proxy service below takes 8080 instead, since
-  # that's what adds the login wall. Not reachable at all without going through it.
+  # The integrated nginx gateway exposes authenticated access on port 8080.
   #
   # Deliberately has no depends_on: Hawtio doesn't need master/monitor/mover to be
   # running (or even compose-managed) at startup, just reachable when you add a
   # connection, so starting it alone never pulls/builds the other images.
   hawtio:
+    volumes:
+      - "${ECPDS_ROOT_PATH:-}/etc/ecpds:/etc/ecpds:ro"
     container_name: hawtio
     hostname: ecpds-hawtio
     network_mode: host
     image: ${ECPDS_REPOSITORY:-ecpds}/hawtio:${TAG:-latest}
     restart: unless-stopped
     environment:
-      HAWTIO_PORT: 8081
+      HAWTIO_USER: ${HAWTIO_USER:-hawtio}
+      HAWTIO_PASSWORD: ${HAWTIO_PASSWORD:-hawtio2021}
       HAWTIO_PRESET_CONNECTIONS: >-
         master=http://localhost:2062/jolokia,
         mover=http://localhost:4062/jolokia,
         monitor=http://localhost:3062/jolokia
       JAVA_OPTS: "-Dhawtio.proxyAllowlist=localhost,127.0.0.1"
-
-  # HTTP Basic Auth gatekeeper in front of Hawtio - our own image runs Hawtio with its
-  # built-in authentication left disabled (io.hawt.embedded.Main.call() forces
-  # hawtio.authenticationEnabled=false when unset), so Hawtio's own login can't be relied
-  # on here. This nginx sidecar is the actual access control: nothing reaches Hawtio
-  # without passing Basic Auth first. Requires HAWTIO_USER/HAWTIO_PASSWORD in your shell
-  # environment (not committed here) - refuses to start without them.
-  hawtio-proxy:
-    container_name: hawtio-proxy
-    network_mode: host
-    image: nginx:alpine
-    restart: unless-stopped
-    environment:
-      HAWTIO_USER: ${HAWTIO_USER:-hawtio}
-      HAWTIO_PASSWORD: ${HAWTIO_PASSWORD:-hawtio2021}
-    entrypoint:
-      - sh
-      - -c
-      - |
-        set -e
-        if [ -z "$$HAWTIO_USER" ] || [ -z "$$HAWTIO_PASSWORD" ]; then
-          echo "ERROR: HAWTIO_USER/HAWTIO_PASSWORD must both be set - refusing to start" \
-               "an unauthenticated gateway to Hawtio." >&2
-          exit 1
-        fi
-        apk add --no-cache openssl > /dev/null
-        printf '%s:%s\n' "$$HAWTIO_USER" "$$(openssl passwd -apr1 "$$HAWTIO_PASSWORD")" \
-          > /etc/nginx/.htpasswd
-        cat > /etc/nginx/conf.d/default.conf <<'EOF'
-        server {
-          listen 8080;
-          location / {
-            auth_basic "Hawtio";
-            auth_basic_user_file /etc/nginx/.htpasswd;
-            proxy_pass http://localhost:8081;
-            proxy_set_header Host $$host;
-          }
-        }
-        EOF
-        exec nginx -g 'daemon off;'
-    depends_on:
-      - hawtio

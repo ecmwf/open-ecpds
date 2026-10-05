@@ -312,7 +312,7 @@ stop-ai: ## Stop the AI service (~)
 	@$(call check-docker)
 	@cd run/bin/ecpds && $(MAKE) down svc=ai
 
-start-hawtio: ## Build and start the Hawtio JMX web console, behind its Basic Auth gateway (~)
+start-hawtio: ## Build and start the Hawtio JMX web console, with its integrated Basic Auth gateway (~)
 	@$(call check-docker)
 	@echo "NOTE: using the fixed local-testing credentials hawtio/hawtio2021 and"; \
 	echo "jolokia/jolokia2021 (same convention as the monitor UI's admin/admin2021)"; \
@@ -325,14 +325,14 @@ start-hawtio: ## Build and start the Hawtio JMX web console, behind its Basic Au
 		jhost=host.docker.internal; \
 	fi; \
 	[ -n "$$jhost" ] && echo "Hawtio preset connections target: $$jhost"; \
-	cd run/bin/ecpds && HAWTIO_JOLOKIA_HOST="$$jhost" $(MAKE) up svc="hawtio hawtio-proxy"
+	cd run/bin/ecpds && HAWTIO_JOLOKIA_HOST="$$jhost" $(MAKE) up svc=hawtio
 	@printf "\n$(GREEN)Hawtio:$(RESET) http://localhost:8080/hawtio  (login: %s / %s)\n" \
 		"$${HAWTIO_USER:-hawtio}" "$${HAWTIO_PASSWORD:-hawtio2021}"
 	@printf "$(GREEN)Connect/Remote page pre-filled:$(RESET) http://localhost:8080/hawtio/connect/remote\n"
 
-stop-hawtio: ## Stop the Hawtio JMX web console and its gateway (~)
+stop-hawtio: ## Stop the Hawtio JMX web console and its integrated gateway (~)
 	@$(call check-docker)
-	@cd run/bin/ecpds && $(MAKE) down svc="hawtio hawtio-proxy"
+	@cd run/bin/ecpds && $(MAKE) down svc=hawtio
 
 start-backend: ## Build and start both database and AI services (~)
 	@$(MAKE) start-db
