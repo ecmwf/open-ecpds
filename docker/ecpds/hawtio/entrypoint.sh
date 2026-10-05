@@ -8,6 +8,14 @@ for envfile in default/hawtio.cnf hawtio.cnf; do
 done
 export HAWTIO_PRESET_CONNECTIONS
 
+gateway_port=${HAWTIO_GATEWAY_PORT:-8080}
+if [[ ! "$gateway_port" =~ ^[0-9]{1,5}$ ]] ||
+    (( 10#$gateway_port < 1 || 10#$gateway_port > 65535 || 10#$gateway_port == 8081 )); then
+    echo "HAWTIO_GATEWAY_PORT must be between 1 and 65535, excluding private Jetty port 8081." >&2
+    exit 1
+fi
+gateway_port=$((10#$gateway_port))
+
 : "${HAWTIO_USER:?Set HAWTIO_USER for the gateway login}"
 if [[ "$HAWTIO_USER" == *:* || "$HAWTIO_USER" == *$'\n'* || "$HAWTIO_USER" == *$'\r'* ]]; then
     echo "HAWTIO_USER must not contain a colon or a newline." >&2
@@ -43,6 +51,7 @@ http {
     }
 }
 EOF
+sed -i "s/listen 8080;/listen $gateway_port;/" /run/hawtio/nginx.conf
 nginx -t -c /run/hawtio/nginx.conf
 
 java_pid=

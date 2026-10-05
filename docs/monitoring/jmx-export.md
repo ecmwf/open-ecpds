@@ -102,7 +102,7 @@ want a newer version, you'll need to fetch it by URL instead of by Maven coordin
    Both the deployment and local development Compose files use this integrated gateway.
 
    **Single-container deployment:** nginx is now installed inside `ecpds/hawtio`.
-   Its authenticated gateway listens on port **8080**; Jetty is always bound to
+   Its authenticated gateway defaults to port **8080** (`HAWTIO_GATEWAY_PORT`); Jetty is always bound to
    **127.0.0.1:8081**, regardless of supplied `HAWTIO_HOST`/`HAWTIO_PORT` settings.
    The entrypoint supervises both processes and stops the container if either exits.
    Standalone deployments must set `HAWTIO_USER` and either `HAWTIO_PASSWORD` or
@@ -116,6 +116,7 @@ want a newer version, you'll need to fetch it by URL instead of by Maven coordin
 
    ```sh
    HAWTIO_USER="hawtio"
+   HAWTIO_GATEWAY_PORT=8080
    HAWTIO_PASSWORD="replace-with-a-strong-password"
    HAWTIO_PRESET_CONNECTIONS="master=http://localhost:2062/jolokia,monitor=http://localhost:3062/jolokia,mover=http://localhost:4062/jolokia"
    JAVA_OPTS="-Dhawtio.proxyAllowlist=localhost,127.0.0.1"
@@ -135,6 +136,11 @@ want a newer version, you'll need to fetch it by URL instead of by Maven coordin
    rather than replaced with a generated password file.
    After editing settings, restart the Hawtio container/service; no image rebuild is
    needed for subsequent configuration changes.
+
+   To use another gateway port with host networking, set `HAWTIO_GATEWAY_PORT=6082`
+   in `hawtio.cnf` and restart. Valid ports are 1–65535 except private Jetty port 8081.
+   With bridged networking, also update the published container port in Compose
+   (for example `"6082:6082"`), or leave the gateway at 8080 and publish `"6082:8080"`.
 
    When upgrading from the two-container setup, stop/remove the old `hawtio-proxy`
    container (and disable its systemd service, if present) before starting the new image,
@@ -157,7 +163,7 @@ want a newer version, you'll need to fetch it by URL instead of by Maven coordin
    port needs to be published to the host for Jolokia, since Hawtio reaches the other
    containers directly over the `backbone` network (or `localhost`, for the Linux dev
    stack, which uses host networking throughout). On every platform, Jetty listens on
-   loopback port `8081` and the integrated gateway listens on `8080`.
+   loopback port `8081` and the integrated gateway defaults to `8080`.
    Note: this is upstream Hawtio behaviour, not something this image controls — on every
    fresh visit to the Hawtio home page (i.e. whenever there's no `?con=` in the URL),
    Hawtio doesn't just list the preset connections, it immediately opens each one as a
