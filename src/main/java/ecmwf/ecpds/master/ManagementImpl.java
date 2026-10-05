@@ -4137,7 +4137,8 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                 // address-keyed getGeoLocations() - see ProxyHostStatus's own javadoc for why.
                 final var geo = _resolveProxyHostLocation(fullyLoadedProxyHost);
                 result.add(new ProxyHostStatus(proxyHost.getName(), proxyHost.getHost(), connected, root,
-                        geo != null ? geo.latitude() : null, geo != null ? geo.longitude() : null));
+                        geo != null ? geo.latitude() : null, geo != null ? geo.longitude() : null,
+                        fullyLoadedProxyHost.getNickname()));
             }
             return result.toArray(new ProxyHostStatus[0]);
         } catch (final Exception e) {

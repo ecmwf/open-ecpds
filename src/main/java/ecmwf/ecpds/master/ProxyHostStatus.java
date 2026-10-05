@@ -56,9 +56,11 @@ import java.io.Serializable;
  *            this Proxy Host's own resolved latitude, or {@code null} if unresolved
  * @param longitude
  *            this Proxy Host's own resolved longitude, or {@code null} if unresolved
+ * @param nickname
+ *            the Proxy Host's display nickname ({@code HOS_NICKNAME})
  */
 public record ProxyHostStatus(String name, String address, boolean connected, String root, Double latitude,
-        Double longitude) implements Serializable {
+        Double longitude, String nickname) implements Serializable {
 
     private static final long serialVersionUID = 1L;
 }

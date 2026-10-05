@@ -502,6 +502,7 @@ public class GlobeWebSocket implements WebSocketListener {
             if (proxyHost.latitude() != null && proxyHost.longitude() != null) {
                 final var proxyHostNode = JSON.createObjectNode();
                 proxyHostNode.put("name", proxyHost.name());
+                proxyHostNode.put("nickname", proxyHost.nickname());
                 proxyHostNode.put("lat", proxyHost.latitude());
                 proxyHostNode.put("lon", proxyHost.longitude());
                 proxyHostNode.put("connected", proxyHost.connected());

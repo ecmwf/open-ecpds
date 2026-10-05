@@ -1273,7 +1273,7 @@
     function moverOutlineColor(connected) {
         return connected ? Cesium.Color.WHITE : Cesium.Color.WHITE.withAlpha(0.35);
     }
-    function upsertMover(name, lat, lon, connected) {
+    function upsertMover(name, lat, lon, connected, nickname) {
         var existing = movers[name];
         if (existing && existing.removeTimeout) {
             clearTimeout(existing.removeTimeout);
@@ -1301,6 +1301,7 @@
                 existing.point.outlineColor = moverOutlineColor(connected);
             }
         }
+        movers[name].label = nickname && nickname.trim() ? nickname.trim() + " (" + name + ")" : name;
     }
 
     // Aggregates every transfer currently reported for one Host (or, in country view, every transfer to every
@@ -1534,7 +1535,7 @@
         var byMover = Object.create(null);
         (proxyHosts || []).forEach(function (p) {
             if (p && p.name && typeof p.lat === "number" && typeof p.lon === "number") {
-                byMover[p.name] = { lat: p.lat, lon: p.lon, connected: !!p.connected };
+                byMover[p.name] = { lat: p.lat, lon: p.lon, connected: !!p.connected, nickname: p.nickname };
             }
         });
         var byCountry = Object.create(null);
@@ -1572,7 +1573,7 @@
         // comment), so this ordering only still matters as a fallback for genuine GeoIP coincidences.
         Object.keys(byMover).forEach(function (name) {
             var m = byMover[name];
-            upsertMover(name, m.lat, m.lon, m.connected);
+            upsertMover(name, m.lat, m.lon, m.connected, m.nickname);
         });
         // A Continental Mover only disappears from the globe once its Proxy Host is disabled/deleted - not merely
         // because it currently has no traffic, and not merely because it is not currently connected (it still
@@ -1794,7 +1795,7 @@
             var m = movers[primitive.moverName];
             var mergedHost = hosts[primitive.moverName];
             var suffix = m && !m.connected ? " (not connected)" : (mergedHost ? " — transfer in progress" : "");
-            hoverTooltip.textContent = primitive.moverName + suffix;
+            hoverTooltip.textContent = (m ? m.label : primitive.moverName) + suffix;
             hoverTooltip.style.left = (movement.endPosition.x + 14) + "px";
             hoverTooltip.style.top = (movement.endPosition.y + 10) + "px";
             hoverTooltip.style.display = "block";
