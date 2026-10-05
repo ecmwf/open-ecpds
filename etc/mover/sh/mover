@@ -136,6 +136,18 @@ fi
 ###################################################################
 if [ -n "$JOLOKIA_PORT" ]; then
   JOLOKIA_OPTS="port=$JOLOKIA_PORT,host=${JOLOKIA_HOST:-0.0.0.0}"
+  if [ -n "${JOLOKIA_POLICY_LOCATION:-}" ]; then
+    case "$JOLOKIA_POLICY_LOCATION" in
+      *[!a-zA-Z0-9_./:-]*) echo "Invalid JOLOKIA_POLICY_LOCATION: use a file:/absolute/path URL without spaces" >&2; exit 1 ;;
+      file:/*) ;;
+      *) echo "JOLOKIA_POLICY_LOCATION must be a file:/absolute/path URL" >&2; exit 1 ;;
+    esac
+    if [ ! -f "${JOLOKIA_POLICY_LOCATION#file:}" ] || [ ! -r "${JOLOKIA_POLICY_LOCATION#file:}" ]; then
+      echo "Jolokia policy file is missing or unreadable: $JOLOKIA_POLICY_LOCATION" >&2
+      exit 1
+    fi
+    JOLOKIA_OPTS=$JOLOKIA_OPTS",policyLocation=$JOLOKIA_POLICY_LOCATION"
+  fi
   if [ -n "$JOLOKIA_USER" ]; then
     JOLOKIA_OPTS=$JOLOKIA_OPTS",user=$JOLOKIA_USER,password=$JOLOKIA_PASSWORD"
   fi

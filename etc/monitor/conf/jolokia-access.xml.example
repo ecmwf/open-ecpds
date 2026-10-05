@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Opt-in TLS termination example. Replace the origin before enabling.
+     Restrict HTTP agent access to trusted hosts; keep authentication enabled.
+     Merge with existing policies rather than replacing their restrictions. -->
+<restrict>
+  <cors>
+    <allow-origin>https://hawtio.example.com:6082</allow-origin>
+    <strict-checking/>
+    <ignore-scheme/>
+  </cors>
+</restrict>
