@@ -78,6 +78,7 @@ import jakarta.ws.rs.core.UriInfo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.io.EofException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ecmwf.common.database.DataFile;
@@ -3551,6 +3552,9 @@ public final class RESTServer {
         public void write(final OutputStream out) throws IOException, WebApplicationException {
             try {
                 _copyFromProxy(out, session, proxy, mediaRequest, startTime, fullLength);
+            } catch (final EofException e) {
+                _log.debug("Download client disconnected: user={}, remote={}, reason={}", session.getUser(),
+                        mediaRequest.remoteAddr, e.getMessage());
             } catch (final IOException e) {
                 throw new WebApplicationException(e, Response.status(Response.Status.SERVICE_UNAVAILABLE)
                         .entity("File temporarily unavailable: " + e.getMessage()).type(MediaType.TEXT_PLAIN).build());
@@ -3643,6 +3647,9 @@ public final class RESTServer {
                 // End with multipart boundary.
                 println(out, "");
                 println(out, "--" + MULTIPART_BOUNDARY + "--");
+            } catch (final EofException e) {
+                _log.debug("Download client disconnected: user={}, remote={}, reason={}", session.getUser(),
+                        mediaRequest.remoteAddr, e.getMessage());
             } catch (final IOException e) {
                 throw new WebApplicationException(e, Response.status(Response.Status.SERVICE_UNAVAILABLE)
                         .entity("File temporarily unavailable: " + e.getMessage()).type(MediaType.TEXT_PLAIN).build());
