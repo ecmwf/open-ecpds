@@ -52,6 +52,29 @@ http {
 }
 EOF
 sed -i "s/listen 8080;/listen $gateway_port;/" /run/hawtio/nginx.conf
+if [[ -n "${HAWTIO_TLS_KEYSTORE:-}" ]]; then
+    pkcs12_options=()
+    case "${HAWTIO_TLS_LEGACY:-false}" in
+        true) pkcs12_options=(-legacy) ;;
+        false) ;;
+        *) echo "HAWTIO_TLS_LEGACY must be true or false." >&2; exit 1 ;;
+    esac
+    if [[ -n "${KEYSTORE_PASSWORD_FILE:-}" ]]; then
+        KEYSTORE_PASSWORD=$(cat "$KEYSTORE_PASSWORD_FILE")
+    fi
+    : "${KEYSTORE_PASSWORD:?Set KEYSTORE_PASSWORD or KEYSTORE_PASSWORD_FILE for HTTPS}"
+    export KEYSTORE_PASSWORD
+    openssl pkcs12 "${pkcs12_options[@]}" -in "$HAWTIO_TLS_KEYSTORE" -passin env:KEYSTORE_PASSWORD \
+        -clcerts -nokeys -out /run/hawtio/certificate.pem
+    openssl pkcs12 "${pkcs12_options[@]}" -in "$HAWTIO_TLS_KEYSTORE" -passin env:KEYSTORE_PASSWORD \
+        -cacerts -nokeys -out /run/hawtio/chain.pem
+    cat /run/hawtio/chain.pem >> /run/hawtio/certificate.pem
+    openssl pkcs12 "${pkcs12_options[@]}" -in "$HAWTIO_TLS_KEYSTORE" -passin env:KEYSTORE_PASSWORD \
+        -nocerts -nodes -out /run/hawtio/key.pem
+    unset KEYSTORE_PASSWORD
+    sed -i "s/listen $gateway_port;/listen $gateway_port ssl;/" /run/hawtio/nginx.conf
+    sed -i '/        location \/ {/i\        ssl_certificate /run/hawtio/certificate.pem;\n        ssl_certificate_key /run/hawtio/key.pem;\n        ssl_protocols TLSv1.2 TLSv1.3;' /run/hawtio/nginx.conf
+fi
 nginx -t -c /run/hawtio/nginx.conf
 
 java_pid=
