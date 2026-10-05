@@ -28,9 +28,6 @@ files):
 | | [ftp://127.0.0.1:4021](ftp://127.0.0.1:4021) | test/test2021 |
 | MQTT Broker | mqtt://127.0.0.1:4883 | test/test2021 |
 | Virtual FTP Server | [ftp://127.0.0.1:2021](ftp://127.0.0.1:2021) | admin/admin2021 |
-| JMX Interfaces | [http://127.0.0.1:2062](http://127.0.0.1:2062) | master/admin |
-| | [http://127.0.0.1:3062](http://127.0.0.1:3062) | monitor/admin |
-| | [http://127.0.0.1:4062](http://127.0.0.1:4062) | mover/admin |
 
 The Monitoring interface is available on port **3443** and presents a login screen prior
 to authentication.

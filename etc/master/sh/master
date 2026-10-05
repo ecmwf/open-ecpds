@@ -121,15 +121,53 @@ JAVA_OPTS=$JAVA_OPTS" -Dhibernate.hbm.xml='$dir_conf/hibernate.hbm.xml'"
 ##################
 ## Starter options
 ##################
-JAVA_OPTS=$JAVA_OPTS" -Decmwf.common.starter.properties='$dir_conf/starter.properties'"
-JAVA_OPTS=$JAVA_OPTS" -Decmwf.common.starter.listenAddress='$INTERNAL_ADDRESS'"
-JAVA_OPTS=$JAVA_OPTS" -Decmwf.common.starter.port='$PORT_JMX'"
 JAVA_OPTS=$JAVA_OPTS" -Decmwf.common.starter.name=ecmwf.ecpds.master.MasterServer"
 JAVA_OPTS=$JAVA_OPTS" -Decmwf.common.starter.domain=ECpdsMaster"
 JAVA_OPTS=$JAVA_OPTS" -Decmwf.common.starter.conf='$dir_conf'"
 JAVA_OPTS=$JAVA_OPTS" -Decmwf.common.starter.ext='$dir_lib/ext'"
 JAVA_OPTS=$JAVA_OPTS" -Decmwf.common.starter.tmp='$dir_tmp'"
 JAVA_OPTS=$JAVA_OPTS" -Decmwf.common.starter.debug=no"
+
+###############################################################
+## Optional: expose the platform MBeanServer (required if you
+## also enable PROMETHEUS_JMX_PORT below, since the Prometheus
+## JMX agent only reads the platform MBeanServer, not the
+## dedicated one Starter creates when this is left unset)
+###############################################################
+if [ -n "$USE_JCONSOLE" ]; then
+  JAVA_OPTS=$JAVA_OPTS" -Decmwf.common.starter.useJConsole='$USE_JCONSOLE'"
+fi
+
+###################################################################
+## Optional: attach the Jolokia JVM agent (JMX-over-HTTP/JSON), so a
+## Hawtio web console can browse/operate every MBeanService exposed
+## by this server. Works regardless of USE_JCONSOLE, since Jolokia
+## merges every MBeanServer it finds in the JVM. Set JOLOKIA_PORT to
+## enable, and optionally JOLOKIA_HOST to bind to a specific address
+## (default: 0.0.0.0). Strongly recommended: also set JOLOKIA_USER and
+## JOLOKIA_PASSWORD, otherwise anyone who can reach this port can read
+## and invoke every MBean with no authentication at all. Agent jar is
+## fetched by Maven at build time - see docs/monitoring/jmx-export.md.
+###################################################################
+if [ -n "$JOLOKIA_PORT" ]; then
+  JOLOKIA_OPTS="port=$JOLOKIA_PORT,host=${JOLOKIA_HOST:-0.0.0.0}"
+  if [ -n "$JOLOKIA_USER" ]; then
+    JOLOKIA_OPTS=$JOLOKIA_OPTS",user=$JOLOKIA_USER,password=$JOLOKIA_PASSWORD"
+  fi
+  JAVA_OPTS=$JAVA_OPTS" -javaagent:$dir_lib/agents/jolokia-agent-jvm-javaagent.jar=$JOLOKIA_OPTS"
+fi
+
+#####################################################################
+## Optional: attach the Prometheus JMX exporter so Grafana can graph
+## the same metrics. Only sees the platform MBeanServer, so requires
+## USE_JCONSOLE=true above. Set PROMETHEUS_JMX_PORT to enable, and
+## optionally PROMETHEUS_JMX_HOST to bind to a specific address
+## (default: 0.0.0.0). Agent jar is fetched by Maven at build time -
+## see docs/monitoring/jmx-export.md.
+#####################################################################
+if [ -n "$PROMETHEUS_JMX_PORT" ]; then
+  JAVA_OPTS=$JAVA_OPTS" -javaagent:$dir_lib/agents/jmx_prometheus_javaagent.jar=${PROMETHEUS_JMX_HOST:-0.0.0.0}:$PROMETHEUS_JMX_PORT:$dir_conf/jmx_exporter.yml"
+fi
 
 ##############
 ## TTL options

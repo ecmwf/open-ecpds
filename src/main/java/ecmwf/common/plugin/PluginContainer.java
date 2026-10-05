@@ -360,7 +360,7 @@ public final class PluginContainer implements MBeanService, MonitorCallback {
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
         try {
-            if ("CallerGone".equals(attributeName)) {
+            if ("IsCallerGone".equals(attributeName)) {
                 return _callerGone;
             }
             if ("PluginCount".equals(attributeName)) {
@@ -401,14 +401,14 @@ public final class PluginContainer implements MBeanService, MonitorCallback {
                 through ECaccess. Plugins are activated and managed by the plugin \
                 container, which communicates with the ECaccess runtime and provides \
                 plugins with access to ECMWF services. This MBean provides operations \
-                to manage and monitor the plugins.""",
-                new MBeanAttributeInfo[] {
-                        new MBeanAttributeInfo("PluginCount", "java.lang.Integer",
-                                "PluginCount: number of plugins loaded.", true, false, false),
-                        new MBeanAttributeInfo("ActivePluginCount", "java.lang.Integer",
-                                "PluginCount: number of active plugins.", true, false, false),
-                        new MBeanAttributeInfo("CallerGone", "java.lang.Boolean", "CallerGone: the caller has gone.",
-                                true, false, false) },
+                to manage and monitor the plugins.""", new MBeanAttributeInfo[] {
+                new MBeanAttributeInfo("PluginCount", "java.lang.Integer", "PluginCount: number of plugins loaded.",
+                        true, false, false),
+                new MBeanAttributeInfo("ActivePluginCount", "java.lang.Integer",
+                        "ActivePluginCount: number of plugins currently in ON status.", true, false, false),
+                new MBeanAttributeInfo("IsCallerGone", "java.lang.Boolean",
+                        "IsCallerGone: whether the controlling process has signalled it is going away (see notifyCallerGone/notifyCallerBack).",
+                        true, false, false) },
                 new MBeanConstructorInfo[0],
                 new MBeanOperationInfo[] {
                         new MBeanOperationInfo("stopPlugin", "stopPlugin(ref): stop the plugin of reference ref",
@@ -417,7 +417,7 @@ public final class PluginContainer implements MBeanService, MonitorCallback {
                                 params, "void", MBeanOperationInfo.ACTION),
                         new MBeanOperationInfo("loadPlugin", "loadPlugin(ref): load the plugin of reference ref",
                                 params, "void", MBeanOperationInfo.ACTION),
-                        new MBeanOperationInfo("loadPlugins", "loadPlugin(): load all the plugins", null, "void",
+                        new MBeanOperationInfo("loadPlugins", "loadPlugins(): load all the plugins", null, "void",
                                 MBeanOperationInfo.ACTION),
                         new MBeanOperationInfo("notifyCallerBack",
                                 "notifyCallerBack(isReseted): notify the plugins the caller is back",

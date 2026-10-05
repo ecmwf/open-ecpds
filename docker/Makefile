@@ -56,7 +56,7 @@ ARCH ?= $(NATIVE_ARCH)
 HTTPS_ACCESS := $(shell curl -s --max-time 2 -I https://google.com | sed 's/^[^ ]*  *\([0-9]\).*/\1/; 1q')
 
 # Output the help for each task
-.PHONY: help all get-rpms get-licenses build-db build-ai build-backend build build-sa get-sa get-cli build-cli images bk-images rm-images clean .clean login push push-sa push-cli push-native push-sa-native push-cli-native manifest sa-manifest cli-manifest info
+.PHONY: help all get-rpms get-licenses build-db build-ai build-backend build build-sa get-sa get-cli build-cli get-hawtio build-hawtio images bk-images rm-images clean .clean login push push-sa push-cli push-native push-sa-native push-cli-native manifest sa-manifest cli-manifest info
 
 # Display help by default
 .DEFAULT_GOAL := help
@@ -110,6 +110,21 @@ build-ai: .https-access ## Build AI images for VS Code and Eclipse debugging/run
 
 build-java: .https-access ## Build the GraalVM base image
 	@$(MAKE) .build app=java tag=graalvm
+
+get-hawtio: ## Copy resolved Hawtio jars into the image build context
+	@if ! ls ../lib/hawtio/hawtio-embedded-*.jar >/dev/null 2>&1; then \
+		printf "$(RED)** Hawtio jars not staged — run 'mvn package -pl ecpds-core' first **$(RESET)\n" && exit 1; \
+	fi
+	mkdir -p ecpds/hawtio/lib
+	rm -f ecpds/hawtio/lib/*.jar ecpds/hawtio/lib/*.war
+	cp -f ../lib/hawtio/*.jar ../lib/hawtio/*.war ecpds/hawtio/lib/
+
+build-hawtio: .https-access get-hawtio ## Build the Hawtio JMX web console image (same arch as ecpds/java:graalvm)
+	@java_arch=$$($(DOCKER) image inspect ecpds/java:graalvm --format '{{.Architecture}}' 2>/dev/null); \
+	if [ -z "$$java_arch" ]; then \
+		printf "$(RED)** ecpds/java:graalvm not found — run 'make build-java' first **$(RESET)\n" && exit 1; \
+	fi; \
+	$(MAKE) .build app=hawtio tag=$(TAG) ARCH=$$java_arch
 
 build: build-db build-ai ## Build database, AI, Java, and service images
 	@$(MAKE) .build app=java tag=graalvm

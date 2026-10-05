@@ -794,6 +794,9 @@ These options help fine-tune the http transfer module and are accessible via the
 ### http.allowCircularRedirects
 If enabled, permits the HTTP client to automatically follow redirects even if they form a circular loop, where a request redirects to a URL that has previously been visited in the same redirect chain.
 
+### http.allowCrossAuthorityAuthRedirect
+If enabled (default), redirects to a different scheme/host/port are still followed even when the request carries an Authorization or Cookie header, restoring the behaviour of every httpclient5 version before 5.6. Disable to opt into the newer, more restrictive default, which refuses to follow such a redirect at all rather than risk forwarding credentials to a different authority.
+
 ### http.attribute
 Specify the anchor element within the parsed HTML document to use for extracting filenames. For instance, using "href" selects all elements with an "href" attribute. By default, it retrieves the text content of each element, excluding HTML tags, while including the textual content of its descendant elements.
 
@@ -1258,6 +1261,9 @@ Allow specifying a HTTP proxy when connecting to the continental data mover.
 
 ### proxy.modulo
 Specify the number of unsuccessful data transmission on the continental data mover before trying from the local data mover (once in every "proxy.modulo" attempts).
+
+### proxy.root
+The continental data mover reached through this Proxy Host identifies itself to the MasterServer using its own [Login] "root" setting, which does not have to match this Host's name. Set this option to that exact root value so the MasterServer can tell which continental data mover this Proxy Host actually points to - used to know whether it is currently alive and, together with this Host's own address, to place it correctly on the "Live ECPDS Earth" globe. If left empty and this is the only enabled Proxy Host, its address is used anyway, since there is no other candidate; with more than one enabled Proxy Host, this must be set on each one, or none of the unconfigured ones will get a marker.
 
 ### proxy.timeout
 Specify the connect timeout duration for connecting to the continental data mover HTTP URL.

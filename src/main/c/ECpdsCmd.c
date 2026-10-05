@@ -915,7 +915,7 @@ int usage(void) {
   fprintf(stdout, "       ecpds [-expected|-started|-completed|-reset] [-at "
                   "arg] -metadata metadata (**)\n");
   fprintf(stdout, "       ecpds -scheduler [-start|-stop|-check] [-destination "
-                  "name] [-streams arg] [-timeout arg]] (***)\n");
+                  "name] [-streams arg] (***)\n");
   fprintf(stdout, "       ecpds -waitfor groupby (****)\n");
   fprintf(stdout, "\n");
   fprintf(stdout, "  DataFiles unicity is based on the target, destination, "
@@ -953,8 +953,6 @@ int usage(void) {
   fprintf(stdout, " -user        {arg} - data user login for authentication\n");
   fprintf(stdout, " -pass        {arg} - data user password for authentication\n");
   fprintf(stdout, " -streams     {arg} - maximum number of retrieval streams "
-                  "(scheduler/check)\n");
-  fprintf(stdout, " -timeout     {arg} - timeout for each retrieval stream "
                   "(scheduler/check)\n");
   fprintf(stdout, " -index             - in groupby mode source file is index "
                   "of source files\n");
@@ -1067,7 +1065,7 @@ int main(int argc, char *argv[]) {
        *priority = NULL, *lifetime = NULL, *at = NULL, *metadata = NULL,
        *original = NULL, *target = NULL, *version = NULL, *identity = NULL,
        *opts = NULL, *ecproxy = NULL, *groupby = NULL, *waitfor = NULL,
-       *streams = NULL, *timeout = NULL, *bufferMon = NULL;
+       *streams = NULL, *bufferMon = NULL;
 
   struct sigaction act, oact;
 
@@ -1173,10 +1171,6 @@ int main(int argc, char *argv[]) {
       if (--argc < 1)
         return usage();
       streams = *(++argv);
-    } else if (strcmp(*argv, "-timeout") == 0) {
-      if (--argc < 1)
-        return usage();
-      timeout = *(++argv);
     } else if (strcmp(*argv, "-priority") == 0) {
       long int p = 0;
       if (--argc < 1)
@@ -1324,8 +1318,8 @@ int main(int argc, char *argv[]) {
     return usage();
   }
 
-  if (!(scheduler && check) && (timeout != NULL || streams != NULL)) {
-    error("-timeout and -streams are only valid with '-scheduler -check'");
+  if (!(scheduler && check) && streams != NULL) {
+    error("-streams is only valid with '-scheduler -check'");
     return usage();
   }
 
@@ -1718,7 +1712,6 @@ int main(int argc, char *argv[]) {
       }
     } else {
       if (sendCommand(sd, "STREAMS", streams) == -1 ||
-          sendCommand(sd, "TIMEOUT", timeout) == -1 ||
           sendAction(sd, "SCHEDULERCHECK") == -1 ||
           receiveCommand(sd, "MESSAGE", message, 512) == -1)
         goto clean;

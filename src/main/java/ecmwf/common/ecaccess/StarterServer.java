@@ -263,10 +263,10 @@ public abstract class StarterServer extends CallBackObject
                 components, including the plugins container \
                 and the Management Bean interfaces.""",
                 new MBeanAttributeInfo[] {
-                        new MBeanAttributeInfo("Version", "java.lang.String", "Version: GatewayServer version number.",
-                                true, false, false),
+                        new MBeanAttributeInfo("Version", "java.lang.String",
+                                "Version: this server's application version number.", true, false, false),
                         new MBeanAttributeInfo("StartDate", "java.util.Date",
-                                "StartDate: when the gateway has been started.", true, false, false) },
+                                "StartDate: when this server process was started.", true, false, false) },
                 new MBeanConstructorInfo[0],
                 new MBeanOperationInfo[] { new MBeanOperationInfo("shutdown",
                         "shutdown(graceful,restart): shutdown the application",

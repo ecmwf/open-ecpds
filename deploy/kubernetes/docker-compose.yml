@@ -58,10 +58,16 @@ services:
       # Dedicated to data traffic between the internal components (jmx, rmi)
       INTERNAL_ADDRESS: 0.0.0.0
       # Ports for the Master-Server services
-      PORT_JMX: 2062 # Java Management Extensions (monitoring & management)
       PORT_CALLBACK: 2600 # Java Remote Method Invocation (communication between components)
       PORT_ECPDS: 2640 # Dedicated service for ecpds command
       PORT_FTP: 2021 # Virtual FTP Server
+      # Jolokia (JMX-over-HTTP), browsable from the hawtio service below. JOLOKIA_USER/
+      # JOLOKIA_PASSWORD are read from your shell environment (not committed here) -
+      # export them before 'docker compose up', otherwise Jolokia runs with no auth at all.
+      JOLOKIA_PORT: 2062
+      JOLOKIA_HOST: 0.0.0.0
+      JOLOKIA_USER: ${JOLOKIA_USER:-jolokia}
+      JOLOKIA_PASSWORD: ${JOLOKIA_PASSWORD:-jolokia2021}
       # Shared secret for the ecpds CLI <-> Master-Server challenge-response authentication
       # (independent from, and does not need to match, the mover's RCC_SHARED_SECRET)
       CLI_SHARED_SECRET: "dboUz95GH4U8LihvnJPGfBce5/rFJdbYXoZesRXBIyQ="
@@ -85,7 +91,6 @@ services:
       # Miscellaneous parameters
       RETRIEVAL_MAX_SPOOL_SIZE: 50 # Maximum number of parallel retrievals
     ports:
-      - "2062:2062" # JMX
       - "2021:2021" # ftp
       - "60000-60009:60000-60009" # ftp (passive mode)
       - "2640:2640" # ECpds
@@ -119,9 +124,15 @@ services:
       # Dedicated to data traffic between the internal components (jmx, rmi)
       INTERNAL_ADDRESS: ecpds-monitor
       # Ports for the Monitor-Server services
-      PORT_JMX: 3062 # Java Management Extensions (monitoring & management)
       PORT_CALLBACK: 3600 # Java Remote Method Invocation (communication between components)
       PORT_HTTPS: 3443 # Web monitoring interface (https)
+      # Jolokia (JMX-over-HTTP), browsable from the hawtio service below. JOLOKIA_USER/
+      # JOLOKIA_PASSWORD are read from your shell environment (not committed here) -
+      # export them before 'docker compose up', otherwise Jolokia runs with no auth at all.
+      JOLOKIA_PORT: 3062
+      JOLOKIA_HOST: 0.0.0.0
+      JOLOKIA_USER: ${JOLOKIA_USER:-jolokia}
+      JOLOKIA_PASSWORD: ${JOLOKIA_PASSWORD:-jolokia2021}
       # Connectivity to the Master-Server
       MASTER_ADDRESS: ecpds-master
       PORT_MASTER: 2600
@@ -141,7 +152,6 @@ services:
       MASTER_URL_LIST:
       DEFAULT_SOURCE_HOST_ID:
     ports:
-      - "3062:3062" # JMX
       - "3443:3443" # https
       - "3600:3600" # RMI
     volumes:
@@ -173,7 +183,6 @@ services:
       # Dedicated to data traffic between the internal components (jmx, rmi)
       INTERNAL_ADDRESS: ecpds-mover
       # Ports for the Monitor-Server services
-      PORT_JMX: 4062 # Java Management Extensions (monitoring & management)
       PORT_CALLBACK: 4600 # Java Remote Method Invocation (communication between components)
       PORT_HTTP: 4080 # Web data-portal interface (http)
       PORT_HTTPS: 4443 # Web data-portal interface (https)
@@ -182,6 +191,13 @@ services:
       PORT_FTP: 4021 # Data-portal interface (ftp)
       PORT_SSH: 4022 # Data-portal interface (sftp/scp)
       PORT_ECPROXY: 4640 # Dedicated service for ecpds command
+      # Jolokia (JMX-over-HTTP), browsable from the hawtio service below. JOLOKIA_USER/
+      # JOLOKIA_PASSWORD are read from your shell environment (not committed here) -
+      # export them before 'docker compose up', otherwise Jolokia runs with no auth at all.
+      JOLOKIA_PORT: 4062
+      JOLOKIA_HOST: 0.0.0.0
+      JOLOKIA_USER: ${JOLOKIA_USER:-jolokia}
+      JOLOKIA_PASSWORD: ${JOLOKIA_PASSWORD:-jolokia2021}
       # Connectivity to the Master-Server
       MASTER_ADDRESS: ecpds-master
       PORT_MASTER: 2600
@@ -200,7 +216,6 @@ services:
       # Miscellaneous parameters
       OPERATION: "yes" # Set to 'no' to produce random data for missing files (for testing purpose only)
     ports:
-      - "4062:4062" # JMX
       - "4080:4080" # http
       - "4443:4443" # https
       - "4183:4183" # mqtt
@@ -219,6 +234,78 @@ services:
       - backbone
     depends_on:
       - master
+  # Hawtio web UI for browsing/operating the JMX MBeans exposed by Jolokia on
+  # master/monitor/mover (see docs/monitoring/jmx-export.md). Open http://<host>:8080/hawtio
+  # - master/mover/monitor connections are pre-filled (HAWTIO_PRESET_CONNECTIONS below),
+  # using the same JOLOKIA_USER/JOLOKIA_PASSWORD you exported for those services. Note:
+  # Hawtio auto-opens each preset connection as a browser tab on every fresh visit to the
+  # bare /hawtio/ URL (upstream behaviour) - bookmark a specific ?con=<id> URL to avoid that.
+  #
+  # Built from our own image (docker/ecpds/hawtio), not a third-party one - see
+  # docs/monitoring/jmx-export.md for why. Not published to the host directly - only the
+  # hawtio-proxy service below is, since that's what adds the login wall.
+  #
+  # Deliberately has no depends_on: Hawtio doesn't need master/monitor/mover to be
+  # running (or even compose-managed) at startup, just reachable when you add a
+  # connection, so starting it alone never pulls/builds the other images.
+  hawtio:
+    container_name: ecpds-hawtio
+    hostname: ecpds-hawtio
+    image: ${ECPDS_REPOSITORY:-ecpds}/hawtio:${TAG:-latest}
+    restart: on-failure
+    environment:
+      HAWTIO_PRESET_CONNECTIONS: >-
+        master=http://ecpds-master:2062/jolokia,
+        mover=http://ecpds-mover:4062/jolokia,
+        monitor=http://ecpds-monitor:3062/jolokia
+      JAVA_OPTS: "-Dhawtio.proxyAllowlist=ecpds-master,ecpds-monitor,ecpds-mover"
+    networks:
+      - backbone
+
+  # HTTP Basic Auth gatekeeper in front of Hawtio - it ships with JAAS auth disabled by
+  # default, and (as of Hawtio 5.3.0) enabling it via -Dhawtio.authenticationEnabled=true
+  # throws a NullPointerException (io.hawt.system.Authenticator/JAASLoginService wiring is
+  # broken outside a full standalone Jetty distribution), so Hawtio's own login can't be
+  # used here. This nginx sidecar is the actual access control: nothing reaches Hawtio
+  # without passing Basic Auth first. Requires HAWTIO_USER/HAWTIO_PASSWORD in your shell
+  # environment (not committed here) - refuses to start without them.
+  hawtio-proxy:
+    image: nginx:alpine
+    restart: on-failure
+    environment:
+      HAWTIO_USER: ${HAWTIO_USER:-hawtio}
+      HAWTIO_PASSWORD: ${HAWTIO_PASSWORD:-hawtio2021}
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -e
+        if [ -z "$$HAWTIO_USER" ] || [ -z "$$HAWTIO_PASSWORD" ]; then
+          echo "ERROR: HAWTIO_USER/HAWTIO_PASSWORD must both be set - refusing to start" \
+               "an unauthenticated gateway to Hawtio." >&2
+          exit 1
+        fi
+        apk add --no-cache openssl > /dev/null
+        printf '%s:%s\n' "$$HAWTIO_USER" "$$(openssl passwd -apr1 "$$HAWTIO_PASSWORD")" \
+          > /etc/nginx/.htpasswd
+        cat > /etc/nginx/conf.d/default.conf <<'EOF'
+        server {
+          listen 80;
+          location / {
+            auth_basic "Hawtio";
+            auth_basic_user_file /etc/nginx/.htpasswd;
+            proxy_pass http://ecpds-hawtio:8080;
+            proxy_set_header Host $$host;
+          }
+        }
+        EOF
+        exec nginx -g 'daemon off;'
+    ports:
+      - "8080:80"
+    networks:
+      - backbone
+    depends_on:
+      - hawtio
 
 volumes:
     var-lib-ecpds-database:

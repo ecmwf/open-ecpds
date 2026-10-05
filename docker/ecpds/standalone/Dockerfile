@@ -113,13 +113,9 @@ RUN sed -i 's/^ftp=ecmwf\.common\.ftpd\.FtpPlugin/#ftp=ecmwf.common.ftpd.FtpPlug
 # Plugin listen addresses default to ${Login[externalAddress]} = 'ecpds-mover'
 # which resolves to the loopback interface inside the container. Replace with
 # 0.0.0.0 so HTTPS, MQTTS, ECproxy etc. are reachable from outside the container.
-# Also fix ecmwf.common.starter.listenAddress in the startup script (JMX port).
 RUN sed -i \
     's/listenAddress=\${Login\[externalAddress\]}/listenAddress=0.0.0.0/g' \
-    /usr/local/ecpds/mover/conf/ecmwf.properties && \
-    sed -i \
-    "s/-Decmwf.common.starter.listenAddress='\\\$INTERNAL_ADDRESS'/-Decmwf.common.starter.listenAddress='0.0.0.0'/" \
-    /usr/local/ecpds/mover/sh/mover
+    /usr/local/ecpds/mover/conf/ecmwf.properties
 
 # ── MariaDB datadir → /data/db ────────────────────────────────────────────────
 RUN mkdir -p /etc/my.cnf.d && \

@@ -4019,26 +4019,36 @@ public final class TransferScheduler extends MBeanScheduler {
         public MBeanInfo getMBeanInfo() {
             return MBeanManager.addMBeanInfo(super.getMBeanInfo(),
                     "This MBean provides operations to monitor and manage " + "the Destination",
-                    new MBeanAttributeInfo[] {
-                            new MBeanAttributeInfo("DestinationStep", "java.lang.String",
-                                    "DestinationStep: runtime step.", true, false, false),
+                    new MBeanAttributeInfo[] { new MBeanAttributeInfo("DestinationStep", "java.lang.String",
+                            "DestinationStep: current phase of this Destination's scheduling loop (e.g. no pending transfers, processing).",
+                            true, false, false),
                             new MBeanAttributeInfo("RetryCount", "java.lang.Integer",
-                                    "RetryCount: destination retry count.", true, false, false),
+                                    "RetryCount: number of times the transfer on this Destination's active Host has been (re)started.",
+                                    true, false, false),
                             new MBeanAttributeInfo("PendingTransferCount", "java.lang.Integer",
                                     "PendingTransferCount: number of DataTransfer(s) in the queue.", true, false,
                                     false),
-                            new MBeanAttributeInfo("LastTransfer", "java.lang.String", "LastTransfer: last transfer.",
-                                    true, false, false),
+                            new MBeanAttributeInfo("LastTransfer", "java.lang.String",
+                                    "LastTransfer: last successfully completed transfer, as id=status(percent%).", true,
+                                    false, false),
                             new MBeanAttributeInfo("CurrentTransfer", "java.lang.String",
-                                    "NextTransfer: current transfer.", true, false, false),
+                                    "CurrentTransfer: transfer currently being processed by this Destination's scheduler, as id=status(percent%).",
+                                    true, false, false),
                             new MBeanAttributeInfo("CurrentTransfers", "java.lang.String",
-                                    "CurrentTransfers: current transfer(s).", true, false, false),
+                                    "CurrentTransfers: id=status(percent%) report of every transfer currently queued or active for this Destination.",
+                                    true, false, false),
                             new MBeanAttributeInfo("LastFailedTransfer", "java.lang.String",
-                                    "LastFailedTransfer: last failed transfer.", true, false, false),
+                                    "LastFailedTransfer: last transfer that failed, as id=status(percent%).", true,
+                                    false, false),
                             new MBeanAttributeInfo("TransferCount", "java.lang.Integer",
-                                    "TransferCount: transfer count.", true, false, false),
-                            new MBeanAttributeInfo("Inactivity", "java.lang.String", "Inactivity: elapsed time.", true,
-                                    false, false) },
+                                    "TransferCount: number of connections currently active through this Destination's current Host.",
+                                    true, false, false),
+                            new MBeanAttributeInfo("Inactivity", "java.lang.String",
+                                    "Inactivity: time since the transfer queue went empty; the scheduler thread stops itself after 5 minutes idle.",
+                                    true, false, false),
+                            new MBeanAttributeInfo("InactivityMillis", "java.lang.Long",
+                                    "InactivityMillis: same as Inactivity, in milliseconds (null while transfers are active).",
+                                    true, false, false) },
                     new MBeanOperationInfo[0]);
         }
 
@@ -4080,6 +4090,9 @@ public final class TransferScheduler extends MBeanScheduler {
                 }
                 if ("Inactivity".equals(attributeName)) {
                     return _inactivity != -1 ? Format.formatDuration(System.currentTimeMillis() - _inactivity) : null;
+                }
+                if ("InactivityMillis".equals(attributeName)) {
+                    return _inactivity != -1 ? System.currentTimeMillis() - _inactivity : null;
                 }
                 if ("LastFailedTransfer".equals(attributeName)) {
                     final var transfer = getLastFailedTransfer();

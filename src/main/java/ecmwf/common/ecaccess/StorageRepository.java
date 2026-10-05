@@ -233,8 +233,8 @@ public abstract class StorageRepository<O> extends MBeanRepository<O> {
             infos[i] = new MBeanAttributeInfo("StorageThreadStatus_" + i, "java.lang.String",
                     "StorageThreadStatus_" + i + ": status of the storage thread.", true, false, false);
         }
-        infos[infoLength] = new MBeanAttributeInfo("SharedSpoolSize", "int",
-                "SharedSpoolSize: size of the shared spool between workers.", true, false, false);
+        infos[infoLength] = new MBeanAttributeInfo("SharedSpoolSize", "java.lang.Integer",
+                "SharedSpoolSize: number of objects currently queued in the shared spool.", true, false, false);
         return MBeanManager.addMBeanInfo(super.getMBeanInfo(), """
                 The StorageRepository is used to manage a cache \
                 of storage objects. A number of threads are \

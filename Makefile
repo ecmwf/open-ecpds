@@ -127,7 +127,7 @@ dev-container-exists = \
 # Conditional targets based on the environment
 .PHONY: help dev .dev-cntnr .run login rm-dev \
         get-geodb get-licenses build build-sa build-cli cr-login push push-sa push-cli push-native push-sa-native push-cli-native manifest sa-manifest cli-manifest release-tools \
-        start-db stop-db start-ai stop-ai start-backend stop-backend \
+        start-db stop-db start-ai stop-ai start-hawtio stop-hawtio start-backend stop-backend \
         docs docs-embed docs-screenshots docs-preview docs-publish \
         clean info
 
@@ -311,6 +311,28 @@ start-ai: ## Build and start the AI service (~)
 stop-ai: ## Stop the AI service (~)
 	@$(call check-docker)
 	@cd run/bin/ecpds && $(MAKE) down svc=ai
+
+start-hawtio: ## Build and start the Hawtio JMX web console, behind its Basic Auth gateway (~)
+	@$(call check-docker)
+	@echo "NOTE: using the fixed local-testing credentials hawtio/hawtio2021 and"; \
+	echo "jolokia/jolokia2021 (same convention as the monitor UI's admin/admin2021)"; \
+	echo "unless HAWTIO_USER/HAWTIO_PASSWORD/JOLOKIA_USER/JOLOKIA_PASSWORD are exported."
+	@cd docker && $(MAKE) build-hawtio
+	@# On macOS, target the host when master/monitor/mover are not running as containers
+	@# (e.g. launched from an IDE); unused by the Linux compose file (host networking).
+	@jhost="$${HAWTIO_JOLOKIA_HOST:-}"; \
+	if [ -z "$$jhost" ] && [ -z "$$($(DOCKER) ps -q -f name=^master$$ -f name=^monitor$$ -f name=^mover$$)" ]; then \
+		jhost=host.docker.internal; \
+	fi; \
+	[ -n "$$jhost" ] && echo "Hawtio preset connections target: $$jhost"; \
+	cd run/bin/ecpds && HAWTIO_JOLOKIA_HOST="$$jhost" $(MAKE) up svc="hawtio hawtio-proxy"
+	@printf "\n$(GREEN)Hawtio:$(RESET) http://localhost:8080/hawtio  (login: %s / %s)\n" \
+		"$${HAWTIO_USER:-hawtio}" "$${HAWTIO_PASSWORD:-hawtio2021}"
+	@printf "$(GREEN)Connect/Remote page pre-filled:$(RESET) http://localhost:8080/hawtio/connect/remote\n"
+
+stop-hawtio: ## Stop the Hawtio JMX web console and its gateway (~)
+	@$(call check-docker)
+	@cd run/bin/ecpds && $(MAKE) down svc="hawtio hawtio-proxy"
 
 start-backend: ## Build and start both database and AI services (~)
 	@$(MAKE) start-db

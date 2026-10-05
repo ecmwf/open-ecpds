@@ -1,0 +1,15 @@
+#
+# File jmx_exporter.yml
+#
+# Purpose: Prometheus JMX exporter mapping rules for the Master-Server (OpenECPDS)
+#
+# Used only when PROMETHEUS_JMX_PORT is set (see docs/monitoring/jmx-export.md).
+# This default exports every registered MBean attribute as-is; narrow the
+# "pattern" rules below once you know which metrics you actually want in Grafana.
+#
+
+startDelaySeconds: 0
+lowercaseOutputName: false
+lowercaseOutputLabelNames: false
+rules:
+  - pattern: ".*"

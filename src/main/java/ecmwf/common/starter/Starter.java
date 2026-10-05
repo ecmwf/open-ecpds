@@ -59,9 +59,6 @@ import javax.management.ObjectName;
 import javax.management.ReflectionException;
 import javax.management.RuntimeOperationsException;
 
-import com.sun.jdmk.comm.AuthInfo;
-import com.sun.jdmk.comm.HtmlAdaptorServer;
-
 /**
  * The Class Starter.
  */
@@ -83,9 +80,6 @@ public final class Starter implements DynamicMBean {
 
     /** The startDate. */
     private final Date startDate;
-
-    /** The html. */
-    private final HtmlAdaptorServer html;
 
     /** The classPath. */
     private final String classPath;
@@ -142,19 +136,10 @@ public final class Starter implements DynamicMBean {
         final var consoleHandler = new ConsoleHandler();
         consoleHandler.setLevel(Level.ALL);
         _log.addHandler(consoleHandler);
-        // Use either the default MBeanServer accessible from JConsole or the HTTP one!
-        if (get("useJConsole", false)) {
-            mBeanServer = ManagementFactory.getPlatformMBeanServer();
-            html = null;
-        } else {
-            mBeanServer = MBeanServerFactory.createMBeanServer(get("domain", "ECaccessGateway"));
-            // Setting up the HTML adaptor for JMX!
-            html = new HtmlAdaptorServer();
-            html.setListenAddress(get("listenAddress", "127.0.0.1"));
-            html.setPort(Integer.parseInt(get("port", "9082")));
-            html.addUserAuthenticationInfo(new AuthInfo(get("user", "admin"), get("password", "admin")));
-            mBeanServer.registerMBean(html, new ObjectName("Adaptor:name=html"));
-        }
+        // Use either the platform MBeanServer (visible to jconsole/Prometheus) or a
+        // dedicated one (still reachable via a JMX agent such as Jolokia)!
+        mBeanServer = get("useJConsole", false) ? ManagementFactory.getPlatformMBeanServer()
+                : MBeanServerFactory.createMBeanServer(get("domain", "ECaccessGateway"));
         mBeanServer.registerMBean(this, new ObjectName("ECaccess:service=ECStarter"));
         // This is required for OJB in order to find OJB.properties and other OJB
         // configuration files.
@@ -182,9 +167,6 @@ public final class Starter implements DynamicMBean {
             }
         } catch (final Throwable t) {
             _log.log(Level.WARNING, "addShutdownHook", t);
-        }
-        if (html != null) {
-            html.start();
         }
         if (get("start", true)) {
             start();
@@ -229,7 +211,7 @@ public final class Starter implements DynamicMBean {
             if ("ClassPath".equals(attributeName)) {
                 return classPath.replace(File.pathSeparatorChar, ' ').trim();
             }
-            if ("Started".equals(attributeName)) {
+            if ("IsStarted".equals(attributeName)) {
                 return service != null;
             }
             if ("FreeMemory".equals(attributeName)) {
@@ -294,17 +276,19 @@ public final class Starter implements DynamicMBean {
         return new MBeanInfo(this.getClass().getName(),
                 "The ECStarter service can be used to start/stop the "
                         + "software and monitor the Java Virtual Machine (memory).",
-                new MBeanAttributeInfo[] {
-                        new MBeanAttributeInfo("Name", "java.lang.String", "Name: name of the class to instanciate.",
-                                true, false, false),
+                new MBeanAttributeInfo[] { new MBeanAttributeInfo("Name", "java.lang.String",
+                        "Name: fully-qualified class name of the application being started.", true, false, false),
                         new MBeanAttributeInfo("StartDate", "java.util.Date",
-                                "StartDate: when the starter has been started.", true, false, false),
+                                "StartDate: when this Starter process was launched.", true, false, false),
                         new MBeanAttributeInfo("ActiveThreadsCount", "java.lang.Integer",
-                                "ActiveThreadsCount: number of active threads.", true, false, false),
-                        new MBeanAttributeInfo("Started", "java.lang.Boolean",
-                                "Started: application loaded and started.", true, false, false),
+                                "ActiveThreadsCount: number of currently active JVM threads.", true, false, false),
+                        new MBeanAttributeInfo("IsStarted", "java.lang.Boolean",
+                                "IsStarted: whether the target application has been loaded and started.", true, false,
+                                false),
                         new MBeanAttributeInfo("ClassPath", "java.lang.String",
-                                "ClassPath: names of the Java Archive File (JAR).", true, false, false) },
+                                "ClassPath: space-separated list of JAR files on the classpath.", true, false, false),
+                        new MBeanAttributeInfo("FreeMemory", "java.lang.Long",
+                                "FreeMemory: free JVM heap memory, in bytes.", true, false, false) },
                 new MBeanConstructorInfo[0],
                 new MBeanOperationInfo[] {
                         new MBeanOperationInfo("stop", "stop(): active the stop method of " + name,

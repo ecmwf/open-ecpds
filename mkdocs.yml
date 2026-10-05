@@ -175,6 +175,7 @@ nav:
   - Global Reach: global-reach.md
   - Monitoring:
       - Transfer Network Statistics: monitoring/transfer-statistics.md
+      - Exporting JMX to Grafana/Hawtio: monitoring/jmx-export.md
   - API Reference (JavaDocs): api-reference.md
   - REST API: rest-api.md
   - Support: support.md

@@ -852,30 +852,32 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
             return MBeanManager.addMBeanInfo(super.getMBeanInfo(),
                     "The " + getRef() + " plugin allows operators to manage/monitor "
                             + "MS jobs using a standard WEB browser. " + super.getMBeanInfo().getDescription(),
-                    new MBeanAttributeInfo[] {
-                            new MBeanAttributeInfo("Requests", "java.lang.Integer",
-                                    "Requests: number of requests accepted by the server since statsReset() called.",
-                                    true, false, false),
+                    new MBeanAttributeInfo[] { new MBeanAttributeInfo("Requests", "java.lang.Integer",
+                            "Requests: number of requests accepted by the server since resetStatistics() called.", true,
+                            false, false),
                             new MBeanAttributeInfo("RequestsActive", "java.lang.Integer",
-                                    "RequestsActive: number of active requests currently open since statsReset() called.",
+                                    "RequestsActive: number of requests currently being processed by the server.", true,
+                                    false, false),
+                            new MBeanAttributeInfo("RequestsActiveMax", "java.lang.Integer",
+                                    "RequestsActiveMax: maximum number of active requests opened simultaneously since resetStatistics() called.",
                                     true, false, false),
                             new MBeanAttributeInfo("Responses1xx", "java.lang.Integer",
-                                    "Responses1xx: number of 1xx responses since statsReset() called.", true, false,
-                                    false),
+                                    "Responses1xx: number of 1xx responses since resetStatistics() called.", true,
+                                    false, false),
                             new MBeanAttributeInfo("Responses2xx", "java.lang.Integer",
-                                    "Responses1xx: number of 2xx responses since statsReset() called.", true, false,
-                                    false),
+                                    "Responses2xx: number of 2xx responses since resetStatistics() called.", true,
+                                    false, false),
                             new MBeanAttributeInfo("Responses3xx", "java.lang.Integer",
-                                    "Responses1xx: number of 3xx responses since statsReset() called.", true, false,
-                                    false),
+                                    "Responses3xx: number of 3xx responses since resetStatistics() called.", true,
+                                    false, false),
                             new MBeanAttributeInfo("Responses4xx", "java.lang.Integer",
-                                    "Responses1xx: number of 4xx responses since statsReset() called.", true, false,
-                                    false),
+                                    "Responses4xx: number of 4xx responses since resetStatistics() called.", true,
+                                    false, false),
                             new MBeanAttributeInfo("Responses5xx", "java.lang.Integer",
-                                    "Responses1xx: number of 5xx responses since statsReset() called.", true, false,
-                                    false) },
-                    new MBeanOperationInfo[] { new MBeanOperationInfo("statsReset", "statsReset(): reset statistics.",
-                            null, "void", MBeanOperationInfo.ACTION) });
+                                    "Responses5xx: number of 5xx responses since resetStatistics() called.", true,
+                                    false, false) },
+                    new MBeanOperationInfo[] { new MBeanOperationInfo("resetStatistics",
+                            "resetStatistics(): reset statistics.", null, "void", MBeanOperationInfo.ACTION) });
         } catch (final LinkageError e) {
             return super.getMBeanInfo();
         } catch (final Throwable t) {
@@ -905,7 +907,7 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
             throws NoSuchMethodException, MBeanException {
         try {
-            if ("statsReset".equals(operationName)) {
+            if ("resetStatistics".equals(operationName)) {
                 if (statisticsHandler != null) {
                     statisticsHandler.reset();
                 }

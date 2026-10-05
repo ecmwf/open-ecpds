@@ -118,27 +118,37 @@ public abstract class MBeanScheduler extends ECaccessScheduler implements MBeanS
                 "The MBeanScheduler is used to manage and monitor " + "a runtime ECaccessScheduler.",
                 new MBeanAttributeInfo[] {
                         new MBeanAttributeInfo("StartDate", "java.util.Date",
-                                "StartDate: when the MBeanScheduler has been started.", true, false, false),
+                                "StartDate: when this scheduler thread was started.", true, false, false),
                         new MBeanAttributeInfo("Monitor", "java.lang.String",
-                                "Monitor: current status sent to Monitor.", true, false, false),
+                                "Monitor: health status reported to the external monitoring system (e.g. Opsview).",
+                                true, false, false),
                         new MBeanAttributeInfo("ThreadName", "java.lang.String", "ThreadName: current thread name.",
                                 true, false, false),
-                        new MBeanAttributeInfo("Activity", "java.lang.String", "Activity: activity of this scheduler.",
+                        new MBeanAttributeInfo("Activity", "java.lang.String",
+                                "Activity: free-text description of what the scheduler is currently doing (subclass-specific).",
                                 true, false, false),
                         new MBeanAttributeInfo("StepTimeCurrent", "java.lang.String",
-                                "StepTimeCurrent: duration of the current step.", true, false, false),
+                                "StepTimeCurrent: elapsed time since the current step started.", true, false, false),
+                        new MBeanAttributeInfo("StepTimeCurrentMillis", "java.lang.Long",
+                                "StepTimeCurrentMillis: elapsed time since the current step started, in milliseconds.",
+                                true, false, false),
                         new MBeanAttributeInfo("StepTimeLast", "java.lang.String",
-                                "StepTimeLast: duration of the last step.", true, false, false),
-                        new MBeanAttributeInfo("SchedulerState", "int", "SchedulerState: state of the running thread.",
+                                "StepTimeLast: duration of the last completed step.", true, false, false),
+                        new MBeanAttributeInfo("StepTimeLastMillis", "java.lang.Long",
+                                "StepTimeLastMillis: duration of the last completed step, in milliseconds.", true,
+                                false, false),
+                        new MBeanAttributeInfo("SchedulerState", "java.lang.String",
+                                "SchedulerState: current state name, one of the SCHEDULER_STATE_* constants (e.g. SCHEDULER_STATE_ONLINE).",
                                 true, false, false),
                         new MBeanAttributeInfo("NextStepLast", "java.lang.String",
-                                "NextStepLast: last next step result.", true, false, false),
-                        new MBeanAttributeInfo("ThreadPriority", "int", "ThreadPriority: priority of the thread.", true,
-                                true, false),
-                        new MBeanAttributeInfo("IsSleeping", "boolean", "IsSleeping: the thread is sleeping.", true,
-                                false, false),
-                        new MBeanAttributeInfo("StepPeriodicity", "long",
-                                "StepPeriodicity: delay between 2 steps in milliseconds.", true, true, false) },
+                                "NextStepLast: name of the last step the scheduler went through, one of the NEXT_STEP_* constants.",
+                                true, false, false),
+                        new MBeanAttributeInfo("ThreadPriority", "java.lang.Integer",
+                                "ThreadPriority: Java thread priority (1-10).", true, true, false),
+                        new MBeanAttributeInfo("IsSleeping", "java.lang.Boolean", "IsSleeping: the thread is sleeping.",
+                                true, false, false),
+                        new MBeanAttributeInfo("StepPeriodicity", "java.lang.Long",
+                                "StepPeriodicity: delay between 2 steps, in milliseconds.", true, true, false) },
                 new MBeanConstructorInfo[0],
                 new MBeanOperationInfo[] {
                         new MBeanOperationInfo("wakeup", "wakeup: wakeup the thread.", new MBeanParameterInfo[0],
@@ -170,11 +180,17 @@ public abstract class MBeanScheduler extends ECaccessScheduler implements MBeanS
             if ("StepTimeCurrent".equals(attributeName)) {
                 return Format.formatDuration(getStepTime());
             }
+            if ("StepTimeCurrentMillis".equals(attributeName)) {
+                return getStepTime();
+            }
             if ("Activity".equals(attributeName)) {
                 return getActivity();
             }
             if ("StepTimeLast".equals(attributeName)) {
                 return Format.formatDuration(getLastStepTime());
+            }
+            if ("StepTimeLastMillis".equals(attributeName)) {
+                return getLastStepTime();
             }
             if ("StartDate".equals(attributeName)) {
                 return getStartDate();

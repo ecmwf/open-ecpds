@@ -128,7 +128,7 @@ public final class ECtransContainer implements MBeanService {
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
         try {
-            if ("Activated".equals(attributeName)) {
+            if ("Enabled".equals(attributeName)) {
                 return activated;
             }
             if ("InProgress".equals(attributeName)) {
@@ -157,10 +157,10 @@ public final class ECtransContainer implements MBeanService {
                 operations to check the ECtrans database configuration \
                 and to test the ECtrans modules.""",
                 new MBeanAttributeInfo[] {
-                        new MBeanAttributeInfo("Activated", "java.lang.Boolean",
-                                "Activated: specify if ECTrans can be used.", true, true, false),
-                        new MBeanAttributeInfo("InProgress", "long", "InProgress: number of transfer(s) in progress.",
-                                true, false, false) },
+                        new MBeanAttributeInfo("Enabled", "java.lang.Boolean",
+                                "Enabled: when false, new ECtrans operations are rejected.", true, true, false),
+                        new MBeanAttributeInfo("InProgress", "java.lang.Long",
+                                "InProgress: number of ECtrans operations currently executing.", true, false, false) },
                 new MBeanConstructorInfo[0],
                 new MBeanOperationInfo[] {
                         new MBeanOperationInfo("size",
@@ -285,7 +285,7 @@ public final class ECtransContainer implements MBeanService {
     @Override
     public boolean setAttribute(final String name, final Object value)
             throws InvalidAttributeValueException, MBeanException {
-        if ("Activated".equals(name) && value instanceof final Boolean bool) {
+        if ("Enabled".equals(name) && value instanceof final Boolean bool) {
             activated = bool;
             return true;
         }
@@ -1560,27 +1560,35 @@ public final class ECtransContainer implements MBeanService {
                     "The TransferThread is dedicated to a specific data transfer " + "to a remote server.",
                     new MBeanAttributeInfo[] {
                             new MBeanAttributeInfo("StartDate", "java.util.Date",
-                                    "StartDate: when the TransferThread has been started.", true, false, false),
-                            new MBeanAttributeInfo("Action", "java.lang.String", "Action: the action to start.", true,
-                                    false, false),
+                                    "StartDate: when this transfer thread was started.", true, false, false),
+                            new MBeanAttributeInfo("Action", "java.lang.String",
+                                    "Action: name of the ECtrans action being executed (e.g. get, put, del, size).",
+                                    true, false, false),
                             new MBeanAttributeInfo("Cookie", "java.lang.String",
-                                    "Cookie: the cookie used to maintain persistence.", true, false, false),
+                                    "Cookie: session cookie identifying the remote connection being reused, if any.",
+                                    true, false, false),
                             new MBeanAttributeInfo("RetryCount", "java.lang.Integer",
-                                    "RetryCount: the number of retry allowed.", true, false, false),
-                            new MBeanAttributeInfo("RetryFrequency", "java.lang.Integer",
-                                    "RetryFrequency: the delay before to retry.", true, false, false),
-                            new MBeanAttributeInfo("ConnectTimeout", "java.lang.Integer",
-                                    "ConnectTimeout: the timeout for the connection.", true, false, false),
-                            new MBeanAttributeInfo("ExecTimeout", "java.lang.Integer",
-                                    "ExecTimeout: the timeout for the action.", true, false, false),
-                            new MBeanAttributeInfo("CloseTimeout", "java.lang.Integer",
-                                    "CloseTimeout: the timeout for the close.", true, false, false),
-                            new MBeanAttributeInfo("CloseAsynchronous", "java.lang.Boolean",
-                                    "CloseAsynchronous: the close is performed asynchronously.", true, false, false),
+                                    "RetryCount: number of retries allowed before the action fails.", true, false,
+                                    false),
+                            new MBeanAttributeInfo("RetryFrequency", "java.lang.Long",
+                                    "RetryFrequency: delay between retries, in milliseconds.", true, false, false),
+                            new MBeanAttributeInfo("ConnectTimeout", "java.lang.Long",
+                                    "ConnectTimeout: timeout to establish the connection, in milliseconds.", true,
+                                    false, false),
+                            new MBeanAttributeInfo("ExecTimeout", "java.lang.Long",
+                                    "ExecTimeout: timeout for the action to complete, in milliseconds.", true, false,
+                                    false),
+                            new MBeanAttributeInfo("CloseTimeout", "java.lang.Long",
+                                    "CloseTimeout: timeout to close the connection, in milliseconds.", true, false,
+                                    false),
+                            new MBeanAttributeInfo("IsCloseAsynchronous", "java.lang.Boolean",
+                                    "IsCloseAsynchronous: the connection is closed asynchronously, without waiting for completion.",
+                                    true, false, false),
                             new MBeanAttributeInfo("ECuser", "java.lang.String",
-                                    "ECuser: the user associated to the transfer.", true, false, false),
+                                    "ECuser: ECMWF user name associated with the transfer.", true, false, false),
                             new MBeanAttributeInfo("Location", "java.lang.String",
-                                    "Location: the location associated to the transfer.", true, false, false) },
+                                    "Location: remote location (path) associated with the transfer.", true, false,
+                                    false) },
                     new MBeanConstructorInfo[0], new MBeanOperationInfo[0], new MBeanNotificationInfo[0]);
         }
 
@@ -1641,7 +1649,7 @@ public final class ECtransContainer implements MBeanService {
                 if ("ConnectTimeout".equals(attributeName)) {
                     return connectTimeout;
                 }
-                if ("CloseAsynchronous".equals(attributeName)) {
+                if ("IsCloseAsynchronous".equals(attributeName)) {
                     return asynchronous;
                 }
                 if ("ExecTimeout".equals(attributeName)) {

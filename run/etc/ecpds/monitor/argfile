@@ -42,9 +42,9 @@
 -Djava.awt.headless=true
 -Dfile.encoding=UTF8
 -Duser.timezone=GMT
--Dstarter.properties='etc/monitor/conf/starter.properties'
--Dstarter.listenAddress='0.0.0.0'
--Dstarter.port='3062'
+-Dstarter.useJConsole=yes
+-javaagent:lib/agents/jolokia-agent-jvm-javaagent.jar=port=3062,host=0.0.0.0,user=jolokia,password=jolokia2021
+-javaagent:lib/agents/jmx_prometheus_javaagent.jar=0.0.0.0:3063:etc/monitor/conf/jmx_exporter.yml
 -Dstarter.name=ecmwf.ecpds.monitor.MonitorServer
 -Dstarter.domain=ECpdsMonitor
 -Dstarter.conf='etc/monitor/conf'

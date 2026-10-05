@@ -347,9 +347,6 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /** The currentStreams. */
     private int currentStreams = -1;
 
-    /** The currentTimeout. */
-    private long currentTimeout = -1;
-
     /** The version. */
     private String version = null;
 
@@ -2734,27 +2731,6 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     }
 
     /**
-     * Timeout req.
-     *
-     * @param parameters
-     *            the parameters
-     *
-     * @throws ParameterException
-     *             the parameter exception
-     */
-    public void timeoutReq(final String[] parameters) throws ParameterException {
-        final var timeout = getParameter(parameters);
-        try {
-            if ((currentTimeout = Format.getDuration(timeout)) >= 0) {
-                return;
-            }
-        } catch (final NumberFormatException e) {
-            // Ignored
-        }
-        stopAndError("Invalid timeout (" + timeout + ")");
-    }
-
-    /**
      * Destinationexists req.
      *
      * @throws IOException
@@ -2880,16 +2856,12 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
             if (currentStreams > 0) {
                 downloadScheduler.setMaxDownloadThreads(currentStreams);
             }
-            if (currentTimeout >= 0) {
-                downloadScheduler.setTimeOutDownloadThread(currentTimeout);
-            }
         } catch (final Throwable t) {
             stopAndError(Format.getMessage(t));
             return;
         }
         send("MESSAGE Scheduler " + (downloadScheduler.getPause() ? "stopped" : "started") + " (streams="
-                + downloadScheduler.getMaxDownloadThreads() + ",timeout=" + downloadScheduler.getTimeOutDownloadThread()
-                + ")");
+                + downloadScheduler.getMaxDownloadThreads() + ")");
         setLoop(false);
     }
 

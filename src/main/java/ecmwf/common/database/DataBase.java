@@ -960,10 +960,10 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
         try {
-            if ("LogEvents".equals(attributeName)) {
+            if ("LogEventsEnabled".equals(attributeName)) {
                 return logEvents;
             }
-            if ("DebugSql".equals(attributeName)) {
+            if ("DebugSqlEnabled".equals(attributeName)) {
                 return debugSql;
             }
             if ("MaxTime".equals(attributeName)) {
@@ -1004,11 +1004,11 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     @Override
     public boolean setAttribute(final String name, final Object value)
             throws InvalidAttributeValueException, MBeanException {
-        if ("LogEvents".equals(name)) {
+        if ("LogEventsEnabled".equals(name)) {
             logEvents = ((Boolean) value);
             return true;
         }
-        if ("DebugSql".equals(name)) {
+        if ("DebugSqlEnabled".equals(name)) {
             debugSql = ((Boolean) value);
             return true;
         }
@@ -1035,18 +1035,19 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
                 ECaccess application to maintain information persistence. This \
                 MBean provides informations concerning the database connection \
                 and operations to manage the content of the database.""", new MBeanAttributeInfo[] {
-                new MBeanAttributeInfo("Server", "java.lang.String", "Server: database location if SERVER mode.", true,
-                        false, false),
-                new MBeanAttributeInfo("LogEvents", "java.lang.Boolean", "LogEvents: log events in the database.", true,
-                        true, false),
-                new MBeanAttributeInfo("DebugSql", "java.lang.Boolean",
-                        "DebugSql: display sql requests in the log file.", true, true, false),
+                new MBeanAttributeInfo("Server", "java.lang.String",
+                        "Server: remote database server URL, or null when running in local/embedded mode.", true, false,
+                        false),
+                new MBeanAttributeInfo("LogEventsEnabled", "java.lang.Boolean",
+                        "LogEventsEnabled: record ECUser activity/event audit entries in the database.", true, true,
+                        false),
+                new MBeanAttributeInfo("DebugSqlEnabled", "java.lang.Boolean",
+                        "DebugSqlEnabled: log every sql request regardless of MaxTime/MaxCount.", true, true, false),
                 new MBeanAttributeInfo("MaxTime", "java.lang.Long",
-                        "MaxTime: DebugSql automaticaly set for a request which take more than MaxTime to be executed.",
-                        true, true, false),
+                        "MaxTime: log a sql request if it takes longer than this to execute, in milliseconds.", true,
+                        true, false),
                 new MBeanAttributeInfo("MaxCount", "java.lang.Long",
-                        "MaxCount: DebugSql automaticaly set for a request which return more than MaxCount elements.",
-                        true, true, false),
+                        "MaxCount: log a sql request if it returns or affects more rows than this.", true, true, false),
                 new MBeanAttributeInfo(
                         "Repository", "java.lang.String", "Repository: path for SQL scripts.", true, false, false) },
                 new MBeanConstructorInfo[0],

@@ -495,7 +495,7 @@ public abstract class ServerPlugin extends PluginThread {
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
         try {
-            if ("Available".equals(attributeName)) {
+            if ("IsAvailable".equals(attributeName)) {
                 return _available;
             }
             if ("Header".equals(attributeName)) {
@@ -514,8 +514,14 @@ public abstract class ServerPlugin extends PluginThread {
             if ("ConnectionsDurationAve".equals(attributeName)) {
                 return Format.formatDuration(descriptor != null ? descriptor.getConnectionDurationAve() : 0);
             }
+            if ("ConnectionsDurationAveMillis".equals(attributeName)) {
+                return descriptor != null ? descriptor.getConnectionDurationAve() : 0L;
+            }
             if ("ConnectionsDurationMax".equals(attributeName)) {
                 return Format.formatDuration(descriptor != null ? descriptor.getDurationMax() : 0);
+            }
+            if ("ConnectionsDurationMaxMillis".equals(attributeName)) {
+                return descriptor != null ? descriptor.getDurationMax() : 0L;
             }
             if ("ConnectionsActiveCount".equals(attributeName)) {
                 return descriptor != null ? descriptor.getConnectionsActiveCount() : 0;
@@ -540,31 +546,38 @@ public abstract class ServerPlugin extends PluginThread {
      */
     @Override
     public MBeanInfo getMBeanInfo() {
-        return MBeanManager.addMBeanInfo(
-                super.getMBeanInfo(), super.getMBeanInfo().getDescription(),
-                new MBeanAttributeInfo[] {
-                        new MBeanAttributeInfo("Available", "java.lang.Boolean", "Available: server availability.",
+        return MBeanManager.addMBeanInfo(super.getMBeanInfo(), super.getMBeanInfo().getDescription(),
+                new MBeanAttributeInfo[] { new MBeanAttributeInfo("IsAvailable", "java.lang.Boolean",
+                        "IsAvailable: whether this plugin's caller-back channel is active (false once callerGone() has been invoked).",
+                        true, false, false),
+                        new MBeanAttributeInfo("Header", "java.lang.String",
+                                "Header: plugin name, version, and local hostname, used as the connection banner (e.g. FTP's 220 greeting).",
                                 true, false, false),
-                        new MBeanAttributeInfo("Header", "java.lang.String", "Header: server header.", true, false,
-                                false),
                         new MBeanAttributeInfo("Port", "java.lang.Integer", "Port: server port number.", true, false,
                                 false),
                         new MBeanAttributeInfo("ConnectionsCount", "java.lang.Integer",
-                                "ConnectionsCount: number of connections accepted by the server since statsReset() called.",
+                                "ConnectionsCount: number of connections accepted by the server since resetStatistics() called.",
                                 true, false, false),
                         new MBeanAttributeInfo("ConnectionsActiveMax", "java.lang.Integer",
-                                "ConnectionsActiveMax: maximum number of parallel connections since statsReset() called.",
+                                "ConnectionsActiveMax: highest number of connections open at the same time since the server started (not reset by resetStatistics()).",
                                 true, false, false),
                         new MBeanAttributeInfo("ConnectionsActiveCount", "java.lang.Integer",
                                 "ConnectionsActiveCount: number of connections currently active.", true, false, false),
                         new MBeanAttributeInfo("ConnectionsDurationAve", "java.lang.String",
-                                "ConnectionsDurationAve: sliding average duration in milliseconds of open connections since statsReset() called.",
+                                "ConnectionsDurationAve: average duration in milliseconds of connections closed since resetStatistics() called.",
+                                true, false, false),
+                        new MBeanAttributeInfo("ConnectionsDurationAveMillis", "java.lang.Long",
+                                "ConnectionsDurationAveMillis: average duration in milliseconds of connections closed since resetStatistics() called.",
                                 true, false, false),
                         new MBeanAttributeInfo("ConnectionsDurationMax", "java.lang.String",
-                                "ConnectionsDurationMax: maximum duration in milliseconds of an open connection since statsReset() called.",
+                                "ConnectionsDurationMax: longest duration in milliseconds of any connection closed since resetStatistics() called.",
+                                true, false, false),
+                        new MBeanAttributeInfo("ConnectionsDurationMaxMillis", "java.lang.Long",
+                                "ConnectionsDurationMaxMillis: longest duration in milliseconds of any connection closed since resetStatistics() called.",
                                 true, false, false),
                         new MBeanAttributeInfo("ConnectionsList", "java.lang.String",
-                                "ConnectionsList: current connection(s) in the queue.", true, false, false),
+                                "ConnectionsList: currently open connections, each shown as address, port, and open duration.",
+                                true, false, false),
                         new MBeanAttributeInfo("LastConnectedUser", "java.lang.String",
                                 "LastConnectedUser: the IP address of the last connected user.", true, false, false) },
                 new MBeanOperationInfo[] {
@@ -574,7 +587,7 @@ public abstract class ServerPlugin extends PluginThread {
                                                 "the remote ip address of the socket"),
                                         new MBeanParameterInfo("port", "java.lang.Integer", "the remote port") },
                                 "void", MBeanOperationInfo.ACTION),
-                        new MBeanOperationInfo("statsReset", "statsReset(): reset statistics.", null, "void",
+                        new MBeanOperationInfo("resetStatistics", "resetStatistics(): reset statistics.", null, "void",
                                 MBeanOperationInfo.ACTION) });
     }
 
@@ -596,8 +609,8 @@ public abstract class ServerPlugin extends PluginThread {
     public Object invoke(final String operationName, final Object[] params, final String[] signature)
             throws NoSuchMethodException, MBeanException {
         try {
-            if ("statsReset".equals(operationName)) {
-                getServerPluginDescriptor().statsReset();
+            if ("resetStatistics".equals(operationName)) {
+                getServerPluginDescriptor().resetStatistics();
                 return Boolean.TRUE;
             }
             final var descriptor = getServerPluginDescriptor();
@@ -786,7 +799,7 @@ public abstract class ServerPlugin extends PluginThread {
         /**
          * Stats reset.
          */
-        public void statsReset() {
+        public void resetStatistics() {
             _connectionsCount = 0;
             _totalDuration = 0;
             _durationMax = 0;

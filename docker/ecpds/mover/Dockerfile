@@ -22,7 +22,15 @@ ENV CLI_SHARED_SECRET=""
 ENV MOVER_TITLE="Personal Data Store (PDS)"
 ENV MOVER_COLOR="#0079d3"
 ENV OPERATION=yes
-ENV PORT_JMX=7062
+# Optional JMX export (see docs/monitoring/jmx-export.md) - unset by default,
+# leaving no JMX agent attached.
+ENV USE_JCONSOLE=""
+ENV JOLOKIA_PORT=""
+ENV JOLOKIA_HOST=""
+ENV JOLOKIA_USER=""
+ENV JOLOKIA_PASSWORD=""
+ENV PROMETHEUS_JMX_PORT=""
+ENV PROMETHEUS_JMX_HOST=""
 ENV PORT_CALLBACK=7600
 ENV PORT_HTTP=80
 ENV PORT_HTTPS=7443
@@ -51,7 +59,7 @@ VOLUME /var/lib/ecpds/mover/mqtt
 VOLUME /var/lib/ecpds/mover/data
 
 # Expose the ports
-EXPOSE 7062 7600 7080 7443 7640 7021 7022
+EXPOSE 7600 7080 7443 7640 7021 7022
 
 # Start OpenECPDS services
 ENTRYPOINT ["/usr/local/ecpds/mover/sh/mover","start"]

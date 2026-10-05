@@ -264,7 +264,7 @@ public abstract class PluginThread extends ConfigurableRunnable implements MBean
             if ("Ref".equals(attributeName)) {
                 return getRef();
             }
-            if ("EventsTotal".equals(attributeName)) {
+            if ("EventsCount".equals(attributeName)) {
                 return _eventsTotal;
             }
             if ("Name".equals(attributeName)) {
@@ -300,10 +300,11 @@ public abstract class PluginThread extends ConfigurableRunnable implements MBean
                         new MBeanAttributeInfo("Ref", "java.lang.String", "Ref: plugin reference name.", true, false,
                                 false),
                         new MBeanAttributeInfo("Name", "java.lang.String", "Name: plugin name.", true, false, false),
-                        new MBeanAttributeInfo("EventsTotal", "java.lang.Integer",
-                                "EventsTotal: total number of events.", true, false, false),
-                        new MBeanAttributeInfo("Status", "java.lang.String", "Name: plugin status.", true, false,
+                        new MBeanAttributeInfo("EventsCount", "java.lang.Long",
+                                "EventsCount: number of events handled by this plugin since it started.", true, false,
                                 false),
+                        new MBeanAttributeInfo("Status", "java.lang.String",
+                                "Status: plugin status, one of ON/OFF/ERROR.", true, false, false),
                         new MBeanAttributeInfo("StatusUpdateDate", "java.util.Date",
                                 "StatusUpdateDate: last update of the status.", true, false, false) },
                 new MBeanConstructorInfo[0],

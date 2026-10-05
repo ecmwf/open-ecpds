@@ -62,6 +62,8 @@ The database initialises automatically on first start. The `/data` volume persis
 
 > **Note on FTP:** OpenECPDS fully supports FTP in production deployments. However, FTP passive mode (PASV) is not compatible with Docker port mapping — the server advertises its internal container address for data connections, which external clients cannot reach. For that reason, FTP is disabled in this standalone image. Use SFTP (port 7022) as a drop-in alternative for file transfers in Docker.
 
+> **Note on JMX monitoring:** Neither Jolokia/Hawtio nor the Prometheus JMX exporter ([details](https://ecmwf.github.io/open-ecpds/monitoring/jmx-export/)) are configured in this standalone image — per-process ports (and, for Jolokia, an authenticated proxy) are overkill for a single-container demo. Both are available in a full, multi-container deployment.
+
 ### Populate some data
 
 The standalone image ships with a few example destinations (e.g. `hourly_aq`), but they start out empty and switched off. Before testing the protocols below, log into the Monitoring UI and start one or two of them so there is some data to experiment with. This requires the container to have outbound Internet access, as these destinations acquire data from external providers:

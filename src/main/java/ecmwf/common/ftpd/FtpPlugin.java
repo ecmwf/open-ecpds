@@ -365,7 +365,7 @@ public final class FtpPlugin extends ServerPlugin {
                         + "server can also be used for access to ECMWF computing and archiving "
                         + "facilities from within shell scripts. " + super.getMBeanInfo().getDescription(),
                 new MBeanAttributeInfo[] { new MBeanAttributeInfo("CacheConnectionCount", "java.lang.Integer",
-                        "CacheConnectionCount: number of connections in the cache.", true, false, false) },
+                        "CacheConnectionCount: number of cached FTP login entries.", true, false, false) },
                 new MBeanOperationInfo[] { new MBeanOperationInfo("clearCache", "clearCache(): clear the login cache.",
                         null, "void", MBeanOperationInfo.ACTION) });
     }

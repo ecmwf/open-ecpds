@@ -245,18 +245,20 @@ public abstract class MBeanRepository<O> extends MBeanScheduler {
     public MBeanInfo getMBeanInfo() {
         return MBeanManager.addMBeanInfo(super.getMBeanInfo(),
                 "The MBeanRepository is used to manage a generic cache " + "of objects.",
-                new MBeanAttributeInfo[] {
-                        new MBeanAttributeInfo("MaxRecordedSize", "long",
-                                "MaxRecordedSize: maximum number of objects(s) seen in the queue.", true, false, false),
-                        new MBeanAttributeInfo("MaxAuthorisedSize", "long",
-                                "MaxAuthorisedSize: maximum number of objects(s) allowed in the queue.", true, false,
-                                false),
-                        new MBeanAttributeInfo("JammedTimeOut", "long",
-                                "JammedTimeOut: timeout before to move to the jammed status.", true, false, false),
+                new MBeanAttributeInfo[] { new MBeanAttributeInfo("MaxRecordedSize", "java.lang.Long",
+                        "MaxRecordedSize: largest number of objects the queue has held at once (high-water mark).",
+                        true, false, false),
+                        new MBeanAttributeInfo("MaxAuthorisedSize", "java.lang.Long",
+                                "MaxAuthorisedSize: maximum number of objects allowed in the queue before new submissions block, 0 for unlimited.",
+                                true, false, false),
+                        new MBeanAttributeInfo("JammedTimeout", "java.lang.Long",
+                                "JammedTimeout: the scheduler is considered jammed when a step takes longer than this, in milliseconds.",
+                                true, false, false),
                         new MBeanAttributeInfo("QueueStatus", "java.lang.String",
-                                "Queue: status of the object(s) in the queue.", true, false, false),
-                        new MBeanAttributeInfo("QueueSize", "int", "QueueSize: number of objects in the queue.", true,
-                                false, false) },
+                                "QueueStatus: one 'key=status' line per object currently in the queue.", true, false,
+                                false),
+                        new MBeanAttributeInfo("QueueSize", "java.lang.Integer",
+                                "QueueSize: number of objects in the queue.", true, false, false) },
                 new MBeanOperationInfo[] { new MBeanOperationInfo("remove",
                         "remove(key): remove the object from the queue.",
                         new MBeanParameterInfo[] {
@@ -299,7 +301,7 @@ public abstract class MBeanRepository<O> extends MBeanScheduler {
             if ("QueueSize".equals(attributeName)) {
                 return _objects.size();
             }
-            if ("JammedTimeOut".equals(attributeName)) {
+            if ("JammedTimeout".equals(attributeName)) {
                 return getJammedTimeout();
             }
             if ("MaxRecordedSize".equals(attributeName)) {

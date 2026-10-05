@@ -4337,13 +4337,15 @@ public final class MasterServer extends ECaccessProvider
     @Override
     public MBeanInfo getMBeanInfo() {
         return MBeanManager.addMBeanInfo(super.getMBeanInfo(), "The ECpds MasterServer deals with data transfers",
-                new MBeanAttributeInfo[] { new MBeanAttributeInfo("sendMailForTransfers", "java.lang.Boolean",
-                        "sendMailForTransfers: send mails for each event on a data transfer.", true, true, false),
-                        new MBeanAttributeInfo("Trace", "java.lang.Boolean",
-                                "Trace: show remote calls from monitoring interface in logs.", true, true, false),
+                new MBeanAttributeInfo[] { new MBeanAttributeInfo("SendMailForTransfersEnabled", "java.lang.Boolean",
+                        "SendMailForTransfersEnabled: global switch for the per-Destination MailOnEnd/MailOnError transfer-completion emails.",
+                        true, true, false),
+                        new MBeanAttributeInfo("TraceEnabled", "java.lang.Boolean",
+                                "TraceEnabled: logs each monitoring-interface call's duration, result and caller stack at debug level.",
+                                true, true, false),
                         new MBeanAttributeInfo("SynchronizedCount", "java.lang.Long",
-                                "SynchronizedCount: total number of elements for all instances of Synchronized.", true,
-                                false, false) },
+                                "SynchronizedCount: number of keyed locks currently held across all Synchronized lock registries (JVM-wide, diagnostic).",
+                                true, false, false) },
                 new MBeanOperationInfo[] { new MBeanOperationInfo("computeFilterEfficiency",
                         "computeFilterEfficiency(destination,email,filter,date,includeStdby): check the efficiency of filtering",
                         new MBeanParameterInfo[] {
@@ -4369,7 +4371,7 @@ public final class MasterServer extends ECaccessProvider
                                         new MBeanParameterInfo("hostId", "java.lang.String", "Host identifier") },
                                 "void", MBeanOperationInfo.ACTION),
                         new MBeanOperationInfo("cleanHosts",
-                                "cleanHost(hostType): remove unused parameters in data window for Host of the selected Type",
+                                "cleanHosts(hostType): remove unused parameters in data window for Host of the selected Type",
                                 new MBeanParameterInfo[] { new MBeanParameterInfo("hostType", "java.lang.String",
                                         "Host type (e.g. Dissemination, Acquisition ...)") },
                                 "void", MBeanOperationInfo.ACTION),
@@ -4483,10 +4485,10 @@ public final class MasterServer extends ECaccessProvider
             if ("SynchronizedCount".equals(attributeName)) {
                 return Synchronized.getSize();
             }
-            if ("sendMailForTransfers".equals(attributeName)) {
+            if ("SendMailForTransfersEnabled".equals(attributeName)) {
                 return sendMailNotificationsForTransfers;
             }
-            if ("Trace".equals(attributeName)) {
+            if ("TraceEnabled".equals(attributeName)) {
                 return MonitorCall.getTrace();
             }
         } catch (final Exception e) {
@@ -4514,11 +4516,11 @@ public final class MasterServer extends ECaccessProvider
     @Override
     public boolean setAttribute(final String name, final Object value)
             throws InvalidAttributeValueException, MBeanException {
-        if ("sendMailForTransfers".equals(name)) {
+        if ("SendMailForTransfersEnabled".equals(name)) {
             sendMailNotificationsForTransfers = (Boolean) value;
             return true;
         }
-        if ("Trace".equals(name)) {
+        if ("TraceEnabled".equals(name)) {
             MonitorCall.setTrace((Boolean) value);
             return true;
         }
@@ -4590,7 +4592,7 @@ public final class MasterServer extends ECaccessProvider
                     && "java.lang.Integer".equals(signature[0]) && "java.lang.String".equals(signature[1])
                     && "java.lang.Boolean".equals(signature[2]) && "java.lang.String".equals(signature[3])) {
                 return updateTransferStatus(((Integer) params[0]).intValue(), (String) params[1], ((Boolean) params[2]),
-                        (String) params[3], "From the JMX interface", true, true, true);
+                        (String) params[3], "By JMX client from the JMX management interface", true, true, true);
             }
             if ("mqttPublish".equals(operationName) && signature.length == 7 && "java.lang.String".equals(signature[0])
                     && "java.lang.Integer".equals(signature[1]) && "java.lang.Long".equals(signature[2])
@@ -7215,7 +7217,7 @@ public final class MasterServer extends ECaccessProvider
         @Override
         public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
             try {
-                if ("ECUsers".equals(attributeName)) {
+                if ("ECUsersCount".equals(attributeName)) {
                     return getDataBase(ECpdsBase.class).getECUserCount();
                 }
             } catch (final Exception e) {
@@ -7236,8 +7238,8 @@ public final class MasterServer extends ECaccessProvider
             return new MBeanInfo(this.getClass().getName(),
                     "The uid authenticate the local Member State user. This MBean provides "
                             + "operations to monitor such information.",
-                    new MBeanAttributeInfo[] { new MBeanAttributeInfo("ECUsers", "java.lang.Integer",
-                            "ECUsers: number of ECUsers in the database.", true, false, false) },
+                    new MBeanAttributeInfo[] { new MBeanAttributeInfo("ECUsersCount", "java.lang.Integer",
+                            "ECUsersCount: number of ECUsers in the database.", true, false, false) },
                     new MBeanConstructorInfo[0],
                     new MBeanOperationInfo[] {
                             new MBeanOperationInfo("importRegisteredUser",
@@ -7831,15 +7833,16 @@ public final class MasterServer extends ECaccessProvider
             return MBeanManager.addMBeanInfo(super.getMBeanInfo(),
                     "The EventScheduler is used to manage the event threads.",
                     new MBeanAttributeInfo[] {
-                            new MBeanAttributeInfo("ThreadSize", "int", "ThreadSize: number of event thread(s).", true,
-                                    false, false),
-                            new MBeanAttributeInfo("MaximumEventThreads", "int",
+                            new MBeanAttributeInfo("ThreadCount", "java.lang.Integer",
+                                    "ThreadCount: number of event thread(s) currently running.", true, false, false),
+                            new MBeanAttributeInfo("MaximumEventThreads", "java.lang.Integer",
                                     "MaximumEventThreads: maximum number of parallel events.", true, true, false),
-                            new MBeanAttributeInfo("TimeOutEventThreads", "long",
-                                    "TimeOutEventThreads: timeout for each event thread (-1 to deactivate).", true,
-                                    true, false),
-                            new MBeanAttributeInfo("ThreadList", "int", "ThreadList: list of event thread(s).", true,
-                                    false, false) },
+                            new MBeanAttributeInfo("EventThreadsTimeout", "java.lang.Long",
+                                    "EventThreadsTimeout: milliseconds an event thread may run before being interrupted (-1 disables this check).",
+                                    true, true, false),
+                            new MBeanAttributeInfo("ThreadList", "java.lang.String",
+                                    "ThreadList: active event thread(s) shown as publication id and elapsed running time.",
+                                    true, false, false) },
                     new MBeanOperationInfo[] { new MBeanOperationInfo("reloadEventScript",
                             "reloadEventScript(): reload event script content", null, "void",
                             MBeanOperationInfo.ACTION) });
@@ -7861,7 +7864,7 @@ public final class MasterServer extends ECaccessProvider
         @Override
         public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
             try {
-                if ("ThreadSize".equals(attributeName)) {
+                if ("ThreadCount".equals(attributeName)) {
                     return _eventThreads.size();
                 }
                 if ("ThreadList".equals(attributeName)) {
@@ -7870,7 +7873,7 @@ public final class MasterServer extends ECaccessProvider
                 if ("MaximumEventThreads".equals(attributeName)) {
                     return _maxEventThreads;
                 }
-                if ("TimeOutEventThreads".equals(attributeName)) {
+                if ("EventThreadsTimeout".equals(attributeName)) {
                     return _timeOutEventThread;
                 }
             } catch (final Exception e) {
@@ -7902,7 +7905,7 @@ public final class MasterServer extends ECaccessProvider
                 _maxEventThreads = (Integer) value;
                 return true;
             }
-            if ("TimeOutEventThreads".equals(name)) {
+            if ("EventThreadsTimeout".equals(name)) {
                 _timeOutEventThread = (Long) value;
                 return true;
             }
@@ -8855,11 +8858,12 @@ public final class MasterServer extends ECaccessProvider
         public MBeanInfo getMBeanInfo() {
             return MBeanManager.addMBeanInfo(super.getMBeanInfo(),
                     "This MBean provides operations to monitor and manage " + "the HostCheckScheduler",
-                    new MBeanAttributeInfo[] {
-                            new MBeanAttributeInfo("TestPhrase", "java.lang.String", "TestPhrase: test phrase.", true,
-                                    true, false),
+                    new MBeanAttributeInfo[] { new MBeanAttributeInfo("TestPhrase", "java.lang.String",
+                            "TestPhrase: text content uploaded to a Host during the check operation to verify connectivity and write access.",
+                            true, true, false),
                             new MBeanAttributeInfo("DefaultCheckFileName", "java.lang.String",
-                                    "DefaultCheckFileName: default check filename.", true, true, false) },
+                                    "DefaultCheckFileName: filename used to upload TestPhrase during a Host check when the Host has no CheckFilename override.",
+                                    true, true, false) },
                     new MBeanOperationInfo[] { new MBeanOperationInfo("check",
                             "check(hostname): check if a host is available",
                             new MBeanParameterInfo[] {
@@ -9104,15 +9108,16 @@ public final class MasterServer extends ECaccessProvider
             return MBeanManager.addMBeanInfo(super.getMBeanInfo(),
                     "The FilterScheduler is used to manage the filter threads.",
                     new MBeanAttributeInfo[] {
-                            new MBeanAttributeInfo("ThreadSize", "int", "ThreadSize: number of filter thread(s).", true,
-                                    false, false),
-                            new MBeanAttributeInfo("MaximumFilterThreads", "int",
+                            new MBeanAttributeInfo("ThreadCount", "java.lang.Integer",
+                                    "ThreadCount: number of filter thread(s) currently running.", true, false, false),
+                            new MBeanAttributeInfo("MaximumFilterThreads", "java.lang.Integer",
                                     "MaximumFilterThreads: maximum number of parallel filters.", true, true, false),
-                            new MBeanAttributeInfo("TimeOutFilterThreads", "long",
-                                    "TimeOutFilterThreads: timeout for each filter thread (-1 to deactivate).", true,
-                                    true, false),
-                            new MBeanAttributeInfo("ThreadList", "int", "ThreadList: list of filter thread(s).", true,
-                                    false, false) },
+                            new MBeanAttributeInfo("FilterThreadsTimeout", "java.lang.Long",
+                                    "FilterThreadsTimeout: milliseconds a filter thread may run before being interrupted (-1 disables this check).",
+                                    true, true, false),
+                            new MBeanAttributeInfo("ThreadList", "java.lang.String",
+                                    "ThreadList: active filter thread(s) shown as DataFile id, filter name and elapsed running time.",
+                                    true, false, false) },
                     new MBeanOperationInfo[0]);
         }
 
@@ -9132,7 +9137,7 @@ public final class MasterServer extends ECaccessProvider
         @Override
         public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
             try {
-                if ("ThreadSize".equals(attributeName)) {
+                if ("ThreadCount".equals(attributeName)) {
                     return _filterThreads.size();
                 }
                 if ("ThreadList".equals(attributeName)) {
@@ -9141,7 +9146,7 @@ public final class MasterServer extends ECaccessProvider
                 if ("MaximumFilterThreads".equals(attributeName)) {
                     return _maxFilterThreads;
                 }
-                if ("TimeOutFilterThreads".equals(attributeName)) {
+                if ("FilterThreadsTimeout".equals(attributeName)) {
                     return _timeOutFilterThread;
                 }
             } catch (final Exception e) {
@@ -9173,7 +9178,7 @@ public final class MasterServer extends ECaccessProvider
                 _maxFilterThreads = (Integer) value;
                 return true;
             }
-            if ("TimeOutFilterThreads".equals(name)) {
+            if ("FilterThreadsTimeout".equals(name)) {
                 _timeOutFilterThread = (Long) value;
                 return true;
             }
@@ -9440,19 +9445,19 @@ public final class MasterServer extends ECaccessProvider
         public MBeanInfo getMBeanInfo() {
             return MBeanManager.addMBeanInfo(super.getMBeanInfo(),
                     "The ReplicateScheduler is used to manage the replication threads.",
-                    new MBeanAttributeInfo[] {
-                            new MBeanAttributeInfo("ThreadSize", "int", "ThreadSize: number of replicate thread(s).",
-                                    true, false, false),
-                            new MBeanAttributeInfo("MaximumReplicateThreads", "int",
+                    new MBeanAttributeInfo[] { new MBeanAttributeInfo("ThreadCount", "java.lang.Integer",
+                            "ThreadCount: number of replicate thread(s) currently running.", true, false, false),
+                            new MBeanAttributeInfo("MaximumReplicateThreads", "java.lang.Integer",
                                     "MaximumReplicateThreads: maximum number of parallel replications.", true, true,
                                     false),
-                            new MBeanAttributeInfo("MaximumReplicateThreadsPerMover", "int",
-                                    "MaximumReplicateThreads: maximum number of parallel replications per data mover.",
+                            new MBeanAttributeInfo("MaximumReplicateThreadsPerMover", "java.lang.Integer",
+                                    "MaximumReplicateThreadsPerMover: maximum number of parallel replications per data mover.",
                                     true, true, false),
-                            new MBeanAttributeInfo("TimeOutReplicateThreads", "long",
-                                    "TimeOutReplicateThreads: timeout for each replication thread (-1 to deactivate).",
+                            new MBeanAttributeInfo("ReplicateThreadsTimeout", "java.lang.Long",
+                                    "ReplicateThreadsTimeout: milliseconds a replication thread may run before being interrupted (-1 disables this check).",
                                     true, true, false),
-                            new MBeanAttributeInfo("ThreadList", "int", "ThreadList: list of replicate thread(s).",
+                            new MBeanAttributeInfo("ThreadList", "java.lang.String",
+                                    "ThreadList: active replicate thread(s) shown as destination, DataFile id, source mover and elapsed running time.",
                                     true, false, false) },
                     new MBeanOperationInfo[0]);
         }
@@ -9473,7 +9478,7 @@ public final class MasterServer extends ECaccessProvider
         @Override
         public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
             try {
-                if ("ThreadSize".equals(attributeName)) {
+                if ("ThreadCount".equals(attributeName)) {
                     return _replicateThreads.size();
                 }
                 if ("ThreadList".equals(attributeName)) {
@@ -9485,7 +9490,7 @@ public final class MasterServer extends ECaccessProvider
                 if ("MaximumReplicateThreadsPerMover".equals(attributeName)) {
                     return _maxReplicateThreadsPerMover;
                 }
-                if ("TimeOutReplicateThreads".equals(attributeName)) {
+                if ("ReplicateThreadsTimeout".equals(attributeName)) {
                     return _timeOutReplicateThread;
                 }
             } catch (final Exception e) {
@@ -9521,7 +9526,7 @@ public final class MasterServer extends ECaccessProvider
                 _maxReplicateThreadsPerMover = (Integer) value;
                 return true;
             }
-            if ("TimeOutReplicateThreads".equals(name)) {
+            if ("ReplicateThreadsTimeout".equals(name)) {
                 _timeOutReplicateThread = (Long) value;
                 return true;
             }
@@ -9815,15 +9820,16 @@ public final class MasterServer extends ECaccessProvider
             return MBeanManager.addMBeanInfo(super.getMBeanInfo(),
                     "The PurgeScheduler is used to manage the purge threads.",
                     new MBeanAttributeInfo[] {
-                            new MBeanAttributeInfo("ThreadSize", "int", "ThreadSize: number of purge thread(s).", true,
-                                    false, false),
-                            new MBeanAttributeInfo("MaximumPurgeThreads", "int",
+                            new MBeanAttributeInfo("ThreadCount", "java.lang.Integer",
+                                    "ThreadCount: number of purge thread(s) currently running.", true, false, false),
+                            new MBeanAttributeInfo("MaximumPurgeThreads", "java.lang.Integer",
                                     "MaximumPurgeThreads: maximum number of parallel purges.", true, true, false),
-                            new MBeanAttributeInfo("TimeOutPurgeThreads", "long",
-                                    "TimeOutPurgeThreads: timeout for each purge thread (-1 to deactivate).", true,
-                                    true, false),
-                            new MBeanAttributeInfo("ThreadList", "int", "ThreadList: list of purge thread(s).", true,
-                                    false, false) },
+                            new MBeanAttributeInfo("PurgeThreadsTimeout", "java.lang.Long",
+                                    "PurgeThreadsTimeout: milliseconds a purge thread may run before being interrupted (-1 disables this check).",
+                                    true, true, false),
+                            new MBeanAttributeInfo("ThreadList", "java.lang.String",
+                                    "ThreadList: active purge thread(s) shown as DataFile id and elapsed running time.",
+                                    true, false, false) },
                     new MBeanOperationInfo[0]);
         }
 
@@ -9843,7 +9849,7 @@ public final class MasterServer extends ECaccessProvider
         @Override
         public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
             try {
-                if ("ThreadSize".equals(attributeName)) {
+                if ("ThreadCount".equals(attributeName)) {
                     return _purgeThreads.size();
                 }
                 if ("ThreadList".equals(attributeName)) {
@@ -9852,7 +9858,7 @@ public final class MasterServer extends ECaccessProvider
                 if ("MaximumPurgeThreads".equals(attributeName)) {
                     return _maxPurgeThreads;
                 }
-                if ("TimeOutPurgeThreads".equals(attributeName)) {
+                if ("PurgeThreadsTimeout".equals(attributeName)) {
                     return _timeOutPurgeThread;
                 }
             } catch (final Exception e) {
@@ -9884,7 +9890,7 @@ public final class MasterServer extends ECaccessProvider
                 _maxPurgeThreads = (Integer) value;
                 return true;
             }
-            if ("TimeOutPurgeThreads".equals(name)) {
+            if ("PurgeThreadsTimeout".equals(name)) {
                 _timeOutPurgeThread = (Long) value;
                 return true;
             }
@@ -10009,7 +10015,7 @@ public final class MasterServer extends ECaccessProvider
     public final class BackupScheduler extends MBeanScheduler {
 
         /** The _time out backup thread. */
-        private final long _timeOutBackupThread = Cnf.durationAt("Scheduler", "timeOutBackupThread", -1);
+        private long _timeOutBackupThread = Cnf.durationAt("Scheduler", "timeOutBackupThread", -1);
 
         /** The _max backup threads. */
         private final int _maxBackupThreads = Cnf.at("Scheduler", "maxBackupThreads", 15);
@@ -10117,11 +10123,14 @@ public final class MasterServer extends ECaccessProvider
         public MBeanInfo getMBeanInfo() {
             return MBeanManager.addMBeanInfo(super.getMBeanInfo(),
                     "The BackupScheduler is used to manage the backup threads.",
-                    new MBeanAttributeInfo[] {
-                            new MBeanAttributeInfo("ThreadSize", "int", "ThreadSize: number of backup thread(s).", true,
-                                    false, false),
-                            new MBeanAttributeInfo("ThreadList", "int", "ThreadList: list of backup thread(s).", true,
-                                    false, false) },
+                    new MBeanAttributeInfo[] { new MBeanAttributeInfo("BackupThreadsTimeout", "java.lang.Long",
+                            "BackupThreadsTimeout: milliseconds a backup thread may run before being interrupted (-1 disables this check).",
+                            true, true, false),
+                            new MBeanAttributeInfo("ThreadCount", "java.lang.Integer",
+                                    "ThreadCount: number of backup thread(s) currently running.", true, false, false),
+                            new MBeanAttributeInfo("ThreadList", "java.lang.String",
+                                    "ThreadList: active backup thread(s) shown as destination, DataFile id and elapsed running time.",
+                                    true, false, false) },
                     new MBeanOperationInfo[0]);
         }
 
@@ -10141,7 +10150,10 @@ public final class MasterServer extends ECaccessProvider
         @Override
         public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
             try {
-                if ("ThreadSize".equals(attributeName)) {
+                if ("BackupThreadsTimeout".equals(attributeName)) {
+                    return _timeOutBackupThread;
+                }
+                if ("ThreadCount".equals(attributeName)) {
                     return _backupThreads.size();
                 }
                 if ("ThreadList".equals(attributeName)) {
@@ -10152,6 +10164,31 @@ public final class MasterServer extends ECaccessProvider
                 throw new MBeanException(e);
             }
             return super.getAttribute(attributeName);
+        }
+
+        /**
+         * Sets the attribute.
+         *
+         * @param name
+         *            the name
+         * @param value
+         *            the value
+         *
+         * @return true, if successful
+         *
+         * @throws InvalidAttributeValueException
+         *             the invalid attribute value exception
+         * @throws MBeanException
+         *             the MBean exception
+         */
+        @Override
+        public boolean setAttribute(final String name, final Object value)
+                throws InvalidAttributeValueException, MBeanException {
+            if ("BackupThreadsTimeout".equals(name)) {
+                _timeOutBackupThread = (Long) value;
+                return true;
+            }
+            return super.setAttribute(name, value);
         }
 
         /**
@@ -10352,7 +10389,7 @@ public final class MasterServer extends ECaccessProvider
     public final class ProxyScheduler extends MBeanScheduler {
 
         /** The _time out proxy thread. */
-        private final long _timeOutProxyThread = Cnf.durationAt("Scheduler", "timeOutProxyThread", -1);
+        private long _timeOutProxyThread = Cnf.durationAt("Scheduler", "timeOutProxyThread", -1);
 
         /** The _max proxy threads. */
         private int _maxProxyThreads = Cnf.at("Scheduler", "maxProxyThreads", 15);
@@ -10465,15 +10502,20 @@ public final class MasterServer extends ECaccessProvider
         public MBeanInfo getMBeanInfo() {
             return MBeanManager.addMBeanInfo(super.getMBeanInfo(),
                     "The ProxyScheduler is used to manage the proxy threads.",
-                    new MBeanAttributeInfo[] {
-                            new MBeanAttributeInfo("Debug", "boolean", "Debug: display more debug logs.", true, true,
+                    new MBeanAttributeInfo[] { new MBeanAttributeInfo("DebugEnabled", "java.lang.Boolean",
+                            "DebugEnabled: logs why a DataTransfer was skipped (no thread available, no ProxyHost) at debug level.",
+                            true, true, false),
+                            new MBeanAttributeInfo("MaximumProxyThreads", "java.lang.Integer",
+                                    "MaximumProxyThreads: maximum number of parallel proxy transfers.", true, true,
                                     false),
-                            new MBeanAttributeInfo("MaximumProxyThreads", "int",
-                                    "MaximumProxyThreads: maximum number of parallel transfers.", true, true, false),
-                            new MBeanAttributeInfo("ThreadSize", "int", "ThreadSize: number of proxy thread(s).", true,
-                                    false, false),
-                            new MBeanAttributeInfo("ThreadList", "int", "ThreadList: list of proxy thread(s).", true,
-                                    false, false) },
+                            new MBeanAttributeInfo("ProxyThreadsTimeout", "java.lang.Long",
+                                    "ProxyThreadsTimeout: milliseconds a proxy thread may run before being interrupted (-1 disables this check).",
+                                    true, true, false),
+                            new MBeanAttributeInfo("ThreadCount", "java.lang.Integer",
+                                    "ThreadCount: number of proxy thread(s) currently running.", true, false, false),
+                            new MBeanAttributeInfo("ThreadList", "java.lang.String",
+                                    "ThreadList: active proxy thread(s) shown as destination, DataFile id and elapsed running time.",
+                                    true, false, false) },
                     new MBeanOperationInfo[0]);
         }
 
@@ -10493,13 +10535,16 @@ public final class MasterServer extends ECaccessProvider
         @Override
         public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
             try {
-                if ("Debug".equals(attributeName)) {
+                if ("DebugEnabled".equals(attributeName)) {
                     return _debug;
                 }
                 if ("MaximumProxyThreads".equals(attributeName)) {
                     return _maxProxyThreads;
                 }
-                if ("ThreadSize".equals(attributeName)) {
+                if ("ProxyThreadsTimeout".equals(attributeName)) {
+                    return _timeOutProxyThread;
+                }
+                if ("ThreadCount".equals(attributeName)) {
                     return _proxyThreads.size();
                 }
                 if ("ThreadList".equals(attributeName)) {
@@ -10530,12 +10575,16 @@ public final class MasterServer extends ECaccessProvider
         @Override
         public boolean setAttribute(final String name, final Object value)
                 throws InvalidAttributeValueException, MBeanException {
-            if ("Debug".equals(name)) {
+            if ("DebugEnabled".equals(name)) {
                 _debug = (Boolean) value;
                 return true;
             }
             if ("MaximumProxyThreads".equals(name)) {
                 _maxProxyThreads = (Integer) value;
+                return true;
+            }
+            if ("ProxyThreadsTimeout".equals(name)) {
+                _timeOutProxyThread = (Long) value;
                 return true;
             }
             return super.setAttribute(name, value);
@@ -10942,19 +10991,20 @@ public final class MasterServer extends ECaccessProvider
         public MBeanInfo getMBeanInfo() {
             return MBeanManager.addMBeanInfo(super.getMBeanInfo(),
                     "The AcquisitionScheduler is used to manage the acquisition threads.",
-                    new MBeanAttributeInfo[] {
-                            new MBeanAttributeInfo("ThreadSize", "int", "ThreadSize: number of download thread(s).",
+                    new MBeanAttributeInfo[] { new MBeanAttributeInfo("ThreadCount", "java.lang.Integer",
+                            "ThreadCount: number of acquisition thread(s) currently running.", true, false, false),
+                            new MBeanAttributeInfo("ThreadList", "java.lang.String",
+                                    "ThreadList: active acquisition thread(s) shown as destination, Host name and elapsed running time.",
                                     true, false, false),
-                            new MBeanAttributeInfo("ThreadList", "int", "ThreadList: list of download thread(s).", true,
-                                    false, false),
-                            new MBeanAttributeInfo("MaximumAcquisitionThreads", "int",
+                            new MBeanAttributeInfo("MaximumAcquisitionThreads", "java.lang.Integer",
                                     "MaximumAcquisitionThreads: maximum number of parallel acquisitions.", true, true,
                                     false),
-                            new MBeanAttributeInfo("MaximumDuration", "long",
+                            new MBeanAttributeInfo("MaximumDuration", "java.lang.Long",
                                     "MaximumDuration: maximum duration for an acquisition in milliseconds.", true, true,
                                     false),
-                            new MBeanAttributeInfo("InterruptSlow", "boolean",
-                                    "InterruptSlow: automaticaly interrupt slow acquisitions.", true, true, false) },
+                            new MBeanAttributeInfo("InterruptSlowEnabled", "java.lang.Boolean",
+                                    "InterruptSlowEnabled: automatically interrupt slow acquisitions.", true, true,
+                                    false) },
                     new MBeanOperationInfo[0]);
         }
 
@@ -10974,7 +11024,7 @@ public final class MasterServer extends ECaccessProvider
         @Override
         public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
             try {
-                if ("ThreadSize".equals(attributeName)) {
+                if ("ThreadCount".equals(attributeName)) {
                     return _acquisitionThreads.size();
                 }
                 if ("ThreadList".equals(attributeName)) {
@@ -10986,7 +11036,7 @@ public final class MasterServer extends ECaccessProvider
                 if ("MaximumDuration".equals(attributeName)) {
                     return _maximumDuration;
                 }
-                if ("InterruptSlow".equals(attributeName)) {
+                if ("InterruptSlowEnabled".equals(attributeName)) {
                     return _interruptSlow;
                 }
             } catch (final Exception e) {
@@ -11022,7 +11072,7 @@ public final class MasterServer extends ECaccessProvider
                 _maximumDuration = (Long) value;
                 return true;
             }
-            if ("InterruptSlow".equals(name)) {
+            if ("InterruptSlowEnabled".equals(name)) {
                 _interruptSlow = (Boolean) value;
                 return true;
             }
@@ -12467,8 +12517,8 @@ public final class MasterServer extends ECaccessProvider
         @Override
         public MBeanInfo getMBeanInfo() {
             return MBeanManager.addMBeanInfo(super.getMBeanInfo(), null,
-                    new MBeanAttributeInfo[] { new MBeanAttributeInfo("CacheRatio", "int",
-                            "CacheRatio: maximum number of DataTransfers retrieved from the Data-base (ratio*maximumDownloadThreads).",
+                    new MBeanAttributeInfo[] { new MBeanAttributeInfo("CacheRatio", "java.lang.Integer",
+                            "CacheRatio: multiplier on MaximumDownloadThreads sizing the batch of DataTransfers pre-fetched from the database.",
                             true, true, false) },
                     new MBeanOperationInfo[] {});
         }
@@ -12567,7 +12617,7 @@ public final class MasterServer extends ECaccessProvider
         @Override
         public MBeanInfo getMBeanInfo() {
             return MBeanManager.addMBeanInfo(super.getMBeanInfo(), null,
-                    new MBeanAttributeInfo[] { new MBeanAttributeInfo("MaxPresetPerDestination", "int",
+                    new MBeanAttributeInfo[] { new MBeanAttributeInfo("MaxPresetPerDestination", "java.lang.Integer",
                             "MaxPresetPerDestination: maximum number of DataTransfers retrieved from the Data-base per Destination.",
                             true, true, false) },
                     new MBeanOperationInfo[] {});
@@ -12648,16 +12698,8 @@ public final class MasterServer extends ECaccessProvider
         /** The _max download threads. */
         private int _maxDownloadThreads = Cnf.at("Scheduler", "maxDownloadThreads", 60);
 
-        /** The _maximum duration. */
-        private long _maximumDuration = Cnf.durationAt("Scheduler", "maximumDurationDownloadThread",
-                10 * Timer.ONE_MINUTE);
-
-        /** The _minimum duration. */
-        public long _minimumDuration = Cnf.durationAt("Scheduler", "minimumDurationDownloadThread",
-                5 * Timer.ONE_MINUTE);
-
-        /** The _minimum rate. */
-        public long _minimumRate = Cnf.at("Scheduler", "minimumRateDownloadThread", 2359296);
+        // Per-transfer maximum-duration/minimum-rate limits are configured per-Host via
+        // ECtransOptions (HOST_RETRIEVAL_MAXIMUM_DURATION/HOST_RETRIEVAL_MINIMUM_RATE), not here.
 
         /** The _debug. */
         public boolean _debug = Cnf.at("Scheduler", "debug", false);
@@ -12719,31 +12761,12 @@ public final class MasterServer extends ECaccessProvider
         }
 
         /**
-         * Sets the time out download thread.
-         *
-         * @param timeOutDownloadThread
-         *            the new time out download thread
-         */
-        public void setTimeOutDownloadThread(final long timeOutDownloadThread) {
-            _maximumDuration = timeOutDownloadThread;
-        }
-
-        /**
          * Gets the max download threads.
          *
          * @return the max download threads
          */
         public int getMaxDownloadThreads() {
             return _maxDownloadThreads;
-        }
-
-        /**
-         * Gets the time out download thread.
-         *
-         * @return the time out download thread
-         */
-        public long getTimeOutDownloadThread() {
-            return _maximumDuration;
         }
 
         /**
@@ -12899,27 +12922,23 @@ public final class MasterServer extends ECaccessProvider
         @Override
         public MBeanInfo getMBeanInfo() {
             return MBeanManager.addMBeanInfo(super.getMBeanInfo(), _description, new MBeanAttributeInfo[] {
-                    new MBeanAttributeInfo("Debug", "boolean", "Debug: display more debug logs.", true, true, false),
-                    new MBeanAttributeInfo("ProcessChecksum", "boolean",
-                            "ProcessChecksum: generate checksum for downloaded files.", true, true, false),
-                    new MBeanAttributeInfo("ThreadSize", "int", "ThreadSize: number of download thread(s).", true,
-                            false, false),
-                    new MBeanAttributeInfo("ThreadList", "java.lang.String", "ThreadList: list of download thread(s).",
+                    new MBeanAttributeInfo("DebugEnabled", "java.lang.Boolean",
+                            "DebugEnabled: log the reason each DataTransfer is retrieved, delayed or skipped.", true,
+                            true, false),
+                    new MBeanAttributeInfo("ProcessChecksumEnabled", "java.lang.Boolean",
+                            "ProcessChecksumEnabled: when true, a checksum is generated per downloaded DataFile; when false it is stored as \"none\".",
+                            true, true, false),
+                    new MBeanAttributeInfo("ThreadCount", "java.lang.Integer",
+                            "ThreadCount: number of DownloadThread(s) currently tracked.", true, false, false),
+                    new MBeanAttributeInfo("ThreadList", "java.lang.String",
+                            "ThreadList: space-separated list of in-progress downloads, each as destination_DataFile_id_(elapsed/percent-or-bytes).",
                             true, false, false),
-                    new MBeanAttributeInfo("DataTransfersCount", "int",
+                    new MBeanAttributeInfo("DataTransfersCount", "java.lang.Integer",
                             "DataTransfersCount: number of DataTransfer(s) related to the DataFile(s) retrieved.", true,
                             false, false),
-                    new MBeanAttributeInfo("MaximumDownloadThreads", "int",
-                            "MaximumDownloadThreads: maximum number of parallel transfers.", true, true, false),
-                    new MBeanAttributeInfo("DefaultMaximumDuration", "long",
-                            "DefaultMaximumDuration: maximum duration for a transfer in milliseconds.", true, true,
-                            false),
-                    new MBeanAttributeInfo("DefaultMinimumDuration", "long",
-                            "DefaultMinimumDuration: minimum duration for a transfer in milliseconds.", true, true,
-                            false),
-                    new MBeanAttributeInfo("DefaultMinimumRate", "long",
-                            "DefaultMinimumRate: minimum rate for a transfer in bytes/s.", true, true, false) },
-                    new MBeanOperationInfo[] { new MBeanOperationInfo("closeIncomingConnection",
+                    new MBeanAttributeInfo("MaximumDownloadThreads", "java.lang.Integer",
+                            "MaximumDownloadThreads: maximum number of parallel transfers.", true, true, false) },
+                    new MBeanOperationInfo[] { new MBeanOperationInfo("interruptDownload",
                             "interruptDownload(id): interrupt download for the specified DataFile",
                             new MBeanParameterInfo[] {
                                     new MBeanParameterInfo("id", "java.lang.Integer", "DataFile id") },
@@ -12947,9 +12966,10 @@ public final class MasterServer extends ECaccessProvider
         public Object invoke(final String operationName, final Object[] params, final String[] signature)
                 throws NoSuchMethodException, MBeanException {
             try {
-                if ("closeIncomingConnection".equals(operationName) && signature.length == 1
+                if ("interruptDownload".equals(operationName) && signature.length == 1
                         && "java.lang.Integer".equals(signature[0])) {
-                    return interruptDownload((Integer) params[0], "Manual interruption from JMX interface");
+                    return interruptDownload((Integer) params[0],
+                            "Retrieval interrupted via the JMX management interface");
                 }
             } catch (final Exception e) {
                 _log.warn("Invoking the {} MBean method", operationName, e);
@@ -12974,16 +12994,16 @@ public final class MasterServer extends ECaccessProvider
         @Override
         public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
             try {
-                if ("Debug".equals(attributeName)) {
+                if ("DebugEnabled".equals(attributeName)) {
                     return _debug;
                 }
-                if ("ProcessChecksum".equals(attributeName)) {
+                if ("ProcessChecksumEnabled".equals(attributeName)) {
                     return _processChecksum;
                 }
                 if ("DataTransfersCount".equals(attributeName)) {
                     return getDataTransfersCount();
                 }
-                if ("ThreadSize".equals(attributeName)) {
+                if ("ThreadCount".equals(attributeName)) {
                     return _downloadThreads.size();
                 }
                 if ("ThreadList".equals(attributeName)) {
@@ -12991,15 +13011,6 @@ public final class MasterServer extends ECaccessProvider
                 }
                 if ("MaximumDownloadThreads".equals(attributeName)) {
                     return _maxDownloadThreads;
-                }
-                if ("DefaultMaximumDuration".equals(attributeName)) {
-                    return _maximumDuration;
-                }
-                if ("DefaultMinimumDuration".equals(attributeName)) {
-                    return _minimumDuration;
-                }
-                if ("DefaultMinimumRate".equals(attributeName)) {
-                    return _minimumRate;
                 }
             } catch (final Exception e) {
                 _log.warn("Getting an MBean attribute", e);
@@ -13030,23 +13041,11 @@ public final class MasterServer extends ECaccessProvider
                 _maxDownloadThreads = (Integer) value;
                 return true;
             }
-            if ("DefaultMaximumDuration".equals(name)) {
-                _maximumDuration = (Long) value;
-                return true;
-            }
-            if ("DefaultMinimumDuration".equals(name)) {
-                _minimumDuration = (Long) value;
-                return true;
-            }
-            if ("DefaultMinimumRate".equals(name)) {
-                _minimumRate = (Long) value;
-                return true;
-            }
-            if ("Debug".equals(name)) {
+            if ("DebugEnabled".equals(name)) {
                 _debug = (Boolean) value;
                 return true;
             }
-            if ("ProcessChecksum".equals(name)) {
+            if ("ProcessChecksumEnabled".equals(name)) {
                 _processChecksum = (Boolean) value;
                 return true;
             }

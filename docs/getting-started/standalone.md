@@ -71,6 +71,12 @@ everything across restarts. Wait about 30 seconds for all services to become ava
     for data connections, which external clients cannot reach. Use SFTP (port 7022) as a
     drop-in alternative.
 
+!!! note "JMX monitoring not configured in standalone"
+    Neither [Jolokia/Hawtio nor the Prometheus JMX exporter](../monitoring/jmx-export.md)
+    are set up in this image — per-process ports (and, for Jolokia, an authenticated
+    proxy) are overkill for a single-container demo. Both are available in a full,
+    multi-container deployment.
+
 ## Populate some data
 
 The standalone image ships with a few example destinations (e.g. `hourly_aq`), but they

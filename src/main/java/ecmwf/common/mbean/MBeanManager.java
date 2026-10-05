@@ -258,7 +258,13 @@ public final class MBeanManager implements DynamicMBean {
         final var currentLoader = currentThread.getContextClassLoader();
         currentThread.setContextClassLoader(serviceLoader);
         try {
-            return "<pre>" + Format.objectToString(_service.invoke(operationName, params, signature)) + "</pre>";
+            final var result = _service.invoke(operationName, params, signature);
+            // Keep simple values typed so JMX clients (Hawtio, JConsole) display them as-is
+            if (result == null || result instanceof Boolean || result instanceof Number || result instanceof String
+                    || result instanceof Character || result instanceof java.util.Date) {
+                return result;
+            }
+            return Format.objectToString(result);
         } catch (final NoSuchMethodException e) {
             throw new ReflectionException(e,
                     "Cannot find the operation " + operationName + " in " + _service.getClass().getName());

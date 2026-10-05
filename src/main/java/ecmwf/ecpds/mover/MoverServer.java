@@ -1489,20 +1489,25 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     @Override
     public MBeanInfo getMBeanInfo() {
         return MBeanManager.addMBeanInfo(super.getMBeanInfo(), "The ECpds MoverServer deals with data transfers",
-                new MBeanAttributeInfo[] {
-                        new MBeanAttributeInfo("MonitorDebug", "java.lang.Boolean",
-                                "MonitorDebug: debug move of Monitor.", true, true, false),
-                        new MBeanAttributeInfo("MonitorActivated", "java.lang.Boolean",
-                                "MonitorActivated: Monitor activated.", true, false, false),
-                        new MBeanAttributeInfo("Connected", "java.lang.Boolean",
-                                "Connected: connected to the MasterServer.", true, false, false),
-                        new MBeanAttributeInfo("Root", "java.lang.String", "Root: gateway reference name.", true, false,
-                                false),
+                new MBeanAttributeInfo[] { new MBeanAttributeInfo("MonitorDebugEnabled", "java.lang.Boolean",
+                        "MonitorDebugEnabled: allow debugging the MonitorManager (e.g. Opsview).", true, true, false),
+                        new MBeanAttributeInfo("IsMonitorActivated", "java.lang.Boolean",
+                                "IsMonitorActivated: whether external monitoring (e.g. Opsview) integration is enabled via configuration.",
+                                true, false, false),
+                        new MBeanAttributeInfo("IsConnected", "java.lang.Boolean",
+                                "IsConnected: connected to the MasterServer.", true, false, false),
+                        new MBeanAttributeInfo("Root", "java.lang.String",
+                                "Root: this Data Mover's own reference name (hostname), as known to the MasterServer.",
+                                true, false, false),
                         new MBeanAttributeInfo("IncomingConnections", "java.lang.String",
-                                "IncomingConnections: list of all incoming connections.", true, false, false),
+                                "IncomingConnections: space-separated IDs of all incoming connections currently open on this Data Mover.",
+                                true, false, false),
+                        new MBeanAttributeInfo("IncomingConnectionsCount", "java.lang.Integer",
+                                "IncomingConnectionsCount: number of incoming connections currently open on this Data Mover.",
+                                true, false, false),
                         new MBeanAttributeInfo("SynchronizedCount", "java.lang.Long",
-                                "SynchronizedCount: total number of elements for all instances of Synchronized.", true,
-                                false, false) },
+                                "SynchronizedCount: total number of locked-key entries held across all Synchronized lock registries in this JVM (not mover-specific).",
+                                true, false, false) },
                 new MBeanOperationInfo[] {
                         new MBeanOperationInfo("purgeAllDirectories",
                                 "purgeAllDirectories(): remove expired files from all directories",
@@ -1535,7 +1540,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     @Override
     public boolean setAttribute(final String name, final Object value)
             throws InvalidAttributeValueException, MBeanException {
-        if ("MonitorDebug".equals(name)) {
+        if ("MonitorDebugEnabled".equals(name)) {
             MonitorManager.setDebug(((Boolean) value));
             return true;
         }
@@ -1561,10 +1566,10 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             if ("SynchronizedCount".equals(attributeName)) {
                 return Synchronized.getSize();
             }
-            if ("MonitorDebug".equals(attributeName)) {
+            if ("MonitorDebugEnabled".equals(attributeName)) {
                 return MonitorManager.isDebug();
             }
-            if ("MonitorActivated".equals(attributeName)) {
+            if ("IsMonitorActivated".equals(attributeName)) {
                 return MonitorManager.isActivated();
             }
             if ("Root".equals(attributeName)) {
@@ -1577,7 +1582,10 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 }
                 return result.toString();
             }
-            if ("Connected".equals(attributeName)) {
+            if ("IncomingConnectionsCount".equals(attributeName)) {
+                return getIncomingConnectionIds().length;
+            }
+            if ("IsConnected".equals(attributeName)) {
                 return masterManager != null && masterManager.isConnected();
             }
         } catch (final Exception e) {

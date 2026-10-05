@@ -23,7 +23,15 @@ ENV DEFAULT_SOURCE_HOST_ID=""
 ENV MONITOR_NICKNAME="PDS"
 ENV MONITOR_TITLE="Personal Data Store"
 ENV MONITOR_COLOR="#0079d3"
-ENV PORT_JMX=8062
+# Optional JMX export (see docs/monitoring/jmx-export.md) - unset by default,
+# leaving no JMX agent attached.
+ENV USE_JCONSOLE=""
+ENV JOLOKIA_PORT=""
+ENV JOLOKIA_HOST=""
+ENV JOLOKIA_USER=""
+ENV JOLOKIA_PASSWORD=""
+ENV PROMETHEUS_JMX_PORT=""
+ENV PROMETHEUS_JMX_HOST=""
 ENV PORT_CALLBACK=8600
 ENV PORT_HTTPS=8443
 ENV PORT_MASTER=9600
@@ -44,7 +52,7 @@ VOLUME /var/tmp/ecpds/monitor
 VOLUME /var/lib/ecpds/monitor
 
 # Expose the ports
-EXPOSE 8062 8600 8080 8443
+EXPOSE 8600 8080 8443
 
 # Start OpenECPDS services
 ENTRYPOINT ["/usr/local/ecpds/monitor/sh/monitor","start"]

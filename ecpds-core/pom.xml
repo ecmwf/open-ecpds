@@ -204,6 +204,144 @@
 							<excludeGroupIds>ecmwf</excludeGroupIds>
 						</configuration>
 					</execution>
+					<!-- Fetch the optional JMX export javaagents (see docs/monitoring/jmx-export.md).
+					     Not regular dependencies (nothing compiles against them); they are attached
+					     to the JVM with -javaagent and only used when JOLOKIA_PORT / PROMETHEUS_JMX_PORT
+					     is set. Filenames must match the ones hardcoded in etc/{master,mover}/sh/*. -->
+					<execution>
+						<id>copy-jmx-export-agents</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.basedir}/../lib/agents</outputDirectory>
+							<artifactItems>
+								<artifactItem>
+									<groupId>org.jolokia</groupId>
+									<artifactId>jolokia-agent-jvm</artifactId>
+									<version>2.6.2</version>
+									<classifier>javaagent</classifier>
+									<destFileName>jolokia-agent-jvm-javaagent.jar</destFileName>
+								</artifactItem>
+								<artifactItem>
+									<groupId>io.prometheus.jmx</groupId>
+									<artifactId>jmx_prometheus_javaagent</artifactId>
+									<version>1.0.1</version>
+									<destFileName>jmx_prometheus_javaagent.jar</destFileName>
+								</artifactItem>
+							</artifactItems>
+						</configuration>
+					</execution>
+					<!-- Fetch Hawtio and its full runtime dependency tree for docker/ecpds/hawtio
+					     (see docs/monitoring/jmx-export.md). Not a regular dependency - nothing in
+					     ecpds-core compiles against it; explicitly pinned/listed here (rather than
+					     resolved via the project's own dependency graph) to keep it fully isolated
+					     from the application's own classpath. Re-run 'mvn dependency:tree' against
+					     io.hawt:hawtio-embedded to refresh this list when bumping the version. -->
+					<execution>
+						<id>copy-hawtio-deps</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.basedir}/../lib/hawtio</outputDirectory>
+							<artifactItems>
+								<artifactItem>
+									<groupId>io.hawt</groupId>
+									<artifactId>hawtio-embedded</artifactId>
+									<version>5.3.0</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>io.hawt</groupId>
+									<artifactId>hawtio-default</artifactId>
+									<version>5.3.0</version>
+									<type>war</type>
+								</artifactItem>
+								<artifactItem>
+									<groupId>io.hawt</groupId>
+									<artifactId>hawtio-connect</artifactId>
+									<version>5.3.0</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.eclipse.jetty.ee10</groupId>
+									<artifactId>jetty-ee10-webapp</artifactId>
+									<version>12.1.12</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.eclipse.jetty.ee10</groupId>
+									<artifactId>jetty-ee10-servlet</artifactId>
+									<version>12.1.12</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.eclipse.jetty.ee</groupId>
+									<artifactId>jetty-ee-webapp</artifactId>
+									<version>12.1.12</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.eclipse.jetty</groupId>
+									<artifactId>jetty-server</artifactId>
+									<version>12.1.12</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.eclipse.jetty</groupId>
+									<artifactId>jetty-http</artifactId>
+									<version>12.1.12</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.eclipse.jetty</groupId>
+									<artifactId>jetty-io</artifactId>
+									<version>12.1.12</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.eclipse.jetty</groupId>
+									<artifactId>jetty-security</artifactId>
+									<version>12.1.12</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.eclipse.jetty</groupId>
+									<artifactId>jetty-session</artifactId>
+									<version>12.1.12</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.eclipse.jetty</groupId>
+									<artifactId>jetty-util</artifactId>
+									<version>12.1.12</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.eclipse.jetty</groupId>
+									<artifactId>jetty-xml</artifactId>
+									<version>12.1.12</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>jakarta.servlet</groupId>
+									<artifactId>jakarta.servlet-api</artifactId>
+									<version>6.0.0</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>info.picocli</groupId>
+									<artifactId>picocli</artifactId>
+									<version>4.7.7</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.jolokia</groupId>
+									<artifactId>jolokia-json</artifactId>
+									<version>2.6.2</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.slf4j</groupId>
+									<artifactId>slf4j-api</artifactId>
+									<version>2.0.11</version>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.slf4j</groupId>
+									<artifactId>slf4j-simple</artifactId>
+									<version>2.0.11</version>
+								</artifactItem>
+							</artifactItems>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 			<!-- Download dependency licence files. -->
@@ -389,11 +527,6 @@
 		<dependency>
 			<groupId>ecaccess</groupId>
 			<artifactId>ecmwf-webgrp</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.jdmk</groupId>
-			<artifactId>jmxtools</artifactId>
 			<version>1.0.0</version>
 		</dependency>
 		<dependency>

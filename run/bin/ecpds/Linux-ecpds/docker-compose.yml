@@ -55,7 +55,14 @@ services:
       # Dedicated to data traffic between the internal components (jmx, rmi)
       INTERNAL_ADDRESS: 127.0.0.1
       # Ports for the Master-Server services
-      PORT_JMX: 2062 # Java Management Extensions (monitoring & management)
+      # Jolokia (JMX-over-HTTP), browsable from the hawtio service below. JOLOKIA_USER/
+      # JOLOKIA_PASSWORD are read from your shell environment (not committed here) -
+      # export them before 'make up svc=master' (from run/bin/ecpds), otherwise Jolokia
+      # runs with no authentication at all.
+      JOLOKIA_PORT: 2062
+      JOLOKIA_HOST: 0.0.0.0
+      JOLOKIA_USER: ${JOLOKIA_USER:-jolokia}
+      JOLOKIA_PASSWORD: ${JOLOKIA_PASSWORD:-jolokia2021}
       PORT_CALLBACK: 2600 # Java Remote Method Invocation (communication between components)
       PORT_ECPDS: 2640 # Dedicated service for ecpds command
       PORT_FTP: 2021 # Virtual FTP Server
@@ -108,7 +115,14 @@ services:
       # Dedicated to data traffic between the internal components (jmx, rmi)
       INTERNAL_ADDRESS: 127.0.0.1
       # Ports for the Monitor-Server services
-      PORT_JMX: 3062 # Java Management Extensions (monitoring & management)
+      # Jolokia (JMX-over-HTTP), browsable from the hawtio service below. JOLOKIA_USER/
+      # JOLOKIA_PASSWORD are read from your shell environment (not committed here) -
+      # export them before 'make up svc=monitor' (from run/bin/ecpds), otherwise Jolokia
+      # runs with no authentication at all.
+      JOLOKIA_PORT: 3062
+      JOLOKIA_HOST: 0.0.0.0
+      JOLOKIA_USER: ${JOLOKIA_USER:-jolokia}
+      JOLOKIA_PASSWORD: ${JOLOKIA_PASSWORD:-jolokia2021}
       PORT_CALLBACK: 3600 # Java Remote Method Invocation (communication between components)
       PORT_HTTPS: 3443 # Web monitoring interface (https)
       # Connectivity to the Master-Server
@@ -156,7 +170,14 @@ services:
       # Dedicated to data traffic between the internal components (jmx, rmi)
       INTERNAL_ADDRESS: 127.0.0.1
       # Ports for the Monitor-Server services
-      PORT_JMX: 4062 # Java Management Extensions (monitoring & management)
+      # Jolokia (JMX-over-HTTP), browsable from the hawtio service below. JOLOKIA_USER/
+      # JOLOKIA_PASSWORD are read from your shell environment (not committed here) -
+      # export them before 'make up svc=mover' (from run/bin/ecpds), otherwise Jolokia
+      # runs with no authentication at all.
+      JOLOKIA_PORT: 4062
+      JOLOKIA_HOST: 0.0.0.0
+      JOLOKIA_USER: ${JOLOKIA_USER:-jolokia}
+      JOLOKIA_PASSWORD: ${JOLOKIA_PASSWORD:-jolokia2021}
       PORT_CALLBACK: 4600 # Java Remote Method Invocation (communication between components)
       PORT_HTTP: 4080 # Web data-portal interface (http)
       PORT_HTTPS: 4443 # Web data-portal interface (https)
@@ -193,3 +214,74 @@ services:
       - "${ECPDS_ROOT_PATH:-}/etc/ecpds:/etc/ecpds"
     depends_on:
       - master
+
+  # Hawtio web UI for browsing/operating the JMX MBeans exposed by Jolokia on
+  # master/monitor/mover. Open http://localhost:8080/hawtio - the Connect/Remote page
+  # (http://localhost:8080/hawtio/connect/remote) comes pre-filled with a connection for
+  # each service via HAWTIO_PRESET_CONNECTIONS below, using the same JOLOKIA_USER/
+  # JOLOKIA_PASSWORD you exported for each service (all services share the host network,
+  # so every port above is reachable on localhost). Note: Hawtio auto-opens each preset
+  # connection as a browser tab on every fresh visit to the Hawtio home page (upstream
+  # behaviour, not something this image controls) - see docs/monitoring/jmx-export.md.
+  #
+  # Listens on 8081, not 8080 - the hawtio-proxy service below takes 8080 instead, since
+  # that's what adds the login wall. Not reachable at all without going through it.
+  #
+  # Deliberately has no depends_on: Hawtio doesn't need master/monitor/mover to be
+  # running (or even compose-managed) at startup, just reachable when you add a
+  # connection, so starting it alone never pulls/builds the other images.
+  hawtio:
+    container_name: hawtio
+    hostname: ecpds-hawtio
+    network_mode: host
+    image: ${ECPDS_REPOSITORY:-ecpds}/hawtio:${TAG:-latest}
+    restart: unless-stopped
+    environment:
+      HAWTIO_PORT: 8081
+      HAWTIO_PRESET_CONNECTIONS: >-
+        master=http://localhost:2062/jolokia,
+        mover=http://localhost:4062/jolokia,
+        monitor=http://localhost:3062/jolokia
+      JAVA_OPTS: "-Dhawtio.proxyAllowlist=localhost,127.0.0.1"
+
+  # HTTP Basic Auth gatekeeper in front of Hawtio - our own image runs Hawtio with its
+  # built-in authentication left disabled (io.hawt.embedded.Main.call() forces
+  # hawtio.authenticationEnabled=false when unset), so Hawtio's own login can't be relied
+  # on here. This nginx sidecar is the actual access control: nothing reaches Hawtio
+  # without passing Basic Auth first. Requires HAWTIO_USER/HAWTIO_PASSWORD in your shell
+  # environment (not committed here) - refuses to start without them.
+  hawtio-proxy:
+    container_name: hawtio-proxy
+    network_mode: host
+    image: nginx:alpine
+    restart: unless-stopped
+    environment:
+      HAWTIO_USER: ${HAWTIO_USER:-hawtio}
+      HAWTIO_PASSWORD: ${HAWTIO_PASSWORD:-hawtio2021}
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -e
+        if [ -z "$$HAWTIO_USER" ] || [ -z "$$HAWTIO_PASSWORD" ]; then
+          echo "ERROR: HAWTIO_USER/HAWTIO_PASSWORD must both be set - refusing to start" \
+               "an unauthenticated gateway to Hawtio." >&2
+          exit 1
+        fi
+        apk add --no-cache openssl > /dev/null
+        printf '%s:%s\n' "$$HAWTIO_USER" "$$(openssl passwd -apr1 "$$HAWTIO_PASSWORD")" \
+          > /etc/nginx/.htpasswd
+        cat > /etc/nginx/conf.d/default.conf <<'EOF'
+        server {
+          listen 8080;
+          location / {
+            auth_basic "Hawtio";
+            auth_basic_user_file /etc/nginx/.htpasswd;
+            proxy_pass http://localhost:8081;
+            proxy_set_header Host $$host;
+          }
+        }
+        EOF
+        exec nginx -g 'daemon off;'
+    depends_on:
+      - hawtio

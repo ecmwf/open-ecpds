@@ -26,7 +26,15 @@ ENV METADATA_MISSING_CONTACTS_MAIL=""
 ENV SMTP_HOST=""
 ENV SMTP_FROM=""
 ENV OPSVIEW_HOST=""
-ENV PORT_JMX=9062
+# Optional JMX export (see docs/monitoring/jmx-export.md) - unset by default,
+# leaving no JMX agent attached.
+ENV USE_JCONSOLE=""
+ENV JOLOKIA_PORT=""
+ENV JOLOKIA_HOST=""
+ENV JOLOKIA_USER=""
+ENV JOLOKIA_PASSWORD=""
+ENV PROMETHEUS_JMX_PORT=""
+ENV PROMETHEUS_JMX_HOST=""
 ENV PORT_CALLBACK=9600
 ENV PORT_ECPDS=9640
 ENV PORT_FTP=9021
@@ -49,7 +57,7 @@ VOLUME /var/tmp/ecpds/master
 VOLUME /var/lib/ecpds/master
 
 # Expose the ports
-EXPOSE 9062 9600 9640 9021
+EXPOSE 9600 9640 9021
 
 # Start OpenECPDS services
 ENTRYPOINT ["/usr/local/ecpds/master/sh/master","start"]

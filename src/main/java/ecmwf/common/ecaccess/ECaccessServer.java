@@ -328,11 +328,12 @@ public abstract class ECaccessServer extends StarterServer {
         return MBeanManager.addMBeanInfo(super.getMBeanInfo(), """
                 The ECaccess server initialize all the ECaccess software \
                 components, including the database, the ECaccess plugins \
-                and the Management Bean interfaces.""",
-                new MBeanAttributeInfo[] { new MBeanAttributeInfo("MonitorDebug", "java.lang.Boolean",
-                        "MonitorDebug: allow debugging the MonitorManager (e.g. Opsview).", true, true, false),
-                        new MBeanAttributeInfo("MonitorActivated", "java.lang.Boolean",
-                                "MonitorActivated: Monitor activated.", true, false, false) },
+                and the Management Bean interfaces.""", new MBeanAttributeInfo[] {
+                new MBeanAttributeInfo("MonitorDebugEnabled", "java.lang.Boolean",
+                        "MonitorDebugEnabled: allow debugging the MonitorManager (e.g. Opsview).", true, true, false),
+                new MBeanAttributeInfo("IsMonitorActivated", "java.lang.Boolean",
+                        "IsMonitorActivated: whether external monitoring (e.g. Opsview) integration is enabled via configuration.",
+                        true, false, false) },
                 new MBeanOperationInfo[] {
                         new MBeanOperationInfo("updateECUsers", "updateECUsers(): update the ECUsers in the database",
                                 new MBeanParameterInfo[0], "void", MBeanOperationInfo.ACTION),
@@ -357,7 +358,7 @@ public abstract class ECaccessServer extends StarterServer {
     @Override
     public boolean setAttribute(final String name, final Object value)
             throws InvalidAttributeValueException, MBeanException {
-        if ("MonitorDebug".equals(name)) {
+        if ("MonitorDebugEnabled".equals(name)) {
             MonitorManager.setDebug((Boolean) value);
             return true;
         }
@@ -372,10 +373,10 @@ public abstract class ECaccessServer extends StarterServer {
     @Override
     public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
         try {
-            if ("MonitorDebug".equals(attributeName)) {
+            if ("MonitorDebugEnabled".equals(attributeName)) {
                 return MonitorManager.isDebug();
             }
-            if ("MonitorActivated".equals(attributeName)) {
+            if ("IsMonitorActivated".equals(attributeName)) {
                 return MonitorManager.isActivated();
             }
         } catch (final Exception e) {

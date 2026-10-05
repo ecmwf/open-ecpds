@@ -40,9 +40,9 @@
 -Duser.timezone=GMT
 -Dhibernate.cfg.xml='etc/master/conf/hibernate.cfg.xml'
 -Dhibernate.hbm.xml='etc/master/conf/hibernate.hbm.xml'
--Dstarter.properties='etc/master/conf/starter.properties'
--Dstarter.listenAddress='0.0.0.0'
--Dstarter.port='2062'
+-Dstarter.useJConsole=yes
+-javaagent:lib/agents/jolokia-agent-jvm-javaagent.jar=port=2062,host=0.0.0.0,user=jolokia,password=jolokia2021
+-javaagent:lib/agents/jmx_prometheus_javaagent.jar=0.0.0.0:2063:etc/master/conf/jmx_exporter.yml
 -Dstarter.name=ecmwf.ecpds.master.MasterServer
 -Dstarter.domain=ECpdsMaster
 -Dstarter.conf='etc/master/conf'

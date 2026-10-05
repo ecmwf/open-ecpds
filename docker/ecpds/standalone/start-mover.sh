@@ -4,7 +4,6 @@ echo "[mover] Waiting for Master (localhost:9600)..."
 until nc -z localhost 9600 2>/dev/null; do sleep 3; done
 echo "[mover] Master is ready."
 
-export PORT_JMX=7062
 export PORT_CALLBACK=7600
 export PORT_HTTPS=7443
 export PORT_MQTTS=8883
