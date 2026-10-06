@@ -16,6 +16,12 @@ if [[ ! "$gateway_port" =~ ^[0-9]{1,5}$ ]] ||
 fi
 gateway_port=$((10#$gateway_port))
 
+nginx_workers=${HAWTIO_NGINX_WORKER_PROCESSES:-2}
+if [[ ! "$nginx_workers" =~ ^[1-9][0-9]*$ ]]; then
+    echo "HAWTIO_NGINX_WORKER_PROCESSES must be a positive integer." >&2
+    exit 1
+fi
+
 : "${HAWTIO_USER:?Set HAWTIO_USER for the gateway login}"
 if [[ "$HAWTIO_USER" == *:* || "$HAWTIO_USER" == *$'\n'* || "$HAWTIO_USER" == *$'\r'* ]]; then
     echo "HAWTIO_USER must not contain a colon or a newline." >&2
@@ -87,7 +93,7 @@ EOF
 chmod 0644 /run/hawtio/index.html
 cat > /run/hawtio/nginx.conf <<'EOF'
 user nginx;
-worker_processes auto;
+worker_processes $nginx_workers;
 pid /run/hawtio/nginx.pid;
 error_log /dev/stderr;
 events { worker_connections 1024; }

@@ -35,6 +35,7 @@ should offer. For example, in `hawtio.cnf`:
 ```sh
 HAWTIO_USER="hawtio"
 HAWTIO_PASSWORD_FILE="/etc/ecpds/hawtio/password"
+HAWTIO_NGINX_WORKER_PROCESSES=2
 HAWTIO_PRESET_CONNECTIONS="master=http://localhost:2062/jolokia,monitor=http://localhost:3062/jolokia,mover=http://localhost:4062/jolokia"
 JAVA_OPTS="-Dhawtio.proxyAllowlist=localhost,127.0.0.1"
 ```
@@ -45,6 +46,8 @@ allowlist when services are on other machines. The gateway defaults to port `808
 `HAWTIO_GATEWAY_PORT` changes it. Configure HTTPS at the gateway or use a trusted
 network/SSH tunnel. The gateway root shows links to configured connections; the full
 Hawtio interface is at `/hawtio/`.
+`HAWTIO_NGINX_WORKER_PROCESSES` controls nginx's worker count (default `2`); set a
+positive integer in `hawtio.cnf` and restart the container to apply it.
 
 The Hawtio container reads `/etc/ecpds/default/hawtio.cnf` followed by
 `/etc/ecpds/hawtio.cnf`; the latter overrides defaults. Protect configuration files
