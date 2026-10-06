@@ -1723,10 +1723,11 @@
 
     // Renders the shared info-panel body (used for both a single Host and an aggregated country) from an
     // already-computed agg (see aggregateTransfers()) and its underlying transfer samples.
-    function renderInfoPanel(title, agg, transfers) {
+    function renderInfoPanel(title, agg, transfers, detailsHtml) {
         document.getElementById("globeInfoTitle").textContent = title;
         var body = document.getElementById("globeInfoBody");
-        var html =
+        var html = detailsHtml || "";
+        html +=
             "<dt>Active transfers</dt><dd>" + agg.activeCount + "</dd>" +
             "<dt>Protocol(s)</dt><dd>" + (agg.protocols.join(", ") || "-") + "</dd>" +
             "<dt>Total throughput</dt><dd>" + formatRate(agg.totalRate) + "</dd>" +
@@ -1742,6 +1743,20 @@
         html += "</tbody></table></dd>";
         body.innerHTML = html;
         document.getElementById("globeInfoPanel").style.display = "block";
+    }
+
+    function showMoverInfoPanel(moverName) {
+        var mover = movers[moverName];
+        if (!mover) {
+            return;
+        }
+        var host = hosts[moverName];
+        var transfers = host ? Object.keys(host.transfers).map(function (id) { return host.transfers[id]; }) : [];
+        var transferMap = host ? host.transfers : Object.create(null);
+        var agg = host ? host.agg : aggregateTransfers(transferMap);
+        var details = "<dt>Proxy Host</dt><dd>Enabled</dd>" +
+            "<dt>Continental Mover</dt><dd>" + (mover.connected ? "Connected" : "Not connected") + "</dd>";
+        renderInfoPanel(mover.label + " (Proxy Host)", agg, transfers, details);
     }
 
     function showInfoPanel(hostName) {
@@ -1777,7 +1792,21 @@
 
     var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     handler.setInputAction(function (movement) {
-        var primitive = pickedPrimitive(viewer.scene.pick(movement.position));
+        // A transfer Host can overlap an enabled Proxy Host marker; prefer the mover identity anywhere beneath the
+        // click so Cesium's topmost pick cannot open details for a different Host at the same coordinates.
+        var picked = viewer.scene.drillPick(movement.position);
+        var primitive;
+        for (var i = 0; i < picked.length; i++) {
+            var candidate = pickedPrimitive(picked[i]);
+            if (Cesium.defined(candidate) && Cesium.defined(candidate.moverName)) {
+                showMoverInfoPanel(candidate.moverName);
+                return;
+            }
+            if (!Cesium.defined(primitive) && Cesium.defined(candidate)
+                    && (Cesium.defined(candidate.hostName) || Cesium.defined(candidate.countryCode))) {
+                primitive = candidate;
+            }
+        }
         if (Cesium.defined(primitive) && Cesium.defined(primitive.hostName)) {
             showInfoPanel(primitive.hostName);
         } else if (Cesium.defined(primitive) && Cesium.defined(primitive.countryCode)) {
