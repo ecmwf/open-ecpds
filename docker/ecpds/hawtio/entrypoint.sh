@@ -32,6 +32,59 @@ printf '%s:%s\n' "$HAWTIO_USER" "$password_hash" > /run/hawtio/htpasswd
 unset HAWTIO_PASSWORD password_hash
 chmod 0644 /run/hawtio/htpasswd
 chmod 0755 /run/hawtio
+html_escape() {
+    local value=$1
+    value=${value//&/&amp;}
+    value=${value//</&lt;}
+    value=${value//>/&gt;}
+    value=${value//\"/&quot;}
+    value=${value//\'/&#39;}
+    printf '%s' "$value"
+}
+cat > /run/hawtio/index.html <<'EOF'
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ECPDS Hawtio</title>
+<style>
+body{font:16px system-ui,sans-serif;max-width:42rem;margin:10vh auto;padding:0 1.5rem;color:#20252b}
+h1{color:#17365d}li{margin:.8rem 0}a{color:#0969da} .hint{color:#59636e}
+</style>
+</head>
+<body>
+<h1>ECPDS Hawtio</h1>
+<p>Select a preset JMX connection:</p>
+<ul>
+EOF
+connection_count=0
+IFS=',' read -r -a preset_connections <<< "${HAWTIO_PRESET_CONNECTIONS:-}"
+for connection in "${preset_connections[@]}"; do
+    connection=${connection#"${connection%%[![:space:]]*}"}
+    connection=${connection%"${connection##*[![:space:]]}"}
+    [[ "$connection" == *=* ]] || continue
+    connection_id=${connection%%=*}
+    connection_url=${connection#*=}
+    if [[ ! "$connection_id" =~ ^[a-zA-Z0-9._-]+$ || -z "$connection_url" ]]; then
+        echo "Skipping invalid Hawtio preset connection: $connection_id" >&2
+        continue
+    fi
+    printf '<li><a href="/hawtio/?con=%s">%s</a></li>\n' \
+        "$connection_id" "$(html_escape "$connection_id")" >> /run/hawtio/index.html
+    connection_count=$((connection_count + 1))
+done
+if (( connection_count == 0 )); then
+    printf '<li>No preset connections are configured.</li>\n' >> /run/hawtio/index.html
+fi
+cat >> /run/hawtio/index.html <<'EOF'
+</ul>
+<p><a href="/hawtio/connect/remote">Open Connect / Remote</a></p>
+<p class="hint">Connections require the corresponding Jolokia credentials.</p>
+</body>
+</html>
+EOF
+chmod 0644 /run/hawtio/index.html
 cat > /run/hawtio/nginx.conf <<'EOF'
 user nginx;
 worker_processes auto;
@@ -42,6 +95,12 @@ http {
     access_log /dev/stdout;
     server {
         listen 8080;
+        location = / {
+            auth_basic "Hawtio";
+            auth_basic_user_file /run/hawtio/htpasswd;
+            root /run/hawtio;
+            try_files /index.html =404;
+        }
         location / {
             auth_basic "Hawtio";
             auth_basic_user_file /run/hawtio/htpasswd;
