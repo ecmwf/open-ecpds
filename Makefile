@@ -24,8 +24,8 @@ DOCKER_GUEST_OS := $(shell uname -s)
 # ARCH differs from the host's native arch.
 NATIVE_ARCH := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
 ARCH ?= $(NATIVE_ARCH)
-IMAGE_NAME := node-$(PROJECT_NAME)-dev-$(ARCH)
-CONTAINER_NAME := running-$(PROJECT_NAME)-dev-$(ARCH)
+IMAGE_NAME := open-ecpds/dev:$(ARCH)
+CONTAINER_NAME := open-ecpds-dev-$(ARCH)
 WORKDIR := /workspaces/$(PROJECT_NAME)
 DB_DATA_DIR := run/var/lib/ecpds/database
 AI_DATA_DIR := run/var/lib/ecpds/ia
