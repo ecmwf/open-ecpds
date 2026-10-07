@@ -143,6 +143,8 @@ dev: .dev-cntnr .run login ## Build, run and login into the development containe
 
 .run: ## Run the development container (*) [ARCH=amd64|arm64]
 	@$(call is-dev-container,true,outside)
+	@mkdir -p "$(HOME)/.aws"
+	@[ -f "$(HOME)/.aws/credentials" ] || cp .devcontainer/.aws-credentials "$(HOME)/.aws/credentials"
 	@mkdir -p "$(HOME)/.claude"
 	@[ -f "$(HOME)/.claude/.claude.json" ] || echo '{"hasCompletedOnboarding": true}' > "$(HOME)/.claude/.claude.json"
 	@$(DOCKER) run -d \
@@ -153,6 +155,7 @@ dev: .dev-cntnr .run login ## Build, run and login into the development containe
 		-v $(HOME)/.claude:/root/.claude \
 		-e CLAUDE_CONFIG_DIR=/root/.claude \
 		-v $(HOME)/.ssh:/root/.ssh \
+		-v $(HOME)/.aws:/root/.aws \
 		-v $(WORKSPACE):/workspaces \
 		-e DOCKER_HOST_WORKSPACE=$(DOCKER_HOST_WORKSPACE) \
 		-e DOCKER_HOST_OS=$(DOCKER_HOST_OS) \

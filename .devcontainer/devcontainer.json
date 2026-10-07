@@ -3,6 +3,7 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "initializeCommand": "mkdir -p \"$HOME/.aws\" && { [ -f \"$HOME/.aws/credentials\" ] || cp .devcontainer/.aws-credentials \"$HOME/.aws/credentials\"; }",
   "remoteUser": "root",
   "remoteEnv": {
     "DOCKER_HOST_WORKSPACE": "${localWorkspaceFolder}",
@@ -36,6 +37,7 @@
   },
   "mounts": [
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-    "source=${env:HOME}/.kube,target=/root/.kube,type=bind"
+    "source=${env:HOME}/.kube,target=/root/.kube,type=bind",
+    "source=${env:HOME}/.aws,target=/root/.aws,type=bind"
   ]
 }

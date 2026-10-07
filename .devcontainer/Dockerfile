@@ -15,10 +15,6 @@ RUN dnf groupinstall -y "Development Tools" && \
         openssl-devel \
     && dnf clean all
 
-# Configure AWS CLI
-RUN mkdir -p /root/.aws
-COPY .aws-credentials /root/.aws/credentials
-
 # Install Docker CE (via official repository)
 RUN dnf install -y yum-utils && \
     dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo && \
