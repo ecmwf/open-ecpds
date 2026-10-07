@@ -74,6 +74,12 @@ On a Destination's Metadata tab, every field that isn't a `password` has an **In
 
 A `markdown` field's content is rendered to safe HTML for the export (so headings, lists, tables and links show up properly in Opsview, not as raw Markdown syntax); every other type is exported as plain text (structured types like `contact` are flattened to a readable "Name, email, phone" line).
 
+Click **Preview Notes**, next to **Export Notes**, to see the saved note before
+sending it. The preview uses exactly the same HTML rendering as export, including
+field ordering, centrally managed defaults, and password exclusion, without sending
+anything to Opsview. Opsview's own styling may differ. Both buttons require metadata
+edit permission and activated monitoring, and are disabled until changes are saved.
+
 ---
 
 ## Worked example: an operator runbook

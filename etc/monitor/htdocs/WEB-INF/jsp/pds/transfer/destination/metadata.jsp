@@ -45,6 +45,10 @@
       </button>
       </c:if>
       <c:if test="${canEditMeta && monitorActivated}">
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="dmfPreviewNotesBtn"
+              onclick="dmfPreviewNotes()" title="Preview fields flagged &quot;Include in Notes&quot; as an Opsview note">
+        <i class="bi bi-eye me-1"></i>Preview Notes
+      </button>
       <button type="button" class="btn btn-sm btn-outline-secondary" id="dmfExportNotesBtn"
               onclick="dmfExportNotes()" title="Export fields flagged &quot;Include in Notes&quot; to Opsview">
         <i class="bi bi-send-check me-1"></i>Export Notes
@@ -202,6 +206,22 @@
       </table>
     </div>
 
+  </div>
+</div>
+
+<div class="modal fade" id="dmfNotesPreviewModal" tabindex="-1" aria-labelledby="dmfNotesPreviewLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="dmfNotesPreviewLabel">Opsview Notes Preview</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted">Saved fields included in Notes, rendered with the same HTML used for export. Opsview's styling may differ.</p>
+        <iframe id="dmfNotesPreviewFrame" title="Rendered Opsview notes" sandbox="allow-popups allow-popups-to-escape-sandbox"
+                class="w-100 border rounded" style="height:55vh;background:white"></iframe>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -531,6 +551,32 @@ function dmfSave() {
 // note for this destination. Acts on the last *saved* state (like Import XML already does), not any
 // in-progress unsaved edits - the button is disabled while dirty (see dmfSetDirty()/dmfClearDirty()) so
 // this is never ambiguous.
+function dmfPreviewNotes() {
+  var btn = document.getElementById('dmfPreviewNotesBtn');
+  if (!btn || _dmfDirty) return;
+  btn.disabled = true;
+  fetch('<c:url value="/do/transfer/destination/metadata/previewnotes"/>', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+    body: JSON.stringify({destination: dmfDestination})
+  }).then(function(r) { return r.json(); })
+    .then(function(data) {
+      btn.disabled = _dmfDirty;
+      if (!data.success) {
+        showToast('Preview error: ' + (data.error || 'unknown'), 'danger');
+        return;
+      }
+      document.getElementById('dmfNotesPreviewFrame').srcdoc =
+        '<!doctype html><html><head><meta charset="UTF-8"></head><body>'
+        + (data.html || '<p>No saved fields with non-empty values are included in Notes.</p>')
+        + '</body></html>';
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('dmfNotesPreviewModal')).show();
+    }).catch(function() {
+      btn.disabled = _dmfDirty;
+      showToast('Unable to load Notes preview', 'danger');
+    });
+}
+
 function dmfExportNotes() {
   var btn = document.getElementById('dmfExportNotesBtn');
   if (!btn) return;
@@ -607,6 +653,11 @@ var _dmfDirty = false;
 var _dmfSavedSnapshot = '';
 
 function dmfApplyDirtyUi(dirty) {
+  var previewBtn = document.getElementById('dmfPreviewNotesBtn');
+  if (previewBtn) {
+    previewBtn.disabled = dirty;
+    previewBtn.title = dirty ? 'Save your changes first' : 'Preview fields flagged "Include in Notes" as an Opsview note';
+  }
   var exportBtn = document.getElementById('dmfExportNotesBtn');
   if (exportBtn) {
     exportBtn.disabled = dirty;
@@ -818,4 +869,3 @@ function dmfDownloadJson() {
   URL.revokeObjectURL(url);
 }
 </script>
-

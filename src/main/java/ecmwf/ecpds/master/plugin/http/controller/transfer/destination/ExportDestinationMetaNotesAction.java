@@ -96,14 +96,19 @@ public class ExportDestinationMetaNotesAction extends PDSAction {
                 throw new IllegalArgumentException("Missing destination");
             }
             final var noteBody = buildNoteBody(destinationName);
-            MasterManager.getMI().exportDestinationMetaNotes(destinationName, noteBody);
-            response.getWriter().write("{\"success\":true}");
+            if ("preview".equals(mapping.getParameter())) {
+                response.getWriter().write(_mapper.writeValueAsString(Map.of("success", true, "html", noteBody)));
+            } else {
+                MasterManager.getMI().exportDestinationMetaNotes(destinationName, noteBody);
+                response.getWriter().write("{\"success\":true}");
+            }
         } catch (final Exception e) {
             _log.warn("ExportDestinationMetaNotesAction", e);
             try {
-                final var msg = e.getMessage() != null ? e.getMessage().replace("\"", "'") : "error";
-                response.getWriter().write("{\"success\":false,\"error\":\"" + msg + "\"}");
-            } catch (final Exception ignored) {
+                final var msg = e.getMessage() != null ? e.getMessage() : "error";
+                response.getWriter().write(_mapper.writeValueAsString(Map.of("success", false, "error", msg)));
+            } catch (final Exception writeError) {
+                _log.warn("Unable to write destination notes response", writeError);
             }
         }
         return null; // already wrote response
