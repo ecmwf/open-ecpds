@@ -259,6 +259,11 @@ cd run/bin/ecpds && make up
 
 The monitoring UI is then available at `https://localhost:3443` and the data portal at `https://localhost:4443`.
 
+Local images use the `open-ecpds/*` namespace. Containers use short names such as
+`master`, `mover`, `monitor` and `standalone`.
+Use service keys in Makefile commands, for example `make logs svc=master`.
+Registry images are published under `ghcr.io/ecmwf/open-ecpds/*`.
+
 See [Getting Started](https://ecmwf.github.io/open-ecpds/getting-started/requirements/) for the full walkthrough, including log inspection, stopping services, IDE setup, and Kubernetes deployment.
 
 ### Building the standalone image locally
@@ -268,7 +273,7 @@ See [Getting Started](https://ecmwf.github.io/open-ecpds/getting-started/require
 make build-sa
 ```
 
-This stages the RPMs (including the `ecpds` CLI binary) into `docker/ecpds/standalone/` and builds the `ecpds/standalone:<tag>` image locally.
+This stages the RPMs (including the `ecpds` CLI binary) into `docker/ecpds/standalone/` and builds the `open-ecpds/standalone:<tag>` image locally.
 
 ---
 

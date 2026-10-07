@@ -28,7 +28,7 @@ services:
      kompose.service.type: NodePort
      kompose.service.replicas: 1
      kompose.volume.type: persistentVolumeClaim
-    image: ${ECPDS_REPOSITORY:-ecpds}/database:${TAG:-latest}
+    image: ${ECPDS_REPOSITORY:-open-ecpds}/database:${TAG:-latest}
     restart: on-failure
     ports:
       - "3309:3309" # Mysqld port must be the same as in 'etc/ecpds/database/mysqld.cnf'
@@ -48,7 +48,7 @@ services:
      kompose.service.replicas: 1
      kompose.volume.type: persistentVolumeClaim
      kompose.volume.storage-class-name: manual
-    image: ${ECPDS_REPOSITORY:-ecpds}/master:${TAG:-latest}
+    image: ${ECPDS_REPOSITORY:-open-ecpds}/master:${TAG:-latest}
     restart: on-failure
     environment:
       # Setting maximum heap size for the Master-Server
@@ -114,7 +114,7 @@ services:
      kompose.service.replicas: 1
      kompose.volume.type: persistentVolumeClaim
      kompose.volume.storage-class-name: manual
-    image: ${ECPDS_REPOSITORY:-ecpds}/monitor:${TAG:-latest}
+    image: ${ECPDS_REPOSITORY:-open-ecpds}/monitor:${TAG:-latest}
     restart: on-failure
     environment:
       # Setting maximum heap size for the Monitor-Server
@@ -173,7 +173,7 @@ services:
      kompose.service.replicas: 1
      kompose.volume.type: persistentVolumeClaim
      kompose.volume.storage-class-name: manual
-    image: ${ECPDS_REPOSITORY:-ecpds}/mover:${TAG:-latest}
+    image: ${ECPDS_REPOSITORY:-open-ecpds}/mover:${TAG:-latest}
     restart: on-failure
     environment:
       # Setting maximum heap size for the Mover-Server
@@ -252,7 +252,7 @@ services:
       - "etc-ecpds-hawtio:/etc/ecpds"
     container_name: ecpds-hawtio
     hostname: ecpds-hawtio
-    image: ${ECPDS_REPOSITORY:-ecpds}/hawtio:${TAG:-latest}
+    image: ${ECPDS_REPOSITORY:-open-ecpds}/hawtio:${TAG:-latest}
     ports:
       - "8080:8080"
     restart: on-failure

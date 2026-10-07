@@ -41,6 +41,9 @@ These targets assume the images have already been built with `make build`, `make
 or `make build-cli`. They do not trigger a Maven build — they just tag and push the
 existing local images to the registry.
 
+The source images are `open-ecpds/<service>:<tag>`. Published names are determined
+by `CR_URL`, for example `ghcr.io/ecmwf/open-ecpds/master:<tag>`.
+
 **When to use these:**
 
 - You have already built locally and want to push without rebuilding (saves time during

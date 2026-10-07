@@ -53,6 +53,10 @@ and build the OpenECPDS Docker images:
 make build
 ```
 
+Local images are tagged `open-ecpds/<service>:<version>-<build>`; the shared Java
+base is `open-ecpds/java:graalvm`. Standalone, CLI and Hawtio images use the same
+namespace. Registry images are published under `ghcr.io/ecmwf/open-ecpds/*`.
+
 !!! warning
     In a production environment, `ENV` should be avoided in Dockerfiles for sensitive
     data like `MYSQL_ROOT_PASSWORD` for the Database, or `KEYSTORE_PASSWORD` for the
@@ -72,6 +76,22 @@ of OpenECPDS. You can find this file in the appropriate directory for your OS:
 
 - `run/bin/ecpds/Darwin-ecpds/docker-compose.yml` — macOS
 - `run/bin/ecpds/Linux-ecpds/docker-compose.yml` — Linux and Windows
+
+Both files use container and service names such as `master`, `mover` and `monitor`;
+use them in commands such as `make up svc=master`. The macOS network is
+`ecpds-backbone`.
+Internal hostnames use names such as `ecpds-master`; data and configuration are
+bind-mounted from the project's `run/` directory.
+To use registry images, override `ECPDS_REPOSITORY`, for example:
+
+```bash
+make up ECPDS_REPOSITORY=ghcr.io/ecmwf/open-ecpds
+```
+
+!!! warning
+    Do not run multiple database containers against the same data directory.
+    Applications sharing a host must use distinct host ports; Linux services use
+    host networking. Avoid volume deletion or pruning commands when preserving data.
 
 To verify the configuration and understand how Docker Compose interprets the settings
 before running the services:

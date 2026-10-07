@@ -1,4 +1,4 @@
-FROM ecpds/java:graalvm
+FROM open-ecpds/java:graalvm
 
 LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 LABEL org.opencontainers.image.source="https://github.com/ecmwf/open-ecpds"

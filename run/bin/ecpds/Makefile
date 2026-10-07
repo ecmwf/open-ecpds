@@ -55,7 +55,7 @@ else
 endif
 
 # Set the repository (export to be available in the compose file)
-export ECPDS_REPOSITORY ?= ecpds
+export ECPDS_REPOSITORY ?= open-ecpds
 
 # Detect which YAML file to use depending on the OS (unless already defined)
 ifeq ($(OS),Windows_NT)

@@ -5,6 +5,18 @@ If you have successfully built the OpenECPDS containers (see
 [System Requirements](../getting-started/requirements.md)), you can deploy OpenECPDS to a
 Kubernetes cluster.
 
+Services and containers use names such as `ecpds-master`.
+Images default to `open-ecpds/*`. Persistent volumes and claims use names such as
+`var-lib-ecpds-database`. Application paths inside the containers use `/etc/ecpds`,
+`/var/lib/ecpds`, `/var/log/ecpds` and `/var/tmp/ecpds`.
+
+!!! warning "Persistent data"
+    Back up persistent data before changing workloads or volume claims.
+    The deployment Makefile populates volumes from the local `run/` directories.
+    Ensure `k8s-configs` contains only the manifests you intend to deploy:
+    `make start` applies every manifest in that directory.
+    `make delete` removes persistent volumes and claims as well as workloads.
+
 Navigate to the directory where the Kubernetes `Makefile` is available:
 
 ```bash

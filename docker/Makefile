@@ -119,10 +119,10 @@ get-hawtio: ## Copy resolved Hawtio jars into the image build context
 	rm -f ecpds/hawtio/lib/*.jar ecpds/hawtio/lib/*.war
 	cp -f ../lib/hawtio/*.jar ../lib/hawtio/*.war ecpds/hawtio/lib/
 
-build-hawtio: .https-access get-hawtio ## Build the Hawtio JMX web console image (same arch as ecpds/java:graalvm)
-	@java_arch=$$($(DOCKER) image inspect ecpds/java:graalvm --format '{{.Architecture}}' 2>/dev/null); \
+build-hawtio: .https-access get-hawtio ## Build the Hawtio JMX web console image (same arch as open-ecpds/java:graalvm)
+	@java_arch=$$($(DOCKER) image inspect open-ecpds/java:graalvm --format '{{.Architecture}}' 2>/dev/null); \
 	if [ -z "$$java_arch" ]; then \
-		printf "$(RED)** ecpds/java:graalvm not found — run 'make build-java' first **$(RESET)\n" && exit 1; \
+		printf "$(RED)** open-ecpds/java:graalvm not found — run 'make build-java' first **$(RESET)\n" && exit 1; \
 	fi; \
 	$(MAKE) .build app=hawtio tag=$(TAG) ARCH=$$java_arch
 
@@ -171,12 +171,12 @@ build-cli: .https-access get-cli ## Build the ecpds CLI image
 		--build-arg TAG=$(tag) \
 		--label "app=$(app)" \
 		--label "tag=$(tag)" \
-		-t ecpds/$(app):$(tag) ecpds/$(app)
+		-t open-ecpds/$(app):$(tag) ecpds/$(app)
 
 # ─── Images ───────────────────────────────────────────────────────────────────
 
 images: ## List images
-	@$(DOCKER) images --format "{{.ID}}@{{.Repository}}:{{.Tag}}" | grep 'ecpds/$(app)' | grep ':$(tag)' | awk -F'[@/]' '{print $$1 "@" $$(NF-1)":"$$NF}' | sed 's/:/-/g' | egrep -v '\-latest$$' | uniq
+	@$(DOCKER) images --format "{{.ID}}@{{.Repository}}:{{.Tag}}" | grep '@open-ecpds/$(app)' | grep ':$(tag)' | awk -F'[@/]' '{print $$1 "@" $$(NF-1)":"$$NF}' | sed 's/:/-/g' | egrep -v '\-latest$$' | uniq
 
 bk-images: ## Backup images (args: app, tag)
 	@for line in $$($(MAKE) -s images tag=$(tag) app=$(app)); do \
@@ -187,10 +187,9 @@ bk-images: ## Backup images (args: app, tag)
 	done
 
 rm-images: ## Remove images (args: app, tag)
-	@for line in $$($(MAKE) -s images tag=$(tag) app=$(app)); do \
-		id=$$(echo $$line | cut -d'@' -f1); \
-		echo "Removing image $$id ..."; \
-		$(DOCKER) rmi -f $$id; \
+	@for ref in $$($(DOCKER) images --format "{{.Repository}}:{{.Tag}}" | grep '^open-ecpds/$(app)' | grep ':$(tag)' | grep -v ':latest$$' | sort -u); do \
+		echo "Removing image $$ref ..."; \
+		$(DOCKER) rmi $$ref || exit 1; \
 	done
 
 # ─── Registry ─────────────────────────────────────────────────────────────────
@@ -245,8 +244,8 @@ cli-manifest: .checkcr ## Combine arch-specific CLI images into a multi-arch man
 	@$(MAKE) .manifest app=cli tag=$(TAG)
 
 .push: # Push locally-built image and tag as latest (args: app, tag)
-	$(DOCKER) tag ecpds/$(app):$(tag) $(CR_URL)/$(app):$(tag)
-	$(DOCKER) tag ecpds/$(app):$(tag) $(CR_URL)/$(app):latest
+	$(DOCKER) tag open-ecpds/$(app):$(tag) $(CR_URL)/$(app):$(tag)
+	$(DOCKER) tag open-ecpds/$(app):$(tag) $(CR_URL)/$(app):latest
 	$(DOCKER) push $(CR_URL)/$(app):$(tag)
 	$(DOCKER) push $(CR_URL)/$(app):latest
 
