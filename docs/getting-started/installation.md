@@ -28,6 +28,11 @@ make dev
 
 If successful, you should be logged into the development container.
 
+If a container already exists, `make dev` offers to reuse it (starting it if
+stopped), replace it with a locally-built image, or cancel. Reusing skips the build.
+Replacement builds successfully before removing the old container; bind-mounted
+host files are preserved, but files stored only inside the old container are lost.
+
 By default, the container targets your host's native architecture. To build/run a
 second, side-by-side dev container for another architecture (e.g. for multi-arch
 image testing), pass `ARCH`:
@@ -43,6 +48,40 @@ container publishes it on the usual `8000`, while any other `ARCH` is offset to
 `8001` (override with `HOST_DOCS_PORT=...` if you need a different port).
 Cross-arch builds/runs require QEMU/binfmt emulation (or Docker Desktop's built-in
 support) when `ARCH` differs from the host's native architecture.
+
+### Download the dev image instead of building it
+
+When a dev image has been published, you can pull it from GHCR and use it without
+running the image build. From the repository root on your host:
+
+```bash
+make dev-pull
+```
+
+This host-only target detects your native architecture, pulls and tags the image
+locally, starts the container, and opens a shell. Docker or Podman is selected
+automatically. Override the architecture with `make dev-pull ARCH=amd64` or
+`make dev-pull ARCH=arm64` if needed.
+
+If the container already exists, you are prompted to reuse it (starting it if
+stopped), delete it and download a fresh image, or cancel. Replacement discards
+files stored only inside the container, but preserves bind-mounted host directories.
+The new image is downloaded successfully before the existing container is removed.
+Do not use `make dev` for this workflow: it builds the image before starting it.
+
+The source distribution is still required: it is mounted into the container.
+AWS credentials are mounted from the host's `~/.aws`, not supplied by the image.
+If `~/.aws/credentials` is missing, `make .run` initializes it with the repository's
+local test credentials without overwriting an existing file.
+
+`make rm-dev` removes a running or stopped dev container and its local image.
+Application cleanup with `make clean` leaves dev images untouched.
+
+Public GHCR images can be pulled without authentication. For a private package,
+log in on the host with `docker login ghcr.io` using a token with `read:packages`
+and access to the package. Registry credentials are not included in the image.
+If the requested architecture tag has not been published yet, use `make dev`
+to build locally instead.
 
 ## Build and configure OpenECPDS
 

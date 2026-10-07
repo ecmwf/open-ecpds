@@ -28,13 +28,8 @@ RESET  := \033[0m
 LICENSES_DIR := ../licenses-cache
 
 # Detect container manager (Docker or Podman)
-ifeq ($(shell command -v podman 2> /dev/null),)
-  DOCKER=docker
-  BUILD_OPTS=
-else
-  DOCKER=podman
-  BUILD_OPTS=--format docker --cap-add all
-endif
+DOCKER ?= $(shell if command -v podman >/dev/null 2>&1; then echo podman; else echo docker; fi)
+BUILD_OPTS := $(if $(filter podman,$(notdir $(DOCKER))),--format docker --cap-add all,)
 
 # Set the docker or podman version
 DOCKER_VERSION := $(shell $(DOCKER) --version)
@@ -56,7 +51,8 @@ ARCH ?= $(NATIVE_ARCH)
 HTTPS_ACCESS := $(shell curl -s --max-time 2 -I https://google.com | sed 's/^[^ ]*  *\([0-9]\).*/\1/; 1q')
 
 # Output the help for each task
-.PHONY: help all get-rpms get-licenses build-db build-ai build-backend build build-sa get-sa get-cli build-cli get-hawtio build-hawtio images bk-images rm-images clean .clean login push push-sa push-cli push-native push-sa-native push-cli-native manifest sa-manifest cli-manifest info
+.PHONY: help all get-rpms get-licenses build-db build-ai build-backend build build-sa get-sa get-cli build-cli get-hawtio build-hawtio images bk-images rm-images clean .clean login push push-dev push-sa push-cli push-native push-sa-native push-cli-native manifest sa-manifest cli-manifest info
+.PHONY: build-java .checkcr .check-docker-release .check-native-release .push .push-native .manifest .build .get-rpm .https-access
 
 # Display help by default
 .DEFAULT_GOAL := help
@@ -187,7 +183,10 @@ bk-images: ## Backup images (args: app, tag)
 	done
 
 rm-images: ## Remove images (args: app, tag)
-	@for ref in $$($(DOCKER) images --format "{{.Repository}}:{{.Tag}}" | grep '^open-ecpds/$(app)' | grep ':$(tag)' | grep -v ':latest$$' | sort -u); do \
+	@images=$$($(DOCKER) images --format "{{.Repository}}:{{.Tag}}") || exit 1; \
+	for ref in $$(printf '%s\n' "$$images" | awk -F: -v app="$(app)" -v tag="$(tag)" \
+		'index($$1, "open-ecpds/") == 1 && $$1 != "open-ecpds/dev" && $$2 != "latest" \
+		&& (app == "" || $$1 == "open-ecpds/" app) && (tag == "" || $$2 == tag)' | sort -u); do \
 		echo "Removing image $$ref ..."; \
 		$(DOCKER) rmi $$ref || exit 1; \
 	done
@@ -199,7 +198,7 @@ rm-images: ## Remove images (args: app, tag)
 		printf "$(RED)** No CR credentials found (CR_URL, CR_UID & CR_PWD) **$(RESET)\n" && exit 1; \
 	fi
 
-login: .checkcr ## Log in to the CR registry (according to '../.settings/.cr-credential')
+login: .checkcr ## Log in to the CR registry (according to '../.settings/.cr-credentials')
 	@echo -n '$(CR_PWD)' | $(DOCKER) login -u '$(CR_UID)' --password-stdin $(CR_URL);
 
 push: .checkcr ## Push locally-built service images to CR as single-arch (no manifest)
@@ -215,7 +214,12 @@ push-sa: .checkcr ## Push locally-built standalone image to CR as single-arch (n
 push-cli: .checkcr ## Push locally-built CLI image to CR as single-arch (no manifest)
 	@$(MAKE) .push app=cli tag=$(TAG)
 
-push-native: .https-access .checkcr get-rpms ## Build and push native arch image to CR with arch suffix (step 1 of 2-machine multi-arch workflow)
+push-dev: .checkcr ## Push the locally-built development image to CR [ARCH=amd64|arm64]
+	$(DOCKER) tag open-ecpds/dev:$(ARCH) $(CR_URL)/dev:$(ARCH)
+	$(DOCKER) push $(CR_URL)/dev:$(ARCH)
+
+push-native: .check-native-release .https-access .checkcr ## Build and push native arch image to CR with arch suffix (step 1 of 2-machine multi-arch workflow)
+	@$(MAKE) get-rpms
 	@$(MAKE) .push-native app=database tag=$(TAG)
 	@$(MAKE) .push-native app=ai tag=$(TAG)
 	@$(MAKE) .push-native app=java tag=graalvm
@@ -223,10 +227,12 @@ push-native: .https-access .checkcr get-rpms ## Build and push native arch image
 	@$(MAKE) .push-native app=master tag=$(TAG)
 	@$(MAKE) .push-native app=monitor tag=$(TAG)
 
-push-sa-native: .https-access .checkcr get-sa ## Build and push native arch standalone image with arch suffix (step 1 of 2-machine multi-arch workflow)
+push-sa-native: .check-native-release .https-access .checkcr ## Build and push native arch standalone image with arch suffix (step 1 of 2-machine multi-arch workflow)
+	@$(MAKE) get-sa
 	@$(MAKE) .push-native app=standalone tag=$(TAG)
 
-push-cli-native: .https-access .checkcr get-cli ## Build and push native arch CLI image with arch suffix (step 1 of 2-machine multi-arch workflow)
+push-cli-native: .check-native-release .https-access .checkcr ## Build and push native arch CLI image with arch suffix (step 1 of 2-machine multi-arch workflow)
+	@$(MAKE) get-cli
 	@$(MAKE) .push-native app=cli tag=$(TAG)
 
 manifest: .checkcr ## Combine arch-specific images into a multi-arch manifest on CR (step 2 of 2-machine multi-arch workflow)
@@ -249,7 +255,20 @@ cli-manifest: .checkcr ## Combine arch-specific CLI images into a multi-arch man
 	$(DOCKER) push $(CR_URL)/$(app):$(tag)
 	$(DOCKER) push $(CR_URL)/$(app):latest
 
-.push-native: # Build and push native-arch image with arch suffix tag to CR (args: app, tag)
+.check-docker-release:
+	@version=$$($(DOCKER) --version) || exit 1; \
+	case "$$version" in \
+		*Docker*) ;; \
+		*) printf "Error: Multi-arch publishing requires Docker with Buildx; use DOCKER=docker.\n" >&2; exit 1 ;; \
+	esac
+	@$(DOCKER) buildx version
+
+.check-native-release: .check-docker-release
+	@if [ "$(ARCH)" != "$(NATIVE_ARCH)" ]; then \
+		printf "Error: Native publishing requires ARCH=%s to match the staged RPM architecture (got %s).\n" "$(NATIVE_ARCH)" "$(ARCH)" >&2; exit 1; \
+	fi
+
+.push-native: .check-native-release # Build and push native-arch image with arch suffix tag to CR (args: app, tag)
 	$(DOCKER) build $(BUILD_OPTS) \
 		--platform linux/$(ARCH) \
 		--provenance=false \
@@ -263,7 +282,7 @@ cli-manifest: .checkcr ## Combine arch-specific CLI images into a multi-arch man
 		-t $(CR_URL)/$(app):$(tag)-$(NATIVE_ARCH) \
 		--push ecpds/$(app)
 
-.manifest: # Combine amd64+arm64 arch-suffixed images into a multi-arch manifest on CR (args: app, tag)
+.manifest: .check-docker-release # Combine amd64+arm64 arch-suffixed images into a multi-arch manifest on CR (args: app, tag)
 	$(DOCKER) buildx imagetools create \
 		-t $(CR_URL)/$(app):$(tag) \
 		-t $(CR_URL)/$(app):latest \

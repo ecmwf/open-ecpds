@@ -247,6 +247,22 @@ To build the platform from source and develop against it, you need **Docker** (w
 make dev
 ```
 
+If the container already exists, you can reuse it without rebuilding, replace it
+after a successful build, or cancel. Replacement discards container-only files,
+not bind-mounted host files.
+
+Alternatively, download a published dev image instead of building it:
+
+```bash
+make dev-pull
+```
+
+Run this on the host from the repository root. It detects the architecture
+(override with `ARCH=amd64` or `ARCH=arm64`) and offers to reuse or replace an
+existing container, or cancel. This requires a published architecture tag.
+See the [installation guide](https://ecmwf.github.io/open-ecpds/getting-started/installation/#download-the-dev-image-instead-of-building-it)
+for authentication and runtime credential details.
+
 ### 2 — Inside the development container
 
 ```bash

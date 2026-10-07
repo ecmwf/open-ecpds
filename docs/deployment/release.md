@@ -5,7 +5,7 @@ There is no need to `cd` into the `docker/` directory.
 
 ## Configure credentials
 
-Store your container registry credentials in `.settings/.cr-credential`:
+Store your container registry credentials in `.settings/.cr-credentials`:
 
 ```bash
 CR_UID=<USERNAME>
@@ -44,6 +44,25 @@ existing local images to the registry.
 The source images are `open-ecpds/<service>:<tag>`. Published names are determined
 by `CR_URL`, for example `ghcr.io/ecmwf/open-ecpds/master:<tag>`.
 
+The development image is published only with `make push-dev`, independently of
+application releases:
+
+```bash
+make push-dev             # push the dev image for the current architecture
+make push-dev ARCH=amd64   # push the amd64 dev image
+make push-dev ARCH=arm64   # push the arm64 dev image
+```
+
+This publishes `open-ecpds/dev:<arch>` as `<CR_URL>/dev:<arch>` (for example,
+`ghcr.io/ecmwf/open-ecpds/dev:arm64`). Build it first on the host with
+`make .dev-cntnr`, or `make .dev-cntnr ARCH=amd64` for another architecture.
+A missing dev image causes `push-dev` to fail; it is not rebuilt automatically.
+The `push`, `push-sa`, `push-cli` and all `-native` targets do not publish the dev image.
+Dev images use architecture tags only, not `latest`.
+
+AWS credentials are mounted at runtime, and registry credentials are used by
+the container engine for login and push; neither is copied into the dev image.
+
 **When to use these:**
 
 - You have already built locally and want to push without rebuilding (saves time during
@@ -56,6 +75,12 @@ by `CR_URL`, for example `ghcr.io/ecmwf/open-ecpds/master:<tag>`.
 below so that the published images work on both `amd64` and `arm64` hosts.
 
 ## Multi-arch push (two machines)
+
+Multi-arch publishing requires Docker with the Buildx plugin. Podman remains
+supported for local builds and single-architecture pushes. If both engines are
+installed, select Docker explicitly with `DOCKER=docker` on the release commands.
+Native push targets reject an `ARCH` that differs from the executing environment's
+native architecture, because the staged RPMs contain native binaries.
 
 Because the `ecpds-mover` image contains a native shared library
 (`libsocketoptions.so`) compiled for the host architecture, true multi-arch images
@@ -74,6 +99,8 @@ make push-cli-native  # CLI image (if needed)
 
 Each machine builds the RPMs via Maven, constructs the Docker images, and pushes them
 to the registry with an architecture-specific tag (e.g. `:tag-amd64`, `:tag-arm64`).
+The manifest targets below combine application images only; dev images retain their
+separate `amd64` and `arm64` tags.
 
 !!! note
     These targets must be run **inside the development container** (i.e. after
@@ -92,6 +119,7 @@ make cli-manifest  # combine CLI arch images into a multi-arch manifest
 This step uses `docker buildx imagetools create` to merge the two arch-specific images
 already in the registry into a single multi-arch manifest (`:tag` and `:latest`).
 No local images are required, so it can be run from either machine.
+Manifest targets can run on the host or inside the development container.
 
 !!! warning
     Each manifest target will fail if either architecture image is missing from the registry.

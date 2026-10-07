@@ -12,9 +12,9 @@
 SHELL=/bin/bash
 
 # Define variables for paths and container names
-PROJECT_NAME := $(shell basename $(PWD))
-WORKSPACE := $(realpath ..)
-DOCKER_HOST_WORKSPACE ?= $(realpath .)
+PROJECT_NAME := $(shell basename "$(CURDIR)")
+WORKSPACE := $(shell cd .. && pwd)
+DOCKER_HOST_WORKSPACE ?= $(CURDIR)
 DOCKER_HOST_OS ?= $(shell uname -s)
 DOCKER_GUEST_OS := $(shell uname -s)
 # Target arch for the dev container (defaults to the host's native arch).
@@ -54,13 +54,8 @@ RED := \033[31m
 RESET := \033[0m
 
 # Detect container manager (Docker or Podman)
-ifeq ($(shell command -v podman 2> /dev/null),)
-  DOCKER=docker
-  BUILD_OPTS=
-else
-  DOCKER=podman
-  BUILD_OPTS=--format docker --cap-add all
-endif
+DOCKER ?= $(shell if command -v podman >/dev/null 2>&1; then echo podman; else echo docker; fi)
+BUILD_OPTS := $(if $(filter podman,$(notdir $(DOCKER))),--format docker --cap-add all,)
 
 # Set the docker or podman version
 DOCKER_VERSION = $(shell $(DOCKER) --version)
@@ -108,25 +103,53 @@ check-docker = \
   fi
 
 # Check if the development container exists and is running
+get-dev-state = \
+  containers=$$($(DOCKER) ps -a --format '{{.Names}} {{.State}}') || exit 1; \
+  state=$$(printf '%s\n' "$$containers" | awk '$$1 == "$(CONTAINER_NAME)" { print $$2 }')
+
 check-dev-container = \
-  @if [ -z "$(shell $(DOCKER) ps -a -q -f name=$(CONTAINER_NAME))" ]; then \
+  @$(get-dev-state); \
+  if [ -z "$$state" ]; then \
     printf "$(RED)Error: The development container '$(CONTAINER_NAME)' does not exist.$(RESET)\n"; \
     exit 1; \
-  elif [ -z "$(shell $(DOCKER) ps -q -f name=$(CONTAINER_NAME))" ]; then \
+  elif [ "$$state" != "running" ]; then \
     printf "$(RED)Error: The development container '$(CONTAINER_NAME)' is not running.$(RESET)\n"; \
     exit 1; \
   fi
 
 # Check if the development container exists
 dev-container-exists = \
-  @if [ "$(shell $(DOCKER) ps -a -q -f name=$(CONTAINER_NAME))" ]; then \
+  @$(get-dev-state); \
+  if [ -n "$$state" ]; then \
       printf "$(RED)Error: The development container '$(CONTAINER_NAME)' already exists.$(RESET)\n"; \
       exit 1; \
   fi
 
+select-dev-container = \
+	$(get-dev-state); \
+	if [ -n "$$state" ]; then \
+		printf "Development container '%s' already exists (%s).\n" "$(CONTAINER_NAME)" "$$state"; \
+		printf "  1) Reuse it (start if stopped, then log in)\n"; \
+		printf "  2) Replace it and $(1) a fresh image (container-only files will be lost)\n"; \
+		printf "  3) Cancel\n"; \
+		if ! read -r -p "Choose [1/2/3]: " choice; then \
+			printf "Error: No choice received; container left unchanged.\n" >&2; exit 1; \
+		fi; \
+		case "$$choice" in \
+			1) \
+				if [ "$$state" != "running" ]; then $(DOCKER) start $(CONTAINER_NAME); fi; \
+				$(MAKE) login ARCH=$(ARCH); exit 0 ;; \
+			2) ;; \
+			3) printf "Cancelled; container left unchanged.\n"; exit 0 ;; \
+			*) printf "Error: Invalid choice; container left unchanged.\n" >&2; exit 1 ;; \
+		esac; \
+	fi
+
+build-dev-image = cd .devcontainer && $(DOCKER) build --platform linux/$(ARCH) -f Dockerfile -t $(IMAGE_NAME) .
+
 # Conditional targets based on the environment
-.PHONY: help dev .dev-cntnr .run login rm-dev \
-        get-geodb get-licenses build build-sa build-cli cr-login push push-sa push-cli push-native push-sa-native push-cli-native manifest sa-manifest cli-manifest release-tools \
+.PHONY: help dev dev-pull .dev-cntnr .run login rm-dev \
+        get-geodb get-licenses build build-sa build-cli cr-login push push-dev push-sa push-cli push-native push-sa-native push-cli-native manifest sa-manifest cli-manifest release-tools \
         start-db stop-db start-ai stop-ai start-hawtio stop-hawtio start-backend stop-backend \
         docs docs-embed docs-screenshots docs-preview docs-publish \
         clean info
@@ -134,15 +157,36 @@ dev-container-exists = \
 # ─── Development container ────────────────────────────────────────────────────
 # ARCH selects the target arch (defaults to native; override e.g. ARCH=arm64 to
 # build/run a second, side-by-side dev container for another arch).
-dev: .dev-cntnr .run login ## Build, run and login into the development container (*) [ARCH=amd64|arm64]
+dev: ## Build, run and login into the development container (*) [ARCH=amd64|arm64]
+	@$(call is-dev-container,true,outside)
+	@$(call check-docker)
+	@set -e -o pipefail; \
+	$(call select-dev-container,build); \
+	( $(build-dev-image) ); \
+	if [ -n "$$state" ]; then $(DOCKER) rm -f $(CONTAINER_NAME); fi; \
+	$(MAKE) .run ARCH=$(ARCH); \
+	$(MAKE) login ARCH=$(ARCH)
+
+dev-pull: ## Download, run and login into the development container (*) [ARCH=amd64|arm64]
+	@$(call is-dev-container,true,outside)
+	@$(call check-docker)
+	@set -e -o pipefail; \
+	$(call select-dev-container,download); \
+	$(DOCKER) pull ghcr.io/ecmwf/open-ecpds/dev:$(ARCH); \
+	$(DOCKER) tag ghcr.io/ecmwf/open-ecpds/dev:$(ARCH) $(IMAGE_NAME); \
+	if [ -n "$$state" ]; then $(DOCKER) rm -f $(CONTAINER_NAME); fi; \
+	$(MAKE) .run ARCH=$(ARCH); \
+	$(MAKE) login ARCH=$(ARCH)
 
 .dev-cntnr: ## Build the development container (*) [ARCH=amd64|arm64]
 	@$(call is-dev-container,true,outside)
 	@$(call dev-container-exists)
-	cd .devcontainer && $(DOCKER) build --platform linux/$(ARCH) -f Dockerfile -t $(IMAGE_NAME) .
+	$(build-dev-image)
 
 .run: ## Run the development container (*) [ARCH=amd64|arm64]
 	@$(call is-dev-container,true,outside)
+	@$(call check-docker)
+	@$(call dev-container-exists)
 	@mkdir -p "$(HOME)/.aws"
 	@[ -f "$(HOME)/.aws/credentials" ] || cp .devcontainer/.aws-credentials "$(HOME)/.aws/credentials"
 	@mkdir -p "$(HOME)/.claude"
@@ -150,15 +194,15 @@ dev: .dev-cntnr .run login ## Build, run and login into the development containe
 	@$(DOCKER) run -d \
 		--platform linux/$(ARCH) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v $(HOME)/.kube:/root/.kube \
-		-v $(HOME)/.copilot:/root/.copilot \
-		-v $(HOME)/.claude:/root/.claude \
+		-v "$(HOME)/.kube:/root/.kube" \
+		-v "$(HOME)/.copilot:/root/.copilot" \
+		-v "$(HOME)/.claude:/root/.claude" \
 		-e CLAUDE_CONFIG_DIR=/root/.claude \
-		-v $(HOME)/.ssh:/root/.ssh \
-		-v $(HOME)/.aws:/root/.aws \
-		-v $(WORKSPACE):/workspaces \
-		-e DOCKER_HOST_WORKSPACE=$(DOCKER_HOST_WORKSPACE) \
-		-e DOCKER_HOST_OS=$(DOCKER_HOST_OS) \
+		-v "$(HOME)/.ssh:/root/.ssh" \
+		-v "$(HOME)/.aws:/root/.aws" \
+		-v "$(WORKSPACE):/workspaces" \
+		-e "DOCKER_HOST_WORKSPACE=$(DOCKER_HOST_WORKSPACE)" \
+		-e "DOCKER_HOST_OS=$(DOCKER_HOST_OS)" \
 		--name $(CONTAINER_NAME) \
 		--add-host=ecpds-mover:host-gateway \
 		-p $(HOST_DOCS_PORT):$(DOCS_PORT) \
@@ -172,14 +216,17 @@ login: ## Log in to the running development container (*) with GitHub Copilot an
 	TOKEN="$${GH_TOKEN:-$$GITHUB_TOKEN}"; \
 	[ -n "$$TOKEN" ] && ENVS="$$ENVS GH_TOKEN=$$TOKEN"; \
 	[ -n "$$CLAUDE_CODE_OAUTH_TOKEN" ] && ENVS="$$ENVS CLAUDE_CODE_OAUTH_TOKEN=$$CLAUDE_CODE_OAUTH_TOKEN"; \
-	$(DOCKER) exec -it -w $(WORKDIR) $(CONTAINER_NAME) env $$ENVS /bin/bash
+	$(DOCKER) exec -it -w "$(WORKDIR)" $(CONTAINER_NAME) env $$ENVS /bin/bash
 
 rm-dev: ## Stop the development container, then remove both its container and image. (*) [ARCH=amd64|arm64]
 	@$(call is-dev-container,true,outside)
-	@$(call check-dev-container)
-	@$(DOCKER) stop $(CONTAINER_NAME) || true
-	@$(DOCKER) rm $(CONTAINER_NAME) || true
-	@$(DOCKER) rmi -f $(IMAGE_NAME) || exit 1
+	@set -e; $(get-dev-state); \
+	if [ -z "$$state" ]; then \
+		printf "Error: Development container '%s' does not exist.\n" "$(CONTAINER_NAME)" >&2; exit 1; \
+	fi; \
+	if [ "$$state" = "running" ]; then $(DOCKER) stop $(CONTAINER_NAME); fi; \
+	$(DOCKER) rm $(CONTAINER_NAME)
+	@$(DOCKER) rmi $(IMAGE_NAME)
 	@if [ -d "$(DOCKER_HOST_WORKSPACE)/$(DB_DATA_DIR)" ] || [ -d "$(DOCKER_HOST_WORKSPACE)/$(AI_DATA_DIR)" ]; then \
 		echo ""; \
 		echo "Note: local service data directories still exist:"; \
@@ -218,13 +265,13 @@ build-sa: ## Build the standalone all-in-one Docker image (**)
 	@echo -n "$(TAG)" > VERSION
 	@$(MAKE) docs-embed
 	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
-	@cd docker && $(MAKE) get-rpms get-licenses build-java build-sa
+	@cd docker && $(MAKE) get-rpms && $(MAKE) get-licenses && $(MAKE) build-java && $(MAKE) build-sa
 
 build-cli: ## Build the ecpds CLI Docker image (**)
 	@$(call is-dev-container,"",inside)
 	@echo -n "$(TAG)" > VERSION
 	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
-	@cd docker && $(MAKE) get-rpms build-cli
+	@cd docker && $(MAKE) get-rpms && $(MAKE) build-cli
 
 release-tools: ## Copy native ecpds binary to release/ with arch suffix for GitHub Release upload (**)
 	@$(call is-dev-container,"",inside)
@@ -233,11 +280,15 @@ release-tools: ## Copy native ecpds binary to release/ with arch suffix for GitH
 	@cp ecpds-native/target/ecpds release/ecpds-$(NATIVE_ARCH)
 	@echo "release/ecpds-$(NATIVE_ARCH) ready for upload to GitHub Releases"
 
-cr-login: ## Log in to the CR registry (according to '.settings/.cr-credential')
+cr-login: ## Log in to the CR registry (according to '.settings/.cr-credentials')
 	@cd docker && $(MAKE) login
 
 push: ## Push locally-built service images to CR as single-arch (no manifest)
 	@cd docker && $(MAKE) push
+
+push-dev: ## Push the locally-built development image to CR (~) [ARCH=amd64|arm64]
+	@$(call check-docker)
+	@cd docker && $(MAKE) push-dev ARCH=$(ARCH)
 
 push-sa: ## Push locally-built standalone image to CR as single-arch (no manifest)
 	@cd docker && $(MAKE) push-sa
@@ -247,31 +298,34 @@ push-cli: ## Push locally-built CLI image to CR as single-arch (no manifest)
 
 push-native: ## Build and push native arch image to CR with arch suffix — run on each machine (**)
 	@$(call is-dev-container,"",inside)
+	@cd docker && $(MAKE) .check-native-release
 	@echo -n "$(TAG)" > VERSION
 	@$(MAKE) docs-embed
 	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
-	@cd docker && $(MAKE) get-rpms get-licenses build-java push-native
+	@cd docker && $(MAKE) get-rpms && $(MAKE) get-licenses && $(MAKE) build-java && $(MAKE) push-native
 
 push-sa-native: ## Build and push native arch standalone image with arch suffix — run on each machine (**)
 	@$(call is-dev-container,"",inside)
+	@cd docker && $(MAKE) .check-native-release
 	@echo -n "$(TAG)" > VERSION
 	@$(MAKE) docs-embed
 	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
-	@cd docker && $(MAKE) get-rpms get-licenses build-java push-sa-native
+	@cd docker && $(MAKE) get-rpms && $(MAKE) get-licenses && $(MAKE) build-java && $(MAKE) push-sa-native
 
 push-cli-native: ## Build and push native arch CLI image with arch suffix — run on each machine (**)
 	@$(call is-dev-container,"",inside)
+	@cd docker && $(MAKE) .check-native-release
 	@echo -n "$(TAG)" > VERSION
 	@mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
-	@cd docker && $(MAKE) get-rpms push-cli-native
+	@cd docker && $(MAKE) get-rpms && $(MAKE) push-cli-native
 
-manifest: ## Combine arch images into a multi-arch manifest on CR — run after push-native on both machines (**)
+manifest: ## Combine arch images into a multi-arch manifest on CR (~)
 	@cd docker && $(MAKE) manifest
 
-sa-manifest: ## Combine arch standalone images into a multi-arch manifest on CR — run after push-sa-native on both machines (**)
+sa-manifest: ## Combine arch standalone images into a multi-arch manifest on CR (~)
 	@cd docker && $(MAKE) sa-manifest
 
-cli-manifest: ## Combine arch CLI images into a multi-arch manifest on CR — run after push-cli-native on both machines (**)
+cli-manifest: ## Combine arch CLI images into a multi-arch manifest on CR (~)
 	@cd docker && $(MAKE) cli-manifest
 
 # ─── Local services (database + AI) ───────────────────────────────────────────
@@ -413,7 +467,7 @@ docs-publish: docs ## Build and publish the documentation to GitHub Pages (**)
 # ─── Utilities ────────────────────────────────────────────────────────────────
 clean: ## Stop containers, remove images, JARs, RPMs and dependencies (**)
 	@$(call is-dev-container,"",inside)
-	@cd run/bin/ecpds && $(MAKE) -s down clean  || exit 1
+	@cd run/bin/ecpds && $(MAKE) -s down && $(MAKE) -s clean
 	@cd docker && $(MAKE) -s rm-images  || exit 1
 	@cd docker && $(MAKE) clean  || exit 1
 	@mvn clean  || exit 1
@@ -442,9 +496,10 @@ info: ## Output the configuration
 	@printf "  %-24s %s\n" "Arch:"       "$(ARCH)"
 	@printf "  %-24s %s\n" "Image:"      "$(IMAGE_NAME)"
 	@printf "  %-24s %s\n" "Container:"  "$(CONTAINER_NAME)"
-	@if [ -n "$(shell $(DOCKER) ps -q -f name=$(CONTAINER_NAME) 2>/dev/null)" ]; then \
+	@$(get-dev-state); \
+	if [ "$$state" = "running" ]; then \
 		printf "  %-24s $(GREEN)%s$(RESET)\n" "Status:" "running"; \
-	elif [ -n "$(shell $(DOCKER) ps -a -q -f name=$(CONTAINER_NAME) 2>/dev/null)" ]; then \
+	elif [ -n "$$state" ]; then \
 		printf "  %-24s $(RED)%s$(RESET)\n" "Status:" "stopped"; \
 	else \
 		printf "  %-24s %s\n" "Status:" "not created"; \
