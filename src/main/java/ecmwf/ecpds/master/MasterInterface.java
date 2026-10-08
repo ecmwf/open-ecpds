@@ -108,6 +108,8 @@ public interface MasterInterface extends ProviderInterface {
      */
     void updateLiveTransferStatistics(LiveTransferSample[] samples) throws RemoteException;
 
+    void updateTrafficAccounting(String mover, java.util.Map<String, String> snapshot) throws RemoteException;
+
     /**
      * Whether the MasterServer currently wants to receive live transfer statistics (e.g. because at least one "Live
      * ECPDS Earth" globe visualisation client is connected). DataMovers should poll this periodically and skip

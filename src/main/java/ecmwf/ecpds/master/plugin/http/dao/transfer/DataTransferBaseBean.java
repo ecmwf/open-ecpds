@@ -648,6 +648,11 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
         return transfer.getTarget();
     }
 
+    @Override
+    public String getDeliveredName() {
+        return transfer.getDeliveredName();
+    }
+
     /**
      * {@inheritDoc}
      *

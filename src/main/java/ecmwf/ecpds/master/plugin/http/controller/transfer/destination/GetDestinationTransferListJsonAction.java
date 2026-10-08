@@ -82,8 +82,9 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
      * getSortedDataTransfersByFilter.sql: 0=failed_time, 1=host, 2=sched_time, 3=start_time, 4=finish_time, 5=target,
      * 6=ts, 7=% (non-sortable — live value from TransferScheduler, not DB), 8=mbits, 9=size, 10=status, 11=priority.
      * Columns 12 (Actions) and 13 (Select) are non-sortable, defaulting to column 2 (scheduled time).
+     * Column 14 (Delivered name) maps to database sort 12.
      */
-    private static final int[] SORT_COLS = { 0, 1, 2, 3, 4, 5, 6, 2, 8, 11, 9, 10, 2, 2 };
+    private static final int[] SORT_COLS = { 0, 1, 2, 3, 4, 5, 6, 2, 8, 11, 9, 10, 2, 2, 12 };
 
     /**
      * {@inheritDoc}
@@ -215,6 +216,7 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
             row.add(String.valueOf(dt.getPriority()));
             row.add(buildActionsHtml(dt, hasActiveDissHosts, memberState));
             row.add(buildSelectHtml(dt));
+            row.add(escapeHtml(dt.getDeliveredName()));
         }
         try {
             response.setContentType("application/json; charset=UTF-8");

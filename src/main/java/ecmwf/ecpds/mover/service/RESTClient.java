@@ -305,6 +305,21 @@ public final class RESTClient implements RESTInterface {
     }
 
     @Override
+    public void updateTrafficAccounting(String mover, Map<String, String> snapshot) throws RestException {
+        RestException failure = null;
+        for (final String dataMover : getDataMover()) {
+            try (final var response = send(httpProxy, dataMover + "/ecpds/master/updateTrafficAccounting",
+                    connectTimeout, "PUT", snapshot, Map.of("mover", mover))) {
+                parse(response);
+                return;
+            } catch (final Exception e) {
+                failure = new RestException("Sending traffic accounting to " + dataMover, e);
+            }
+        }
+        throw failure != null ? failure : new RestException("No MasterServer available");
+    }
+
+    @Override
     public boolean isLiveTransferMonitoringEnabled() throws RestException {
         _log.debug("REST sending request: isLiveTransferMonitoringEnabled()");
         RestException restException = null;

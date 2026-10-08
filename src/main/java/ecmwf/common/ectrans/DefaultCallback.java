@@ -38,6 +38,23 @@ public class DefaultCallback implements ECtransCallback {
     /** The _setup. */
     private final ECtransSetup _setup;
 
+    private java.util.function.LongConsumer _byteCounter;
+
+    public void setByteCounter(java.util.function.LongConsumer counter) {
+        _byteCounter = counter;
+    }
+
+    @Override
+    public boolean isByteAccountingEnabled() {
+        return _byteCounter != null;
+    }
+
+    @Override
+    public void transferredBytes(long bytes) {
+        if (_byteCounter != null)
+            _byteCounter.accept(bytes);
+    }
+
     /**
      * Instantiates a new default callback.
      *

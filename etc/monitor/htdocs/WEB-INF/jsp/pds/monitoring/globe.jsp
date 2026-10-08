@@ -1,4 +1,4 @@
-<%@ page session="true" %>
+<%@ page session="true" contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 
 <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
@@ -66,9 +66,22 @@
 [data-bs-theme=light] #globeStatsToggleBtn{background:#f6f8fa;color:#0969da;border-color:rgba(0,0,0,.08);box-shadow:0 4px 14px rgba(0,0,0,.18);}
 #globeRightPanels{position:absolute;right:10px;top:10px;z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-height:calc(100% - 20px);pointer-events:none;}
 #globeRightPanels>div{pointer-events:auto;position:static;}
-#globeInfoPanel{width:290px;max-width:80vw;background:rgba(20,25,30,.86);color:#eee;border-radius:8px;padding:.75rem 1rem;font-size:.82rem;display:none;box-shadow:0 4px 16px rgba(0,0,0,.35);}
+#globeInfoPanel{position:absolute;right:0;top:0;bottom:0;width:340px;max-width:100%;z-index:25;background:rgba(20,25,30,.96);color:#eee;padding:1rem;font-size:.82rem;display:none;overflow:auto;box-sizing:border-box;box-shadow:0 4px 16px rgba(0,0,0,.35);}
+#globeContainer.globe-details-open #cesiumContainer{width:calc(100% - 340px)!important;}
+#globeContainer.globe-details-open #globeRightPanels,#globeContainer.globe-details-open #globeBottomRightPanels{right:350px;}
+#globeHostChoices{display:flex;flex-direction:column;gap:.35rem;margin-bottom:.75rem;}
+#globeHostChoices button{text-align:left;white-space:normal;overflow-wrap:anywhere;}
+#globeHostChoices button{border-color:var(--host-marker-color);color:var(--host-marker-color);}
+#globeHostChoices button:hover,#globeHostChoices button.active{background:var(--host-marker-color);border-color:var(--host-marker-color);color:var(--host-marker-text);}
+.globe-details-header{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.75rem;}
+@media(max-width:700px){
+    #globeInfoPanel{top:auto;left:0;width:100%;height:45%;border-radius:10px 10px 0 0;}
+    #globeContainer.globe-details-open #cesiumContainer{width:100%!important;height:55%!important;}
+    #globeContainer.globe-details-open #globeRightPanels{right:10px;max-height:calc(55% - 20px);overflow:auto;}
+    #globeContainer.globe-details-open #globeBottomRightPanels{right:10px;bottom:calc(45% + 10px);max-height:calc(55% - 20px);}
+}
 #globeInfoPanel h6{color:#9fd6ff;margin-bottom:.4rem;}
-#globeInfoPanel .close-btn{position:absolute;top:6px;right:8px;cursor:pointer;color:#ccc;}
+#globeInfoPanel .close-btn{position:static;flex:0 0 auto;cursor:pointer;color:inherit;}
 #globeInfoPanel dl{margin:0;}
 #globeInfoPanel dt{color:#aaa;font-weight:400;}
 #globeInfoPanel dd{margin-bottom:.35rem;word-break:break-all;}
@@ -270,7 +283,19 @@
         <li><strong>Hosts</strong> &mdash; number of distinct Transfer Hosts with at least one active transfer.</li>
         <li><strong>Throughput</strong> &mdash; combined instantaneous transfer rate across all currently active
         transfers.</li>
-        <li><strong>24h total</strong> &mdash; total volume transferred over the last 24 hours.</li>
+        <li><strong>Recent movements</strong> &mdash; completed/failed transfers, including short transfers between
+        polls, appear briefly in green/red. They do not count as active traffic. Repeated snapshots and filter changes
+        do not restart their 2.5-second display interval. Replication/Backup/Proxy pushes currently show only
+        their completion/failure, not live progress. Event delivery retries transient failures but is not durable history.</li>
+        <li><strong>24h total</strong> &mdash; recorded bytes moved over the last 24 hours,
+        summed across the selected Host Types (Dissemination, Acquisition, Replication, Source, Backup and Proxy).
+        Data Portal uploads/downloads are separate. Upgraded Movers continuously count application-stream bytes,
+        including retries and partial attempts, even when nobody views this page; no force-enabled setting is needed.
+        Background checkpoints/delivery run every 10 seconds by default. A crash can lose bytes since the last
+        successful local checkpoint. Protocol overhead, TCP retransmissions and handler-based transfers are excluded;
+        optimized modules report bytes consumed/emitted, not confirmed remote receipt.
+        The minute-bucket window needs 24 hours to fill after upgrading all Movers and the Master.
+        Keep mover clocks synchronized and checkpoint files on persistent storage.</li>
         <li><strong>Sessions</strong> &mdash; number of Incoming Users currently connected to the Data Portal (FTP/
         HTTP/SFTP/S3/WebDAV), across every DataMover.</li>
         <li><strong>Data in / Data out</strong> &mdash; combined instantaneous upload/download rate of every open
@@ -299,12 +324,16 @@
     <button type="button" id="globeLegendToggleBtn" title="Show/hide the legend">
         <i class="bi bi-info-circle"></i><span id="globeLegendToggleLabel">Legend</span>
     </button>
-    <div id="globeRightPanels">
-        <div id="globeInfoPanel">
-            <span class="close-btn" onclick="document.getElementById('globeInfoPanel').style.display='none';">&times;</span>
+        <div id="globeInfoPanel" role="region" aria-label="Selected host details">
+            <div class="globe-details-header">
+                <span class="fw-semibold">Host details</span>
+                <button type="button" class="close-btn btn btn-sm" id="globeInfoClose" aria-label="Close host details">&times;</button>
+            </div>
+            <div id="globeHostChoices"></div>
             <h6 id="globeInfoTitle">Transfer</h6>
             <dl id="globeInfoBody"></dl>
         </div>
+    <div id="globeRightPanels">
         <div id="globeCountryTable">
             <div class="globe-country-table-title">Transfers by country</div>
             <table>
@@ -347,7 +376,7 @@
                     <span class="globe-stat-label">Throughput</span>
                 </div>
             </div>
-            <div class="globe-stat-tile" title="Overall total across every Host type - not affected by the Host Type filter">
+            <div class="globe-stat-tile" title="Recorded 24h bytes across selected Host Types; excludes Data Portal traffic">
                 <div class="globe-stat-graphic"><i class="bi bi-hdd-stack"></i></div>
                 <div class="globe-stat-text">
                     <span class="globe-stat-value" id="kpiBytes">0 B</span>
@@ -609,14 +638,41 @@
     var ORIGIN_COLOR = Cesium.Color.fromCssColorString("#ffd166");
     var PROXY_HOST_COLOR = Cesium.Color.fromCssColorString("#a78bfa");
     var TERMINAL_FADE_MS = 2500;
+    var terminalEvents = Object.create(null);
+    var terminalRefreshTimer = null;
+
+    function transferEventKey(sample) {
+        return sample.eventKey || JSON.stringify([sample.transferId, sample.mover, sample.destination,
+            sample.host, sample.direction, sample.hostType, sample.attemptId]);
+    }
+
+    // Remember expiry while the server repeats an event; polling/filter changes must not restart its fade.
+    function visibleTransferSamples(samples, now) {
+        samples.forEach(function (sample) {
+            if (sample.status === "ACTIVE") return;
+            var key = transferEventKey(sample);
+            if (terminalEvents[key] === undefined) terminalEvents[key] = now + TERMINAL_FADE_MS;
+        });
+        Object.keys(terminalEvents).forEach(function (key) {
+            if (now - terminalEvents[key] >= 60000) delete terminalEvents[key];
+        });
+        var keys = Object.keys(terminalEvents);
+        if (keys.length > 20000) {
+            keys.sort(function (a, b) { return terminalEvents[a] - terminalEvents[b]; });
+            keys.slice(0, keys.length - 20000).forEach(function (key) { delete terminalEvents[key]; });
+        }
+        return samples.filter(function (sample) {
+            return sample.status === "ACTIVE" || terminalEvents[transferEventKey(sample)] > now;
+        });
+    }
     var ORIGIN_PIXEL_SIZE = 12;
     var MOVER_PIXEL_SIZE = 10;
 
     var origin = null; // {lat, lon}
     var originPoint = null;
-    // hostName -> { arc, point, lat, lon, transfers: {transferId: sample}, status, removeTimeout, pulsePhase }
+    // hostName -> { arc, point, lat, lon, transfers: {eventKey: sample}, status, removeTimeout, pulsePhase }
     var hosts = Object.create(null);
-    // countryCode -> { arc, point, lat, lon, hostCount, transfers: {transferId: sample}, agg, removeTimeout, pulsePhase }
+    // countryCode -> { arc, point, lat, lon, hostCount, transfers: {eventKey: sample}, agg, removeTimeout, pulsePhase }
     // - only populated/rendered while viewMode === "country" (see setViewMode()).
     var countries = Object.create(null);
     // moverName -> { point, lat, lon, removeTimeout } - one entry per Continental Mover (a Data Mover reached only
@@ -857,6 +913,7 @@
     var bytesLast24h = 0;
     var bytesLast24hDissemination = 0;
     var bytesLast24hAcquisition = 0;
+    var bytesLast24hByType = null;
 
     // Data Portal (IncomingUser FTP/HTTP/SFTP/S3/WebDAV) activity, maintained server-side by
     // DataPortalActivityRegistry and pushed with every "snapshot" message: current open session count, plus a live
@@ -995,12 +1052,12 @@
             " / " + formatBytes(moverStorageTotalBytes);
     }
 
-    // The rolling 24h bytes total is a single, MasterServer-side counter bucketed only by push/pull direction (see
-    // LiveTransferRegistry#getBytesLast24h()), not by the finer-grained Host type the globe now filters by - so
-    // unlike the other KPI cards (computed client-side from the currently filtered lastSamples), this one always
-    // shows the overall, unfiltered total regardless of the current Host Type filter selection.
+    // Never show the old unfiltered total as if it matched selected Host Types.
     function currentBytesLast24h() {
-        return bytesLast24h;
+        if (!bytesLast24hByType) return null;
+        var total = 0;
+        selectedHostTypes.forEach(function(type) { total += bytesLast24hByType[type] || 0; });
+        return total;
     }
 
     // Counts straight from the last Host-Type-filtered sample list (see lastSamples above), not from the `hosts`
@@ -1023,7 +1080,8 @@
         document.getElementById("kpiTransfers").textContent = transferCount;
         document.getElementById("kpiHosts").textContent = Object.keys(activeHostNames).length;
         document.getElementById("kpiThroughput").textContent = formatRate(totalRate);
-        document.getElementById("kpiBytes").textContent = formatBytes(currentBytesLast24h());
+        var selectedBytes = currentBytesLast24h();
+        document.getElementById("kpiBytes").textContent = selectedBytes === null ? "N/A" : formatBytes(selectedBytes);
         updateGauge(totalRate);
         document.getElementById("globeSubtitle").textContent = "Live data - updates automatically";
     }
@@ -1402,11 +1460,6 @@
             removeTimeout: null, pulsePhase: existing ? existing.pulsePhase : Math.random() * Math.PI * 2
         };
         hosts[name] = entry;
-        if (!agg.hasActive) {
-            // Every transfer to this Host just completed/failed: fade the marker out shortly instead of
-            // leaving it on the globe forever.
-            entry.removeTimeout = setTimeout(function () { removeHost(name); }, TERMINAL_FADE_MS);
-        }
         updateKpis();
     }
 
@@ -1481,11 +1534,6 @@
             removeTimeout: null, pulsePhase: existing ? existing.pulsePhase : Math.random() * Math.PI * 2
         };
         countries[code] = entry;
-        if (!agg.hasActive) {
-            // Every transfer to this country just completed/failed: fade the marker out shortly instead of
-            // leaving it on the globe forever.
-            entry.removeTimeout = setTimeout(function () { removeCountry(code); }, TERMINAL_FADE_MS);
-        }
         updateKpis();
     }
 
@@ -1521,7 +1569,21 @@
     function applySnapshot(samples, proxyHosts) {
         rawSamples = samples;
         lastProxyHosts = proxyHosts || [];
-        lastSamples = selectedHostTypes.size === ALL_HOST_TYPES.length ? samples : samples.filter(function (s) {
+        var now = Date.now();
+        var visibleSamples = visibleTransferSamples(samples, now);
+        if (terminalRefreshTimer) clearTimeout(terminalRefreshTimer);
+        terminalRefreshTimer = null;
+        var nextExpiry = Infinity;
+        Object.keys(terminalEvents).forEach(function (key) {
+            if (terminalEvents[key] > now) nextExpiry = Math.min(nextExpiry, terminalEvents[key]);
+        });
+        if (nextExpiry !== Infinity) {
+            terminalRefreshTimer = setTimeout(function () {
+                terminalRefreshTimer = null;
+                applySnapshot(rawSamples, lastProxyHosts);
+            }, nextExpiry - now);
+        }
+        lastSamples = selectedHostTypes.size === ALL_HOST_TYPES.length ? visibleSamples : visibleSamples.filter(function (s) {
             return selectedHostTypes.has(sampleHostType(s));
         });
         var byHost = Object.create(null);
@@ -1551,7 +1613,7 @@
             if (!group) {
                 group = byHost[sample.host] = { lat: sample.hostLat, lon: sample.hostLon, label: sample.hostLabel, transfers: Object.create(null) };
             }
-            group.transfers[sample.transferId] = sample;
+            group.transfers[transferEventKey(sample)] = sample;
             if (sample.hostCountry) {
                 var cGroup = byCountry[sample.hostCountry];
                 if (!cGroup) {
@@ -1562,7 +1624,7 @@
                     cGroup.latSum += sample.hostLat;
                     cGroup.lonSum += sample.hostLon;
                 }
-                cGroup.transfers[sample.transferId] = sample;
+                cGroup.transfers[transferEventKey(sample)] = sample;
             }
         });
         // Drawn before host/country markers below. For the common case of an unrelated Host coincidentally
@@ -1724,7 +1786,9 @@
     // Renders the shared info-panel body (used for both a single Host and an aggregated country) from an
     // already-computed agg (see aggregateTransfers()) and its underlying transfer samples.
     function renderInfoPanel(title, agg, transfers, detailsHtml) {
-        document.getElementById("globeInfoTitle").textContent = title;
+        var titleEl = document.getElementById("globeInfoTitle");
+        titleEl.textContent = title;
+        titleEl.hidden = document.getElementById("globeHostChoices").children.length > 0;
         var body = document.getElementById("globeInfoBody");
         var html = detailsHtml || "";
         html +=
@@ -1743,7 +1807,147 @@
         html += "</tbody></table></dd>";
         body.innerHTML = html;
         document.getElementById("globeInfoPanel").style.display = "block";
+        globeContainerEl.classList.add("globe-details-open");
+        viewer.resize();
+        adjustCountryTableMaxHeight();
     }
+
+    document.getElementById("globeInfoClose").addEventListener("click", function() {
+        document.getElementById("globeInfoPanel").style.display = "none";
+        globeContainerEl.classList.remove("globe-details-open");
+        viewer.resize();
+        adjustCountryTableMaxHeight();
+    });
+
+    function showHostChoices(members) {
+        var choices = document.getElementById("globeHostChoices");
+        choices.replaceChildren();
+        members.forEach(function(member) {
+            var entry = member.proxy ? movers[member.name] : hosts[member.name];
+            if (!entry) return;
+            var button = document.createElement("button");
+            button.type = "button";
+            button.className = "btn btn-sm btn-outline-info";
+            var markerColor = entry.point.color;
+            button.style.setProperty("--host-marker-color", markerColor.toCssColorString());
+            var luminance = 0.2126 * markerColor.red + 0.7152 * markerColor.green + 0.0722 * markerColor.blue;
+            button.style.setProperty("--host-marker-text", luminance > 0.5 ? "#000000" : "#ffffff");
+            button.setAttribute("aria-pressed", "false");
+            button.textContent = (entry.label || member.name) + (member.proxy ? " - Proxy Host" : " - Target Host");
+            button.addEventListener("click", function() {
+                Array.from(choices.children).forEach(function(choice) {
+                    var selected = choice === button;
+                    choice.classList.toggle("active", selected);
+                    choice.setAttribute("aria-pressed", String(selected));
+                });
+                if (member.proxy) showMoverInfoPanel(member.name);
+                else showInfoPanel(member.name);
+            });
+            choices.appendChild(button);
+        });
+        if (choices.firstElementChild) choices.firstElementChild.click();
+    }
+
+    var clusterMarkers = viewer.scene.primitives.add(new Cesium.BillboardCollection());
+    var clusterImages = Object.create(null);
+    function clusterImage(count, color) {
+        var key = count + ":" + color;
+        if (clusterImages[key]) return clusterImages[key];
+        var size = Math.max(30, 18 + String(count).length * 9);
+        var canvas = document.createElement("canvas");
+        canvas.width = canvas.height = size * 2;
+        var context = canvas.getContext("2d");
+        context.scale(2, 2);
+        context.beginPath();
+        context.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
+        context.fillStyle = color;
+        context.fill();
+        context.strokeStyle = "#ffffff";
+        context.lineWidth = 2;
+        context.stroke();
+        context.font = "bold 13px sans-serif";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillStyle = "#000000";
+        context.fillText(String(count), size / 2, size / 2);
+        clusterImages[key] = canvas;
+        return canvas;
+    }
+    var lastClusterUpdate = 0;
+    var clusterSignature = "";
+    var clusteredPoints = [];
+    // Group by screen distance, not geographic distance: zooming separates nearby
+    // locations while truly co-located hosts remain selectable in the details pane.
+    viewer.scene.postRender.addEventListener(function() {
+        var now = performance.now();
+        if (now - lastClusterUpdate < 250) return;
+        lastClusterUpdate = now;
+        var members = [];
+        Object.keys(movers).forEach(function(name) {
+            members.push({name:name, proxy:true, point:movers[name].point});
+        });
+        Object.keys(hosts).forEach(function(name) {
+            if (!movers[name]) members.push({name:name, proxy:false, point:hosts[name].point});
+        });
+        var occluder = new Cesium.EllipsoidalOccluder(viewer.scene.globe.ellipsoid, viewer.camera.positionWC);
+        var visible = members.filter(function(member) {
+            if (viewer.scene.mode === Cesium.SceneMode.SCENE3D && !occluder.isPointVisible(member.point.position)) return false;
+            var screen = Cesium.SceneTransforms.worldToWindowCoordinates(viewer.scene, member.point.position);
+            if (!screen || screen.x < 0 || screen.y < 0 || screen.x > viewer.canvas.clientWidth || screen.y > viewer.canvas.clientHeight) return false;
+            member.screen = screen;
+            return true;
+        });
+        var signature = visible.map(function(member) {
+            return member.name + ":" + member.proxy + ":" + Math.round(member.screen.x)
+                + ":" + Math.round(member.screen.y) + ":" + member.point.color.toCssColorString();
+        }).join("|");
+        // Snapshot updates can replace primitives without changing their screen positions.
+        var samePoints = visible.length === clusteredPoints.length
+            && visible.every(function(member, i) { return member.point === clusteredPoints[i]; });
+        if (signature === clusterSignature && samePoints) return;
+        clusterSignature = signature;
+        clusteredPoints = visible.map(function(member) { return member.point; });
+        members.forEach(function(member) { member.point.show = true; });
+        clusterMarkers.removeAll();
+        var remaining = new Set(visible);
+        visible.forEach(function(seed) {
+            if (!remaining.delete(seed)) return;
+            var group = [seed];
+            for (var i = 0; i < group.length; i++) {
+                remaining.forEach(function(candidate) {
+                    var dx = candidate.screen.x - group[i].screen.x;
+                    var dy = candidate.screen.y - group[i].screen.y;
+                    if (dx * dx + dy * dy <= 28 * 28) {
+                        remaining.delete(candidate);
+                        group.push(candidate);
+                    }
+                });
+            }
+            if (group.length < 2) return;
+            group.forEach(function(member) { member.point.show = false; });
+            var hasFailed = group.some(function(member) {
+                return hosts[member.name] && hosts[member.name].agg.hasFailed;
+            });
+            var hasActive = group.some(function(member) {
+                return hosts[member.name] && hosts[member.name].agg.hasActive;
+            });
+            var hasConnectedProxy = group.some(function(member) {
+                return member.proxy && movers[member.name].connected;
+            });
+            var allProxy = group.every(function(member) { return member.proxy; });
+            var color = hasFailed ? STATUS_COLOR.FAILED : hasActive ? STATUS_COLOR.ACTIVE
+                : allProxy ? PROXY_HOST_COLOR : STATUS_COLOR.DONE;
+            var image = clusterImage(group.length, color.toCssColorString());
+            clusterMarkers.add({
+                position:seed.point.position,
+                id:{hostCluster:group},
+                image:image, width:image.width / 2, height:image.height / 2,
+                color:Cesium.Color.WHITE.withAlpha(allProxy && !hasActive && !hasFailed && !hasConnectedProxy ? 0.35 : 1),
+                horizontalOrigin:Cesium.HorizontalOrigin.CENTER,
+                verticalOrigin:Cesium.VerticalOrigin.CENTER
+            });
+        });
+    });
 
     function showMoverInfoPanel(moverName) {
         var mover = movers[moverName];
@@ -1767,6 +1971,13 @@
         var samples = Object.keys(h.transfers).map(function (id) { return h.transfers[id]; });
         var destination = samples[0] && samples[0].destination;
         renderInfoPanel((h.label || hostName) + (destination ? " (" + destination + ")" : ""), h.agg, samples);
+        if (destination) {
+            var label = document.createElement("dt");
+            label.textContent = "Destination";
+            var value = document.createElement("dd");
+            value.textContent = destination;
+            document.getElementById("globeInfoBody").prepend(label, value);
+        }
     }
 
     function showCountryInfoPanel(code) {
@@ -1787,29 +1998,43 @@
     // DevTools console dump during a live debugging session, which showed exactly this {primitive, collection, id}
     // shape with all three custom properties undefined on the wrapper.
     function pickedPrimitive(picked) {
+        if (Cesium.defined(picked) && picked.id && picked.id.hostCluster) return picked.id;
         return Cesium.defined(picked) && Cesium.defined(picked.primitive) ? picked.primitive : undefined;
     }
 
     var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     handler.setInputAction(function (movement) {
-        // A transfer Host can overlap an enabled Proxy Host marker; prefer the mover identity anywhere beneath the
-        // click so Cesium's topmost pick cannot open details for a different Host at the same coordinates.
+        // Keep every identity selectable when picks overlap, including mixed Proxy/Target groups.
         var picked = viewer.scene.drillPick(movement.position);
         var primitive;
+        var selectedHosts = [];
+        var selectedNames = new Set();
         for (var i = 0; i < picked.length; i++) {
             var candidate = pickedPrimitive(picked[i]);
-            if (Cesium.defined(candidate) && Cesium.defined(candidate.moverName)) {
-                showMoverInfoPanel(candidate.moverName);
+            if (Cesium.defined(candidate) && candidate.hostCluster) {
+                showHostChoices(candidate.hostCluster);
                 return;
+            }
+            if (Cesium.defined(candidate) && Cesium.defined(candidate.moverName)) {
+                if (!selectedNames.has(candidate.moverName)) {
+                    selectedNames.add(candidate.moverName);
+                    selectedHosts.push({name:candidate.moverName, proxy:true});
+                }
+            } else if (Cesium.defined(candidate) && Cesium.defined(candidate.hostName)) {
+                if (!selectedNames.has(candidate.hostName)) {
+                    selectedNames.add(candidate.hostName);
+                    selectedHosts.push({name:candidate.hostName, proxy:false});
+                }
             }
             if (!Cesium.defined(primitive) && Cesium.defined(candidate)
                     && (Cesium.defined(candidate.hostName) || Cesium.defined(candidate.countryCode))) {
                 primitive = candidate;
             }
         }
-        if (Cesium.defined(primitive) && Cesium.defined(primitive.hostName)) {
-            showInfoPanel(primitive.hostName);
+        if (selectedHosts.length) {
+            showHostChoices(selectedHosts);
         } else if (Cesium.defined(primitive) && Cesium.defined(primitive.countryCode)) {
+            document.getElementById("globeHostChoices").replaceChildren();
             showCountryInfoPanel(primitive.countryCode);
         }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
@@ -1820,10 +2045,16 @@
     var hoverTooltip = document.getElementById("globeHoverTooltip");
     handler.setInputAction(function (movement) {
         var primitive = pickedPrimitive(viewer.scene.pick(movement.endPosition));
-        if (Cesium.defined(primitive) && Cesium.defined(primitive.moverName)) {
+        if (Cesium.defined(primitive) && primitive.hostCluster) {
+            hoverTooltip.textContent = primitive.hostCluster.length + " hosts - click to select";
+            hoverTooltip.style.left = (movement.endPosition.x + 14) + "px";
+            hoverTooltip.style.top = (movement.endPosition.y + 10) + "px";
+            hoverTooltip.style.display = "block";
+            viewer.scene.canvas.style.cursor = "pointer";
+        } else if (Cesium.defined(primitive) && Cesium.defined(primitive.moverName)) {
             var m = movers[primitive.moverName];
             var mergedHost = hosts[primitive.moverName];
-            var suffix = m && !m.connected ? " (not connected)" : (mergedHost ? " — transfer in progress" : "");
+            var suffix = m && !m.connected ? " (not connected)" : (mergedHost ? " - transfer in progress" : "");
             hoverTooltip.textContent = (m ? m.label : primitive.moverName) + suffix;
             hoverTooltip.style.left = (movement.endPosition.x + 14) + "px";
             hoverTooltip.style.top = (movement.endPosition.y + 10) + "px";
@@ -1871,6 +2102,7 @@
                 if (typeof msg.bytes24h === "number") {
                     bytesLast24h = msg.bytes24h;
                 }
+                bytesLast24hByType = msg.bytes24hByType || null;
                 if (typeof msg.bytes24hDissemination === "number") {
                     bytesLast24hDissemination = msg.bytes24hDissemination;
                 }

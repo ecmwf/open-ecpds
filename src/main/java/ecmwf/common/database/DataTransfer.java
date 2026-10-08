@@ -109,6 +109,8 @@ public class DataTransfer extends DataBaseObject {
     /** The dat target. */
     protected String DAT_TARGET;
 
+    protected String DAT_DELIVERED_NAME;
+
     /** The dat time base. */
     protected BigDecimal DAT_TIME_BASE;
 
@@ -1096,6 +1098,19 @@ public class DataTransfer extends DataBaseObject {
      */
     public void setTarget(final String param) {
         DAT_TARGET = param;
+    }
+
+    public String getDeliveredName() {
+        return DAT_DELIVERED_NAME;
+    }
+
+    public void setDeliveredName(final String name) {
+        DAT_DELIVERED_NAME = name;
+    }
+
+    /** Record only a module-confirmed name differing from the requested target. */
+    public void recordDeliveredName(final String name) {
+        DAT_DELIVERED_NAME = name != null && !name.isBlank() && !name.equals(DAT_TARGET) ? name : null;
     }
 
     /**

@@ -363,9 +363,6 @@ public final class MasterServer extends ECaccessProvider
     /** The mover availability scheduler. */
     private final transient MoverAvailabilityScheduler theMoverAvailabilityScheduler;
 
-    /** The live transfer bytes (rolling 24h total) persistence scheduler. */
-    private final transient LiveTransferBytesScheduler theLiveTransferBytesScheduler;
-
     /** The data transfer check. */
     private final transient DataTransferCheck theDataTransferCheck;
 
@@ -386,6 +383,96 @@ public final class MasterServer extends ECaccessProvider
 
     /** The current dataFiles. */
     private final transient Map<Long, ProgressInterface> currentDataFiles = new ConcurrentHashMap<>();
+
+    private final transient Map<String, TrafficAccounting> actualTraffic = new ConcurrentHashMap<>();
+    private volatile boolean actualTrafficReady;
+    private final transient TrafficAccountingMaintenance trafficAccountingMaintenance;
+
+    private static String trafficSourceKey(String mover) {
+        try {
+            return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(mover.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @Override
+    public void updateTrafficAccounting(String mover, Map<String, String> snapshot) throws RemoteException {
+        if (!actualTrafficReady)
+            throw new RemoteException("Actual traffic history could not be restored");
+        if (mover == null || mover.isBlank() || mover.length() > 1024)
+            throw new RemoteException("Invalid accounting mover identity");
+        final var key = trafficSourceKey(mover);
+        try {
+            actualTraffic.compute(key, (ignored, existing) -> {
+                final var counter = existing != null ? existing : new TrafficAccounting();
+                final var previous = counter.snapshot();
+                final var merged = new TrafficAccounting();
+                merged.merge(previous);
+                merged.merge(snapshot);
+                merged.totals();
+                final var state = merged.snapshot();
+                for (final var entry : state.entrySet()) {
+                    if (!entry.getValue().equals(previous.get(entry.getKey()))) {
+                        try {
+                            getECpdsBase().setSysConfigValue("ActualTraffic", key + "." + entry.getKey(),
+                                    entry.getValue());
+                        } catch (final DataBaseException e) {
+                            throw new IllegalStateException("Cannot persist traffic bucket", e);
+                        }
+                    }
+                }
+                counter.merge(state);
+                return counter;
+            });
+        } catch (final Exception e) {
+            _log.warn("Cannot persist actual traffic accounting for {}", mover, e);
+            throw Format.getRemoteException("Actual traffic accounting", e);
+        }
+    }
+
+    public Map<String, Long> getActualTrafficTotals() throws RemoteException {
+        if (!actualTrafficReady)
+            throw new RemoteException("Actual traffic history could not be restored");
+        final Map<String, Long> result = new java.util.LinkedHashMap<>();
+        for (final var type : TrafficAccounting.TYPES)
+            result.put(type, 0L);
+        for (final var counter : actualTraffic.values()) {
+            counter.totals().forEach((type, value) -> result.merge(type, value, Math::addExact));
+        }
+        return result;
+    }
+
+    private final class TrafficAccountingMaintenance extends MBeanScheduler {
+        TrafficAccountingMaintenance() {
+            super("TrafficAccountingMaintenance");
+            setDelay(Timer.ONE_HOUR);
+            setJammedTimeout(5 * Timer.ONE_MINUTE);
+        }
+
+        @Override
+        public int nextStep() {
+            if (actualTrafficReady) {
+                for (final var key : actualTraffic.keySet()) {
+                    actualTraffic.computeIfPresent(key, (ignored, counter) -> {
+                        if (counter.totals().values().stream().anyMatch(value -> value > 0))
+                            return counter;
+                        try {
+                            for (final var type : TrafficAccounting.TYPES) {
+                                getECpdsBase().deleteSysConfigValue("ActualTraffic", key + "." + type);
+                            }
+                            return null;
+                        } catch (final DataBaseException e) {
+                            _log.warn("Cannot prune expired traffic producer {}", key, e);
+                            return counter;
+                        }
+                    });
+                }
+            }
+            return NEXT_STEP_DELAY;
+        }
+    }
 
     /** The incoming connection ids. */
     private final transient Map<String, List<IncomingConnection>> incomingConnectionIds = new ConcurrentHashMap<>();
@@ -724,15 +811,9 @@ public final class MasterServer extends ECaccessProvider
         } else {
             theMoverAvailabilityScheduler = null;
         }
-        if (Cnf.at("Server", "liveTransferBytesScheduler", true)) {
-            _log.debug("Loading live transfer bytes snapshot from DB");
-            _loadLiveTransferBytesFromDb();
-            _log.debug("Starting LiveTransferBytesScheduler");
-            theLiveTransferBytesScheduler = new LiveTransferBytesScheduler("LiveTransferBytesScheduler");
-            theLiveTransferBytesScheduler.start();
-        } else {
-            theLiveTransferBytesScheduler = null;
-        }
+        _loadActualTrafficFromDb();
+        trafficAccountingMaintenance = new TrafficAccountingMaintenance();
+        trafficAccountingMaintenance.start();
         _log.debug("Monitors to notify: {}", containersToNotify);
         _log.debug("Passwords allowed from: {}", allowedPasswordOn);
         localContainer.startPlugins();
@@ -3344,21 +3425,26 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Loads the "Live ECPDS Earth" rolling 24h transferred-bytes buckets, previously persisted to the
-     * {@code SYS_CONFIG} table by {@link LiveTransferBytesScheduler}, back into {@link LiveTransferRegistry} so a
-     * MasterServer restart only loses at most a few minutes of history for that figure instead of the full 24 hours.
+     * Restores authoritative per-producer stream counters before accepting accounting updates.
      */
-    private void _loadLiveTransferBytesFromDb() {
+    private void _loadActualTrafficFromDb() {
         final var base = getECpdsBase();
         if (base == null) {
-            _log.warn("Skipping live transfer bytes snapshot load because ECpdsBase is not available yet");
+            _log.warn("Cannot restore actual traffic because ECpdsBase is not available");
             return;
         }
         try {
-            final var persisted = base.getSysConfigValue("LiveTransfer", "bytes24hBuckets");
-            LiveTransferRegistry.getInstance().restoreBucketsFromPersistence(persisted);
+            for (final var entry : base.getSysConfigValuesByGroup("ActualTraffic").entrySet()) {
+                final var separator = entry.getKey().lastIndexOf('.');
+                if (separator <= 0)
+                    throw new IllegalArgumentException("Invalid traffic accounting key: " + entry.getKey());
+                actualTraffic
+                        .computeIfAbsent(entry.getKey().substring(0, separator), ignored -> new TrafficAccounting())
+                        .merge(Map.of(entry.getKey().substring(separator + 1), entry.getValue()));
+            }
+            actualTrafficReady = true;
         } catch (final DataBaseException e) {
-            _log.warn("Failed to load live transfer bytes snapshot from DB", e);
+            _log.warn("Failed to restore actual traffic; accounting updates and totals are unavailable", e);
         }
     }
 
@@ -4702,6 +4788,7 @@ public final class MasterServer extends ECaccessProvider
                             local.setDuration(transfer.getDuration());
                             local.setDurationOnClose(transfer.getDurationOnClose());
                             local.setComment(transfer.getComment());
+                            local.setDeliveredName(transfer.getDeliveredName());
                             local.setStatusCode(transfer.getStatusCode());
                             local.setRatio(transfer.getRatio());
                             local.setCompressed(transfer.getCompressed());
@@ -4815,7 +4902,9 @@ public final class MasterServer extends ECaccessProvider
                             source != null ? source.getNickname() : null, source != null ? source.getHost() : null,
                             source != null ? source.getTransferMethodName() : null, progressInterface.getFileSize(),
                             byteSent, duration, rate, status, LiveTransferSample.DIRECTION_ACQUISITION,
-                            source != null ? source.getType() : null) });
+                            source != null ? source.getType() : null)
+                                    .withAttempt(progressInterface instanceof DownloadScheduler.DownloadThread thread
+                                            ? thread._liveAttemptId : null) });
         } catch (final Throwable t) {
             _log.debug("Building LiveTransferSample for Acquisition DataFile-{}", progressInterface.getDataFileId(), t);
         }
@@ -6942,20 +7031,7 @@ public final class MasterServer extends ECaccessProvider
         if (theMoverAvailabilityScheduler != null) {
             theMoverAvailabilityScheduler.shutdown();
         }
-        if (theLiveTransferBytesScheduler != null) {
-            theLiveTransferBytesScheduler.shutdown();
-            // Persist one last time on a graceful shutdown so a planned restart loses as little history as
-            // possible (rather than waiting for the next periodic tick, up to liveTransferBytesScheduler delay away).
-            try {
-                final var base = getECpdsBase();
-                if (base != null) {
-                    base.setSysConfigValue("LiveTransfer", "bytes24hBuckets",
-                            LiveTransferRegistry.getInstance().snapshotBucketsForPersistence());
-                }
-            } catch (final DataBaseException e) {
-                _log.warn("Failed to persist live transfer bytes snapshot on shutdown", e);
-            }
-        }
+        trafficAccountingMaintenance.shutdown();
         if (theDissDownloadScheduler != null) {
             theDissDownloadScheduler.shutdown();
         }
@@ -8665,36 +8741,6 @@ public final class MasterServer extends ECaccessProvider
                 } catch (final DataBaseException e) {
                     _log.warn("MoverAvailabilityScheduler: failed to delete old availability snapshots", e);
                 }
-            }
-            return NEXT_STEP_DELAY;
-        }
-    }
-
-    /**
-     * The Class LiveTransferBytesScheduler. Periodically persists the "Live ECPDS Earth" rolling 24h transferred-bytes
-     * buckets ({@link LiveTransferRegistry#snapshotBucketsForPersistence()}) to a single {@code SYS_CONFIG} row, so a
-     * MasterServer restart only loses the handful of minutes since the last save instead of the whole 24h window.
-     */
-    public final class LiveTransferBytesScheduler extends MBeanScheduler {
-
-        private LiveTransferBytesScheduler(final String name) {
-            super(name);
-            setDelay(Cnf.durationAt("Scheduler", "liveTransferBytesScheduler", 2 * Timer.ONE_MINUTE));
-            setJammedTimeout(
-                    Cnf.durationAt("Scheduler", "liveTransferBytesSchedulerJammedTimeout", 5 * Timer.ONE_MINUTE));
-        }
-
-        @Override
-        public int nextStep() {
-            final var base = getECpdsBase();
-            if (base == null) {
-                return NEXT_STEP_DELAY;
-            }
-            try {
-                final var snapshot = LiveTransferRegistry.getInstance().snapshotBucketsForPersistence();
-                base.setSysConfigValue("LiveTransfer", "bytes24hBuckets", snapshot);
-            } catch (final DataBaseException e) {
-                _log.warn("LiveTransferBytesScheduler: failed to persist live transfer bytes snapshot", e);
             }
             return NEXT_STEP_DELAY;
         }
@@ -13263,6 +13309,7 @@ public final class MasterServer extends ECaccessProvider
          * The Class DownloadThread.
          */
         private final class DownloadThread extends ConfigurableRunnable implements ProgressInterface {
+            private final String _liveAttemptId = java.util.UUID.randomUUID().toString();
             /** The _time. */
             private long _time = System.currentTimeMillis();
 

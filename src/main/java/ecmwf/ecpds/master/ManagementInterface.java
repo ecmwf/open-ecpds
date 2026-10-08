@@ -1850,12 +1850,13 @@ public interface ManagementInterface extends Remote {
     void invalidateUnreviewedFeedbackCache() throws MasterException, RemoteException;
 
     /**
-     * Gets a snapshot of every currently active data transfer known to the {@link LiveTransferRegistry}, for the "Live
-     * ECPDS Earth" globe visualisation. Polling this method (e.g. from the Monitor plugin's WebSocket broadcaster) also
-     * keeps live sampling enabled on the DataMovers for a short window (see {@link LiveTransferRegistry#touch()}), so
-     * it should only be called while at least one globe page is actually open.
+     * Gets active transfers and terminal events from the last 15 seconds known to the {@link LiveTransferRegistry}, for
+     * the "Live ECPDS Earth" globe visualisation. Polling this method (e.g. from the Monitor plugin's WebSocket
+     * broadcaster) also keeps live sampling enabled on the DataMovers for a short window (see
+     * {@link LiveTransferRegistry#touch()}), so it should only be called while at least one globe page is actually
+     * open.
      *
-     * @return the currently active live transfer samples
+     * @return the active and recently completed/failed live transfer samples
      *
      * @throws java.rmi.RemoteException
      *             the remote exception
@@ -1903,9 +1904,9 @@ public interface ManagementInterface extends Remote {
 
     /**
      * Gets the total number of bytes transferred (across every DataMover/ProxyHost) over the rolling last 24 hours, for
-     * display on the "Live ECPDS Earth" globe visualisation. This is a single, MasterServer-side counter (see
-     * {@link LiveTransferRegistry#getBytesLast24h()}), so every connected globe client sees the same value regardless
-     * of when it connected/reconnected. It is memory-only and resets on a MasterServer restart.
+     * display on the "Live ECPDS Earth" globe visualisation. Aggregates checkpointed application-stream counters from
+     * every upgraded Mover, independently of globe viewers. Accepted snapshots are persisted before acknowledgement and
+     * restored on MasterServer restart. Excludes Data Portal traffic and unobservable handler transfers.
      *
      * @return the total bytes transferred in the last 24 hours
      *
@@ -1919,6 +1920,9 @@ public interface ManagementInterface extends Remote {
      * display on the "Live ECPDS Earth" globe visualisation when the Dissemination/Acquisition/Both toggle is set to a
      * single direction. See {@link #getLiveTransferBytes24h()} for the combined (Both) figure.
      *
+     * Host type names (Dissemination, Acquisition, Replication, Source, Backup, Proxy) are also accepted, returning
+     * only that type rather than the broader uppercase direction.
+     *
      * @param direction
      *            one of {@link LiveTransferSample#DIRECTION_DISSEMINATION} or
      *            {@link LiveTransferSample#DIRECTION_ACQUISITION}
@@ -1929,6 +1933,9 @@ public interface ManagementInterface extends Remote {
      *             the remote exception
      */
     long getLiveTransferBytes24h(String direction) throws RemoteException;
+
+    /** Returns authoritative rolling application-byte totals keyed by Host type, excluding Data Portal traffic. */
+    java.util.Map<String, Long> getLiveTransferBytes24hByType() throws RemoteException;
 
     /**
      * Gets the names of every currently active ProxyHost (a Data Mover reachable only through another Data Mover's REST

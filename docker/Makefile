@@ -171,8 +171,8 @@ build-cli: .https-access get-cli ## Build the ecpds CLI image
 
 # ─── Images ───────────────────────────────────────────────────────────────────
 
-images: ## List images
-	@$(DOCKER) images --format "{{.ID}}@{{.Repository}}:{{.Tag}}" | grep '@open-ecpds/$(app)' | grep ':$(tag)' | awk -F'[@/]' '{print $$1 "@" $$(NF-1)":"$$NF}' | sed 's/:/-/g' | egrep -v '\-latest$$' | uniq
+images: ## List images, excluding the open-ecpds/dev development image (args: app, tag)
+	@$(DOCKER) images --format "{{.ID}}@{{.Repository}}:{{.Tag}}" | grep -v '@open-ecpds/dev:' | grep '@open-ecpds/$(app)' | grep ':$(tag)' | awk -F'[@/]' '{print $$1 "@" $$(NF-1)":"$$NF}' | sed 's/:/-/g' | egrep -v '\-latest$$' | uniq
 
 bk-images: ## Backup images (args: app, tag)
 	@for line in $$($(MAKE) -s images tag=$(tag) app=$(app)); do \

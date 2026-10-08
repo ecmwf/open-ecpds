@@ -81,6 +81,8 @@ public interface DataTransfer extends CollectionSizeBean, ArrivalMonitoringParam
      */
     String getComment();
 
+    String getDeliveredName();
+
     /**
      * Gets the formatted comment.
      *

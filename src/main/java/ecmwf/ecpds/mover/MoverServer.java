@@ -211,6 +211,11 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     /** The liveStatsRepository (Live ECPDS Earth - Phase 0). */
     private final transient LiveStatsRepository liveStatsRepository;
 
+    private final transient ecmwf.ecpds.master.TrafficAccounting trafficAccounting = new ecmwf.ecpds.master.TrafficAccounting();
+    private final transient java.nio.file.Path trafficAccountingPath = java.nio.file.Path
+            .of(Cnf.at("Server", "trafficAccountingFile", "var/traffic-accounting.json"));
+    private final transient TrafficAccountingScheduler trafficAccountingScheduler;
+
     /** The ticketRepository. */
     private final transient TicketRepository ticketRepository;
 
@@ -1057,6 +1062,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             throws IOException, InstanceAlreadyExistsException, MBeanRegistrationException, NotCompliantMBeanException,
             MalformedObjectNameException, InstanceNotFoundException, ConnectionException {
         super(starter);
+        trafficAccounting.load(trafficAccountingPath);
         _log.info("MoverServer-version: {}", (Supplier<Object>) Version::getFullVersion);
         if (!OPERATIONAL) {
             _log.warn("!!!!! THIS IS NOT AN OPERATIONAL DATA-MOVER !!!!!");
@@ -1098,6 +1104,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         } else {
             downloadRepository = null;
         }
+        trafficAccountingScheduler = new TrafficAccountingScheduler();
+        trafficAccountingScheduler.start();
         if (Cnf.at("Server", "liveStatsRepository", true)) {
             _log.debug("Starting LiveStatsRepository");
             liveStatsRepository = new LiveStatsRepository("LiveStatsRepository");
@@ -1977,9 +1985,11 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             // Now we process the transmission synchronously!
             final var descriptor = new FileDescriptor(null, dataFile, file, fileSize, 0, -1, null, null);
             final var put = new ECtransPut(fileName, descriptor, 0, fileSize, toFilter, null);
+            final var accountingCallback = new DefaultCallback(HOST_ECTRANS.getECtransSetup(targetHost.getData()));
+            accountingCallback.setByteCounter(bytes -> trafficAccounting.add(targetHost.getType(), bytes));
             new ECtransContainer(new MoverProvider(new LocalRepository(targetHost)), false).syncExec(put, null,
                     targetHost.getECUserName(), targetHost.getName() + "@" + targetHost.getTransferMethodName(), null,
-                    new DefaultCallback(HOST_ECTRANS.getECtransSetup(targetHost.getData())), true);
+                    accountingCallback, true);
             _log.info("File {} successfully transmitted on {}", fileName, targetHost.getNickname());
             return dataFile;
         } catch (final Throwable t) {
@@ -2976,6 +2986,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             deleteOriginal = false;
         }
         final var ecproxyCallback = new ECproxyCallback(new ECaccessTicket(ECaccessTicket.OUTPUT), host.getData(), out);
+        ecproxyCallback.setByteCounter(bytes -> trafficAccounting.add(host.getType(), bytes));
         new ECtransContainer(new MoverProvider(new StreamRepository(host, out)), false).asyncExec(
                 new ECtransGet(source, null, remotePosn, deleteOriginal), null, host.getECUserName(),
                 host.getName() + "@" + host.getTransferMethodName(), null, null, ecproxyCallback);
@@ -3510,6 +3521,14 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         }
         if (downloadRepository != null) {
             downloadRepository.shutdown();
+        }
+        if (trafficAccountingScheduler != null) {
+            trafficAccountingScheduler.shutdown();
+            try {
+                trafficAccounting.checkpoint(trafficAccountingPath);
+            } catch (final IOException e) {
+                _log.warn("Final traffic accounting checkpoint failed", e);
+            }
         }
         if (ticketRepository != null) {
             ticketRepository.shutdown();
@@ -4268,6 +4287,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * The Class MoverCallback.
      */
     private final class MoverCallback implements ProgressHandler, ECtransCallback {
+        private final String _liveAttemptId = java.util.UUID.randomUUID().toString();
         /** The _name. */
         private final String _name;
 
@@ -4336,9 +4356,20 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             _transfer.setComment(null);
             _transfer.setDuration(0);
             _transfer.setSent(0);
+            _transfer.setDeliveredName(null);
             _transfer.setRatio(1);
             _transfer.setPutTime(null);
             _timeout = _setup.getDuration(HOST_ECTRANS_STREAM_TIMEOUT).toMillis();
+        }
+
+        @Override
+        public void transferredBytes(final long bytes) {
+            trafficAccounting.add(_transfer.getHost().getType(), bytes);
+        }
+
+        @Override
+        public boolean isByteAccountingEnabled() {
+            return true;
         }
 
         /**
@@ -4392,6 +4423,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
          *            {@link LiveTransferSample#STATUS_FAILED}
          */
         private void _offerLiveSample(final String status) {
+            if (LiveTransferSample.STATUS_ACTIVE.equals(status) && _closed.get())
+                return;
             if (liveStatsRepository == null || !liveStatsRepository.isMasterEnabled()) {
                 return;
             }
@@ -4408,7 +4441,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 liveStatsRepository.offer(new LiveTransferSample(_transfer.getId(), getRoot(),
                         _transfer.getDestinationName(), _transfer.getHostName(), hostNickname, hostAddress, protocol,
                         _fileSize, _transfer.getSent(), _transfer.getDuration(), rate, status,
-                        LiveTransferSample.DIRECTION_DISSEMINATION, host != null ? host.getType() : null));
+                        LiveTransferSample.DIRECTION_DISSEMINATION, host != null ? host.getType() : null)
+                                .withAttempt(_liveAttemptId));
             } catch (final Throwable t) {
                 _log.debug("Building LiveTransferSample for DataTransfer-{}", _transfer.getId(), t);
             }
@@ -4604,6 +4638,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             synchronized (transferRepository) {
                 updateFinishTime();
                 _transfer.setComment(comment);
+                _transfer.recordDeliveredName(fileName);
                 _transfer.setStatistics(statisticsString);
                 _transfer.setCompressed(_filter);
                 _transfer.setStatusCode(StatusFactory.DONE);
@@ -5909,16 +5944,57 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * per transfer id (only the most recent sample for a given transfer is kept between two pushes) to keep the payload
      * bounded regardless of how often {@link #offer(LiveTransferSample)} is called.
      */
+    private final class TrafficAccountingScheduler extends ecmwf.common.ecaccess.MBeanScheduler {
+        private Map<String, String> acknowledged = Map.of();
+
+        TrafficAccountingScheduler() {
+            super("TrafficAccountingScheduler");
+            final var delay = Cnf.durationAt("Scheduler", "trafficAccounting", 10 * Timer.ONE_SECOND);
+            if (delay < Timer.ONE_SECOND)
+                throw new IllegalArgumentException("trafficAccounting must be at least 1 second");
+            setDelay(delay);
+            setJammedTimeout(Cnf.durationAt("Scheduler", "trafficAccountingJammedTimeout", 5 * Timer.ONE_MINUTE));
+        }
+
+        @Override
+        public int nextStep() {
+            try {
+                final var snapshot = trafficAccounting.checkpoint(trafficAccountingPath);
+                final var changes = ecmwf.ecpds.master.TrafficAccounting.changedBuckets(snapshot, acknowledged);
+                if (!changes.isEmpty()) {
+                    getMasterProxy().updateTrafficAccounting(getRoot() + ":" + trafficAccounting.getSourceId(),
+                            changes);
+                    acknowledged = snapshot;
+                }
+            } catch (final Exception e) {
+                _log.warn("Traffic accounting checkpoint/delivery failed; will retry", e);
+            }
+            return NEXT_STEP_DELAY;
+        }
+    }
+
     private final class LiveStatsRepository extends MBeanRepository<LiveTransferSample> {
 
         /** Pending samples, coalesced by transfer id. */
-        private final Map<Long, LiveTransferSample> _pending = new ConcurrentHashMap<>();
+        private final ecmwf.ecpds.master.LiveTransferEvents _pending = new ecmwf.ecpds.master.LiveTransferEvents(60_000,
+                60_000, 20_000);
 
         /** Cached result of the last {@link MasterProxy#isLiveTransferMonitoringEnabled()} poll. */
         private volatile boolean _masterWantsLiveStats = false;
 
         /** Last time {@link MasterProxy#isLiveTransferMonitoringEnabled()} was polled. */
         private volatile long _lastEnabledCheck = -1;
+        private long _lastDeliveryWarning = -1;
+
+        private void warnDeliveryFailure(final String message, final Exception error) {
+            final var now = System.currentTimeMillis();
+            if (_lastDeliveryWarning < 0 || now - _lastDeliveryWarning >= Timer.ONE_MINUTE) {
+                _log.warn(message, error);
+                _lastDeliveryWarning = now;
+            } else {
+                _log.debug(message, error);
+            }
+        }
 
         /**
          * Instantiates a new live stats repository.
@@ -5951,7 +6027,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
          */
         void offer(final LiveTransferSample sample) {
             if (sample != null) {
-                _pending.put(sample.getTransferId(), sample);
+                _pending.offer(sample);
             }
         }
 
@@ -5965,7 +6041,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
          */
         @Override
         public String getKey(final LiveTransferSample sample) {
-            return Format.formatLong(sample.getTransferId(), 10, true);
+            return sample.getEventKey();
         }
 
         /**
@@ -5993,13 +6069,13 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 return NEXT_STEP_DELAY;
             }
             final var now = System.currentTimeMillis();
-            if (now - _lastEnabledCheck >= NEXT_STEP_DELAY) {
+            if (now - _lastEnabledCheck >= getDelay()) {
                 _lastEnabledCheck = now;
                 try {
                     _masterWantsLiveStats = getMasterProxy().isLiveTransferMonitoringEnabled();
                 } catch (final Exception e) {
-                    _log.debug("isLiveTransferMonitoringEnabled", e);
-                    _masterWantsLiveStats = false;
+                    warnDeliveryFailure("Cannot refresh globe interest; retaining recent events for retry", e);
+                    return NEXT_STEP_DELAY;
                 }
             }
             if (!_masterWantsLiveStats) {
@@ -6007,16 +6083,15 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 _pending.clear();
                 return NEXT_STEP_DELAY;
             }
-            if (_pending.isEmpty()) {
+            final var batch = _pending.snapshot();
+            if (batch.isEmpty())
                 return NEXT_STEP_DELAY;
-            }
-            final Map<Long, LiveTransferSample> batch = new ConcurrentHashMap<>(_pending);
-            _pending.keySet().removeAll(batch.keySet());
-            final var array = batch.values().toArray(new LiveTransferSample[batch.size()]);
+            final var array = batch.toArray(new LiveTransferSample[0]);
             try {
                 getMasterProxy().updateLiveTransferStatistics(array);
+                _pending.acknowledge(batch);
             } catch (final Exception e) {
-                _log.debug("updateLiveTransferStatistics", e);
+                warnDeliveryFailure("Live transfer event delivery failed; retaining recent events for retry", e);
             }
             return NEXT_STEP_DELAY;
         }

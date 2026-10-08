@@ -27,6 +27,7 @@ package ecmwf.ecpds.master;
  */
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -44,14 +45,11 @@ import org.apache.logging.log4j.Logger;
  * the single "source of truth" for the "Live ECPDS Earth" globe visualisation: DataMovers push samples in here (via
  * {@link ecmwf.ecpds.master.MasterInterface#updateLiveTransferStatistics(LiveTransferSample[])}), and any number of
  * listeners (e.g. a WebSocket broadcaster, added in a later phase) can subscribe to be notified in real-time, and/or
- * poll {@link #getActiveTransfers()} for the current snapshot.
+ * poll {@link #getVisualizationSamples()} for active movements and recent terminal events.
  *
- * Kept intentionally simple (no full history/replay persistence) since it only ever needs to reflect "what is happening
- * right now"; the only persisted piece of state is the rolling 24h transferred-bytes total's underlying per-minute
- * buckets (see {@link #snapshotBucketsForPersistence()}/{@link #restoreBucketsFromPersistence(String)}), periodically
- * saved to the {@code SYS_CONFIG} table by the MasterServer so that figure survives a restart. Detailed
- * historical/replay data is expected to be handled separately (e.g. a periodic rollup written to the database), not by
- * this class.
+ * Visualization state is bounded and ephemeral. Terminal events are exposed for 15 seconds and retained internally for
+ * 60 seconds to suppress delayed active replays. Authoritative byte accounting is separate in
+ * {@link TrafficAccounting}; the legacy bucket helpers below are not used by the globe KPI.
  */
 public final class LiveTransferRegistry {
 
@@ -75,11 +73,14 @@ public final class LiveTransferRegistry {
      */
     private static final int BUCKET_COUNT = 24 * 60;
 
+    private static final List<String> HOST_TYPES = List.of("Dissemination", "Acquisition", "Replication", "Source",
+            "Backup", "Proxy");
+
     /** Singleton instance. */
     private static final LiveTransferRegistry _instance = new LiveTransferRegistry();
 
     /** Latest known sample per transfer id. */
-    private final Map<Long, LiveTransferSample> _samples = new ConcurrentHashMap<>();
+    private final LiveTransferEvents _events = new LiveTransferEvents(STALE_AFTER_MS, STALE_AFTER_MS, 20_000);
 
     /** Listeners notified whenever a sample is added/updated/removed. */
     private final CopyOnWriteArrayList<Consumer<LiveTransferSample>> _listeners = new CopyOnWriteArrayList<>();
@@ -107,6 +108,9 @@ public final class LiveTransferRegistry {
 
     /** Acquisition bytes transferred per one-minute bucket; see {@link #_bucketBytesDiss}. */
     private final AtomicLongArray _bucketBytesAcq = new AtomicLongArray(BUCKET_COUNT);
+
+    private final Map<String, AtomicLongArray> _typeBuckets = HOST_TYPES.stream()
+            .collect(java.util.stream.Collectors.toMap(type -> type, type -> new AtomicLongArray(BUCKET_COUNT)));
 
     /**
      * The epoch-minute each bucket in {@link #_bucketBytesDiss}/{@link #_bucketBytesAcq} currently holds data for;
@@ -148,13 +152,8 @@ public final class LiveTransferRegistry {
             if (sample == null) {
                 continue;
             }
-            _recordBytes(sample);
-            if (sample.isTerminal()) {
-                _samples.remove(sample.getTransferId());
-                _lastKnownBytes.remove(sample.getTransferId());
-            } else {
-                _samples.put(sample.getTransferId(), sample);
-            }
+            if (!_events.offer(sample))
+                continue;
             for (final Consumer<LiveTransferSample> listener : _listeners) {
                 try {
                     listener.accept(sample);
@@ -163,7 +162,6 @@ public final class LiveTransferRegistry {
                 }
             }
         }
-        _purgeStaleEntries();
     }
 
     /**
@@ -195,7 +193,7 @@ public final class LiveTransferRegistry {
      * @return the total bytes transferred in the last 24 hours for that direction
      */
     public long getBytesLast24h(final String direction) {
-        final var buckets = _bucketsFor(direction);
+        final var buckets = _typeBuckets.containsKey(direction) ? _typeBuckets.get(direction) : _bucketsFor(direction);
         final var nowMinute = System.currentTimeMillis() / 60_000;
         final var oldestMinute = nowMinute - BUCKET_COUNT + 1;
         var total = 0L;
@@ -206,6 +204,14 @@ public final class LiveTransferRegistry {
             }
         }
         return total;
+    }
+
+    public Map<String, Long> getBytesLast24hByType() {
+        final Map<String, Long> totals = new java.util.LinkedHashMap<>();
+        for (final var type : HOST_TYPES) {
+            totals.put(type, getBytesLast24h(type));
+        }
+        return totals;
     }
 
     /**
@@ -269,12 +275,13 @@ public final class LiveTransferRegistry {
         for (final String entry : data.split(",")) {
             final var fields = entry.split(":");
             if (fields.length != 2 && fields.length != 3) {
+                _log.warn("Skipping malformed live transfer bytes bucket entry: {}", entry);
                 continue;
             }
             try {
                 final var minute = Long.parseLong(fields[0]);
                 final var dissBytes = Long.parseLong(fields[1]);
-                final var acqBytes = fields.length == 3 ? Long.parseLong(fields[2]) : 0L;
+                final var acqBytes = fields.length >= 3 ? Long.parseLong(fields[2]) : 0L;
                 if (minute < oldestMinute || minute > nowMinute || (dissBytes <= 0 && acqBytes <= 0)) {
                     continue; // stale (outside the rolling window) or corrupt - skip.
                 }
@@ -294,14 +301,56 @@ public final class LiveTransferRegistry {
         }
     }
 
-    /**
-     * Derives the incremental number of bytes carried by this sample (each sample carries a cumulative
-     * {@link LiveTransferSample#getByteSent()}, not an incremental one) compared to the last sample seen for the same
-     * transfer id, and adds it to the current one-minute bucket of the rolling 24h total for the sample's direction.
-     *
-     * @param sample
-     *            the sample
-     */
+    /** Serializes each Host type separately, keeping snapshots within the SYS_CONFIG text column size. */
+    public Map<String, String> snapshotTypeBucketsForPersistence() {
+        final Map<String, String> snapshots = new java.util.LinkedHashMap<>();
+        final var nowMinute = System.currentTimeMillis() / 60_000;
+        synchronized (_bucketBytesDiss) {
+            for (final var type : HOST_TYPES) {
+                final var sb = new StringBuilder();
+                for (var i = 0; i < BUCKET_COUNT; i++) {
+                    final var minute = _bucketMinute.get(i);
+                    final var bytes = _typeBuckets.get(type).get(i);
+                    if (minute > nowMinute - BUCKET_COUNT && minute <= nowMinute && bytes > 0) {
+                        if (sb.length() > 0)
+                            sb.append(',');
+                        sb.append(minute).append(':').append(bytes);
+                    }
+                }
+                snapshots.put(type, sb.toString());
+            }
+        }
+        return snapshots;
+    }
+
+    public void restoreTypeBucketsFromPersistence(final String type, final String data) {
+        if (data == null || data.isBlank())
+            return;
+        final var buckets = _typeBuckets.get(type);
+        if (buckets == null)
+            throw new IllegalArgumentException("Unknown traffic type: " + type);
+        final var nowMinute = System.currentTimeMillis() / 60_000;
+        for (final var entry : data.split(",")) {
+            try {
+                final var fields = entry.split(":");
+                if (fields.length != 2)
+                    throw new NumberFormatException("Expected minute:bytes");
+                final var minute = Long.parseLong(fields[0]);
+                final var bytes = Long.parseLong(fields[1]);
+                if (minute <= nowMinute - BUCKET_COUNT || minute > nowMinute || bytes <= 0)
+                    continue;
+                synchronized (_bucketBytesDiss) {
+                    final var index = (int) (minute % BUCKET_COUNT);
+                    _bucketMinute.set(index, minute);
+                    buckets.set(index, bytes);
+                }
+            } catch (final NumberFormatException e) {
+                _log.warn("Skipping malformed {} traffic bucket: {}", type, entry, e);
+            }
+        }
+    }
+
+    /** Adds cumulative sample deltas to both direction and Host-type minute buckets. */
     private void _recordBytes(final LiveTransferSample sample) {
         final var previous = _lastKnownBytes.getOrDefault(sample.getTransferId(), 0L);
         final var current = sample.getByteSent();
@@ -325,8 +374,16 @@ public final class LiveTransferRegistry {
             if (_bucketMinute.getAndSet(index, minute) != minute) {
                 _bucketBytesDiss.set(index, 0);
                 _bucketBytesAcq.set(index, 0);
+                for (final var typeBucket : _typeBuckets.values()) {
+                    typeBucket.set(index, 0);
+                }
             }
             buckets.addAndGet(index, delta);
+            final var reportedType = sample.getHostType();
+            final var type = _typeBuckets.containsKey(reportedType) ? reportedType
+                    : LiveTransferSample.DIRECTION_ACQUISITION.equals(sample.getDirection()) ? "Acquisition"
+                            : "Dissemination";
+            _typeBuckets.get(type).addAndGet(index, delta);
         }
     }
 
@@ -336,8 +393,14 @@ public final class LiveTransferRegistry {
      * @return the active transfers
      */
     public Collection<LiveTransferSample> getActiveTransfers() {
-        _purgeStaleEntries();
-        return _samples.values();
+        return _events.snapshot().stream().filter(sample -> !sample.isTerminal()).toList();
+    }
+
+    /** Active movements plus short-lived terminal events, retained across independent Monitor polls. */
+    public Collection<LiveTransferSample> getVisualizationSamples() {
+        final var now = System.currentTimeMillis();
+        return _events.snapshot().stream()
+                .filter(sample -> !sample.isTerminal() || now - sample.getTimestamp() < 15_000).toList();
     }
 
     /**
@@ -390,12 +453,4 @@ public final class LiveTransferRegistry {
         _enabled.set(enabled);
     }
 
-    /**
-     * Drop ACTIVE samples which have not been refreshed for a while (e.g. because the DataMover that emitted them died
-     * without sending a terminal DONE/FAILED sample).
-     */
-    private void _purgeStaleEntries() {
-        final var now = System.currentTimeMillis();
-        _samples.entrySet().removeIf(entry -> now - entry.getValue().getTimestamp() > STALE_AFTER_MS);
-    }
 }

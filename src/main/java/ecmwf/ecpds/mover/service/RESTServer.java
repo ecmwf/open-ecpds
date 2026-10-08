@@ -528,6 +528,27 @@ public final class RESTServer {
         }
     }
 
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("master/updateTrafficAccounting")
+    public Response updateTrafficAccounting(@Context UriInfo ui, @QueryParam("mover") String source,
+            Map<String, String> snapshot) {
+        checkIsControlChannel(ui);
+        checkParameter("mover", source);
+        checkParameter("snapshot", snapshot);
+        try {
+            mover.getMasterProxy().updateTrafficAccounting(source, snapshot);
+            return RESTMessage.getSuccessMessage().getResponse();
+        } catch (final WebApplicationException e) {
+            _log.warn("updateTrafficAccounting", e);
+            throw e;
+        } catch (final Exception e) {
+            _log.warn("updateTrafficAccounting", e);
+            return RESTMessage.getErrorMessage(e).getResponse();
+        }
+    }
+
     /**
      * Proxy host is alive.
      *

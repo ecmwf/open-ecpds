@@ -98,7 +98,7 @@
                 <input type="text" value="${destinationDetailActionForm.fileNameSearch}"
                        placeholder="e.g. expired=no target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i"
                        class="form-control"
-                       title="Default search is by target. Conduct extended searches using target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules. Wildcards: * (zero or more chars), ? (exactly one char)."
+                       title="Default search is by target. Conduct extended searches using target, delivered, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover and event rules. Wildcards: * (zero or more chars), ? (exactly one char)."
                        id="fileNameSearch" name="fileNameSearch" onkeypress="submitenter(this,event)">
             </div>
             <button type="button" class="btn btn-outline-primary position-relative"
@@ -121,6 +121,7 @@
                 <ul class="mb-1 ps-3">
                     <li><strong>Default (no prefix)</strong> &mdash; matches the <code>target</code> filename. Wildcards <code>*</code> (any chars) and <code>?</code> (one char) are supported.</li>
                     <li><code>target=*.dat</code> &mdash; filter by target filename.</li>
+                    <li><code>delivered=*/in/*.dat</code> &mdash; filter by the stored delivered name (only recorded when different from Target).</li>
                     <li><code>source=/tmp/*</code> &mdash; filter by source path.</li>
                     <li><code>mover=</code> &mdash; filter by Data Mover name.</li>
                     <li><code>ts&gt;10 ts&lt;=99</code> &mdash; filter by transfer size (numeric range, supports <code>=</code> <code>&gt;</code> <code>&gt;=</code> <code>&lt;</code> <code>&lt;=</code>).</li>
@@ -141,6 +142,10 @@
          style="display:none; position:absolute; z-index:9999; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd) !important; box-shadow:0 8px 28px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.10); font-size:0.85rem">
             <%-- Row 1: text fields -- align-items-end so inputs line up despite different label heights --%>
             <div class="row g-1 mb-1 align-items-end">
+                <div class="col-6 col-md-3">
+                    <label class="form-label mb-0 fw-semibold"><code>delivered=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                    <input type="text" class="form-control form-control-sm" id="dft_delivered" placeholder="e.g. */in/*" oninput="dftPreview()">
+                </div>
                 <div class="col-6 col-md-3">
                     <label class="form-label mb-0 fw-semibold"><code>target=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                     <input type="text" class="form-control form-control-sm" id="dft_target" placeholder="e.g. *.dat" oninput="dftPreview()">
@@ -291,7 +296,7 @@ function dftVal(id) { return document.getElementById(id) ? document.getElementBy
 function dftQuote(v) { var q=v.indexOf(' ')>=0||v.indexOf('=')>=0||v.indexOf('"')>=0; return q?'"'+v.replace(/"/g,'\\"')+'"':v; }
 function dftBuild() {
     var p = [];
-    ['target','source','mover','identity','checksum','groupby'].forEach(function(f) {
+    ['target','delivered','source','mover','identity','checksum','groupby'].forEach(function(f) {
         var v = dftVal('dft_' + f); if (v) p.push(f + '=' + dftQuote(v));
     });
     ['asap','deleted','expired','replicated','proxy','event'].forEach(function(f) {
@@ -307,7 +312,7 @@ function dftBuild() {
 }
 function dftCountActive() {
     var n = 0;
-    ['target','source','mover','identity','checksum','groupby','priority'].forEach(function(f) { if (dftVal('dft_'+f)) n++; });
+    ['target','delivered','source','mover','identity','checksum','groupby','priority'].forEach(function(f) { if (dftVal('dft_'+f)) n++; });
     ['dft_ts_val1','dft_ts_val2','dft_size_val1','dft_size_val2'].forEach(function(id) { if (dftVal(id)) n++; });
     ['asap','deleted','expired','replicated','proxy','event'].forEach(function(f) { if (dftVal('dft_'+f)) n++; });
     if (dftVal('dft_case') !== 's') n++;
@@ -330,7 +335,7 @@ function dftApply() {
     document.destinationDetailActionForm.submit();
 }
 function dftClear() {
-    ['target','source','mover','identity','checksum','groupby','priority'].forEach(function(f) {
+    ['target','delivered','source','mover','identity','checksum','groupby','priority'].forEach(function(f) {
         var el = document.getElementById('dft_' + f); if (el) el.value = '';
     });
     ['ts_val1','ts_val2','size_val1','size_val2'].forEach(function(f) {

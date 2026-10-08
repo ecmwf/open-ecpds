@@ -32,6 +32,15 @@ import ecmwf.common.database.MSUser;
  * The Interface ECtransCallback.
  */
 public interface ECtransCallback {
+    /** Whether transfer stream boundaries should report byte increments to this callback. */
+    default boolean isByteAccountingEnabled() {
+        return false;
+    }
+
+    /** Reports newly observed bytes, not cumulative progress or resume offsets. */
+    default void transferredBytes(long bytes) {
+    }
+
     /**
      * Gets the ectrans setup.
      *

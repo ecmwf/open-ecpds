@@ -85,6 +85,7 @@ public class GetDataTransferProgressJsonAction extends PDSAction {
             final var root = MAPPER.createObjectNode();
             final var statusCode = transfer.getStatusCode();
             root.put("statusCode", statusCode);
+            root.put("deliveredName", transfer.getDeliveredName());
             root.put("transferring", StatusFactory.EXEC.equals(statusCode) || StatusFactory.FETC.equals(statusCode)
                     || StatusFactory.INIT.equals(statusCode));
 

@@ -15,10 +15,15 @@ The dashboard shows all destinations and their current transfer status. Each row
 ## Live Earth
 
 Nearby Proxy and Target Hosts share a counted marker when their screen positions
-are within 28 pixels. Click the marker or its count to select a host from the
+are within 28 pixels. The host count is centred inside the marker bubble.
+Click the bubble to select a host from the
 details pane. Groups split as you zoom in; hosts at identical coordinates remain
 individually selectable. A Proxy Host that is also a transfer target is counted
 once, with its transfer activity included in its details.
+Grouped markers retain status colours: failed transfers take precedence over
+active transfers; otherwise a Proxy-only group is violet, dimmed when all members
+are disconnected. Groups without transfers in progress that include Target Hosts
+use the completed-transfer green.
 
 The scrollable details pane sits beside the globe on desktop, leaving the country
 table and KPIs in the globe area. On narrow screens it becomes a bottom sheet,
@@ -30,9 +35,117 @@ or transfer-status suffix.
 
 **Live Earth** is a real-time 3D globe visualisation of the transfers currently in progress across every Data Mover, available from the Monitoring card on the start page (`/do/monitoring/globe`). An in-page **ⓘ** button next to the page title expands a short built-in explanation of the whole page — the globe itself, its view/filter controls, and every figure shown in the stats panel described below — so this reference doc and the page stay in sync without needing to be read side-by-side. Transfers are aggregated per destination Host: each Host with at least one active transfer is drawn as a single pulsing arc/marker from its origin to that Host, coloured by status (blue while active, red if any of its transfers is failing, green fading out just after completion), with the arc's thickness reflecting the Host's combined throughput and the marker growing slightly with its number of concurrent transfers. A **Host Type filter** (top-right, arrows icon) lets any combination of Dissemination, Acquisition, Replication, Source, Backup and Proxy be shown or hidden independently — Replication/Backup/Proxy Host pushes behave like an ordinary Dissemination push and show as arcs the same way, but are often only relevant when specifically looking for them, since they are usually internal-network/redundancy traffic rather than the final delivery. Clicking a Host marker opens a panel summarising its aggregate activity (active transfer count, protocol(s) in use, total throughput, total bytes transferred, longest-running transfer) together with a per-transfer breakdown table (Data Mover, protocol, rate, bytes, status).
 
-The globe is powered by a lightweight WebSocket feed (`/ws/globe`) pushed from the Master Server, which aggregates live samples reported periodically by every Data Mover while at least one globe page is open — no additional load is added when nobody is watching. Transfers relayed through a ProxyHost (a Continental Data Mover — a Data Mover with no direct RMI connection to the Master Server, reachable only via another Data Mover's REST interface, see [Continental Data Movers](../architecture/continental-data-movers.md)) are included as well: their samples are relayed to the Master Server through that intermediary Data Mover's REST endpoint, exactly like their transfer status and progress updates already are. A Destination associated with a Proxy-type Host has its files replicated from the local Data Movers to that Continental Data Mover first (shown as an arc from the origin to the Proxy Host, under the **Proxy** filter), then disseminated onward from the Continental Data Mover when possible — falling back to a local Data Mover otherwise — shown as a second arc, from the Continental Data Mover to the real target Host, under **Dissemination**. Every currently *enabled* Proxy-type Host gets its own persistent marker (a distinct violet dot) regardless of current traffic, shown dimmed while its Continental Data Mover is not currently connected rather than not shown at all — so a configured-but-offline one stays visible as "known but not currently reachable". For this to work, the Proxy Host's `proxy.root` option must be set to its Continental Data Mover's own `[Login]` `root` value (see [Host Options — `proxy.*`](../concepts/host-options.md#proxy-continental-data-mover-proxy)) — required to tell which Continental Data Mover a given Proxy Host actually points to, since a Continental Data Mover's self-reported identity does not have to match its Proxy Host's own name; with more than one enabled Proxy Host, this must be set on every one of them, or the unconfigured ones simply will not get a marker. A Proxy Host's location on the globe prefers its own stored `HostLocation` (manually entered, or previously auto-resolved and cached — see the [Host Map view](hosts.md#host-map-view)) over a live GeoIP lookup, since `proxy.root`/a Continental Data Mover's root identifier is very often not a resolvable hostname on its own; setting the Host's location manually there is picked up here automatically, typically within a few minutes (the resolved-location cache expires every 5 minutes). Ordinary, directly-connected local Data Movers are not shown as separate markers, since they are considered co-located with the Master Server itself. The map imagery and 3D rendering are provided by a self-hosted copy of [CesiumJS](https://cesium.com/platform/cesiumjs/); no external network access or account/token is required.
+The globe is powered by a lightweight WebSocket feed (`/ws/globe`) pushed from the
+Master Server, which aggregates live visualization samples reported periodically
+by every Data Mover while at least one globe page is open (or force-enabled).
+The continuous byte accounting described below runs independently of these samples.
 
-A floating stats panel overlaid in the bottom-right corner of the globe itself (styled like the legend/country-breakdown panels, and kept clear of Cesium's own attribution logo, which sits bottom-left) shows, in its **Network** row, the number of active transfers and hosts, a combined-throughput speed-meter, and the total bytes transferred over the rolling last 24 hours. The 24h total is maintained on the Master Server itself (not in the browser), so every open globe page — and every reconnect — shows the exact same figure. It is kept in memory for accuracy, but its underlying data is also periodically saved to the database (`SYS_CONFIG` table, every 2 minutes by default, plus once more on a graceful shutdown) and reloaded at startup, so a normal Master Server restart only loses at most a couple of minutes of history instead of resetting the whole 24h figure to zero. This can be disabled with `liveTransferBytesScheduler=no` in the `[Server]` section of the **Master Server's** `ecmwf.properties` (the save interval can also be adjusted with a `liveTransferBytesScheduler` duration entry in the `[Scheduler]` section), in which case the figure reverts to being memory-only.
+Live events are identified by transfer, Mover, Host, traffic type and attempt, so
+successive replication/dissemination legs and retries do not overwrite one
+another. Movers coalesce progress per movement, retain unsent events for at most
+60 seconds, and remove only the exact delivered versions after successful
+delivery. A newer event arriving during delivery remains queued; transient
+delivery/interest-check failures are logged and retried without transfer-thread
+network calls. Each Mover queue and Master registry is limited to 20,000
+movements; overflow evicts older terminal events first (otherwise the oldest
+movement), with a rate-limited warning.
+
+The Master keeps recent DONE/FAILED events visible to all Monitor polls for
+15 seconds after their original timestamp, including transfers that finish
+between polls. REST relays preserve that timestamp and attempt identity.
+Terminal state remains internally for up to 60 seconds to prevent delayed active
+updates from reviving finished attempts. On each browser, completion/failure
+arcs show for **2.5 seconds from first observation**, then disappear even if
+subsequent polls repeat the event. Filtering or switching views does not restart
+that interval; terminal events do not contribute to active-transfer counts or
+throughput. Visualization delivery is bounded best-effort, not durable history:
+old events expire during extended outages and pending state is discarded when
+the Master explicitly reports no viewers. Transfer accounting is unaffected.
+Replication/Backup/Proxy pushes still report completion/failure only, not
+in-progress arcs; the normal 2-second dissemination sampling/delivery,
+5-second acquisition progress delivery and 3-second Monitor polling remain unchanged.
+
+Transfers relayed through a ProxyHost (a Continental Data Mover — a Data Mover with no direct RMI connection to the Master Server, reachable only via another Data Mover's REST interface, see [Continental Data Movers](../architecture/continental-data-movers.md)) are included as well: their samples are relayed to the Master Server through that intermediary Data Mover's REST endpoint, exactly like their transfer status and progress updates already are. A Destination associated with a Proxy-type Host has its files replicated from the local Data Movers to that Continental Data Mover first (shown as an arc from the origin to the Proxy Host, under the **Proxy** filter), then disseminated onward from the Continental Data Mover when possible — falling back to a local Data Mover otherwise — shown as a second arc, from the Continental Data Mover to the real target Host, under **Dissemination**. Every currently *enabled* Proxy-type Host gets its own persistent marker (a distinct violet dot) regardless of current traffic, shown dimmed while its Continental Data Mover is not currently connected rather than not shown at all — so a configured-but-offline one stays visible as "known but not currently reachable". For this to work, the Proxy Host's `proxy.root` option must be set to its Continental Data Mover's own `[Login]` `root` value (see [Host Options — `proxy.*`](../concepts/host-options.md#proxy-continental-data-mover-proxy)) — required to tell which Continental Data Mover a given Proxy Host actually points to, since a Continental Data Mover's self-reported identity does not have to match its Proxy Host's own name; with more than one enabled Proxy Host, this must be set on every one of them, or the unconfigured ones simply will not get a marker. A Proxy Host's location on the globe prefers its own stored `HostLocation` (manually entered, or previously auto-resolved and cached — see the [Host Map view](hosts.md#host-map-view)) over a live GeoIP lookup, since `proxy.root`/a Continental Data Mover's root identifier is very often not a resolvable hostname on its own; setting the Host's location manually there is picked up here automatically, typically within a few minutes (the resolved-location cache expires every 5 minutes). Ordinary, directly-connected local Data Movers are not shown as separate markers, since they are considered co-located with the Master Server itself. The map imagery and 3D rendering are provided by a self-hosted copy of [CesiumJS](https://cesium.com/platform/cesiumjs/); no external network access or account/token is required.
+
+A floating stats panel in the bottom-right corner shows active transfers and hosts,
+combined throughput, and **24h total**. The latter sums recorded bytes for the
+selected Host Types: Dissemination, Acquisition, Replication, Source, Backup and
+Proxy. Changing filters updates it immediately, without a database query.
+Data Portal uploads and downloads are accounted for separately.
+
+The 24-hour KPI uses **continuous application-stream accounting**, independently
+of the viewer-driven samples used for arcs and instantaneous rates.
+`[Server] liveTransferMonitoringForceEnabled=yes` is **not required** for this
+counter. Every upgraded Mover keeps six fixed-size sets of 1,440 minute buckets.
+Bytes from retries and partial failed attempts count when observed at the stream
+boundary, rather than being inferred from completed file sizes or progress deltas.
+Resume offsets are not added again. Host type determines the bucket, including
+replication to Proxy Hosts; onward dissemination is a separate movement.
+The rolling window has minute precision (up to one minute shorter than 24 hours).
+
+Transfer threads update memory only: no disk, database or remote calls.
+A background scheduler atomically checkpoints the Mover's cumulative buckets,
+then sends only changed absolute buckets, every **10 seconds** by default.
+The Master merges maxima per producer/minute/type and persists changed type rows
+under `SYS_CONFIG` group `ActualTraffic` before acknowledging. Duplicate deliveries,
+lost acknowledgements and out-of-order updates do not add bytes twice.
+Failed delivery is retried from the retained local cumulative state.
+Only checkpointed values are sent, so the Master's acknowledged history cannot
+run ahead of the Mover's recovery file. Separate type rows fit the existing TEXT
+column; there are at most six changed-row writes per producer per scheduler cycle,
+not per transfer. Monitor instances retrieve cached totals in one shared call,
+not one database query per browser. Counter arrays are fixed-size per producer;
+producer identities survive ordinary restarts. An hourly background sweep removes
+expired producer state and its database rows after all its bytes leave the window.
+Legacy `liveTransferBytesScheduler` settings and `LiveTransfer` rows no longer
+drive this KPI.
+
+Configure each **Mover**, including Continental Movers, as follows:
+
+```ini
+[Server]
+trafficAccountingFile=/persistent/ecpds/traffic-accounting.json
+
+[Scheduler]
+trafficAccounting=10s
+trafficAccountingJammedTimeout=5m
+```
+
+The default file is `var/traffic-accounting.json`, relative to the Mover's working
+directory. Use a unique writable file per Mover on persistent storage outside
+content-file garbage collection; mount that directory persistently in containers.
+Do not copy the file to another Mover or change the Mover's login root while reusing
+it. A missing file starts a new producer identity, preserving earlier Master
+history without masking newly collected bytes. A corrupt existing file prevents
+Mover startup rather than silently resetting accounting. Local checkpoint/delivery
+failures are logged and retried; shutdown attempts a final checkpoint.
+
+!!! warning "Accuracy and deployment"
+    Upgrade and restart the Master, **all** Movers (including Continental Movers
+    and their REST relays), and Monitor together. Unupgraded Movers do not
+    contribute; legacy sample-based history is not mixed into this counter.
+    Allow 24 hours of continuous collection for a full window. Keep host clocks
+    synchronized: future-minute snapshots are rejected until time catches up.
+    A process crash can lose increments after the last successful local checkpoint
+    (normally about 10 seconds; longer during disk failures or scheduler delays).
+    A connection outage delays the displayed totals; recovery beyond 24 hours
+    cannot recover bytes already outside the rolling window.
+    Losing the checkpoint file loses any bytes not yet delivered to the Master.
+    This is periodic durability, not a power-loss-proof per-I/O journal.
+
+    Standard streams count bytes before input filters/after output filters;
+    optimized modules count bytes consumed/emitted at their supplied streams.
+    Module-internal filtering, buffering, prefetching and SDK retries that replay
+    internal buffers can differ from the observed stream volume.
+    A write that partially succeeds then throws cannot expose its partial
+    count through Java's OutputStream API. TCP retransmissions and protocol/TLS
+    overhead are not counted, nor does a counted write prove remote receipt.
+    External get/put handlers bypass these streams and are excluded with an
+    explicit warning in the Mover log. Portal publication's local consume-only
+    operation and simulated Test-module transfers are excluded; actual Data Portal
+    user traffic remains separate.
+    A Monitor receiving no authoritative totals displays **N/A**, not a legacy
+    sample total presented as reliable accounting.
 
 A second row of that same panel, **Data Portal**, covers the separate world of end-user Data Portal traffic (FTP, HTTP, SFTP, S3, WebDAV) that the transfer arcs above do not — since incoming/outgoing user sessions are not tied to a specific destination Host and so cannot be drawn as an arc. It shows the number of currently open Data Portal sessions across every Data Mover, plus a data-in and a data-out speed-meter computed from a live 5-second rolling average of bytes uploaded/downloaded by those sessions, all refreshed by the same WebSocket feed and requiring no extra configuration. A fourth tile, **Storage**, uses the same semicircular speed-meter style (rather than a literal capacity/percentage gauge) to show the aggregate used/total disk space across every volume of every Data Mover as a percentage — reusing the same cached figures already shown per-Mover on the Data Movers page, so it never triggers extra disk I/O of its own; hovering the tile reveals the exact used/total figures, and it only turns amber/red once the aggregate crosses 75%/90% respectively, as an early warning that some Data Movers may be running low on space.
 

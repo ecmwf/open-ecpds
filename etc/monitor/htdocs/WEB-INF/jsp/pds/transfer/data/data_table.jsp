@@ -285,6 +285,7 @@
 <div class="field-row"><div class="field-label">Data Mover</div><div class="field-value"><c:choose><c:when test="${not empty datatransfer.transferServerName}"><auth:if basePathKey="transferserver.basepath" paths="/${datatransfer.transferServerName}"><auth:then><a href="/do/datafile/transferserver/${datatransfer.transferServerName}">${datatransfer.transferServerName}</a></auth:then><auth:else><span class="val-code">${datatransfer.transferServerName}</span></auth:else></auth:if></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-body-tertiary text-muted fst-italic">None</span></c:otherwise></c:choose></div></div>
 <div class="field-row"><div class="field-label">On Proxy</div><div class="field-value"><c:choose><c:when test="${datatransfer.proxy}"><span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i>Yes</span></c:when><c:otherwise><span class="badge rounded-pill border fw-normal bg-secondary-subtle text-secondary-emphasis"><i class="bi bi-x-circle-fill me-1"></i>No</span></c:otherwise></c:choose></div></div>
 <div class="field-row"><div class="field-label">Target</div><div class="field-value"><c:choose><c:when test="${datatransfer.deleted}"><span class="val-code text-danger text-break d-inline-block">${datatransfer.target}</span></c:when><c:otherwise><span class="val-code text-break d-inline-block">${datatransfer.target}</span></c:otherwise></c:choose></div></div>
+<div class="field-row"><div class="field-label" title="Module-reported filename, only when different from Target">Delivered name</div><div class="field-value"><span id="dt-delivered-name" class="val-code text-break d-inline-block"><c:out value="${datatransfer.deliveredName}"/></span></div></div>
 <div class="field-row"><div class="field-label">Sent</div><div class="field-value"><span id="dt-sent-val" class="val-num" title="Sent: ${datatransfer.formattedSent}">${datatransfer.sent} bytes</span></div></div>
 <c:if test="${not empty showFileSize}">
 <div class="field-row"><div class="field-label">Size</div><div class="field-value"><span class="val-num" title="Size: ${datatransfer.formattedSize}">${datatransfer.size} bytes</span></div></div>
@@ -809,6 +810,7 @@ var _nstGlobalMin = ${_globalMin}, _nstGlobalMax = ${_globalMax};
              }
 
              // Update sent field
+             $('#dt-delivered-name').text(data.deliveredName || '');
              var $sent = $('#dt-sent-val');
              if ($sent.length) {
                  $sent.attr('title', 'Sent: ' + data.formattedSent)

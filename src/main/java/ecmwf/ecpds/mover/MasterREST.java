@@ -130,6 +130,11 @@ final class MasterREST implements MasterProxy {
         _rest.updateLiveTransferStatistics(samples);
     }
 
+    @Override
+    public void updateTrafficAccounting(String mover, java.util.Map<String, String> snapshot) throws Exception {
+        _rest.updateTrafficAccounting(mover, snapshot);
+    }
+
     /**
      * {@inheritDoc}
      *

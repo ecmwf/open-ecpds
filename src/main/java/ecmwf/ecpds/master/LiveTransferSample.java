@@ -29,6 +29,7 @@ package ecmwf.ecpds.master;
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -134,6 +135,8 @@ public final class LiveTransferSample implements Serializable {
     /** Wall-clock time (epoch millis) at which the sample was taken. */
     private final long timestamp;
 
+    private final String attemptId;
+
     /**
      * Instantiates a new live transfer sample.
      *
@@ -167,6 +170,14 @@ public final class LiveTransferSample implements Serializable {
      * @param hostType
      *            the target/source Host's actual type (see {@link #hostType}); may be {@code null}
      */
+    public LiveTransferSample(final long transferId, final String moverName, final String destinationName,
+            final String hostName, final String hostNickname, final String hostAddress, final String protocol,
+            final long fileSize, final long byteSent, final long duration, final double rateBitsPerSecond,
+            final String status, final String direction, final String hostType) {
+        this(transferId, moverName, destinationName, hostName, hostNickname, hostAddress, protocol, fileSize, byteSent,
+                duration, rateBitsPerSecond, status, direction, hostType, null, null);
+    }
+
     @JsonCreator
     public LiveTransferSample(@JsonProperty("transferId") final long transferId,
             @JsonProperty("moverName") final String moverName,
@@ -177,7 +188,8 @@ public final class LiveTransferSample implements Serializable {
             @JsonProperty("duration") final long duration,
             @JsonProperty("rateBitsPerSecond") final double rateBitsPerSecond,
             @JsonProperty("status") final String status, @JsonProperty("direction") final String direction,
-            @JsonProperty("hostType") final String hostType) {
+            @JsonProperty("hostType") final String hostType, @JsonProperty("timestamp") final Long timestamp,
+            @JsonProperty("attemptId") final String attemptId) {
         this.transferId = transferId;
         this.moverName = moverName;
         this.destinationName = destinationName;
@@ -192,7 +204,30 @@ public final class LiveTransferSample implements Serializable {
         this.status = status;
         this.direction = direction != null ? direction : DIRECTION_DISSEMINATION;
         this.hostType = hostType;
-        this.timestamp = System.currentTimeMillis();
+        this.timestamp = timestamp != null ? timestamp : System.currentTimeMillis();
+        this.attemptId = attemptId;
+    }
+
+    public LiveTransferSample withAttempt(final String attempt) {
+        return new LiveTransferSample(transferId, moverName, destinationName, hostName, hostNickname, hostAddress,
+                protocol, fileSize, byteSent, duration, rateBitsPerSecond, status, direction, hostType, timestamp,
+                attempt);
+    }
+
+    public String getAttemptId() {
+        return attemptId;
+    }
+
+    /** Identity of a movement, not merely the database transfer reused by successive legs/retries. */
+    @JsonIgnore
+    public String getEventKey() {
+        final var key = new StringBuilder().append(transferId);
+        for (final var part : new String[] { moverName, destinationName, hostName, direction, hostType, attemptId }) {
+            key.append('|').append(part != null ? part.length() : -1).append(':');
+            if (part != null)
+                key.append(part);
+        }
+        return key.toString();
     }
 
     public long getTransferId() {

@@ -25,4 +25,39 @@ The destination detail page shows the current queue for that destination: pendin
 
 ![Destination Detail](img/destination-detail.png)
 
+### Delivered filename
 
+**Target** remains the requested filename. Host settings can change the filename
+or path actually used by a delivery module. The transfer detail page shows
+**Delivered name** when the module reports a different name after successful
+delivery. It is empty when the names are identical or the module supplies no name.
+Comparison is exact and case-sensitive; names are not inferred from comments.
+
+In the destination queue, choose **Cols → Custom** and enable **Delivered name**
+to display it. The column is not included in Auto, All, Compact or Small modes.
+Existing saved column selections are preserved.
+
+Use `delivered=*/in/*` to search this field, or combine it with other conditions,
+for example `target=*.dat delivered=archive/* case=i`. Wildcards, quoting and
+`case=` work as for `target=`. The same filter applies to transfer rows, counts
+and filtered basket selection. Transfers with no recorded delivered name do not
+match a filename search.
+
+The field describes the latest delivery attempt, not a history of remote names.
+It is cleared when a new Mover delivery attempt starts and populated on success.
+Historical transfers are not backfilled.
+
+!!! warning "Database upgrade required"
+    Before starting the updated Master, apply
+    `docker/ecpds/database/add-delivered-name.sql` once to the existing ECPDS
+    database. It adds nullable `DATA_TRANSFER.DAT_DELIVERED_NAME` as `TEXT`, so
+    transformed paths are not truncated to Target's length. Review ALTER TABLE
+    locking and supported online-DDL options for your MariaDB version and table
+    size before scheduling the upgrade. New databases already contain this field.
+    Deploy the updated Master, Movers, Continental relays (if used) and Monitor
+    together, then restart the services.
+
+Recording the name uses the existing transfer update path: there is no additional
+database request per transfer or parsing of history messages. No index is added
+for the new text field. Searching or sorting it can cost more on large result
+sets; destination and time/status filters still constrain the existing queries.

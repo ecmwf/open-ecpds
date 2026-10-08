@@ -103,6 +103,11 @@ final class MasterRMI implements MasterProxy {
         _mover.getMasterInterface().updateLiveTransferStatistics(samples);
     }
 
+    @Override
+    public void updateTrafficAccounting(String mover, java.util.Map<String, String> snapshot) throws Exception {
+        _mover.getMasterInterface().updateTrafficAccounting(mover, snapshot);
+    }
+
     /**
      * {@inheritDoc}
      *

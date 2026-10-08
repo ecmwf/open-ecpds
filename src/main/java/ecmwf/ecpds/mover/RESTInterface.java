@@ -236,6 +236,8 @@ public interface RESTInterface {
      */
     void updateLiveTransferStatistics(LiveTransferSample[] samples) throws Exception;
 
+    void updateTrafficAccounting(String mover, java.util.Map<String, String> snapshot) throws Exception;
+
     /**
      * Whether the MasterServer currently wants live transfer statistics, so a ProxyHost knows whether it is worth
      * sampling/pushing at all (relayed via this data mover's REST server).

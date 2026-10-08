@@ -139,6 +139,8 @@ public class GlobeWebSocket implements WebSocketListener {
     /** Latest known rolling-24h transferred-bytes total for Acquisition only, refreshed by the poller. */
     private static volatile long bytesLast24hAcquisition;
 
+    private static volatile java.util.Map<String, Long> bytesLast24hByType;
+
     /** Latest known number of currently open Data Portal (incoming) connections, refreshed by the poller. */
     private static volatile long dataPortalSessions;
 
@@ -354,10 +356,14 @@ public class GlobeWebSocket implements WebSocketListener {
                 LOG.debug("Fetching MasterServer origin hostname/address", e);
             }
             try {
-                bytesLast24h = mi.getLiveTransferBytes24h();
-                bytesLast24hDissemination = mi.getLiveTransferBytes24h(LiveTransferSample.DIRECTION_DISSEMINATION);
-                bytesLast24hAcquisition = mi.getLiveTransferBytes24h(LiveTransferSample.DIRECTION_ACQUISITION);
+                final var totals = mi.getLiveTransferBytes24hByType();
+                bytesLast24h = totals.values().stream().mapToLong(Long::longValue).sum();
+                bytesLast24hDissemination = totals.get("Dissemination") + totals.get("Replication")
+                        + totals.get("Backup") + totals.get("Proxy");
+                bytesLast24hAcquisition = totals.get("Acquisition") + totals.get("Source");
+                bytesLast24hByType = totals;
             } catch (final Exception e) {
+                bytesLast24hByType = null;
                 LOG.debug("Fetching MasterServer 24h transferred bytes total", e);
             }
             try {
@@ -481,6 +487,7 @@ public class GlobeWebSocket implements WebSocketListener {
         node.put("bytes24h", bytesLast24h);
         node.put("bytes24hDissemination", bytesLast24hDissemination);
         node.put("bytes24hAcquisition", bytesLast24hAcquisition);
+        node.set("bytes24hByType", JSON.valueToTree(bytesLast24hByType));
         node.put("dataPortalSessions", dataPortalSessions);
         node.put("dataPortalBytesInPerSecond", dataPortalBytesInPerSecond);
         node.put("dataPortalBytesOutPerSecond", dataPortalBytesOutPerSecond);
@@ -546,6 +553,7 @@ public class GlobeWebSocket implements WebSocketListener {
         final var node = JSON.createObjectNode();
         node.put("type", "transfer");
         node.put("transferId", sample.getTransferId());
+        node.put("eventKey", sample.getEventKey());
         node.put("mover", sample.getMoverName());
         node.put("destination", sample.getDestinationName());
         node.put("host", sample.getHostName());

@@ -211,7 +211,10 @@ public final class ECtransGet extends ECtransAction {
                 if (!StreamManagerImp.isFiltered(filter)) {
                     _log.debug("Trying optimized get (providing output stream to transfer module)");
                     try {
-                        done = module.get(out, source, posn);
+                        done = module.get(getECtransCallback().isByteAccountingEnabled()
+                                ? ecmwf.common.technical.AccountingStreams.output(out,
+                                        getECtransCallback()::transferredBytes)
+                                : out, source, posn);
                     } catch (final Throwable t) {
                         _log.warn("Optimized get failed, falling back to standard get", t);
                         message = t.getMessage();
@@ -221,6 +224,9 @@ public final class ECtransGet extends ECtransAction {
                 if (!done) {
                     _log.debug("Performing standard get (getting input stream from transfer module)");
                     in = module.get(source, posn);
+                    if (getECtransCallback().isByteAccountingEnabled()) {
+                        in = ecmwf.common.technical.AccountingStreams.input(in, getECtransCallback()::transferredBytes);
+                    }
                     final var bufferedSize = setup.getByteSize(HOST_ECTRANS_BUFF_INPUT_SIZE);
                     in = StreamManagerImp.getFilters(in, filter, bufferedSize != null ? (int) bufferedSize.size() : 0);
                     final var plug = new StreamPlugThread(in, out);
@@ -289,6 +295,9 @@ public final class ECtransGet extends ECtransAction {
             }
         } else {
             final var getHandlerCmd = setup.getString(HOST_ECTRANS_GET_HANDLER_CMD);
+            if (getECtransCallback().isByteAccountingEnabled()) {
+                _log.warn("Traffic accounting unavailable for handler-based get from {}", source);
+            }
             if ((getHandlerCmd == null) || getHandlerCmd.isBlank()) {
                 throw new IOException("No valid handler command found (please check option \""
                         + HOST_ECTRANS_GET_HANDLER_CMD.getFullName() + "\")");

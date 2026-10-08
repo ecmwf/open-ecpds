@@ -169,6 +169,9 @@ public final class ECtransPut extends ECtransAction {
      */
     @Override
     protected void exec(final TransferModule module, final boolean interruptible) throws Exception {
+        final var accounting = getECtransCallback().isByteAccountingEnabled()
+                && !(module instanceof ecmwf.common.ectrans.module.PortalModule)
+                && !(module instanceof ecmwf.common.ectrans.module.TestModule);
         _log.debug("Start ECtransPut for {} (size={})", target, size);
         final var setup = getECtransCallback().getECtransSetup();
         // Do we have a notification request?
@@ -287,7 +290,8 @@ public final class ECtransPut extends ECtransAction {
                     if (!toFilter) {
                         _log.debug("Trying optimized put (providing input stream to transfer module)");
                         try {
-                            done = module.put(in, target, posn, size);
+                            done = module.put(accounting ? ecmwf.common.technical.AccountingStreams.input(in,
+                                    getECtransCallback()::transferredBytes) : in, target, posn, size);
                         } catch (final Throwable t) {
                             _log.warn("Optimized put failed, falling back to standard put", t);
                             message = t.getMessage();
@@ -297,6 +301,10 @@ public final class ECtransPut extends ECtransAction {
                     if (!done) {
                         _log.debug("Performing standard put (getting output stream from transfer module)");
                         out = module.put(target, posn, size);
+                        if (accounting) {
+                            out = ecmwf.common.technical.AccountingStreams.output(out,
+                                    getECtransCallback()::transferredBytes);
+                        }
                         if (!decrompressedOnTheFly) {
                             // We have to know the size of the compressed file when we will do the checking!
                             mOut = new MonitoredOutputStream(out);
@@ -394,6 +402,9 @@ public final class ECtransPut extends ECtransAction {
                     throw new IOException("Filter not supported with putHandler: " + initialInputFilter);
                 }
                 final var putHandlerCmd = setup.getString(HOST_ECTRANS_PUT_HANDLER_CMD);
+                if (getECtransCallback().isByteAccountingEnabled()) {
+                    _log.warn("Traffic accounting unavailable for handler-based put to {}", target);
+                }
                 if (putHandlerCmd != null && !putHandlerCmd.isBlank()) {
                     // This is a shell command to start on the underlying OS!
                     final var sourceFile = getRemoteProvider().getDataOutputFile(ticket); // The source on the local

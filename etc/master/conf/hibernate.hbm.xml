@@ -444,6 +444,9 @@
 		<property name="DAT_TARGET" type="java.lang.String">
 			<column name="DAT_TARGET" />
 		</property>
+		<property name="DAT_DELIVERED_NAME" type="text">
+			<column name="DAT_DELIVERED_NAME" />
+		</property>
 		<property name="DAT_TIME_BASE" type="java.math.BigDecimal">
 			<column name="DAT_TIME_BASE" />
 		</property>

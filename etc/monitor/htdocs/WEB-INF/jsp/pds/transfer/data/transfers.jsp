@@ -160,6 +160,7 @@
                                             <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-4" data-col="4" checked><label class="form-check-label" for="tfrchk-4">%</label></div>
                                             <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-5" data-col="5" checked><label class="form-check-label" for="tfrchk-5">Mbits/s</label></div>
                                             <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-6" data-col="6" checked><label class="form-check-label" for="tfrchk-6">Prior</label></div>
+                                            <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-7" data-col="7"><label class="form-check-label" for="tfrchk-7">Delivered name</label></div>
                                         </div>
                                     </li>
                                 </ul>
@@ -170,7 +171,7 @@
                                 <span class="input-group-text text-muted"><i class="bi bi-search"></i></span>
                                 <input class="form-control" name="transferSearch" id="transferSearch" type="text"
                                     placeholder="e.g. expired=no target=*.dat source=/tmp/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i"
-                                    title="Default search is by target. Use target, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover, method and event rules."
+                                    title="Default search is by target. Use target, delivered, source, ts, priority, groupby, identity, checksum, size, replicated, asap, deleted, expired, proxy, mover, method and event rules."
                                     value='<c:out value="${transferSearch}"/>'>
                             </div>
                         </div>
@@ -207,6 +208,7 @@
                             <ul class="mb-1 ps-3">
                                 <li><strong>Default (no prefix)</strong> &mdash; matches the <code>target</code> filename. Wildcards <code>*</code> and <code>?</code> are supported.</li>
                                 <li><code>target=*.dat</code>, <code>source=/tmp/*</code> &mdash; filter by target filename or source path.</li>
+                                <li><code>delivered=*/in/*</code> &mdash; filter by the stored delivered name (only when different from Target).</li>
                                 <li><code>mover=</code> &mdash; filter by Data Mover name.</li>
                                 <li><code>method=</code> &mdash; filter by Transfer Method name.</li>
                                 <li><code>ts&gt;10 ts&lt;=99</code> &mdash; filter by transfer size (numeric; supports <code>=</code> <code>&gt;</code> <code>&gt;=</code> <code>&lt;</code> <code>&lt;=</code>).</li>
@@ -227,6 +229,10 @@
                                 <div class="col-md-6">
                                     <label class="form-label mb-0 fw-semibold"><code>target=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
                                     <input type="text" class="form-control form-control-sm" id="qb_target" placeholder="e.g. *.dat" oninput="qbPreview()">
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label mb-0 fw-semibold"><code>delivered=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
+                                    <input type="text" class="form-control form-control-sm" id="qb_delivered" placeholder="e.g. */in/*" oninput="qbPreview()">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label mb-0 fw-semibold"><code>source=</code> <span class="text-muted fw-normal">wildcards * ?</span></label>
@@ -384,7 +390,7 @@
         function qbQuote(v) { var q=v.indexOf(' ')>=0||v.indexOf('=')>=0||v.indexOf('"')>=0; return q?'"'+v.replace(/"/g,'\\"')+'"':v; }
         function qbCountActive() {
             var n = 0;
-            ['target','source','mover','method','identity','checksum','groupby','priority'].forEach(function(f) { if (qbVal('qb_'+f)) n++; });
+            ['target','delivered','source','mover','method','identity','checksum','groupby','priority'].forEach(function(f) { if (qbVal('qb_'+f)) n++; });
             ['qb_ts_val1','qb_ts_val2','qb_size_val1','qb_size_val2'].forEach(function(id) { if (qbVal(id)) n++; });
             ['asap','deleted','expired','replicated','proxy','event'].forEach(function(f) { if (qbVal('qb_'+f)) n++; });
             if (qbVal('qb_case') !== 's') n++;
@@ -399,7 +405,7 @@
         }
         function qbBuild() {
             var p = [];
-            ['target','source','mover','method','identity','checksum','groupby'].forEach(function(f) {
+            ['target','delivered','source','mover','method','identity','checksum','groupby'].forEach(function(f) {
                 var v = qbVal('qb_' + f); if (v) p.push(f + '=' + qbQuote(v));
             });
             ['asap','deleted','expired','replicated','proxy','event'].forEach(function(f) {
@@ -424,7 +430,7 @@
             document.getElementById('transferSearchForm').submit();
         }
         function qbClear() {
-            ['target','source','mover','method','identity','checksum','groupby','priority'].forEach(function(f) {
+            ['target','delivered','source','mover','method','identity','checksum','groupby','priority'].forEach(function(f) {
                 var el = document.getElementById('qb_' + f); if (el) el.value = '';
             });
             ['qb_ts_val1','qb_ts_val2','qb_size_val1','qb_size_val2'].forEach(function(id) {
@@ -528,7 +534,7 @@
 <script>
 var _transferSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search using the following rules:<\/p>' +
     '<ul class="mb-0">' +
-    '<li><code>target=<\/code>, <code>source=<\/code>, <code>ts=<\/code>, <code>priority=<\/code>, ' +
+    '<li><code>target=<\/code>, <code>delivered=<\/code>, <code>source=<\/code>, <code>ts=<\/code>, <code>priority=<\/code>, ' +
     '<code>groupby=<\/code>, <code>identity=<\/code>, <code>checksum=<\/code>, <code>size=<\/code>, ' +
     '<code>replicated=<\/code>, <code>asap=<\/code>, <code>deleted=<\/code>, <code>expired=<\/code>, ' +
     '<code>proxy=<\/code>, <code>mover=<\/code>, <code>method=<\/code>, <code>event=<\/code><\/li>' +
@@ -570,6 +576,7 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
             <th>%</th>
             <th>Mbits/s</th>
             <th>Prior</th>
+            <th title="Module-reported delivered filename, only when different from Target">Delivered name</th>
         </tr>
     </thead>
 </table>
@@ -628,7 +635,8 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
             { title: 'Target',        orderable: true,  render: function (d) { return d; } },
             { title: '%',             orderable: false, className: 'text-nowrap', width: '45px' },
             { title: 'Mbits/s',       orderable: true,  className: 'text-nowrap', render: function (d) { return d; }, width: '70px' },
-            { title: 'Prior',         orderable: true,  className: 'text-nowrap', width: '45px' }
+            { title: 'Prior',         orderable: true,  className: 'text-nowrap', width: '45px' },
+            { title: 'Delivered name', orderable: true, visible: false, className: 'text-break' }
         ],
         pageLength: (function() { try { var v = parseInt(localStorage.getItem('transferPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
         lengthMenu: [[10, 25, 50, 100, 250], [10, 25, 50, 100, 250]],
@@ -666,7 +674,7 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
 
     function _tfrShowCols(hideCols) {
         var n = table.columns().count();
-        for (var i = 0; i < n; i++) table.column(i).visible(hideCols.indexOf(i) === -1, false);
+        for (var i = 0; i < n; i++) table.column(i).visible(i !== 7 && hideCols.indexOf(i) === -1, false);
         table.columns.adjust();
     }
     function _tfrApplyCustomCols() {

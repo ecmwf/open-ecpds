@@ -4015,7 +4015,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     public LiveTransferSample[] getLiveTransfers() throws RemoteException {
         final var registry = LiveTransferRegistry.getInstance();
         registry.touch();
-        return registry.getActiveTransfers().toArray(new LiveTransferSample[0]);
+        return registry.getVisualizationSamples().toArray(new LiveTransferSample[0]);
     }
 
     /**
@@ -4081,7 +4081,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      */
     @Override
     public long getLiveTransferBytes24h() throws RemoteException {
-        return LiveTransferRegistry.getInstance().getBytesLast24h();
+        return master.getActualTrafficTotals().values().stream().mapToLong(Long::longValue).sum();
     }
 
     /**
@@ -4089,7 +4089,17 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      */
     @Override
     public long getLiveTransferBytes24h(final String direction) throws RemoteException {
-        return LiveTransferRegistry.getInstance().getBytesLast24h(direction);
+        final var totals = master.getActualTrafficTotals();
+        if (totals.containsKey(direction))
+            return totals.get(direction);
+        if (LiveTransferSample.DIRECTION_ACQUISITION.equals(direction))
+            return totals.get("Acquisition") + totals.get("Source");
+        return totals.get("Dissemination") + totals.get("Replication") + totals.get("Backup") + totals.get("Proxy");
+    }
+
+    @Override
+    public java.util.Map<String, Long> getLiveTransferBytes24hByType() throws RemoteException {
+        return master.getActualTrafficTotals();
     }
 
     /**

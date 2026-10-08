@@ -79,6 +79,8 @@ public interface MasterProxy {
      */
     void updateLiveTransferStatistics(LiveTransferSample[] samples) throws Exception;
 
+    void updateTrafficAccounting(String mover, java.util.Map<String, String> snapshot) throws Exception;
+
     /**
      * Whether the MasterServer currently wants live transfer statistics.
      *

@@ -62,6 +62,7 @@
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-12" data-col="12" checked><label class="form-check-label" for="chk-col-12">Actions</label></div>
             </c:if>
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-13" data-col="13" checked><label class="form-check-label" for="chk-col-13">Select</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-14" data-col="14"><label class="form-check-label" for="chk-col-14">Delivered name</label></div>
           </div>
         </li>
       </ul>
@@ -98,7 +99,7 @@
   </div>
 </div>
 
-<%-- DataTable: 14 columns (Actions hidden when user lacks queue access; Size hidden by default) --%>
+<%-- DataTable: 15 columns (Delivered name available only in Custom; Size hidden by default) --%>
 <div style="overflow-x: auto">
 <table id="destTransferTable" class="table table-striped table-sm table-hover">
   <thead class="table-light">
@@ -117,6 +118,7 @@
       <th title="Priority">P</th>
       <th>Actions</th>
       <th style="cursor:pointer;white-space:nowrap" title="Click to select/unselect all transfers on this page" onclick="togglePageSelection()"><i id="hdr-star-icon" class="bi bi-star"></i></th>
+      <th title="Module-reported delivered filename, only when different from Target">Delivered name</th>
     </tr>
   </thead>
   <tbody></tbody>
@@ -127,7 +129,7 @@
 <script>
 var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search using the following rules:<\/p>' +
     '<ul class="mb-0">' +
-    '<li><code>target=<\/code>, <code>source=<\/code>, <code>mover=<\/code>, <code>identity=<\/code>, <code>groupby=<\/code>, <code>checksum=<\/code>, <code>priority=<\/code><\/li>' +
+    '<li><code>target=<\/code>, <code>delivered=<\/code>, <code>source=<\/code>, <code>mover=<\/code>, <code>identity=<\/code>, <code>groupby=<\/code>, <code>checksum=<\/code>, <code>priority=<\/code><\/li>' +
     '<li><code>ts&gt;<\/code> \/ <code>ts&lt;=<\/code> &mdash; transfer size range (numeric); <code>size&gt;=700kb<\/code> &mdash; file size (<code>b<\/code>, <code>kb<\/code>, <code>mb<\/code>, <code>gb<\/code>)<\/li>' +
     '<li><code>asap=yes|no<\/code>, <code>deleted=yes|no<\/code>, <code>expired=yes|no<\/code>, <code>replicated=yes|no<\/code>, <code>proxy=yes|no<\/code>, <code>event=yes|no<\/code><\/li>' +
     '<li>Example: <code>asap=yes target=*.dat source=\/tmp\/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i<\/code><\/li>' +
@@ -182,13 +184,15 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             { data: 10, width: '130px' },
             { data: 11, width: '45px' },
             { data: 12, width: '95px' },
-            { data: 13, width: '40px' }
+            { data: 13, width: '40px' },
+            { data: 14 }
         ],
         columnDefs: [
             { targets: 5, className: 'col-target' },
             { targets: [0, 6, 7, 8, 9, 10, 11, 12, 13], className: 'text-nowrap' },
             { targets: 7, orderable: false },
             { targets: 9, visible: false },
+            { targets: 14, visible: false, className: 'text-break' },
             { targets: 12, orderable: false, visible: canQueue },
             { targets: 13, orderable: false }
         ],
@@ -338,7 +342,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
     // Additional columns hidden at small width (<768px): Start(3), Finish(4)
     var _SM_COLS = [3, 4];
     // Size(9) is always hidden in auto mode — only available in Custom mode
-    var _AUTO_ALWAYS_HIDE = [9];
+    var _AUTO_ALWAYS_HIDE = [9, 14];
     // Compact: hide Err + all MED cols
     var _COMPACT_HIDE = [0].concat(_MED_COLS.filter(function(c){return c!==0;}));
     // Small: hide everything in Compact + SM cols
@@ -355,6 +359,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
         var total = _destTable.columns().count();
         for (var i = 0; i < total; i++) {
             var visible = hideCols.indexOf(i) === -1;
+            if (i === 14) visible = false; // Delivered name is opt-in through Custom only.
             if (i === 12 && !canQueue) {
                 visible = false;
             }

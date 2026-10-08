@@ -1575,6 +1575,11 @@ final class ManagementProxy implements ManagementInterface {
         return managementInterface.getLiveTransferBytes24h(direction);
     }
 
+    @Override
+    public java.util.Map<String, Long> getLiveTransferBytes24hByType() throws RemoteException {
+        return managementInterface.getLiveTransferBytes24hByType();
+    }
+
     /** {@inheritDoc} */
     @Override
     public String[] getActiveProxyHostNames() throws RemoteException {
