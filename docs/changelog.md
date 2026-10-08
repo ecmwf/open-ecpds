@@ -1,11 +1,11 @@
 # Changelog
 
 All notable changes to OpenECPDS are listed here in **descending order** (most recent first).
-Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.0.4-01072026`).
+Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.2.0-07102026`).
 
 ---
 
-## open-ecpds 8.2.0-30092026
+## open-ecpds 8.2.0-07102026
 
 - **JMX monitoring: Hawtio/Jolokia and Prometheus integration**: A new Hawtio container provides a web console for inspecting attributes and invoking operations on Master, Monitor and Mover via Jolokia, replacing the legacy HTML JMX adaptor. JMX interfaces have clearer names and richer attribute/operation descriptions, while the bundled, opt-in Prometheus JMX exporter maps application internals to metrics for Prometheus and Grafana dashboards. See [Exporting JMX Metrics to Grafana and Hawtio](monitoring/jmx-export.md).
 - **Opsview: no longer forces a new login token on every kind of failure**: `OpsViewManager` (notes export, product status/service "Detail" pushes, and the periodic Destination-to-Opsview-filter sync) used to treat *any* failed request — a 404, a 500, a malformed response, a network error — as a possible sign of an expired token, forcing a fresh login and retrying once. Only an actual `401 Unauthorized` now triggers that; every other failure fails through on the first attempt, avoiding unnecessary repeated logins hitting the Opsview server for errors a new token would not have fixed anyway.
