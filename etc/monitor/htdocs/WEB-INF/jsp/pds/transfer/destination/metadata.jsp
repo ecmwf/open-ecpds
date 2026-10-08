@@ -45,14 +45,16 @@
       </button>
       </c:if>
       <c:if test="${canEditMeta && monitorActivated}">
-      <button type="button" class="btn btn-sm btn-outline-secondary" id="dmfPreviewNotesBtn"
-              onclick="dmfPreviewNotes()" title="Preview fields flagged &quot;Include in Notes&quot; as an Opsview note">
-        <i class="bi bi-eye me-1"></i>Preview Notes
-      </button>
-      <button type="button" class="btn btn-sm btn-outline-secondary" id="dmfExportNotesBtn"
-              onclick="dmfExportNotes()" title="Export fields flagged &quot;Include in Notes&quot; to Opsview">
-        <i class="bi bi-send-check me-1"></i>Export Notes
-      </button>
+      <div class="btn-group btn-group-sm" role="group" aria-label="Opsview Notes">
+        <button type="button" class="btn btn-outline-secondary" id="dmfPreviewNotesBtn"
+                onclick="dmfPreviewNotes()" title="Preview fields flagged &quot;Include in Notes&quot; as an Opsview note">
+          <i class="bi bi-eye me-1"></i>Preview Notes
+        </button>
+        <button type="button" class="btn btn-outline-secondary" id="dmfExportNotesBtn"
+                onclick="dmfExportNotes()" title="Export fields flagged &quot;Include in Notes&quot; to Opsview">
+          <i class="bi bi-send-check me-1"></i>Export Notes
+        </button>
+      </div>
       </c:if>
       <c:if test="${canEditMeta}">
       <div class="btn-group btn-group-sm">
