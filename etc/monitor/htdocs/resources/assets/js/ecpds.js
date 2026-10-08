@@ -1,3 +1,47 @@
+// Suppress login HTML in asynchronous callbacks and reload the current page so the
+// normal login flow remembers the page URL, rather than the AJAX endpoint.
+(function() {
+    var reloading = false;
+    function sessionExpired(response) {
+        var url = response.url || response.responseURL;
+        if (!url || new URL(url, window.location.href).origin !== window.location.origin) return false;
+        return response.headers
+            ? response.headers.get('X-ECPDS-Session-Expired') === 'true'
+            : response.getResponseHeader('X-ECPDS-Session-Expired') === 'true';
+    }
+    function reloadForLogin() {
+        if (reloading) return;
+        reloading = true;
+        window.location.reload();
+    }
+    if (window.fetch) {
+        var originalFetch = window.fetch;
+        window.fetch = function() {
+            return originalFetch.apply(this, arguments).then(function(response) {
+                if (!sessionExpired(response)) return response;
+                reloadForLogin();
+                // Keep callers from parsing the login page or reporting a network error.
+                return new Promise(function() {});
+            });
+        };
+    }
+    var OriginalXMLHttpRequest = window.XMLHttpRequest;
+    window.XMLHttpRequest = function() {
+        var xhr = new OriginalXMLHttpRequest();
+        function checkSession(event) {
+            if (xhr.readyState !== 4 || !sessionExpired(xhr)) return;
+            event.stopImmediatePropagation();
+            reloadForLogin();
+        }
+        ['readystatechange', 'load', 'loadend'].forEach(function(type) {
+            xhr.addEventListener(type, checkSession, true);
+        });
+        return xhr;
+    };
+    window.XMLHttpRequest.prototype = OriginalXMLHttpRequest.prototype;
+    Object.setPrototypeOf(window.XMLHttpRequest, OriginalXMLHttpRequest);
+}());
+
 // Loading ace editor library
 var beautify, ltools, Range;
 try {

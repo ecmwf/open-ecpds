@@ -87,6 +87,8 @@ public abstract class PDSAction extends ECMWFAction {
         final var currentPath = request.getContextPath() + request.getServletPath() + mapping.getPath();
         if (user == null || Cnf.at("Server", "anonymousUser", "anonymous").equals(user.getUid())) {
             // Access Denied. No User.
+            response.setHeader("X-ECPDS-Session-Expired", "true");
+            response.setHeader("Cache-Control", "no-store");
             request.getSession().setAttribute(RETURN_AFTER_LOGIN_KEY, currentPath);
             forward = mapping.findForward("login");
         } else if (!user.hasAccess(currentPath)) {

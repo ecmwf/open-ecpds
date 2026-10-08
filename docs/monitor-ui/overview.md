@@ -33,3 +33,11 @@ The main navigation bar divides the interface into five sections:
 | **Data Files** | Data file inventory, transfer groups, movers, and traffic stats |
 | **Users** | Data portal users, web users, categories, policies, and resources |
 | **Admin** | System-wide tools: metadata, requeue, upload, and audit |
+
+## Session expiry
+
+Across the Monitor UI, an asynchronous request that discovers an expired session
+reloads the current page through the normal login flow, returning to that page
+after authentication. This covers both Fetch and XMLHttpRequest (including jQuery
+AJAX). Permission denials and genuine network/server errors do not trigger this
+reload. Unsaved edits are not preserved.
