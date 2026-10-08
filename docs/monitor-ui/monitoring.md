@@ -14,6 +14,16 @@ The dashboard shows all destinations and their current transfer status. Each row
 
 ## Live Earth
 
+Nearby Proxy and Target Hosts share a counted marker when their screen positions
+are within 28 pixels. Click the marker or its count to select a host from the
+details pane. Groups split as you zoom in; hosts at identical coordinates remain
+individually selectable. A Proxy Host that is also a transfer target is counted
+once, with its transfer activity included in its details.
+
+The scrollable details pane sits beside the globe on desktop, leaving the country
+table and KPIs in the globe area. On narrow screens it becomes a bottom sheet,
+with the globe above it. Close the pane to restore the full globe area.
+
 Hovering over a Proxy Host's Continental Mover marker shows `HOS_NICKNAME (ID)`,
 falling back to the ID when no nickname is configured, with its existing connection
 or transfer-status suffix.

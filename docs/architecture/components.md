@@ -69,6 +69,12 @@ The database persists the system's metadata: [destinations and aliases](../conce
 schedules, and history. In the default development setup it runs as a MariaDB container
 (`make mariadb` opens a session).
 
+In ECMWF's production infrastructure, databases use three-node MariaDB Galera
+clusters distributed across two data halls and a separate DHS zone. See
+[ECPDS infrastructure at ECMWF](overview.md#ecpds-infrastructure-at-ecmwf) for the
+physical deployment, cross-hall Data Mover replication, and the distinction between
+performance provisioning and high availability.
+
 ## Related
 
 - [Architecture Overview](overview.md)
