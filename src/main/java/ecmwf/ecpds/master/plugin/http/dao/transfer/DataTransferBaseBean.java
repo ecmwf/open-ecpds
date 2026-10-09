@@ -650,7 +650,10 @@ public class DataTransferBaseBean extends ModelBeanBase implements DataTransfer,
 
     @Override
     public String getDeliveredName() {
-        return transfer.getDeliveredName();
+        if (!StatusFactory.DONE.equals(transfer.getStatusCode())) {
+            return null;
+        }
+        return transfer.getDeliveredName() != null ? transfer.getDeliveredName() : transfer.getTarget();
     }
 
     /**

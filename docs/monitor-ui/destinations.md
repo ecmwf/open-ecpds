@@ -30,18 +30,24 @@ The destination detail page shows the current queue for that destination: pendin
 **Target** remains the requested filename. Host settings can change the filename
 or path actually used by a delivery module. The transfer detail page shows
 **Delivered name** when the module reports a different name after successful
-delivery. It is empty when the names are identical or the module supplies no name.
+delivery. It is shown only for transfers whose current status is **DONE**.
+The display falls back to **Target** when no different name is recorded.
 Comparison is exact and case-sensitive; names are not inferred from comments.
 
-In the destination queue, choose **Cols → Custom** and enable **Delivered name**
-to display it. The column is not included in Auto, All, Compact or Small modes.
+In the destination queue, choose **Cols → Custom** and enable **Delivered**
+to display it immediately after **Target**. The column is not included in Auto, All, Compact or Small modes.
 Existing saved column selections are preserved.
 
 Use `delivered=*/in/*` to search this field, or combine it with other conditions,
 for example `target=*.dat delivered=archive/* case=i`. Wildcards, quoting and
 `case=` work as for `target=`. The same filter applies to transfer rows, counts
-and filtered basket selection. Transfers with no recorded delivered name do not
-match a filename search.
+and filtered basket selection. Only **DONE** transfers match `delivered=`.
+When their stored delivered name is NULL, `delivered=` searches **Target** instead.
+Sorting uses the same effective filename. This does not change stored values.
+Failed, queued, running and other non-DONE transfers show an empty Delivered
+value and do not match a delivered filename filter, even if an older name remains
+stored. Historical DONE transfers and modules that do not report a name use the
+Target fallback; this does not recover an unrecorded historical remote filename.
 
 The field describes the latest delivery attempt, not a history of remote names.
 It is cleared when a new Mover delivery attempt starts and populated on success.

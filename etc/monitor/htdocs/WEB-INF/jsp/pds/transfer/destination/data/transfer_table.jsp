@@ -52,6 +52,7 @@
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-3"  data-col="3"  checked><label class="form-check-label" for="chk-col-3">Start Time</label></div>
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-4"  data-col="4"  checked><label class="form-check-label" for="chk-col-4">Finish Time</label></div>
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-5"  data-col="5"  checked disabled><label class="form-check-label text-muted" for="chk-col-5">Target <small>(required)</small></label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-14" data-col="14"><label class="form-check-label" for="chk-col-14">Delivered</label></div>
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-6"  data-col="6"  checked><label class="form-check-label" for="chk-col-6">TS</label></div>
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-7"  data-col="7"  checked><label class="form-check-label" for="chk-col-7">%</label></div>
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-8"  data-col="8"  checked><label class="form-check-label" for="chk-col-8">Mbits/s</label></div>
@@ -62,7 +63,6 @@
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-12" data-col="12" checked><label class="form-check-label" for="chk-col-12">Actions</label></div>
             </c:if>
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-13" data-col="13" checked><label class="form-check-label" for="chk-col-13">Select</label></div>
-            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-14" data-col="14"><label class="form-check-label" for="chk-col-14">Delivered name</label></div>
           </div>
         </li>
       </ul>
@@ -87,6 +87,8 @@
 
 <div class="collapse mt-1 mb-2" id="dtSelectionHelp">
   <div class="card card-body py-2 px-3" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd);">
+    <strong class="d-block mb-1">Target and Delivered</strong>
+    <p class="mb-2"><strong>Target</strong> is the requested filename. Enable <strong>Delivered</strong> under <strong>Cols &rarr; Custom</strong> to show the successful delivery filename immediately after Target. Delivered is populated only while the current status is <strong>Done (DONE)</strong>: it uses the module-reported name, or Target when no different name was recorded. Failed, queued, running and other non-DONE transfers leave it empty. The <code>delivered=</code> filter and column sorting use the same rule, including counts and filtered basket selection; use <code>target=</code> to search filenames regardless of status. Historical DONE transfers without a recorded name fall back to Target; this does not recover an unrecorded remote filename.</p>
     <strong class="d-block mb-1">Selecting transfers and applying bulk actions</strong>
     <p class="mb-1">Use the controls in the toolbar to build a <em>selection basket</em>, then open the basket to act on all selected transfers at once.</p>
     <ul class="mb-1 ps-3">
@@ -110,6 +112,7 @@
       <th title="Start Time (UTC) &mdash; full date shown, since it may differ from the selected Prod. Date (which is the file's product/base time)">Start Time</th>
       <th title="Finish Time (UTC) &mdash; full date shown, since it may differ from the selected Prod. Date (which is the file's product/base time)">Finish Time</th>
       <th style="min-width:120px;">Target</th>
+      <th title="Successful delivery filename (DONE only); falls back to Target when no different name is recorded">Delivered</th>
       <th>TS</th>
       <th>%</th>
       <th>Mbits/s</th>
@@ -118,7 +121,6 @@
       <th title="Priority">P</th>
       <th>Actions</th>
       <th style="cursor:pointer;white-space:nowrap" title="Click to select/unselect all transfers on this page" onclick="togglePageSelection()"><i id="hdr-star-icon" class="bi bi-star"></i></th>
-      <th title="Module-reported delivered filename, only when different from Target">Delivered name</th>
     </tr>
   </thead>
   <tbody></tbody>
@@ -130,6 +132,7 @@
 var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search using the following rules:<\/p>' +
     '<ul class="mb-0">' +
     '<li><code>target=<\/code>, <code>delivered=<\/code>, <code>source=<\/code>, <code>mover=<\/code>, <code>identity=<\/code>, <code>groupby=<\/code>, <code>checksum=<\/code>, <code>priority=<\/code><\/li>' +
+    '<li><code>delivered=*.dat<\/code> matches only Done (DONE) transfers, using the recorded delivered name or Target when no different name was recorded. Other statuses do not match; use <code>target=<\/code> to search across statuses.<\/li>' +
     '<li><code>ts&gt;<\/code> \/ <code>ts&lt;=<\/code> &mdash; transfer size range (numeric); <code>size&gt;=700kb<\/code> &mdash; file size (<code>b<\/code>, <code>kb<\/code>, <code>mb<\/code>, <code>gb<\/code>)<\/li>' +
     '<li><code>asap=yes|no<\/code>, <code>deleted=yes|no<\/code>, <code>expired=yes|no<\/code>, <code>replicated=yes|no<\/code>, <code>proxy=yes|no<\/code>, <code>event=yes|no<\/code><\/li>' +
     '<li>Example: <code>asap=yes target=*.dat source=\/tmp\/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i<\/code><\/li>' +
@@ -152,6 +155,9 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
     // query errors are already shown inline via #destTableError in drawCallback.
     $.fn.dataTable.ext.errMode = function () {};
 
+    // Keep server and saved-preference column IDs stable when changing display order.
+    var columnIds = [0, 1, 2, 3, 4, 5, 14, 6, 7, 8, 9, 10, 11, 12, 13];
+
     var table = $('#destTransferTable').DataTable({
         serverSide: true,
         processing: true,
@@ -161,6 +167,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             url: '/do/transfer/destination?json=dataList',
             type: 'GET',
             data: function (d) {
+                (d.order || []).forEach(function(order) { order.column = columnIds[order.column]; });
                 d.destinationName      = document.getElementById('dt-dest-name').value;
                 d.disseminationStream  = document.getElementById('dt-dissStream').value;
                 d.dataStream           = document.getElementById('dt-dataStream').value;
@@ -177,6 +184,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             { data: 3, width: '130px' },
             { data: 4, width: '130px' },
             { data: 5 },
+            { data: 14 },
             { data: 6, width: '55px' },
             { data: 7, width: '45px' },
             { data: 8, width: '85px' },
@@ -184,17 +192,16 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             { data: 10, width: '130px' },
             { data: 11, width: '45px' },
             { data: 12, width: '95px' },
-            { data: 13, width: '40px' },
-            { data: 14 }
+            { data: 13, width: '40px' }
         ],
         columnDefs: [
             { targets: 5, className: 'col-target' },
-            { targets: [0, 6, 7, 8, 9, 10, 11, 12, 13], className: 'text-nowrap' },
-            { targets: 7, orderable: false },
-            { targets: 9, visible: false },
-            { targets: 14, visible: false, className: 'text-break' },
-            { targets: 12, orderable: false, visible: canQueue },
-            { targets: 13, orderable: false }
+            { targets: [0, 7, 8, 9, 10, 11, 12, 13, 14], className: 'text-nowrap' },
+            { targets: 8, orderable: false },
+            { targets: 10, visible: false },
+            { targets: 6, visible: false, className: 'text-break' },
+            { targets: 13, orderable: false, visible: canQueue },
+            { targets: 14, orderable: false }
         ],
         order: [[2, 'desc']],
         dom: "t<'d-flex align-items-start mt-2'i<'ms-auto'p>>",
@@ -306,9 +313,10 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
     function _applyCustomCols() {
         var total = _destTable.columns().count();
         for (var i = 0; i < total; i++) {
-            var visible = _customCols.indexOf(i) !== -1;
-            if (i === 5) visible = true;  // Target is mandatory
-            if (i === 12 && !canQueue) visible = false;
+            var id = columnIds[i];
+            var visible = _customCols.indexOf(id) !== -1;
+            if (id === 5) visible = true;  // Target is mandatory
+            if (id === 12 && !canQueue) visible = false;
             _destTable.column(i).visible(visible, false);
         }
         _applyTableMinWidth();
@@ -358,9 +366,10 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
     function _showCols(hideCols) {
         var total = _destTable.columns().count();
         for (var i = 0; i < total; i++) {
-            var visible = hideCols.indexOf(i) === -1;
-            if (i === 14) visible = false; // Delivered name is opt-in through Custom only.
-            if (i === 12 && !canQueue) {
+            var id = columnIds[i];
+            var visible = hideCols.indexOf(id) === -1;
+            if (id === 14) visible = false; // Delivered name is opt-in through Custom only.
+            if (id === 12 && !canQueue) {
                 visible = false;
             }
             _destTable.column(i).visible(visible, false);

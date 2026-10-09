@@ -19,6 +19,12 @@ public final class DeliveredNameCheck {
         if (!condition) throw new AssertionError(message);
     }
 
+    private static final class DisplayTransfer extends ecmwf.ecpds.master.plugin.http.dao.transfer.DataTransferBaseBean {
+        private DisplayTransfer(final DataTransfer transfer) {
+            super(transfer);
+        }
+    }
+
     public static void main(final String[] args) throws Exception {
         final var transfer = new DataTransfer();
         transfer.setId(1);
@@ -55,13 +61,28 @@ public final class DeliveredNameCheck {
 
         final var filter = new SQLParameterParser("target=*.dat delivered=\"folder/*O'Brien?.dat\" case=i",
                 "target", "delivered");
-        final var sql = filter.get(0, "DAT_TARGET") + filter.get("delivered", "DAT_DELIVERED_NAME");
+        final var sql = filter.get(0, "DAT_TARGET")
+                + filter.get("delivered", "CASE WHEN STA_CODE = 'DONE' THEN COALESCE(DAT_DELIVERED_NAME, DAT_TARGET) ELSE NULL END");
+        check(sql.contains("CASE WHEN STA_CODE = 'DONE' THEN COALESCE(DAT_DELIVERED_NAME, DAT_TARGET) ELSE NULL END"), "Filter lost Target fallback");
         check(sql.contains("DAT_TARGET") && sql.contains("DAT_DELIVERED_NAME"), "Combined filter lost a field");
         check(sql.contains("%O\\'Brien_.dat") && sql.contains("COLLATE latin1_general_ci"),
                 "Wildcard conversion, case handling or SQL escaping failed: " + sql);
         final var statusFilter = new SQLParameterParser("delivered=folder/*", "target", "method", "delivered");
         check(statusFilter.get("delivered", "DAT_DELIVERED_NAME").contains("folder/%"),
                 "Named lookup depends on absent method");
+        final var display = new DisplayTransfer(transfer);
+        transfer.setStatusCode("DONE");
+        check("file.dat".equals(display.getDeliveredName()), "Cached display did not fall back to Target");
+        check(transfer.getDeliveredName() == null, "Display fallback modified stored field");
+        transfer.recordDeliveredName("remote/file.dat");
+        check("remote/file.dat".equals(display.getDeliveredName()), "Display fallback hid real delivered name");
+        for (final String status : new String[] { null, "FAIL", "STOP", "RETR", "WAIT", "EXEC" }) {
+            transfer.setStatusCode(status);
+            check(display.getDeliveredName() == null, "Non-DONE transfer displayed a delivered name: " + status);
+            transfer.setDeliveredName(null);
+            check(display.getDeliveredName() == null, "Non-DONE transfer fell back to Target: " + status);
+            transfer.recordDeliveredName("remote/file.dat");
+        }
         System.out.println("Delivered name checks passed");
     }
 }

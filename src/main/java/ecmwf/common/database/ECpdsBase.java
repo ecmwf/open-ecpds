@@ -1637,7 +1637,8 @@ public final class ECpdsBase extends DataBase {
             DataTransfer initialTransfer = null; // The first DataTransfer will contain the collection size (total)!
             try (var rs = ecpds.getSortedDataTransfersByStatusOnDate(status, new Timestamp(from.getTime()),
                     new Timestamp(to.getTime()),
-                    options.get(0, "DAT_TARGET") + options.get("delivered", "DAT_DELIVERED_NAME"),
+                    options.get(0, "DAT_TARGET") + options.get("delivered",
+                            "CASE WHEN STA_CODE = 'DONE' THEN COALESCE(DAT_DELIVERED_NAME, DAT_TARGET) ELSE NULL END"),
                     options.get(1, "DAF_ORIGINAL"), options.get(2, "DAT_TIME_STEP"), options.get(3, "DAT_PRIORITY"),
                     options.get(4, "DAF_CHECKSUM"), options.get(5, "DAF_GROUP_BY"), options.get(6, "DAT_IDENTITY"),
                     options.get(7, "DAT_SIZE"), options.get(8, "DAT_REPLICATED"), options.get(9, "DAT_ASAP"),
@@ -2835,7 +2836,9 @@ public final class ECpdsBase extends DataBase {
                     "proxy=?", "mover", "delivered");
             final List<List<String>> results = new ArrayList<>();
             try (var rs = ecpds.getDataTransferCountAndMetaDataByFilter(destination, countBy, target, stream, time,
-                    status, options.get(0, "DAT_TARGET") + options.get("delivered", "DAT_DELIVERED_NAME"),
+                    status,
+                    options.get(0, "DAT_TARGET") + options.get("delivered",
+                            "CASE WHEN STA_CODE = 'DONE' THEN COALESCE(DAT_DELIVERED_NAME, DAT_TARGET) ELSE NULL END"),
                     options.get(1, "DAF_ORIGINAL"), options.get(2, "DAT_TIME_STEP"), options.get(3, "DAT_PRIORITY"),
                     options.get(4, "DAF_CHECKSUM"), options.get(5, "DAF_GROUP_BY"), options.get(6, "DAT_IDENTITY"),
                     options.get(7, "DAT_SIZE"), options.get(8, "DAT_REPLICATED"), options.get(9, "DAT_ASAP"),
@@ -2920,7 +2923,8 @@ public final class ECpdsBase extends DataBase {
                     "proxy=?", "mover", "delivered");
             try (var rs = ecpds.getSortedDataTransfersByFilter(destination, target, stream, time, status,
                     privilegedUser, new Timestamp(scheduledBefore.getTime()),
-                    options.get(0, "DAT_TARGET") + options.get("delivered", "DAT_DELIVERED_NAME"),
+                    options.get(0, "DAT_TARGET") + options.get("delivered",
+                            "CASE WHEN STA_CODE = 'DONE' THEN COALESCE(DAT_DELIVERED_NAME, DAT_TARGET) ELSE NULL END"),
                     options.get(1, "DAF_ORIGINAL"), options.get(2, "DAT_TIME_STEP"), options.get(3, "DAT_PRIORITY"),
                     options.get(4, "DAF_CHECKSUM"), options.get(5, "DAF_GROUP_BY"), options.get(6, "DAT_IDENTITY"),
                     options.get(7, "DAT_SIZE"), options.get(8, "DAT_REPLICATED"), options.get(9, "DAT_ASAP"),
@@ -3026,7 +3030,8 @@ public final class ECpdsBase extends DataBase {
                     "proxy=?", "mover", "delivered");
             try (var rs = ecpds.getDataTransfersByFilter(destination, target, stream, time, status, privilegedUser,
                     new Timestamp(scheduledBefore.getTime()),
-                    options.get(0, "DAT_TARGET") + options.get("delivered", "DAT_DELIVERED_NAME"),
+                    options.get(0, "DAT_TARGET") + options.get("delivered",
+                            "CASE WHEN STA_CODE = 'DONE' THEN COALESCE(DAT_DELIVERED_NAME, DAT_TARGET) ELSE NULL END"),
                     options.get(1, "DAF_ORIGINAL"), options.get(2, "DAT_TIME_STEP"), options.get(3, "DAT_PRIORITY"),
                     options.get(4, "DAF_CHECKSUM"), options.get(5, "DAF_GROUP_BY"), options.get(6, "DAT_IDENTITY"),
                     options.get(7, "DAT_SIZE"), options.get(8, "DAT_REPLICATED"), options.get(9, "DAT_ASAP"),

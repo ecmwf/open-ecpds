@@ -68,6 +68,10 @@
 <div class="collapse mb-3" id="transferStatusLegend">
     <div class="px-3 py-2 mt-1" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-radius:var(--bs-border-radius); border:1px solid var(--bs-border-color);">
         <div class="row g-3">
+            <div class="col-12">
+                <strong class="d-block mb-1">Target and Delivered</strong>
+                <p class="mb-0"><strong>Target</strong> is the requested filename. Enable <strong>Delivered</strong> under <strong>Cols &rarr; Custom</strong> to show the successful delivery filename immediately after Target. Delivered is populated only while the current status is <strong>Done (DONE)</strong>: it uses the module-reported name, or Target when no different name was recorded. Failed, queued, running and other non-DONE transfers leave it empty. The <code>delivered=</code> filter and column sorting use the same rule; use <code>target=</code> to search filenames regardless of status. Historical DONE transfers without a recorded name fall back to Target; this does not recover an unrecorded remote filename.</p>
+            </div>
             <%-- Submission --%>
             <div class="col-12 col-md-4">
                 <strong class="d-block mb-1">Submission</strong>
@@ -157,10 +161,10 @@
                                             <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-1" data-col="1" checked><label class="form-check-label" for="tfrchk-1">Transfer Host</label></div>
                                             <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-2" data-col="2" checked><label class="form-check-label" for="tfrchk-2">Sched. Time</label></div>
                                             <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-3" data-col="3" checked disabled><label class="form-check-label text-muted" for="tfrchk-3">Target <small>(required)</small></label></div>
+                                            <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-7" data-col="7"><label class="form-check-label" for="tfrchk-7">Delivered</label></div>
                                             <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-4" data-col="4" checked><label class="form-check-label" for="tfrchk-4">%</label></div>
                                             <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-5" data-col="5" checked><label class="form-check-label" for="tfrchk-5">Mbits/s</label></div>
                                             <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-6" data-col="6" checked><label class="form-check-label" for="tfrchk-6">Prior</label></div>
-                                            <div class="form-check mb-0"><input class="form-check-input tfr-col-chk" type="checkbox" id="tfrchk-7" data-col="7"><label class="form-check-label" for="tfrchk-7">Delivered name</label></div>
                                         </div>
                                     </li>
                                 </ul>
@@ -208,7 +212,7 @@
                             <ul class="mb-1 ps-3">
                                 <li><strong>Default (no prefix)</strong> &mdash; matches the <code>target</code> filename. Wildcards <code>*</code> and <code>?</code> are supported.</li>
                                 <li><code>target=*.dat</code>, <code>source=/tmp/*</code> &mdash; filter by target filename or source path.</li>
-                                <li><code>delivered=*/in/*</code> &mdash; filter by the stored delivered name (only when different from Target).</li>
+                                <li><code>delivered=*/in/*</code> &mdash; filter only <strong>Done (DONE)</strong> transfers by delivered name, falling back to Target when no different name is recorded. Other statuses do not match; use <code>target=</code> for a filename search across statuses.</li>
                                 <li><code>mover=</code> &mdash; filter by Data Mover name.</li>
                                 <li><code>method=</code> &mdash; filter by Transfer Method name.</li>
                                 <li><code>ts&gt;10 ts&lt;=99</code> &mdash; filter by transfer size (numeric; supports <code>=</code> <code>&gt;</code> <code>&gt;=</code> <code>&lt;</code> <code>&lt;=</code>).</li>
@@ -538,6 +542,7 @@ var _transferSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended sear
     '<code>groupby=<\/code>, <code>identity=<\/code>, <code>checksum=<\/code>, <code>size=<\/code>, ' +
     '<code>replicated=<\/code>, <code>asap=<\/code>, <code>deleted=<\/code>, <code>expired=<\/code>, ' +
     '<code>proxy=<\/code>, <code>mover=<\/code>, <code>method=<\/code>, <code>event=<\/code><\/li>' +
+    '<li><code>delivered=*.dat<\/code> matches only Done (DONE) transfers, using the recorded delivered name or Target when no different name was recorded. Other statuses do not match; use <code>target=<\/code> to search across statuses.<\/li>' +
     '<li>Example: <code>asap=yes target=*.dat source=\/tmp\/* ts&gt;10 ts&lt;=99 size&gt;=700kb case=i<\/code><\/li>' +
     '<li><code>case=i<\/code> for case-insensitive, <code>case=s<\/code> for case-sensitive (default)<\/li>' +
     '<li>Enclose values with spaces or equals signs in double quotes, e.g. <code>&quot;United States&quot;<\/code><\/li>' +
@@ -573,10 +578,10 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
             <th>Transfer Host</th>
             <th title="Scheduled Time (UTC) &mdash; full date shown, since it may differ from the selected date (which is the file's product/base time)">Sched. Time</th>
             <th>Target</th>
+            <th title="Successful delivery filename (DONE only); falls back to Target when no different name is recorded">Delivered</th>
             <th>%</th>
             <th>Mbits/s</th>
             <th>Prior</th>
-            <th title="Module-reported delivered filename, only when different from Target">Delivered name</th>
         </tr>
     </thead>
 </table>
@@ -611,12 +616,16 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
 
     $.fn.dataTable.ext.errMode = 'none';
 
+    // Keep server and saved-preference column IDs stable when changing display order.
+    var columnIds = [0, 1, 2, 3, 7, 4, 5, 6];
+
     var table = $('#transferTable').DataTable({
         serverSide: true,
         processing: true,
         ajax: {
             url: '/do/transfer/data?json=list',
             data: function (d) {
+                (d.order || []).forEach(function(order) { order.column = columnIds[order.column]; });
                 d.date           = date;
                 d.transferStatus = status;
                 d.transferSearch = search;
@@ -629,14 +638,14 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
         order: [[2, 'desc']],
         autoWidth: false,
         columns: [
-            { title: 'Destination',   orderable: true,  render: function (d) { return d; } },
-            { title: 'Transfer Host', orderable: true,  render: function (d) { return d; }, width: '110px' },
-            { title: 'Sched. Time',   orderable: true,  className: 'text-nowrap', width: '130px' },
-            { title: 'Target',        orderable: true,  render: function (d) { return d; } },
-            { title: '%',             orderable: false, className: 'text-nowrap', width: '45px' },
-            { title: 'Mbits/s',       orderable: true,  className: 'text-nowrap', render: function (d) { return d; }, width: '70px' },
-            { title: 'Prior',         orderable: true,  className: 'text-nowrap', width: '45px' },
-            { title: 'Delivered name', orderable: true, visible: false, className: 'text-break' }
+            { data: 0, title: 'Destination',   orderable: true,  render: function (d) { return d; } },
+            { data: 1, title: 'Transfer Host', orderable: true,  render: function (d) { return d; }, width: '110px' },
+            { data: 2, title: 'Sched. Time',   orderable: true,  className: 'text-nowrap', width: '130px' },
+            { data: 3, title: 'Target',        orderable: true,  render: function (d) { return d; } },
+            { data: 7, title: 'Delivered', orderable: true, visible: false, className: 'text-break' },
+            { data: 4, title: '%',             orderable: false, className: 'text-nowrap', width: '45px' },
+            { data: 5, title: 'Mbits/s',       orderable: true,  className: 'text-nowrap', render: function (d) { return d; }, width: '70px' },
+            { data: 6, title: 'Prior',         orderable: true,  className: 'text-nowrap', width: '45px' }
         ],
         pageLength: (function() { try { var v = parseInt(localStorage.getItem('transferPageLen'), 10); return [10,25,50,100,250].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })(),
         lengthMenu: [[10, 25, 50, 100, 250], [10, 25, 50, 100, 250]],
@@ -674,13 +683,17 @@ function _updateTransferSearchBanner(queryError, total, hasSearch) {
 
     function _tfrShowCols(hideCols) {
         var n = table.columns().count();
-        for (var i = 0; i < n; i++) table.column(i).visible(i !== 7 && hideCols.indexOf(i) === -1, false);
+        for (var i = 0; i < n; i++) {
+            var id = columnIds[i];
+            table.column(i).visible(id !== 7 && hideCols.indexOf(id) === -1, false);
+        }
         table.columns.adjust();
     }
     function _tfrApplyCustomCols() {
         var n = table.columns().count();
         for (var i = 0; i < n; i++) {
-            var vis = (i === 0 || i === 3) ? true : _tfrCustomCols.indexOf(i) !== -1;
+            var id = columnIds[i];
+            var vis = (id === 0 || id === 3) ? true : _tfrCustomCols.indexOf(id) !== -1;
             table.column(i).visible(vis, false);
         }
         table.columns.adjust();

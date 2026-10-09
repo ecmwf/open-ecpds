@@ -12,10 +12,12 @@ The history page lists completed transfer requests with their destination, targe
 
 ![Transfer History](img/transfer-history.png)
 
-The cross-destination transfer list also offers **Delivered name** through
+The cross-destination transfer list also offers **Delivered** immediately after **Target** through
 **Cols → Custom**, and accepts `delivered=` in the search box and query builder.
 The transfer detail page shows it separately from the original **Target**, and
 updates it when a delivery completes. It is recorded only for a module-reported
-name that differs from Target; an empty value is not proof of delivery to Target.
+name that differs from Target; when no different name is recorded, the display and filter fall back to Target.
+Delivered is shown and searchable only for **DONE** transfers. Other statuses
+leave it empty, including failed and running transfers.
 See [Delivered filename](destinations.md#delivered-filename) for examples,
 attempt semantics and the required database upgrade.

@@ -121,7 +121,7 @@
                 <ul class="mb-1 ps-3">
                     <li><strong>Default (no prefix)</strong> &mdash; matches the <code>target</code> filename. Wildcards <code>*</code> (any chars) and <code>?</code> (one char) are supported.</li>
                     <li><code>target=*.dat</code> &mdash; filter by target filename.</li>
-                    <li><code>delivered=*/in/*.dat</code> &mdash; filter by the stored delivered name (only recorded when different from Target).</li>
+                    <li><code>delivered=*/in/*.dat</code> &mdash; filter only <strong>Done (DONE)</strong> transfers by delivered name, falling back to Target when no different name is recorded. Other statuses do not match; use <code>target=</code> for a filename search across statuses. Counts and filtered basket selection follow the same rule.</li>
                     <li><code>source=/tmp/*</code> &mdash; filter by source path.</li>
                     <li><code>mover=</code> &mdash; filter by Data Mover name.</li>
                     <li><code>ts&gt;10 ts&lt;=99</code> &mdash; filter by transfer size (numeric range, supports <code>=</code> <code>&gt;</code> <code>&gt;=</code> <code>&lt;</code> <code>&lt;=</code>).</li>
