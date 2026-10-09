@@ -1,11 +1,11 @@
 # Changelog
 
 All notable changes to OpenECPDS are listed here in **descending order** (most recent first).
-Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.2.0-07102026`).
+Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.2.0-09102026`).
 
 ---
 
-## open-ecpds 8.2.0-07102026
+## open-ecpds 8.2.0-09102026
 
 - **TLS certificate deployment: OpenSSL-compatible PFX files**: Bouncy Castle now follows the built-in providers, preventing mixed PBE password encodings. Certificate imports and generation use validated, atomic PKCS#12 writes and the destination password for both the keystore and private key. Restore affected files from known-good OpenSSL originals before restarting updated services, then redeploy the Monitor certificate to Movers without changing the certificate, private key or chain.
 - **Administration: Proxy, Backup and Replication traffic monitor**: New **Scheduler Traffic** page (`/do/admin/schedulertraffic`), linked from Administration Tasks, the start page and administration menus, provides a read-only view of current Master scheduler workers with a Proxy/Backup/Replication switch, transfer/data-file links, worker phase, separate dissemination status, Host/source information, size and elapsed time. Filtering, sorting, pagination and selectable refresh use detached worker snapshots retrieved by the Monitor over RMI, without database scans or Mover probes. Completed workers disappear; transfer history remains the source for outcomes, and unsupported live percentage/rate is not inferred from dissemination progress. See [Scheduler Traffic](monitor-ui/admin.md#scheduler-traffic).
