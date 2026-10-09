@@ -45,6 +45,15 @@ import ecmwf.common.database.MSUser;
  * The Class TransferModule.
  */
 public abstract class TransferModule implements Closeable {
+    /**
+     * Whether bytes consumed by put represent actual traffic rather than publication or simulation.
+     *
+     * @return true when put stream I/O can be included in traffic accounting
+     */
+    public boolean supportsPutByteAccounting() {
+        return true;
+    }
+
     /** The _env. */
     private final Map<Object, Object> env = new ConcurrentHashMap<>();
 

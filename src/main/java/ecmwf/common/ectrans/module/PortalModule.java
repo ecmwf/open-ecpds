@@ -46,6 +46,11 @@ import ecmwf.common.technical.StreamPlugThread;
  * The Class PortalModule.
  */
 public final class PortalModule extends TransferModule {
+    @Override
+    public boolean supportsPutByteAccounting() {
+        return false;
+    }
+
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(PortalModule.class);
 

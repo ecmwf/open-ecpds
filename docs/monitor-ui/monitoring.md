@@ -84,6 +84,10 @@ replication to Proxy Hosts; onward dissemination is a separate movement.
 The rolling window has minute precision (up to one minute shorter than 24 hours).
 
 Transfer threads update memory only: no disk, database or remote calls.
+Put accounting is enabled through `TransferModule.supportsPutByteAccounting()`,
+which defaults to true. Portal publication and simulated Test transfers override
+it to false. Custom publication/simulation modules should also opt out this way;
+the core does not directly reference plugin classes, which can be loaded separately.
 A background scheduler atomically checkpoints the Mover's cumulative buckets,
 then sends only changed absolute buckets, every **10 seconds** by default.
 The Master merges maxima per producer/minute/type and persists changed type rows

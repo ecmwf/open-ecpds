@@ -169,9 +169,7 @@ public final class ECtransPut extends ECtransAction {
      */
     @Override
     protected void exec(final TransferModule module, final boolean interruptible) throws Exception {
-        final var accounting = getECtransCallback().isByteAccountingEnabled()
-                && !(module instanceof ecmwf.common.ectrans.module.PortalModule)
-                && !(module instanceof ecmwf.common.ectrans.module.TestModule);
+        final var accounting = getECtransCallback().isByteAccountingEnabled() && module.supportsPutByteAccounting();
         _log.debug("Start ECtransPut for {} (size={})", target, size);
         final var setup = getECtransCallback().getECtransSetup();
         // Do we have a notification request?
