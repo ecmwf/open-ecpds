@@ -68,6 +68,8 @@
 		wrappingTags="tr,td"><i class="bi bi-file-zip"></i> Compress Files</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/requeue"
 		wrappingTags="tr,td"><i class="bi <%=_sm_badIconClass%>"></i> Outstanding Transfers</auth:link>
+	<auth:link basePathKey="admin.basepath" href="/schedulertraffic"
+		wrappingTags="tr,td"><i class="bi bi-arrow-left-right"></i> Scheduler Traffic</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/upload"
 		wrappingTags="tr,td"><i class="bi bi-upload"></i> Upload Files</auth:link>
 	<auth:link basePathKey="admin.feedback.basepath" href=""

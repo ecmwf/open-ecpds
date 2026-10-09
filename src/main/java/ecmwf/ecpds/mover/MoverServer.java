@@ -213,7 +213,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
 
     private final transient ecmwf.ecpds.master.TrafficAccounting trafficAccounting = new ecmwf.ecpds.master.TrafficAccounting();
     private final transient java.nio.file.Path trafficAccountingPath = java.nio.file.Path
-            .of(Cnf.at("Server", "trafficAccountingFile", "var/traffic-accounting.json"));
+            .of(Cnf.at("Server", "trafficAccountingFile",
+                    java.nio.file.Path.of(System.getProperty("mover.tmp", System.getProperty("java.io.tmpdir")),
+                            "traffic-accounting.json").toString()));
     private final transient TrafficAccountingScheduler trafficAccountingScheduler;
 
     /** The ticketRepository. */

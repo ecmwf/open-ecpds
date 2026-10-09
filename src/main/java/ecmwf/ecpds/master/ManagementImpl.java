@@ -4018,6 +4018,11 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         return registry.getVisualizationSamples().toArray(new LiveTransferSample[0]);
     }
 
+    @Override
+    public SchedulerTrafficSnapshot getSchedulerTraffic(final String type) throws RemoteException {
+        return master.getSchedulerTraffic(type);
+    }
+
     /**
      * {@inheritDoc}
      *

@@ -115,8 +115,16 @@ trafficAccounting=10s
 trafficAccountingJammedTimeout=5m
 ```
 
-The default file is `var/traffic-accounting.json`, relative to the Mover's working
-directory. Use a unique writable file per Mover on persistent storage outside
+The default file is `traffic-accounting.json` inside the Mover's startup-script
+temporary directory (`mover.tmp`, falling back to `java.io.tmpdir` when unset).
+The explicit `Server.trafficAccountingFile` setting still overrides this default.
+Temporary-directory cleanup or an ephemeral container mount loses the local checkpoint;
+use persistent storage if restart/outage recovery is required. Existing files at the
+old `var/traffic-accounting.json` location are not moved automatically: move the file
+while the Mover is stopped, or configure its old path explicitly to retain the counters
+and producer identity.
+
+Use a unique writable file per Mover on persistent storage outside
 content-file garbage collection; mount that directory persistently in containers.
 Do not copy the file to another Mover or change the Mover's login root while reusing
 it. A missing file starts a new producer identity, preserving earlier Master

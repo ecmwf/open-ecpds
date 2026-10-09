@@ -192,6 +192,7 @@
             <ul class="home-menu">
                 <auth:link basePathKey="admin.basepath" href="/filter" wrappingTags="li"><i class="bi bi-file-zip"></i>Compress Files</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/requeue" wrappingTags="li"><i class="bi <%=_badIconClass%>"></i>Outstanding Transfers</auth:link>
+                <auth:link basePathKey="admin.basepath" href="/schedulertraffic" wrappingTags="li"><i class="bi bi-arrow-left-right"></i>Scheduler Traffic</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/upload" wrappingTags="li"><i class="bi bi-upload"></i>Upload Files</auth:link>
                 <auth:link basePathKey="admin.feedback.basepath" href="" wrappingTags="li"><i class="bi <%=_feedbackIconClass%>"></i>User Feedback</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/metafields" wrappingTags="li"><i class="bi bi-list-check"></i>Metadata Fields</auth:link>

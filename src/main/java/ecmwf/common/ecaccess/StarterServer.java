@@ -133,12 +133,21 @@ public abstract class StarterServer extends CallBackObject
         final var position = System.getProperty("bouncyCastleProviderPosition");
         if (position != null) {
             try {
-                Security.insertProviderAt(provider, Integer.parseInt(position));
-            } catch (final NumberFormatException _) {
-                // We don't set it!
+                final var requestedPosition = Integer.parseInt(position);
+                final var providers = Security.getProviders();
+                for (int i = 0; i < providers.length; i++) {
+                    if ("SunJCE".equals(providers[i].getName()) && requestedPosition <= i + 1) {
+                        throw new IOException(
+                                "bouncyCastleProviderPosition must be after SunJCE for interoperable PKCS12 files");
+                    }
+                }
+                Security.insertProviderAt(provider, requestedPosition);
+            } catch (final NumberFormatException e) {
+                throw new IOException("bouncyCastleProviderPosition must be a numeric position after SunJCE", e);
             }
         } else {
-            Security.insertProviderAt(provider, 2);
+            // Keep SunJCE's PBE key factory and cipher together for interoperable PKCS12 files.
+            Security.addProvider(provider);
         }
         if (_log.isInfoEnabled()) {
             _log.info("Starting {} (Java{})", Format.getClassName(this), System.getProperty("java.vm.version"));

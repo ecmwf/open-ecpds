@@ -9375,6 +9375,74 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * Return detached worker snapshots without consulting the database or Data Movers.
+     */
+    public SchedulerTrafficSnapshot getSchedulerTraffic(final String type) {
+        final List<SchedulerTrafficSnapshot.Transfer> transfers = new ArrayList<>();
+        final MBeanScheduler scheduler;
+        switch (type) {
+        case "Proxy":
+            scheduler = theProxyScheduler;
+            if (theProxyScheduler != null) {
+                final java.util.Set<Long> removed;
+                synchronized (theProxyScheduler._toRemove) {
+                    removed = new java.util.HashSet<>(theProxyScheduler._toRemove);
+                }
+                theProxyScheduler._proxyThreads.forEach((key, thread) -> {
+                    if (!removed.contains(key)) {
+                        final var host = thread._hostForProxy;
+                        transfers.add(schedulerTransfer(thread._transfer, thread._time, thread._phase, "", host != null
+                                ? host.getNickname() + " (Host " + host.getName() + ")" : "Selecting host"));
+                    }
+                });
+            }
+            break;
+        case "Backup":
+            scheduler = theBackupScheduler;
+            if (theBackupScheduler != null) {
+                final java.util.Set<Long> removed;
+                synchronized (theBackupScheduler._toRemove) {
+                    removed = new java.util.HashSet<>(theBackupScheduler._toRemove);
+                }
+                theBackupScheduler._backupThreads.forEach((key, thread) -> {
+                    if (!removed.contains(key)) {
+                        final var host = thread._hostForBackup;
+                        transfers.add(schedulerTransfer(thread._transfer, thread._time, thread._phase, "",
+                                host.getNickname() + " (Host " + host.getName() + ")"));
+                    }
+                });
+            }
+            break;
+        case "Replication":
+            scheduler = theReplicateScheduler;
+            if (theReplicateScheduler != null) {
+                final java.util.Set<Long> removed;
+                synchronized (theReplicateScheduler._toRemove) {
+                    removed = new java.util.HashSet<>(theReplicateScheduler._toRemove);
+                }
+                theReplicateScheduler._replicateThreads.forEach((key, thread) -> {
+                    if (!removed.contains(key)) {
+                        transfers.add(schedulerTransfer(thread._transfer, thread._time, thread._phase,
+                                thread._sourceMover, "Replication group"));
+                    }
+                });
+            }
+            break;
+        default:
+            throw new IllegalArgumentException("Unknown scheduler traffic type: " + type);
+        }
+        return new SchedulerTrafficSnapshot(type, scheduler != null,
+                scheduler != null ? scheduler.getActivity() : "Scheduler disabled", transfers);
+    }
+
+    private static SchedulerTrafficSnapshot.Transfer schedulerTransfer(final DataTransfer transfer, final long started,
+            final String phase, final String sourceMover, final String targetHost) {
+        return new SchedulerTrafficSnapshot.Transfer(transfer.getId(), transfer.getDataFileId(),
+                transfer.getDestinationName(), transfer.getTarget(), transfer.getStatusCode(), phase, sourceMover,
+                targetHost, transfer.getSize(), started);
+    }
+
+    /**
      * The Class ReplicateScheduler.
      */
     public final class ReplicateScheduler extends MBeanScheduler {
@@ -9679,6 +9747,8 @@ public final class MasterServer extends ECaccessProvider
          */
         private final class ReplicateThread extends ConfigurableRunnable {
 
+            private volatile String _phase = "Starting";
+
             /** The _time. */
             private final long _time = System.currentTimeMillis();
 
@@ -9686,7 +9756,7 @@ public final class MasterServer extends ECaccessProvider
             private final String _sourceMover;
 
             /** The _transfer. */
-            private DataTransfer _transfer = null;
+            private volatile DataTransfer _transfer = null;
 
             /**
              * Instantiates a new replicate thread.
@@ -9721,7 +9791,9 @@ public final class MasterServer extends ECaccessProvider
                     final var start = System.currentTimeMillis();
                     _log.info("Starting replication for DataTransfer " + _transfer.getId());
                     final var list = _getTransferServers(_transfer.getDataFile());
+                    _phase = "Processing";
                     final var rr = TransferScheduler.replicate(_sourceMover, list, _transfer);
+                    _phase = "Finalizing";
                     final var duration = System.currentTimeMillis() - start;
                     final var base = getDataBase();
                     _transfer = base.getDataTransfer(_transfer.getId());
@@ -10337,6 +10409,8 @@ public final class MasterServer extends ECaccessProvider
          */
         private final class BackupThread extends ConfigurableRunnable {
 
+            private volatile String _phase = "Starting";
+
             /** The _time. */
             private final long _time = System.currentTimeMillis();
 
@@ -10344,7 +10418,7 @@ public final class MasterServer extends ECaccessProvider
             private final Host _hostForBackup;
 
             /** The _transfer. */
-            private DataTransfer _transfer = null;
+            private volatile DataTransfer _transfer = null;
 
             /**
              * Instantiates a new backup thread.
@@ -10379,7 +10453,9 @@ public final class MasterServer extends ECaccessProvider
                 try {
                     _log.info("Starting backup for DataTransfer " + _transfer.getId());
                     final var list = _getTransferServers(_transfer.getDataFile());
+                    _phase = "Processing";
                     final var rr = TransferScheduler.backup(_hostForBackup, list, _transfer);
+                    _phase = "Finalizing";
                     final var base = getDataBase(ECpdsBase.class);
                     _transfer = base.getDataTransfer(_transfer.getId());
                     _transfer.setBackupTime(new Timestamp(System.currentTimeMillis()));
@@ -10756,6 +10832,8 @@ public final class MasterServer extends ECaccessProvider
          */
         private final class ProxyThread extends ConfigurableRunnable {
 
+            private volatile String _phase = "Starting";
+
             /** The _time. */
             private final long _time = System.currentTimeMillis();
 
@@ -10763,10 +10841,10 @@ public final class MasterServer extends ECaccessProvider
             private final Collection<Host> _hostsForProxy;
 
             /** The _host for proxy. */
-            private Host _hostForProxy = null;
+            private volatile Host _hostForProxy = null;
 
             /** The _transfer. */
-            private DataTransfer _transfer = null;
+            private volatile DataTransfer _transfer = null;
 
             /**
              * Instantiates a new proxy thread.
@@ -10828,6 +10906,7 @@ public final class MasterServer extends ECaccessProvider
                                     .ifPresent(byteSize -> proxySetup.set(HOST_ECTRANS_FILTER_MINIMUM_SIZE, byteSize));
                             hostForProxy.setData(proxySetup.getData());
                         }
+                        _phase = "Processing";
                         if ((rr = TransferScheduler.backup(_hostForProxy = hostForProxy, list, _transfer)).complete) {
                             break;
                         }
@@ -10835,6 +10914,7 @@ public final class MasterServer extends ECaccessProvider
                     // Did we find any HostForProxy available for the
                     // transmission? (good or bad)
                     final var duration = System.currentTimeMillis() - start;
+                    _phase = "Finalizing";
                     if (rr == null) {
                         // Maybe next time!
                         if (_debug) {

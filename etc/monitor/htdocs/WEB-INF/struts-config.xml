@@ -1426,6 +1426,10 @@
 		<action path="/admin/requeue/list"
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.GetAllBadTransfersJsonAction">
 		</action>
+		<action path="/admin/schedulertraffic"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.SchedulerTrafficAction">
+			<forward name="success" path=".pds.admin.schedulertraffic" />
+		</action>
 		<action path="/admin/requeue/*"
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.RequeueDestinationBadTransfersAction">
 		</action>

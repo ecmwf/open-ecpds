@@ -24,6 +24,10 @@ On first startup, if no keystore file is found at the path configured in `ecmwf.
 
 This means OpenECPDS is ready to use over HTTPS out of the box with no manual certificate configuration.
 
+MQTT TLS startup also creates its configured keystore if missing, independently of
+HTTP plugin startup order. Existing non-empty keystores are never regenerated
+automatically. Generated `.pfx`/`.p12` files are ignored by Git and must not be committed.
+
 !!! warning "Self-signed certificates are for evaluation only"
     A self-signed certificate is not trusted by browsers or operating systems by default. Visitors will see a security warning. Replace it with a certificate issued by a trusted Certificate Authority (CA) before deploying the system in a production environment.
 
@@ -144,6 +148,37 @@ Downloads the Monitor's public certificate as a PEM file (`ecpds-monitor.pem`). 
 Pushes the current Monitor certificate to every connected Data Mover over RMI. Each Mover writes the new keystore to disk and hot-reloads its HTTPS server without interrupting active connections.
 
 This is the recommended way to synchronise all components after importing a new CA-signed certificate.
+
+Deployment repackages the certificate, private key and complete chain into each Mover's
+PKCS#12 file using that Mover's configured keystore password. The certificate's SHA-256
+fingerprint does not change. New files use Java's standard AES-256/PBES2 with PBKDF2-HMAC-SHA256 and a
+SHA-256 MAC, and can be read by OpenSSL without `-legacy`. The replacement is validated
+before an atomic write; existing file permissions and ownership are preserved.
+
+Older Java writes could mix Bouncy Castle password encoding with SunJCE encryption,
+creating a file that ECPDS could read but OpenSSL could not decrypt. Updated services
+register Bouncy Castle after the built-in providers so Java's PBE key factory and
+cipher use consistent password encoding. Code explicitly selecting Bouncy Castle
+continues to use it. An explicit `bouncyCastleProviderPosition` must also be after
+SunJCE; remove an earlier-position override rather than keeping the incompatible setup.
+
+Incompatible existing files are **not** automatically migrated or supported by a
+fallback reader. Restore a known-good OpenSSL-generated keystore and its matching
+password on affected services **before restarting with the updated code**. Then use
+**Deploy to All Movers** from the Monitor holding the intended certificate to write
+compatible Mover files. Simply restarting a service does not rewrite its keystore.
+Verify the deployed file locally with:
+
+```bash
+openssl pkcs12 -in /path/to/ecpds-mover.pfx -info -noout
+```
+
+Enter the Mover's keystore password interactively. If Hawtio uses this file, configure
+the same password there and restart Hawtio after redeployment. Neither the certificate
+nor its private key needs to be regenerated.
+
+Hawtio no longer supports the `HAWTIO_TLS_LEGACY` setting. Remove it from local
+configuration and use a modern PKCS#12 file readable without OpenSSL's `-legacy` flag.
 
 ### Deploy to All Monitors
 

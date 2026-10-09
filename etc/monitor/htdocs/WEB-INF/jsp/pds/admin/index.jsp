@@ -110,6 +110,19 @@
     </div>
     </auth:link>
 
+    <auth:link basePathKey="admin.basepath" href="/schedulertraffic">
+    <div class="col">
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
+        <i class="bi bi-arrow-left-right text-primary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title">Scheduler Traffic</span>
+            <p class="tool-desc">Monitor current Proxy, Backup and Replication workers, their processing state,
+            transfer status and elapsed time. A read-only view of background traffic managed by the Master.</p>
+        </div>
+    </div>
+    </div>
+    </auth:link>
+
     <auth:link basePathKey="admin.basepath" href="/upload">
     <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">

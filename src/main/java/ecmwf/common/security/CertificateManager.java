@@ -37,13 +37,17 @@ package ecmwf.common.security;
  */
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.MessageDigest;
@@ -53,6 +57,7 @@ import java.security.Security;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
@@ -192,17 +197,11 @@ public final class CertificateManager {
         final X509Certificate cert = new JcaX509CertificateConverter().setProvider(BouncyCastleProvider.PROVIDER_NAME)
                 .getCertificate(certBuilder.build(signer));
 
-        // Wrap in a PKCS#12 keystore
         final var ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
         ks.setKeyEntry(ALIAS, keyPair.getPrivate(), keystorePassword.toCharArray(),
                 new java.security.cert.Certificate[] { cert });
-
-        final var ksFile = new File(keystorePath);
-        ksFile.getParentFile().mkdirs();
-        try (final var fos = new FileOutputStream(ksFile)) {
-            ks.store(fos, keystorePassword.toCharArray());
-        }
+        writeKeystore(keystorePath, keystorePassword, ks);
     }
 
     // -------------------------------------------------------------------------
@@ -291,10 +290,7 @@ public final class CertificateManager {
     public static String generateCsr(final String keystorePath, final String keystorePassword, final String hostname)
             throws Exception {
         final var ksFile = new File(keystorePath);
-        final var ks = KeyStore.getInstance("PKCS12");
-        try (final var fis = new FileInputStream(ksFile)) {
-            ks.load(fis, keystorePassword.toCharArray());
-        }
+        final var ks = openKeystore(ksFile, keystorePassword, "PKCS12");
         final var cert = (X509Certificate) ks.getCertificate(ALIAS);
         final var privateKey = (PrivateKey) ks.getKey(ALIAS, keystorePassword.toCharArray());
         if (cert == null || privateKey == null) {
@@ -342,16 +338,12 @@ public final class CertificateManager {
         targetKs.load(null, null);
 
         if (isPem(inputBytes)) {
-            importFromPem(targetKs, inputBytes, inputPassword);
+            importFromPem(targetKs, inputBytes, inputPassword, targetPassword);
         } else {
-            importFromKeystore(targetKs, inputBytes, inputPassword, ALIAS);
+            importFromKeystore(targetKs, inputBytes, inputPassword, ALIAS, targetPassword);
         }
 
-        final var ksFile = new File(targetKeystorePath);
-        ksFile.getParentFile().mkdirs();
-        try (final var fos = new FileOutputStream(ksFile)) {
-            targetKs.store(fos, targetPassword.toCharArray());
-        }
+        writeKeystore(targetKeystorePath, targetPassword, targetKs);
     }
 
     // -------------------------------------------------------------------------
@@ -385,6 +377,51 @@ public final class CertificateManager {
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    private static void writeKeystore(final String path, final String password, final KeyStore keystore)
+            throws Exception {
+        final var chars = password.toCharArray();
+        try {
+            final var output = new ByteArrayOutputStream();
+            keystore.store(output, chars);
+            final var bytes = output.toByteArray();
+            final var check = KeyStore.getInstance("PKCS12");
+            check.load(new ByteArrayInputStream(bytes), chars);
+            final var key = keystore.getKey(ALIAS, chars);
+            if (!keystore.getCertificate(ALIAS).equals(check.getCertificate(ALIAS)) || (key != null
+                    && (!Arrays.equals(key.getEncoded(), check.getKey(ALIAS, chars).getEncoded()) || !Arrays
+                            .equals(keystore.getCertificateChain(ALIAS), check.getCertificateChain(ALIAS))))) {
+                throw new IllegalStateException("PKCS12 validation failed before replacing " + path);
+            }
+            var target = new File(path).toPath().toAbsolutePath();
+            if (Files.exists(target)) {
+                target = target.toRealPath();
+            }
+            Files.createDirectories(target.getParent());
+            final var posix = Files.getFileStore(target.getParent())
+                    .supportsFileAttributeView(PosixFileAttributeView.class);
+            final var temp = posix
+                    ? Files.createTempFile(target.getParent(), ".ecpds-keystore-", ".tmp",
+                            PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")))
+                    : Files.createTempFile(target.getParent(), ".ecpds-keystore-", ".tmp");
+            try {
+                Files.write(temp, bytes);
+                if (posix && Files.exists(target)) {
+                    final var attributes = Files.readAttributes(target,
+                            java.nio.file.attribute.PosixFileAttributes.class);
+                    final var view = Files.getFileAttributeView(temp, PosixFileAttributeView.class);
+                    view.setOwner(attributes.owner());
+                    view.setGroup(attributes.group());
+                    view.setPermissions(attributes.permissions());
+                }
+                Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } finally {
+                Files.deleteIfExists(temp);
+            }
+        } finally {
+            Arrays.fill(chars, '\0');
+        }
+    }
 
     private static X509Certificate loadCertificate(final File ksFile, final String password, final String type)
             throws Exception {
@@ -492,8 +529,8 @@ public final class CertificateManager {
         return s.startsWith("-----BEGIN");
     }
 
-    private static void importFromPem(final KeyStore targetKs, final byte[] pemBytes, final String password)
-            throws Exception {
+    private static void importFromPem(final KeyStore targetKs, final byte[] pemBytes, final String password,
+            final String targetPassword) throws Exception {
         X509Certificate cert = null;
         PrivateKey privateKey = null;
         try (final var reader = new PEMParser(new InputStreamReader(new ByteArrayInputStream(pemBytes)))) {
@@ -518,7 +555,7 @@ public final class CertificateManager {
             throw new IllegalArgumentException("No X.509 certificate found in PEM input");
         }
         if (privateKey != null) {
-            targetKs.setKeyEntry(ALIAS, privateKey, password != null ? password.toCharArray() : new char[0],
+            targetKs.setKeyEntry(ALIAS, privateKey, targetPassword.toCharArray(),
                     new java.security.cert.Certificate[] { cert });
         } else {
             targetKs.setCertificateEntry(ALIAS, cert);
@@ -526,7 +563,7 @@ public final class CertificateManager {
     }
 
     private static void importFromKeystore(final KeyStore targetKs, final byte[] bytes, final String password,
-            final String alias) throws Exception {
+            final String alias, final String targetPassword) throws Exception {
         // Try PKCS12, then JKS
         for (final var type : new String[] { "PKCS12", "JKS" }) {
             try {
@@ -538,7 +575,7 @@ public final class CertificateManager {
                     if (srcKs.isKeyEntry(a)) {
                         final var key = srcKs.getKey(a, password != null ? password.toCharArray() : null);
                         final var chain = srcKs.getCertificateChain(a);
-                        targetKs.setKeyEntry(alias, key, password != null ? password.toCharArray() : null, chain);
+                        targetKs.setKeyEntry(alias, key, targetPassword.toCharArray(), chain);
                         return;
                     }
                 }

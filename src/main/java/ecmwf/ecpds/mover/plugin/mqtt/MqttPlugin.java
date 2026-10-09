@@ -149,6 +149,10 @@ public class MqttPlugin extends PluginThread implements HttpCertificateProvider 
             System.setProperty("listenAddress", listenAddress);
             System.setProperty("mqttPort", "" + mqttPort);
             System.setProperty("mqttsPort", "" + mqttsPort);
+            if (mqttsPort >= 0) {
+                CertificateManager.ensureSelfSigned(getConf("keyStore", null), getConf("keyStorePassword", null),
+                        java.net.InetAddress.getLocalHost().getHostName());
+            }
             System.setProperty("keyStore", Path.of(getConf("keyStore", "none")).toFile().getAbsolutePath());
             System.setProperty("keyStorePassword", getConf("keyStorePassword", "none"));
             System.setProperty("keyStorePasswordKey", getConf("keyStorePassword", "none"));

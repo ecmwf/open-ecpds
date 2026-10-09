@@ -1545,6 +1545,11 @@ final class ManagementProxy implements ManagementInterface {
         return managementInterface.getLiveTransfers();
     }
 
+    @Override
+    public SchedulerTrafficSnapshot getSchedulerTraffic(final String type) throws RemoteException {
+        return managementInterface.getSchedulerTraffic(type);
+    }
+
     /** {@inheritDoc} */
     @Override
     public double[] getLiveTransferOrigin() throws RemoteException {
