@@ -17,5 +17,11 @@ export EXTERNAL_ADDRESS=ecpds-mover
 export INTERNAL_ADDRESS=localhost
 export LOG_LEVEL=debug
 
+# The transfer group has 4 volumes, all on /data. A volume that does not exist is seen as
+# having no capacity and never receives data, so create them all up front.
+for i in 0 1 2 3; do
+    mkdir -p "/data/lib/mover/data/volume$i"
+done
+
 echo "[mover] Starting..."
 exec /usr/local/ecpds/mover/sh/mover start
