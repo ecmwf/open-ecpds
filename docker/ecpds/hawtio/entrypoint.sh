@@ -16,6 +16,12 @@ if [[ ! "$gateway_port" =~ ^[0-9]{1,5}$ ]] ||
 fi
 gateway_port=$((10#$gateway_port))
 
+access_log=${HAWTIO_ACCESS_LOG:-/dev/stdout}
+if [[ "$access_log" != "off" && ! "$access_log" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+    echo "HAWTIO_ACCESS_LOG must be 'off' or an absolute file path." >&2
+    exit 1
+fi
+
 nginx_workers=${HAWTIO_NGINX_WORKER_PROCESSES:-2}
 if [[ ! "$nginx_workers" =~ ^[1-9][0-9]*$ ]]; then
     echo "HAWTIO_NGINX_WORKER_PROCESSES must be a positive integer." >&2
@@ -126,6 +132,11 @@ error_log /dev/stderr;
 events { worker_connections 1024; }
 http {
     access_log /dev/stdout;
+    # Jetty only sees plain HTTP from nginx and rejects a browser "https://" Origin.
+    map $http_origin $hawtio_origin {
+        default $http_origin;
+        "~^https://(?<origin_rest>.+)$" "http://$origin_rest";
+    }
     server {
         listen 8080;
         location = / {
@@ -139,11 +150,27 @@ http {
             auth_basic_user_file /run/hawtio/htpasswd;
             proxy_pass http://127.0.0.1:8081;
             proxy_set_header Host $host;
+            proxy_set_header Origin $hawtio_origin;
+        }
+        # A Jolokia 401 relayed by the Hawtio proxy makes browsers discard the gateway's
+        # cached Basic credentials and prompt again, so report it as 403 instead.
+        location /hawtio/proxy/ {
+            auth_basic "Hawtio";
+            auth_basic_user_file /run/hawtio/htpasswd;
+            proxy_pass http://127.0.0.1:8081;
+            proxy_set_header Host $host;
+            proxy_set_header Origin $hawtio_origin;
+            proxy_intercept_errors on;
+            error_page 401 =403 @jolokia_denied;
+        }
+        location @jolokia_denied {
+            return 403;
         }
     }
 }
 EOF
-sed -i -e "s/listen 8080;/listen $gateway_port;/" \
+sed -i -e "s#access_log /dev/stdout;#access_log $access_log;#" \
+    -e "s/listen 8080;/listen $gateway_port;/" \
     -e 's/worker_processes \$nginx_workers;/worker_processes '"$nginx_workers"';/' /run/hawtio/nginx.conf
 if [[ -n "${HAWTIO_TLS_KEYSTORE:-}" ]]; then
     if [[ -n "${KEYSTORE_PASSWORD_FILE:-}" ]]; then

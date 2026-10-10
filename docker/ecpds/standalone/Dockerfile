@@ -18,6 +18,16 @@ ENV LOG_ROLLOVER_SIZE_MAX=100MB
 ENV LOG_ROLLOVER_SIZE_KEEP=5
 ENV LOG_ROLLOVER_DATE_PATTERN=dd-MM-yyyy
 ENV LOG_ROLLOVER_DATE_KEEP=5d
+# Evaluation-only credentials for local JMX and Hawtio access.
+ENV JOLOKIA_USER=jolokia
+ENV JOLOKIA_PASSWORD=jolokia2021
+ENV HAWTIO_USER=hawtio
+ENV HAWTIO_PASSWORD=hawtio2021
+ENV HAWTIO_GATEWAY_PORT=8080
+# The container's stdout is not rotated, so do not log every Hawtio request there.
+ENV HAWTIO_ACCESS_LOG=off
+ENV HAWTIO_PRESET_CONNECTIONS="master=http://127.0.0.1:2062/jolokia,monitor=http://127.0.0.1:3062/jolokia,mover=http://127.0.0.1:4062/jolokia"
+ENV JAVA_OPTS="-Dhawtio.proxyAllowlist=127.0.0.1,localhost"
 
 # ── Master settings ────────────────────────────────────────────────────────────
 ENV DATABASE_ALIAS="sequential://127.0.0.1/ecpds"
@@ -53,7 +63,7 @@ ENV MONITOR_COLOR="#0079d3"
 ENV MYSQL_ROOT_PASSWORD=ecpds2020!
 
 # ── Install MariaDB, tools, and supervisord ────────────────────────────────────
-RUN dnf -y install mariadb-server lbzip2 zstd nmap mtr supervisor && \
+RUN dnf -y install mariadb-server lbzip2 zstd nmap mtr supervisor nginx openssl && \
     dnf clean all
 
 # ── Install OpenECPDS RPMs ─────────────────────────────────────────────────────
@@ -94,7 +104,13 @@ RUN mkdir -p /etc/ecpds/default /usr/local/ecpds/standalone && \
     chmod +x /usr/local/ecpds/standalone/pidof-*.sh && \
     echo 'pidof=/usr/local/ecpds/standalone/pidof-master.sh'  > /etc/ecpds/default/master.cnf  && \
     echo 'pidof=/usr/local/ecpds/standalone/pidof-mover.sh'   > /etc/ecpds/default/mover.cnf   && \
-    echo 'pidof=/usr/local/ecpds/standalone/pidof-monitor.sh' > /etc/ecpds/default/monitor.cnf
+    echo 'pidof=/usr/local/ecpds/standalone/pidof-monitor.sh' > /etc/ecpds/default/monitor.cnf && \
+    printf 'JOLOKIA_PORT=2062\nJOLOKIA_HOST=127.0.0.1\nUSE_JCONSOLE=true\nPROMETHEUS_JMX_PORT=9404\n' \
+        >> /etc/ecpds/default/master.cnf && \
+    printf 'JOLOKIA_PORT=4062\nJOLOKIA_HOST=127.0.0.1\nUSE_JCONSOLE=true\nPROMETHEUS_JMX_PORT=9405\n' \
+        >> /etc/ecpds/default/mover.cnf && \
+    printf 'JOLOKIA_PORT=3062\nJOLOKIA_HOST=127.0.0.1\nUSE_JCONSOLE=true\nPROMETHEUS_JMX_PORT=9406\n' \
+        >> /etc/ecpds/default/monitor.cnf
 
 # ── Allow password auth from any host (inside container, monitor→master via RMI) ─
 # By default, ECPDS only accepts password authentication when the calling host
@@ -124,8 +140,15 @@ RUN mkdir -p /etc/my.cnf.d && \
 
 # ── Configuration and startup scripts ─────────────────────────────────────────
 COPY ecpds.sql /ecpds-init.sql
+COPY hawtio/lib /opt/hawtio/lib
+COPY hawtio/HawtioLauncher.java /opt/hawtio/HawtioLauncher.java
+COPY hawtio/entrypoint.sh /entrypoint.sh
+RUN mkdir -p /opt/hawtio/classes && \
+    javac -d /opt/hawtio/classes -cp "/opt/hawtio/lib/*" /opt/hawtio/HawtioLauncher.java && \
+    rm /opt/hawtio/HawtioLauncher.java && \
+    chmod 0755 /entrypoint.sh
 COPY supervisord.conf /etc/supervisord.conf
-COPY entrypoint.sh start-master.sh start-mover.sh start-monitor.sh \
+COPY entrypoint.sh start-master.sh start-mover.sh start-monitor.sh start-hawtio.sh \
      /usr/local/ecpds/standalone/
 RUN chmod +x /usr/local/ecpds/standalone/*.sh
 
@@ -134,12 +157,15 @@ RUN chmod +x /usr/local/ecpds/standalone/*.sh
 VOLUME /data
 
 # ── Exposed ports ──────────────────────────────────────────────────────────────
-# Master:   9062 (JMX)  9600 (callback)  9640 (ECpds CLI)  [FTP disabled - see note]
-# Mover:    7062 (JMX)  7600 (callback)  7443 (HTTPS portal)
+# Master:   9600 (callback)  9640 (ECpds CLI)  [FTP disabled - see note]
+# Mover:    7600 (callback)  7443 (HTTPS portal)
 #           7022 (SFTP) 8883 (MQTTS)  7640 (ECproxy)  [FTP disabled - see note]
-# Monitor:  8062 (JMX)  8600 (callback)  8443 (HTTPS)
+# Monitor:  8600 (callback)  8443 (HTTPS)
+# Hawtio:   8080 (authenticated HTTPS gateway, Monitor certificate)
+# Prometheus metrics: 9404 (Master) 9405 (Mover) 9406 (Monitor); bind to localhost when publishing
 EXPOSE 9062 9600 9640 \
        7062 7600 7443 7022 8883 7640 \
-       8062 8600 8443
+       8062 8600 8443 \
+       8080 9404 9405 9406
 
 ENTRYPOINT ["/usr/local/ecpds/standalone/entrypoint.sh"]

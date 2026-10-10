@@ -128,11 +128,13 @@ build: build-db build-ai ## Build database, AI, Java, and service images
 	@$(MAKE) .build app=master tag=$(TAG)
 	@$(MAKE) .build app=monitor tag=$(TAG)
 
-get-sa: ## Copy RPMs, SQL, and certs into standalone build context
+get-sa: ## Copy RPMs, SQL, Hawtio, and certs into standalone build context
 	@if ! ls ecpds/mover/rpms/ecpds-mover-*.rpm >/dev/null 2>&1; then \
 		printf "$(RED)** RPMs not staged — run 'make get-rpms' first **$(RESET)\n" && exit 1; \
 	fi
-	mkdir -p ecpds/standalone/rpms ecpds/standalone/etc/mover ecpds/standalone/etc/monitor
+	@$(MAKE) get-hawtio
+	mkdir -p ecpds/standalone/rpms ecpds/standalone/etc/mover ecpds/standalone/etc/monitor \
+		ecpds/standalone/hawtio/lib
 	rm -f ecpds/standalone/rpms/ecpds-common-*.rpm ecpds/standalone/rpms/ecpds-master-*.rpm \
 		ecpds/standalone/rpms/ecpds-mover-*.rpm ecpds/standalone/rpms/ecpds-monitor-*.rpm \
 		ecpds/standalone/rpms/ecpds-tools-*.rpm
@@ -142,6 +144,9 @@ get-sa: ## Copy RPMs, SQL, and certs into standalone build context
 	cp -f ecpds/monitor/rpms/ecpds-monitor-*.noarch.rpm ecpds/standalone/rpms/
 	cp -f ecpds/tools/rpms/ecpds-tools-*.rpm ecpds/standalone/rpms/
 	cp -f ecpds/database/ecpds.sql ecpds/standalone/.
+	cp -f ecpds/hawtio/lib/*.jar ecpds/hawtio/lib/*.war ecpds/standalone/hawtio/lib/
+	cp -f ecpds/hawtio/HawtioLauncher.java ecpds/standalone/hawtio/.
+	cp -f ecpds/hawtio/entrypoint.sh ecpds/standalone/hawtio/.
 
 get-cli: ## Copy ecpds-tools RPM into CLI image build context
 	@if ! ls ecpds/tools/rpms/ecpds-tools-*.rpm >/dev/null 2>&1; then \
@@ -299,7 +304,7 @@ clean: ## Remove all RPMs and licenses
 	@$(MAKE) .clean app=monitor
 	@$(MAKE) .clean app=standalone
 	rm -f ecpds/standalone/ecpds.sql
-	rm -rf ecpds/standalone/etc
+	rm -rf ecpds/standalone/etc ecpds/standalone/hawtio
 	cd ecpds/java && rm -fr AUTHORS LICENSE.txt NOTICE VERSION licenses*
 
 .clean: # Remove RPMs for the specified app (arg: app)

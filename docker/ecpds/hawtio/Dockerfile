@@ -26,6 +26,10 @@ ENV HAWTIO_PRESET_CONNECTIONS=""
 # Extra JVM options, e.g. -Dhawtio.proxyAllowlist=host1,host2
 ENV JAVA_OPTS=""
 
+# The container's stdout is not rotated, so do not log every Hawtio request there.
+# Set to /dev/stdout or an absolute file path to re-enable the gateway access log.
+ENV HAWTIO_ACCESS_LOG=off
+
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod 0755 /entrypoint.sh
 

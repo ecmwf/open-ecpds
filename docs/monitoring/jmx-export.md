@@ -48,6 +48,10 @@ network/SSH tunnel. The gateway root shows links to configured connections; the 
 Hawtio interface is at `/hawtio/`.
 `HAWTIO_NGINX_WORKER_PROCESSES` controls nginx's worker count (default `2`); set a
 positive integer in `hawtio.cnf` and restart the container to apply it.
+`HAWTIO_ACCESS_LOG` controls the gateway access log. It is `off` by default because
+Hawtio's polling is verbose and the container's stdout is not rotated. Set it to
+`/dev/stdout` or to an absolute file path (rotate it yourself) to enable it; errors are
+always written to stderr.
 
 The Hawtio container reads `/etc/ecpds/default/hawtio.cnf` followed by
 `/etc/ecpds/hawtio.cnf`; the latter overrides defaults. Protect configuration files

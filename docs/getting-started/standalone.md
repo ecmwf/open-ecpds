@@ -28,6 +28,10 @@ docker run -d \
   -p 7022:7022 \
   -p 8443:8443 \
   -p 8883:8883 \
+  -p 127.0.0.1:8080:8080 \
+  -p 127.0.0.1:9404:9404 \
+  -p 127.0.0.1:9405:9405 \
+  -p 127.0.0.1:9406:9406 \
   ghcr.io/ecmwf/open-ecpds/standalone:latest
 ```
 
@@ -54,6 +58,19 @@ everything across restarts. Wait about 30 seconds for all services to become ava
 | Data Portal (WebDAV) | `https://localhost:7443/webdav` | `test` / `test2021` |
 | Data Portal (SFTP) | `sftp://localhost:7022` | `test` / `test2021` |
 | MQTTS broker | `mqtts://localhost:8883` | `test` / `test2021` |
+| Hawtio | `https://localhost:8080` | `hawtio` / `hawtio2021` |
+
+Hawtio includes preset connections for the Master, Monitor, and Mover Jolokia agents.
+When prompted by Hawtio, use `jolokia` / `jolokia2021` for the Jolokia login. These
+credentials are for evaluation only; do not expose the standalone image to an untrusted
+network.
+
+Hawtio is served over HTTPS using the same keystore as the Monitor UI
+(`/etc/ecpds/monitor/ecpds-monitor.pfx`), so the browser shows the same self-signed
+certificate warning. Hawtio reads the certificate at startup: after replacing the Monitor
+certificate, restart Hawtio with `docker exec standalone supervisorctl restart hawtio`.
+Set `HAWTIO_TLS_KEYSTORE` to another PKCS#12 file to use a different certificate, or to
+`none` to fall back to plain HTTP.
 
 ## Exposed ports
 
@@ -64,6 +81,10 @@ everything across restarts. Wait about 30 seconds for all services to become ava
 | `8883` | Data Mover — MQTTS (MQTT over TLS) |
 | `8443` | Monitor — HTTPS UI |
 | `9640` | Master — ECpds CLI |
+| `8080` | Hawtio — authenticated JMX console (HTTPS, Monitor certificate) |
+| `9404` | Prometheus JMX exporter — Master |
+| `9405` | Prometheus JMX exporter — Mover |
+| `9406` | Prometheus JMX exporter — Monitor |
 
 !!! note "FTP not available in standalone"
     OpenECPDS fully supports FTP in production deployments. FTP passive mode (PASV) is
@@ -71,11 +92,22 @@ everything across restarts. Wait about 30 seconds for all services to become ava
     for data connections, which external clients cannot reach. Use SFTP (port 7022) as a
     drop-in alternative.
 
-!!! note "JMX monitoring not configured in standalone"
-    Neither [Jolokia/Hawtio nor the Prometheus JMX exporter](../monitoring/jmx-export.md)
-    are set up in this image — per-process ports (and, for Jolokia, an authenticated
-    proxy) are overkill for a single-container demo. Both are available in a full,
-    multi-container deployment.
+!!! warning "Evaluation credentials and management ports"
+    The standalone image includes demo Hawtio and Jolokia credentials and exposes
+    unauthenticated Prometheus exporter endpoints. The command above binds Hawtio and
+    metrics ports to localhost only. Do not publish these ports on an untrusted network,
+    and replace the demo `HAWTIO_USER`, `HAWTIO_PASSWORD`, `JOLOKIA_USER`, and
+    `JOLOKIA_PASSWORD` values for any shared environment.
+
+### Connect Grafana to Prometheus metrics
+
+The JMX exporter endpoints are available at `http://localhost:9404/metrics` (Master),
+`http://localhost:9405/metrics` (Mover), and `http://localhost:9406/metrics` (Monitor)
+when using the localhost port mappings above. Add the endpoint(s) as Prometheus scrape
+targets, then configure Grafana to use that Prometheus instance as a data source. If
+Prometheus runs in another container, use a host address reachable from that container
+instead of `localhost` (which would refer to the Prometheus container itself). These
+endpoints have no authentication; keep them restricted to trusted clients.
 
 ## Populate some data
 

@@ -32,6 +32,10 @@ docker run -d \
   -p 7022:7022 \
   -p 8443:8443 \
   -p 8883:8883 \
+  -p 127.0.0.1:8080:8080 \
+  -p 127.0.0.1:9404:9404 \
+  -p 127.0.0.1:9405:9405 \
+  -p 127.0.0.1:9406:9406 \
   ghcr.io/ecmwf/open-ecpds/standalone:latest
 ```
 
@@ -49,6 +53,7 @@ The database initialises automatically on first start. The `/data` volume persis
 | Data Portal (WebDAV) | `https://localhost:7443/webdav` | test / test2021 |
 | Data Portal (SFTP) | `sftp://localhost:7022` | test / test2021 |
 | MQTTS broker | `mqtts://localhost:8883` | test / test2021 |
+| Hawtio (JMX console) | `https://localhost:8080` | hawtio / hawtio2021 (Jolokia login: jolokia / jolokia2021) |
 
 ### Exposed ports
 
@@ -59,10 +64,12 @@ The database initialises automatically on first start. The `/data` volume persis
 | `8883` | Data Mover — MQTTS (MQTT over TLS) |
 | `8443` | Monitor — HTTPS UI |
 | `9640` | Master — ECpds CLI |
+| `8080` | Hawtio — authenticated HTTPS JMX console (preset Master, Monitor and Mover connections) |
+| `9404` / `9405` / `9406` | Prometheus JMX exporter — Master / Mover / Monitor |
 
 > **Note on FTP:** OpenECPDS fully supports FTP in production deployments. However, FTP passive mode (PASV) is not compatible with Docker port mapping — the server advertises its internal container address for data connections, which external clients cannot reach. For that reason, FTP is disabled in this standalone image. Use SFTP (port 7022) as a drop-in alternative for file transfers in Docker.
 
-> **Note on JMX monitoring:** Neither Jolokia/Hawtio nor the Prometheus JMX exporter ([details](https://ecmwf.github.io/open-ecpds/monitoring/jmx-export/)) are configured in this standalone image — per-process ports (and, for Jolokia, an authenticated proxy) are overkill for a single-container demo. Both are available in a full, multi-container deployment.
+> **Note on JMX monitoring:** The standalone image includes Hawtio and the Prometheus JMX exporter ([details](https://ecmwf.github.io/open-ecpds/monitoring/jmx-export/)). Point Prometheus/Grafana at `http://localhost:9404/metrics` (Master), `:9405` (Mover) and `:9406` (Monitor). The credentials above are for evaluation only, and the exporter endpoints are unauthenticated — keep these ports bound to localhost (as in the command above) and never expose them on an untrusted network.
 
 ### Populate some data
 

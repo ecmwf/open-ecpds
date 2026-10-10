@@ -3,6 +3,7 @@
 /docker/ecpds/mover/rpms/
 /docker/ecpds/standalone/rpms/
 /docker/ecpds/standalone/etc/
+/docker/ecpds/standalone/hawtio/
 /docker/ecpds/standalone/ecpds.sql
 /docker/ecpds/tools/rpms/
 /docker/ecpds/cli/rpms/
