@@ -115,7 +115,10 @@ source.
 ## For users
 
 Open the Hawtio gateway URL provided by your administrator and sign in with the gateway
-account. Choose a service from the landing page or open its Hawtio connection link,
+account. The landing page shows responsive cards for configured service presets only;
+each opens its Hawtio connection in a new tab, keeping the service selector available.
+There is no generic Connect / Remote shortcut on this page (Hawtio itself still
+provides its connection interface). Choose a service or open its Hawtio connection link,
 such as `/hawtio/?con=master`. Hawtio lets you browse that service's MBeans and view
 their attributes. Some MBeans also provide operations; invoking them can change service
 state, so use those controls only when authorized.
