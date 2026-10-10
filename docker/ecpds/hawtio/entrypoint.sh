@@ -55,14 +55,41 @@ cat > /run/hawtio/index.html <<'EOF'
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ECPDS Hawtio</title>
 <style>
-body{font:16px system-ui,sans-serif;max-width:42rem;margin:10vh auto;padding:0 1.5rem;color:#20252b}
-h1{color:#17365d}li{margin:.8rem 0}a{color:#0969da} .hint{color:#59636e}
+:root{color-scheme:light;--accent:#0079d3;--border:#dee2e6;--muted:#59636e}
+*{box-sizing:border-box}
+body{margin:0;background:#f5f7fa;color:#212529;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:#fff;border-bottom:1px solid var(--border);border-top:4px solid var(--accent)}
+.header-inner,main{max-width:1080px;margin:auto;padding:24px}
+.brand{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--accent)}
+h1{margin:5px 0 0;font-size:27px;font-weight:600}
+.subtitle{margin:5px 0 0;color:var(--muted)}
+main{padding-top:32px}
+.info{padding:15px 18px;border-left:4px solid var(--accent);border-radius:5px;background:#eaf3fb;margin-bottom:26px}
+h2{font-size:18px;margin:0 0 16px;font-weight:600}
+.connections{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}
+.connection{display:flex;align-items:center;gap:14px;padding:22px;background:#fff;border:1px solid var(--border);border-radius:8px;text-decoration:none;color:inherit;box-shadow:0 2px 5px rgba(0,0,0,.03);height:100%;transition:border-color .15s,box-shadow .15s}
+.connection:hover{border-color:var(--accent);box-shadow:0 3px 12px rgba(0,121,211,.12)}
+.connection:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.icon{display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;border-radius:9px;background:#eaf3fb;color:var(--accent)}
+.icon svg{width:24px;height:24px}
+.name{display:block;font-size:17px;font-weight:600;overflow-wrap:anywhere}
+.description{display:block;font-size:13px;color:var(--muted);margin-top:3px}
+.arrow{margin-left:auto;color:var(--accent);font-size:21px}
+.empty{padding:24px;background:#fff;border:1px dashed var(--border);border-radius:8px;color:var(--muted)}
+footer{margin-top:26px;color:var(--muted);font-size:13px}
+@media(prefers-reduced-motion:reduce){.connection{transition:none}}
 </style>
 </head>
 <body>
+<header><div class="header-inner">
+<div class="brand">ECPDS / ADMINISTRATION</div>
 <h1>ECPDS Hawtio</h1>
-<p>Select a preset JMX connection:</p>
-<ul>
+<p class="subtitle">Java service monitoring and management</p>
+</div></header>
+<main>
+<div class="info">Select a configured service to open its Hawtio console in a new tab. Sign in with the service's Jolokia credentials when prompted.</div>
+<h2>Configured connections</h2>
+<ul class="connections">
 EOF
 connection_count=0
 IFS=',' read -r -a preset_connections <<< "${HAWTIO_PRESET_CONNECTIONS:-}"
@@ -76,17 +103,17 @@ for connection in "${preset_connections[@]}"; do
         echo "Skipping invalid Hawtio preset connection: $connection_id" >&2
         continue
     fi
-    printf '<li><a href="/hawtio/?con=%s">%s</a></li>\n' \
+    printf '<li><a class="connection" href="/hawtio/?con=%s" target="_blank" rel="noopener noreferrer"><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h2M7 17.5h2M14 6.5h3M14 17.5h3"/></svg></span><span><span class="name">%s</span><span class="description">Open console in a new tab</span></span><span class="arrow" aria-hidden="true">&#8599;</span></a></li>\n' \
         "$connection_id" "$(html_escape "$connection_id")" >> /run/hawtio/index.html
     connection_count=$((connection_count + 1))
 done
 if (( connection_count == 0 )); then
-    printf '<li>No preset connections are configured.</li>\n' >> /run/hawtio/index.html
+    printf '<li class="empty">No connections are configured. Ask your administrator to configure the service presets.</li>\n' >> /run/hawtio/index.html
 fi
 cat >> /run/hawtio/index.html <<'EOF'
 </ul>
-<p><a href="/hawtio/connect/remote">Open Connect / Remote</a></p>
-<p class="hint">Connections require the corresponding Jolokia credentials.</p>
+<footer>Only configured connections are listed. Management operations in the console may affect running services.</footer>
+</main>
 </body>
 </html>
 EOF
