@@ -64,7 +64,19 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.ContentInfo;
+import org.bouncycastle.asn1.pkcs.EncryptedData;
+import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
+import org.bouncycastle.asn1.pkcs.PBES2Parameters;
+import org.bouncycastle.asn1.pkcs.PBKDF2Params;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.SafeBag;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -76,6 +88,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.PKCS12PfxPdu;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
@@ -126,8 +139,8 @@ public final class CertificateManager {
 
     /**
      * Ensures a self-signed certificate exists at {@code keystorePath}. If the file is absent or empty the method
-     * generates a new RSA-2048 / SHA-256 self-signed certificate and stores it as a PKCS#12 keystore at that path. The
-     * method is idempotent; it does nothing when a certificate is already present.
+     * generates a new RSA-2048 / SHA-256 self-signed certificate and stores it as a PKCS#12 keystore at that path. An
+     * existing PKCS#12 private-key keystore is normalized to the interoperable format without changing its identity.
      *
      * @param keystorePath
      *            path where the PKCS#12 keystore should be created
@@ -141,12 +154,36 @@ public final class CertificateManager {
      */
     public static synchronized void ensureSelfSigned(final String keystorePath, final String keystorePassword,
             final String hostname) throws Exception {
+        ensureSelfSigned(keystorePath, keystorePassword, hostname, "PKCS12");
+    }
+
+    /**
+     * Ensures a certificate exists and normalizes an existing PKCS#12 private-key keystore so it can be consumed by
+     * OpenSSL without legacy algorithms. JKS keystores are left unchanged.
+     *
+     * @param keystorePath
+     *            path where the keystore should be created
+     * @param keystorePassword
+     *            password to protect the keystore and private key
+     * @param hostname
+     *            the CN / SAN hostname to embed when generating a new certificate
+     * @param keystoreType
+     *            configured type of the existing keystore
+     *
+     * @throws Exception
+     *             if migration, generation, or writing fails
+     */
+    public static synchronized void ensureSelfSigned(final String keystorePath, final String keystorePassword,
+            final String hostname, final String keystoreType) throws Exception {
         if (keystorePath == null || keystorePassword == null) {
             _log.warn("Cannot auto-generate certificate: keystorePath or keystorePassword is null");
             return;
         }
         final var ksFile = new File(keystorePath);
         if (ksFile.exists() && ksFile.length() > 0) {
+            if ("PKCS12".equalsIgnoreCase(keystoreType)) {
+                migratePkcs12(ksFile, keystorePassword);
+            }
             _log.debug("Certificate already present at {}", keystorePath);
             return;
         }
@@ -385,13 +422,30 @@ public final class CertificateManager {
             final var output = new ByteArrayOutputStream();
             keystore.store(output, chars);
             final var bytes = output.toByteArray();
+            if (!isOpenSslCompatiblePkcs12(bytes)) {
+                throw new IllegalStateException("PKCS12 is not OpenSSL-compatible before replacing " + path);
+            }
             final var check = KeyStore.getInstance("PKCS12");
             check.load(new ByteArrayInputStream(bytes), chars);
-            final var key = keystore.getKey(ALIAS, chars);
-            if (!keystore.getCertificate(ALIAS).equals(check.getCertificate(ALIAS)) || (key != null
-                    && (!Arrays.equals(key.getEncoded(), check.getKey(ALIAS, chars).getEncoded()) || !Arrays
-                            .equals(keystore.getCertificateChain(ALIAS), check.getCertificateChain(ALIAS))))) {
+            if (keystore.size() != check.size()) {
                 throw new IllegalStateException("PKCS12 validation failed before replacing " + path);
+            }
+            final var aliases = keystore.aliases();
+            while (aliases.hasMoreElements()) {
+                final var alias = aliases.nextElement();
+                if (!check.containsAlias(alias) || keystore.isKeyEntry(alias) != check.isKeyEntry(alias)) {
+                    throw new IllegalStateException("PKCS12 validation failed before replacing " + path);
+                }
+                if (keystore.isKeyEntry(alias)) {
+                    final var key = keystore.getKey(alias, chars);
+                    final var checkedKey = check.getKey(alias, chars);
+                    if (key == null || checkedKey == null || !Arrays.equals(key.getEncoded(), checkedKey.getEncoded())
+                            || !Arrays.equals(keystore.getCertificateChain(alias), check.getCertificateChain(alias))) {
+                        throw new IllegalStateException("PKCS12 validation failed before replacing " + path);
+                    }
+                } else if (!java.util.Objects.equals(keystore.getCertificate(alias), check.getCertificate(alias))) {
+                    throw new IllegalStateException("PKCS12 validation failed before replacing " + path);
+                }
             }
             var target = new File(path).toPath().toAbsolutePath();
             if (Files.exists(target)) {
@@ -421,6 +475,142 @@ public final class CertificateManager {
         } finally {
             Arrays.fill(chars, '\0');
         }
+    }
+
+    private static void migratePkcs12(final File file, final String password) throws Exception {
+        try {
+            if (isOpenSslCompatiblePkcs12(Files.readAllBytes(file.toPath()))
+                    && isReadableByDefaultProvider(file, password)) {
+                return;
+            }
+        } catch (final Exception e) {
+            _log.debug("Could not inspect PKCS#12 algorithms before migration of {}: {}", file, e.getMessage());
+        }
+        final var chars = password.toCharArray();
+        try {
+            KeyStore replacement = null;
+            Exception failure = null;
+            var readSuccessfully = false;
+            for (final var provider : new String[] { null, BouncyCastleProvider.PROVIDER_NAME }) {
+                try {
+                    final var source = provider == null ? KeyStore.getInstance("PKCS12")
+                            : KeyStore.getInstance("PKCS12", provider);
+                    try (final var input = new FileInputStream(file)) {
+                        source.load(input, chars);
+                    }
+                    replacement = repackagePkcs12(source, chars);
+                    readSuccessfully = true;
+                    break;
+                } catch (final Exception e) {
+                    if (failure == null) {
+                        failure = e;
+                    } else {
+                        failure.addSuppressed(e);
+                    }
+                }
+            }
+            if (replacement == null) {
+                if (!readSuccessfully && failure != null) {
+                    throw new IllegalArgumentException("Cannot migrate PKCS#12 keystore: " + file, failure);
+                }
+                return;
+            }
+            writeKeystore(file.getPath(), password, replacement);
+            _log.info("Migrated PKCS#12 keystore to OpenSSL-compatible format: {}", file);
+        } finally {
+            Arrays.fill(chars, '\0');
+        }
+    }
+
+    private static boolean isReadableByDefaultProvider(final File file, final String password) throws Exception {
+        final var chars = password.toCharArray();
+        try {
+            final var keystore = KeyStore.getInstance("PKCS12");
+            try (final var input = new FileInputStream(file)) {
+                keystore.load(input, chars);
+            }
+            final var aliases = keystore.aliases();
+            while (aliases.hasMoreElements()) {
+                final var alias = aliases.nextElement();
+                if (keystore.isKeyEntry(alias)) {
+                    final var key = keystore.getKey(alias, chars);
+                    final var chain = keystore.getCertificateChain(alias);
+                    if (key instanceof PrivateKey && chain != null && chain.length > 0) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } finally {
+            Arrays.fill(chars, '\0');
+        }
+    }
+
+    private static boolean isOpenSslCompatiblePkcs12(final byte[] bytes) throws Exception {
+        final var pfx = new PKCS12PfxPdu(bytes);
+        if (!pfx.hasMac() || !NISTObjectIdentifiers.id_sha256.equals(pfx.getMacAlgorithmID().getAlgorithm())) {
+            return false;
+        }
+        var hasEncryptedPrivateKey = false;
+        for (final ContentInfo info : pfx.getContentInfos()) {
+            if (PKCSObjectIdentifiers.encryptedData.equals(info.getContentType())) {
+                final var encryptedData = EncryptedData.getInstance(info.getContent());
+                if (!isModernPbe(encryptedData.getEncryptionAlgorithm())) {
+                    return false;
+                }
+            } else if (PKCSObjectIdentifiers.data.equals(info.getContentType())) {
+                final var safeContents = ASN1Sequence.getInstance(
+                        ASN1Primitive.fromByteArray(ASN1OctetString.getInstance(info.getContent()).getOctets()));
+                for (var i = 0; i < safeContents.size(); i++) {
+                    final var bag = SafeBag.getInstance(safeContents.getObjectAt(i));
+                    if (PKCSObjectIdentifiers.pkcs8ShroudedKeyBag.equals(bag.getBagId())) {
+                        hasEncryptedPrivateKey = true;
+                        final var encryptedKey = EncryptedPrivateKeyInfo.getInstance(bag.getBagValue());
+                        if (!isModernPbe(encryptedKey.getEncryptionAlgorithm())) {
+                            return false;
+                        }
+                    }
+                }
+            } else {
+                return false;
+            }
+        }
+        return hasEncryptedPrivateKey;
+    }
+
+    private static boolean isModernPbe(final AlgorithmIdentifier algorithm) {
+        if (!PKCSObjectIdentifiers.id_PBES2.equals(algorithm.getAlgorithm())) {
+            return false;
+        }
+        final var pbes2 = PBES2Parameters.getInstance(algorithm.getParameters());
+        final var keyDerivation = pbes2.getKeyDerivationFunc();
+        if (!PKCSObjectIdentifiers.id_PBKDF2.equals(keyDerivation.getAlgorithm())) {
+            return false;
+        }
+        final var pbkdf2 = PBKDF2Params.getInstance(keyDerivation.getParameters());
+        return NISTObjectIdentifiers.id_aes256_CBC.equals(pbes2.getEncryptionScheme().getAlgorithm())
+                && PKCSObjectIdentifiers.id_hmacWithSHA256.equals(pbkdf2.getPrf().getAlgorithm());
+    }
+
+    private static KeyStore repackagePkcs12(final KeyStore source, final char[] password) throws Exception {
+        final var target = KeyStore.getInstance("PKCS12");
+        target.load(null, null);
+        var hasPrivateKey = false;
+        final var aliases = source.aliases();
+        while (aliases.hasMoreElements()) {
+            final var alias = aliases.nextElement();
+            if (source.isKeyEntry(alias)) {
+                final var key = source.getKey(alias, password);
+                if (!(key instanceof PrivateKey) || source.getCertificateChain(alias) == null) {
+                    throw new IllegalArgumentException("Unsupported non-private-key entry in PKCS#12 keystore");
+                }
+                target.setKeyEntry(alias, key, password, source.getCertificateChain(alias));
+                hasPrivateKey = true;
+            } else if (source.isCertificateEntry(alias)) {
+                target.setCertificateEntry(alias, source.getCertificate(alias));
+            }
+        }
+        return hasPrivateKey ? target : null;
     }
 
     private static X509Certificate loadCertificate(final File ksFile, final String password, final String type)

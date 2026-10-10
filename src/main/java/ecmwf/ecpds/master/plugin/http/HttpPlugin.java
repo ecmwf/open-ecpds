@@ -350,7 +350,7 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
             // Auto-generate a self-signed certificate if none exists yet
             try {
                 CertificateManager.ensureSelfSigned(storePath, storePassword,
-                        java.net.InetAddress.getLocalHost().getHostName());
+                        java.net.InetAddress.getLocalHost().getHostName(), storeType);
             } catch (final Exception e) {
                 _log.warn("Could not auto-generate self-signed certificate", e);
             }

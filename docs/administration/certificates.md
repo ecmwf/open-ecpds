@@ -162,12 +162,19 @@ cipher use consistent password encoding. Code explicitly selecting Bouncy Castle
 continues to use it. An explicit `bouncyCastleProviderPosition` must also be after
 SunJCE; remove an earlier-position override rather than keeping the incompatible setup.
 
-Incompatible existing files are **not** automatically migrated or supported by a
-fallback reader. Restore a known-good OpenSSL-generated keystore and its matching
-password on affected services **before restarting with the updated code**. Then use
-**Deploy to All Movers** from the Monitor holding the intended certificate to write
-compatible Mover files. Simply restarting a service does not rewrite its keystore.
-Verify the deployed file locally with:
+When Master, Monitor, or Mover HTTP/MQTT services start, an incompatible existing
+PKCS#12 keystore containing a private key is automatically repackaged in the current
+OpenSSL-compatible format; already-compatible files are left unchanged. The configured
+password is used to read and write it; the certificate, private key, complete chain,
+and SHA-256 fingerprint are preserved. The replacement is validated before an atomic
+write, and existing file permissions and ownership are preserved. A legacy provider
+is tried when the default Java provider cannot read the file. JKS and certificate-only
+truststores are left unchanged. If a keystore cannot be read with the configured
+password or has unsupported entries, it is not replaced and the migration failure is
+logged.
+
+This also updates the keystore used by Hawtio when it shares the service's PKCS#12
+file. Verify the migrated file locally with:
 
 ```bash
 openssl pkcs12 -in /path/to/ecpds-mover.pfx -info -noout
@@ -176,9 +183,6 @@ openssl pkcs12 -in /path/to/ecpds-mover.pfx -info -noout
 Enter the Mover's keystore password interactively. If Hawtio uses this file, configure
 the same password there and restart Hawtio after redeployment. Neither the certificate
 nor its private key needs to be regenerated.
-
-Hawtio no longer supports the `HAWTIO_TLS_LEGACY` setting. Remove it from local
-configuration and use a modern PKCS#12 file readable without OpenSSL's `-legacy` flag.
 
 ### Deploy to All Monitors
 
