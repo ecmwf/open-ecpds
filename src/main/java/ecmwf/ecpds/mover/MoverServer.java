@@ -2988,7 +2988,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             deleteOriginal = false;
         }
         final var ecproxyCallback = new ECproxyCallback(new ECaccessTicket(ECaccessTicket.OUTPUT), host.getData(), out);
-        ecproxyCallback.setByteCounter(bytes -> trafficAccounting.add(host.getType(), bytes));
+        ecproxyCallback.setByteCounter(
+                bytes -> trafficAccounting.add(host.getType() != null ? host.getType() : HostOption.PROXY, bytes));
         new ECtransContainer(new MoverProvider(new StreamRepository(host, out)), false).asyncExec(
                 new ECtransGet(source, null, remotePosn, deleteOriginal), null, host.getECUserName(),
                 host.getName() + "@" + host.getTransferMethodName(), null, null, ecproxyCallback);

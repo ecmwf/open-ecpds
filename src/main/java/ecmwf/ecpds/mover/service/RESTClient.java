@@ -231,6 +231,7 @@ public final class RESTClient implements RESTInterface {
         h.setNetworkCode(host.getNetworkCode());
         h.setNetworkName(host.getNetworkName());
         h.setNickname(host.getNickname());
+        h.setType(host.getType());
         _log.debug("REST sending request: getHostReport({})", h);
         try (final var response = send(httpProxy, getDataMover()[0] + "/ecpds/mover/getHostReport", connectTimeout,
                 "PUT", h, Map.of())) {
@@ -467,10 +468,12 @@ public final class RESTClient implements RESTInterface {
         h.setLogin(host.getLogin());
         h.setPasswd(host.getPasswd());
         h.setNickname(host.getNickname());
+        h.setType(host.getType());
         final var proxy = transfer.getProxyHost();
         final var p = new Host();
         p.setName(proxy.getName());
         p.setNickname(proxy.getNickname());
+        p.setType(proxy.getType());
         final var f = new DataFile();
         f.setId(file.getId());
         f.setDownloaded(file.getDownloaded());

@@ -61,9 +61,10 @@ public final class TrafficAccounting {
             throw new IllegalArgumentException("Negative traffic bytes");
         if (count == 0)
             return;
-        var bucket = bytes.get(type);
+        var bucket = type == null ? null : bytes.get(type);
+        // Accounting must never fail a transfer: hosts without a known type are simply not accounted.
         if (bucket == null)
-            throw new IllegalArgumentException("Unknown traffic type: " + type);
+            return;
         long minute = System.currentTimeMillis() / 60000;
         int index = (int) (minute % MINUTES);
         if (minutes[index] != minute) {
