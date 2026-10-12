@@ -107,6 +107,10 @@ public class ProductMessagesAction extends PDSAction {
                 } else {
                     db.setProductStatusMessage(ProductStatusMessages.COMPACT_CYCLE_LISTS_NAME, "false");
                 }
+                saveAddress(db, ProductStatusMessages.TO_ADDRESS_NAME, request.getParameter("noticeToAddress"),
+                        ProductStatusMessages.DEFAULT_TO_ADDRESS);
+                saveAddress(db, ProductStatusMessages.BCC_ADDRESS_NAME, request.getParameter("noticeBccAddress"),
+                        ProductStatusMessages.DEFAULT_BCC_ADDRESS);
                 request.setAttribute("pmSuccess", "Product Status Messages saved successfully.");
             } catch (final Exception e) {
                 request.setAttribute("pmError", "Failed to store the messages: " + e.getMessage());
@@ -135,6 +139,10 @@ public class ProductMessagesAction extends PDSAction {
             request.setAttribute("delayMessageGroupedCustomized", delayMessageGrouped != null);
             request.setAttribute("resumedMessageGroupedCustomized", resumedMessageGrouped != null);
             request.setAttribute("compactCycleLists", !"false".equals(compactCycleLists));
+            final var to = db.getProductStatusMessage(ProductStatusMessages.TO_ADDRESS_NAME);
+            final var bcc = db.getProductStatusMessage(ProductStatusMessages.BCC_ADDRESS_NAME);
+            request.setAttribute("noticeToAddress", to != null ? to : ProductStatusMessages.DEFAULT_TO_ADDRESS);
+            request.setAttribute("noticeBccAddress", bcc != null ? bcc : ProductStatusMessages.DEFAULT_BCC_ADDRESS);
         } catch (final Exception e) {
             request.setAttribute("pmError", "Unable to load the current messages: " + e.getMessage());
             setDefaults(request);
@@ -156,6 +164,26 @@ public class ProductMessagesAction extends PDSAction {
         request.setAttribute("delayMessageGroupedCustomized", Boolean.FALSE);
         request.setAttribute("resumedMessageGroupedCustomized", Boolean.FALSE);
         request.setAttribute("compactCycleLists", Boolean.TRUE);
+        request.setAttribute("noticeToAddress", ProductStatusMessages.DEFAULT_TO_ADDRESS);
+        request.setAttribute("noticeBccAddress", ProductStatusMessages.DEFAULT_BCC_ADDRESS);
+    }
+
+    /**
+     * Stores an email address after validating it, or resets it when blank or equal to the default.
+     *
+     * @throws IllegalArgumentException
+     *             if the value is not a single valid email address
+     */
+    private static void saveAddress(final ecmwf.ecpds.master.DataBaseInterface db, final String name,
+            final String value, final String defaultValue) throws Exception {
+        final var v = value == null ? "" : value.strip();
+        if (v.isEmpty() || v.equals(defaultValue)) {
+            db.resetProductStatusMessage(name);
+        } else if (v.matches("[A-Za-z0-9._%+'-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")) {
+            db.setProductStatusMessage(name, v);
+        } else {
+            throw new IllegalArgumentException("Invalid email address: " + v);
+        }
     }
 
     /**

@@ -1,12 +1,13 @@
 # Changelog
 
 All notable changes to OpenECPDS are listed here in **descending order** (most recent first).
-Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.2.0-09102026`).
+Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.2.0-12102026`).
 
 ---
 
-## open-ecpds 8.2.0-09102026
+## open-ecpds 8.2.0-12102026
 
+- **Monitoring: Delay Notification**: New **Delay Notification** page (`/do/monitoring/delaynotification`, Monitoring menu) to send one consistent notice for all products and cycles affected by a delay (Definite/Possible matrix, per-model filtering, recipients taken from the destinations receiving them, Cc, editable subject and message), then update, partially or fully resolve, cancel or delete it from the **Sent notices** register (kept in a new `DELAY_NOTICE` table; existing databases need `docker/ecpds/database/delay-notice.sql` applied once; operators confirm the actual sending since ECPDS cannot see it). Product models are maintained in **Product Descriptions**. See [Delay Notification](monitoring/delay-notification.md).
 - **Standalone image: Hawtio, Jolokia and Prometheus**: The all-in-one image now includes the Hawtio JMX console (`https://localhost:8080`, preset Master/Monitor/Mover connections) and Prometheus JMX exporters on ports `9404`/`9405`/`9406` for testing with Grafana. Evaluation credentials: `hawtio`/`hawtio2021` (Hawtio) and `jolokia`/`jolokia2021` (Jolokia).
 - **TLS certificate deployment: OpenSSL-compatible PFX files**: Bouncy Castle now follows the built-in providers, preventing mixed PBE password encodings. Incompatible PKCS#12 private-key keystores are automatically repackaged in the interoperable format when Master, Monitor, or Mover HTTP/MQTT services start, preserving the certificate, key, full chain, and file permissions for Hawtio and OpenSSL without `-legacy`. Certificate imports and generation continue to use validated, atomic PKCS#12 writes.
 - **Administration: Proxy, Backup and Replication traffic monitor**: New **Scheduler Traffic** page (`/do/admin/schedulertraffic`), linked from Administration Tasks, the start page and administration menus, provides a read-only view of current Master scheduler workers with a Proxy/Backup/Replication switch, transfer/data-file links, worker phase, separate dissemination status, Host/source information, size and elapsed time. Filtering, sorting, pagination and selectable refresh use detached worker snapshots retrieved by the Monitor over RMI, without database scans or Mover probes. Completed workers disappear; transfer history remains the source for outcomes, and unsupported live percentage/rate is not inferred from dissemination progress. See [Scheduler Traffic](monitor-ui/admin.md#scheduler-traffic).

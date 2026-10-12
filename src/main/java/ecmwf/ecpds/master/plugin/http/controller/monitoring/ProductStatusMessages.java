@@ -86,6 +86,30 @@ public final class ProductStatusMessages {
      */
     public static final String DESCRIPTION_PLACEHOLDER = "{{DESCRIPTION}}";
 
+    /** SYS_CONFIG parameter name for the address the delay/resumed emails are sent to (and from). */
+    public static final String TO_ADDRESS_NAME = "noticeToAddress";
+
+    /** SYS_CONFIG parameter name for the distribution list always placed in Bcc of the delay/resumed emails. */
+    public static final String BCC_ADDRESS_NAME = "noticeBccAddress";
+
+    /** Default address the delay/resumed emails are sent to (and from). */
+    public static final String DEFAULT_TO_ADDRESS = "operators@ecmwf.int";
+
+    /** Default distribution list always placed in Bcc of the delay/resumed emails. */
+    public static final String DEFAULT_BCC_ADDRESS = "op_delay_ecmwf@lists.ecmwf.int";
+
+    /**
+     * Placeholder for the product(s) of a grouped message: the product of the page on the monitoring pages, and the
+     * list of all the selected products on the Delay Notification page.
+     */
+    public static final String PRODUCTS_PLACEHOLDER = "{{PRODUCTS}}";
+
+    /**
+     * Placeholder for the list of affected products and cycles, filled in by the Delay Notification page only: it is
+     * removed from the messages sent from the monitoring pages.
+     */
+    public static final String AFFECTED_PLACEHOLDER = "{{AFFECTED}}";
+
     /** Built-in default text for the "Products Delay" message (used until an administrator customizes it). */
     public static final String DEFAULT_DELAY_MESSAGE = """
             Dear colleagues,
@@ -121,7 +145,9 @@ public final class ProductStatusMessages {
     public static final String DEFAULT_DELAY_MESSAGE_GROUPED = """
             Dear colleagues,
 
-            << Due to if known and not commercially or infrastructure sensitive, please give some information of the reason for the delay, the or otherwise The >> dissemination of ECMWF {{PRODUCT}} products for the {{CYCLES}}Z cycles will be delayed <<estimate time if possible>>.
+            << Due to if known and not commercially or infrastructure sensitive, please give some information of the reason for the delay, the or otherwise The >> dissemination of ECMWF {{PRODUCTS}} products for the {{CYCLES}}Z cycles will be delayed <<estimate time if possible>>.
+
+            {{AFFECTED}}
 
             Our teams and partners are actively working to restore services.
 
@@ -143,7 +169,7 @@ public final class ProductStatusMessages {
     public static final String DEFAULT_RESUMED_MESSAGE_GROUPED = """
             Dear colleagues,
             I am pleased to inform you that the issues we encountered earlier
-            within the operational production for the {{PRODUCT}} {{CYCLES}}Z cycles have been resolved and the dissemination of products has started.
+            within the operational production for the {{PRODUCTS}} {{CYCLES}}Z cycles have been resolved and the dissemination of products has started.
             Our sincere apologies for the inconvenience caused by this delay.
             Kind regards
             ECMWF Duty Manager""";
@@ -219,7 +245,9 @@ public final class ProductStatusMessages {
         if (text == null) {
             return null;
         }
-        return text.replace(PRODUCT_PLACEHOLDER, product != null ? product : "")
+        return text.replace(AFFECTED_PLACEHOLDER + "\n\n", "").replace(AFFECTED_PLACEHOLDER, "")
+                .replace(PRODUCT_PLACEHOLDER, product != null ? product : "")
+                .replace(PRODUCTS_PLACEHOLDER, product != null ? product : "")
                 .replace(CYCLE_PLACEHOLDER, cycle != null ? cycle : "")
                 .replace(CYCLES_PLACEHOLDER, cycles != null ? cycles : "")
                 .replace(DESCRIPTION_PLACEHOLDER, description != null ? description : "");

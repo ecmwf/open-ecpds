@@ -55,6 +55,10 @@ import ecmwf.common.text.DateUtil;
  * The Class ECpdsBase.
  */
 public final class ECpdsBase extends DataBase {
+
+    /** Serializes the allocation of the delay notice references. */
+    private static final Object DELAY_NOTICE_LOCK = new Object();
+
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(ECpdsBase.class);
 
@@ -5837,6 +5841,136 @@ public final class ECpdsBase extends DataBase {
         } catch (final Exception e) {
             _log.warn("deleteSysConfigValue({},{})", group, name, e);
             throw new DataBaseException("deleteSysConfigValue", e);
+        }
+    }
+
+    /**
+     * Gets the most recent delay notices.
+     *
+     * @param refPattern
+     *            the SQL LIKE pattern of the references ("%" for all)
+     * @param limit
+     *            the maximum number of notices
+     *
+     * @return the rows (keys: ref, status, createdAt, createdBy, updatedAt, version, content), newest first
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public List<Map<String, String>> getDelayNotices(final String refPattern, final int limit)
+            throws DataBaseException {
+        final List<Map<String, String>> result = new ArrayList<>();
+        try (var rs = executeSelect("ECpdsBase", "getDelayNotices",
+                new String[] { "ref=" + refPattern, "limit=" + Math.max(1, limit) })) {
+            while (rs.next()) {
+                final Map<String, String> row = new LinkedHashMap<>();
+                row.put("ref", rs.getString("DLN_REF"));
+                row.put("status", rs.getString("DLN_STATUS"));
+                row.put("createdAt", String.valueOf(rs.getTimestamp("DLN_CREATED_AT")));
+                row.put("createdBy", rs.getString("DLN_CREATED_BY"));
+                row.put("updatedAt", String.valueOf(rs.getTimestamp("DLN_UPDATED_AT")));
+                row.put("version", String.valueOf(rs.getInt("DLN_VERSION")));
+                row.put("content", rs.getString("DLN_CONTENT"));
+                result.add(row);
+            }
+        } catch (final Exception e) {
+            _log.warn("getDelayNotices()", e);
+            throw new DataBaseException("getDelayNotices", e);
+        }
+        return result;
+    }
+
+    /**
+     * Creates a delay notice with the next reference of the year (DLY-YYYY-NNNN). Allocating and inserting is
+     * serialized here, so Monitors registering notices at the same time always get distinct references; the primary key
+     * is the safeguard should another writer be involved, in which case the allocation is retried.
+     *
+     * @param year
+     *            the year
+     * @param status
+     *            the initial status
+     * @param createdBy
+     *            the user
+     * @param content
+     *            the JSON content
+     *
+     * @return the new reference
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public String createDelayNotice(final int year, final String status, final String createdBy, final String content)
+            throws DataBaseException {
+        synchronized (DELAY_NOTICE_LOCK) {
+            DataBaseException last = null;
+            for (var attempt = 0; attempt < 5; attempt++) {
+                var next = 1;
+                try (var rs = executeSelect("ECpdsBase", "getNextDelayNoticeNumber", new String[] { "year=" + year })) {
+                    if (rs.next()) {
+                        next = rs.getInt("NEXT_NUMBER");
+                    }
+                } catch (final Exception e) {
+                    _log.warn("getNextDelayNoticeNumber()", e);
+                    throw new DataBaseException("getNextDelayNoticeNumber", e);
+                }
+                final var ref = String.format("DLY-%d-%04d", year, next);
+                try {
+                    executeUpdate("ECpdsBase", "insertDelayNotice", new String[] { "ref=" + ref, "status=" + status,
+                            "createdBy=" + createdBy, "content=" + content });
+                    return ref;
+                } catch (final Exception e) {
+                    // Most likely a duplicate reference: retry with a fresh number.
+                    _log.warn("insertDelayNotice({}), attempt {}", ref, attempt + 1, e);
+                    last = new DataBaseException("insertDelayNotice", e);
+                }
+            }
+            throw last;
+        }
+    }
+
+    /**
+     * Updates a delay notice only if nobody else changed it since it was read (optimistic locking).
+     *
+     * @param ref
+     *            the reference
+     * @param version
+     *            the version that was read
+     * @param status
+     *            the new status
+     * @param content
+     *            the new JSON content
+     *
+     * @return false if the notice was modified or deleted in the meantime
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public boolean updateDelayNotice(final String ref, final int version, final String status, final String content)
+            throws DataBaseException {
+        try {
+            return executeUpdate("ECpdsBase", "updateDelayNotice",
+                    new String[] { "ref=" + ref, "version=" + version, "status=" + status, "content=" + content }) == 1;
+        } catch (final Exception e) {
+            _log.warn("updateDelayNotice({})", ref, e);
+            throw new DataBaseException("updateDelayNotice", e);
+        }
+    }
+
+    /**
+     * Deletes a delay notice.
+     *
+     * @param ref
+     *            the reference
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void deleteDelayNotice(final String ref) throws DataBaseException {
+        try {
+            executeUpdate("ECpdsBase", "deleteDelayNotice", new String[] { "ref=" + ref });
+        } catch (final Exception e) {
+            _log.warn("deleteDelayNotice({})", ref, e);
+            throw new DataBaseException("deleteDelayNotice", e);
         }
     }
 

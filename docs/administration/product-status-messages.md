@@ -31,9 +31,11 @@ The admin page shows an **Ungrouped**/**Grouped** toggle above each message's te
 | Placeholder | Replaced with |
 |---|---|
 | `{{PRODUCT}}` | The product currently being viewed (e.g. `GENFO`). |
+| `{{PRODUCTS}}` | For the Grouped messages: the product of the page on the monitoring pages, or the list of all the selected products on the [Delay Notification](../monitoring/delay-notification.md) page. `{{PRODUCT}}` still works in grouped messages and gives the same value. |
 | `{{CYCLE}}` | The single cycle/time currently being viewed (e.g. `06`). Empty on a grouped page, which has no single cycle. |
 | `{{CYCLES}}` | Every cycle/time currently shown (e.g. `00-03,06-07,12` on a grouped page). On a regular, single-cycle page this is the same single value as `{{CYCLE}}`. |
 | `{{DESCRIPTION}}` | The description(s) configured under [Product Descriptions](product-descriptions.md) for the current product — a plain text if only one type applies, a bullet list (one line per type) when several types shown on the page each resolve to a different description, or an empty string if none has been configured. |
+| `{{AFFECTED}}` | Used by the [Delay Notification](../monitoring/delay-notification.md) page (Grouped delay message): replaced with the products and cycles selected as *Definite* or *Possible*, then the reason, expected delay, ETA and note. When absent, that block is inserted after the first paragraph. Removed from the messages sent from the monitoring pages. |
 
 The `<<...>>` markers in the built-in default text highlight wording that should be edited before sending — they have no special meaning to the system, they're just a visual convention.
 
@@ -48,6 +50,63 @@ By default, the `{{CYCLES}}` placeholder compacts a long list of cycles into ran
 ```
 
 Uncheck **"Automatically compact grouped cycle lists in the `{{CYCLES}}` placeholder"** (in the **Cycle List Formatting** card) to always show the complete, uncompacted list instead.
+
+---
+
+## Products Delay Message
+
+Used in two places:
+
+- **Ungrouped** variant: the *Products Delay* button of a single product/cycle page.
+- **Grouped** variant: the same button on an all-cycles page, and the **body of the notice** on the
+  [Delay Notification](../monitoring/delay-notification.md) page, which always starts from this variant because a notice
+  covers several products and cycles.
+
+Use the **Insert at cursor** buttons above the editor to add a placeholder where the cursor is (or over the selected text).
+Only the placeholders valid for the displayed variant are offered, and each placeholder can be used several times.
+
+Example of a Grouped message:
+
+```
+Dear colleagues,
+
+The dissemination of ECMWF {{PRODUCTS}} products for the {{CYCLES}}Z cycles will be delayed.
+
+{{AFFECTED}}
+
+{{DESCRIPTION}}
+
+Kind regards,
+ECMWF Duty Manager
+```
+
+On the Delay Notification page, `{{AFFECTED}}` is replaced with the *Definite* and *Possible* lists, followed by the
+reason, expected delay, ETA and note. Use it **once**: a second use repeats the list. If it is missing, the list is
+inserted after the first paragraph. When the message is used from a monitoring page, `{{AFFECTED}}` is simply removed.
+
+### Products with different cycles
+
+If the selected products do not share the same cycles, `{{PRODUCTS}}` names the cycles of each product, for example
+`GENFO (00,12Z) and GWAVE (06,18Z)`, and the wording "for the {{CYCLES}}Z cycles" becomes "for their respective cycles".
+Only that exact wording is rewritten: if you phrase the sentence differently, `{{CYCLES}}` shows the combined list of
+cycles instead. Cycle lists follow the *Cycle List Formatting* option below.
+
+---
+
+## Products Resumed Message
+
+- **Ungrouped** variant: the *Products Resumed* button of a single product/cycle page.
+- **Grouped** variant: the same button on an all-cycles page, and the pre-filled text of **Inform resolution** (in *Sent
+  notices* of the Delay Notification page), for the cells being resolved.
+
+`{{PRODUCTS}}`, `{{CYCLES}}` and `{{DESCRIPTION}}` work as in the delay message. `{{AFFECTED}}` is not available here.
+
+## Notification Addresses
+
+The **Notification Addresses** card sets the **From / To address** (default `operators@ecmwf.int`) and the distribution list
+that is **always in Bcc** (default `op_delay_ecmwf@lists.ecmwf.int`). They are used by the *Products Delay* / *Products
+Resumed* buttons of the monitoring pages and by the [Delay Notification](../monitoring/delay-notification.md) page. Leave
+a field empty to restore its default.
 
 ---
 

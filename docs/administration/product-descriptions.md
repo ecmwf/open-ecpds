@@ -55,3 +55,17 @@ Enabling **Group all cycles/times into one page** on a product's generic entry i
 - [Monitoring](../monitor-ui/monitoring.md)
 - [Data Ownership & Catalogue](../architecture/data-ownership-and-catalogue.md)
 - [REST API — Monitoring](../rest-api.md#monitoring)
+
+## Product Models
+
+The **Product Models** card groups products per model (for example `IFS` or `AIFS`). A model is identified only by its
+name, which must be unique (case-insensitive), and a product belongs to at most one model. Assigning a product to a
+model moves it from its previous one; deleting a model leaves its products unassigned. Deleting the last description of a product also removes it from its model. Models are used to filter the
+products on the [Delay Notification](../monitoring/delay-notification.md) page.
+
+### How to
+
+1. Open **Admin → Product Descriptions** (`/do/admin/productdescriptions`) and scroll to the **Product Models** card.
+2. In the last row, enter a **model name** (for example `IFS`) and tick the **products** in the drop-down list. Only products that have a product description can be selected.
+3. Click the save button on the row. To change a model, edit its name or ticked products and save again.
+4. To remove a model, click the delete button on its row and confirm. Its products are kept, but left without a model.

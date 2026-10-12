@@ -4733,7 +4733,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      * ungrouped and grouped-page variants of the two notification messages, plus the cycle-list compaction flag.
      */
     private static final Set<String> PRODUCT_STATUS_MESSAGE_NAMES = Set.of("productDelayMessage",
-            "productResumedMessage", "productDelayMessageGrouped", "productResumedMessageGrouped", "compactCycleLists");
+            "productResumedMessage", "productDelayMessageGrouped", "productResumedMessageGrouped", "compactCycleLists",
+            "noticeToAddress", "noticeBccAddress");
 
     /**
      * {@inheritDoc}
@@ -4771,6 +4772,105 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             throw new DataBaseException("Unknown product status message name: " + name);
         }
         ecpds.deleteSysConfigValue("ProductStatus", name);
+        monitor.done();
+    }
+
+    /** The SYS_CONFIG groups the Monitor UI may read and write through the generic monitor configuration methods. */
+    private static final Set<String> MONITOR_CONFIG_GROUPS = Set.of("ProductModelName", "ProductModel",
+            "DelayNoticeSettings");
+
+    /**
+     * Checks that the group is one of the accepted Monitor UI configuration groups.
+     *
+     * @param group
+     *            the group
+     *
+     * @throws DataBaseException
+     *             if the group is not accepted
+     */
+    private static void checkMonitorConfigGroup(final String group) throws DataBaseException {
+        if (!MONITOR_CONFIG_GROUPS.contains(group)) {
+            throw new DataBaseException("Unknown monitor configuration group: " + group);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<Map<String, String>> getDelayNotices(final String refPattern, final int limit)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getDelayNotices(" + refPattern + "," + limit + ")");
+        return monitor.done(ecpds.getDelayNotices(refPattern, limit));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String createDelayNotice(final int year, final String status, final String createdBy, final String content)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("createDelayNotice(" + year + ")");
+        return monitor.done(ecpds.createDelayNotice(year, status, createdBy, content));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean updateDelayNotice(final String ref, final int version, final String status, final String content)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("updateDelayNotice(" + ref + ")");
+        return monitor.done(ecpds.updateDelayNotice(ref, version, status, content));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteDelayNotice(final String ref) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteDelayNotice(" + ref + ")");
+        ecpds.deleteDelayNotice(ref);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<String, String> getMonitorConfigGroup(final String group) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getMonitorConfigGroup(" + group + ")");
+        checkMonitorConfigGroup(group);
+        return monitor.done(ecpds.getSysConfigValuesByGroup(group));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setMonitorConfigValue(final String group, final String name, final String value)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("setMonitorConfigValue(" + group + "," + name + ")");
+        checkMonitorConfigGroup(group);
+        if (name == null || name.isBlank() || name.length() > 128) {
+            throw new DataBaseException("Invalid parameter name: " + name);
+        }
+        ecpds.setSysConfigValue(group, name, value);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteMonitorConfigValue(final String group, final String name)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteMonitorConfigValue(" + group + "," + name + ")");
+        checkMonitorConfigGroup(group);
+        if (name == null || name.isBlank() || name.length() > 128) {
+            throw new DataBaseException("Invalid parameter name: " + name);
+        }
+        ecpds.deleteSysConfigValue(group, name);
         monitor.done();
     }
 

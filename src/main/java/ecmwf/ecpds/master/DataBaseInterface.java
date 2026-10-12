@@ -3001,6 +3001,131 @@ public interface DataBaseInterface extends Remote {
     void resetProductStatusMessage(String name) throws DataBaseException, RemoteException;
 
     /**
+     * Gets every parameter stored in one of the Monitor UI configuration groups of the SYS_CONFIG table (product models
+     * and delay notices). Only the groups {@code "ProductModelName"}, {@code "ProductModel"} and
+     * {@code "DelayNoticeSettings"} are accepted.
+     *
+     * @param group
+     *            the configuration group
+     *
+     * @return the ordered map of parameter name to value (empty if the group has no parameter)
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    Map<String, String> getMonitorConfigGroup(String group) throws DataBaseException, RemoteException;
+
+    /**
+     * Gets the most recent delay notices (see the Delay Notification page of the Monitor).
+     *
+     * @param refPattern
+     *            the SQL LIKE pattern of the references ("%" for all)
+     * @param limit
+     *            the maximum number of notices
+     *
+     * @return the rows (keys: ref, status, createdAt, createdBy, updatedAt, version, content), newest first
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    List<Map<String, String>> getDelayNotices(String refPattern, int limit) throws DataBaseException, RemoteException;
+
+    /**
+     * Creates a delay notice and returns its new reference (DLY-YYYY-NNNN). The allocation is atomic, so several
+     * Monitors can register notices at the same time.
+     *
+     * @param year
+     *            the year
+     * @param status
+     *            the initial status
+     * @param createdBy
+     *            the user
+     * @param content
+     *            the JSON content
+     *
+     * @return the reference
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    String createDelayNotice(int year, String status, String createdBy, String content)
+            throws DataBaseException, RemoteException;
+
+    /**
+     * Updates a delay notice if its version is still the one that was read.
+     *
+     * @param ref
+     *            the reference
+     * @param version
+     *            the version that was read
+     * @param status
+     *            the new status
+     * @param content
+     *            the new JSON content
+     *
+     * @return false if the notice was modified or deleted by someone else in the meantime
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    boolean updateDelayNotice(String ref, int version, String status, String content)
+            throws DataBaseException, RemoteException;
+
+    /**
+     * Deletes a delay notice.
+     *
+     * @param ref
+     *            the reference
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void deleteDelayNotice(String ref) throws DataBaseException, RemoteException;
+
+    /**
+     * Stores (adds or updates) a parameter in one of the Monitor UI configuration groups (see
+     * {@link #getMonitorConfigGroup}).
+     *
+     * @param group
+     *            the configuration group
+     * @param name
+     *            the parameter name
+     * @param value
+     *            the parameter value
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void setMonitorConfigValue(String group, String name, String value) throws DataBaseException, RemoteException;
+
+    /**
+     * Removes a parameter from one of the Monitor UI configuration groups (see {@link #getMonitorConfigGroup}).
+     *
+     * @param group
+     *            the configuration group
+     * @param name
+     *            the parameter name
+     *
+     * @throws ecmwf.common.database.DataBaseException
+     *             the data base exception
+     * @throws java.rmi.RemoteException
+     *             the remote exception
+     */
+    void deleteMonitorConfigValue(String group, String name) throws DataBaseException, RemoteException;
+
+    /**
      * Gets all configured product metadata entries (description and tips per product/type pair). Stored in the
      * PRODUCT_METADATA table, managed from the Monitor UI (Admin Tasks &rarr; Product Descriptions). An entry with an
      * empty type applies to all types of that product (used as a fallback). Descriptions are made available as the

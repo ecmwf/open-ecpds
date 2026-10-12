@@ -20,6 +20,7 @@ package ecmwf.ecpds.master.plugin.http.controller.admin;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,6 +37,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ecmwf.common.database.ProductMetadata;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
+import ecmwf.ecpds.master.plugin.http.controller.monitoring.ProductModels;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStepStatusHome;
 import ecmwf.web.controller.ECMWFActionForm;
@@ -217,6 +219,12 @@ public class ProductDescriptionsAction extends PDSAction {
         if ("deleteUnknown".equals(action)) {
             return handleDeleteUnknown(request, response);
         }
+        if ("modelsave".equals(action)) {
+            return handleModelSave(request, response);
+        }
+        if ("modeldelete".equals(action)) {
+            return handleModelDelete(request, response);
+        }
         if ("import".equals(action)) {
             return handleImport(request, response);
         }
@@ -255,7 +263,77 @@ public class ProductDescriptionsAction extends PDSAction {
             request.setAttribute("pdError", "Unable to load product metadata: " + e.getMessage());
         }
 
+        try {
+            request.setAttribute("productModels", ProductModels.productsPerModel());
+            request.setAttribute("describedProductNames", describedProducts());
+        } catch (final Exception e) {
+            _log.warn("ProductDescriptionsAction: failed to load product models", e);
+            request.setAttribute("productModels", java.util.Collections.emptyMap());
+        }
+
         return mapping.findForward("success");
+    }
+
+    private ActionForward handleModelSave(final HttpServletRequest request, final HttpServletResponse response) {
+        response.setContentType("application/json;charset=UTF-8");
+        try {
+            final var body = _mapper.readValue(request.getInputStream(), Map.class);
+            final var name = trimOrNull(body.get("name"));
+            final var oldName = trimOrNull(body.get("oldName"));
+            final var products = new ArrayList<String>();
+            if (body.get("products") instanceof final java.util.Collection<?> c) {
+                for (final var p : c) {
+                    products.add(String.valueOf(p).trim());
+                }
+            }
+            final var described = describedProducts();
+            for (final var product : products) {
+                if (!described.contains(product)) {
+                    throw new IllegalArgumentException("Product '" + product + "' has no product description");
+                }
+            }
+            ProductModels.save(oldName == null || oldName.isEmpty() ? null : oldName, name, products);
+            response.getWriter().write("{\"success\":true}");
+        } catch (final Exception e) {
+            _log.warn("ProductDescriptionsAction.handleModelSave", e);
+            writeError(response, e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Gets the names of the products having at least one product description.
+     */
+    private static Set<String> describedProducts() throws Exception {
+        final var result = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        for (final var m : MasterManager.getDB().getProductMetadata()) {
+            result.add(m.getProduct());
+        }
+        return result;
+    }
+
+    /**
+     * Removes from their model the products which no longer have any product description.
+     */
+    private static void cleanModels() {
+        try {
+            ProductModels.retainProducts(describedProducts());
+        } catch (final Exception e) {
+            _log.warn("ProductDescriptionsAction: failed to update the product models", e);
+        }
+    }
+
+    private ActionForward handleModelDelete(final HttpServletRequest request, final HttpServletResponse response) {
+        response.setContentType("application/json;charset=UTF-8");
+        try {
+            final var body = _mapper.readValue(request.getInputStream(), Map.class);
+            ProductModels.delete(trimOrNull(body.get("name")));
+            response.getWriter().write("{\"success\":true}");
+        } catch (final Exception e) {
+            _log.warn("ProductDescriptionsAction.handleModelDelete", e);
+            writeError(response, e.getMessage());
+        }
+        return null;
     }
 
     /**
@@ -330,6 +408,7 @@ public class ProductDescriptionsAction extends PDSAction {
                 throw new IllegalArgumentException("Product name is required");
             final var type = trimOrNull(body.get("type"));
             MasterManager.getDB().deleteProductMetadata(product, type != null ? type : "");
+            cleanModels();
             response.getWriter().write("{\"success\":true}");
         } catch (final Exception e) {
             _log.warn("ProductDescriptionsAction.handleDelete", e);
@@ -378,6 +457,7 @@ public class ProductDescriptionsAction extends PDSAction {
                     }
                 }
             }
+            cleanModels();
             response.getWriter().write("{\"success\":true,\"deleted\":" + deleted + ",\"errors\":" + errors + "}");
         } catch (final Exception e) {
             _log.warn("ProductDescriptionsAction.handleDeleteUnknown", e);

@@ -102,11 +102,13 @@
     <%-- Split/Single toggle (only on product detail page with enough rows to split) --%>
     <c:if test="${productStatus.calculated && fn:length(productStepStatii) > 1}">
       <span class="text-muted" style="font-size:0.75rem;">|</span>
+      <span id="btnProductLayoutWrap" title="Toggle between split and single table view">
       <button id="btnProductLayout" type="button" class="btn btn-sm btn-outline-secondary"
-              onclick="toggleProductLayout()" title="Toggle between split and single table view">
+              onclick="toggleProductLayout()">
         <i class="bi bi-layout-three-columns" id="btnProductLayoutIcon"></i>
         <span id="btnProductLayoutLabel">Single</span>
       </button>
+      </span>
     </c:if>
     <%-- "All cycles" shortcut (only when viewing a single dedicated cycle, not already on the merged/all-cycles page) --%>
     <c:if test="${productStatus.calculated && not empty productStatus.time}">

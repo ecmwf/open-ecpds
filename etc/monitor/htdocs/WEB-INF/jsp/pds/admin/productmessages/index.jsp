@@ -17,44 +17,7 @@
     <span>
         <strong>Product Messages</strong> &mdash; customize the email templates used for delay/resume notifications
     </span>
-    <button class="btn btn-link btn-sm text-muted p-0 ms-1" type="button"
-        data-bs-toggle="collapse" data-bs-target="#pmInfoPanel"
-        aria-expanded="false" title="About this page">
-        <i class="bi bi-info-circle"></i>
-    </button>
-</div>
-
-<%-- Info panel --%>
-<div class="collapse mb-3" id="pmInfoPanel">
-  <div class="card-body py-2 px-3 border rounded" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid #6c757d!important;">
-    <p class="mb-1">These messages pre-fill the Outlook email body when an administrator uses the
-    <strong>"Notify Delay"</strong> or <strong>"Notify Resumed"</strong> links on the Product Status page. Leave a
-    field empty (or unchanged) to keep using the built-in default text.</p>
-    <ul class="mb-0 ps-3">
-        <li><strong>Storage</strong> &mdash; stored in the database, so they can be customized per site without a
-        code change. Clearing a field (submitting it empty or unchanged from the default) reverts it to the built-in
-        default text. Changes take effect immediately on the Product Status page for all users.</li>
-        <li><strong>Grouped vs. Ungrouped</strong> &mdash; each message below has two variants. The
-        <strong>Grouped</strong> variant is used instead of the <strong>Ungrouped</strong> one on a product's
-        merged, all-cycles page (<code>/do/monitoring/summary/{product}</code>, no cycle in the URL) &mdash; i.e. a
-        product with <a href="/do/admin/productdescriptions">"Group all cycles/times into one page"</a> enabled.
-        Every other page (a single product/cycle) always uses the Ungrouped variant.</li>
-        <li><strong>Placeholders</strong> &mdash; <code>{{PRODUCT}}</code> is replaced with the product of the page
-        the message is sent from (e.g. <code>GENFO</code>). <code>{{CYCLE}}</code> is replaced with the single
-        cycle being viewed (e.g. <code>06</code> on <code>/do/monitoring/summary/GENFO/06</code>; empty on a grouped
-        page, which has no single cycle). <code>{{CYCLES}}</code> is replaced with every cycle currently shown
-        (e.g. <code>00-03,06-07,12</code> on a grouped page; the same single value as <code>{{CYCLE}}</code>
-        otherwise) &mdash; see <strong>Cycle List Formatting</strong> below.</li>
-        <li><strong>Description placeholder</strong> &mdash; <code>{{DESCRIPTION}}</code> is replaced with the
-        description(s) configured under <a href="/do/admin/productdescriptions">Admin Tasks &rarr; Product
-        Descriptions</a> for the current product: a plain text if only one type applies (or a type-independent
-        description was configured), a bullet list (one line per type, e.g. <code>- AN: ...</code>) when several
-        types shown on the page each resolve to a different description, or an empty string if none has been
-        configured.</li>
-        <li><strong>Edit markers</strong> &mdash; the <code>&lt;&lt;...&gt;&gt;</code> placeholder markers highlight
-        text that should be edited before sending.</li>
-    </ul>
-  </div>
+    <a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('pmGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Configuration Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide</a>
 </div>
 
 <% if (pmError != null) { %>
@@ -65,8 +28,8 @@
 <% } %>
 
 <% if (pmSuccess != null) { %>
-<div class="alert alert-success alert-dismissible fade show d-flex gap-2 mb-4" role="alert" id="pmSuccessAlert">
-    <i class="bi bi-check-circle-fill flex-shrink-0 mt-1"></i>
+<div class="alert alert-success fade show d-flex align-items-center gap-2 mb-4" role="alert" id="pmSuccessAlert">
+    <i class="bi bi-check-circle-fill flex-shrink-0"></i>
     <span><%=pmSuccess%></span>
     <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
@@ -102,12 +65,20 @@
         <div class="card-body">
             <label class="form-label fw-semibold" id="delayVariantLabel">Message body <span
                 class="text-muted fw-normal">(Ungrouped &mdash; uses <code>{{CYCLE}}</code>)</span></label>
+                        <div class="d-flex flex-wrap align-items-center gap-1 mb-2 pm-placeholders" id="delayPlaceholders" style="font-size:0.8rem;">
+                <span class="text-muted me-1"><i class="bi bi-braces me-1"></i>Insert at cursor:</span> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="ungrouped" title="Product name" onclick="pmInsertPlaceholder('delay', '{{PRODUCT}}')">{{PRODUCT}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Product(s): the product of the page, or all the selected products on the Delay Notification page" onclick="pmInsertPlaceholder('delay', '{{PRODUCTS}}')">{{PRODUCTS}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="ungrouped" title="Single cycle (ungrouped pages)" onclick="pmInsertPlaceholder('delay', '{{CYCLE}}')">{{CYCLE}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="All cycles shown (grouped pages)" onclick="pmInsertPlaceholder('delay', '{{CYCLES}}')">{{CYCLES}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="ungrouped grouped" title="Product description(s)" onclick="pmInsertPlaceholder('delay', '{{DESCRIPTION}}')">{{DESCRIPTION}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="List of affected products and cycles (Delay Notification page)" onclick="pmInsertPlaceholder('delay', '{{AFFECTED}}')">{{AFFECTED}}</button> 
+            </div>
             <textarea class="form-control" id="delayMessage" name="delayMessage" rows="12"
                       style="font-family:monospace; font-size:0.85rem;"><c:out value="${delayMessage}" /></textarea>
             <textarea class="form-control" id="delayMessageGrouped" name="delayMessageGrouped" rows="12"
                       style="font-family:monospace; font-size:0.85rem; display:none;"><c:out value="${delayMessageGrouped}" /></textarea>
             <div class="form-text text-muted">Supports the <code>&lt;&lt;...&gt;&gt;</code> placeholder markers to
             highlight text that should be edited before sending.</div>
+            <div id="affectedHint" class="alert alert-info py-2 small mt-2 mb-0" style="display:none;">
+                The Grouped message has no <code>{{AFFECTED}}</code> placeholder: the Delay Notification page then inserts
+                the list of affected products and cycles after the first paragraph (or put the cursor where you want it and use the buttons above).
+                <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="pmInsertPlaceholder('delay', '{{AFFECTED}}')">Insert {{AFFECTED}} at the cursor</button>
+            </div>
         </div>
     </div>
 
@@ -133,6 +104,9 @@
         <div class="card-body">
             <label class="form-label fw-semibold" id="resumedVariantLabel">Message body <span
                 class="text-muted fw-normal">(Ungrouped &mdash; uses <code>{{CYCLE}}</code>)</span></label>
+                        <div class="d-flex flex-wrap align-items-center gap-1 mb-2 pm-placeholders" id="resumedPlaceholders" style="font-size:0.8rem;">
+                <span class="text-muted me-1"><i class="bi bi-braces me-1"></i>Insert at cursor:</span> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="ungrouped" title="Product name" onclick="pmInsertPlaceholder('resumed', '{{PRODUCT}}')">{{PRODUCT}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Product(s): the product of the page, or all the selected products on the Delay Notification page" onclick="pmInsertPlaceholder('resumed', '{{PRODUCTS}}')">{{PRODUCTS}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="ungrouped" title="Single cycle (ungrouped pages)" onclick="pmInsertPlaceholder('resumed', '{{CYCLE}}')">{{CYCLE}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="All cycles shown (grouped pages)" onclick="pmInsertPlaceholder('resumed', '{{CYCLES}}')">{{CYCLES}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="ungrouped grouped" title="Product description(s)" onclick="pmInsertPlaceholder('resumed', '{{DESCRIPTION}}')">{{DESCRIPTION}}</button> 
+            </div>
             <textarea class="form-control" id="resumedMessage" name="resumedMessage" rows="8"
                       style="font-family:monospace; font-size:0.85rem;"><c:out value="${resumedMessage}" /></textarea>
             <textarea class="form-control" id="resumedMessageGrouped" name="resumedMessageGrouped" rows="8"
@@ -152,6 +126,28 @@
             <div class="form-text text-muted">When enabled (default), a long list of cycles is collapsed into ranges
             for readability, e.g. <code>00,01,02,03,06,07,12</code> becomes <code>00-03,06-07,12</code>. Disable to
             always show the complete, uncompacted list.</div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4" id="addressCard">
+        <div class="card-header fw-semibold"><i class="bi bi-at me-2"></i>Notification Addresses</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold" for="noticeToAddress">From / To address</label>
+                    <input type="email" class="form-control" id="noticeToAddress" name="noticeToAddress"
+                           value="<c:out value="${noticeToAddress}" />" placeholder="operators@ecmwf.int">
+                    <div class="form-text">Sender and visible recipient of the delay/resumed emails. The real recipients are placed in Bcc.</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold" for="noticeBccAddress">Always in Bcc</label>
+                    <input type="email" class="form-control" id="noticeBccAddress" name="noticeBccAddress"
+                           value="<c:out value="${noticeBccAddress}" />" placeholder="op_delay_ecmwf@lists.ecmwf.int">
+                    <div class="form-text">Distribution list always placed in Bcc (e.g. the operational delay list).</div>
+                </div>
+            </div>
+            <div class="form-text text-muted mt-2">Used by the <em>Products Delay</em>/<em>Products Resumed</em> buttons and by
+            the Delay Notification page. Leave empty to restore the default.</div>
         </div>
     </div>
 
@@ -230,6 +226,25 @@
 }());
 
 // Ungrouped/Grouped message body toggle: shows the matching textarea and re-labels/re-badges the card.
+function pmUpdateAffectedHint() {
+  var g = document.getElementById('delayMessageGrouped'), hint = document.getElementById('affectedHint');
+  if (!g || !hint) return;
+  var visible = g.style.display !== 'none' && g.value.indexOf('{{AFFECTED}}') < 0;
+  hint.style.display = visible ? '' : 'none';
+}
+// Inserts a placeholder at the cursor (replacing any selection) of the message currently shown in the card.
+// A placeholder may be inserted several times: every occurrence is replaced when the message is used.
+function pmInsertPlaceholder(which, placeholder) {
+  var ta = document.getElementById(which + 'MessageGrouped');
+  if (!ta || ta.style.display === 'none') ta = document.getElementById(which + 'Message');
+  var start = ta.selectionStart == null ? ta.value.length : ta.selectionStart;
+  var end = ta.selectionEnd == null ? start : ta.selectionEnd;
+  ta.value = ta.value.substring(0, start) + placeholder + ta.value.substring(end);
+  ta.focus();
+  ta.setSelectionRange(start + placeholder.length, start + placeholder.length);
+  ta.dispatchEvent(new Event('input', {bubbles: true}));
+  pmUpdateAffectedHint();
+}
 function pmSetVariant(which, variant) {
   var grouped = variant === 'grouped';
   var ungroupedEl = document.getElementById(which + 'Message');
@@ -244,6 +259,12 @@ function pmSetVariant(which, variant) {
       (grouped ? 'Grouped &mdash; uses <code>{{CYCLES}}</code>' : 'Ungrouped &mdash; uses <code>{{CYCLE}}</code>') +
       ')</span>';
   }
+  var bar = document.getElementById(which + 'Placeholders');
+  if (bar) {
+    bar.querySelectorAll('button[data-variants]').forEach(function(b) {
+      b.style.display = b.getAttribute('data-variants').split(' ').indexOf(variant) >= 0 ? '' : 'none';
+    });
+  }
   var card = ungroupedEl.closest('.card');
   if (card) {
     card.querySelectorAll('[data-variant]').forEach(function(b) {
@@ -256,9 +277,12 @@ function pmSetVariant(which, variant) {
     badge.className = 'badge ' + (customized ? 'text-bg-info' : 'text-bg-secondary');
   }
   try { localStorage.setItem('pm' + which + 'Variant', variant); } catch (e) {}
+  pmUpdateAffectedHint();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  var gm = document.getElementById('delayMessageGrouped');
+  if (gm) gm.addEventListener('input', pmUpdateAffectedHint);
   ['delay', 'resumed'].forEach(function(which) {
     var variant = 'ungrouped';
     try { variant = localStorage.getItem('pm' + which + 'Variant') || 'ungrouped'; } catch (e) {}
@@ -266,3 +290,5 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
+
+<jsp:include page="/WEB-INF/jsp/pds/admin/productmessages/guide.jsp"/>

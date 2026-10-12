@@ -1671,6 +1671,26 @@ CREATE TABLE `PRODUCT_METADATA` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `DELAY_NOTICE`
+--
+
+DROP TABLE IF EXISTS `DELAY_NOTICE`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `DELAY_NOTICE` (
+  `DLN_REF` varchar(16) NOT NULL,
+  `DLN_STATUS` varchar(16) NOT NULL,
+  `DLN_CREATED_AT` datetime NOT NULL,
+  `DLN_CREATED_BY` varchar(64) NOT NULL DEFAULT '',
+  `DLN_UPDATED_AT` datetime NOT NULL,
+  `DLN_VERSION` int(11) NOT NULL DEFAULT 1,
+  `DLN_CONTENT` mediumtext NOT NULL,
+  PRIMARY KEY (`DLN_REF`),
+  KEY `DLN_CREATED_AT_IDX` (`DLN_CREATED_AT`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `SYSTEM_MESSAGE`
 --
 

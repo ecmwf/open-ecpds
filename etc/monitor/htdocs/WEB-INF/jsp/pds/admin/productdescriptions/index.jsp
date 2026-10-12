@@ -2,16 +2,13 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%
     final String pdError = (String) request.getAttribute("pdError");
-    final boolean pdHasEmbeddedDocs = application.getResource("/docs/index.html") != null;
-    final String pdDocsHref = pdHasEmbeddedDocs ? "/docs/administration/product-descriptions/"
-            : "https://ecmwf.github.io/open-ecpds/administration/product-descriptions/";
 %>
 
 <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
 style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-left:4px solid #6c757d;">
 <i class="bi bi-card-text text-secondary flex-shrink-0"></i>
-<span>Descriptions and tips for products (optionally per type), used as the <code>{{DESCRIPTION}}</code> placeholder in <a href="/do/admin/productmessages">Product Messages</a> and shown on the <a href="/do/monitoring">monitoring</a> product pages. See the <a href="<%=pdDocsHref%>" target="_blank" rel="noopener">full guide</a> for details.</span>
-
+<span>Descriptions and tips for products, optionally per type.</span>
+<a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('pdGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Configuration Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide</a>
 </div>
 
 <% if (pdError != null) { %>
@@ -34,15 +31,100 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
 }
 </style>
 
+<%
+    @SuppressWarnings("unchecked")
+    final java.util.Map<String, java.util.List<String>> pdModels = (java.util.Map<String, java.util.List<String>>) request.getAttribute("productModels");
+    @SuppressWarnings("unchecked")
+    final java.util.Set<String> pdDescribed = (java.util.Set<String>) request.getAttribute("describedProductNames");
+%>
+<%!
+    private static String pmPicker(final java.util.Collection<String> described, final java.util.Collection<String> selected) {
+        final java.util.TreeSet<String> sel = new java.util.TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        if (selected != null) { sel.addAll(selected); }
+        final java.util.TreeSet<String> all = new java.util.TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        if (described != null) { all.addAll(described); }
+        all.addAll(sel);
+        final StringBuilder b = new StringBuilder();
+        b.append("<div class=\"dropdown pm-picker\"><button type=\"button\" class=\"btn btn-sm btn-outline-secondary dropdown-toggle w-100 text-start text-truncate\" data-bs-toggle=\"dropdown\" data-bs-auto-close=\"outside\"><span class=\"pm-label\"></span></button>");
+        b.append("<div class=\"dropdown-menu p-2\" style=\"max-height:280px;overflow:auto;min-width:260px\">");
+        if (all.isEmpty()) { b.append("<span class=\"text-muted small\">No product description yet.</span>"); }
+        for (final String n : all) {
+            final String e = n.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+            final boolean stale = described == null || !described.contains(n);
+            b.append("<div class=\"form-check\"><label class=\"form-check-label w-100\"><input type=\"checkbox\" class=\"form-check-input pm-opt\" value=\"").append(e).append("\"");
+            if (sel.contains(n)) { b.append(" checked"); }
+            b.append("> ").append(e);
+            if (stale) { b.append(" <span class=\"text-danger small\">(no description)</span>"); }
+            b.append("</label></div>");
+        }
+        b.append("</div></div>");
+        return b.toString();
+    }
+%>
+<div class="card border-0 shadow-sm mt-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+  <i class="bi bi-diagram-3 text-primary"></i>
+  <span class="fw-semibold">Product Models</span>
+  <span class="text-muted small">Group products per model (e.g. IFS, AIFS); used by the Delay Notification page. A product belongs to one model at most.</span>
+</div>
+<div class="card-body p-0">
+<table class="table table-sm align-middle mb-0" id="pmTable">
+<thead><tr><th style="width:20%">Model</th><th>Products</th><th style="width:140px"></th></tr></thead>
+<tbody>
+<% if (pdModels != null) for (final java.util.Map.Entry<String, java.util.List<String>> e : pdModels.entrySet()) { %>
+<tr data-old="<c:out value='<%=e.getKey()%>'/>">
+ <td><input type="text" class="form-control form-control-sm pm-name" maxlength="64" value="<c:out value='<%=e.getKey()%>'/>"></td>
+ <td><%= pmPicker(pdDescribed, e.getValue()) %></td>
+ <td class="text-nowrap">
+  <button type="button" class="btn btn-sm btn-outline-primary" onclick="pmSave(this)" title="Save"><i class="bi bi-check-lg"></i></button>
+  <button type="button" class="btn btn-sm btn-outline-danger" onclick="pmDelete(this)" title="Delete (its products become unassigned)"><i class="bi bi-trash"></i></button>
+ </td>
+</tr>
+<% } %>
+<tr data-old="">
+ <td><input type="text" class="form-control form-control-sm pm-name" maxlength="64" placeholder="New model name"></td>
+ <td><%= pmPicker(pdDescribed, null) %></td>
+ <% final boolean pmNone = pdDescribed == null || pdDescribed.isEmpty(); %>
+ <td><span class="d-inline-block"<% if (pmNone) { %> title="Disabled: no product description exists yet. Create a product description below first, then it can be selected in a model."<% } %>><button type="button" class="btn btn-sm btn-outline-success" onclick="pmSave(this)"<% if (pmNone) { %> disabled style="pointer-events:none"<% } %>><i class="bi bi-plus-circle"></i> Add</button></span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<script>
+function pmPost(url, payload) {
+  return fetch(url, {method:'POST', headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
+    body: JSON.stringify(payload)}).then(function(r){ return r.json(); }).then(function(d) {
+      if (!d.success) { throw new Error(d.error || 'Failed'); }
+    });
+}
+function pmSave(btn) {
+  var tr = btn.closest('tr');
+  var products = Array.prototype.map.call(tr.querySelectorAll('.pm-opt:checked'), function(x){ return x.value; });
+  pmPost('<c:url value="/do/admin/productdescriptions/modelsave"/>',
+    {oldName: tr.dataset.old, name: tr.querySelector('.pm-name').value.trim(), products: products})
+    .then(function(){ location.reload(); }).catch(function(e){ alert(e.message); });
+}
+function pmLabel(tr) {
+  var sel = Array.prototype.map.call(tr.querySelectorAll('.pm-opt:checked'), function(x){ return x.value; });
+  tr.querySelector('.pm-label').textContent = sel.length ? sel.join(', ') : 'Select products...';
+}
+document.querySelectorAll('#pmTable tbody tr').forEach(function(tr) {
+  pmLabel(tr);
+  tr.addEventListener('change', function(){ pmLabel(tr); });
+});
+function pmDelete(btn) {
+  var tr = btn.closest('tr');
+  if (!confirm("Delete model '" + tr.dataset.old + "'? Its products will be left without model.")) { return; }
+  pmPost('<c:url value="/do/admin/productdescriptions/modeldelete"/>', {name: tr.dataset.old})
+    .then(function(){ location.reload(); }).catch(function(e){ alert(e.message); });
+}
+</script>
+
 <div class="card border-0 shadow-sm mt-3">
 <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
   <i class="bi bi-card-list text-primary"></i>
   <span class="fw-semibold">Product Descriptions</span>
-  <button class="btn btn-link btn-sm text-muted p-0" type="button"
-      data-bs-toggle="collapse" data-bs-target="#pdInfoPanel"
-      aria-expanded="false" title="About this page">
-    <i class="bi bi-info-circle"></i>
-  </button>
   <button id="pdUnknownBtn" type="button" class="btn btn-sm btn-outline-secondary"
           onclick="pdToggleUnknown()" title="Show only products that do not exist in the monitoring interface">
     <i class="bi bi-exclamation-triangle-fill me-1"></i>Unknown only
@@ -69,39 +151,6 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
     <button type="button" class="btn btn-sm btn-outline-success" onclick="pdOpenAdd()">
       <i class="bi bi-plus-circle"></i> Create
     </button>
-  </div>
-</div>
-
-<div class="collapse" id="pdInfoPanel">
-  <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
-    <strong class="d-block mb-1">Product Descriptions &mdash; overview</strong>
-    <p class="mb-1">Configure metadata for a product (e.g. <code>GOPER</code>, as seen in
-      <code>/do/monitoring/summary/GOPER/06</code>), optionally scoped to one of its types (the <em>Type</em> column
-      shown in that page, e.g. <code>AN</code>/<code>FC</code>). Leave Type blank for a <strong>generic</strong>
-      entry that acts as the <strong>default</strong> for every type of that product that doesn't have its own,
-      more specific entry &mdash; you only need one generic entry to cover all types; add a type-specific one only
-      for the types that need different wording, it will override the generic default for that type alone.</p>
-    <ul class="mb-1 ps-3">
-      <li><strong>Product</strong> / <strong>Type</strong> &mdash; identify the entry; Type blank = generic/default entry for the product.</li>
-      <li><strong>Description</strong> &mdash; used to build the <code>{{DESCRIPTION}}</code> placeholder in
-        <a href="/do/admin/productmessages">Product Messages</a>: shown as a bullet list, one line per type
-        currently shown for the product &mdash; unless every type resolves to the exact same text (e.g. only the
-        generic entry is configured), in which case it is shown once, as plain text.</li>
-      <li><strong>Tips</strong> &mdash; same default/override and bullet-list-or-plain-text behaviour as
-        Description, but shown as an expandable info card (<i class="bi bi-info-circle"></i>) on the product's
-        monitoring page (e.g. <code>/do/monitoring/summary/GOPER/06/0/AN</code>) instead of in an email message.</li>
-      <li><strong>Group all cycles/times into one page</strong> &mdash; on the generic (blank Type) entry only.
-        When enabled, the pill for this product on <a href="/do/monitoring">the monitoring page</a> shows a
-        <i class="bi bi-layers-fill text-primary"></i> icon instead of a cycle/time (e.g. <code>06-GOPER</code>),
-        and links to <code>/do/monitoring/summary/GOPER</code>, a single page listing every cycle/time for that
-        product together, instead of one page per cycle/time.</li>
-      <li><i class="bi bi-exclamation-triangle-fill text-warning"></i> &mdash; shown next to a product that does not currently
-        exist in the <a href="/do/monitoring">monitoring interface</a> (e.g. a typo, or a product that is no longer active).</li>
-      <li><strong>Unknown only</strong> &mdash; shows only such products. Use with <em>Delete All Unknown</em> to clean up stale entries.</li>
-      <li><strong>Import from Monitoring</strong> &mdash; scans every product/type pair currently seen in the
-        <a href="/do/monitoring">monitoring interface</a> and adds a blank entry (empty Description/Tips) for any pair
-        not yet configured here, ready for you to fill in.</li>
-    </ul>
   </div>
 </div>
 
@@ -189,17 +238,17 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
             </div>
             <div class="modal-body">
                 <div class="alert alert-danger d-none" id="pdSaveError"></div>
-                <div class="row g-2 mb-2">
-                  <div class="col-7">
+                <div class="d-flex gap-2 mb-2">
+                  <div style="flex:1 1 0; min-width:0;">
                     <label for="pdProduct" class="form-label fw-semibold">Product</label>
-                    <input type="text" class="form-control" id="pdProduct" list="pdKnownProducts"
+                    <input type="text" class="form-control w-100" id="pdProduct" list="pdKnownProducts"
                            placeholder="e.g. GOPER" autocomplete="off">
                     <div class="form-text text-muted">Letters, digits, underscores, dots or hyphens only.</div>
                   </div>
-                  <div class="col-5">
+                  <div style="flex:1 1 0; min-width:0;">
                     <label for="pdType" class="form-label fw-semibold">Type</label>
-                    <input type="text" class="form-control" id="pdType" style="min-width:0;"
-                           placeholder="e.g. AN (blank = all types)" autocomplete="off">
+                    <input type="text" class="form-control w-100" id="pdType"
+                           placeholder="e.g. AN" autocomplete="off">
                     <div class="form-text text-muted">Blank applies to all types.</div>
                   </div>
                 </div>
@@ -644,3 +693,5 @@ function pdDelete() {
     });
 }
 </script>
+
+<jsp:include page="/WEB-INF/jsp/pds/admin/productdescriptions/guide.jsp"/>

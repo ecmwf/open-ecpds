@@ -1306,6 +1306,14 @@
 		<action path="/monitoring/globe/keepalive"
 			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GlobeKeepAliveAction">
 		</action>
+		<action path="/monitoring/delaynotification"
+			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.DelayNotificationAction">
+			<forward name="success" path=".pds.monitoring.delaynotification" />
+		</action>
+		<action path="/monitoring/delaynotification/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.DelayNotificationAction">
+			<forward name="success" path=".pds.monitoring.delaynotification" />
+		</action>
 		<action path="/monitoring/topology"
 			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetTopologyDisplayAction">
 			<forward name="success" path=".pds.monitoring.topology" />

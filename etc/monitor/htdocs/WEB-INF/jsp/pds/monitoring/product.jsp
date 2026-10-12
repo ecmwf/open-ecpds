@@ -47,14 +47,16 @@ th {
 <tiles:insert page="./pds/monitoring/reload.jsp" />
 
 <script>
-	var _pLayout = localStorage.getItem('productLayout') || 'split';
+	// The all-products page lists too many rows for the split view: always use a single table there.
+	var _forceSingle = ${allProducts ? 'true' : 'false'};
+	var _pLayout = _forceSingle ? 'single' : (localStorage.getItem('productLayout') || 'split');
 
 	function setHrefForSendingEmail(anchor, bcc, subject, body) {
 		try {
 			anchor.href = 'https://outlook.office365.com/mail/deeplink/compose'
 					+ '?subject=' + escape(subject) + '&body=' + body
-					+ '&from=' + escape('operators@ecmwf.int') + '&to='
-					+ escape('operators@ecmwf.int') + '?bcc=' + bcc;
+					+ '&from=' + escape('<c:out value="${noticeToAddress}" />') + '&to='
+					+ escape('<c:out value="${noticeToAddress}" />') + '?bcc=' + bcc;
 
 		} catch (e) {
 			showToast("Error: " + e, "danger");
@@ -125,10 +127,17 @@ th {
 	    } else {
 	        icon.className    = 'bi bi-layout-sidebar-inset';
 	        label.textContent = 'Split';
-	        btn.disabled      = !canSplit;
+	        btn.disabled      = !canSplit || _forceSingle;
+	    }
+	    var wrap = document.getElementById('btnProductLayoutWrap');
+	    if (wrap) {
+	        wrap.title = _forceSingle
+	            ? 'Split view is not available on the all-products page: the table is too large to be split in two columns, so it is always shown as a single table.'
+	            : 'Toggle between split and single table view';
 	    }
 	}
 	function toggleProductLayout() {
+	    if (_forceSingle) return;
 	    var tables = document.querySelectorAll('.sortableTable');
 	    var wrap2  = document.getElementById('productTable2Wrap');
 	    if (_pLayout === 'split') {
@@ -385,13 +394,49 @@ th {
 
 <c:set var="key" value="${productStatus.product}@${productStatus.time}" />
 <c:set var="emails" value="${reqData.contacts[key]}" />
+<c:set var="regProduct" value="${allProducts ? '*' : productStatus.product}" />
+<c:set var="regTime" value="${empty productStatus.time ? '*' : productStatus.time}" />
+<c:choose>
+    <c:when test="${allProducts}"><c:set var="regLabel" value="all products" /></c:when>
+    <c:when test="${empty productStatus.time}"><c:set var="regLabel" value="${productStatus.product} (all cycles)" /></c:when>
+    <c:otherwise><c:set var="regLabel" value="${productNameAndTime}" /></c:otherwise>
+</c:choose>
+<c:if test="${empty emails and (allProducts or empty productStatus.time)}">
+    <div class="card mt-4 border-secondary-subtle">
+        <div class="card-header py-2 px-3 d-flex align-items-center gap-2">
+            <i class="bi bi-envelope-fill text-secondary"></i>
+            <span class="fw-semibold text-secondary" style="font-size:0.82rem;">Email Notifications &mdash; ${regLabel}</span>
+        </div>
+        <div class="card-body py-2 px-3 d-flex align-items-stretch flex-wrap gap-3">
+            <div class="border rounded px-2 py-1">
+                <div class="text-muted mb-1" style="font-size:0.72rem;"><i class="bi bi-journal-text me-1"></i>Register a notice (opens the Delay Notification page)</div>
+                <div class="d-flex flex-wrap gap-2">
+            <a href="<bean:message key="monitoring.basepath"/>/delaynotification?action=delay&product=<c:out value="${regProduct}" />&time=<c:out value="${regTime}" />"
+               title="Register a delay notice for ${regLabel}, to be confirmed once sent"
+               class="btn btn-sm btn-warning">
+                <i class="bi bi-journal-plus me-1"></i>Register Delay Notice
+            </a>
+            <a href="<bean:message key="monitoring.basepath"/>/delaynotification?action=resumed&product=<c:out value="${regProduct}" />&time=<c:out value="${regTime}" />"
+               title="Register the resolution of the open notice(s) covering ${regLabel}, to be confirmed once sent"
+               class="btn btn-sm btn-success">
+                <i class="bi bi-journal-check me-1"></i>Register Resumed Notice
+            </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</c:if>
+
 <c:if test="${not empty emails}">
     <div class="card mt-4 border-secondary-subtle">
         <div class="card-header py-2 px-3 d-flex align-items-center gap-2">
             <i class="bi bi-envelope-fill text-secondary"></i>
             <span class="fw-semibold text-secondary" style="font-size:0.82rem;">Email Notifications &mdash; ${productNameAndTime}</span>
         </div>
-        <div class="card-body py-2 px-3 d-flex align-items-center flex-wrap gap-2">
+        <div class="card-body py-2 px-3 d-flex align-items-stretch flex-wrap gap-3">
+            <div class="border rounded px-2 py-1">
+                <div class="text-muted mb-1" style="font-size:0.72rem;"><i class="bi bi-envelope-arrow-up me-1"></i>Send directly (opens Outlook)</div>
+                <div class="d-flex flex-wrap gap-2">
             <a id="delayEmail" target="_blank"
                title="Open Outlook: Products Delay Email for ${productNameAndTime}"
                class="btn btn-sm btn-outline-warning">
@@ -402,12 +447,32 @@ th {
                class="btn btn-sm btn-outline-success">
                 <i class="bi bi-check-circle-fill me-1"></i>Products Resumed
             </a>
+                </div>
+            </div>
+            <div class="border rounded px-2 py-1">
+                <div class="text-muted mb-1" style="font-size:0.72rem;"><i class="bi bi-journal-text me-1"></i>Register a notice (opens the Delay Notification page)</div>
+                <div class="d-flex flex-wrap gap-2">
+            <a href="<bean:message key="monitoring.basepath"/>/delaynotification?action=delay&product=<c:out value="${regProduct}" />&time=<c:out value="${regTime}" />"
+               title="Register a delay notice for ${regLabel}, to be confirmed once sent"
+               class="btn btn-sm btn-warning">
+                <i class="bi bi-journal-plus me-1"></i>Register Delay Notice
+            </a>
+            <a href="<bean:message key="monitoring.basepath"/>/delaynotification?action=resumed&product=<c:out value="${regProduct}" />&time=<c:out value="${regTime}" />"
+               title="Register the resolution of the open notice(s) covering ${regLabel}, to be confirmed once sent"
+               class="btn btn-sm btn-success">
+                <i class="bi bi-journal-check me-1"></i>Register Resumed Notice
+            </a>
+                </div>
+            </div>
+            <div class="border rounded px-2 py-1">
+                <div class="text-muted mb-1" style="font-size:0.72rem;"><i class="bi bi-tools me-1"></i>Tools</div>
             <button type="button"
                     class="btn btn-sm btn-outline-secondary"
                     title="Copy BCC email addresses to clipboard"
                     onclick="copyToClipboard('<c:out value="${emails}" />')">
                 <i class="bi bi-clipboard me-1"></i>Copy BCC Emails
             </button>
+            </div>
         </div>
     </div>
 
@@ -445,13 +510,13 @@ th {
 
         setHrefForSendingEmail(
             document.getElementById('delayEmail'),
-            'op_delay_ecmwf@lists.ecmwf.int,ecpds-product-${productNameAndTime}@ecmwf.int',
+            '<c:out value="${noticeBccAddress}" />,ecpds-product-${productNameAndTime}@ecmwf.int',
             'ECMWF Products Delay (${productNameAndTime})',
             '${ECMWFProductsDelay}');
 
         setHrefForSendingEmail(
             document.getElementById('productEmail'),
-            'op_delay_ecmwf@lists.ecmwf.int,ecpds-product-${productNameAndTime}@ecmwf.int',
+            '<c:out value="${noticeBccAddress}" />,ecpds-product-${productNameAndTime}@ecmwf.int',
             'ECMWF Products (${productNameAndTime})',
             '${ECMWFProducts}');
     </script>

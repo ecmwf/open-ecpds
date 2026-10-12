@@ -286,6 +286,19 @@ public class GetSummaryDisplayAction extends PDSAction {
         request.setAttribute("ECMWFProductsDelay", ProductStatusMessages.encodeForEmailBody(delayMessage));
         request.setAttribute("ECMWFProducts", ProductStatusMessages.encodeForEmailBody(resumedMessage));
         request.setAttribute("productTips", tips);
+        var toAddress = ProductStatusMessages.DEFAULT_TO_ADDRESS;
+        var bccAddress = ProductStatusMessages.DEFAULT_BCC_ADDRESS;
+        try {
+            final var db = MasterManager.getDB();
+            final var to = db.getProductStatusMessage(ProductStatusMessages.TO_ADDRESS_NAME);
+            final var bcc = db.getProductStatusMessage(ProductStatusMessages.BCC_ADDRESS_NAME);
+            toAddress = to != null ? to : toAddress;
+            bccAddress = bcc != null ? bcc : bccAddress;
+        } catch (final Exception e) {
+            // Keep the defaults.
+        }
+        request.setAttribute("noticeToAddress", toAddress);
+        request.setAttribute("noticeBccAddress", bccAddress);
     }
 
     /**

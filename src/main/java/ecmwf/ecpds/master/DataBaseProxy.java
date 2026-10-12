@@ -2811,6 +2811,105 @@ final class DataBaseProxy implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
+    public List<Map<String, String>> getDelayNotices(final String refPattern, final int limit)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getDelayNotices(" + refPattern + "," + limit + ")");
+        try {
+            return monitor.done(dataBaseInterface.getDelayNotices(refPattern, limit));
+        } catch (final RemoteException e) {
+            throw new DataBaseException("getDelayNotices", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String createDelayNotice(final int year, final String status, final String createdBy, final String content)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("createDelayNotice(" + year + ")");
+        try {
+            return monitor.done(dataBaseInterface.createDelayNotice(year, status, createdBy, content));
+        } catch (final RemoteException e) {
+            throw new DataBaseException("createDelayNotice", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean updateDelayNotice(final String ref, final int version, final String status, final String content)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("updateDelayNotice(" + ref + ")");
+        try {
+            return monitor.done(dataBaseInterface.updateDelayNotice(ref, version, status, content));
+        } catch (final RemoteException e) {
+            throw new DataBaseException("updateDelayNotice", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteDelayNotice(final String ref) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteDelayNotice(" + ref + ")");
+        try {
+            dataBaseInterface.deleteDelayNotice(ref);
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("deleteDelayNotice", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<String, String> getMonitorConfigGroup(final String group) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getMonitorConfigGroup(" + group + ")");
+        try {
+            return monitor.done(dataBaseInterface.getMonitorConfigGroup(group));
+        } catch (final RemoteException e) {
+            throw new DataBaseException("getMonitorConfigGroup", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setMonitorConfigValue(final String group, final String name, final String value)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("setMonitorConfigValue(" + group + "," + name + ")");
+        try {
+            dataBaseInterface.setMonitorConfigValue(group, name, value);
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("setMonitorConfigValue", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteMonitorConfigValue(final String group, final String name)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteMonitorConfigValue(" + group + "," + name + ")");
+        try {
+            dataBaseInterface.deleteMonitorConfigValue(group, name);
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("deleteMonitorConfigValue", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public List<ecmwf.common.database.ProductMetadata> getProductMetadata() throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getProductMetadata()");
         try {

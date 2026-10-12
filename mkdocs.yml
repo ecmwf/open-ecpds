@@ -176,6 +176,7 @@ nav:
   - Monitoring:
       - Transfer Network Statistics: monitoring/transfer-statistics.md
       - JMX Monitoring with Hawtio and Prometheus: monitoring/jmx-export.md
+      - Delay Notification: monitoring/delay-notification.md
   - API Reference (JavaDocs): api-reference.md
   - REST API: rest-api.md
   - Support: support.md

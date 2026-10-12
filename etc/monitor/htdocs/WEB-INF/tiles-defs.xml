@@ -1205,6 +1205,14 @@
 			value="/WEB-INF/jsp/pds/common/date_select.jsp" />
 	</definition>
 
+	<definition name=".pds.monitoring.delaynotification" extends=".pds.base">
+		<put name="title" value="Delay Notification" />
+		<put name="location"
+			value="/WEB-INF/jsp/pds/monitoring/location.jsp" />
+		<put name="content"
+			value="/WEB-INF/jsp/pds/monitoring/delaynotification/index.jsp" />
+	</definition>
+
 	<definition name=".pds.monitoring.spare"
 		page="/WEB-INF/jsp/pds/monitoring/spare.jsp" />
 

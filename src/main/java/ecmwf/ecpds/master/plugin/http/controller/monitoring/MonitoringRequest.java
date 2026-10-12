@@ -904,7 +904,7 @@ public class MonitoringRequest {
      *
      * @return true if the product should be shown
      */
-    private static boolean matchesApplicationFilter(final String application, final String name) {
+    public static boolean matchesApplicationFilter(final String application, final String name) {
         if (isEmpty(application)) {
             return true;
         }
