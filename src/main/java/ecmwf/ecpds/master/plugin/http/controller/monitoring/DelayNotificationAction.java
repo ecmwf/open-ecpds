@@ -79,6 +79,7 @@ public class DelayNotificationAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFActionFormException {
+        request.setAttribute("dnPreferenceUser", user.getUid());
         final var params = ECMWFActionForm.getPathParameters(mapping, request);
         final var action = params.isEmpty() ? "" : params.get(0).toString();
         if (action.isEmpty()) {
@@ -146,6 +147,10 @@ public class DelayNotificationAction extends PDSAction {
             // Default limit.
         }
         out.put("cycles", DelayRecipients.cyclesPerProduct());
+        out.put("minutesBeforeSchedule", DelayRecipients.minutesBeforeSchedulePerProduct());
+        out.put("minutesBeforeSchedulePerCycle", DelayRecipients.minutesBeforeSchedulePerCycle());
+        out.put("generationStatusPerProduct", DelayRecipients.generationStatusPerProduct());
+        out.put("generationStatusPerCycle", DelayRecipients.generationStatusPerCycle());
         out.put("models", ProductModels.productsPerModel());
         out.put("defaultCc", DelayNotices.defaultCc());
         templates(out);

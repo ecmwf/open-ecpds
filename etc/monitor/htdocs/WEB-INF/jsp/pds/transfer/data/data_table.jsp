@@ -160,7 +160,7 @@
                 el.title = origTitle;
                 el.classList.remove('disabled');
                 el.style.pointerEvents = '';
-                alert('Operation failed: ' + (err.message || err));
+                ecpdsAlert('Operation failed', err.message || err);
             });
     });
 })();

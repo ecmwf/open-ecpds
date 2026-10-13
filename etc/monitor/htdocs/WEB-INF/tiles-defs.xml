@@ -92,6 +92,12 @@
 		<put name="content" value="/WEB-INF/jsp/pds/index.jsp" />
 	</definition>
 
+	<definition name=".pds.operations.index" extends=".pds.base">
+		<put name="title" value="Operations" />
+		<put name="location" value="/WEB-INF/jsp/pds/operations/location.jsp" />
+		<put name="content" value="/WEB-INF/jsp/pds/operations/index.jsp" />
+	</definition>
+
 	<!-- Login -->
 
 	<definition name=".login" extends=".pds.base">

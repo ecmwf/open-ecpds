@@ -91,7 +91,7 @@ public abstract class PDSAction extends ECMWFAction {
             response.setHeader("Cache-Control", "no-store");
             request.getSession().setAttribute(RETURN_AFTER_LOGIN_KEY, currentPath);
             forward = mapping.findForward("login");
-        } else if (!user.hasAccess(currentPath)) {
+        } else if (!isAuthorized(user, currentPath, request)) {
             // Access Denied to THIS user!!
             request.getSession().setAttribute(RETURN_AFTER_LOGIN_KEY, currentPath);
             if (user.getCategories().isEmpty()) {
@@ -124,6 +124,14 @@ public abstract class PDSAction extends ECMWFAction {
             }
         }
         return forward;
+    }
+
+    /**
+     * Checks whether the user is authorized to access the current action.
+     */
+    protected boolean isAuthorized(final User user, final String currentPath, final HttpServletRequest request)
+            throws ECMWFException {
+        return user.hasAccess(currentPath);
     }
 
     /**

@@ -71,6 +71,10 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.StartAction">
 			<forward name="success" path=".pds.start" redirect="true" />
 		</action>
+		<action path="/operations"
+			type="ecmwf.ecpds.master.plugin.http.controller.OperationsAction">
+			<forward name="success" path=".pds.operations.index" />
+		</action>
 
 		<!-- Login -->
 

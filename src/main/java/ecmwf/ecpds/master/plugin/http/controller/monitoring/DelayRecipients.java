@@ -27,6 +27,7 @@ import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.DestinationProductStatusHome;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
+import ecmwf.ecpds.master.plugin.http.model.monitoring.ProductStatus;
 
 /**
  * ECMWF Product Data Store (OpenECPDS) Project
@@ -70,6 +71,94 @@ public final class DelayRecipients {
         for (final var ps : ProductStatusHome.findFromMemory().values()) {
             if (ps.getProduct() != null && ps.getTime() != null && !ps.getTime().isEmpty()) {
                 result.computeIfAbsent(ps.getProduct(), k -> new TreeSet<>()).add(ps.getTime());
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Finds the nearest schedule time across all known cycles for each product. A negative value means that at least
+     * one cycle is already late; cycles without a schedule are ignored.
+     *
+     * @return shortest minutes before schedule, keyed by product name
+     *
+     * @throws Exception
+     *             if the monitoring data cannot be read
+     */
+    public static Map<String, Long> minutesBeforeSchedulePerProduct() throws Exception {
+        final Map<String, Long> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        for (final ProductStatus ps : ProductStatusHome.findFromMemory().values()) {
+            if (ps.getProduct() == null || ps.getTime() == null || ps.getTime().isEmpty()) {
+                continue;
+            }
+            final var minutes = ps.getMinutesBeforeSchedule();
+            if (minutes != Integer.MIN_VALUE) {
+                result.merge(ps.getProduct(), minutes, Math::min);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Gets the minutes before schedule for each known product and cycle.
+     *
+     * @return minutes before schedule keyed by "product@cycle"
+     *
+     * @throws Exception
+     *             if the monitoring data cannot be read
+     */
+    public static Map<String, Long> minutesBeforeSchedulePerCycle() throws Exception {
+        final Map<String, Long> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        for (final ProductStatus ps : ProductStatusHome.findFromMemory().values()) {
+            if (ps.getProduct() == null || ps.getTime() == null || ps.getTime().isEmpty()) {
+                continue;
+            }
+            final var minutes = ps.getMinutesBeforeSchedule();
+            if (minutes != Integer.MIN_VALUE) {
+                result.put(ps.getProduct() + "@" + ps.getTime(), minutes);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Gets the generation-status color for each known product and cycle.
+     *
+     * @return generation status keyed by "product@cycle"
+     *
+     * @throws Exception
+     *             if the monitoring data cannot be read
+     */
+    public static Map<String, Integer> generationStatusPerCycle() throws Exception {
+        final Map<String, Integer> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        for (final ProductStatus ps : ProductStatusHome.findFromMemory().values()) {
+            if (ps.getProduct() != null && ps.getTime() != null && !ps.getTime().isEmpty()) {
+                result.put(ps.getProduct() + "@" + ps.getTime(), ps.getGenerationStatus());
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Gets the generation status of the cycle with the shortest time remaining for each product.
+     *
+     * @return generation status keyed by product name
+     *
+     * @throws Exception
+     *             if the monitoring data cannot be read
+     */
+    public static Map<String, Integer> generationStatusPerProduct() throws Exception {
+        final Map<String, Integer> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        final Map<String, Long> nearest = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        for (final ProductStatus ps : ProductStatusHome.findFromMemory().values()) {
+            if (ps.getProduct() == null || ps.getTime() == null || ps.getTime().isEmpty()) {
+                continue;
+            }
+            final var minutes = ps.getMinutesBeforeSchedule();
+            if (minutes != Integer.MIN_VALUE
+                    && (!nearest.containsKey(ps.getProduct()) || minutes < nearest.get(ps.getProduct()))) {
+                nearest.put(ps.getProduct(), minutes);
+                result.put(ps.getProduct(), ps.getGenerationStatus());
             }
         }
         return result;

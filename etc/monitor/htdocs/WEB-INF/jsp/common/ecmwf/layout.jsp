@@ -432,6 +432,22 @@ $(document).ready(function() {
   </div>
 </div>
 
+<div class="modal fade" id="ecpdsAlertModal" tabindex="-1"
+     aria-labelledby="ecpdsAlertModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="ecpdsAlertModalLabel">Message</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="ecpdsAlertModalMessage"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
     <div class="offcanvas-header border-bottom py-2 px-3">
         <span class="fw-semibold small" id="sidebarMenuLabel"><i class="bi bi-layout-sidebar me-2"></i>Navigation</span>
@@ -646,6 +662,11 @@ function confirmationDialog(arg1, arg2, arg3) {
     });
 
     bsModal.show();
+}
+function ecpdsAlert(title, message) {
+    $("#ecpdsAlertModalLabel").text(title || "Message");
+    $("#ecpdsAlertModalMessage").text(message == null ? "" : String(message));
+    bootstrap.Modal.getOrCreateInstance(document.getElementById("ecpdsAlertModal")).show();
 }
 $(function() {
   $('a[href*="/download/"]').on('click', function(e) {

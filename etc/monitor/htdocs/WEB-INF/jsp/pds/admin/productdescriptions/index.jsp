@@ -29,6 +29,10 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
     max-width: 420px;
     white-space: pre-wrap;
 }
+.pm-picker .dropdown-toggle {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
 </style>
 
 <%
@@ -45,7 +49,7 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
         if (described != null) { all.addAll(described); }
         all.addAll(sel);
         final StringBuilder b = new StringBuilder();
-        b.append("<div class=\"dropdown pm-picker\"><button type=\"button\" class=\"btn btn-sm btn-outline-secondary dropdown-toggle w-100 text-start text-truncate\" data-bs-toggle=\"dropdown\" data-bs-auto-close=\"outside\"><span class=\"pm-label\"></span></button>");
+        b.append("<div class=\"dropdown pm-picker\"><button type=\"button\" class=\"btn btn-sm btn-outline-secondary dropdown-toggle w-100 text-start\" data-bs-toggle=\"dropdown\" data-bs-auto-close=\"outside\"><span class=\"pm-label\"></span></button>");
         b.append("<div class=\"dropdown-menu p-2\" style=\"max-height:280px;overflow:auto;min-width:260px\">");
         if (all.isEmpty()) { b.append("<span class=\"text-muted small\">No product description yet.</span>"); }
         for (final String n : all) {
@@ -103,7 +107,7 @@ function pmSave(btn) {
   var products = Array.prototype.map.call(tr.querySelectorAll('.pm-opt:checked'), function(x){ return x.value; });
   pmPost('<c:url value="/do/admin/productdescriptions/modelsave"/>',
     {oldName: tr.dataset.old, name: tr.querySelector('.pm-name').value.trim(), products: products})
-    .then(function(){ location.reload(); }).catch(function(e){ alert(e.message); });
+    .then(function(){ location.reload(); }).catch(function(e){ ecpdsAlert('Save failed', e.message); });
 }
 function pmLabel(tr) {
   var sel = Array.prototype.map.call(tr.querySelectorAll('.pm-opt:checked'), function(x){ return x.value; });
@@ -115,9 +119,18 @@ document.querySelectorAll('#pmTable tbody tr').forEach(function(tr) {
 });
 function pmDelete(btn) {
   var tr = btn.closest('tr');
-  if (!confirm("Delete model '" + tr.dataset.old + "'? Its products will be left without model.")) { return; }
-  pmPost('<c:url value="/do/admin/productdescriptions/modeldelete"/>', {name: tr.dataset.old})
-    .then(function(){ location.reload(); }).catch(function(e){ alert(e.message); });
+  var name = tr.dataset.old;
+  confirmationDialog({
+    title: 'Delete product model',
+    message: "Delete model '" + name + "'? Its products will be left without model.",
+    confirmText: 'Delete',
+    allowHtml: false,
+    showLoading: false,
+    onConfirm: function() {
+      pmPost('<c:url value="/do/admin/productdescriptions/modeldelete"/>', {name: name})
+        .then(function(){ location.reload(); }).catch(function(e){ ecpdsAlert('Delete failed', e.message); });
+    }
+  });
 }
 </script>
 
@@ -343,11 +356,11 @@ document.addEventListener('DOMContentLoaded', function() {
               _pdRender();
               pdShowSuccess('Deleted ' + data.deleted + ' unknown entr' + (data.deleted !== 1 ? 'ies' : 'y') + '.');
             } else {
-              alert('Error: ' + (data.error || 'unknown'));
+              ecpdsAlert('Error', data.error || 'unknown');
             }
           }).catch(function() {
             $("#loadingBackdrop").hide(); $("#loadingDiv").hide();
-            alert('Network error');
+            ecpdsAlert('Network error', 'Please check your connection and try again.');
           });
       }
     });
@@ -400,12 +413,12 @@ function pdImport() {
           pdShowSuccess('No new product/type pairs found \u2014 everything currently seen in the monitoring interface is already configured.');
         }
       } else {
-        alert('Import failed: ' + (data.error || 'unknown'));
+        ecpdsAlert('Import failed', data.error || 'unknown');
       }
     }).catch(function(e) {
       btn.disabled = false;
       btn.innerHTML = original;
-      alert('Network error: ' + e.message);
+      ecpdsAlert('Network error', e.message);
     });
 }
 
@@ -686,10 +699,10 @@ function pdDelete() {
         pdUpdateEmptyMessage();
         pdShowSuccess('Product description deleted successfully.');
       } else {
-        alert('Delete failed: ' + (data.error || 'unknown'));
+        ecpdsAlert('Delete failed', data.error || 'unknown');
       }
     }).catch(function(e) {
-      alert('Network error: ' + e.message);
+      ecpdsAlert('Network error', e.message);
     });
 }
 </script>

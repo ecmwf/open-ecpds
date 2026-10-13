@@ -26,12 +26,12 @@
     <div class="tab-content">
 
       <div class="tab-pane fade show active" id="dng-matrix" role="tabpanel">
-        <p class="small text-muted mb-2">The matrix lists the products and cycles currently known to the monitoring.</p>
+        <p class="small text-muted mb-2">The matrix lists the products and cycles currently known to the monitoring. Filter products by name, model, or one or more generation timings; a product is shown when any of its cycles matches. The <strong>Before</strong> column uses a colored dot for the nearest cycle status; hover it to see the exact time before schedule or how long it is overdue. Cycle cells use a soft background tint from the same Product Generation legend; hover a cell for that cycle's exact timing.</p>
         <div class="table-responsive mb-3">
           <table class="table table-sm table-bordered small mb-0">
             <thead class="table-light"><tr><th>Action</th><th>Effect</th></tr></thead>
             <tbody>
-              <tr><td>Click a cell</td><td>Cycles between <strong>Definite</strong> (affected), <strong>Possible</strong> (might be) and cleared. Both levels are listed separately in the message and both receive it.</td></tr>
+              <tr><td>Click a cell</td><td>Cycles between <strong>D</strong> (Definite, affected), <strong>P</strong> (Possible, might be) and cleared. Both levels are listed separately in the message and both receive it.</td></tr>
               <tr><td>Click a product name</td><td>Applies the same level to all its cycles.</td></tr>
               <tr><td>Product name filter</td><td>As in <code>/do/monitoring</code>: comma-separated, <code>*</code> and <code>?</code> wildcards, <code>!</code> or <code>-</code> to exclude.</td></tr>
               <tr><td>Model buttons</td><td>Select all the products of a model (models are maintained in <em>Product Descriptions</em>).</td></tr>
@@ -66,6 +66,7 @@
         <p class="small mb-2"><strong>Subject and message</strong> are generated from the grouped <em>Products Delay</em> message of
         <a href="/do/admin/productmessages">Product Messages</a>, your selection, and the reason, delay, ETA (UTC) and note. They stay editable;
         <em>Regenerate</em> rebuilds them and <em>Preview</em> shows the final mail.</p>
+        <p class="small mb-2">Choose a predefined reason or select <em>Other (enter a reason)</em> to provide free text.</p>
         <p class="small fw-semibold mb-1"><i class="bi bi-list-check text-primary me-1"></i>Affected block</p>
         <p class="small mb-2">Inserted at the <code>{{AFFECTED}}</code> placeholder, or after the first paragraph when it is absent:</p>
         <ul class="small mb-3 ps-3">

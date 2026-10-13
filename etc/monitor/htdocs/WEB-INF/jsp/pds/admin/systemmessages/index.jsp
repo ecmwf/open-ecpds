@@ -318,10 +318,10 @@ function smDelete() {
       if (data.success) {
         window.location.reload();
       } else {
-        alert('Delete failed: ' + (data.error || 'unknown'));
+        ecpdsAlert('Delete failed', data.error || 'unknown');
       }
     }).catch(function(e) {
-      alert('Network error: ' + e.message);
+      ecpdsAlert('Network error', e.message);
     });
 }
 </script>

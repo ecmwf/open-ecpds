@@ -587,10 +587,10 @@ function mfDelete() {
         var row = document.getElementById('mfRow' + _mfDeleteId);
         if (row) row.remove();
       } else {
-        alert('Delete failed: ' + (data.error || 'unknown'));
+        ecpdsAlert('Delete failed', data.error || 'unknown');
       }
     }).catch(function(e) {
-      alert('Network error: ' + e.message);
+      ecpdsAlert('Network error', e.message);
     });
 }
 
@@ -605,11 +605,11 @@ function mfToggle(id, active) {
         var row = document.getElementById('mfRow' + id);
         if (row) row.classList.toggle('mf-inactive', !active);
       } else {
-        alert('Toggle failed: ' + (data.error || 'unknown'));
+        ecpdsAlert('Toggle failed', data.error || 'unknown');
         location.reload();
       }
     }).catch(function(e) {
-      alert('Network error: ' + e.message);
+      ecpdsAlert('Network error', e.message);
       location.reload();
     });
 }
@@ -823,11 +823,11 @@ document.addEventListener('DOMContentLoaded', function() {
               _mfPage = 0;
               _mfRender();
             } else {
-              alert('Error: ' + (data.error || 'unknown'));
+              ecpdsAlert('Error', data.error || 'unknown');
             }
           }).catch(function(){
             $("#loadingBackdrop").hide(); $("#loadingDiv").hide();
-            alert('Network error');
+            ecpdsAlert('Network error', 'Please check your connection and try again.');
           });
       }
     });

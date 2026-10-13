@@ -23,10 +23,10 @@
               <tr>
                 <td><auth:link basePathKey="admin.basepath" href=""><i class="bi bi-gear"></i> Admin Tasks</auth:link></td>
               </tr>
-	      <auth:if basePathKey="transferhistory.basepath" paths="/">
+	      <auth:if basePathKey="monitoring.basepath" paths="/">
 	      	<auth:then>
 	      		<tr>
-                	  <td><auth:link basePathKey="monitoring.basepath" href=""><i class="bi bi-eye"></i> Monitoring</auth:link></td>
+                  <td><a href="/do/operations"><i class="bi bi-eye"></i> Operations</a></td>
               		</tr>
 		</auth:then>
 	      </auth:if>

@@ -446,7 +446,21 @@ onclick="progressCopy(this)">
 
     window.progressRunNow = function (btn) {
         var force = btn.dataset.force === 'true';
-        if (force) { if (!confirm('A listing is already running.\nStop it and start a new one?')) return; }
+        if (force) {
+            confirmationDialog({
+                title: 'Restart listing',
+                message: 'A listing is already running. Stop it and start a new one?',
+                confirmText: 'Stop and start',
+                allowHtml: false,
+                showLoading: false,
+                onConfirm: function () { startListing(btn, force); }
+            });
+            return;
+        }
+        startListing(btn, force);
+    };
+
+    function startListing(btn, force) {
         if (_timer) { clearTimeout(_timer); _timer = null; }
         btn.disabled = true;
         var orig = btn.innerHTML;
@@ -478,7 +492,7 @@ onclick="progressCopy(this)">
                 }
             })
             .catch(function() { btn.innerHTML = orig; btn.disabled = false; });
-    };
+    }
 
     document.addEventListener('DOMContentLoaded', function () {
         var body = getBody();

@@ -504,7 +504,7 @@ $(document).ready(function () {
           }).then(function() {
             window.location.reload();
           }).catch(function(e) {
-            alert('Error deleting pattern: ' + e.message);
+            ecpdsAlert('Delete failed', e.message);
           });
         }
       });

@@ -182,16 +182,13 @@ if (message == null) {
     </auth:then>
   </auth:if>
 
-  <%-- Monitoring --%>
-  <auth:if basePathKey="transferhistory.basepath" paths="/">
+  <%-- Operations --%>
+  <auth:if basePathKey="monitoring.basepath" paths="/">
     <auth:then>
     <div class="col-xl-4 col-md-6 d-flex flex-column">
       <div class="home-section-card">
         <div class="home-section-hdr" style="background:#e8f7f7;">
-          <auth:if basePathKey="monitoring.basepath" paths="/">
-            <auth:then><a href="/do/monitoring" class="home-section-hdr-link"><i class="bi bi-eye text-info"></i> Monitoring</a></auth:then>
-            <auth:else><span class="home-section-hdr-link"><i class="bi bi-eye text-info"></i> Monitoring</span></auth:else>
-          </auth:if>
+          <a href="/do/operations" class="home-section-hdr-link"><i class="bi bi-eye text-info"></i> Operations</a>
         </div>
         <ul class="home-menu">
           <auth:link basePathKey="monitoring.basepath" href="?type=9|10|11|12|13|14|15|16|17|19|21|22|24|25|26|28|29|30&status=&network=&" wrappingTags="li"><i class="bi bi-broadcast-pin"></i>Dissemination</auth:link>

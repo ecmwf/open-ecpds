@@ -1,11 +1,33 @@
 <%@ page session="true" contentType="text/html;charset=UTF-8"%>
+<%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <style>
 .dn-cell { width: 84px; cursor: pointer; text-align: center; user-select: none; }
-.dn-cell.definite { background: #dc3545; color: #fff; }
-.dn-cell.possible { background: #ffc107; color: #000; }
+.dn-cell.dn-status-0 { --bs-table-bg: rgba(173, 181, 189, 0.10); background-color: rgba(173, 181, 189, 0.10) !important; }
+.dn-cell.dn-status-1 { --bs-table-bg: rgba(32, 201, 151, 0.10); background-color: rgba(32, 201, 151, 0.10) !important; }
+.dn-cell.dn-status-2 { --bs-table-bg: rgba(40, 167, 69, 0.10); background-color: rgba(40, 167, 69, 0.10) !important; }
+.dn-cell.dn-status-3 { --bs-table-bg: rgba(253, 126, 20, 0.10); background-color: rgba(253, 126, 20, 0.10) !important; }
+.dn-cell.dn-status-4 { --bs-table-bg: rgba(255, 193, 7, 0.13); background-color: rgba(255, 193, 7, 0.13) !important; }
+.dn-cell.dn-status-5 { --bs-table-bg: rgba(220, 53, 69, 0.10); background-color: rgba(220, 53, 69, 0.10) !important; }
+.dn-cell.dn-status-6, .dn-cell.dn-status-7 { --bs-table-bg: rgba(111, 66, 193, 0.10); background-color: rgba(111, 66, 193, 0.10) !important; }
+.dn-cell[class*="dn-status-"]:hover { filter: brightness(0.96); }
+.dn-marker { display: inline-block; min-width: 1.25rem; padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 700; line-height: 1.2; }
+.dn-marker.definite { background: #dc3545; color: #fff; }
+.dn-marker.possible { background: #ffc107; color: #000; }
+.dn-before-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: middle; }
 .dn-cell.na { background: var(--bs-tertiary-bg); color: #aaa; cursor: default; }
 .dn-matrix-wrap { max-height: 60vh; overflow: auto; }
+#dnMatrix.dn-uniform { table-layout: fixed; width: max-content; min-width: 100%; }
+#dnMatrix.dn-uniform th:first-child, #dnMatrix.dn-uniform td:first-child { width: 160px; min-width: 160px; max-width: 160px; }
+#dnMatrix.dn-uniform td:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#dnMatrix.dn-uniform th:nth-child(n+3), #dnMatrix.dn-uniform td:nth-child(n+3) { width: 44px; min-width: 44px; max-width: 44px; height: 34px; padding: 0.15rem; }
+#dnMatrix th.dn-before, #dnMatrix td.dn-before { width: 44px; min-width: 44px; max-width: 44px; padding: 0.15rem; text-align: center; white-space: nowrap; }
+#dnMatrix th.dn-before { position: relative; vertical-align: middle !important; }
+#dnMatrix th.dn-before > i { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; line-height: 1; }
+#dnMatrix .dn-before-ahead { color: #198754; }
+#dnMatrix .dn-before-late { color: #dc3545; }
+#dnMatrix .dn-before-now { color: #6c757d; }
 .dn-pill { cursor: pointer; }
+.dn-status-filter-menu { min-width: 250px; }
 .dn-new { background: #d1e7dd; }
 #dnBody { font-family: monospace; font-size: 0.85rem; }
 </style>
@@ -18,29 +40,73 @@
 </div>
 
 <div id="dnAlert"></div>
+<div id="dnPreferences" data-user="<c:out value="${dnPreferenceUser}"/>"></div>
 
 <ul class="nav nav-tabs mb-3">
  <li class="nav-item"><button class="nav-link active" id="dnTabCompose" type="button" onclick="dnTab('compose')"><i class="bi bi-send me-1"></i><span id="dnTabComposeLbl">Send delay notification</span></button></li>
  <li class="nav-item"><button class="nav-link" id="dnTabSent" type="button" onclick="dnTab('sent')"><i class="bi bi-journal-text me-1"></i>Sent notices <span class="badge text-bg-secondary" id="dnSentCount">0</span></button></li>
+ <li class="nav-item ms-auto align-self-center" id="dnLayoutControls">
+  <div class="btn-group btn-group-sm" role="group" aria-label="Compose layout">
+   <button type="button" class="btn btn-outline-secondary active" data-dn-layout="split" aria-label="Split view" aria-pressed="true" title="Show matrix and notice side by side"><i class="bi bi-columns-gap"></i></button>
+   <button type="button" class="btn btn-outline-secondary" data-dn-layout="matrix" aria-label="Matrix only" aria-pressed="false" title="Show the matrix at full width"><i class="bi bi-layout-sidebar"></i></button>
+   <button type="button" class="btn btn-outline-secondary" data-dn-layout="notice" aria-label="Notice only" aria-pressed="false" title="Show the notice at full width"><i class="bi bi-layout-sidebar-reverse"></i></button>
+  </div>
+ </li>
 </ul>
 
 <div id="dnCompose" class="row g-3">
- <div class="col-xl-7">
+ <div class="col-xl-7" id="dnMatrixColumn">
   <div class="card border-0 shadow-sm">
    <div class="card-header fw-semibold" style="background:var(--bs-secondary-bg)"><i class="bi bi-grid-3x3-gap text-primary me-1"></i>Affected products and cycles</div>
    <div class="card-body">
-    <div class="input-group input-group-sm mb-2">
-     <span class="input-group-text">Product name</span>
-     <input type="text" id="dnFilter" class="form-control" placeholder="e.g. GENFO, *ERA5*, !*TEST*" oninput="dnRenderMatrix()">
+    <div class="d-flex align-items-center gap-2 mb-2">
+     <div class="input-group input-group-sm flex-grow-1" style="min-width:0">
+      <span class="input-group-text">Product name</span>
+      <input type="text" id="dnFilter" class="form-control" placeholder="e.g. GENFO, *ERA5*, !*TEST*" oninput="dnRenderMatrix()">
+     </div>
+     <div class="dropdown flex-shrink-0 ms-auto" id="dnStatusFilter">
+      <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+              data-bs-auto-close="outside" aria-expanded="false" title="Show products if any cycle matches the selected generation timings">
+       <i class="bi bi-funnel me-1"></i><span id="dnStatusFilterLabel">All timings</span>
+      </button>
+      <div class="dropdown-menu dropdown-menu-end p-2 dn-status-filter-menu" aria-label="Filter by generation timing">
+       <label class="form-check small mb-2 pb-2 border-bottom">
+        <input class="form-check-input" type="checkbox" id="dnStatusAll" checked onchange="dnSetAllStatuses(this.checked)">
+        <span class="form-check-label">All generation timings</span>
+       </label>
+       <label class="form-check small mb-1"><input class="form-check-input dn-status-option" type="checkbox" value="0"><span class="form-check-label">No data / pending</span></label>
+       <label class="form-check small mb-1"><input class="form-check-input dn-status-option" type="checkbox" value="1"><span class="form-check-label">Received &gt;30m ahead</span></label>
+       <label class="form-check small mb-1"><input class="form-check-input dn-status-option" type="checkbox" value="2"><span class="form-check-label">Received 15-30m ahead</span></label>
+       <label class="form-check small mb-1"><input class="form-check-input dn-status-option" type="checkbox" value="3"><span class="form-check-label">Received 0-15m ahead</span></label>
+       <label class="form-check small mb-1"><input class="form-check-input dn-status-option" type="checkbox" value="4"><span class="form-check-label">On schedule / slightly late</span></label>
+       <label class="form-check small mb-1"><input class="form-check-input dn-status-option" type="checkbox" value="5"><span class="form-check-label">Not received / overdue</span></label>
+       <label class="form-check small"><input class="form-check-input dn-status-option" type="checkbox" value="other"><span class="form-check-label">Transitional / other</span></label>
+      </div>
+     </div>
     </div>
-    <div class="mb-2" id="dnModels"></div>
-    <div class="small text-muted mb-2">Click a cell to switch between <span class="badge text-bg-danger">Definite</span>, <span class="badge text-bg-warning">Possible</span> and cleared. Click a product name to cycle its whole row.</div>
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+     <div class="d-flex flex-wrap align-items-center gap-1" id="dnModels"></div>
+     <div class="form-check form-switch small mb-0 ms-auto" title="Give every cycle cell the same fixed width and height">
+      <input class="form-check-input" type="checkbox" role="switch" id="dnUniformCells" onchange="dnSetUniformCells(this.checked)">
+      <label class="form-check-label" for="dnUniformCells">Uniform cells</label>
+     </div>
+    </div>
+    <div class="small text-muted mb-2">Click a cell to switch between <span class="badge text-bg-danger">D = Definite</span>, <span class="badge text-bg-warning">P = Possible</span> and cleared. Click a product name to cycle its whole row.</div>
+    <div class="d-flex flex-wrap gap-2 small mb-2" aria-label="Generation timing legend">
+     <span><i class="mon-dot mon-dot-0 me-1"></i>No data / pending</span>
+     <span><i class="mon-dot mon-dot-1 me-1"></i>&gt;30m ahead</span>
+     <span><i class="mon-dot mon-dot-2 me-1"></i>15-30m ahead</span>
+     <span><i class="mon-dot mon-dot-3 me-1"></i>0-15m ahead</span>
+     <span><i class="mon-dot mon-dot-4 me-1"></i>On schedule / slightly late</span>
+     <span><i class="mon-dot mon-dot-5 me-1"></i>Overdue (&gt;60m)</span>
+     <span><i class="mon-dot mon-dot-6 me-1"></i>Transitional</span>
+    </div>
     <div class="dn-matrix-wrap"><table class="table table-sm table-bordered align-middle mb-0" id="dnMatrix"></table></div>
     <div class="mt-2 small text-muted d-flex align-items-center"><span><span id="dnSelCount">0</span> cell(s) selected</span> <button class="btn btn-link btn-sm p-0 ms-2 text-decoration-none" style="font-size:inherit;line-height:inherit" onclick="dnClear()">Clear all</button></div>
    </div>
   </div>
  </div>
- <div class="col-xl-5">
+ <div class="col-xl-5" id="dnNoticeColumn">
   <div class="card border-0 shadow-sm">
    <div class="card-header fw-semibold" style="background:var(--bs-secondary-bg)"><i class="bi bi-envelope text-primary me-1"></i>Notice <span id="dnUpdBadge" class="badge text-bg-info ms-1 d-none"></span></div>
    <div class="card-body">
@@ -60,9 +126,14 @@
     </div>
     <div class="row g-2 mb-2">
      <div class="col-12"><label class="form-label small mb-1">Reason</label>
-      <select id="dnReason" class="form-select form-select-sm" onchange="dnAuto()">
-       <option>Delay in model production</option><option>Dissemination system issue</option><option>Power / infrastructure outage</option><option>Data acquisition / observations delay</option><option>Scheduled maintenance overrun</option><option>Network / connectivity issue</option>
-      </select></div>
+      <div class="d-flex align-items-center gap-2">
+      <select id="dnReason" class="form-select form-select-sm flex-fill" onchange="dnReasonChanged()">
+       <option>Delay in model production</option><option>Dissemination system issue</option><option>Power / infrastructure outage</option><option>Data acquisition / observations delay</option><option>Scheduled maintenance overrun</option><option>Network / connectivity issue</option><option value="__custom__">Other (enter a reason)</option>
+      </select>
+      <input type="text" id="dnCustomReason" class="form-control form-control-sm flex-fill d-none" maxlength="200"
+             placeholder="Enter the reason" oninput="dnAuto()">
+      </div>
+     </div>
      <div class="col-6"><label class="form-label small mb-1">ETA (UTC)</label><input type="hidden" id="dnEta">
       <div class="input-group input-group-sm">
        <select id="dnEtaH" class="form-select" style="min-width:4.4rem; padding-left:.5rem; padding-right:1.6rem; background-position:right .4rem center" onchange="dnEtaChanged()" title="Hour (UTC)"></select>
@@ -105,12 +176,29 @@
 <script>
 (function() {
 var BASE = '/do/monitoring/delaynotification/';
-var S = { cycles: {}, models: {}, notices: [], sel: {}, emails: [], dests: {}, bodyEdited: false, update: null, defaultCc: '', limit: 100, more: false };
+var S = { cycles: {}, minutesBeforeSchedule: {}, minutesBeforeSchedulePerCycle: {}, generationStatusPerProduct: {}, generationStatusPerCycle: {}, models: {}, notices: [], sel: {}, emails: [], dests: {}, bodyEdited: false, update: null, defaultCc: '', limit: 100, more: false };
 var BCC_LIST = 'op_delay_ecmwf@lists.ecmwf.int', TO_ADDRESS = 'operators@ecmwf.int'; // replaced by the values of Product Messages
 var MAX_URL = 6000;
+var PREF_KEY = 'delayNotificationPreferences:' + $('dnPreferences').dataset.user;
+var preferences = {};
+try {
+  preferences = JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
+  if (!preferences || typeof preferences !== 'object' || Array.isArray(preferences)) { preferences = {}; }
+} catch (e) { preferences = {}; }
 
 function $(id) { return document.getElementById(id); }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function generationStatusNumber(status) {
+  var number = Number(status);
+  return Number.isInteger(number) && number >= 0 && number <= 7 ? number : 0;
+}
+function savePreferences() {
+  try { localStorage.setItem(PREF_KEY, JSON.stringify(preferences)); } catch (e) {}
+}
+function setPreference(key, value) {
+  preferences[key] = value;
+  savePreferences();
+}
 function post(action, payload) {
   return fetch(BASE + action, {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
     body: JSON.stringify(payload || {})}).then(function(r) { return r.json(); }).then(function(d) {
@@ -149,13 +237,48 @@ function setEta(v) {
   $('dnEta').value = x ? $('dnEtaH').value + ':' + x[2] : '';
 }
 function fail(e) { alertMsg(e.message || e); }
+function reasonValue() {
+  return $('dnReason').value === '__custom__' ? $('dnCustomReason').value.trim() : $('dnReason').value;
+}
+window.dnReasonChanged = function() {
+  var custom = $('dnReason').value === '__custom__';
+  $('dnCustomReason').classList.toggle('d-none', !custom);
+  if (custom) { $('dnCustomReason').focus(); }
+  dnAuto();
+};
 
 window.dnTab = function(t) {
   $('dnCompose').classList.toggle('d-none', t !== 'compose');
   $('dnSent').classList.toggle('d-none', t !== 'sent');
+  $('dnLayoutControls').classList.toggle('d-none', t !== 'compose');
   $('dnTabCompose').classList.toggle('active', t === 'compose');
   $('dnTabSent').classList.toggle('active', t === 'sent');
 };
+window.dnSetLayout = function(layout) {
+  if (['split', 'matrix', 'notice'].indexOf(layout) < 0) { layout = 'split'; }
+  var matrix = $('dnMatrixColumn'), notice = $('dnNoticeColumn');
+  matrix.classList.remove('col-xl-7', 'col-xl-12', 'd-none');
+  notice.classList.remove('col-xl-5', 'col-xl-12', 'd-none');
+  if (layout === 'matrix') {
+    matrix.classList.add('col-xl-12');
+    notice.classList.add('d-none');
+  } else if (layout === 'notice') {
+    matrix.classList.add('d-none');
+    notice.classList.add('col-xl-12');
+  } else {
+    matrix.classList.add('col-xl-7');
+    notice.classList.add('col-xl-5');
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-dn-layout]'), function(button) {
+    var selected = button.dataset.dnLayout === layout;
+    button.classList.toggle('active', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
+  setPreference('layout', layout);
+};
+Array.prototype.forEach.call(document.querySelectorAll('[data-dn-layout]'), function(button) {
+  button.onclick = function() { dnSetLayout(button.dataset.dnLayout); };
+});
 
 // Same syntax as the product-name filter of /do/monitoring: comma-separated, * and ? wildcards, ! or - to exclude.
 function matches(filter, name) {
@@ -185,14 +308,77 @@ function renderModels() {
   });
   $('dnModels').innerHTML = html;
   Array.prototype.forEach.call($('dnModels').querySelectorAll('button'), function(b) {
-    b.onclick = function() { activeModels[b.dataset.m] = !activeModels[b.dataset.m]; renderModels(); dnRenderMatrix(); };
+    b.onclick = function() {
+      activeModels[b.dataset.m] = !activeModels[b.dataset.m];
+      setPreference('models', Object.keys(activeModels).filter(function(m) { return activeModels[m]; }));
+      renderModels(); dnRenderMatrix();
+    };
+  });
+}
+
+function restorePreferences() {
+  var validModels = Object.keys(S.models).concat(['']);
+  if (Array.isArray(preferences.models)) {
+    preferences.models.forEach(function(model) {
+      if (validModels.indexOf(model) >= 0) { activeModels[model] = true; }
+    });
+  }
+  var validStatuses = ['0', '1', '2', '3', '4', '5', 'other'];
+  var savedStatuses = Array.isArray(preferences.statusFilters)
+    ? preferences.statusFilters
+    : (preferences.statusFilter && preferences.statusFilter !== 'all' ? [preferences.statusFilter] : []);
+  selectedStatuses = savedStatuses.filter(function(status, index) {
+    return validStatuses.indexOf(status) >= 0 && savedStatuses.indexOf(status) === index;
+  });
+  renderStatusFilter();
+  $('dnUniformCells').checked = preferences.uniformCells === true;
+  dnSetUniformCells($('dnUniformCells').checked);
+  dnSetLayout(preferences.layout || 'split');
+}
+
+var selectedStatuses = [];
+function renderStatusFilter() {
+  Array.prototype.forEach.call(document.querySelectorAll('.dn-status-option'), function(option) {
+    option.checked = selectedStatuses.indexOf(option.value) >= 0;
+  });
+  $('dnStatusAll').checked = selectedStatuses.length === 0;
+  $('dnStatusFilterLabel').textContent = selectedStatuses.length
+    ? selectedStatuses.length + ' timing' + (selectedStatuses.length === 1 ? '' : 's') : 'All timings';
+}
+window.dnSetAllStatuses = function(all) {
+  selectedStatuses = all ? [] : selectedStatuses;
+  setPreference('statusFilters', selectedStatuses.slice());
+  renderStatusFilter();
+  dnRenderMatrix();
+};
+Array.prototype.forEach.call(document.querySelectorAll('.dn-status-option'), function(option) {
+  option.addEventListener('change', function() {
+    if (option.checked && selectedStatuses.indexOf(option.value) < 0) {
+      selectedStatuses.push(option.value);
+    } else if (!option.checked) {
+      selectedStatuses = selectedStatuses.filter(function(status) { return status !== option.value; });
+    }
+    setPreference('statusFilters', selectedStatuses.slice());
+    renderStatusFilter();
+    dnRenderMatrix();
+  });
+});
+
+function statusMatchesFilter(status) {
+  if (!selectedStatuses.length) { return true; }
+  return selectedStatuses.some(function(selected) {
+    return selected === 'other' ? status >= 6 : status === Number(selected);
   });
 }
 
 function visibleProducts() {
   var any = Object.keys(activeModels).some(function(k) { return activeModels[k]; });
   return Object.keys(S.cycles).filter(function(p) {
-    return matches($('dnFilter').value, p) && (!any || activeModels[modelOf(p)]);
+    var hasMatchingCycle = S.cycles[p].some(function(cycle) {
+      var status = generationStatusNumber(S.generationStatusPerCycle[p + '@' + cycle]);
+      return statusMatchesFilter(status);
+    });
+    return matches($('dnFilter').value, p) && (!any || activeModels[modelOf(p)]) && hasMatchingCycle;
   });
 }
 function allCycles(products) {
@@ -200,19 +386,40 @@ function allCycles(products) {
   products.forEach(function(p) { S.cycles[p].forEach(function(t) { set[t] = 1; }); });
   return Object.keys(set).sort();
 }
+window.dnSetUniformCells = function(uniform) {
+  $('dnMatrix').classList.toggle('dn-uniform', uniform);
+  setPreference('uniformCells', uniform);
+};
 window.dnRenderMatrix = function() {
   var products = visibleProducts(), cycles = allCycles(products);
-  var h = '<thead><tr><th>Product</th>' + cycles.map(function(c) { return '<th class="text-center">' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
+  var h = '<thead><tr><th>Product</th><th class="dn-before" title="Before: shortest time remaining across all cycles" aria-label="Before: shortest time remaining across all cycles"><i class="bi bi-clock-history"></i></th>' + cycles.map(function(c) { return '<th class="text-center">' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
   products.forEach(function(p) {
-    h += '<tr><td class="fw-semibold" style="cursor:pointer" data-row="' + esc(p) + '">' + esc(p) + '</td>';
+    var description = S.descriptions[p] || '';
+    h += '<tr><td class="fw-semibold" style="cursor:pointer" data-row="' + esc(p) + '"'
+      + (description ? ' title="' + esc(description) + '"' : '') + '>' + esc(p) + '</td>';
+    var before = S.minutesBeforeSchedule[p];
+    var productStatus = S.generationStatusPerProduct[p];
+    var beforeTitle = before == null ? 'No schedule available'
+      : before < 0 ? Math.abs(before) + 'm overdue' : before + 'm before schedule';
+    h += '<td class="dn-before"><span class="dn-before-dot mon-dot mon-dot-'
+      + generationStatusNumber(productStatus) + '" title="' + esc(beforeTitle)
+      + '" aria-label="' + esc(beforeTitle) + '"></span></td>';
     cycles.forEach(function(c) {
       if (S.cycles[p].indexOf(c) < 0) { h += '<td class="dn-cell na">&middot;</td>'; return; }
       var l = S.sel[p + '@' + c] || '';
-      h += '<td class="dn-cell ' + l + '" data-p="' + esc(p) + '" data-t="' + esc(c) + '">' + (l === 'definite' ? 'Definite' : l === 'possible' ? 'Possible' : '') + '</td>';
+      var cycleBefore = S.minutesBeforeSchedulePerCycle[p + '@' + c];
+      var cycleStatus = S.generationStatusPerCycle[p + '@' + c];
+      var cycleTitle = cycleBefore == null ? 'No schedule available'
+        : cycleBefore < 0 ? Math.abs(cycleBefore) + 'm overdue' : cycleBefore + 'm before schedule';
+      var marker = l === 'definite' ? '<span class="dn-marker definite" title="Definite" aria-label="Definite">D</span>'
+        : l === 'possible' ? '<span class="dn-marker possible" title="Possible" aria-label="Possible">P</span>' : '';
+      h += '<td class="dn-cell dn-status-' + generationStatusNumber(cycleStatus)
+        + '" data-p="' + esc(p) + '" data-t="' + esc(c) + '" title="' + esc(cycleTitle) + '">' + marker + '</td>';
     });
     h += '</tr>';
   });
   $('dnMatrix').innerHTML = h + '</tbody>';
+  $('dnMatrix').classList.toggle('dn-uniform', $('dnUniformCells').checked);
   Array.prototype.forEach.call($('dnMatrix').querySelectorAll('td[data-p]'), function(td) {
     td.onclick = function() { setCell(td.dataset.p, td.dataset.t, next(S.sel[td.dataset.p + '@' + td.dataset.t])); };
   });
@@ -283,7 +490,8 @@ function affectedBlock(cells) {
   var d = group(cells, 'definite'), p = group(cells, 'possible');
   if (d.length) { lines.push('Products and cycles affected:'); lines = lines.concat(d, ''); }
   if (p.length) { lines.push('Products and cycles that might be affected:'); lines = lines.concat(p, ''); }
-  if ($('dnReason').value) { lines.push('Reason: ' + $('dnReason').value); }
+  var reason = reasonValue();
+  if (reason) { lines.push('Reason: ' + reason); }
   if ($('dnDelay').value) { lines.push('Expected delay: ' + $('dnDelay').value); }
   if ($('dnEta').value.trim()) { lines.push('Estimated time of availability: ' + $('dnEta').value.trim() + ' UTC'); }
   if ($('dnNote').value.trim()) { lines.push('', $('dnNote').value.trim()); }
@@ -356,7 +564,7 @@ function outlook(subject, body, emails, cells, ccText) {
 
 function payload() {
   return {cells: cellList(), includeNonMonitored: $('dnNonMon').checked, includeCc: $('dnCcOn').checked, cc: $('dnCc').value,
-    reason: $('dnReason').value, eta: $('dnEta').value, delay: $('dnDelay').value, note: $('dnNote').value,
+    reason: reasonValue(), eta: $('dnEta').value, delay: $('dnDelay').value, note: $('dnNote').value,
     subject: $('dnSubject').value, body: $('dnBody').value};
 }
 // ECPDS cannot know whether the message was really sent from Outlook, so the operator confirms it here.
@@ -451,10 +659,26 @@ function sentAction(a, n, i, k) {
   }
   if (a === 'copy') { copy((n.emails || []).join(',')).then(function() { alertMsg('Emails copied', 'success'); }); }
   else if (a === 'delete') {
-    if (confirm('Delete notice ' + n.ref + '? This cannot be undone.')) { post('delete', {ref: n.ref}).then(load).catch(fail); }
+    confirmationDialog({
+      title: 'Delete delay notice',
+      message: 'Delete notice ' + esc(n.ref) + '? This cannot be undone.',
+      confirmText: 'Delete',
+      showLoading: false,
+      allowHtml: true,
+      onConfirm: function() { post('delete', {ref: n.ref}).then(load).catch(fail); }
+    });
   } else if (a === 'cancel') {
-    if (!confirm('Cancel notice ' + n.ref + '? No more update or resolution will be possible.')) { return; }
-    post('cancel', {ref: n.ref, subject: 'Cancelled ' + n.ref, body: ''}).then(function() { load(); alertMsg(n.ref + ' cancelled. Use the copy button if you need to tell the recipients.', 'success'); }).catch(fail);
+    confirmationDialog({
+      title: 'Cancel delay notice',
+      message: 'Cancel notice ' + esc(n.ref) + '? No more update or resolution will be possible.',
+      confirmText: 'Cancel notice',
+      showLoading: false,
+      allowHtml: true,
+      onConfirm: function() {
+        post('cancel', {ref: n.ref, subject: 'Cancelled ' + n.ref, body: ''})
+          .then(function() { load(); alertMsg(n.ref + ' cancelled. Use the copy button if you need to tell the recipients.', 'success'); }).catch(fail);
+      }
+    });
   } else if (a === 'update') { startUpdate(n); }
   else if (a === 'resolve') { openResolve(n, i); }
 }
@@ -462,7 +686,16 @@ function startUpdate(n) {
   S.update = n; S.sel = {};
   (n.cells || []).forEach(function(c) { if (!c.resolved) { S.sel[c.product + '@' + c.time] = c.level; } });
   $('dnNonMon').checked = !!n.includeNonMonitored; $('dnCcOn').checked = !!n.includeCc; $('dnCc').value = n.cc || '';
-  $('dnReason').value = n.reason; setEta(n.eta); $('dnDelay').value = n.delay || ''; $('dnNote').value = n.note || '';
+  var knownReasons = Array.prototype.map.call($('dnReason').options, function(option) { return option.value; });
+  if (knownReasons.indexOf(n.reason) >= 0) {
+    $('dnReason').value = n.reason;
+    $('dnCustomReason').value = '';
+  } else {
+    $('dnReason').value = '__custom__';
+    $('dnCustomReason').value = n.reason || '';
+  }
+  $('dnCustomReason').classList.toggle('d-none', $('dnReason').value !== '__custom__');
+  setEta(n.eta); $('dnDelay').value = n.delay || ''; $('dnNote').value = n.note || '';
   S.bodyEdited = false; dnAuto();
   $('dnSubject').value = n.subject; $('dnBody').value = 'UPDATE\n\n' + n.body; S.bodyEdited = true;
   setUpdateMode(true, n.ref); dnTab('compose'); dnRenderMatrix(); dnRecipients();
@@ -494,11 +727,15 @@ window.dnMoreNotices = function() { S.limit += 100; load(); };
 function load() {
   return post('data', {limit: S.limit}).then(function(d) {
     S.more = d.more;
-    S.cycles = d.cycles; S.models = d.models; S.notices = d.notices; S.defaultCc = d.defaultCc;
+    S.cycles = d.cycles; S.minutesBeforeSchedule = d.minutesBeforeSchedule || {};
+    S.minutesBeforeSchedulePerCycle = d.minutesBeforeSchedulePerCycle || {};
+    S.generationStatusPerProduct = d.generationStatusPerProduct || {};
+    S.generationStatusPerCycle = d.generationStatusPerCycle || {};
+    S.models = d.models; S.notices = d.notices; S.defaultCc = d.defaultCc;
     if (d.toAddress) { TO_ADDRESS = d.toAddress; } if (d.bccAddress) { BCC_LIST = d.bccAddress; }
     S.compactCycles = d.compactCycles; S.delayTemplate = d.delayTemplate; S.resumedTemplate = d.resumedTemplate; S.descriptions = d.descriptions;
     if (!$('dnCc').value && !S.update) { $('dnCc').value = d.defaultCc || ''; }
-    renderModels(); renderSent(); dnRenderMatrix();
+    restorePreferences(); renderModels(); renderSent(); dnRenderMatrix();
   }).catch(fail);
 }
 // Entry points from a monitoring page: ?product=GWAVE&time=18&action=delay|resumed ("*" matches everything)
