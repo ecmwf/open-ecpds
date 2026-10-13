@@ -1,34 +1,48 @@
 # Delay Notification
 
-**Monitoring → Delay Notification** (`/do/monitoring/delaynotification`) lets operators send a single, consistent
+**Operations → Delay Notification** (`/do/monitoring/delaynotification`) lets operators send a single, consistent
 notice for all the products and cycles affected by a delay, then tell the same users when it is resolved. It is
-available to the users who can access `/do/monitoring`.
+available to users who can access the monitoring pages. The page is also available from existing `/do/monitoring*`
+links and bookmarks.
 
 ## Send a notice
 
-1. Filter the products by name (same syntax as the monitoring page: comma-separated, `*`/`?` wildcards, `!` or `-` to
-   exclude) and/or by [model](../administration/product-descriptions.md#product-models).
-2. Click cells of the matrix to set a cycle to **Definite**, **Possible** or cleared. Clicking a product name cycles
-   its whole row. Cycles come from the monitoring data.
+1. Filter products by name (same syntax as the monitoring page: comma-separated, `*`/`?` wildcards, `!` or `-` to
+   exclude), by [model](../administration/product-descriptions.md#product-models), and/or by generation timing. The
+   timing filter is multi-select: *No data / pending*, *Received >30m ahead*, *Received 15-30m ahead*,
+   *Received 0-15m ahead*, *On schedule / slightly late*, *Not received / overdue*, and *Transitional / other*.
+   A product remains visible when any of its cycles matches the selected timing categories; **All timings** disables
+   this filter.
+2. The **Before** column shows a colored dot for the nearest cycle status; hover it to see the exact time before
+   schedule or how long it is overdue. Cycle cells use a soft tint matching the **Product Generation** legend; hover
+   a cell to see that cycle's exact timing. Click a cell to set a cycle to **Definite**, **Possible** or cleared.
+   Clicking a product name cycles its whole row. Cycles come from the monitoring data. **Uniform cells** gives each
+   cycle cell the same fixed size. The layout buttons switch between side-by-side matrix and notice, matrix only, or
+   notice only.
 3. The **To** pill shows the number of destinations concerned; click it to list them. They are the destinations
    receiving the selected product/cycle combinations (as in the table at the bottom of `/do/monitoring`), limited to
    those showing in the monitor unless *Include destinations not showing in the monitor* is on. Their contact emails
    are de-duplicated and the list is always recomputed by the Monitor when the notice is registered.
-4. Choose the reason, ETA and expected delay, add a note and review the editable subject and message. The message starts from the grouped *Products Delay* message managed in
-   **Product Messages** (`/do/admin/productmessages`); `{{PRODUCTS}}` (or `{{PRODUCT}}`) becomes the list of selected products, `{{CYCLES}}` the
-   selected cycles and `{{DESCRIPTION}}` the product descriptions. The Definite/Possible lists, reason, ETA and note are
-   inserted at `{{AFFECTED}}` (or after the first paragraph when that placeholder is absent). Resolution messages start from
-   the grouped *Products Resumed* message. The internal Cc
-   can be switched off, edited, and saved as the default.
-   The ETA is picked with hour/minute selectors (UTC) so no invalid time can be entered; the message and subject are generated as
-   soon as the page loads, and **Preview** shows the final mail (subject, To/Cc/Bcc counts and body). The **Configuration Guide**
-   button opens a side panel summarising all of this.
+4. Choose a predefined reason or select **Other (enter a reason)** and enter a free-text reason in the adjacent field.
+   The reason, ETA and expected delay are added to the message; free-text reasons are saved with the notice and
+   restored when it is reopened. Add a note and review the editable subject and message. The message starts from the
+   grouped *Products Delay* message managed in **Product Messages** (`/do/admin/productmessages`); `{{PRODUCTS}}` (or
+   `{{PRODUCT}}`) becomes the list of selected products, `{{CYCLES}}` the selected cycles and `{{DESCRIPTION}}` the
+   product descriptions. The Definite/Possible lists, reason, ETA and note are inserted at `{{AFFECTED}}` (or after
+   the first paragraph when that placeholder is absent). Resolution messages start from the grouped *Products Resumed*
+   message. The internal Cc can be switched off, edited, and saved as the default.
+   The ETA is picked with hour/minute selectors (UTC) so no invalid time can be entered; the message and subject are
+   generated as soon as the page loads, and **Preview** shows the final mail (subject, To/Cc/Bcc counts and body).
+   The **Configuration Guide** button opens a side panel summarising all of this.
 5. **Send notice** registers the notice (`DLY-YYYY-NNNN`) and opens an Outlook message with the recipients in BCC, as the
    *Products Delay* button does. ECPDS cannot see whether the mail is then sent from Outlook, so the notice is flagged
    **to confirm** until the operator presses **I have sent it** (right after sending, or later from **Sent notices**,
    where **Open Outlook again** reopens the message if needed). The confirmation records who confirmed and when. If the
    BCC list is too long for a link, the product distribution lists are used and **Copy BCC emails** gives the explicit
    list.
+
+The selected timing categories, layout and **Uniform cells** setting are remembered in the browser for the signed-in
+user.
 
 ## Sent notices
 
