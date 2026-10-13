@@ -15,7 +15,7 @@
 .dn-marker.possible { background: #ffc107; color: #000; }
 .dn-before-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: middle; }
 .dn-cell.na { background: var(--bs-tertiary-bg); color: #aaa; cursor: default; }
-.dn-matrix-wrap { max-height: 60vh; overflow: auto; }
+.dn-matrix-wrap { max-height: 45vh; overflow: auto; }
 #dnMatrix.dn-uniform { table-layout: fixed; width: max-content; min-width: 100%; }
 #dnMatrix.dn-uniform th:first-child, #dnMatrix.dn-uniform td:first-child { width: 160px; min-width: 160px; max-width: 160px; }
 #dnMatrix.dn-uniform td:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -26,10 +26,16 @@
 #dnMatrix .dn-before-ahead { color: #198754; }
 #dnMatrix .dn-before-late { color: #dc3545; }
 #dnMatrix .dn-before-now { color: #6c757d; }
+#dnMatrix td.dt-empty { text-align: left; vertical-align: top; }
 .dn-pill { cursor: pointer; }
 .dn-status-filter-menu { min-width: 250px; }
 .dn-new { background: #d1e7dd; }
 #dnBody { font-family: monospace; font-size: 0.85rem; }
+@media (min-width: 1200px) {
+  #dnMatrixColumn, #dnNoticeColumn { display: flex; }
+  #dnMatrixColumn > .card, #dnNoticeColumn > .card { flex: 1 1 auto; }
+  #dnMatrixColumn .card-body, #dnNoticeColumn .card-body { flex: 1 1 auto; }
+}
 </style>
 
 <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
@@ -102,12 +108,12 @@
      <span><i class="mon-dot mon-dot-6 me-1"></i>Transitional</span>
     </div>
     <div class="dn-matrix-wrap"><table class="table table-sm table-bordered align-middle mb-0" id="dnMatrix"></table></div>
-    <div class="mt-2 d-flex flex-wrap align-items-center gap-2">
+    <div class="mt-2 d-flex flex-wrap align-items-start gap-2">
      <span class="small text-muted"><span id="dnSelCount">0</span> cell(s) selected</span>
      <div class="btn-group btn-group-sm ms-auto" role="group" aria-label="Select affected cells by generation timing">
-      <button class="btn btn-outline-danger" type="button" onclick="dnMarkByTiming('definite')" title="Mark all on-schedule/slightly-late and overdue product/cycle cells as Definite">Mark late/overdue D</button>
-      <button class="btn btn-outline-warning" type="button" onclick="dnMarkByTiming('possible')" title="Mark all product/cycle cells received 0-15 minutes ahead as Possible">Mark 0-15m ahead P</button>
-      <button class="btn btn-outline-secondary" type="button" onclick="dnClear()">Clear all</button>
+      <button class="btn btn-outline-danger" id="dnMarkLateBtn" type="button" onclick="dnMarkByTiming('definite')" title="Mark all on-schedule/slightly-late and overdue product/cycle cells as Definite">Mark late/overdue D</button>
+      <button class="btn btn-outline-warning" id="dnMarkAheadBtn" type="button" onclick="dnMarkByTiming('possible')" title="Mark all product/cycle cells received 0-15 minutes ahead as Possible">Mark 0-15m ahead P</button>
+      <button class="btn btn-outline-secondary" id="dnClearBtn" type="button" onclick="dnClear()">Clear all</button>
      </div>
     </div>
    </div>
@@ -163,7 +169,7 @@
        <label class="form-check-label" for="dnCompactEmptyLines">Compact empty lines</label>
       </div>
      </div>
-     <textarea id="dnBody" class="form-control" rows="12" oninput="dnEdited()"></textarea>
+     <textarea id="dnBody" class="form-control" rows="16" oninput="dnEdited()"></textarea>
     </div>
     <div class="d-flex gap-2">
      <button class="btn btn-outline-secondary" type="button" onclick="dnEditedReset()"><i class="bi bi-arrow-clockwise me-1"></i>Regenerate</button>
@@ -209,6 +215,14 @@ function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function
 function generationStatusNumber(status) {
   var number = Number(status);
   return Number.isInteger(number) && number >= 0 && number <= 7 ? number : 0;
+}
+function beforeScheduleStatus(status, minutes) {
+  var current = generationStatusNumber(status);
+  if (minutes == null || current >= 6) { return current; }
+  if (minutes >= 30) { return 1; }
+  if (minutes >= 15) { return 2; }
+  if (minutes >= 0) { return 3; }
+  return minutes > -60 ? 4 : 5;
 }
 function savePreferences() {
   try { localStorage.setItem(PREF_KEY, JSON.stringify(preferences)); } catch (e) {}
@@ -395,7 +409,8 @@ function visibleProducts() {
   var any = Object.keys(activeModels).some(function(k) { return activeModels[k]; });
   return Object.keys(S.cycles).filter(function(p) {
     var hasMatchingCycle = S.cycles[p].some(function(cycle) {
-      var status = generationStatusNumber(S.generationStatusPerCycle[p + '@' + cycle]);
+      var key = p + '@' + cycle;
+      var status = beforeScheduleStatus(S.generationStatusPerCycle[key], S.minutesBeforeSchedulePerCycle[key]);
       return statusMatchesFilter(status);
     });
     return matches($('dnFilter').value, p) && (!any || activeModels[modelOf(p)]) && hasMatchingCycle;
@@ -431,7 +446,7 @@ window.dnRenderMatrix = function() {
     var beforeTitle = before == null ? 'No schedule available'
       : before < 0 ? Math.abs(before) + 'm overdue' : before + 'm before schedule';
     h += '<td class="dn-before"><span class="dn-before-dot mon-dot mon-dot-'
-      + generationStatusNumber(productStatus) + '" title="' + esc(beforeTitle)
+      + beforeScheduleStatus(productStatus, before) + '" title="' + esc(beforeTitle)
       + '" aria-label="' + esc(beforeTitle) + '"></span></td>';
     cycles.forEach(function(c) {
       if (S.cycles[p].indexOf(c) < 0) { h += '<td class="dn-cell na">&middot;</td>'; return; }
@@ -442,11 +457,17 @@ window.dnRenderMatrix = function() {
         : cycleBefore < 0 ? Math.abs(cycleBefore) + 'm overdue' : cycleBefore + 'm before schedule';
       var marker = l === 'definite' ? '<span class="dn-marker definite" title="Definite" aria-label="Definite">D</span>'
         : l === 'possible' ? '<span class="dn-marker possible" title="Possible" aria-label="Possible">P</span>' : '';
-      h += '<td class="dn-cell dn-status-' + generationStatusNumber(cycleStatus)
+      h += '<td class="dn-cell dn-status-' + beforeScheduleStatus(cycleStatus, cycleBefore)
         + '" data-p="' + esc(p) + '" data-t="' + esc(c) + '" title="' + esc(cycleTitle) + '">' + marker + '</td>';
     });
     h += '</tr>';
   });
+  if (!products.length) {
+    h += '<tr><td colspan="' + (cycles.length + 2) + '" class="dt-empty">No matching records found.</td></tr>';
+  }
+  $('dnMarkLateBtn').disabled = products.length === 0;
+  $('dnMarkAheadBtn').disabled = products.length === 0;
+  $('dnClearBtn').disabled = Object.keys(S.sel).length === 0;
   $('dnMatrix').innerHTML = h + '</tbody>';
   $('dnMatrix').classList.toggle('dn-uniform', $('dnUniformCells').checked);
   Array.prototype.forEach.call($('dnMatrix').querySelectorAll('td[data-p]'), function(td) {
@@ -472,10 +493,11 @@ window.dnMarkByTiming = function(level) {
   if (level !== 'definite' && level !== 'possible') { return; }
   Object.keys(S.cycles).forEach(function(product) {
     S.cycles[product].forEach(function(cycle) {
-      var status = generationStatusNumber(S.generationStatusPerCycle[product + '@' + cycle]);
+      var key = product + '@' + cycle;
+      var status = beforeScheduleStatus(S.generationStatusPerCycle[key], S.minutesBeforeSchedulePerCycle[key]);
       if ((level === 'definite' && (status === 4 || status === 5))
           || (level === 'possible' && status === 3)) {
-        S.sel[product + '@' + cycle] = level;
+        S.sel[key] = level;
       }
     });
   });

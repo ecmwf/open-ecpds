@@ -11,7 +11,7 @@
 | **Products Delay** | Pre-fills the email opened from the **Products Delay** button, used when a product's dissemination is running late. |
 | **Products Resumed** | Pre-fills the email opened from the **Products Resumed** button, used once dissemination has caught up. |
 
-Each is stored in the database (so it survives upgrades and can be customized per site without a code change) and, when left empty or unchanged from the built-in default, falls back to that default text automatically — there is nothing to "reset": just clear the field and save.
+Each is stored in the database (so it survives upgrades and can be customized per site without a code change) and, when left empty or unchanged from the built-in default, falls back to that default text automatically. Use **Reset current variant** to restore the currently displayed Ungrouped or Grouped body to its built-in default, then click **Save Messages** to persist the reset.
 
 ---
 

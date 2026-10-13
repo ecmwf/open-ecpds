@@ -12,13 +12,18 @@ links and bookmarks.
    timing filter is multi-select: *No data / pending*, *Received >30m ahead*, *Received 15-30m ahead*,
    *Received 0-15m ahead*, *On schedule / slightly late*, *Not received / overdue*, and *Transitional / other*.
    A product remains visible when any of its cycles matches the selected timing categories; **All timings** disables
-   this filter.
+   this filter. Where a schedule offset is available, the timing category is based on that offset (including for
+   completed products), so it agrees with the cell tint and hover text. Otherwise the generation status is used.
 2. The **Before** column shows a colored dot for the nearest cycle status; hover it to see the exact time before
    schedule or how long it is overdue. Cycle cells use a soft tint matching the **Product Generation** legend; hover
    a cell to see that cycle's exact timing. Click a cell to set a cycle to **Definite**, **Possible** or cleared.
    Clicking a product name cycles its whole row. Cycles come from the monitoring data. **Uniform cells** gives each
-   cycle cell the same fixed size. The layout buttons switch between side-by-side matrix and notice, matrix only, or
-   notice only.
+   cycle cell the same fixed size. **Mark late/overdue D** automatically marks cells on schedule/slightly late or
+   overdue as Definite; **Mark 0-15m ahead P** marks cells received 0-15 minutes ahead as Possible. These buttons
+   follow the same schedule-adjusted categories as the cell colors and apply to all monitored products/cycles, even
+   those hidden by filters. **Clear all** removes the current selections.
+   When filters leave no visible products, the matrix shows *No matching records found.* and the marking buttons
+   are disabled. The layout buttons switch between side-by-side matrix and notice, matrix only, or notice only.
 3. The **To** pill shows the number of destinations concerned; click it to list them. They are the destinations
    receiving the selected product/cycle combinations (as in the table at the bottom of `/do/monitoring`), limited to
    those showing in the monitor unless *Include destinations not showing in the monitor* is on. Their contact emails
@@ -32,11 +37,15 @@ links and bookmarks.
    `{{AFFECTED}}` (or after the first paragraph when that placeholder is absent). In **Product Messages**, the grouped
    templates can instead place `{{REASON}}`, `{{ETA}}`, `{{EXPECTED_DELAY}}` and `{{NOTE}}` individually; each value
    placed this way is omitted from the affected block. Resolution messages use the grouped *Products Resumed* message
-   and the original notice's saved values for those placeholders. The internal Cc
-   can be switched off, edited, and saved as the default.
+   and the original notice's saved values for those placeholders. The internal Cc can be switched off, edited, and
+   saved as the default. When enabled, it accepts valid email addresses separated by semicolons; invalid addresses
+   block saving, previewing, and sending. The clipboard icon
+   beside the recipient count copies the BCC email list and is disabled when that list is empty.
    The ETA is picked with hour/minute selectors (UTC) so no invalid time can be entered; the message and subject are
-   generated as soon as the page loads, and **Preview** shows the final mail (subject, To/Cc/Bcc counts and body).
-   The **Configuration Guide** button opens a side panel summarising all of this.
+   generated as soon as the page loads. **Compact empty lines** is remembered per browser user and reduces runs of
+   blank lines to one blank line in the generated or edited message. **Regenerate** rebuilds the message from the
+   template and current values; **Preview** shows the final mail (subject, To/Cc/Bcc counts and body). The
+   **Configuration Guide** button opens a side panel summarising all of this.
 5. **Send notice** registers the notice (`DLY-YYYY-NNNN`) and opens an Outlook message with the recipients in BCC, as the
    *Products Delay* button does. ECPDS cannot see whether the mail is then sent from Outlook, so the notice is flagged
    **to confirm** until the operator presses **I have sent it** (right after sending, or later from **Sent notices**,
@@ -44,8 +53,8 @@ links and bookmarks.
    BCC list is too long for a link, the product distribution lists are used and **Copy BCC emails** gives the explicit
    list.
 
-The selected timing categories, layout and **Uniform cells** setting are remembered in the browser for the signed-in
-user.
+The selected timing categories, layout, **Uniform cells**, and **Compact empty lines** settings are remembered in the
+browser for the signed-in user.
 
 ## Sent notices
 
