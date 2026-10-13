@@ -1055,16 +1055,6 @@ final class DataBaseProxy implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
-    public java.util.Map<String, java.util.List<java.util.Map<String, Object>>> scanMetadataAttachments(
-            final String destinationName) throws DataBaseException, RemoteException {
-        final var monitor = new MonitorCall("scanMetadataAttachments(" + destinationName + ")");
-        return monitor.done(dataBaseInterface.scanMetadataAttachments(destinationName));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public java.util.Map<Integer, java.util.Set<Integer>> getDestinationMetaFieldTypeMap()
             throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getDestinationMetaFieldTypeMap()");

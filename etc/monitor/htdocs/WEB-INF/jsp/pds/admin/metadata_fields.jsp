@@ -40,10 +40,6 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
           onclick="mfToggleUnassigned()" title="Show only fields not used by any destination">
     <i class="bi bi-exclamation-triangle-fill me-1"></i>Unassigned only
   </button>
-  <a href="<c:url value='/do/transfer/destination/metadata/bulkimport'/>" class="btn btn-sm btn-outline-info"
-     title="Import XML metadata files for all destinations at once">
-    <i class="bi bi-cloud-upload me-1"></i>Bulk Import XML
-  </a>
   <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
     <div class="input-group input-group-sm" style="width:auto">
       <span class="input-group-text"><i class="bi bi-search"></i></span>

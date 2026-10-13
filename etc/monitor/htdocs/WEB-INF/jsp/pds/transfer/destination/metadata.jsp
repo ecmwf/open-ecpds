@@ -64,10 +64,6 @@
         <button type="button" class="btn btn-outline-secondary" onclick="dmfDownloadJson()" title="Download metadata as JSON">
           <i class="bi bi-download me-1"></i>JSON
         </button>
-        <a href="<c:url value='/do/transfer/destination/metadata/import/${destination.name}'/>"
-           class="btn btn-outline-secondary">
-          <i class="bi bi-upload me-1"></i>Import XML
-        </a>
       </div>
       </c:if>
       <c:if test="${hasMarkdownField}">
@@ -550,7 +546,7 @@ function dmfSave() {
 }
 
 // Exports every field flagged "Include in Notes" (see dmfCollect()'s DMV_INCLUDE_IN_NOTES) as an Opsview
-// note for this destination. Acts on the last *saved* state (like Import XML already does), not any
+// note for this destination. Acts on the last *saved* state (like Save already does), not any
 // in-progress unsaved edits - the button is disabled while dirty (see dmfSetDirty()/dmfClearDirty()) so
 // this is never ambiguous.
 function dmfPreviewNotes() {

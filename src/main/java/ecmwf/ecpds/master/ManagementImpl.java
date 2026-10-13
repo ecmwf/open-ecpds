@@ -48,21 +48,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import javax.management.timer.Timer;
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
 import ecmwf.common.callback.CallBackObject;
 import ecmwf.common.callback.RemoteInputStream;
@@ -186,19 +179,8 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     /** Timestamp (ms) of the last {@link #unreviewedFeedbackCache} refresh. Zero forces an immediate refresh. */
     private volatile long unreviewedFeedbackCacheTime = 0L;
 
-    /** The Constant METADATA_FILENAME. */
-    private static final transient String METADATA_FILENAME = Cnf.at("MetaData", "fileName", ".*(.xml)");
-
-    /** The Constant METADATA_TAGS. */
-    private static final transient String[] METADATA_TAGS = Cnf.stringListAt("MetaData", "tags", "mailGroup:email",
-            "ContactInformations:email");
-
     /** Pre-compiled pattern to extract the "email" field from a JSON object without a Jackson dependency. */
     private static final transient Pattern _JSON_EMAIL_PATTERN = Pattern.compile("\"email\"\\s*:\\s*\"([^\"\\\\]*)\"");
-
-    /** Whether to use DB for contact lookups (fallback to XML files if false). */
-    private static final transient boolean METADATA_USE_DB = Cnf.at("MetaData", "useDB", "true")
-            .equalsIgnoreCase("true");
 
     /** The Constant METADATA_MISSING_CONTACTS. */
     private static final transient String METADATA_MISSING_CONTACTS = Cnf.at("MetaData", "missingContactsMail", "");
@@ -268,8 +250,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
             final boolean caseSensitive) throws IOException {
         final var names = new ArrayList<String>();
         for (final Map.Entry<String, String> rule : rules) {
-            for (final Map.Entry<String, String> entries : (METADATA_USE_DB ? loadContactsFromDB()
-                    : loadContacts(".*:email")).entrySet()) {
+            for (final Map.Entry<String, String> entries : loadContactsFromDB().entrySet()) {
                 for (final String value : entries.getValue().split(",")) {
                     if (matchesRule(rule, value, caseSensitive)) {
                         names.add(entries.getKey());
@@ -336,136 +317,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     /**
-     * Collect emails.
-     *
-     * @param contactXml
-     *            the contact xml
-     * @param tagNames
-     *            the tag names
-     *
-     * @return the list
-     *
-     * @throws ParserConfigurationException
-     *             the parser configuration exception
-     * @throws SAXException
-     *             the SAX exception
-     * @throws IOException
-     *             Signals that an I/O exception has occurred.
-     */
-    public static List<String> collectEmails(final File contactXml, final String... tagNames)
-            throws ParserConfigurationException, SAXException, IOException {
-        final var factory = DocumentBuilderFactory.newInstance();
-        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        final var builder = factory.newDocumentBuilder();
-        final var doc = builder.parse(contactXml);
-        doc.getDocumentElement().normalize();
-        return collectEmails(doc.getDocumentElement(), tagNames);
-    }
-
-    /**
-     * Collect emails.
-     *
-     * @param node
-     *            the node
-     * @param tagNames
-     *            the tag names
-     *
-     * @return the list
-     */
-    private static List<String> collectEmails(final Node node, final String... tagNames) {
-        final List<String> emailList = new ArrayList<>();
-        if (node.getNodeType() == Node.ELEMENT_NODE) {
-            if (matches(node, tagNames)) {
-                final var mailList = Format.trimString(node.getTextContent().trim(), "");
-                if (!mailList.isBlank()) {
-                    final var tokenizer = new StringTokenizer(mailList, "\"\\|/:;, ");
-                    while (tokenizer.hasMoreTokens()) {
-                        final var email = tokenizer.nextToken();
-                        if (Format.isValidEmail(email)) {
-                            _log.debug("Found email for {} -> {}: {}", node.getParentNode().getNodeName(),
-                                    node.getNodeName(), email);
-                            emailList.add(email);
-                        }
-                    }
-                }
-            }
-            // Recursively call this method for child nodes
-            final var childNodes = node.getChildNodes();
-            for (var i = 0; i < childNodes.getLength(); i++) {
-                emailList.addAll(collectEmails(childNodes.item(i), tagNames));
-            }
-        }
-        return emailList;
-    }
-
-    /**
-     * Matches.
-     *
-     * @param node
-     *            the node
-     * @param tagNames
-     *            the tag names
-     *
-     * @return true, if successful
-     */
-    private static boolean matches(final Node node, final String... tagNames) {
-        for (final String tagName : tagNames) {
-            final var tag = tagName.split(":");
-            if (tag.length == 2 && node.getParentNode().getNodeName().matches(tag[0])
-                    && node.getNodeName().matches(tag[1])) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Load contacts.
-     *
-     * @param tagNames
-     *            the tag names
-     *
-     * @return the hash map
-     */
-    private HashMap<String, String> loadContacts(final String... tagNames) {
-        final var contacts = new HashMap<String, String>();
-        var dirs = new File(ATTACHMENTS_DIR).listFiles();
-        if (dirs == null) {
-            dirs = new File[] {};
-        } else {
-            Arrays.sort(dirs);
-        }
-        for (final File dir : dirs) {
-            final var destinationName = dir.getName();
-            if (master.getDestination(destinationName) == null) { // Destination does not exists, ignore it!
-                _log.debug("Destination {} not found", destinationName);
-            } else {
-                final var files = new File(dir.getAbsolutePath()).listFiles();
-                for (final File contactXml : files == null ? new File[] {} : files) {
-                    if (contactXml.getName().matches(METADATA_FILENAME) && contactXml.exists()) {
-                        try {
-                            _log.debug("Processing file: {}", contactXml.getAbsolutePath());
-                            final var emails = collectEmails(contactXml, tagNames);
-                            if (!emails.isEmpty()) {
-                                contacts.put(destinationName, emails.stream().collect(Collectors.joining(",")));
-                            }
-                        } catch (final Throwable t) {
-                            _log.warn("Reading {}", contactXml.getAbsolutePath(), t);
-                        }
-                    }
-                }
-            }
-        }
-        _log.debug("Contact(s) updated for {} Destination(s)", contacts.size());
-        return contacts;
-    }
-
-    /**
-     * Loads contact email addresses from the destination metadata DB. Falls back to XML file loading if an error
-     * occurs.
+     * Loads contact email addresses from the destination metadata DB.
      *
      * @return the hash map of destination name to comma-separated email addresses
      */
@@ -518,8 +370,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
             }
             _log.debug("loadContactsFromDB: contacts updated for {} Destination(s)", contacts.size());
         } catch (final Exception e) {
-            _log.warn("loadContactsFromDB failed, falling back to XML", e);
-            return loadContacts(METADATA_TAGS);
+            _log.warn("loadContactsFromDB failed", e);
         }
         return contacts;
     }
@@ -542,7 +393,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                     || System.currentTimeMillis() - contactsCacheLastUpdate > METADATA_RELOAD) {
                 contactsCacheLastUpdate = System.currentTimeMillis();
                 contactsCache.clear();
-                contactsCache.putAll(METADATA_USE_DB ? loadContactsFromDB() : loadContacts(METADATA_TAGS));
+                contactsCache.putAll(loadContactsFromDB());
                 if (METADATA_MISSING_CONTACTS.length() > 0) {
                     // Let's build the list of missing contacts per type of Destination for the
                     // sending of the email!
