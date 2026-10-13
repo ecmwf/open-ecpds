@@ -8,6 +8,8 @@
     final boolean delayGroupedCustomized   = Boolean.TRUE.equals(request.getAttribute("delayMessageGroupedCustomized"));
     final boolean resumedGroupedCustomized = Boolean.TRUE.equals(request.getAttribute("resumedMessageGroupedCustomized"));
     final boolean compactCycleLists        = !Boolean.FALSE.equals(request.getAttribute("compactCycleLists"));
+    final boolean allowNoticeCc            = !Boolean.FALSE.equals(request.getAttribute("allowNoticeCc"));
+    final boolean allowNoticeBcc           = !Boolean.FALSE.equals(request.getAttribute("allowNoticeBcc"));
 %>
 
 <%-- Header: title + info button --%>
@@ -168,8 +170,25 @@
                     <div class="form-text">Distribution list always placed in Bcc (e.g. the operational delay list).</div>
                 </div>
             </div>
+            <div class="row g-2 mt-2">
+                <div class="col-md-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="allowNoticeCc" name="allowNoticeCc"
+                               <%= allowNoticeCc ? "checked" : "" %>>
+                        <label class="form-check-label fw-semibold" for="allowNoticeCc">Allow Cc recipients in Delay Notification</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="allowNoticeBcc" name="allowNoticeBcc"
+                               <%= allowNoticeBcc ? "checked" : "" %>>
+                        <label class="form-check-label fw-semibold" for="allowNoticeBcc">Allow additional Bcc recipients in Delay Notification</label>
+                    </div>
+                </div>
+            </div>
             <div class="form-text text-muted mt-2">Used by the <em>Products Delay</em>/<em>Products Resumed</em> buttons and by
-            the Delay Notification page. Leave empty to restore the default.</div>
+            the Delay Notification page. Leave an address empty to restore the default. The flags control whether
+            operators can specify Cc and Bcc recipients on the Delay Notification page.</div>
         </div>
     </div>
 

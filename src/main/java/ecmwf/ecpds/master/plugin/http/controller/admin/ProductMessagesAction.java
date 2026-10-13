@@ -79,6 +79,8 @@ public class ProductMessagesAction extends PDSAction {
             final var delayMessageGrouped = request.getParameter("delayMessageGrouped");
             final var resumedMessageGrouped = request.getParameter("resumedMessageGrouped");
             final var compactCycleLists = "on".equals(request.getParameter("compactCycleLists"));
+            final var allowNoticeCc = "on".equals(request.getParameter("allowNoticeCc"));
+            final var allowNoticeBcc = "on".equals(request.getParameter("allowNoticeBcc"));
             try {
                 if (isBlankOrDefault(delayMessage, ProductStatusMessages.DEFAULT_DELAY_MESSAGE)) {
                     db.resetProductStatusMessage(ProductStatusMessages.DELAY_MESSAGE_NAME);
@@ -111,6 +113,8 @@ public class ProductMessagesAction extends PDSAction {
                         ProductStatusMessages.DEFAULT_TO_ADDRESS);
                 saveAddress(db, ProductStatusMessages.BCC_ADDRESS_NAME, request.getParameter("noticeBccAddress"),
                         ProductStatusMessages.DEFAULT_BCC_ADDRESS);
+                saveFlag(db, ProductStatusMessages.NOTICE_ALLOW_CC_NAME, allowNoticeCc);
+                saveFlag(db, ProductStatusMessages.NOTICE_ALLOW_BCC_NAME, allowNoticeBcc);
                 request.setAttribute("pmSuccess", "Product Status Messages saved successfully.");
             } catch (final Exception e) {
                 request.setAttribute("pmError", "Failed to store the messages: " + e.getMessage());
@@ -143,6 +147,10 @@ public class ProductMessagesAction extends PDSAction {
             request.setAttribute("delayMessageGroupedCustomized", delayMessageGrouped != null);
             request.setAttribute("resumedMessageGroupedCustomized", resumedMessageGrouped != null);
             request.setAttribute("compactCycleLists", !"false".equals(compactCycleLists));
+            request.setAttribute("allowNoticeCc",
+                    !"false".equals(db.getProductStatusMessage(ProductStatusMessages.NOTICE_ALLOW_CC_NAME)));
+            request.setAttribute("allowNoticeBcc",
+                    !"false".equals(db.getProductStatusMessage(ProductStatusMessages.NOTICE_ALLOW_BCC_NAME)));
             final var to = db.getProductStatusMessage(ProductStatusMessages.TO_ADDRESS_NAME);
             final var bcc = db.getProductStatusMessage(ProductStatusMessages.BCC_ADDRESS_NAME);
             request.setAttribute("noticeToAddress", to != null ? to : ProductStatusMessages.DEFAULT_TO_ADDRESS);
@@ -172,6 +180,8 @@ public class ProductMessagesAction extends PDSAction {
         request.setAttribute("delayMessageGroupedCustomized", Boolean.FALSE);
         request.setAttribute("resumedMessageGroupedCustomized", Boolean.FALSE);
         request.setAttribute("compactCycleLists", Boolean.TRUE);
+        request.setAttribute("allowNoticeCc", Boolean.TRUE);
+        request.setAttribute("allowNoticeBcc", Boolean.TRUE);
         request.setAttribute("noticeToAddress", ProductStatusMessages.DEFAULT_TO_ADDRESS);
         request.setAttribute("noticeBccAddress", ProductStatusMessages.DEFAULT_BCC_ADDRESS);
     }
@@ -191,6 +201,15 @@ public class ProductMessagesAction extends PDSAction {
             db.setProductStatusMessage(name, v);
         } else {
             throw new IllegalArgumentException("Invalid email address: " + v);
+        }
+    }
+
+    private static void saveFlag(final ecmwf.ecpds.master.DataBaseInterface db, final String name,
+            final boolean enabled) throws Exception {
+        if (enabled) {
+            db.resetProductStatusMessage(name);
+        } else {
+            db.setProductStatusMessage(name, "false");
         }
     }
 

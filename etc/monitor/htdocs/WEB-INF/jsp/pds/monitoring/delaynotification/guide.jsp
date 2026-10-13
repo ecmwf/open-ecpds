@@ -54,8 +54,8 @@
             <thead class="table-light"><tr><th>Field</th><th>Content</th></tr></thead>
             <tbody>
               <tr><td>To</td><td>The From/To address (default <code>operators@ecmwf.int</code>).</td></tr>
-              <tr><td>Bcc</td><td>The recipients plus the always-in-Bcc list (default <code>op_delay_ecmwf@lists.ecmwf.int</code>), so they do not see each other. If the list is too long for an Outlook link, the product distribution lists are used; <em>Copy BCC emails</em> gives the explicit list.</td></tr>
-              <tr><td>Cc</td><td>Internal Cc addresses, separated by semicolons and validated before saving or sending. The disk button saves them as the default; untick the box to send without Cc.</td></tr>
+              <tr><td>Bcc</td><td>The selected recipients, additional Bcc recipients, and the always-in-Bcc list (default <code>op_delay_ecmwf@lists.ecmwf.int</code>), so they do not see each other. Additional Bcc recipients are available when enabled in <a href="/do/admin/productmessages">Product Messages</a>; separate addresses by semicolons and they are validated before saving or sending. The disk button saves them as the default. If the list is too long for an Outlook link, the product distribution lists are used; <em>Copy BCC emails</em> gives the explicit recipients.</td></tr>
+              <tr><td>Cc</td><td>Cc recipients are available when enabled in <a href="/do/admin/productmessages">Product Messages</a>. Separate addresses by semicolons; they are validated before saving or sending. The disk button saves them as the default; untick the box to send without Cc.</td></tr>
             </tbody>
           </table>
         </div>

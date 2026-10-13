@@ -92,6 +92,12 @@ public final class ProductStatusMessages {
     /** SYS_CONFIG parameter name for the distribution list always placed in Bcc of the delay/resumed emails. */
     public static final String BCC_ADDRESS_NAME = "noticeBccAddress";
 
+    /** SYS_CONFIG parameter name controlling Cc recipients on Delay Notification. */
+    public static final String NOTICE_ALLOW_CC_NAME = "noticeAllowCc";
+
+    /** SYS_CONFIG parameter name controlling Bcc recipients on Delay Notification. */
+    public static final String NOTICE_ALLOW_BCC_NAME = "noticeAllowBcc";
+
     /** Default address the delay/resumed emails are sent to (and from). */
     public static final String DEFAULT_TO_ADDRESS = "operators@ecmwf.int";
 

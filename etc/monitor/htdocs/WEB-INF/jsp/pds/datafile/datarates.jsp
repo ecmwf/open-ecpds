@@ -113,6 +113,10 @@ const tFiles    = _si.map(i=>_tFiles[i]);
     <button class="btn btn-outline-secondary active" data-days="0" onclick="setChartPeriod(0)">All</button>
   </div>
   <span id="chartPeriodLabel" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis border" style="display:none;font-size:0.75rem;font-weight:500;"></span>
+  <div class="form-check form-switch small mb-0" title="Start the transfer-rate Y-axis at zero">
+    <input class="form-check-input" type="checkbox" role="switch" id="rateAxisZero" onchange="setRateAxisZero(this.checked)">
+    <label class="form-check-label" for="rateAxisZero">Rate axis starts at zero</label>
+  </div>
   <div class="ms-auto d-flex align-items-center gap-1">
     <button type="button" class="btn btn-sm btn-outline-secondary" id="btnTable" onclick="setView('table')">
       <i class="bi bi-table me-1"></i>Table
@@ -417,6 +421,10 @@ function setChartPeriod(days) {
   _page = 0;
   buildTable();
 }
+function setRateAxisZero(enabled) {
+  try { localStorage.setItem('transferRateAxisStartsAtZero', enabled ? 'true' : 'false'); } catch(e) {}
+  if (_chartBR) buildCharts();
+}
 
 function getThemeColors() {
   var s = getComputedStyle(document.documentElement);
@@ -500,6 +508,7 @@ function buildCharts() {
         },
         yRate: {
           type: 'linear', position: 'right',
+          beginAtZero: document.getElementById('rateAxisZero').checked,
           title: { display: true, text: 'Mbit/s', color: theme.bodyColor },
           ticks: { color: theme.bodyColor },
           grid: { color: theme.borderColor, drawOnChartArea: false }
@@ -597,6 +606,7 @@ function computeStats() {
 
 document.addEventListener('DOMContentLoaded', function() {
   try { if (localStorage.getItem('dataRatesReversed') === '1') _reversed = true; } catch(e) {}
+  try { document.getElementById('rateAxisZero').checked = localStorage.getItem('transferRateAxisStartsAtZero') === 'true'; } catch(e) {}
   computeStats();
   buildTable();
   _applyReverseBtn();

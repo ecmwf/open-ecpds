@@ -37,10 +37,13 @@ links and bookmarks.
    `{{AFFECTED}}` (or after the first paragraph when that placeholder is absent). In **Product Messages**, the grouped
    templates can instead place `{{REASON}}`, `{{ETA}}`, `{{EXPECTED_DELAY}}` and `{{NOTE}}` individually; each value
    placed this way is omitted from the affected block. Resolution messages use the grouped *Products Resumed* message
-   and the original notice's saved values for those placeholders. The internal Cc can be switched off, edited, and
-   saved as the default. When enabled, it accepts valid email addresses separated by semicolons; invalid addresses
-   block saving, previewing, and sending. The clipboard icon
-   beside the recipient count copies the BCC email list and is disabled when that list is empty.
+   and the original notice's saved values for those placeholders. When allowed by the flags in **Product Messages**,
+   Bcc recipients (in addition to the selected destination recipients and configured always-in-Bcc list) and Cc
+   recipients can each be switched off, edited, and saved as the default. Additional Bcc recipients are added to the
+   destination recipients and configured always-in-Bcc list. Both fields accept
+   valid email addresses separated by semicolons; invalid addresses block saving, previewing, and sending. The
+   clipboard icon beside the recipient count copies the destination-recipient and configured Bcc recipient list and is
+   disabled when that list is empty.
    The ETA is picked with hour/minute selectors (UTC) so no invalid time can be entered; the message and subject are
    generated as soon as the page loads. **Compact empty lines** is remembered per browser user and reduces runs of
    blank lines to one blank line in the generated or edited message. **Regenerate** rebuilds the message from the
@@ -54,7 +57,8 @@ links and bookmarks.
    list.
 
 The selected timing categories, layout, **Uniform cells**, and **Compact empty lines** settings are remembered in the
-browser for the signed-in user.
+browser for the signed-in user. Default Cc and additional Bcc recipient addresses, and the flags allowing these fields, are
+stored in `SYS_CONFIG` and managed in **Product Messages**.
 
 ## Sent notices
 
@@ -72,8 +76,7 @@ Notices are kept in the dedicated `DELAY_NOTICE` table as a permanent history (t
 load older ones). The Master allocates the references atomically, so several Monitors can register notices at the same
 time, and changes are protected by a version check: if someone else modified the same notice, the operation is retried
 on the fresh version. When upgrading an existing database, create the table once with `docker/ecpds/database/delay-notice.sql` (new
-databases get it from `ecpds.sql`). Models and
-the default Cc are stored in `SYS_CONFIG`.
+databases get it from `ecpds.sql`). Models and the default Cc/Bcc addresses are stored in `SYS_CONFIG`.
 
 Deploy the Master and the Monitors together, as the Monitor calls new Master operations.
 

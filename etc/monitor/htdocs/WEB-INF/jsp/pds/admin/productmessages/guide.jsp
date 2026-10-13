@@ -100,7 +100,8 @@ ECMWF Duty Manager</pre>
         <p class="small fw-semibold mb-1"><i class="bi bi-at text-primary me-1"></i>Notification addresses</p>
         <p class="small text-muted mb-0">The <strong>To / From</strong> address (default <code>operators@ecmwf.int</code>) and the address always placed
         in <strong>Bcc</strong> (default <code>op_delay_ecmwf@lists.ecmwf.int</code>) used by the email buttons and by the Delay
-        Notification page. Leave blank to restore the default.</p>
+        Notification page. Leave blank to restore the default. The two switches allow operators to add optional Cc and
+        Cc and additional Bcc recipients on the Delay Notification page; both are enabled by default.</p>
       </div>
 
     </div>

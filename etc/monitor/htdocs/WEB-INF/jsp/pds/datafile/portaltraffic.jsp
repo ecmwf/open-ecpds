@@ -194,7 +194,7 @@ function ptBuildCharts() {
     options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
       plugins:{ legend:{labels:{color:theme.bodyColor}} },
       scales:{ x:{ticks:{color:theme.bodyColor},grid:{color:theme.borderColor}},
-               y:{beginAtZero:true,title:{display:true,text:'Mbps',color:theme.bodyColor},
+               y:{beginAtZero:document.getElementById('ptRateAxisZero').checked,title:{display:true,text:'Mbps',color:theme.bodyColor},
                   ticks:{color:theme.bodyColor},grid:{color:theme.borderColor}} }}
   });
 }
@@ -208,10 +208,18 @@ function ptSetView(v) {
   if (v==='table') ptBuildTable();
   try { localStorage.setItem('ptView','portalTraffic_'+v); } catch(e){}
 }
+function ptSetRateAxisZero(enabled) {
+  try { localStorage.setItem('transferRateAxisStartsAtZero', enabled ? 'true' : 'false'); } catch(e) {}
+  if (_ptChartBw) ptBuildCharts();
+}
 
   document.addEventListener('DOMContentLoaded', function() {
   // Restore reversed preference (default: true = latest first)
   try { var r = localStorage.getItem('ptReversed'); if (r !== null) _ptReversed = (r === '1'); } catch(e) {}
+  try {
+    var rateAxisZero = localStorage.getItem('transferRateAxisStartsAtZero');
+    if (rateAxisZero !== null) document.getElementById('ptRateAxisZero').checked = rateAxisZero === 'true';
+  } catch(e) {}
   // Restore period preference (default: 0 = all)
   try { var p = parseInt(localStorage.getItem('ptPeriod'), 10); if ([30,90,180,365,0].indexOf(p) >= 0) {
     _ptPeriod = p;
@@ -253,6 +261,10 @@ function ptSetView(v) {
     <button class="btn btn-outline-secondary active" data-days="0" onclick="ptSetPeriod(0)">All</button>
   </div>
   <span id="ptPeriodLabel" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis border" style="display:none;font-size:0.75rem;font-weight:500;"></span>
+  <div class="form-check form-switch small mb-0" title="Start the transfer-rate Y-axis at zero">
+    <input class="form-check-input" type="checkbox" role="switch" id="ptRateAxisZero" checked onchange="ptSetRateAxisZero(this.checked)">
+    <label class="form-check-label" for="ptRateAxisZero">Rate axis starts at zero</label>
+  </div>
   <div class="ms-auto d-flex align-items-center gap-1">
     <button type="button" class="btn btn-sm btn-outline-secondary" id="ptBtnTable" onclick="ptSetView('table')">
       <i class="bi bi-table me-1"></i>Table

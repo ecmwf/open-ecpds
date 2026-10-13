@@ -105,8 +105,14 @@ public class DelayNotificationAction extends PDSAction {
                 _log.info("Delay notice {} deleted by {}", body.get("ref"), who);
             }
             case "defaultcc" -> {
-                validateCc(str(body.get("cc")));
+                requireOptionEnabled(ProductStatusMessages.NOTICE_ALLOW_CC_NAME, "Cc");
+                validateAddresses(str(body.get("cc")));
                 DelayNotices.setDefaultCc(str(body.get("cc")));
+            }
+            case "defaultbcc" -> {
+                requireOptionEnabled(ProductStatusMessages.NOTICE_ALLOW_BCC_NAME, "Bcc");
+                validateAddresses(str(body.get("bcc")));
+                DelayNotices.setDefaultBcc(str(body.get("bcc")));
             }
             default -> throw new IllegalArgumentException("Unknown action: " + action);
             }
@@ -136,7 +142,7 @@ public class DelayNotificationAction extends PDSAction {
         return v;
     }
 
-    private static void validateCc(final String value) {
+    private static void validateAddresses(final String value) {
         if (value == null || value.isBlank()) {
             return;
         }
@@ -145,6 +151,16 @@ public class DelayNotificationAction extends PDSAction {
                     "(?i)[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+")) {
                 throw new IllegalArgumentException("Enter valid email addresses separated by semicolons.");
             }
+        }
+    }
+
+    private static boolean optionEnabled(final String name) throws Exception {
+        return !"false".equals(MasterManager.getDB().getProductStatusMessage(name));
+    }
+
+    private static void requireOptionEnabled(final String name, final String label) throws Exception {
+        if (!optionEnabled(name)) {
+            throw new IllegalArgumentException("Additional " + label + " is disabled in Product Messages");
         }
     }
 
@@ -168,6 +184,9 @@ public class DelayNotificationAction extends PDSAction {
         out.put("generationStatusPerCycle", DelayRecipients.generationStatusPerCycle());
         out.put("models", ProductModels.productsPerModel());
         out.put("defaultCc", DelayNotices.defaultCc());
+        out.put("defaultBcc", DelayNotices.defaultBcc());
+        out.put("allowNoticeCc", optionEnabled(ProductStatusMessages.NOTICE_ALLOW_CC_NAME));
+        out.put("allowNoticeBcc", optionEnabled(ProductStatusMessages.NOTICE_ALLOW_BCC_NAME));
         templates(out);
         final var notices = DelayNotices.list(limit);
         out.put("notices", notices);
@@ -270,11 +289,12 @@ public class DelayNotificationAction extends PDSAction {
 
     /** Copies the editable content of the request into the notice. */
     private static void fill(final Map<String, Object> notice, final Map<String, Object> body) {
-        for (final var k : new String[] { "reason", "eta", "delay", "note", "cc", "subject", "body" }) {
+        for (final var k : new String[] { "reason", "eta", "delay", "note", "cc", "bcc", "subject", "body" }) {
             notice.put(k, text(body, k));
         }
         notice.put("includeNonMonitored", Boolean.TRUE.equals(body.get("includeNonMonitored")));
         notice.put("includeCc", Boolean.TRUE.equals(body.get("includeCc")));
+        notice.put("includeBcc", Boolean.TRUE.equals(body.get("includeBcc")));
     }
 
     /**
@@ -290,6 +310,7 @@ public class DelayNotificationAction extends PDSAction {
         h.put("subject", text(body, "subject"));
         h.put("body", text(body, "body"));
         h.put("cc", "true".equals(String.valueOf(body.get("includeCc"))) ? text(body, "cc") : "");
+        h.put("bcc", "true".equals(String.valueOf(body.get("includeBcc"))) ? text(body, "bcc") : "");
         h.put("emails", new ArrayList<>(emails));
         h.put("confirmed", false);
         return h;
@@ -303,7 +324,12 @@ public class DelayNotificationAction extends PDSAction {
     private void send(final Map<String, Object> body, final String who, final Map<String, Object> out)
             throws Exception {
         if (Boolean.TRUE.equals(body.get("includeCc"))) {
-            validateCc(text(body, "cc"));
+            requireOptionEnabled(ProductStatusMessages.NOTICE_ALLOW_CC_NAME, "Cc");
+            validateAddresses(text(body, "cc"));
+        }
+        if (Boolean.TRUE.equals(body.get("includeBcc"))) {
+            requireOptionEnabled(ProductStatusMessages.NOTICE_ALLOW_BCC_NAME, "Bcc");
+            validateAddresses(text(body, "bcc"));
         }
         final var cells = cells(body);
         requireLevels(cells);
@@ -335,7 +361,12 @@ public class DelayNotificationAction extends PDSAction {
     private void update(final Map<String, Object> body, final String who, final Map<String, Object> out)
             throws Exception {
         if (Boolean.TRUE.equals(body.get("includeCc"))) {
-            validateCc(text(body, "cc"));
+            requireOptionEnabled(ProductStatusMessages.NOTICE_ALLOW_CC_NAME, "Cc");
+            validateAddresses(text(body, "cc"));
+        }
+        if (Boolean.TRUE.equals(body.get("includeBcc"))) {
+            requireOptionEnabled(ProductStatusMessages.NOTICE_ALLOW_BCC_NAME, "Bcc");
+            validateAddresses(text(body, "bcc"));
         }
         final var cells = cells(body);
         requireLevels(cells);
@@ -388,6 +419,8 @@ public class DelayNotificationAction extends PDSAction {
         if (body.get("cells") instanceof final Collection<?> c) {
             c.forEach(o -> selected.add(String.valueOf(o)));
         }
+        final var allowCc = optionEnabled(ProductStatusMessages.NOTICE_ALLOW_CC_NAME);
+        final var allowBcc = optionEnabled(ProductStatusMessages.NOTICE_ALLOW_BCC_NAME);
         final var emails = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
         final var notice = DelayNotices.modify(str(body.get("ref")), n -> {
             open(n, "resolved");
@@ -420,6 +453,8 @@ public class DelayNotificationAction extends PDSAction {
                 n.put("resolvedBy", who);
             }
             final var h = message("resolution", who, body, emails);
+            h.put("cc", allowCc && Boolean.TRUE.equals(n.get("includeCc")) ? str(n.get("cc")) : "");
+            h.put("bcc", allowBcc && Boolean.TRUE.equals(n.get("includeBcc")) ? str(n.get("bcc")) : "");
             h.put("cells", resolvedNow);
             list(n, "history").add(h);
         });
@@ -428,6 +463,8 @@ public class DelayNotificationAction extends PDSAction {
         out.put("index", list(notice, "history").size() - 1);
         out.put("emails", emails);
         out.put("status", notice.get("status"));
+        out.put("allowNoticeCc", allowCc);
+        out.put("allowNoticeBcc", allowBcc);
     }
 
     private void cancel(final Map<String, Object> body, final String who, final Map<String, Object> out)

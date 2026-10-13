@@ -47,7 +47,7 @@ import ecmwf.ecpds.master.MasterManager;
  */
 public final class DelayNotices {
 
-    /** SYS_CONFIG group of the settings (default Cc). */
+    /** SYS_CONFIG group of the settings (default Cc/Bcc). */
     private static final String SETTINGS_GROUP = "DelayNoticeSettings";
 
     /** The fields held by columns rather than by the JSON content. */
@@ -208,7 +208,7 @@ public final class DelayNotices {
     }
 
     /**
-     * Gets the default internal Cc.
+     * Gets the default Cc recipients.
      *
      * @return the addresses, or an empty string
      *
@@ -220,7 +220,7 @@ public final class DelayNotices {
     }
 
     /**
-     * Sets the default internal Cc.
+     * Sets the default Cc recipients.
      *
      * @param cc
      *            the addresses
@@ -230,5 +230,30 @@ public final class DelayNotices {
      */
     public static void setDefaultCc(final String cc) throws Exception {
         MasterManager.getDB().setMonitorConfigValue(SETTINGS_GROUP, "defaultCc", cc == null ? "" : cc.trim());
+    }
+
+    /**
+     * Gets the default Bcc recipients.
+     *
+     * @return the addresses, or an empty string
+     *
+     * @throws Exception
+     *             if the setting cannot be read
+     */
+    public static String defaultBcc() throws Exception {
+        return MasterManager.getDB().getMonitorConfigGroup(SETTINGS_GROUP).getOrDefault("defaultBcc", "");
+    }
+
+    /**
+     * Sets the default Bcc recipients.
+     *
+     * @param bcc
+     *            the addresses
+     *
+     * @throws Exception
+     *             if it cannot be saved
+     */
+    public static void setDefaultBcc(final String bcc) throws Exception {
+        MasterManager.getDB().setMonitorConfigValue(SETTINGS_GROUP, "defaultBcc", bcc == null ? "" : bcc.trim());
     }
 }
