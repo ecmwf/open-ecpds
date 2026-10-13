@@ -28,9 +28,12 @@ links and bookmarks.
    restored when it is reopened. Add a note and review the editable subject and message. The message starts from the
    grouped *Products Delay* message managed in **Product Messages** (`/do/admin/productmessages`); `{{PRODUCTS}}` (or
    `{{PRODUCT}}`) becomes the list of selected products, `{{CYCLES}}` the selected cycles and `{{DESCRIPTION}}` the
-   product descriptions. The Definite/Possible lists, reason, ETA and note are inserted at `{{AFFECTED}}` (or after
-   the first paragraph when that placeholder is absent). Resolution messages start from the grouped *Products Resumed*
-   message. The internal Cc can be switched off, edited, and saved as the default.
+   product descriptions. The Definite/Possible lists, reason, expected delay, ETA and note are inserted at
+   `{{AFFECTED}}` (or after the first paragraph when that placeholder is absent). In **Product Messages**, the grouped
+   templates can instead place `{{REASON}}`, `{{ETA}}`, `{{EXPECTED_DELAY}}` and `{{NOTE}}` individually; each value
+   placed this way is omitted from the affected block. Resolution messages use the grouped *Products Resumed* message
+   and the original notice's saved values for those placeholders. The internal Cc
+   can be switched off, edited, and saved as the default.
    The ETA is picked with hour/minute selectors (UTC) so no invalid time can be entered; the message and subject are
    generated as soon as the page loads, and **Preview** shows the final mail (subject, To/Cc/Bcc counts and body).
    The **Configuration Guide** button opens a side panel summarising all of this.

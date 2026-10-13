@@ -110,31 +110,51 @@ public final class ProductStatusMessages {
      */
     public static final String AFFECTED_PLACEHOLDER = "{{AFFECTED}}";
 
+    /** Placeholder for the reason entered on the Delay Notification page. */
+    public static final String REASON_PLACEHOLDER = "{{REASON}}";
+
+    /** Placeholder for the UTC ETA entered on the Delay Notification page. */
+    public static final String ETA_PLACEHOLDER = "{{ETA}}";
+
+    /** Placeholder for the expected delay selected on the Delay Notification page. */
+    public static final String EXPECTED_DELAY_PLACEHOLDER = "{{EXPECTED_DELAY}}";
+
+    /** Placeholder for the note entered on the Delay Notification page. */
+    public static final String NOTE_PLACEHOLDER = "{{NOTE}}";
+
     /** Built-in default text for the "Products Delay" message (used until an administrator customizes it). */
     public static final String DEFAULT_DELAY_MESSAGE = """
             Dear colleagues,
 
-            << Due to if known and not commercially or infrastructure sensitive, please give some information of the reason for the delay, the or otherwise The >> dissemination of ECMWF {{PRODUCT}} products for the {{CYCLE}}Z cycle will be delayed <<estimate time if possible>>.
+            The dissemination of ECMWF {{PRODUCT}} products for the {{CYCLE}}Z cycle is delayed.
+
+            {{DESCRIPTION}}
 
             Our teams and partners are actively working to restore services.
 
-            (Preferable to give a time stamp if and when appropriate, eg The next update will be at xx:xx UTC) / As soon as we have further details, we will inform you by email <<or other channel if email/system vulnerable?>>.
+            We will provide an update as soon as further information is available.
 
-            For more up-to-date information, you may please refer to ECMWF service status page at http://www.ecmwf.int/en/service-status.
+            For the latest information, please refer to the ECMWF service status page:
+            https://www.ecmwf.int/en/service-status
 
-            Our sincere apologies for the inconvenience caused by this delay.
+            We apologise for the inconvenience.
 
-            Kind regards
+            Kind regards,
 
             ECMWF Duty Manager""";
 
     /** Built-in default text for the "Products Resumed" message (used until an administrator customizes it). */
     public static final String DEFAULT_RESUMED_MESSAGE = """
             Dear colleagues,
-            I am pleased to inform you that the issues we encountered earlier
-            within the operational production for the {{PRODUCT}} {{CYCLE}}Z cycle have been resolved and the dissemination of products has started.
-            Our sincere apologies for the inconvenience caused by this delay.
-            Kind regards
+
+            The issues affecting the {{PRODUCT}} {{CYCLE}}Z cycle have been resolved and dissemination has resumed.
+
+            {{DESCRIPTION}}
+
+            We apologise for the inconvenience caused by the delay.
+
+            Kind regards,
+
             ECMWF Duty Manager""";
 
     /**
@@ -145,19 +165,28 @@ public final class ProductStatusMessages {
     public static final String DEFAULT_DELAY_MESSAGE_GROUPED = """
             Dear colleagues,
 
-            << Due to if known and not commercially or infrastructure sensitive, please give some information of the reason for the delay, the or otherwise The >> dissemination of ECMWF {{PRODUCTS}} products for the {{CYCLES}}Z cycles will be delayed <<estimate time if possible>>.
+            The dissemination of ECMWF {{PRODUCTS}} products for the {{CYCLES}}Z cycles is delayed.
+
+            {{DESCRIPTION}}
+
+            Reason: {{REASON}}
+            Expected delay: {{EXPECTED_DELAY}}
+            Estimated time of availability: {{ETA}}
 
             {{AFFECTED}}
 
             Our teams and partners are actively working to restore services.
 
-            (Preferable to give a time stamp if and when appropriate, eg The next update will be at xx:xx UTC) / As soon as we have further details, we will inform you by email <<or other channel if email/system vulnerable?>>.
+            {{NOTE}}
 
-            For more up-to-date information, you may please refer to ECMWF service status page at http://www.ecmwf.int/en/service-status.
+            We will provide an update as soon as further information is available.
 
-            Our sincere apologies for the inconvenience caused by this delay.
+            For the latest information, please refer to the ECMWF service status page:
+            https://www.ecmwf.int/en/service-status
 
-            Kind regards
+            We apologise for the inconvenience caused by this delay.
+
+            Kind regards,
 
             ECMWF Duty Manager""";
 
@@ -168,10 +197,21 @@ public final class ProductStatusMessages {
      */
     public static final String DEFAULT_RESUMED_MESSAGE_GROUPED = """
             Dear colleagues,
-            I am pleased to inform you that the issues we encountered earlier
-            within the operational production for the {{PRODUCTS}} {{CYCLES}}Z cycles have been resolved and the dissemination of products has started.
-            Our sincere apologies for the inconvenience caused by this delay.
-            Kind regards
+
+            The issues affecting the {{PRODUCTS}} {{CYCLES}}Z cycles have been resolved and dissemination has resumed.
+
+            {{DESCRIPTION}}
+
+            Original reason: {{REASON}}
+            Expected delay: {{EXPECTED_DELAY}}
+            Previous estimated time of availability: {{ETA}}
+
+            {{NOTE}}
+
+            We apologise for the inconvenience caused by the delay.
+
+            Kind regards,
+
             ECMWF Duty Manager""";
 
     private ProductStatusMessages() {
@@ -246,7 +286,8 @@ public final class ProductStatusMessages {
             return null;
         }
         return text.replace(AFFECTED_PLACEHOLDER + "\n\n", "").replace(AFFECTED_PLACEHOLDER, "")
-                .replace(PRODUCT_PLACEHOLDER, product != null ? product : "")
+                .replace(REASON_PLACEHOLDER, "").replace(ETA_PLACEHOLDER, "").replace(EXPECTED_DELAY_PLACEHOLDER, "")
+                .replace(NOTE_PLACEHOLDER, "").replace(PRODUCT_PLACEHOLDER, product != null ? product : "")
                 .replace(PRODUCTS_PLACEHOLDER, product != null ? product : "")
                 .replace(CYCLE_PLACEHOLDER, cycle != null ? cycle : "")
                 .replace(CYCLES_PLACEHOLDER, cycles != null ? cycles : "")

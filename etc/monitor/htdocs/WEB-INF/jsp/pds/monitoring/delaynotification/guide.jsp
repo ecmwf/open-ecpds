@@ -55,7 +55,7 @@
             <tbody>
               <tr><td>To</td><td>The From/To address (default <code>operators@ecmwf.int</code>).</td></tr>
               <tr><td>Bcc</td><td>The recipients plus the always-in-Bcc list (default <code>op_delay_ecmwf@lists.ecmwf.int</code>), so they do not see each other. If the list is too long for an Outlook link, the product distribution lists are used; <em>Copy BCC emails</em> gives the explicit list.</td></tr>
-              <tr><td>Cc</td><td>Internal Cc addresses, editable. The disk button saves them as the default; untick the box to send without Cc.</td></tr>
+              <tr><td>Cc</td><td>Internal Cc addresses, separated by semicolons and validated before saving or sending. The disk button saves them as the default; untick the box to send without Cc.</td></tr>
             </tbody>
           </table>
         </div>
@@ -67,6 +67,12 @@
         <a href="/do/admin/productmessages">Product Messages</a>, your selection, and the reason, delay, ETA (UTC) and note. They stay editable;
         <em>Regenerate</em> rebuilds them and <em>Preview</em> shows the final mail.</p>
         <p class="small mb-2">Choose a predefined reason or select <em>Other (enter a reason)</em> to provide free text.</p>
+        <p class="small mb-2">In <em>Product Messages</em>, place <code>{{REASON}}</code>, <code>{{ETA}}</code>,
+        <code>{{EXPECTED_DELAY}}</code> and <code>{{NOTE}}</code> wherever those individual values should appear.
+        <code>{{ETA}}</code> includes <code>UTC</code> when set. A value placed with its own placeholder is omitted
+        from the affected block; any other values still appear there. The <strong>Compact empty lines</strong> switch
+        beside the message editor reduces sequences of blank lines to one blank line; the setting is remembered for
+        your browser.</p>
         <p class="small fw-semibold mb-1"><i class="bi bi-list-check text-primary me-1"></i>Affected block</p>
         <p class="small mb-2">Inserted at the <code>{{AFFECTED}}</code> placeholder, or after the first paragraph when it is absent:</p>
         <ul class="small mb-3 ps-3">

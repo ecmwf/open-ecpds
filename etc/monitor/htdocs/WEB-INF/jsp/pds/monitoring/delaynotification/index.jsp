@@ -102,7 +102,14 @@
      <span><i class="mon-dot mon-dot-6 me-1"></i>Transitional</span>
     </div>
     <div class="dn-matrix-wrap"><table class="table table-sm table-bordered align-middle mb-0" id="dnMatrix"></table></div>
-    <div class="mt-2 small text-muted d-flex align-items-center"><span><span id="dnSelCount">0</span> cell(s) selected</span> <button class="btn btn-link btn-sm p-0 ms-2 text-decoration-none" style="font-size:inherit;line-height:inherit" onclick="dnClear()">Clear all</button></div>
+    <div class="mt-2 d-flex flex-wrap align-items-center gap-2">
+     <span class="small text-muted"><span id="dnSelCount">0</span> cell(s) selected</span>
+     <div class="btn-group btn-group-sm ms-auto" role="group" aria-label="Select affected cells by generation timing">
+      <button class="btn btn-outline-danger" type="button" onclick="dnMarkByTiming('definite')" title="Mark all on-schedule/slightly-late and overdue product/cycle cells as Definite">Mark late/overdue D</button>
+      <button class="btn btn-outline-warning" type="button" onclick="dnMarkByTiming('possible')" title="Mark all product/cycle cells received 0-15 minutes ahead as Possible">Mark 0-15m ahead P</button>
+      <button class="btn btn-outline-secondary" type="button" onclick="dnClear()">Clear all</button>
+     </div>
+    </div>
    </div>
   </div>
  </div>
@@ -115,14 +122,15 @@
      <div>
       <span class="badge rounded-pill text-bg-primary dn-pill" id="dnToPill" onclick="dnToggleDest()" title="Show the destinations affected">(0) Destinations</span>
       <span class="badge rounded-pill text-bg-secondary" id="dnEmailPill">0 emails</span>
-      <button class="btn btn-link btn-sm" onclick="dnCopyBcc()"><i class="bi bi-clipboard"></i> Copy BCC emails</button>
+      <button class="btn btn-link btn-sm" id="dnCopyBccBtn" type="button" onclick="dnCopyBcc()" title="Copy BCC email addresses" aria-label="Copy BCC email addresses" disabled><i class="bi bi-clipboard"></i></button>
      </div>
      <div id="dnDestList" class="small border rounded p-2 mt-1 d-none" style="max-height:160px; overflow:auto"></div>
      <div class="form-check form-switch mt-1"><input class="form-check-input" type="checkbox" id="dnNonMon" onchange="dnRecipients()"><label class="form-check-label small" for="dnNonMon">Include destinations not showing in the monitor</label></div>
     </div>
     <div class="mb-2">
      <div class="form-check"><input class="form-check-input" type="checkbox" id="dnCcOn" checked><label class="form-check-label small" for="dnCcOn">Cc (internal)</label></div>
-     <div class="input-group input-group-sm"><input type="text" id="dnCc" class="form-control" placeholder="a@x.int; b@x.int"><button class="btn btn-outline-secondary" type="button" onclick="dnSaveCc()" title="Use as default Cc"><i class="bi bi-save"></i></button></div>
+     <div class="input-group input-group-sm"><input type="text" id="dnCc" class="form-control" placeholder="a@x.int; b@x.int" oninput="dnValidateCc()"><button class="btn btn-outline-secondary" type="button" onclick="dnSaveCc()" title="Use as default Cc"><i class="bi bi-save"></i></button></div>
+     <div class="invalid-feedback" id="dnCcError">Enter valid email addresses separated by semicolons.</div>
     </div>
     <div class="row g-2 mb-2">
      <div class="col-12"><label class="form-label small mb-1">Reason</label>
@@ -147,10 +155,20 @@
      <div class="col-12"><label class="form-label small mb-1">Note</label><input type="text" id="dnNote" class="form-control form-control-sm" maxlength="500" oninput="dnAuto()"></div>
     </div>
     <div class="mb-2"><label class="form-label small mb-1">Subject</label><input type="text" id="dnSubject" class="form-control form-control-sm" oninput="dnEdited()"></div>
-    <div class="mb-2"><div class="d-flex align-items-center gap-2 mb-1"><label class="form-label small mb-0" for="dnBody">Message</label><button type="button" class="btn btn-link btn-sm p-0 align-baseline text-decoration-none" onclick="dnEditedReset()">Regenerate</button></div><textarea id="dnBody" class="form-control" rows="12" oninput="dnEdited()"></textarea></div>
+    <div class="mb-2">
+     <div class="d-flex align-items-center justify-content-between mb-1">
+      <label class="form-label small mb-0" for="dnBody">Message</label>
+      <div class="form-check form-switch small mb-0" title="Replace sequences of multiple blank lines with one blank line">
+       <input class="form-check-input" type="checkbox" role="switch" id="dnCompactEmptyLines" checked onchange="dnSetCompactEmptyLines(this.checked)">
+       <label class="form-check-label" for="dnCompactEmptyLines">Compact empty lines</label>
+      </div>
+     </div>
+     <textarea id="dnBody" class="form-control" rows="12" oninput="dnEdited()"></textarea>
+    </div>
     <div class="d-flex gap-2">
-     <button class="btn btn-danger" id="dnSendBtn" onclick="dnSend()"><i class="bi bi-send me-1"></i><span id="dnSendLbl">Send notice</span></button>
+     <button class="btn btn-outline-secondary" type="button" onclick="dnEditedReset()"><i class="bi bi-arrow-clockwise me-1"></i>Regenerate</button>
      <button class="btn btn-outline-primary" type="button" id="dnPreviewBtn" onclick="dnPreview()"><i class="bi bi-eye me-1"></i>Preview</button>
+     <button class="btn btn-danger" id="dnSendBtn" onclick="dnSend()"><i class="bi bi-send me-1"></i><span id="dnSendLbl">Send notice</span></button>
      <button class="btn btn-outline-secondary d-none" id="dnCancelUpd" onclick="dnLeaveUpdate()">Cancel update</button>
     </div>
     <div class="modal fade" id="dnPreviewModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
@@ -333,6 +351,8 @@ function restorePreferences() {
   renderStatusFilter();
   $('dnUniformCells').checked = preferences.uniformCells === true;
   dnSetUniformCells($('dnUniformCells').checked);
+  $('dnCompactEmptyLines').checked = preferences.compactEmptyLines !== false;
+  dnSetCompactEmptyLines($('dnCompactEmptyLines').checked);
   dnSetLayout(preferences.layout || 'split');
 }
 
@@ -390,6 +410,15 @@ window.dnSetUniformCells = function(uniform) {
   $('dnMatrix').classList.toggle('dn-uniform', uniform);
   setPreference('uniformCells', uniform);
 };
+function compactEmptyLines(text) {
+  return text.replace(/\r\n?/g, '\n').replace(/\n(?:[ \t]*\n)+/g, '\n\n');
+}
+window.dnSetCompactEmptyLines = function(compact) {
+  setPreference('compactEmptyLines', compact);
+  if (compact && $('dnBody')) {
+    $('dnBody').value = compactEmptyLines($('dnBody').value);
+  }
+};
 window.dnRenderMatrix = function() {
   var products = visibleProducts(), cycles = allCycles(products);
   var h = '<thead><tr><th>Product</th><th class="dn-before" title="Before: shortest time remaining across all cycles" aria-label="Before: shortest time remaining across all cycles"><i class="bi bi-clock-history"></i></th>' + cycles.map(function(c) { return '<th class="text-center">' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
@@ -439,6 +468,19 @@ function setCell(p, t, l, quiet) {
 }
 function afterSelection() { dnRenderMatrix(); dnRecipients(); dnAuto(); }
 window.dnClear = function() { S.sel = {}; afterSelection(); };
+window.dnMarkByTiming = function(level) {
+  if (level !== 'definite' && level !== 'possible') { return; }
+  Object.keys(S.cycles).forEach(function(product) {
+    S.cycles[product].forEach(function(cycle) {
+      var status = generationStatusNumber(S.generationStatusPerCycle[product + '@' + cycle]);
+      if ((level === 'definite' && (status === 4 || status === 5))
+          || (level === 'possible' && status === 3)) {
+        S.sel[product + '@' + cycle] = level;
+      }
+    });
+  });
+  afterSelection();
+};
 
 function cellList() {
   return Object.keys(S.sel).sort().map(function(k) { var i = k.lastIndexOf('@'); return {product: k.substring(0, i), time: k.substring(i + 1), level: S.sel[k]}; });
@@ -466,7 +508,8 @@ function describeProducts(cells) {
   return Object.keys(names).sort();
 }
 
-function fillTemplate(tpl, products, cells) {
+function fillTemplate(tpl, products, cells, details) {
+  details = details || {};
   var per = {}; cells.forEach(function(c) { (per[c.product] = per[c.product] || []).push(c.time); });
   var all = {}; cells.forEach(function(c) { all[c.time] = 1; });
   var cycles = compactTimes(Object.keys(all), ',');
@@ -482,19 +525,26 @@ function fillTemplate(tpl, products, cells) {
     tpl = tpl.replace(/(the )?\{\{CYCLES?\}\}Z? cycles?/gi, 'their respective cycles');
   }
   var desc = products.map(function(p) { return S.descriptions && S.descriptions[p] ? '  - ' + p + ': ' + S.descriptions[p] : ''; }).filter(Boolean).join('\n');
-  return tpl.split('{{PRODUCTS}}').join(productText).split('{{PRODUCT}}').join(productText).split('{{CYCLES}}').join(cycles).split('{{CYCLE}}').join(cycles)
-    .split('{{DESCRIPTION}}').join(desc);
+  var body = tpl.split('{{PRODUCTS}}').join(productText).split('{{PRODUCT}}').join(productText).split('{{CYCLES}}').join(cycles).split('{{CYCLE}}').join(cycles)
+    .split('{{DESCRIPTION}}').join(desc)
+    .split('{{REASON}}').join(details.reason || '')
+    .split('{{ETA}}').join(details.eta ? details.eta + ' UTC' : '')
+    .split('{{EXPECTED_DELAY}}').join(details.expectedDelay || '')
+    .split('{{NOTE}}').join(details.note || '');
+  return $('dnCompactEmptyLines').checked ? compactEmptyLines(body) : body;
 }
-function affectedBlock(cells) {
+function noticeDetails() {
+  return {reason: reasonValue(), eta: $('dnEta').value.trim(), expectedDelay: $('dnDelay').value, note: $('dnNote').value.trim()};
+}
+function affectedBlock(cells, details, includeDetails) {
   var lines = [];
   var d = group(cells, 'definite'), p = group(cells, 'possible');
   if (d.length) { lines.push('Products and cycles affected:'); lines = lines.concat(d, ''); }
   if (p.length) { lines.push('Products and cycles that might be affected:'); lines = lines.concat(p, ''); }
-  var reason = reasonValue();
-  if (reason) { lines.push('Reason: ' + reason); }
-  if ($('dnDelay').value) { lines.push('Expected delay: ' + $('dnDelay').value); }
-  if ($('dnEta').value.trim()) { lines.push('Estimated time of availability: ' + $('dnEta').value.trim() + ' UTC'); }
-  if ($('dnNote').value.trim()) { lines.push('', $('dnNote').value.trim()); }
+  if (includeDetails.reason && details.reason) { lines.push('Reason: ' + details.reason); }
+  if (includeDetails.expectedDelay && details.expectedDelay) { lines.push('Expected delay: ' + details.expectedDelay); }
+  if (includeDetails.eta && details.eta) { lines.push('Estimated time of availability: ' + details.eta + ' UTC'); }
+  if (includeDetails.note && details.note) { lines.push('', details.note); }
   return lines.join('\n').replace(/\s+$/, '');
 }
 function generate() {
@@ -502,7 +552,14 @@ function generate() {
   var products = describeProducts(cells);
   var subj = 'Delay notification' + (products.length ? ': ' : '') + (products.length > 4 ? products.slice(0, 4).join(', ') + ' and ' + (products.length - 4) + ' more' : products.join(', '));
   var tpl = S.delayTemplate || 'Dear users,\n\nWe are currently experiencing a delay.\n\nBest regards,\nECMWF Operations';
-  var block = affectedBlock(cells);
+  var details = noticeDetails();
+  var includeDetails = {
+    reason: tpl.indexOf('{{REASON}}') < 0,
+    eta: tpl.indexOf('{{ETA}}') < 0,
+    expectedDelay: tpl.indexOf('{{EXPECTED_DELAY}}') < 0,
+    note: tpl.indexOf('{{NOTE}}') < 0
+  };
+  var block = affectedBlock(cells, details, includeDetails);
   if (tpl.indexOf('{{AFFECTED}}') >= 0) {
     tpl = tpl.split('{{AFFECTED}}').join(block);
   } else if (block) {
@@ -510,9 +567,12 @@ function generate() {
     var k = tpl.search(/\n\s*\n/);
     tpl = k < 0 ? tpl + '\n\n' + block : tpl.substring(0, k) + '\n\n' + block + tpl.substring(k);
   }
-  return {subject: subj, body: fillTemplate(tpl, products, cells)};
+  return {subject: subj, body: fillTemplate(tpl, products, cells, details)};
 }
 window.dnAuto = function() {
+  if ($('dnCompactEmptyLines').checked) {
+    $('dnBody').value = compactEmptyLines($('dnBody').value);
+  }
   if (S.bodyEdited) { return; }
   var g = generate(); $('dnSubject').value = g.subject; $('dnBody').value = g.body;
 };
@@ -531,6 +591,7 @@ function renderRecipients() {
   var known = S.update ? S.update.emails.map(function(e) { return e.toLowerCase(); }) : null;
   $('dnToPill').textContent = '(' + names.length + ') Destinations';
   $('dnEmailPill').textContent = S.emails.length + ' emails';
+  $('dnCopyBccBtn').disabled = S.emails.length === 0;
   $('dnDestList').innerHTML = names.length ? names.map(function(n) {
     var e = S.dests[n];
     var isNew = known && e && e.split(/[,;]/).some(function(x) { return x.trim() && known.indexOf(x.trim().toLowerCase()) < 0; });
@@ -544,7 +605,23 @@ function copy(text) {
   return Promise.resolve();
 }
 window.dnCopyBcc = function() { copy(S.emails.join(',')).then(function() { alertMsg(S.emails.length + ' email(s) copied', 'success'); }); };
-window.dnSaveCc = function() { post('defaultcc', {cc: $('dnCc').value}).then(function() { alertMsg('Default Cc saved', 'success'); }).catch(fail); };
+function ccIsValid() {
+  var value = $('dnCc').value.trim();
+  return !value || value.split(';').every(function(address) {
+    address = address.trim();
+    return /^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+$/i.test(address);
+  });
+}
+window.dnValidateCc = function() {
+  var valid = ccIsValid();
+  $('dnCc').classList.toggle('is-invalid', !valid);
+  $('dnCcError').style.display = valid ? 'none' : 'block';
+  return valid;
+};
+window.dnSaveCc = function() {
+  if (!dnValidateCc()) { $('dnCc').focus(); return; }
+  post('defaultcc', {cc: $('dnCc').value}).then(function() { alertMsg('Default Cc saved', 'success'); }).catch(fail);
+};
 
 function outlook(subject, body, emails, cells, ccText) {
   var cc = (ccText || '').split(/[;,]/).map(function(x) { return x.trim(); }).filter(Boolean).join(',');
@@ -563,6 +640,9 @@ function outlook(subject, body, emails, cells, ccText) {
 }
 
 function payload() {
+  if ($('dnCompactEmptyLines').checked) {
+    $('dnBody').value = compactEmptyLines($('dnBody').value);
+  }
   return {cells: cellList(), includeNonMonitored: $('dnNonMon').checked, includeCc: $('dnCcOn').checked, cc: $('dnCc').value,
     reason: reasonValue(), eta: $('dnEta').value, delay: $('dnDelay').value, note: $('dnNote').value,
     subject: $('dnSubject').value, body: $('dnBody').value};
@@ -583,6 +663,10 @@ function confirmSent(ref, index) {
   post('confirm', {ref: ref, index: index}).then(function() { alertMsg('Sending of ' + ref + ' confirmed', 'success'); load(); }).catch(fail);
 }
 window.dnPreview = function() {
+  if ($('dnCcOn').checked && !dnValidateCc()) { $('dnCc').focus(); return; }
+  if ($('dnCompactEmptyLines').checked) {
+    $('dnBody').value = compactEmptyLines($('dnBody').value);
+  }
   var cc = $('dnCcOn').checked ? $('dnCc').value.split(/[;,]/).map(function(x) { return x.trim(); }).filter(Boolean) : [];
   var ref = S.update ? S.update.ref : 'DLY-yyyy-nnnn (assigned when sent)';
   var subj = '[' + ref + '] ' + (S.update ? 'UPDATE - ' : '') + $('dnSubject').value;
@@ -594,6 +678,7 @@ window.dnPreview = function() {
   bootstrap.Modal.getOrCreateInstance($('dnPreviewModal')).show();
 };
 window.dnSend = function() {
+  if ($('dnCcOn').checked && !dnValidateCc()) { $('dnCc').focus(); return; }
   var p = payload();
   if (!p.cells.length) { alertMsg('Select at least one product and cycle'); return; }
   if (!p.subject.trim() || !p.body.trim()) { alertMsg('The subject and message are required'); return; }
@@ -707,7 +792,7 @@ function openResolve(n, i) {
   row.firstChild.innerHTML = '<div class="p-2 border rounded"><div class="small mb-1">Cells to resolve:</div>'
     + openCells.map(function(c) { return '<label class="me-3 small"><input type="checkbox" class="form-check-input me-1" checked value="' + esc(c.product + '@' + c.time) + '">' + esc(c.product + ' ' + c.time) + '</label>'; }).join('')
     + '<input class="form-control form-control-sm my-2 rs-subj" value="' + esc('Resolved: ' + products.join(', ')) + '">'
-    + '<textarea class="form-control form-control-sm mb-2 rs-body" rows="6">' + esc(S.resumedTemplate ? fillTemplate(S.resumedTemplate, products, openCells) : 'Dear users,\n\nThe delay affecting ' + products.join(', ') + ' has been resolved.\n\nBest regards,\nECMWF Operations') + '</textarea>'
+    + '<textarea class="form-control form-control-sm mb-2 rs-body" rows="6">' + esc(S.resumedTemplate ? fillTemplate(S.resumedTemplate, products, openCells, {reason: n.reason, eta: n.eta, expectedDelay: n.delay, note: n.note}) : 'Dear users,\n\nThe delay affecting ' + products.join(', ') + ' has been resolved.\n\nBest regards,\nECMWF Operations') + '</textarea>'
     + '<button class="btn btn-sm btn-success rs-go">Register and open the message</button></div>';
   row.querySelector('.rs-go').onclick = function() {
     var picked = Array.prototype.map.call(row.querySelectorAll('input[type=checkbox]:checked'), function(c) { return c.value; });

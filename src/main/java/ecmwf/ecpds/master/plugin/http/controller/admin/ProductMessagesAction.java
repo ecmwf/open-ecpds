@@ -128,12 +128,16 @@ public class ProductMessagesAction extends PDSAction {
             final var compactCycleLists = db.getProductStatusMessage(ProductStatusMessages.COMPACT_CYCLE_LISTS_NAME);
             request.setAttribute("delayMessage",
                     delayMessage != null ? delayMessage : ProductStatusMessages.DEFAULT_DELAY_MESSAGE);
+            request.setAttribute("defaultDelayMessage", ProductStatusMessages.DEFAULT_DELAY_MESSAGE);
             request.setAttribute("resumedMessage",
                     resumedMessage != null ? resumedMessage : ProductStatusMessages.DEFAULT_RESUMED_MESSAGE);
+            request.setAttribute("defaultResumedMessage", ProductStatusMessages.DEFAULT_RESUMED_MESSAGE);
             request.setAttribute("delayMessageGrouped", delayMessageGrouped != null ? delayMessageGrouped
                     : ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED);
+            request.setAttribute("defaultDelayMessageGrouped", ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED);
             request.setAttribute("resumedMessageGrouped", resumedMessageGrouped != null ? resumedMessageGrouped
                     : ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED);
+            request.setAttribute("defaultResumedMessageGrouped", ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED);
             request.setAttribute("delayMessageCustomized", delayMessage != null);
             request.setAttribute("resumedMessageCustomized", resumedMessage != null);
             request.setAttribute("delayMessageGroupedCustomized", delayMessageGrouped != null);
@@ -156,9 +160,13 @@ public class ProductMessagesAction extends PDSAction {
      */
     private static void setDefaults(final HttpServletRequest request) {
         request.setAttribute("delayMessage", ProductStatusMessages.DEFAULT_DELAY_MESSAGE);
+        request.setAttribute("defaultDelayMessage", ProductStatusMessages.DEFAULT_DELAY_MESSAGE);
         request.setAttribute("resumedMessage", ProductStatusMessages.DEFAULT_RESUMED_MESSAGE);
+        request.setAttribute("defaultResumedMessage", ProductStatusMessages.DEFAULT_RESUMED_MESSAGE);
         request.setAttribute("delayMessageGrouped", ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED);
+        request.setAttribute("defaultDelayMessageGrouped", ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED);
         request.setAttribute("resumedMessageGrouped", ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED);
+        request.setAttribute("defaultResumedMessageGrouped", ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED);
         request.setAttribute("delayMessageCustomized", Boolean.FALSE);
         request.setAttribute("resumedMessageCustomized", Boolean.FALSE);
         request.setAttribute("delayMessageGroupedCustomized", Boolean.FALSE);

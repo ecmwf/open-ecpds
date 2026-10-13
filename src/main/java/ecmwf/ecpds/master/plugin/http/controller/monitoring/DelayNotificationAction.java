@@ -104,7 +104,10 @@ public class DelayNotificationAction extends PDSAction {
                 DelayNotices.delete(str(body.get("ref")));
                 _log.info("Delay notice {} deleted by {}", body.get("ref"), who);
             }
-            case "defaultcc" -> DelayNotices.setDefaultCc(str(body.get("cc")));
+            case "defaultcc" -> {
+                validateCc(str(body.get("cc")));
+                DelayNotices.setDefaultCc(str(body.get("cc")));
+            }
             default -> throw new IllegalArgumentException("Unknown action: " + action);
             }
             out.put("success", true);
@@ -131,6 +134,18 @@ public class DelayNotificationAction extends PDSAction {
             throw new IllegalArgumentException(key + " is too long");
         }
         return v;
+    }
+
+    private static void validateCc(final String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        for (final var address : value.split(";", -1)) {
+            if (!address.strip().matches(
+                    "(?i)[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+")) {
+                throw new IllegalArgumentException("Enter valid email addresses separated by semicolons.");
+            }
+        }
     }
 
     private static String now() {
@@ -287,6 +302,9 @@ public class DelayNotificationAction extends PDSAction {
 
     private void send(final Map<String, Object> body, final String who, final Map<String, Object> out)
             throws Exception {
+        if (Boolean.TRUE.equals(body.get("includeCc"))) {
+            validateCc(text(body, "cc"));
+        }
         final var cells = cells(body);
         requireLevels(cells);
         final var r = DelayRecipients.resolve(keys(cells), Boolean.TRUE.equals(body.get("includeNonMonitored")));
@@ -316,6 +334,9 @@ public class DelayNotificationAction extends PDSAction {
     @SuppressWarnings("unchecked")
     private void update(final Map<String, Object> body, final String who, final Map<String, Object> out)
             throws Exception {
+        if (Boolean.TRUE.equals(body.get("includeCc"))) {
+            validateCc(text(body, "cc"));
+        }
         final var cells = cells(body);
         requireLevels(cells);
         final var added = new ArrayList<String>();

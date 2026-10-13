@@ -15,7 +15,8 @@
       <div>These templates pre-fill the Outlook emails of the monitoring product pages and the body of the notices
       on the <a href="/do/monitoring/delaynotification">Delay Notification</a> page. Each message has an
       <strong>Ungrouped</strong> variant (one product and cycle) and a <strong>Grouped</strong> variant (several
-      products or cycles). Empty or unchanged text restores the built-in default.</div>
+      products or cycles). Use <strong>Reset current variant</strong> to restore the displayed body; click
+      <strong>Save Messages</strong> to persist it. Empty or unchanged text also restores the built-in default.</div>
     </div>
 
     <ul class="nav nav-tabs nav-fill mb-3" role="tablist">
@@ -57,9 +58,14 @@
               <tr><td><code>{{CYCLES}}</code></td><td>Grouped</td><td>The list of cycles (e.g. <code>00,12</code>).</td></tr>
               <tr><td><code>{{DESCRIPTION}}</code></td><td>Both</td><td>The description of the product from <a href="/do/admin/productdescriptions">Product Descriptions</a>.</td></tr>
               <tr><td><code>{{AFFECTED}}</code></td><td>Grouped delay</td><td>The block of <em>Definite</em> and <em>Possible</em> product/cycle lists with reason, delay, ETA and note (Delay Notification page). Removed on monitoring pages. Use it <strong>once</strong>; if missing, the block is inserted after the first paragraph.</td></tr>
+              <tr><td><code>{{REASON}}</code></td><td>Grouped delay/resumed</td><td>The reason entered for a Delay Notification, or saved with that notice when composing its resolution.</td></tr>
+              <tr><td><code>{{ETA}}</code></td><td>Grouped delay/resumed</td><td>The notice ETA, followed by <code>UTC</code> when set.</td></tr>
+              <tr><td><code>{{EXPECTED_DELAY}}</code></td><td>Grouped delay/resumed</td><td>The expected delay selected for the notice.</td></tr>
+              <tr><td><code>{{NOTE}}</code></td><td>Grouped delay/resumed</td><td>The note entered for the notice.</td></tr>
             </tbody>
           </table>
         </div>
+        <p class="small text-muted mb-2">The four notice-detail placeholders are replaced with the values from the current notice; on a resolution message they use the values saved with that notice. They are empty on regular monitoring-page emails. In the grouped delay template, each value placed with its own placeholder is omitted from the automatically inserted affected block, while the other details remain there.</p>
         <pre class="small p-2 rounded mb-0" style="background:var(--bs-secondary-bg); white-space:pre-wrap;">Dear colleagues,
 
 The dissemination of ECMWF {{PRODUCTS}} products for the {{CYCLES}}Z cycles will be delayed.

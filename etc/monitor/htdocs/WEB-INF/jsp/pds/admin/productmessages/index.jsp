@@ -60,20 +60,30 @@
                   data-ungrouped-customized="<%= delayCustomized %>" data-grouped-customized="<%= delayGroupedCustomized %>">
                 <%= delayCustomized ? "Customized" : "Default" %>
             </span>
+            <button type="button" class="btn btn-sm btn-outline-secondary py-0" onclick="pmResetCurrentDefault('delay')">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset current variant
+            </button>
             </span>
         </div>
         <div class="card-body">
             <label class="form-label fw-semibold" id="delayVariantLabel">Message body <span
-                class="text-muted fw-normal">(Ungrouped &mdash; uses <code>{{CYCLE}}</code>)</span></label>
+                class="text-muted fw-normal">(Ungrouped &mdash; e.g. <code>{{PRODUCT}}</code>, <code>{{CYCLE}}</code>)</span></label>
                         <div class="d-flex flex-wrap align-items-center gap-1 mb-2 pm-placeholders" id="delayPlaceholders" style="font-size:0.8rem;">
                 <span class="text-muted me-1"><i class="bi bi-braces me-1"></i>Insert at cursor:</span> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="ungrouped" title="Product name" onclick="pmInsertPlaceholder('delay', '{{PRODUCT}}')">{{PRODUCT}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Product(s): the product of the page, or all the selected products on the Delay Notification page" onclick="pmInsertPlaceholder('delay', '{{PRODUCTS}}')">{{PRODUCTS}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="ungrouped" title="Single cycle (ungrouped pages)" onclick="pmInsertPlaceholder('delay', '{{CYCLE}}')">{{CYCLE}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="All cycles shown (grouped pages)" onclick="pmInsertPlaceholder('delay', '{{CYCLES}}')">{{CYCLES}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="ungrouped grouped" title="Product description(s)" onclick="pmInsertPlaceholder('delay', '{{DESCRIPTION}}')">{{DESCRIPTION}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="List of affected products and cycles (Delay Notification page)" onclick="pmInsertPlaceholder('delay', '{{AFFECTED}}')">{{AFFECTED}}</button> 
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Reason entered on the Delay Notification page" onclick="pmInsertPlaceholder('delay', '{{REASON}}')">{{REASON}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="ETA entered on the Delay Notification page, in UTC" onclick="pmInsertPlaceholder('delay', '{{ETA}}')">{{ETA}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Expected delay selected on the Delay Notification page" onclick="pmInsertPlaceholder('delay', '{{EXPECTED_DELAY}}')">{{EXPECTED_DELAY}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Note entered on the Delay Notification page" onclick="pmInsertPlaceholder('delay', '{{NOTE}}')">{{NOTE}}</button>
+                <span class="small text-muted ms-1">Green = used</span>
             </div>
             <textarea class="form-control" id="delayMessage" name="delayMessage" rows="12"
                       style="font-family:monospace; font-size:0.85rem;"><c:out value="${delayMessage}" /></textarea>
             <textarea class="form-control" id="delayMessageGrouped" name="delayMessageGrouped" rows="12"
                       style="font-family:monospace; font-size:0.85rem; display:none;"><c:out value="${delayMessageGrouped}" /></textarea>
-            <div class="form-text text-muted">Supports the <code>&lt;&lt;...&gt;&gt;</code> placeholder markers to
-            highlight text that should be edited before sending.</div>
+            <textarea id="defaultDelayMessage" class="d-none"><c:out value="${defaultDelayMessage}" /></textarea>
+            <textarea id="defaultDelayMessageGrouped" class="d-none"><c:out value="${defaultDelayMessageGrouped}" /></textarea>
+            <div class="alert alert-warning py-2 small mt-2 mb-0 d-none" id="delayUnknownWarning" role="status">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i><strong>Unknown placeholder(s):</strong>
+                <code id="delayUnknownTokens"></code>
+                <div>Unrecognized placeholders are not replaced and will remain in the message. Check the spelling or use a supported placeholder from the buttons above.</div>
+            </div>
             <div id="affectedHint" class="alert alert-info py-2 small mt-2 mb-0" style="display:none;">
                 The Grouped message has no <code>{{AFFECTED}}</code> placeholder: the Delay Notification page then inserts
                 the list of affected products and cycles after the first paragraph (or put the cursor where you want it and use the buttons above).
@@ -99,18 +109,30 @@
                   data-ungrouped-customized="<%= resumedCustomized %>" data-grouped-customized="<%= resumedGroupedCustomized %>">
                 <%= resumedCustomized ? "Customized" : "Default" %>
             </span>
+            <button type="button" class="btn btn-sm btn-outline-secondary py-0" onclick="pmResetCurrentDefault('resumed')">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset current variant
+            </button>
             </span>
         </div>
         <div class="card-body">
             <label class="form-label fw-semibold" id="resumedVariantLabel">Message body <span
-                class="text-muted fw-normal">(Ungrouped &mdash; uses <code>{{CYCLE}}</code>)</span></label>
+                class="text-muted fw-normal">(Ungrouped &mdash; e.g. <code>{{PRODUCT}}</code>, <code>{{CYCLE}}</code>)</span></label>
                         <div class="d-flex flex-wrap align-items-center gap-1 mb-2 pm-placeholders" id="resumedPlaceholders" style="font-size:0.8rem;">
                 <span class="text-muted me-1"><i class="bi bi-braces me-1"></i>Insert at cursor:</span> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="ungrouped" title="Product name" onclick="pmInsertPlaceholder('resumed', '{{PRODUCT}}')">{{PRODUCT}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Product(s): the product of the page, or all the selected products on the Delay Notification page" onclick="pmInsertPlaceholder('resumed', '{{PRODUCTS}}')">{{PRODUCTS}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="ungrouped" title="Single cycle (ungrouped pages)" onclick="pmInsertPlaceholder('resumed', '{{CYCLE}}')">{{CYCLE}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="All cycles shown (grouped pages)" onclick="pmInsertPlaceholder('resumed', '{{CYCLES}}')">{{CYCLES}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="ungrouped grouped" title="Product description(s)" onclick="pmInsertPlaceholder('resumed', '{{DESCRIPTION}}')">{{DESCRIPTION}}</button> 
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Reason saved with the Delay Notification" onclick="pmInsertPlaceholder('resumed', '{{REASON}}')">{{REASON}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="ETA saved with the Delay Notification, in UTC" onclick="pmInsertPlaceholder('resumed', '{{ETA}}')">{{ETA}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Expected delay saved with the Delay Notification" onclick="pmInsertPlaceholder('resumed', '{{EXPECTED_DELAY}}')">{{EXPECTED_DELAY}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Note saved with the Delay Notification" onclick="pmInsertPlaceholder('resumed', '{{NOTE}}')">{{NOTE}}</button>
+                <span class="small text-muted ms-1">Green = used</span>
             </div>
             <textarea class="form-control" id="resumedMessage" name="resumedMessage" rows="8"
                       style="font-family:monospace; font-size:0.85rem;"><c:out value="${resumedMessage}" /></textarea>
             <textarea class="form-control" id="resumedMessageGrouped" name="resumedMessageGrouped" rows="8"
                       style="font-family:monospace; font-size:0.85rem; display:none;"><c:out value="${resumedMessageGrouped}" /></textarea>
+            <textarea id="defaultResumedMessage" class="d-none"><c:out value="${defaultResumedMessage}" /></textarea>
+            <textarea id="defaultResumedMessageGrouped" class="d-none"><c:out value="${defaultResumedMessageGrouped}" /></textarea>
+            <div class="alert alert-warning py-2 small mt-2 mb-0 d-none" id="resumedUnknownWarning" role="status">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i><strong>Unknown placeholder(s):</strong>
+                <code id="resumedUnknownTokens"></code>
+                <div>Unrecognized placeholders are not replaced and will remain in the message. Check the spelling or use a supported placeholder from the buttons above.</div>
+            </div>
         </div>
     </div>
 
@@ -232,6 +254,33 @@ function pmUpdateAffectedHint() {
   var visible = g.style.display !== 'none' && g.value.indexOf('{{AFFECTED}}') < 0;
   hint.style.display = visible ? '' : 'none';
 }
+function pmUpdatePlaceholderUsage(which) {
+  var grouped = document.getElementById(which + 'MessageGrouped');
+  var textarea = grouped && grouped.style.display !== 'none'
+    ? grouped : document.getElementById(which + 'Message');
+  var variant = textarea === grouped ? 'grouped' : 'ungrouped';
+  var bar = document.getElementById(which + 'Placeholders');
+  if (!textarea || !bar) return;
+  var supported = ['{{PRODUCT}}', '{{PRODUCTS}}', '{{CYCLE}}', '{{CYCLES}}', '{{DESCRIPTION}}',
+    '{{AFFECTED}}', '{{REASON}}', '{{ETA}}', '{{EXPECTED_DELAY}}', '{{NOTE}}'];
+  var found = textarea.value.match(/\{\{[^{}]+\}\}/g) || [];
+  var unknown = found.filter(function(token, index) {
+    return supported.indexOf(token) < 0 && found.indexOf(token) === index;
+  });
+  var warning = document.getElementById(which + 'UnknownWarning');
+  var tokens = document.getElementById(which + 'UnknownTokens');
+  if (warning && tokens) {
+    tokens.textContent = unknown.join(', ');
+    warning.classList.toggle('d-none', unknown.length === 0);
+  }
+  bar.querySelectorAll('button[data-variants]').forEach(function(button) {
+    if (button.getAttribute('data-variants').split(' ').indexOf(variant) < 0) return;
+    var used = textarea.value.indexOf(button.textContent.trim()) >= 0;
+    button.classList.toggle('btn-success', used);
+    button.classList.toggle('btn-outline-secondary', !used);
+    button.setAttribute('aria-pressed', used ? 'true' : 'false');
+  });
+}
 // Inserts a placeholder at the cursor (replacing any selection) of the message currently shown in the card.
 // A placeholder may be inserted several times: every occurrence is replaced when the message is used.
 function pmInsertPlaceholder(which, placeholder) {
@@ -245,6 +294,20 @@ function pmInsertPlaceholder(which, placeholder) {
   ta.dispatchEvent(new Event('input', {bubbles: true}));
   pmUpdateAffectedHint();
 }
+function pmResetCurrentDefault(which) {
+  var grouped = document.getElementById(which + 'MessageGrouped');
+  var textarea = grouped && grouped.style.display !== 'none'
+    ? grouped : document.getElementById(which + 'Message');
+  var variant = textarea === grouped ? 'grouped' : 'ungrouped';
+  var defaults = document.getElementById('default' + which.charAt(0).toUpperCase() + which.slice(1)
+    + (variant === 'grouped' ? 'MessageGrouped' : 'Message'));
+  var badge = document.getElementById(which + 'CustomizedBadge');
+  if (!textarea || !defaults || !badge) return;
+  textarea.value = defaults.value;
+  badge.setAttribute('data-' + variant + '-customized', 'false');
+  textarea.dispatchEvent(new Event('input', {bubbles: true}));
+  pmSetVariant(which, variant);
+}
 function pmSetVariant(which, variant) {
   var grouped = variant === 'grouped';
   var ungroupedEl = document.getElementById(which + 'Message');
@@ -256,7 +319,8 @@ function pmSetVariant(which, variant) {
   groupedEl.style.display   = grouped ? '' : 'none';
   if (label) {
     label.innerHTML = 'Message body <span class="text-muted fw-normal">(' +
-      (grouped ? 'Grouped &mdash; uses <code>{{CYCLES}}</code>' : 'Ungrouped &mdash; uses <code>{{CYCLE}}</code>') +
+      (grouped ? 'Grouped &mdash; e.g. <code>{{PRODUCTS}}</code>, <code>{{CYCLES}}</code>'
+        : 'Ungrouped &mdash; e.g. <code>{{PRODUCT}}</code>, <code>{{CYCLE}}</code>') +
       ')</span>';
   }
   var bar = document.getElementById(which + 'Placeholders');
@@ -277,6 +341,7 @@ function pmSetVariant(which, variant) {
     badge.className = 'badge ' + (customized ? 'text-bg-info' : 'text-bg-secondary');
   }
   try { localStorage.setItem('pm' + which + 'Variant', variant); } catch (e) {}
+  pmUpdatePlaceholderUsage(which);
   pmUpdateAffectedHint();
 }
 
@@ -284,6 +349,10 @@ document.addEventListener('DOMContentLoaded', function() {
   var gm = document.getElementById('delayMessageGrouped');
   if (gm) gm.addEventListener('input', pmUpdateAffectedHint);
   ['delay', 'resumed'].forEach(function(which) {
+    ['Message', 'MessageGrouped'].forEach(function(suffix) {
+      var textarea = document.getElementById(which + suffix);
+      if (textarea) textarea.addEventListener('input', function() { pmUpdatePlaceholderUsage(which); });
+    });
     var variant = 'ungrouped';
     try { variant = localStorage.getItem('pm' + which + 'Variant') || 'ungrouped'; } catch (e) {}
     pmSetVariant(which, variant);
