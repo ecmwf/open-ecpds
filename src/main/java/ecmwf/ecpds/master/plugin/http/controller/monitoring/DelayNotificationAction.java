@@ -42,6 +42,7 @@ import org.apache.struts.action.ActionMapping;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import ecmwf.common.text.MarkdownUtil;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.web.controller.ECMWFActionForm;
@@ -96,6 +97,11 @@ public class DelayNotificationAction extends PDSAction {
             switch (action) {
             case "data" -> data(body, out);
             case "report" -> report(body, out);
+            case "markdown" -> {
+                final var source = str(body.get("markdown"));
+                out.put("html", MarkdownUtil.toMessageHtml(source));
+                out.put("text", MarkdownUtil.toPlainText(source));
+            }
             case "recipients" -> recipients(body, out);
             case "send" -> send(body, who, out);
             case "update" -> update(body, who, out);
@@ -178,13 +184,22 @@ public class DelayNotificationAction extends PDSAction {
     }
 
     private static void queueEmail(final String to, final String cc, final String bcc, final String subject,
-            final String body) throws Exception {
+            final String body, final boolean markdown) throws Exception {
         final var recipients = normalizeAddresses(to);
         if (recipients.isEmpty()) {
             throw new IllegalArgumentException("The To address is not configured");
         }
         MasterManager.getMI().sendNotificationEmail(recipients.split(",", 2)[0], recipients, normalizeAddresses(cc),
-                normalizeAddresses(bcc), subject, body);
+                normalizeAddresses(bcc), subject, markdown ? MarkdownUtil.toEmailHtml(body) : body);
+    }
+
+    /** Whether the Product Messages are written in Markdown (the default). */
+    private static boolean markdownEnabled() {
+        try {
+            return optionEnabled(ProductStatusMessages.MARKDOWN_NAME);
+        } catch (final Exception e) {
+            return true;
+        }
     }
 
     private void sendProductEmail(final Map<String, Object> body, final String who, final Map<String, Object> out)
@@ -224,7 +239,7 @@ public class DelayNotificationAction extends PDSAction {
         }
         queueEmail(
                 productMessageSetting(ProductStatusMessages.TO_ADDRESS_NAME, ProductStatusMessages.DEFAULT_TO_ADDRESS),
-                "", String.join(",", bcc), subject, messageBody);
+                "", String.join(",", bcc), subject, messageBody, markdownEnabled());
         _log.info("Product {} email for {} queued directly by {}", kind, label, who);
         out.put("sentDirectly", true);
     }
@@ -262,7 +277,7 @@ public class DelayNotificationAction extends PDSAction {
         queueEmail(
                 productMessageSetting(ProductStatusMessages.TO_ADDRESS_NAME, ProductStatusMessages.DEFAULT_TO_ADDRESS),
                 str(entry.get("cc")), noticeBcc(entry), "[" + ref + "] " + updatePrefix + str(entry.get("subject")),
-                str(entry.get("body")));
+                str(entry.get("body")), !Boolean.FALSE.equals(entry.get("markdown")));
     }
 
     private void deliverDirectly(final String ref, final int index, final String who, final Map<String, Object> out) {
@@ -319,6 +334,7 @@ public class DelayNotificationAction extends PDSAction {
         out.put("defaultBcc", DelayNotices.defaultBcc());
         out.put("allowNoticeCc", optionEnabled(ProductStatusMessages.NOTICE_ALLOW_CC_NAME));
         out.put("allowNoticeBcc", optionEnabled(ProductStatusMessages.NOTICE_ALLOW_BCC_NAME));
+        out.put("markdownMessages", markdownEnabled());
         templates(out);
         final var notices = DelayNotices.list(limit);
         out.put("notices", notices);
@@ -348,8 +364,9 @@ public class DelayNotificationAction extends PDSAction {
      * product descriptions, so that the notice body starts from the same text and placeholders.
      */
     private static void templates(final Map<String, Object> out) {
-        var delay = ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED;
-        var resumed = ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED;
+        final var md = markdownEnabled();
+        var delay = ProductStatusMessages.defaultFor(ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED, md);
+        var resumed = ProductStatusMessages.defaultFor(ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED, md);
         final Map<String, String> descriptions = new LinkedHashMap<>();
         try {
             final var db = MasterManager.getDB();
@@ -458,6 +475,7 @@ public class DelayNotificationAction extends PDSAction {
         h.put("by", by);
         h.put("subject", text(body, "subject"));
         h.put("body", text(body, "body"));
+        h.put("markdown", markdownEnabled());
         h.put("cc", "true".equals(String.valueOf(body.get("includeCc"))) ? text(body, "cc") : "");
         h.put("bcc", "true".equals(String.valueOf(body.get("includeBcc"))) ? text(body, "bcc") : "");
         h.put("emails", new ArrayList<>(emails));

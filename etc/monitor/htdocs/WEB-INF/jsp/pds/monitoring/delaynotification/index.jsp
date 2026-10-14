@@ -193,8 +193,8 @@
     </div>
     <div class="modal fade" id="dnPreviewModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
      <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-eye me-1"></i>Message preview</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-     <div class="modal-body"><div id="dnPreviewHead" class="small mb-2"></div><pre id="dnPreviewBody" class="border rounded p-3 bg-body-tertiary" style="white-space:pre-wrap;font-family:inherit;font-size:0.9rem"></pre></div>
-     <div class="modal-footer py-2"><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button></div></div></div></div>
+     <div class="modal-body"><div id="dnPreviewHead" class="small mb-2"></div><div id="dnPreviewHtml" class="border rounded p-3 bg-body-tertiary d-none" style="font-size:0.9rem"></div><pre id="dnPreviewBody" class="border rounded p-3 bg-body-tertiary" style="white-space:pre-wrap;font-family:inherit;font-size:0.9rem"></pre></div>
+     <div class="modal-footer py-2"><button type="button" class="btn btn-outline-secondary btn-sm me-auto d-none" id="dnPreviewToggle" onclick="dnPreviewToggle()"></button><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button></div></div></div></div>
     <div class="small text-muted mt-2">Choose Outlook to review and send the message there, then acknowledge it here, or send directly through the Master mail service and have it acknowledged automatically.</div>
    </div>
   </div>
@@ -268,7 +268,7 @@
 <script>
 (function() {
 var BASE = '/do/monitoring/delaynotification/';
-var S = { cycles: {}, minutesBeforeSchedule: {}, minutesBeforeSchedulePerCycle: {}, generationStatusPerProduct: {}, generationStatusPerCycle: {}, models: {}, notices: [], sel: {}, emails: [], dests: {}, bodyEdited: false, update: null, defaultCc: '', defaultBcc: '', allowNoticeCc: true, allowNoticeBcc: true, limit: 100, more: false, sentTable: null, reportBusy: false, reportData: null };
+var S = { cycles: {}, minutesBeforeSchedule: {}, minutesBeforeSchedulePerCycle: {}, generationStatusPerProduct: {}, generationStatusPerCycle: {}, models: {}, notices: [], sel: {}, emails: [], dests: {}, bodyEdited: false, update: null, defaultCc: '', defaultBcc: '', allowNoticeCc: true, allowNoticeBcc: true, markdown: true, previewData: null, previewPlain: false, limit: 100, more: false, sentTable: null, reportBusy: false, reportData: null };
 var BCC_LIST = 'op_delay_ecmwf@lists.ecmwf.int', TO_ADDRESS = 'operators@ecmwf.int'; // replaced by the values of Product Messages
 var MAX_URL = 6000;
 var PREF_KEY = 'delayNotificationPreferences:' + $('dnPreferences').dataset.user;
@@ -746,7 +746,12 @@ function addressList(value) {
   return (value || '').split(';').map(function(x) { return x.trim(); }).filter(Boolean);
 }
 
-function outlook(subject, body, emails, cells, ccText, bccText) {
+function outlook(subject, body, emails, cells, ccText, bccText, markdown) {
+  if (markdown) {
+    // Outlook links can only carry plain text: use the plain-text rendering of the Markdown message.
+    post('markdown', {markdown: body}).then(function(d) { outlook(subject, d.text, emails, cells, ccText, bccText, false); }).catch(fail);
+    return;
+  }
   var cc = (ccText || '').split(/[;,]/).map(function(x) { return x.trim(); }).filter(Boolean).join(',');
   var additionalBcc = addressList(bccText);
   function url(bcc) {
@@ -781,7 +786,7 @@ function askConfirm(ref, index, m) {
     + '<button class="btn btn-sm btn-outline-secondary me-2" id="dnConfAgain"><i class="bi bi-box-arrow-up-right"></i> Open Outlook again</button>'
     + '<button class="btn btn-sm btn-link" id="dnConfLater">Confirm later (Sent notices)</button></div>';
   $('dnConfYes').onclick = function() { confirmSent(ref, index); };
-  $('dnConfAgain').onclick = function() { outlook(m.subject, m.body, m.emails, m.cells, m.cc, m.bcc); };
+  $('dnConfAgain').onclick = function() { outlook(m.subject, m.body, m.emails, m.cells, m.cc, m.bcc, m.markdown); };
   $('dnConfLater').onclick = function() { box.innerHTML = ''; };
 }
 function confirmSent(ref, index) {
@@ -803,8 +808,28 @@ window.dnPreview = function() {
     + '<div><strong>Bcc:</strong> ' + (S.emails || []).length + ' recipient email(s) in ' + Object.keys(S.dests || {}).length + ' destination(s)'
     + (bcc.length ? ' + ' + bcc.length + ' additional (' + esc(bcc.join(', ')) + ')' : '') + '</div>';
   $('dnPreviewBody').textContent = $('dnBody').value;
+  S.previewData = null; S.previewPlain = false;
+  $('dnPreviewToggle').classList.toggle('d-none', !S.markdown);
+  showPreviewMode();
   bootstrap.Modal.getOrCreateInstance($('dnPreviewModal')).show();
+  if (S.markdown) {
+    post('markdown', {markdown: $('dnBody').value}).then(function(d) { S.previewData = d; showPreviewMode(); }).catch(fail);
+  }
 };
+// Markdown messages: formatted view (direct sending) or plain-text view (what Outlook will receive).
+function showPreviewMode() {
+  var md = S.markdown, plain = S.previewPlain;
+  $('dnPreviewHtml').classList.toggle('d-none', !md || plain);
+  $('dnPreviewBody').classList.toggle('d-none', md && !plain);
+  if (md) {
+    var d = S.previewData;
+    $('dnPreviewHtml').innerHTML = d ? d.html : '<span class="text-muted">Loading…</span>';
+    $('dnPreviewBody').textContent = d ? d.text : '';
+    $('dnPreviewToggle').innerHTML = plain ? '<i class="bi bi-file-earmark-richtext me-1"></i>Show formatted view (direct sending)'
+      : '<i class="bi bi-file-earmark-text me-1"></i>Show plain text (Outlook)';
+  }
+}
+window.dnPreviewToggle = function() { S.previewPlain = !S.previewPlain; showPreviewMode(); };
 window.dnSend = function(direct) {
   if ($('dnCcOn').checked && !dnValidateCc()) { $('dnCc').focus(); return; }
   if ($('dnBccOn').checked && !dnValidateBcc()) { $('dnBcc').focus(); return; }
@@ -820,7 +845,7 @@ window.dnSend = function(direct) {
     var ref = upd ? upd.ref : d.ref;
     var cc = p.includeCc ? p.cc : '';
     var bcc = p.includeBcc ? p.bcc : '';
-    var message = {subject: '[' + ref + '] ' + (upd ? 'UPDATE - ' : '') + p.subject, body: p.body, emails: d.emails, cells: p.cells, cc: cc, bcc: bcc};
+    var message = {subject: '[' + ref + '] ' + (upd ? 'UPDATE - ' : '') + p.subject, body: p.body, emails: d.emails, cells: p.cells, cc: cc, bcc: bcc, markdown: S.markdown};
     S.sel = {}; S.update = null; setUpdateMode(false); S.bodyEdited = false;
     afterSelection(); load();
     if (direct && d.sentDirectly) {
@@ -829,7 +854,7 @@ window.dnSend = function(direct) {
       if (direct && d.deliveryError) {
         alertMsg('Direct sending failed: ' + d.deliveryError + '. Outlook was opened instead.', 'warning');
       }
-      outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc);
+      outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc, message.markdown);
       askConfirm(ref, d.index, message);
     }
   }).catch(fail).then(function() { btn.disabled = false; directBtn.disabled = false; });
@@ -1079,7 +1104,7 @@ function sentAction(a, n, i, k) {
   }
   if (a === 'reopen') {
     var m = n.history[k];
-    outlook('[' + n.ref + '] ' + (m.kind === 'update' ? 'UPDATE - ' : '') + m.subject, m.body, m.emails || [], m.cells ? m.cells.map(function(c) { var j = c.lastIndexOf('@'); return {product: c.substring(0, j), time: c.substring(j + 1)}; }) : (n.cells || []), m.cc, m.bcc);
+    outlook('[' + n.ref + '] ' + (m.kind === 'update' ? 'UPDATE - ' : '') + m.subject, m.body, m.emails || [], m.cells ? m.cells.map(function(c) { var j = c.lastIndexOf('@'); return {product: c.substring(0, j), time: c.substring(j + 1)}; }) : (n.cells || []), m.cc, m.bcc, m.markdown !== false);
     return;
   }
   if (a === 'copy') { copy((n.emails || []).concat(n.includeBcc ? addressList(n.bcc) : []).join(',')).then(function() { alertMsg('Emails copied', 'success'); }); }
@@ -1150,7 +1175,7 @@ function openResolve(n, i) {
       var cells = picked.map(function(k) { var j = k.lastIndexOf('@'); return {product: k.substring(0, j), time: k.substring(j + 1)}; });
       var cc = d.allowNoticeCc && S.allowNoticeCc && n.includeCc ? n.cc : '';
       var bcc = d.allowNoticeBcc && S.allowNoticeBcc && n.includeBcc ? n.bcc : '';
-      var message = {subject: '[' + n.ref + '] ' + subject, body: body, emails: d.emails, cells: cells, cc: cc, bcc: bcc};
+      var message = {subject: '[' + n.ref + '] ' + subject, body: body, emails: d.emails, cells: cells, cc: cc, bcc: bcc, markdown: S.markdown};
       load();
       if (direct && d.sentDirectly) {
         alertMsg('Resolution message queued through the Master mail service and acknowledged', 'success');
@@ -1158,7 +1183,7 @@ function openResolve(n, i) {
         if (direct && d.deliveryError) {
           alertMsg('Direct sending failed: ' + d.deliveryError + '. Outlook was opened instead.', 'warning');
         }
-        outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc);
+        outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc, message.markdown);
         askConfirm(n.ref, d.index, message);
       }
     }).catch(fail);
@@ -1176,7 +1201,7 @@ function load() {
     S.generationStatusPerProduct = d.generationStatusPerProduct || {};
     S.generationStatusPerCycle = d.generationStatusPerCycle || {};
     S.models = d.models; S.notices = d.notices; S.defaultCc = d.defaultCc; S.defaultBcc = d.defaultBcc;
-    S.allowNoticeCc = d.allowNoticeCc !== false; S.allowNoticeBcc = d.allowNoticeBcc !== false;
+    S.markdown = d.markdownMessages !== false; S.allowNoticeCc = d.allowNoticeCc !== false; S.allowNoticeBcc = d.allowNoticeBcc !== false;
     $('dnCcOption').classList.toggle('d-none', !S.allowNoticeCc);
     $('dnBccOption').classList.toggle('d-none', !S.allowNoticeBcc);
     if (!S.allowNoticeCc) $('dnCcOn').checked = false;

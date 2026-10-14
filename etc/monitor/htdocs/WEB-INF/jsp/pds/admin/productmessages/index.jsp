@@ -8,6 +8,7 @@
     final boolean delayGroupedCustomized   = Boolean.TRUE.equals(request.getAttribute("delayMessageGroupedCustomized"));
     final boolean resumedGroupedCustomized = Boolean.TRUE.equals(request.getAttribute("resumedMessageGroupedCustomized"));
     final boolean compactCycleLists        = !Boolean.FALSE.equals(request.getAttribute("compactCycleLists"));
+    final boolean markdownMessages         = !Boolean.FALSE.equals(request.getAttribute("markdownMessages"));
     final boolean allowNoticeCc            = !Boolean.FALSE.equals(request.getAttribute("allowNoticeCc"));
     final boolean allowNoticeBcc           = !Boolean.FALSE.equals(request.getAttribute("allowNoticeBcc"));
 %>
@@ -43,6 +44,14 @@
 </script>
 <% } %>
 
+<style>
+.pm-pane-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bs-secondary-color); margin-bottom: 0.15rem; }
+.pm-preview { overflow: auto; border: 1px solid var(--bs-border-color); border-radius: var(--bs-border-radius-sm); padding: 0.5rem 0.75rem; font-size: 0.88rem; background: var(--bs-tertiary-bg); }
+.pm-preview p { margin-bottom: 0.6rem; }
+.pm-preview table { border-collapse: collapse; }
+.pm-preview th, .pm-preview td { border: 1px solid var(--bs-border-color); padding: 0.25rem 0.5rem; }
+</style>
+
 <form method="post" action="/do/admin/productmessages">
 
     <div class="card shadow-sm mb-4" id="delayCard">
@@ -75,12 +84,21 @@
                 <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Reason entered on the Delay Notification page" onclick="pmInsertPlaceholder('delay', '{{REASON}}')">{{REASON}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="ETA entered on the Delay Notification page, in UTC" onclick="pmInsertPlaceholder('delay', '{{ETA}}')">{{ETA}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Expected delay selected on the Delay Notification page" onclick="pmInsertPlaceholder('delay', '{{EXPECTED_DELAY}}')">{{EXPECTED_DELAY}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Note entered on the Delay Notification page" onclick="pmInsertPlaceholder('delay', '{{NOTE}}')">{{NOTE}}</button>
                 <span class="small text-muted ms-1">Green = used</span>
             </div>
+            <div class="row g-3 pm-editor-row" id="delayEditorRow">
+              <div class="col-lg-6 pm-editor-col">
+                <div class="pm-pane-label pm-md-label">Markdown</div>
             <textarea class="form-control" id="delayMessage" name="delayMessage" rows="12"
                       style="font-family:monospace; font-size:0.85rem;"><c:out value="${delayMessage}" /></textarea>
             <textarea class="form-control" id="delayMessageGrouped" name="delayMessageGrouped" rows="12"
                       style="font-family:monospace; font-size:0.85rem; display:none;"><c:out value="${delayMessageGrouped}" /></textarea>
             <textarea id="defaultDelayMessage" class="d-none"><c:out value="${defaultDelayMessage}" /></textarea>
             <textarea id="defaultDelayMessageGrouped" class="d-none"><c:out value="${defaultDelayMessageGrouped}" /></textarea>
+              </div>
+              <div class="col-lg-6 pm-preview-col">
+                <div class="pm-pane-label">Preview</div>
+                <div class="pm-preview" id="delayPreview"></div>
+              </div>
+            </div>
             <div class="alert alert-warning py-2 small mt-2 mb-0 d-none" id="delayUnknownWarning" role="status">
                 <i class="bi bi-exclamation-triangle-fill me-1"></i><strong>Unknown placeholder(s):</strong>
                 <code id="delayUnknownTokens"></code>
@@ -124,17 +142,42 @@
                 <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Reason saved with the Delay Notification" onclick="pmInsertPlaceholder('resumed', '{{REASON}}')">{{REASON}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="ETA saved with the Delay Notification, in UTC" onclick="pmInsertPlaceholder('resumed', '{{ETA}}')">{{ETA}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Expected delay saved with the Delay Notification" onclick="pmInsertPlaceholder('resumed', '{{EXPECTED_DELAY}}')">{{EXPECTED_DELAY}}</button> <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-variants="grouped" title="Note saved with the Delay Notification" onclick="pmInsertPlaceholder('resumed', '{{NOTE}}')">{{NOTE}}</button>
                 <span class="small text-muted ms-1">Green = used</span>
             </div>
+            <div class="row g-3 pm-editor-row" id="resumedEditorRow">
+              <div class="col-lg-6 pm-editor-col">
+                <div class="pm-pane-label pm-md-label">Markdown</div>
             <textarea class="form-control" id="resumedMessage" name="resumedMessage" rows="8"
                       style="font-family:monospace; font-size:0.85rem;"><c:out value="${resumedMessage}" /></textarea>
             <textarea class="form-control" id="resumedMessageGrouped" name="resumedMessageGrouped" rows="8"
                       style="font-family:monospace; font-size:0.85rem; display:none;"><c:out value="${resumedMessageGrouped}" /></textarea>
             <textarea id="defaultResumedMessage" class="d-none"><c:out value="${defaultResumedMessage}" /></textarea>
             <textarea id="defaultResumedMessageGrouped" class="d-none"><c:out value="${defaultResumedMessageGrouped}" /></textarea>
+              </div>
+              <div class="col-lg-6 pm-preview-col">
+                <div class="pm-pane-label">Preview</div>
+                <div class="pm-preview" id="resumedPreview"></div>
+              </div>
+            </div>
             <div class="alert alert-warning py-2 small mt-2 mb-0 d-none" id="resumedUnknownWarning" role="status">
                 <i class="bi bi-exclamation-triangle-fill me-1"></i><strong>Unknown placeholder(s):</strong>
                 <code id="resumedUnknownTokens"></code>
                 <div>Unrecognized placeholders are not replaced and will remain in the message. Check the spelling or use a supported placeholder from the buttons above.</div>
             </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4" id="markdownCard">
+        <div class="card-header fw-semibold"><i class="bi bi-markdown me-2"></i>Message Format</div>
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="markdownMessages" name="markdownMessages"
+                       <%= markdownMessages ? "checked" : "" %>>
+                <label class="form-check-label" for="markdownMessages">Write the messages in <strong>Markdown</strong></label>
+            </div>
+            <div class="form-text text-muted">When enabled (default), the messages above are Markdown: emails sent
+            directly by the Master Server are formatted as HTML, the Delay Notification preview shows the formatted
+            message, and <em>Send with Outlook</em> uses a plain-text approximation (Outlook links cannot carry HTML).
+            Line breaks are kept as typed. Disable to send the messages as plain text exactly as written.
+            Notices already created keep the format they were written with.</div>
         </div>
     </div>
 
@@ -313,6 +356,49 @@ function pmInsertPlaceholder(which, placeholder) {
   ta.dispatchEvent(new Event('input', {bubbles: true}));
   pmUpdateAffectedHint();
 }
+// Live Markdown preview shown next to the editor (rendered server-side, like the Destination metadata page).
+var _pmPreviewTimers = {};
+// The preview always has the height of the visible editor (also when the textarea is resized by the user).
+var _pmObservers = {};
+function pmSyncHeight(which, ta, preview) {
+  var apply = function() { if (ta.offsetHeight) preview.style.height = ta.offsetHeight + 'px'; };
+  apply();
+  if (_pmObservers[which]) _pmObservers[which].disconnect();
+  if (window.ResizeObserver) {
+    _pmObservers[which] = new ResizeObserver(apply);
+    _pmObservers[which].observe(ta);
+  }
+}
+function pmRefreshPreview(which, immediate) {
+  var toggle = document.getElementById('markdownMessages');
+  var on = !toggle || toggle.checked;
+  var row = document.getElementById(which + 'EditorRow');
+  var preview = document.getElementById(which + 'Preview');
+  if (!row || !preview) return;
+  var editor = row.querySelector('.pm-editor-col'), col = row.querySelector('.pm-preview-col');
+  col.classList.toggle('d-none', !on);
+  editor.classList.toggle('col-lg-6', on);
+  editor.classList.toggle('col-lg-12', !on);
+  var lbl = editor.querySelector('.pm-md-label'); if (lbl) lbl.classList.toggle('d-none', !on);
+  if (!on) return;
+  var grouped = document.getElementById(which + 'MessageGrouped');
+  var ta = grouped && grouped.style.display !== 'none' ? grouped : document.getElementById(which + 'Message');
+  pmSyncHeight(which, ta, preview);
+  clearTimeout(_pmPreviewTimers[which]);
+  _pmPreviewTimers[which] = setTimeout(function() {
+    fetch('/do/monitoring/delaynotification/markdown', {method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+      body: JSON.stringify({markdown: ta.value})})
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) {
+          preview.innerHTML = ta.value.trim() ? d.html : '<span class="text-muted fst-italic">Nothing to preview</span>';
+        } else {
+          preview.innerHTML = '<span class="text-danger">Preview error</span>';
+        }
+      }).catch(function() { preview.innerHTML = '<span class="text-danger">Network error</span>'; });
+  }, immediate ? 0 : 400);
+}
 function pmResetCurrentDefault(which) {
   var grouped = document.getElementById(which + 'MessageGrouped');
   var textarea = grouped && grouped.style.display !== 'none'
@@ -360,17 +446,26 @@ function pmSetVariant(which, variant) {
     badge.className = 'badge ' + (customized ? 'text-bg-info' : 'text-bg-secondary');
   }
   try { localStorage.setItem('pm' + which + 'Variant', variant); } catch (e) {}
+  pmRefreshPreview(which);
   pmUpdatePlaceholderUsage(which);
   pmUpdateAffectedHint();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  var mdToggle = document.getElementById('markdownMessages');
+  if (mdToggle) mdToggle.addEventListener('change', function() {
+    pmRefreshPreview('delay', true);
+    pmRefreshPreview('resumed', true);
+  });
   var gm = document.getElementById('delayMessageGrouped');
   if (gm) gm.addEventListener('input', pmUpdateAffectedHint);
   ['delay', 'resumed'].forEach(function(which) {
     ['Message', 'MessageGrouped'].forEach(function(suffix) {
       var textarea = document.getElementById(which + suffix);
-      if (textarea) textarea.addEventListener('input', function() { pmUpdatePlaceholderUsage(which); });
+      if (textarea) textarea.addEventListener('input', function() {
+        pmUpdatePlaceholderUsage(which);
+        pmRefreshPreview(which);
+      });
     });
     var variant = 'ungrouped';
     try { variant = localStorage.getItem('pm' + which + 'Variant') || 'ungrouped'; } catch (e) {}

@@ -43,6 +43,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
 import ecmwf.common.database.ProductMetadata;
+import ecmwf.common.text.MarkdownUtil;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
@@ -251,7 +252,12 @@ public class GetSummaryDisplayAction extends PDSAction {
         String description = null;
         String tips = null;
         var compactCycleLists = true;
+        var markdown = true;
         try {
+            markdown = !"false"
+                    .equals(MasterManager.getDB().getProductStatusMessage(ProductStatusMessages.MARKDOWN_NAME));
+            delayMessage = ProductStatusMessages.defaultFor(delayMessage, markdown);
+            resumedMessage = ProductStatusMessages.defaultFor(resumedMessage, markdown);
             final var db = MasterManager.getDB();
             final var storedDelayMessage = db.getProductStatusMessage(grouped
                     ? ProductStatusMessages.DELAY_MESSAGE_GROUPED_NAME : ProductStatusMessages.DELAY_MESSAGE_NAME);
@@ -263,6 +269,7 @@ public class GetSummaryDisplayAction extends PDSAction {
             if (storedResumedMessage != null) {
                 resumedMessage = storedResumedMessage;
             }
+            markdown = !"false".equals(db.getProductStatusMessage(ProductStatusMessages.MARKDOWN_NAME));
             final var compactFlag = db.getProductStatusMessage(ProductStatusMessages.COMPACT_CYCLE_LISTS_NAME);
             if (compactFlag != null) {
                 compactCycleLists = !"false".equals(compactFlag);
@@ -285,8 +292,10 @@ public class GetSummaryDisplayAction extends PDSAction {
                 description);
         request.setAttribute("ECMWFProductsDelayText", delayMessage);
         request.setAttribute("ECMWFProductsText", resumedMessage);
-        request.setAttribute("ECMWFProductsDelay", ProductStatusMessages.encodeForEmailBody(delayMessage));
-        request.setAttribute("ECMWFProducts", ProductStatusMessages.encodeForEmailBody(resumedMessage));
+        request.setAttribute("ECMWFProductsDelay", ProductStatusMessages
+                .encodeForEmailBody(markdown ? MarkdownUtil.toPlainText(delayMessage) : delayMessage));
+        request.setAttribute("ECMWFProducts", ProductStatusMessages
+                .encodeForEmailBody(markdown ? MarkdownUtil.toPlainText(resumedMessage) : resumedMessage));
         request.setAttribute("productTips", tips);
         var toAddress = ProductStatusMessages.DEFAULT_TO_ADDRESS;
         var bccAddress = ProductStatusMessages.DEFAULT_BCC_ADDRESS;

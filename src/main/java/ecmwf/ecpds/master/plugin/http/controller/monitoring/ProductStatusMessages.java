@@ -91,6 +91,9 @@ public final class ProductStatusMessages {
     /** SYS_CONFIG parameter name for the distribution list always placed in Bcc of the delay/resumed emails. */
     public static final String BCC_ADDRESS_NAME = "noticeBccAddress";
 
+    /** SYS_CONFIG parameter name: whether the messages are written in Markdown (default true). */
+    public static final String MARKDOWN_NAME = "messagesMarkdown";
+
     /** SYS_CONFIG parameter name controlling Cc recipients on Delay Notification. */
     public static final String NOTICE_ALLOW_CC_NAME = "noticeAllowCc";
 
@@ -127,13 +130,44 @@ public final class ProductStatusMessages {
     /** Placeholder for the note entered on the Delay Notification page. */
     public static final String NOTE_PLACEHOLDER = "{{NOTE}}";
 
+    /**
+     * Returns a built-in default for the given format: the defaults below are written in Markdown, and are converted to
+     * their plain-text equivalent when the messages are not written in Markdown.
+     *
+     * @param markdownDefault
+     *            one of the {@code DEFAULT_*} constants
+     * @param markdown
+     *            whether the messages are written in Markdown
+     *
+     * @return the default message
+     */
+    public static String defaultFor(final String markdownDefault, final boolean markdown) {
+        return markdown ? markdownDefault : ecmwf.common.text.MarkdownUtil.toPlainText(markdownDefault);
+    }
+
+    /**
+     * Tells whether the text is the built-in default, in either format.
+     *
+     * @param text
+     *            the text to check
+     * @param markdownDefault
+     *            one of the {@code DEFAULT_*} constants
+     *
+     * @return true if the text is blank or one of the two built-in defaults
+     */
+    public static boolean isDefault(final String text, final String markdownDefault) {
+        return text == null || text.isBlank() || text.strip().equals(markdownDefault.strip())
+                || text.strip().equals(defaultFor(markdownDefault, false).strip());
+    }
+
     /** Built-in default text for the "Products Delay" message (used until an administrator customizes it). */
     public static final String DEFAULT_DELAY_MESSAGE = """
             Dear colleagues,
 
             The dissemination of ECMWF {{PRODUCT}} products for the {{CYCLE}}Z cycle is delayed.
 
-            Product descriptions:
+            **Product descriptions:**
+
             {{DESCRIPTION}}
 
             Our teams and partners are actively working to restore services.
@@ -141,13 +175,13 @@ public final class ProductStatusMessages {
             We will provide an update as soon as further information is available.
 
             For the latest information, please refer to the ECMWF service status page:
-            https://www.ecmwf.int/en/service-status
+            <https://www.ecmwf.int/en/service-status>
 
             We apologise for the inconvenience.
 
             Kind regards,
 
-            ECMWF Duty Manager""";
+            **ECMWF Duty Manager**""";
 
     /** Built-in default text for the "Products Resumed" message (used until an administrator customizes it). */
     public static final String DEFAULT_RESUMED_MESSAGE = """
@@ -155,13 +189,15 @@ public final class ProductStatusMessages {
 
             The issues affecting the {{PRODUCT}} {{CYCLE}}Z cycle have been resolved and dissemination has resumed.
 
+            **Product descriptions:**
+
             {{DESCRIPTION}}
 
             We apologise for the inconvenience caused by the delay.
 
             Kind regards,
 
-            ECMWF Duty Manager""";
+            **ECMWF Duty Manager**""";
 
     /**
      * Built-in default text for the grouped-page variant of the "Products Delay" message (used until an administrator
@@ -173,12 +209,13 @@ public final class ProductStatusMessages {
 
             The dissemination of ECMWF {{PRODUCTS}} products for the {{CYCLES}}Z cycles is delayed.
 
-            Product descriptions:
+            **Product descriptions:**
+
             {{DESCRIPTION}}
 
-            Reason: {{REASON}}
-            Expected delay: {{EXPECTED_DELAY}}
-            Estimated time of availability: {{ETA}}
+            - **Reason:** {{REASON}}
+            - **Expected delay:** {{EXPECTED_DELAY}}
+            - **Estimated time of availability:** {{ETA}}
 
             {{AFFECTED}}
 
@@ -189,13 +226,13 @@ public final class ProductStatusMessages {
             We will provide an update as soon as further information is available.
 
             For the latest information, please refer to the ECMWF service status page:
-            https://www.ecmwf.int/en/service-status
+            <https://www.ecmwf.int/en/service-status>
 
             We apologise for the inconvenience caused by this delay.
 
             Kind regards,
 
-            ECMWF Duty Manager""";
+            **ECMWF Duty Manager**""";
 
     /**
      * Built-in default text for the grouped-page variant of the "Products Resumed" message (used until an administrator
@@ -207,11 +244,13 @@ public final class ProductStatusMessages {
 
             The issues affecting the {{PRODUCTS}} {{CYCLES}}Z cycles have been resolved and dissemination has resumed.
 
+            **Product descriptions:**
+
             {{DESCRIPTION}}
 
-            Original reason: {{REASON}}
-            Expected delay: {{EXPECTED_DELAY}}
-            Previous estimated time of availability: {{ETA}}
+            - **Original reason:** {{REASON}}
+            - **Expected delay:** {{EXPECTED_DELAY}}
+            - **Previous estimated time of availability:** {{ETA}}
 
             {{NOTE}}
 
@@ -219,7 +258,7 @@ public final class ProductStatusMessages {
 
             Kind regards,
 
-            ECMWF Duty Manager""";
+            **ECMWF Duty Manager**""";
 
     private ProductStatusMessages() {
         // Hiding constructor!

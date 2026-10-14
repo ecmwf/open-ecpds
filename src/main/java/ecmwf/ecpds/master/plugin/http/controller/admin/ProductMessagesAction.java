@@ -81,23 +81,26 @@ public class ProductMessagesAction extends PDSAction {
             final var compactCycleLists = "on".equals(request.getParameter("compactCycleLists"));
             final var allowNoticeCc = "on".equals(request.getParameter("allowNoticeCc"));
             final var allowNoticeBcc = "on".equals(request.getParameter("allowNoticeBcc"));
+            final var markdown = "on".equals(request.getParameter("markdownMessages"));
             try {
-                if (isBlankOrDefault(delayMessage, ProductStatusMessages.DEFAULT_DELAY_MESSAGE)) {
+                if (ProductStatusMessages.isDefault(delayMessage, ProductStatusMessages.DEFAULT_DELAY_MESSAGE)) {
                     db.resetProductStatusMessage(ProductStatusMessages.DELAY_MESSAGE_NAME);
                 } else {
                     db.setProductStatusMessage(ProductStatusMessages.DELAY_MESSAGE_NAME, delayMessage);
                 }
-                if (isBlankOrDefault(resumedMessage, ProductStatusMessages.DEFAULT_RESUMED_MESSAGE)) {
+                if (ProductStatusMessages.isDefault(resumedMessage, ProductStatusMessages.DEFAULT_RESUMED_MESSAGE)) {
                     db.resetProductStatusMessage(ProductStatusMessages.RESUMED_MESSAGE_NAME);
                 } else {
                     db.setProductStatusMessage(ProductStatusMessages.RESUMED_MESSAGE_NAME, resumedMessage);
                 }
-                if (isBlankOrDefault(delayMessageGrouped, ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED)) {
+                if (ProductStatusMessages.isDefault(delayMessageGrouped,
+                        ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED)) {
                     db.resetProductStatusMessage(ProductStatusMessages.DELAY_MESSAGE_GROUPED_NAME);
                 } else {
                     db.setProductStatusMessage(ProductStatusMessages.DELAY_MESSAGE_GROUPED_NAME, delayMessageGrouped);
                 }
-                if (isBlankOrDefault(resumedMessageGrouped, ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED)) {
+                if (ProductStatusMessages.isDefault(resumedMessageGrouped,
+                        ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED)) {
                     db.resetProductStatusMessage(ProductStatusMessages.RESUMED_MESSAGE_GROUPED_NAME);
                 } else {
                     db.setProductStatusMessage(ProductStatusMessages.RESUMED_MESSAGE_GROUPED_NAME,
@@ -113,6 +116,7 @@ public class ProductMessagesAction extends PDSAction {
                         ProductStatusMessages.DEFAULT_TO_ADDRESS);
                 saveAddress(db, ProductStatusMessages.BCC_ADDRESS_NAME, request.getParameter("noticeBccAddress"),
                         ProductStatusMessages.DEFAULT_BCC_ADDRESS);
+                saveFlag(db, ProductStatusMessages.MARKDOWN_NAME, markdown);
                 saveFlag(db, ProductStatusMessages.NOTICE_ALLOW_CC_NAME, allowNoticeCc);
                 saveFlag(db, ProductStatusMessages.NOTICE_ALLOW_BCC_NAME, allowNoticeBcc);
                 request.setAttribute("pmSuccess", "Product Status Messages saved successfully.");
@@ -123,6 +127,7 @@ public class ProductMessagesAction extends PDSAction {
 
         // GET (or after POST) — show the form pre-filled with the current values
         try {
+            final var md = !"false".equals(db.getProductStatusMessage(ProductStatusMessages.MARKDOWN_NAME));
             final var delayMessage = db.getProductStatusMessage(ProductStatusMessages.DELAY_MESSAGE_NAME);
             final var resumedMessage = db.getProductStatusMessage(ProductStatusMessages.RESUMED_MESSAGE_NAME);
             final var delayMessageGrouped = db
@@ -130,23 +135,29 @@ public class ProductMessagesAction extends PDSAction {
             final var resumedMessageGrouped = db
                     .getProductStatusMessage(ProductStatusMessages.RESUMED_MESSAGE_GROUPED_NAME);
             final var compactCycleLists = db.getProductStatusMessage(ProductStatusMessages.COMPACT_CYCLE_LISTS_NAME);
-            request.setAttribute("delayMessage",
-                    delayMessage != null ? delayMessage : ProductStatusMessages.DEFAULT_DELAY_MESSAGE);
-            request.setAttribute("defaultDelayMessage", ProductStatusMessages.DEFAULT_DELAY_MESSAGE);
-            request.setAttribute("resumedMessage",
-                    resumedMessage != null ? resumedMessage : ProductStatusMessages.DEFAULT_RESUMED_MESSAGE);
-            request.setAttribute("defaultResumedMessage", ProductStatusMessages.DEFAULT_RESUMED_MESSAGE);
+            request.setAttribute("delayMessage", delayMessage != null ? delayMessage
+                    : ProductStatusMessages.defaultFor(ProductStatusMessages.DEFAULT_DELAY_MESSAGE, md));
+            request.setAttribute("defaultDelayMessage",
+                    ProductStatusMessages.defaultFor(ProductStatusMessages.DEFAULT_DELAY_MESSAGE, md));
+            request.setAttribute("resumedMessage", resumedMessage != null ? resumedMessage
+                    : ProductStatusMessages.defaultFor(ProductStatusMessages.DEFAULT_RESUMED_MESSAGE, md));
+            request.setAttribute("defaultResumedMessage",
+                    ProductStatusMessages.defaultFor(ProductStatusMessages.DEFAULT_RESUMED_MESSAGE, md));
             request.setAttribute("delayMessageGrouped", delayMessageGrouped != null ? delayMessageGrouped
-                    : ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED);
-            request.setAttribute("defaultDelayMessageGrouped", ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED);
+                    : ProductStatusMessages.defaultFor(ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED, md));
+            request.setAttribute("defaultDelayMessageGrouped",
+                    ProductStatusMessages.defaultFor(ProductStatusMessages.DEFAULT_DELAY_MESSAGE_GROUPED, md));
             request.setAttribute("resumedMessageGrouped", resumedMessageGrouped != null ? resumedMessageGrouped
-                    : ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED);
-            request.setAttribute("defaultResumedMessageGrouped", ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED);
+                    : ProductStatusMessages.defaultFor(ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED, md));
+            request.setAttribute("defaultResumedMessageGrouped",
+                    ProductStatusMessages.defaultFor(ProductStatusMessages.DEFAULT_RESUMED_MESSAGE_GROUPED, md));
             request.setAttribute("delayMessageCustomized", delayMessage != null);
             request.setAttribute("resumedMessageCustomized", resumedMessage != null);
             request.setAttribute("delayMessageGroupedCustomized", delayMessageGrouped != null);
             request.setAttribute("resumedMessageGroupedCustomized", resumedMessageGrouped != null);
             request.setAttribute("compactCycleLists", !"false".equals(compactCycleLists));
+            request.setAttribute("markdownMessages",
+                    !"false".equals(db.getProductStatusMessage(ProductStatusMessages.MARKDOWN_NAME)));
             request.setAttribute("allowNoticeCc",
                     !"false".equals(db.getProductStatusMessage(ProductStatusMessages.NOTICE_ALLOW_CC_NAME)));
             request.setAttribute("allowNoticeBcc",
@@ -180,6 +191,7 @@ public class ProductMessagesAction extends PDSAction {
         request.setAttribute("delayMessageGroupedCustomized", Boolean.FALSE);
         request.setAttribute("resumedMessageGroupedCustomized", Boolean.FALSE);
         request.setAttribute("compactCycleLists", Boolean.TRUE);
+        request.setAttribute("markdownMessages", Boolean.TRUE);
         request.setAttribute("allowNoticeCc", Boolean.TRUE);
         request.setAttribute("allowNoticeBcc", Boolean.TRUE);
         request.setAttribute("noticeToAddress", ProductStatusMessages.DEFAULT_TO_ADDRESS);
@@ -211,13 +223,5 @@ public class ProductMessagesAction extends PDSAction {
         } else {
             db.setProductStatusMessage(name, "false");
         }
-    }
-
-    /**
-     * Returns true if the submitted text is blank, or is unchanged from the built-in default (in which case there is no
-     * point storing a custom override — the row is cleared instead, so future default updates still apply).
-     */
-    private static boolean isBlankOrDefault(final String submitted, final String defaultText) {
-        return submitted == null || submitted.isBlank() || submitted.trim().equals(defaultText.trim());
     }
 }

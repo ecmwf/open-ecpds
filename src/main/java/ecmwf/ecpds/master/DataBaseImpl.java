@@ -4972,7 +4972,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      */
     private static final Set<String> PRODUCT_STATUS_MESSAGE_NAMES = Set.of("productDelayMessage",
             "productResumedMessage", "productDelayMessageGrouped", "productResumedMessageGrouped", "compactCycleLists",
-            "noticeToAddress", "noticeBccAddress", "noticeAllowCc", "noticeAllowBcc");
+            "noticeToAddress", "noticeBccAddress", "noticeAllowCc", "noticeAllowBcc", "messagesMarkdown");
 
     /**
      * {@inheritDoc}

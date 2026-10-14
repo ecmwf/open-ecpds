@@ -98,6 +98,10 @@ ECMWF Duty Manager</pre>
         <p class="small fw-semibold mb-1"><i class="bi bi-list-ol text-primary me-1"></i>Cycle list formatting</p>
         <p class="small text-muted mb-3">When enabled, consecutive cycles are compacted (e.g. <code>00,06,12,18</code> becomes <code>00-18</code>).
         It applies to <code>{{CYCLES}}</code> on monitoring pages and on the Delay Notification page.</p>
+        <p class="small fw-semibold mb-1"><i class="bi bi-markdown text-primary me-1"></i>Message format</p>
+        <p class="small text-muted mb-3">Messages are Markdown by default, with a live preview next to the editor and line breaks kept as typed.
+        Direct sends are formatted HTML; <em>Send with Outlook</em> uses a plain-text approximation. The Delay Notification preview can
+        switch between both views. Disable the switch to send plain text.</p>
         <p class="small fw-semibold mb-1"><i class="bi bi-at text-primary me-1"></i>Notification addresses</p>
         <p class="small text-muted mb-0">The <strong>To / From</strong> address (default <code>operators@ecmwf.int</code>) and the address always placed
         in <strong>Bcc</strong> (default <code>op_delay_ecmwf@lists.ecmwf.int</code>) used by the email buttons and by the Delay

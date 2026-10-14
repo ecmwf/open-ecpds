@@ -47,7 +47,9 @@ links and bookmarks.
    The ETA is picked with hour/minute selectors (UTC) so no invalid time can be entered; the message and subject are
    generated as soon as the page loads. **Compact empty lines** is remembered per browser user and reduces runs of
    blank lines to one blank line in the generated or edited message. **Regenerate** rebuilds the message from the
-   template and current values; **Preview** shows the final mail (subject, To/Cc/Bcc counts and body). The
+   template and current values; **Preview** shows the final mail (subject, To/Cc/Bcc counts and body). When the Product
+   Messages are written in Markdown (the default), the preview is formatted and a button at the bottom switches to the
+   plain-text view used by Outlook (direct sends are HTML). The
    **Configuration Guide** button opens a side panel summarising all of this.
 5. Choose **Send with Outlook** to register the notice (`DLY-YYYY-NNNN`) and open an Outlook message with the
    recipients in BCC, or **Send directly** to queue the email through the Master mail service. Direct sends are

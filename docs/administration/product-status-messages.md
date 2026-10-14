@@ -45,6 +45,18 @@ The `{{DESCRIPTION}}` placeholder is included in all four built-in message bodie
 
 ---
 
+## Markdown Messages
+
+The messages are written in **Markdown** by default (switch **"Write the messages in Markdown"** in the **Message Format** card). While editing, a live preview is shown next to the editor. Line breaks are kept as typed, so the default templates need no special syntax; use `- ` for bullet lists, `**bold**`, `[text](https://url)` for links and blank lines between paragraphs.
+
+- **Send directly** sends the message as formatted HTML from the Master Server.
+- **Send with Outlook** (and the product page email buttons) opens Outlook with a **plain-text approximation** of the message (paragraphs, lists, links as `text (url)`), because Outlook links cannot carry HTML.
+- On the Delay Notification page, **Preview** shows the formatted message and a button at the bottom switches to the plain-text view to check what Outlook will receive.
+- The built-in default messages are written in Markdown (bold labels, bullet lists for the reason, delay and ETA, a clickable status-page link). When the switch is off, the uncustomized defaults are automatically converted to plain text, so no Markdown symbols appear.
+- Disable the switch to send the messages as plain text exactly as written. A notice keeps the format it was created with for its updates and resolutions.
+
+---
+
 ## Cycle List Formatting
 
 By default, the `{{CYCLES}}` placeholder compacts a long list of cycles into ranges for readability, e.g.:

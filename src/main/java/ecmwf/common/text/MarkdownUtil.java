@@ -56,14 +56,18 @@ public final class MarkdownUtil {
     /** The renderer. */
     private static final HtmlRenderer RENDERER = HtmlRenderer.builder().extensions(EXTENSIONS).build();
 
+    /** Same as {@link #RENDERER} but single line breaks are kept (used for e-mail style messages). */
+    private static final HtmlRenderer MESSAGE_RENDERER = HtmlRenderer.builder().extensions(EXTENSIONS)
+            .softbreak("<br />\n").build();
+
     /**
      * The tags/attributes allowed through to the final output. Kept deliberately small and explicit rather than using
      * one of jsoup's built-in lists (e.g. {@code Safelist.basic()}, which excludes tables) - every tag here is one the
      * plan for this feature specifically asked for.
      */
     private static final Safelist SAFELIST = new Safelist()
-            .addTags("p", "strong", "em", "h1", "h2", "h3", "ul", "ol", "li", "br", "code", "pre", "a", "table",
-                    "thead", "tbody", "tr", "th", "td")
+            .addTags("p", "strong", "em", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "hr", "ul", "ol", "li",
+                    "br", "code", "pre", "a", "table", "thead", "tbody", "tr", "th", "td")
             .addAttributes("a", "href").addProtocols("a", "href", "http", "https", "mailto");
 
     /**
@@ -82,18 +86,119 @@ public final class MarkdownUtil {
      * @return the rendered, allow-listed HTML (empty string if {@code markdown} is {@code null}/blank)
      */
     public static String toSafeHtml(final String markdown) {
+        return toSafeHtml(markdown, false);
+    }
+
+    /**
+     * To safe html for a message: single line breaks in the source are preserved.
+     *
+     * @param markdown
+     *            the markdown source, possibly {@code null}
+     *
+     * @return the rendered, allow-listed HTML
+     */
+    public static String toMessageHtml(final String markdown) {
+        return toSafeHtml(markdown, true);
+    }
+
+    /**
+     * To a complete HTML document suitable for an e-mail body.
+     *
+     * @param markdown
+     *            the markdown source
+     *
+     * @return the HTML document
+     */
+    public static String toEmailHtml(final String markdown) {
+        return "<html><body>" + toMessageHtml(markdown) + "</body></html>";
+    }
+
+    /**
+     * To a readable plain-text approximation (paragraphs, lists, links, tables), for channels which cannot carry HTML.
+     *
+     * @param markdown
+     *            the markdown source, possibly {@code null}
+     *
+     * @return the plain text
+     */
+    public static String toPlainText(final String markdown) {
+        final var sb = new StringBuilder();
+        appendPlain(Jsoup.parseBodyFragment(toMessageHtml(markdown)).body(), sb, "");
+        return sb.toString().replaceAll("[ \\t]+\n", "\n").replaceAll("\n{3,}", "\n\n").strip();
+    }
+
+    private static void appendPlain(final org.jsoup.nodes.Node parent, final StringBuilder sb, final String quote) {
+        for (final var node : parent.childNodes()) {
+            if (node instanceof final org.jsoup.nodes.TextNode t) {
+                final var text = t.getWholeText();
+                // The renderer emits "<br>\n": the line break is already produced by the <br>.
+                final var afterBreak = t.previousSibling() instanceof final org.jsoup.nodes.Element p
+                        && "br".equals(p.normalName());
+                sb.append(afterBreak && text.startsWith("\n") ? text.substring(1) : text);
+            } else if (node instanceof final org.jsoup.nodes.Element e) {
+                switch (e.normalName()) {
+                case "br" -> sb.append('\n').append(quote);
+                case "hr" -> sb.append("----\n\n");
+                case "ul", "ol" -> {
+                    var i = 1;
+                    for (final var li : e.children()) {
+                        sb.append("ol".equals(e.normalName()) ? (i++) + ". " : "- ");
+                        appendPlain(li, sb, quote);
+                        sb.append('\n');
+                    }
+                    sb.append('\n');
+                }
+                case "a" -> {
+                    final var start = sb.length();
+                    appendPlain(e, sb, quote);
+                    final var href = e.attr("href");
+                    final var label = sb.substring(start);
+                    if (!href.isEmpty() && !label.equals(href) && !href.equals("mailto:" + label)) {
+                        sb.append(" (").append(href).append(')');
+                    }
+                }
+                case "table" -> {
+                    for (final var row : e.select("tr")) {
+                        sb.append(String.join(" | ", row.children().eachText())).append('\n');
+                    }
+                    sb.append('\n');
+                }
+                case "blockquote" -> {
+                    final var inner = new StringBuilder();
+                    appendPlain(e, inner, "");
+                    for (final var line : inner.toString().strip().split("\n", -1)) {
+                        sb.append("> ").append(line).append('\n');
+                    }
+                    sb.append('\n');
+                }
+                case "p", "h1", "h2", "h3", "h4", "h5", "h6", "pre" -> {
+                    appendPlain(e, sb, quote);
+                    sb.append("\n\n");
+                }
+                default -> appendPlain(e, sb, quote);
+                }
+            }
+        }
+    }
+
+    private static String toSafeHtml(final String markdown, final boolean keepLineBreaks) {
         if (markdown == null || markdown.isBlank()) {
             return "";
         }
         final var document = PARSER.parse(markdown);
-        final var html = RENDERER.render(document);
-        final var cleaned = Jsoup.clean(html, "", SAFELIST);
+        final var html = (keepLineBreaks ? MESSAGE_RENDERER : RENDERER).render(document);
+        final var cleaned = keepLineBreaks
+                ? Jsoup.clean(html, "", SAFELIST, new org.jsoup.nodes.Document.OutputSettings().prettyPrint(false))
+                : Jsoup.clean(html, "", SAFELIST);
         // Force every link to open in a new tab/page rather than navigating away from the current one - done as a
         // post-processing pass (rather than relying on whatever the source produced) so it applies uniformly
         // regardless of whether the link came from Markdown link syntax or raw inline HTML in the source, and
         // "noopener noreferrer" is the standard safeguard for a target="_blank" link opened from content we rendered.
         final var fragment = Jsoup.parseBodyFragment(cleaned);
         fragment.body().select("a[href]").attr("target", "_blank").attr("rel", "noopener noreferrer");
+        if (keepLineBreaks) {
+            fragment.outputSettings().prettyPrint(false);
+        }
         return fragment.body().html();
     }
 }
