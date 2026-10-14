@@ -31,6 +31,9 @@
 .dn-status-filter-menu { min-width: 250px; }
 .dn-new { background: #d1e7dd; }
 #dnBody { font-family: monospace; font-size: 0.85rem; }
+#dnBccOption .input-group { max-width: 32rem; }
+#dnReason, #dnCustomReason { max-width: 32rem; }
+.dn-eta-input-group { max-width: 22rem; }
 @media (min-width: 1200px) {
   #dnMatrixColumn, #dnNoticeColumn { display: flex; }
   #dnMatrixColumn > .card { flex: 1 1 auto; width: 100%; min-width: 0; }
@@ -157,14 +160,15 @@
              placeholder="Enter the reason" oninput="dnAuto()">
       </div>
      </div>
-     <div class="col-6"><label class="form-label small mb-1">ETA (UTC)</label><input type="hidden" id="dnEta">
-      <div class="input-group input-group-sm">
+     <div class="col-12"><label class="form-label small mb-1">ETA (UTC)</label><input type="hidden" id="dnEta">
+      <div class="input-group input-group-sm dn-eta-input-group">
        <select id="dnEtaH" class="form-select" style="min-width:4.4rem; padding-left:.5rem; padding-right:1.6rem; background-position:right .4rem center" onchange="dnEtaChanged()" title="Hour (UTC)"></select>
        <span class="input-group-text">:</span>
        <select id="dnEtaM" class="form-select" style="min-width:4.4rem; padding-left:.5rem; padding-right:1.6rem; background-position:right .4rem center" onchange="dnEtaChanged()" title="Minute"></select>
        <button class="btn btn-outline-secondary" type="button" onclick="dnEtaNow()" title="Set the current time (UTC)"><i class="bi bi-clock"></i></button>
        <button class="btn btn-outline-secondary" type="button" onclick="dnEtaClear()" title="No ETA"><i class="bi bi-x-lg"></i></button>
       </div></div>
+     <div class="w-100"></div>
      <div class="col-6"><label class="form-label small mb-1">Expected delay</label>
       <select id="dnDelay" class="form-select form-select-sm" onchange="dnAuto()"><option value="">-</option><option>~15 min</option><option>~30 min</option><option>~45 min</option><option>~90 min</option><option>Under investigation</option></select></div>
      <div class="col-12"><label class="form-label small mb-1">Note</label><input type="text" id="dnNote" class="form-control form-control-sm" maxlength="500" oninput="dnAuto()"></div>
@@ -253,11 +257,18 @@
  </div>
  </div>
 </div>
+<div class="modal fade" id="dnReportModal" tabindex="-1" aria-labelledby="dnReportTitle" aria-hidden="true">
+ <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+  <div class="modal-header py-2"><h6 class="modal-title" id="dnReportTitle"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Delay notices report</h6><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+  <div class="modal-body"><div id="dnReportSummary" class="mb-3"></div><div class="table-responsive"><table id="dnReportTable" class="table table-sm table-bordered table-striped align-middle mb-0"></table></div></div>
+  <div class="modal-footer py-2"><button type="button" class="btn btn-outline-primary btn-sm" onclick="dnDownloadReport()"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Download CSV</button><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button></div>
+ </div></div>
+</div>
 
 <script>
 (function() {
 var BASE = '/do/monitoring/delaynotification/';
-var S = { cycles: {}, minutesBeforeSchedule: {}, minutesBeforeSchedulePerCycle: {}, generationStatusPerProduct: {}, generationStatusPerCycle: {}, models: {}, notices: [], sel: {}, emails: [], dests: {}, bodyEdited: false, update: null, defaultCc: '', defaultBcc: '', allowNoticeCc: true, allowNoticeBcc: true, limit: 100, more: false, sentTable: null };
+var S = { cycles: {}, minutesBeforeSchedule: {}, minutesBeforeSchedulePerCycle: {}, generationStatusPerProduct: {}, generationStatusPerCycle: {}, models: {}, notices: [], sel: {}, emails: [], dests: {}, bodyEdited: false, update: null, defaultCc: '', defaultBcc: '', allowNoticeCc: true, allowNoticeBcc: true, limit: 100, more: false, sentTable: null, reportBusy: false, reportData: null };
 var BCC_LIST = 'op_delay_ecmwf@lists.ecmwf.int', TO_ADDRESS = 'operators@ecmwf.int'; // replaced by the values of Product Messages
 var MAX_URL = 6000;
 var PREF_KEY = 'delayNotificationPreferences:' + $('dnPreferences').dataset.user;
@@ -851,8 +862,9 @@ window.dnGenerateReport = function() {
   var statusFilter = $('dnReportStatus').value;
   var includeHistory = $('dnReportHistory').checked;
   var includeAddresses = $('dnReportAddresses').checked;
-  var button = $('dnReportButton');
-  button.disabled = true;
+  if (S.reportBusy) { return; }
+  S.reportBusy = true;
+  updateReportButton();
   post('report', {fromDate: fromDate, toDate: toDate}).then(function(data) {
     var notices = (data.notices || []).filter(function(n) { return statusFilter === 'all' || n.status === statusFilter; });
     var productCounts = {};
@@ -912,15 +924,32 @@ window.dnGenerateReport = function() {
         });
       }
     });
-    var csv = [headers].concat(rows).map(function(row) { return row.map(csvCell).join(','); }).join('\r\n');
-    var blob = new Blob(['\ufeff' + csv], {type: 'text/csv;charset=utf-8'});
-    var url = URL.createObjectURL(blob), link = document.createElement('a');
-    link.href = url;
-    link.download = 'delay-notices-' + fromDate + '-to-' + toDate + '.csv';
-    document.body.appendChild(link); link.click(); link.remove(); window.setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-    $('dnReportResults').innerHTML = summary + '<div class="small text-muted">CSV report downloaded. Product counts are the number of notices affecting each product; select the optional flags to add message history or recipient addresses.</div>';
-    $('dnReportResults').classList.remove('d-none');
-  }).catch(fail).then(function() { updateReportButton(); });
+    S.reportData = {headers: headers, rows: rows, fromDate: fromDate, toDate: toDate, summary: summary};
+    $('dnReportSummary').innerHTML = summary
+      + '<div class="small text-muted">Report contents for ' + esc(fromDate) + ' to ' + esc(toDate) + '.</div>';
+    $('dnReportTable').innerHTML = '<thead class="table-light"><tr>'
+      + headers.map(function(header) { return '<th>' + esc(header) + '</th>'; }).join('')
+      + '</tr></thead><tbody>' + rows.map(function(row) {
+        return '<tr>' + headers.map(function(_, index) { return '<td>' + esc(row[index]) + '</td>'; }).join('') + '</tr>';
+      }).join('') + '</tbody>';
+    bootstrap.Modal.getOrCreateInstance($('dnReportModal')).show();
+  }).catch(fail).then(function() {
+    S.reportBusy = false;
+    updateReportButton();
+  });
+};
+window.dnDownloadReport = function() {
+  if (!S.reportData) { return; }
+  bootstrap.Modal.getOrCreateInstance($('dnReportModal')).hide();
+  var report = S.reportData;
+  var csv = [report.headers].concat(report.rows).map(function(row) { return row.map(csvCell).join(','); }).join('\r\n');
+  var blob = new Blob(['\ufeff' + csv], {type: 'text/csv;charset=utf-8'});
+  var url = URL.createObjectURL(blob), link = document.createElement('a');
+  link.href = url;
+  link.download = 'delay-notices-' + report.fromDate + '-to-' + report.toDate + '.csv';
+  document.body.appendChild(link); link.click(); link.remove(); window.setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+  $('dnReportResults').innerHTML = report.summary + '<div class="small text-muted">CSV report downloaded. Product counts are the number of notices affecting each product; select the optional flags to add message history or recipient addresses.</div>';
+  $('dnReportResults').classList.remove('d-none');
 };
 function sentDetails(n, i) {
   var affected = (n.cells || []).map(function(c) {
@@ -996,9 +1025,9 @@ function initSentTable() {
   });
 }
 function updateReportButton() {
-  var button = $('dnReportButton'), empty = S.notices.length === 0;
-  button.disabled = empty;
-  button.parentNode.title = empty ? 'There are no notices to report on' : '';
+  var empty = S.notices.length === 0, disabled = empty || S.reportBusy;
+  $('dnReportButton').disabled = disabled;
+  $('dnReportButtonWrap').title = empty ? 'There are no notices to report on' : '';
 }
 function renderSent() {
   $('dnSentCount').textContent = S.notices.length;

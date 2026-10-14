@@ -34,7 +34,7 @@ The admin page shows an **Ungrouped**/**Grouped** toggle above each message's te
 | `{{PRODUCTS}}` | For the Grouped messages: the product of the page on the monitoring pages, or the list of all the selected products on the [Delay Notification](../monitoring/delay-notification.md) page. `{{PRODUCT}}` still works in grouped messages and gives the same value. |
 | `{{CYCLE}}` | The single cycle/time currently being viewed (e.g. `06`). Empty on a grouped page, which has no single cycle. |
 | `{{CYCLES}}` | Every cycle/time currently shown (e.g. `00-03,06-07,12` on a grouped page). On a regular, single-cycle page this is the same single value as `{{CYCLE}}`. |
-| `{{DESCRIPTION}}` | The description(s) configured under [Product Descriptions](product-descriptions.md) for the current product — a plain text if only one type applies, a bullet list (one line per type) when several types shown on the page each resolve to a different description, or an empty string if none has been configured. |
+| `{{DESCRIPTION}}` | The description(s) configured under [Product Descriptions](product-descriptions.md) for the current product — plain text when all shown types resolve to the same description, or a bullet list (`- TYPE: description`, one line per type) when they differ. Empty if none has been configured. |
 | `{{AFFECTED}}` | Used by the [Delay Notification](../monitoring/delay-notification.md) page (Grouped delay message): replaced with the products and cycles selected as *Definite* or *Possible*, then the reason, expected delay, ETA and note. When absent, that block is inserted after the first paragraph. Removed from the messages sent from the monitoring pages. |
 | `{{REASON}}` | The reason entered in the Delay Notification form, or the reason saved with a notice when composing its resolution. |
 | `{{ETA}}` | The notice's ETA, followed by `UTC` when set. |
@@ -76,13 +76,18 @@ Dear colleagues,
 
 The dissemination of ECMWF {{PRODUCTS}} products for the {{CYCLES}}Z cycles will be delayed.
 
-{{AFFECTED}}
-
+Product descriptions:
 {{DESCRIPTION}}
+
+{{AFFECTED}}
 
 Kind regards,
 ECMWF Duty Manager
 ```
+
+The built-in Ungrouped and Grouped **Products Delay** messages introduce `{{DESCRIPTION}}` with **Product descriptions:** on
+a new line. When different descriptions are configured for the types shown, the placeholder expands to one `- TYPE:
+description` bullet per type; when they are the same, it appears once as plain text.
 
 On the Delay Notification page, `{{AFFECTED}}` is replaced with the *Definite* and *Possible* lists, followed by the
 reason, expected delay, ETA and note, except for details placed with their own individual placeholders above. Use it

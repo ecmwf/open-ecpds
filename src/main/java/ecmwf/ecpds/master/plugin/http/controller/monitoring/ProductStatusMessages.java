@@ -133,6 +133,7 @@ public final class ProductStatusMessages {
 
             The dissemination of ECMWF {{PRODUCT}} products for the {{CYCLE}}Z cycle is delayed.
 
+            Product descriptions:
             {{DESCRIPTION}}
 
             Our teams and partners are actively working to restore services.
@@ -172,6 +173,7 @@ public final class ProductStatusMessages {
 
             The dissemination of ECMWF {{PRODUCTS}} products for the {{CYCLES}}Z cycles is delayed.
 
+            Product descriptions:
             {{DESCRIPTION}}
 
             Reason: {{REASON}}

@@ -56,7 +56,7 @@
               <tr><td><code>{{CYCLE}}</code></td><td>Ungrouped</td><td>The cycle (e.g. <code>00</code>).</td></tr>
               <tr><td><code>{{PRODUCTS}}</code></td><td>Grouped</td><td>The list of products ("A, B and C"). On a monitoring page it is the page's product.</td></tr>
               <tr><td><code>{{CYCLES}}</code></td><td>Grouped</td><td>The list of cycles (e.g. <code>00,12</code>).</td></tr>
-              <tr><td><code>{{DESCRIPTION}}</code></td><td>Both</td><td>The description of the product from <a href="/do/admin/productdescriptions">Product Descriptions</a>.</td></tr>
+              <tr><td><code>{{DESCRIPTION}}</code></td><td>Both</td><td>Descriptions for the product types shown, from <a href="/do/admin/productdescriptions">Product Descriptions</a>. When types have different descriptions, this is a bullet list (one <code>- TYPE: description</code> line per type); otherwise the shared description is shown once.</td></tr>
               <tr><td><code>{{AFFECTED}}</code></td><td>Grouped delay</td><td>The block of <em>Definite</em> and <em>Possible</em> product/cycle lists with reason, delay, ETA and note (Delay Notification page). Removed on monitoring pages. Use it <strong>once</strong>; if missing, the block is inserted after the first paragraph.</td></tr>
               <tr><td><code>{{REASON}}</code></td><td>Grouped delay/resumed</td><td>The reason entered for a Delay Notification, or saved with that notice when composing its resolution.</td></tr>
               <tr><td><code>{{ETA}}</code></td><td>Grouped delay/resumed</td><td>The notice ETA, followed by <code>UTC</code> when set.</td></tr>
@@ -72,6 +72,7 @@ The dissemination of ECMWF {{PRODUCTS}} products for the {{CYCLES}}Z cycles will
 
 {{AFFECTED}}
 
+Product descriptions:
 {{DESCRIPTION}}
 
 Kind regards,
