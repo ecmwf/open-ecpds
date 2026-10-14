@@ -47,7 +47,7 @@ The database initialises automatically on first start. The `/data` volume persis
 
 | Service | URL | Credentials |
 |---|---|---|
-| Monitoring UI | `https://localhost:8443` | admin / admin2021 · monitor / monitor2021 |
+| Monitoring UI | `https://localhost:8443` | admin / admin2021 · monitor / monitor2021 · operator / operator2021 |
 | Data Portal (HTTPS) | `https://localhost:7443` | test / test2021 |
 | Data Portal (S3) | `https://localhost:7443/s3` | test / test2021 |
 | Data Portal (WebDAV) | `https://localhost:7443/webdav` | test / test2021 |

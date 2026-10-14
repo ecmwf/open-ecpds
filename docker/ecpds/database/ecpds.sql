@@ -1042,7 +1042,8 @@ LOCK TABLES `ECUSER` WRITE;
 INSERT INTO `ECUSER` VALUES
 ('admin',-1,-1,'/','/bin/sh','admin'),
 ('anonymous',-1,-1,'/','/bin/sh','anonymous'),
-('monitor',-1,-1,'/','/bin/sh','monitor');
+('monitor',-1,-1,'/','/bin/sh','monitor'),
+('operator',-1,-1,'/','/bin/sh','operator');
 /*!40000 ALTER TABLE `ECUSER` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2268,7 +2269,8 @@ LOCK TABLES `WEB_USER` WRITE;
 /*!40000 ALTER TABLE `WEB_USER` DISABLE KEYS */;
 INSERT INTO `WEB_USER` VALUES
 ('admin','Administrator',1759157732142,'[0:0:0:0:0:0:0:1]',1,'','admin2021'),
-('monitor','End User',NULL,NULL,1,'','monitor2021');
+('monitor','End User',NULL,NULL,1,'','monitor2021'),
+('operator','Operator',NULL,NULL,1,'','operator2021');
 /*!40000 ALTER TABLE `WEB_USER` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2309,7 +2311,13 @@ INSERT INTO `WEU_CAT` VALUES
 ('admin',10005),
 ('monitor',10005),
 ('admin',10052),
-('monitor',10055);
+('monitor',10055),
+('operator',103),
+('operator',104),
+('operator',1001),
+('operator',1004),
+('operator',10005),
+('operator',10052);
 /*!40000 ALTER TABLE `WEU_CAT` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

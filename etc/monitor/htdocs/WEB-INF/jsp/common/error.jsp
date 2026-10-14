@@ -185,6 +185,8 @@ if (message == null) {
   <%-- Operations --%>
   <auth:if basePathKey="monitoring.basepath" paths="/">
     <auth:then>
+    <auth:if basePathKey="transferhistory.basepath" paths="/">
+    <auth:then>
     <div class="col-xl-4 col-md-6 d-flex flex-column">
       <div class="home-section-card">
         <div class="home-section-hdr" style="background:#e8f7f7;">
@@ -196,6 +198,8 @@ if (message == null) {
         </ul>
       </div>
     </div>
+    </auth:then>
+    </auth:if>
     </auth:then>
   </auth:if>
 

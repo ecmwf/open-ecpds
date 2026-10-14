@@ -25,9 +25,13 @@
               </tr>
 	      <auth:if basePathKey="monitoring.basepath" paths="/">
 	      	<auth:then>
+	      	<auth:if basePathKey="transferhistory.basepath" paths="/">
+	      		<auth:then>
 	      		<tr>
                   <td><a href="/do/operations"><i class="bi bi-eye"></i> Operations</a></td>
               		</tr>
+	      		</auth:then>
+	      	</auth:if>
 		</auth:then>
 	      </auth:if>
 </table>

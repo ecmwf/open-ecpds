@@ -51,7 +51,7 @@ everything across restarts. Wait about 30 seconds for all services to become ava
 
 | Service | URL | Credentials |
 |---|---|---|
-| Monitoring UI | `https://localhost:8443` | `admin` / `admin2021` · `monitor` / `monitor2021` |
+| Monitoring UI | `https://localhost:8443` | `admin` / `admin2021` · `monitor` / `monitor2021` · `operator` / `operator2021` |
 | REST API | `https://localhost:8443/ecpds/v1/` | `api` / `api2021` |
 | Data Portal (HTTPS) | `https://localhost:7443` | `test` / `test2021` |
 | Data Portal (S3) | `https://localhost:7443/s3` | `test` / `test2021` |
@@ -370,11 +370,15 @@ docker rm standalone
 ## Next steps
 
 - Explore the [Monitoring UI](https://localhost:8443) to see destinations, hosts, and
-  transfer history. Two accounts give different perspectives:
+  transfer history. Three accounts give different perspectives:
     - **`admin` / `admin2021`** — full administrator view with access to all destinations,
       hosts, transfer queues, users, and system configuration.
     - **`monitor` / `monitor2021`** — restricted user view showing only a limited set of
       destinations and features, as a regular monitoring user would experience it.
+    - **`operator` / `operator2021`** — operator view: all destinations and the Operations
+      section, without the administration pages.
+
+  See [Monitor UI overview](../monitor-ui/overview.md) for how the three profiles differ.
 - Read [Data Acquisition](../use-cases/acquisition.md) and [Data Dissemination](../use-cases/dissemination.md) to understand the two active services.
 - Explore the [Data Portal](../use-cases/data-portal.md) for how remote users push and pull data.
 - Ready for a real deployment? See [Installation](installation.md) → [First Run](first-run.md).

@@ -34,7 +34,9 @@ public class OperationsAction extends PDSAction {
     protected boolean isAuthorized(final User user, final String currentPath, final HttpServletRequest request)
             throws ECMWFException {
         final var monitoringBasePath = getResource(request, "monitoring.basepath");
-        return user.hasAccess(monitoringBasePath) || user.hasAccess(monitoringBasePath + "/");
+        final var historyBasePath = getResource(request, "transferhistory.basepath");
+        return (user.hasAccess(monitoringBasePath) || user.hasAccess(monitoringBasePath + "/"))
+                && user.hasAccess(historyBasePath + "/");
     }
 
     @Override

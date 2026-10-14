@@ -79,8 +79,10 @@ public class StartAction extends PDSAction {
 
         request.setAttribute("hasAdmin", user.hasAccess(getResource(request, "admin.basepath")));
         final var monitoringBasePath = getResource(request, "monitoring.basepath");
+        final var historyBasePath = getResource(request, "transferhistory.basepath");
         request.setAttribute("hasOperations",
-                user.hasAccess(monitoringBasePath) || user.hasAccess(monitoringBasePath + "/"));
+                (user.hasAccess(monitoringBasePath) || user.hasAccess(monitoringBasePath + "/"))
+                        && user.hasAccess(historyBasePath + "/"));
 
         final boolean hasAdmin = Boolean.TRUE.equals(request.getAttribute("hasAdmin"));
         if (hasAdmin) {
