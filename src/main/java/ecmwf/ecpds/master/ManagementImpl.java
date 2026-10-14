@@ -202,6 +202,16 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         this.base = master.getECpdsBase();
     }
 
+    @Override
+    public void sendNotificationEmail(final String from, final String to, final String cc, final String bcc,
+            final String subject, final String body) throws RemoteException {
+        try {
+            master.sendECpdsNotificationEmail(from, to, cc, bcc, subject, body);
+        } catch (final RuntimeException e) {
+            throw Format.getRemoteException("sendNotificationEmail", e);
+        }
+    }
+
     /**
      * Gets the contacts.
      *
@@ -4018,22 +4028,46 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      */
     @Override
     public Map<String, GeoPoint> getGeoLocations(final String[] hostNames) throws RemoteException {
-        // Plain GeoIP resolution only, for the target Host addresses/names referenced by live transfer samples (see
-        // GlobeWebSocket#resolveGeoLocations()). A Continental Mover's own root identifier, and every enabled Proxy
-        // Host's own location, are resolved separately and more precisely by getEnabledProxyHosts() (which has the
-        // actual Host object in hand, so it can prefer a manually-stored location over a live GeoIP guess) - this
-        // method used to also guess a Proxy Host match for any hostName that failed to resolve here, but that
-        // applied indiscriminately to a real target Host address that simply failed to resolve too, occasionally
-        // (mis)resolving it to the same coincidental location as an unrelated Continental Mover.
         final Map<String, GeoPoint> result = new HashMap<>();
         if (hostNames != null) {
+            final Map<String, DataBaseImpl.GeoIpResult> cloudLocations = new HashMap<>();
+            final Map<String, String> cloudProviders = new HashMap<>();
+            try {
+                // Cloud host addresses use configured regions; proxy roots are resolved separately.
+                for (final var host : base.getHostArray()) {
+                    final var provider = DataBaseImpl.resolveCloudProvider(base, host);
+                    if (!provider.isEmpty()) {
+                        cloudProviders.put(DataBaseImpl.normalizeGeoAddress(host.getHost()), provider);
+                        final var ip = host.getHostLocation() != null ? host.getHostLocation().getIp() : null;
+                        if (ip != null) {
+                            cloudProviders.put(DataBaseImpl.normalizeGeoAddress(ip), provider);
+                        }
+                    }
+                    if (!Boolean.TRUE.equals(host.getAutomaticLocation())) {
+                        continue;
+                    }
+                    final var location = DataBaseImpl.resolveConfiguredGeoLocation(base, host);
+                    if (location != null) {
+                        cloudLocations.put(DataBaseImpl.normalizeGeoAddress(host.getHost()), location);
+                        final var hostLocation = host.getHostLocation();
+                        if (hostLocation != null && hostLocation.getIp() != null) {
+                            cloudLocations.put(DataBaseImpl.normalizeGeoAddress(hostLocation.getIp()), location);
+                        }
+                    }
+                }
+            } catch (final Exception e) {
+                _log.debug("Resolving configured cloud locations for the globe", e);
+            }
             for (final var hostName : hostNames) {
                 if (hostName == null || hostName.isBlank() || result.containsKey(hostName)) {
                     continue;
                 }
-                final var geo = _resolveGeoIpQuietly(hostName);
-                if (geo != null && geo.latitude() != null && geo.longitude() != null) {
-                    result.put(hostName, new GeoPoint(geo.latitude(), geo.longitude(), geo.country()));
+                final var geo = cloudLocations.get(DataBaseImpl.normalizeGeoAddress(hostName));
+                final var resolved = geo != null ? geo : _resolveGeoIpQuietly(hostName);
+                if (resolved != null && resolved.latitude() != null && resolved.longitude() != null) {
+                    final var provider = cloudProviders.get(DataBaseImpl.normalizeGeoAddress(hostName));
+                    result.put(hostName,
+                            new GeoPoint(resolved.latitude(), resolved.longitude(), resolved.country(), provider));
                 }
             }
         }

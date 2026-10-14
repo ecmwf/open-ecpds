@@ -14,6 +14,7 @@ By default the module constructs the endpoint as `{scheme}://{host}:{port}` usin
 | `azure.url` | *scheme://host:port* | Full endpoint URL override (e.g. `http://127.0.0.1:10000/devstoreaccount1` for Azurite) |
 | `azure.scheme` | `https` | URL scheme (`https` for production, `http` for local emulator) |
 | `azure.port` | `443` | Port when constructing the endpoint URL from host + scheme |
+| `azure.region` | *empty* | Optional Azure region used to place the host approximately on maps; does not change the storage endpoint |
 
 ### Quick-start examples
 

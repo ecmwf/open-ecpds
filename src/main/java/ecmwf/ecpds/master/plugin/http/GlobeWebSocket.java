@@ -577,6 +577,9 @@ public class GlobeWebSocket implements WebSocketListener {
             if (location.country() != null && !location.country().isBlank()) {
                 node.put("hostCountry", location.country());
             }
+            if (location.cloud() != null && !location.cloud().isBlank()) {
+                node.put("cloud", location.cloud());
+            }
             if (LOG.isDebugEnabled()) {
                 for (final var p : enabledProxyHosts) {
                     if (p.latitude() != null && p.longitude() != null && location.latitude() == p.latitude()

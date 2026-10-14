@@ -40,8 +40,15 @@ import java.io.Serializable;
  *            the longitude
  * @param country
  *            the ISO country code, or {@code null} if unknown
+ * @param cloud
+ *            the public cloud provider ("aws", "gcs" or "azure") when the target is certainly that provider, or
+ *            {@code null}
  */
-public record GeoPoint(double latitude, double longitude, String country) implements Serializable {
+public record GeoPoint(double latitude, double longitude, String country, String cloud) implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
+
+    public GeoPoint(final double latitude, final double longitude, final String country) {
+        this(latitude, longitude, country, null);
+    }
 }

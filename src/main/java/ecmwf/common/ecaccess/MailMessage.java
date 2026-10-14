@@ -35,8 +35,11 @@ final class MailMessage {
     /** The _to. */
     private final String _to;
 
-    /** The _bcc. */
+    /** The CC recipients. */
     private final String _cc;
+
+    /** The blind-copy recipients. */
+    private final String _bcc;
 
     /** The _subject. */
     private final String _subject;
@@ -59,6 +62,8 @@ final class MailMessage {
      *            the to
      * @param cc
      *            the cc
+     * @param bcc
+     *            the blind-copy recipients
      * @param subject
      *            the subject
      * @param content
@@ -68,11 +73,12 @@ final class MailMessage {
      * @param attachmentcontent
      *            the attachmentcontent
      */
-    MailMessage(final String from, final String to, final String cc, final String subject, final String content,
-            final String attachmentName, final String attachmentcontent) {
+    MailMessage(final String from, final String to, final String cc, final String bcc, final String subject,
+            final String content, final String attachmentName, final String attachmentcontent) {
         _from = from;
         _to = to;
         _cc = cc;
+        _bcc = bcc;
         _subject = subject;
         _content = content;
         _attachmentName = attachmentName;
@@ -104,6 +110,15 @@ final class MailMessage {
      */
     String getCC() {
         return _cc;
+    }
+
+    /**
+     * Gets the blind-copy recipients.
+     *
+     * @return the blind-copy recipients
+     */
+    String getBCC() {
+        return _bcc;
     }
 
     /**

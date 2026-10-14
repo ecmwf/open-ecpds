@@ -1260,6 +1260,9 @@ public enum ECtransOptions {
     /** The host azure url. */
     HOST_AZURE_URL("url", String.class, STRING_NONE),
 
+    /** Azure region used for approximate host geolocation; it does not affect the storage endpoint. */
+    HOST_AZURE_REGION("region", String.class, ""),
+
     /** The host azure sas url. */
     HOST_AZURE_SAS_URL("sasUrl", String.class, ""),
 

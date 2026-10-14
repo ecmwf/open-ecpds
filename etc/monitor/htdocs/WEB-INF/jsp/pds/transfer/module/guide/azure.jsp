@@ -70,6 +70,8 @@
                   <td>URL scheme (<code>https</code> for production, <code>http</code> for local emulator)</td></tr>
               <tr><td><code>azure.port</code></td><td><code>443</code></td>
                   <td>Port when constructing the endpoint URL from host + scheme</td></tr>
+              <tr><td><code>azure.region</code></td><td><em>empty</em></td>
+                  <td>Optional Azure region used to place the host approximately on maps; does not change the storage endpoint</td></tr>
             </tbody>
           </table>
         </div>

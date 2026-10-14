@@ -435,18 +435,32 @@ th {
         </div>
         <div class="card-body py-2 px-3 d-flex align-items-stretch flex-wrap gap-3">
             <div class="border rounded px-2 py-1">
-                <div class="text-muted mb-1" style="font-size:0.72rem;"><i class="bi bi-envelope-arrow-up me-1"></i>Send directly (opens Outlook)</div>
+                <div class="text-muted mb-1" style="font-size:0.72rem;"><i class="bi bi-envelope-arrow-up me-1"></i>Choose Outlook or direct sending</div>
                 <div class="d-flex flex-wrap gap-2">
             <a id="delayEmail" target="_blank"
                title="Open Outlook: Products Delay Email for ${productNameAndTime}"
                class="btn btn-sm btn-outline-warning">
                 <i class="bi bi-exclamation-triangle-fill me-1"></i>Products Delay
             </a>
+            <button type="button" class="btn btn-sm btn-warning"
+                    title="Send the Products Delay email through the Master mail service"
+                    data-kind="delay" data-product="<c:out value="${productName}" />"
+                    data-time="<c:out value="${productStatus.time}" />" data-all-products="${allProducts}"
+                    onclick="sendProductEmail(this)">
+                <i class="bi bi-send-check me-1"></i>Send Delay
+            </button>
             <a id="productEmail" target="_blank"
                title="Open Outlook: Products Resumed Email for ${productNameAndTime}"
                class="btn btn-sm btn-outline-success">
                 <i class="bi bi-check-circle-fill me-1"></i>Products Resumed
             </a>
+            <button type="button" class="btn btn-sm btn-success"
+                    title="Send the Products Resumed email through the Master mail service"
+                    data-kind="resumed" data-product="<c:out value="${productName}" />"
+                    data-time="<c:out value="${productStatus.time}" />" data-all-products="${allProducts}"
+                    onclick="sendProductEmail(this)">
+                <i class="bi bi-send-check me-1"></i>Send Resumed
+            </button>
                 </div>
             </div>
             <div class="border rounded px-2 py-1">
@@ -476,7 +490,35 @@ th {
         </div>
     </div>
 
+    <textarea id="delayEmailBody" class="d-none"><c:out value="${ECMWFProductsDelayText}" /></textarea>
+    <textarea id="resumedEmailBody" class="d-none"><c:out value="${ECMWFProductsText}" /></textarea>
     <script>
+        function sendProductEmail(button) {
+            const kind = button.dataset.kind;
+            const body = document.getElementById(kind === 'delay' ? 'delayEmailBody' : 'resumedEmailBody').value;
+            button.disabled = true;
+            fetch('<bean:message key="monitoring.basepath"/>/delaynotification/productemail', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+                body: JSON.stringify({
+                    kind: kind,
+                    product: button.dataset.product,
+                    time: button.dataset.time,
+                    allProducts: button.dataset.allProducts === 'true',
+                    body: body
+                })
+            }).then(function(response) {
+                return response.json();
+            }).then(function(result) {
+                if (!result.success) throw new Error(result.error || 'Email could not be queued');
+                showToast('Email queued through the Master mail service', 'success');
+            }).catch(function(error) {
+                showToast(error.message || 'Email could not be queued', 'danger');
+            }).finally(function() {
+                button.disabled = false;
+            });
+        }
+
         function copyToClipboard(text) {
             if (!text || text.trim() === 'undefined') {
                 showToast("No emails to copy!", "warning");

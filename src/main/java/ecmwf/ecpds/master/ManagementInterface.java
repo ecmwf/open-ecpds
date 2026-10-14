@@ -57,6 +57,28 @@ import ecmwf.common.monitor.MonitorManager;
  * The Interface ManagementInterface.
  */
 public interface ManagementInterface extends Remote {
+    /**
+     * Queue an email notification through the Master mail service.
+     *
+     * @param from
+     *            the sender
+     * @param to
+     *            the recipient(s)
+     * @param cc
+     *            the CC recipient(s)
+     * @param bcc
+     *            the BCC recipient(s)
+     * @param subject
+     *            the subject
+     * @param body
+     *            the message body
+     *
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void sendNotificationEmail(String from, String to, String cc, String bcc, String subject, String body)
+            throws RemoteException;
+
     /** The Constant DESTINATION_STATE_ONLINE. */
     int DESTINATION_STATE_ONLINE = 0;
 

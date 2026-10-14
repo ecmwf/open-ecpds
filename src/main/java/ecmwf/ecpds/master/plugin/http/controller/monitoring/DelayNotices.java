@@ -124,6 +124,31 @@ public final class DelayNotices {
     }
 
     /**
+     * Loads notices created within an inclusive date range.
+     *
+     * @param fromDate
+     *            the start date
+     * @param toDate
+     *            the end date
+     *
+     * @return the notices, most recent first
+     *
+     * @throws Exception
+     *             if they cannot be read
+     */
+    public static List<Map<String, Object>> list(final String fromDate, final String toDate) throws Exception {
+        final var result = new ArrayList<Map<String, Object>>();
+        for (final var row : MasterManager.getDB().getDelayNoticesInPeriod(fromDate, toDate)) {
+            try {
+                result.add(parse(row));
+            } catch (final Exception e) {
+                // A damaged notice must not hide the others.
+            }
+        }
+        return result;
+    }
+
+    /**
      * Gets a notice.
      *
      * @param ref

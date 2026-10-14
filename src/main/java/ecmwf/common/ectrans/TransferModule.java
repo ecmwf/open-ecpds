@@ -291,6 +291,20 @@ public abstract class TransferModule implements Closeable {
     public abstract void connect(String location, ECtransSetup setup) throws Exception;
 
     /**
+     * Returns a geographic hint derived solely from host configuration. Implementations must not connect to the remote
+     * service or perform network I/O here. The Master resolves the returned hint using its region catalogue and GeoIP
+     * database; {@code null} keeps the normal hostname-based GeoIP behaviour.
+     *
+     * @param setup
+     *            the host's parsed transfer-module configuration
+     *
+     * @return the configured geographic hint, or {@code null} when this module has none
+     */
+    public GeoLocationHint getGeoLocationHint(final ECtransSetup setup) {
+        return null;
+    }
+
+    /**
      * Gets the port from the setup.
      *
      * @param setup

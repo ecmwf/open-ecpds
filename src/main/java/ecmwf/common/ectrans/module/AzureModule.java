@@ -38,6 +38,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_NUM_BUFFERS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_CHUNK_SIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_OVERWRITE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_PORT;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_REGION;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_SAS_SUBSCRIPTION_KEY;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_SAS_URL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_SCHEME;
@@ -46,6 +47,8 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_USER_ASSIGNED_CLIEN
 import static ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_USE_MD5;
 import static ecmwf.common.text.Util.isEmpty;
 import static ecmwf.common.text.Util.isNotEmpty;
+
+import ecmwf.common.ectrans.GeoLocationHint;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -114,6 +117,13 @@ public final class AzureModule extends TransferModule {
 
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(AzureModule.class);
+
+    /** {@inheritDoc} */
+    @Override
+    public GeoLocationHint getGeoLocationHint(final ECtransSetup setup) {
+        final var region = setup.getString(HOST_AZURE_REGION);
+        return isEmpty(region) ? null : new GeoLocationHint("azure", region, null);
+    }
 
     /** The current status. */
     private String currentStatus = "INIT";

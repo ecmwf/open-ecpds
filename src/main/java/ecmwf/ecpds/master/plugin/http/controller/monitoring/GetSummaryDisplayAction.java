@@ -283,6 +283,8 @@ public class GetSummaryDisplayAction extends PDSAction {
                 description);
         resumedMessage = ProductStatusMessages.substitutePlaceholders(resumedMessage, product, time, cyclesText,
                 description);
+        request.setAttribute("ECMWFProductsDelayText", delayMessage);
+        request.setAttribute("ECMWFProductsText", resumedMessage);
         request.setAttribute("ECMWFProductsDelay", ProductStatusMessages.encodeForEmailBody(delayMessage));
         request.setAttribute("ECMWFProducts", ProductStatusMessages.encodeForEmailBody(resumedMessage));
         request.setAttribute("productTips", tips);

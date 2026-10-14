@@ -76,6 +76,7 @@
 }
 
 .location_simple {
+    font-family: Arial, sans-serif; /* same font on every layout (fullscreen pages have no body font rule) */
     padding: 4px 14px;
     background: rgba(255,255,255,0.12);
     border-top: 1px solid rgba(255,255,255,0.18);
@@ -100,10 +101,13 @@
     padding: 0;
     background: transparent;
     font-size: 0.78rem;
+    line-height: 1.5;
     flex-wrap: nowrap;
     overflow: hidden;
 }
 .location_simple .breadcrumb-item {
+    font-size: 0.78rem;
+    line-height: 1.5;
     color: rgba(255,255,255,0.7);
     white-space: nowrap;
 }
@@ -115,6 +119,7 @@
     vertical-align: middle;
 }
 .location_simple .breadcrumb-item a {
+    font-size: inherit;
     color: rgba(255,255,255,0.82);
     text-decoration: none;
 }
@@ -165,6 +170,19 @@
 .dropdown-menu {
     z-index: 1040;
 }
+
+/* Standards-mode pages (fullscreen layout) leave a baseline gap under inline images and use the line-height of the
+   parent font, making the header taller than in quirks-mode pages; neutralise both so every layout renders alike. */
+#topheader { font-family: Arial, sans-serif; }
+#topheader button[data-bs-target="#sidebarMenu"] { display: flex; align-items: center; justify-content: center; }
+#topheader button[data-bs-target="#sidebarMenu"] i { display: block; height: 19.2px; line-height: 19.2px; }
+#topheader button[data-bs-target="#sidebarMenu"] i::before { vertical-align: top; }
+#topheader .dropdown { display: flex; align-items: center; height: 21px; }
+#topheader .dropdown > .dropdown-toggle { display: inline-flex; align-items: center; height: 21px; line-height: 21px; }
+#topheader .navbar-brand { display: flex; align-items: center; line-height: 1; }
+#topheader .navbar-brand img { display: block; }
+#topheader .container-fluid { line-height: 1.5; }
+.location_simple { line-height: 1.5; }
 
 /* Force the inner navbar row to never wrap, and let the title shrink/truncate */
 #topheader .container-fluid {

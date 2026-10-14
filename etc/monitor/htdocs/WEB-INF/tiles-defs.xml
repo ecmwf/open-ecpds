@@ -1202,7 +1202,7 @@
 	<definition name=".pds.monitoring.delaynotification" extends=".pds.base">
 		<put name="title" value="Delay Notification" />
 		<put name="location"
-			value="/WEB-INF/jsp/pds/monitoring/location.jsp" />
+			value="/WEB-INF/jsp/pds/operations/location.jsp" />
 		<put name="content"
 			value="/WEB-INF/jsp/pds/monitoring/delaynotification/index.jsp" />
 	</definition>
@@ -1214,7 +1214,7 @@
 		extends=".ecmwf.fullscreen.base">
 		<put name="title" value="Top Monitoring Display" />
 		<put name="location"
-			value="/WEB-INF/jsp/pds/monitoring/location.jsp" />
+			value="/WEB-INF/jsp/pds/operations/location.jsp" />
 		<put name="content"
 			value="/WEB-INF/jsp/pds/monitoring/top_level/index.jsp" />
 		<put name="search" value="/WEB-INF/jsp/pds/monitoring/pages.jsp" />
@@ -1224,7 +1224,7 @@
 		extends=".ecmwf.fullscreen.base">
 		<put name="title" value="Live Earth" />
 		<put name="location"
-			value="/WEB-INF/jsp/pds/monitoring/location.jsp" />
+			value="/WEB-INF/jsp/pds/operations/location.jsp" />
 		<put name="content"
 			value="/WEB-INF/jsp/pds/monitoring/globe.jsp" />
 	</definition>
@@ -1233,7 +1233,7 @@
 		extends=".ecmwf.fullscreen.base">
 		<put name="title" value="System Topology" />
 		<put name="location"
-			value="/WEB-INF/jsp/pds/monitoring/location.jsp" />
+			value="/WEB-INF/jsp/pds/operations/location.jsp" />
 		<put name="content"
 			value="/WEB-INF/jsp/pds/monitoring/topology.jsp" />
 	</definition>

@@ -2815,6 +2815,20 @@ final class DataBaseProxy implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
+    public List<Map<String, String>> getDelayNoticesInPeriod(final String fromDate, final String toDate)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getDelayNoticesInPeriod(" + fromDate + "," + toDate + ")");
+        try {
+            return monitor.done(dataBaseInterface.getDelayNoticesInPeriod(fromDate, toDate));
+        } catch (final RemoteException e) {
+            throw new DataBaseException("getDelayNoticesInPeriod", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String createDelayNotice(final int year, final String status, final String createdBy, final String content)
             throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("createDelayNotice(" + year + ")");

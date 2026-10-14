@@ -177,7 +177,7 @@ MIIEo...
               <tr><td><code>gcs.mkBucket</code></td><td><code>false</code></td>
                   <td>Automatically create the bucket if it does not exist on first connection</td></tr>
               <tr><td><code>gcs.bucketLocation</code></td><td><em>empty</em></td>
-                  <td>GCS region / location for auto-created buckets (e.g. <code>EU</code>, <code>us-central1</code>)</td></tr>
+                  <td>GCS region / location for auto-created buckets (e.g. <code>EU</code>, <code>us-central1</code>); when configured, also used as the host's approximate map location</td></tr>
             </tbody>
           </table>
         </div>

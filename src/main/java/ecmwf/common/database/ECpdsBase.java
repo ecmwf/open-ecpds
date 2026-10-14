@@ -5526,6 +5526,42 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Gets delay notices created within a date range, inclusive of both dates.
+     *
+     * @param fromDate
+     *            the start date (yyyy-MM-dd)
+     * @param toDate
+     *            the end date (yyyy-MM-dd)
+     *
+     * @return matching rows, newest first
+     *
+     * @throws DataBaseException
+     *             if the notices cannot be read
+     */
+    public List<Map<String, String>> getDelayNoticesInPeriod(final String fromDate, final String toDate)
+            throws DataBaseException {
+        final List<Map<String, String>> result = new ArrayList<>();
+        try (var rs = executeSelect("ECpdsBase", "getDelayNoticesInPeriod",
+                new String[] { "fromDate=" + fromDate, "toDate=" + toDate })) {
+            while (rs.next()) {
+                final Map<String, String> row = new LinkedHashMap<>();
+                row.put("ref", rs.getString("DLN_REF"));
+                row.put("status", rs.getString("DLN_STATUS"));
+                row.put("createdAt", String.valueOf(rs.getTimestamp("DLN_CREATED_AT")));
+                row.put("createdBy", rs.getString("DLN_CREATED_BY"));
+                row.put("updatedAt", String.valueOf(rs.getTimestamp("DLN_UPDATED_AT")));
+                row.put("version", String.valueOf(rs.getInt("DLN_VERSION")));
+                row.put("content", rs.getString("DLN_CONTENT"));
+                result.add(row);
+            }
+        } catch (final Exception e) {
+            _log.warn("getDelayNoticesInPeriod()", e);
+            throw new DataBaseException("getDelayNoticesInPeriod", e);
+        }
+        return result;
+    }
+
+    /**
      * Creates a delay notice with the next reference of the year (DLY-YYYY-NNNN). Allocating and inserting is
      * serialized here, so Monitors registering notices at the same time always get distinct references; the primary key
      * is the safeguard should another writer be involved, in which case the allocation is retried.

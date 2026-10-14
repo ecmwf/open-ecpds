@@ -729,14 +729,87 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
         'inactive':      { normal: makeStyle('rgba(108,117,125,0.55)',6), hover: makeStyle('rgba(108,117,125,0.9)',8) }
     };
 
+    // Simple provider badges for hosts certainly served by the public Amazon, Google or Microsoft cloud.
+    var CLOUD_SVG = {
+        aws: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">'
+            + '<circle cx="14" cy="14" r="12.5" fill="#232f3e" stroke="#fff" stroke-width="1.5"/>'
+            + '<text x="14" y="16.5" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" '
+            + 'font-size="9" fill="#ff9900">aws</text>'
+            + '<path d="M7 20.5q7 3.5 14 0" fill="none" stroke="#ff9900" stroke-width="1.6" stroke-linecap="round"/></svg>',
+        gcs: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">'
+            + '<circle cx="14" cy="14" r="12.5" fill="#fff" stroke="#4285f4" stroke-width="1.5"/>'
+            + '<text x="14" y="19.5" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" '
+            + 'font-size="17" fill="#4285f4">G</text></svg>',
+        azure: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">'
+            + '<circle cx="14" cy="14" r="12.5" fill="#fff" stroke="#737373" stroke-width="1.5"/>'
+            + '<rect x="7.5" y="7.5" width="6" height="6" fill="#f25022"/>'
+            + '<rect x="14.5" y="7.5" width="6" height="6" fill="#7fba00"/>'
+            + '<rect x="7.5" y="14.5" width="6" height="6" fill="#00a4ef"/>'
+            + '<rect x="14.5" y="14.5" width="6" height="6" fill="#ffb900"/></svg>'
+    };
+    var _cloudStyles = {};
+    function cloudStyle(cloud, active, hover) {
+        var key = cloud + (active ? 'a' : 'i') + (hover ? 'h' : 'n');
+        if (!_cloudStyles[key]) {
+            _cloudStyles[key] = new ol.style.Style({
+                image: new ol.style.Icon({
+                    src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(CLOUD_SVG[cloud]),
+                    scale: hover ? 1.25 : 1,
+                    opacity: active ? 1 : 0.5
+                })
+            });
+        }
+        return _cloudStyles[key];
+    }
+
     function styleFor(f, hover) {
+        var cloud = f.get('cloud');
+        if (cloud && CLOUD_SVG[cloud]) return cloudStyle(cloud, !!f.get('active'), hover);
         if (!f.get('active')) return hover ? STYLES.inactive.hover : STYLES.inactive.normal;
         var t = f.get('type');
         var s = STYLES[t] || STYLES['Dissemination'];
         return hover ? s.hover : s.normal;
     }
 
-    function clusterStyle(size, hover) {
+    var CLOUD_CLUSTER = {
+        aws:   { fill: '#232f3e', ring: '#ff9900', text: '#fff', label: 'AWS' },
+        gcs:   { fill: '#4285f4', ring: '#fbbc05', text: '#fff', label: 'GCS' },
+        azure: { fill: '#0078d4', ring: '#7fba00', text: '#fff', label: 'AZURE' }
+    };
+    var _cloudClusterStyles = {};
+
+    // Common provider of a cluster, or '' when hosts are mixed or not all on a public cloud.
+    function clusterCloud(sub) {
+        var c = sub[0].get('cloud');
+        if (!c || !CLOUD_CLUSTER[c]) return '';
+        for (var i = 1; i < sub.length; i++) { if (sub[i].get('cloud') !== c) return ''; }
+        return c;
+    }
+
+    function cloudClusterStyle(cloud, size, hover) {
+        var key = cloud + size + (hover ? 'h' : 'n');
+        if (!_cloudClusterStyles[key]) {
+            var c = CLOUD_CLUSTER[cloud];
+            var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">'
+                + '<circle cx="20" cy="20" r="17" fill="' + c.fill + '" stroke="' + c.ring + '" stroke-width="3.5"/>'
+                + '<text x="20" y="21" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" '
+                + 'font-size="' + (String(size).length > 2 ? 11 : 13) + '" fill="' + c.text + '">' + size + '</text>'
+                + '<text x="20" y="31" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" '
+                + 'font-size="6.5" fill="' + c.ring + '">' + c.label + '</text></svg>';
+            _cloudClusterStyles[key] = new ol.style.Style({
+                image: new ol.style.Icon({
+                    src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+                    scale: hover ? 1.15 : 1
+                })
+            });
+        }
+        return _cloudClusterStyles[key];
+    }
+
+    function clusterStyle(sub, hover) {
+        var size = sub.length;
+        var cloud = clusterCloud(sub);
+        if (cloud) return cloudClusterStyle(cloud, size, hover);
         return new ol.style.Style({
             image: new ol.style.Circle({
                 radius: hover ? 16 : 14,
@@ -761,7 +834,7 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
             source: clusterSource,
             style: function(f) {
                 var sub = f.get('features');
-                return sub.length === 1 ? styleFor(sub[0], false) : clusterStyle(sub.length, false);
+                return sub.length === 1 ? styleFor(sub[0], false) : clusterStyle(sub, false);
             }
         });
 
@@ -809,7 +882,7 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
             if (hovered && hovered !== f) { hovered.setStyle(null); hovered = null; }
             if (f && f !== hovered) {
                 var sub = f.get('features');
-                f.setStyle(sub.length === 1 ? styleFor(sub[0], true) : clusterStyle(sub.length, true));
+                f.setStyle(sub.length === 1 ? styleFor(sub[0], true) : clusterStyle(sub, true));
                 hovered = f;
             }
         });
@@ -904,6 +977,14 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
         _offcanvas.show();
     }
 
+    var CLOUD_NAMES = { aws: 'Amazon Web Services (S3)', gcs: 'Google Cloud Storage', azure: 'Microsoft Azure Blob Storage' };
+
+    function cloudBadge(cloud) {
+        return CLOUD_NAMES[cloud]
+            ? '<span class="badge bg-info text-dark ms-1"><i class="bi bi-cloud me-1"></i>'
+                + esc(CLOUD_NAMES[cloud]) + '</span>' : '';
+    }
+
     function showHostListPanel(hosts) {
         var typeColors = { Dissemination:'primary', Acquisition:'success', Source:'warning' };
         var html = '<div class="list-group list-group-flush">';
@@ -919,6 +1000,7 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
                 + '<span class="badge bg-' + tc + ' ms-1">' + esc(p.type) + '</span></span>'
                 + '</div>'
                 + (p.hostname ? '<div class="small text-muted">' + esc(p.hostname) + '</div>' : '')
+                + (p.cloud ? '<div class="small">' + cloudBadge(p.cloud) + '</div>' : '')
                 + '</a>';
         });
         html += '</div>';
@@ -943,6 +1025,7 @@ function _updateHostSearchBanner(queryError, total, hasSearch) {
             + row('Hostname', esc(p.hostname) || '<span class="text-muted">&mdash;</span>')
             + row('Network',  esc(p.network)  || '<span class="text-muted">&mdash;</span>')
             + row('Method',   esc(p.method)   || '<span class="text-muted">&mdash;</span>')
+            + (p.cloud ? row('Provider', cloudBadge(p.cloud).replace(' ms-1', '')) : '')
             + row('Location', esc(p.geo)      || '<span class="text-muted">&mdash;</span>')
             + (p.comment ? row('Comment', '<span class="text-muted small">' + esc(p.comment) + '</span>') : '')
             + '</table>'

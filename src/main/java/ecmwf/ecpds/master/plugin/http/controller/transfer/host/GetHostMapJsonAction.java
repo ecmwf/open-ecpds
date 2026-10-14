@@ -136,6 +136,7 @@ public class GetHostMapJsonAction extends PDSAction {
                 props.put("network", h.network());
                 props.put("method", h.method());
                 props.put("comment", h.comment());
+                props.put("cloud", h.cloud());
                 props.put("url", HOST_BASE_PATH + "/" + escapeHtml(h.id()));
                 features.add(feature);
             }

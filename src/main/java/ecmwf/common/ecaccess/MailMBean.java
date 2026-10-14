@@ -183,10 +183,35 @@ public class MailMBean extends MBeanRepository<MailMessage> {
      */
     public void sendMail(final String from, final String to, final String cc, final String subject,
             final String content, final String attachmentName, final String attachmentContent) {
+        sendMail(from, to, cc, null, subject, content, attachmentName, attachmentContent);
+    }
+
+    /**
+     * Sends an email with optional CC, BCC and attachment.
+     *
+     * @param from
+     *            the sender
+     * @param to
+     *            the recipient(s)
+     * @param cc
+     *            the CC recipient(s)
+     * @param bcc
+     *            the BCC recipient(s)
+     * @param subject
+     *            the subject
+     * @param content
+     *            the message content
+     * @param attachmentName
+     *            the attachment name
+     * @param attachmentContent
+     *            the attachment content
+     */
+    public void sendMail(final String from, final String to, final String cc, final String bcc, final String subject,
+            final String content, final String attachmentName, final String attachmentContent) {
         if (to != null && !to.isBlank()) {
             _log.debug("Mail to {}: {}", to, subject);
             Arrays.stream(to.split("[,;]")).map(String::trim).filter(s -> !s.isEmpty()).forEach(recipient -> put(
-                    new MailMessage(from, recipient, cc, subject, content, attachmentName, attachmentContent)));
+                    new MailMessage(from, recipient, cc, bcc, subject, content, attachmentName, attachmentContent)));
         } else {
             _log.warn("Invalid address (mail not sent): to='{}' - subject='{}'", to, subject);
         }
@@ -406,20 +431,24 @@ public class MailMBean extends MBeanRepository<MailMessage> {
      * @param attachmentContent
      *            the attachment content
      */
-    private void sendMessage(final String from, final String to, final String cc, final String subject,
-            final String content, final String attachmentName, final String attachmentContent) {
+    private void sendMessage(final String from, final String to, final String cc, final String bcc,
+            final String subject, final String content, final String attachmentName, final String attachmentContent) {
         if (to == null || to.isBlank()) {
             _log.warn("Invalid address: null or empty (mail not sent)");
             return;
         }
         try {
-            _log.debug("Sending from={} to={} cc={} subject={} attachment={}", from, to, cc, subject, attachmentName);
+            _log.debug("Sending from={} to={} cc={} hasBcc={} subject={} attachment={}", from, to, cc,
+                    bcc != null && !bcc.isBlank(), subject, attachmentName);
             final var message = new MimeMessage(session);
             message.setFrom(new InternetAddress(
                     from != null && !from.isBlank() ? from : Cnf.at("Mail", "defaultFrom", mailUser)));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
             if (cc != null && !cc.isBlank()) {
                 message.setRecipients(Message.RecipientType.CC, InternetAddress.parse(cc));
+            }
+            if (bcc != null && !bcc.isBlank()) {
+                message.setRecipients(Message.RecipientType.BCC, InternetAddress.parse(bcc));
             }
             message.setSubject(subject);
             final var isHtml = content != null && HTML_PATTERN.matcher(content).find();
@@ -549,8 +578,8 @@ public class MailMBean extends MBeanRepository<MailMessage> {
      */
     private void sendMessages() throws Exception {
         for (final MailMessage toSend : getList()) {
-            sendMessage(toSend.getFrom(), toSend.getTo(), toSend.getCC(), toSend.getSubject(), toSend.getContent(),
-                    toSend.getAttachmentName(), toSend.getAttachmentContent());
+            sendMessage(toSend.getFrom(), toSend.getTo(), toSend.getCC(), toSend.getBCC(), toSend.getSubject(),
+                    toSend.getContent(), toSend.getAttachmentName(), toSend.getAttachmentContent());
             removeValue(toSend);
         }
     }

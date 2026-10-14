@@ -12,7 +12,7 @@
 
     <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-start gap-2">
       <i class="bi bi-info-circle flex-shrink-0 mt-1"></i>
-      <div>These templates pre-fill the Outlook emails of the monitoring product pages and the body of the notices
+      <div>These templates pre-fill the Outlook or direct emails of the monitoring product pages and the body of the notices
       on the <a href="/do/monitoring/delaynotification">Delay Notification</a> page. Each message has an
       <strong>Ungrouped</strong> variant (one product and cycle) and a <strong>Grouped</strong> variant (several
       products or cycles). Use <strong>Reset current variant</strong> to restore the displayed body; click

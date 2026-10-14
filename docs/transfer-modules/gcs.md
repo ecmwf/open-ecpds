@@ -85,7 +85,7 @@ The bucket name can be embedded in the URL path (`user:pass@host/bucketName`) or
 | Option | Default | Description |
 | --- | --- | --- |
 | `gcs.mkBucket` | `false` | Automatically create the bucket if it does not exist on first connection |
-| `gcs.bucketLocation` | *empty* | GCS region / location for auto-created buckets (e.g. `EU`, `us-central1`) |
+| `gcs.bucketLocation` | *empty* | GCS region / location for auto-created buckets (e.g. `EU`, `us-central1`); when configured, it is also used as the host's approximate map location |
 | `gcs.region` | *none* | GCS service client region. Sets the geographical location of the GCS servers that handle requests (e.g. `us-central1`, `europe-west1`). Distinct from `gcs.bucketLocation`, which only applies to auto-created buckets |
 
 ### Listing ownership

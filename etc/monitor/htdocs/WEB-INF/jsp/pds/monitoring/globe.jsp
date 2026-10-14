@@ -23,22 +23,28 @@
 #globeContainer{position:relative;width:100%;height:70vh;min-height:420px;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.15);}
 #globeLegend{position:absolute;left:10px;top:10px;z-index:10;background:rgba(20,25,30,.72);color:#eee;border-radius:8px;padding:.5rem .75rem;font-size:.78rem;line-height:1.5;backdrop-filter:blur(2px);}
 #globeLegend .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;}
-/* On narrow (phone) screens the legend's full text (5 lines of colour keys plus the "Arrows point..." /
-   unresolved-transfers notes) is wide/tall enough to cover a large fraction of the globe. Mirror the KPI panel's
-   collapse-to-pill pattern below the same breakpoint: #globeLegendToggleBtn stays hidden and unused above it
-   (desktop/tablet keep today's always-visible legend, unchanged) and only appears below it, replacing the legend
-   with a small pill the user taps to show/hide it on demand. */
-#globeLegendToggleBtn{display:none;}
+/* The legend can be hidden with its close button and brought back with this pill (kept visible only while hidden). */
+#globeLegendToggleBtn{display:flex;align-items:center;justify-content:center;gap:.35rem;height:36px;padding:0 .85rem;border-radius:18px;background:rgba(20,25,30,.86);color:#9fd6ff;border:1px solid rgba(255,255,255,.12);box-shadow:0 4px 14px rgba(0,0,0,.35);font-size:.76rem;font-weight:600;cursor:pointer;position:absolute;left:10px;top:10px;z-index:10;}
+#globeLegendToggleBtn i{font-size:.95rem;}
+.globe-panel-close{box-sizing:border-box;min-width:0!important;width:20px!important;height:20px!important;padding:0!important;margin:0!important;line-height:18px;text-align:center;border:0!important;border-radius:50%!important;background:transparent!important;box-shadow:none!important;color:inherit!important;opacity:.6;cursor:pointer;font-size:.9rem;z-index:2;position:absolute;top:4px;right:4px;}
+#globeBottomRightPanels>#globeStatsPanel{position:relative;}
+#globeStatsPanel .globe-panel-close{top:2px;right:2px;}
+.globe-panel-close:hover{opacity:1;background:rgba(128,128,128,.3)!important;}
+/* On phones the legend and KPI panel are moved out of the globe (see movePanelsForViewport()) and stacked below it,
+   always visible, so they never cover the globe; their hide buttons and pills are not needed there. */
+#globePhonePanels{display:none;}
 @media (max-width:700px){
-    #globeLegendToggleBtn{display:flex;align-items:center;justify-content:center;gap:.35rem;height:36px;padding:0 .85rem;border-radius:18px;background:rgba(20,25,30,.86);color:#9fd6ff;border:1px solid rgba(255,255,255,.12);box-shadow:0 4px 14px rgba(0,0,0,.35);font-size:.76rem;font-weight:600;cursor:pointer;position:absolute;left:10px;top:10px;z-index:10;}
-    #globeLegendToggleBtn i{font-size:.95rem;}
-    #globeLegend{display:none;}
-    #globeLegend.globe-legend-open{display:block;top:56px;}
+    #globePhonePanels{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+    #globePhonePanels>.globe-phone-panel{position:static!important;display:block!important;width:100%!important;max-width:100%!important;max-height:none!important;box-sizing:border-box;margin:0;}
+    #globePhonePanels .globe-panel-close{display:none!important;}
+    #globeContainer #globeLegendToggleBtn,#globeContainer #globeStatsToggleBtn{display:none!important;}
 }
+#globeLegendToggleBtn.globe-toggle-hidden,#globeStatsToggleBtn.globe-toggle-hidden{display:none;}
+#globeLegend.globe-collapsed,#globeStatsPanel.globe-collapsed{display:none;}
 [data-bs-theme=light] #globeLegendToggleBtn{background:#f6f8fa;color:#0969da;border-color:rgba(0,0,0,.08);box-shadow:0 4px 14px rgba(0,0,0,.18);}
 #globeBottomRightPanels{position:absolute;right:10px;bottom:10px;z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-height:calc(100% - 20px);pointer-events:none;}
 #globeBottomRightPanels>div,#globeBottomRightPanels>button{pointer-events:auto;position:static;}
-#globeStatsPanel{width:410px;max-width:min(410px,92vw);max-height:calc(100% - 20px);overflow:auto;background:linear-gradient(160deg,rgba(22,27,34,.9),rgba(14,18,24,.86));color:#eee;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:.7rem;font-size:.74rem;line-height:1.3;backdrop-filter:blur(6px);box-shadow:0 8px 28px rgba(0,0,0,.4);}
+#globeStatsPanel{width:436px;max-width:min(436px,92vw);padding-right:1.7rem!important;box-sizing:border-box;max-height:calc(100% - 20px);overflow:auto;background:linear-gradient(160deg,rgba(22,27,34,.9),rgba(14,18,24,.86));color:#eee;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:.7rem;font-size:.74rem;line-height:1.3;backdrop-filter:blur(6px);box-shadow:0 8px 28px rgba(0,0,0,.4);}
 .globe-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;}
 .globe-stats-row+.globe-stats-row{margin-top:.5rem;}
 @media (max-width: 480px){.globe-stats-row{grid-template-columns:repeat(2,1fr);}}
@@ -56,13 +62,8 @@
    always-visible panel, unchanged) and only appears below it, replacing the panel with a small pill the user taps
    to show/hide the KPIs on demand - so on a phone it is always either "see the globe" or "see the KPIs", never both
    fighting for the same space. */
-#globeStatsToggleBtn{display:none;}
-@media (max-width:700px){
-    #globeStatsToggleBtn{display:flex;align-items:center;justify-content:center;gap:.35rem;height:36px;padding:0 .85rem;border-radius:18px;background:rgba(20,25,30,.86);color:#9fd6ff;border:1px solid rgba(255,255,255,.12);box-shadow:0 4px 14px rgba(0,0,0,.35);font-size:.76rem;font-weight:600;cursor:pointer;}
-    #globeStatsToggleBtn i{font-size:.95rem;}
-    #globeStatsPanel{display:none;}
-    #globeStatsPanel.globe-stats-open{display:block;}
-}
+#globeStatsToggleBtn{display:flex;align-items:center;justify-content:center;gap:.35rem;height:36px;padding:0 .85rem;border-radius:18px;background:rgba(20,25,30,.86);color:#9fd6ff;border:1px solid rgba(255,255,255,.12);box-shadow:0 4px 14px rgba(0,0,0,.35);font-size:.76rem;font-weight:600;cursor:pointer;}
+#globeStatsToggleBtn i{font-size:.95rem;}
 [data-bs-theme=light] #globeStatsToggleBtn{background:#f6f8fa;color:#0969da;border-color:rgba(0,0,0,.08);box-shadow:0 4px 14px rgba(0,0,0,.18);}
 #globeRightPanels{position:absolute;right:10px;top:10px;z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-height:calc(100% - 20px);pointer-events:none;}
 #globeRightPanels>div{pointer-events:auto;position:static;}
@@ -275,6 +276,11 @@
         <li><strong>Labels</strong> toggles country/town name overlays; the map icon switches between the 3D globe
         and a flat 2D map (same arcs and markers, just reprojected); the fullscreen button expands the view to
         fill the whole browser window.</li>
+        <li><strong>Cloud sites</strong> &mdash; hosts located in a public cloud are outlined in the provider's colour
+        and, when grouped in a cluster, tagged with its label: <strong>AWS</strong> (Amazon AWS, orange),
+        <strong>GCS</strong> (Google Cloud, green) or <strong>AZ</strong> (Microsoft Azure, blue). The provider is
+        also shown in the host details panel and in the hover tooltip. A country marker is outlined only when all its
+        hosts share the same provider.</li>
     </ul>
     <strong class="d-block mb-1">Data Portal Activity panel (bottom-right)</strong>
     <ul class="mb-0 ps-3">
@@ -282,7 +288,7 @@
         (matches the current Direction filter).</li>
         <li><strong>Hosts</strong> &mdash; number of distinct Transfer Hosts with at least one active transfer.</li>
         <li><strong>Throughput</strong> &mdash; combined instantaneous transfer rate across all currently active
-        transfers.</li>
+        Dissemination/Acquisition transfers. Data Portal traffic is not included; see <strong>Data in / Data out</strong>.</li>
         <li><strong>Recent movements</strong> &mdash; completed/failed transfers, including short transfers between
         polls, appear briefly in green/red. They do not count as active traffic. Repeated snapshots and filter changes
         do not restart their 2.5-second display interval. Replication/Backup/Proxy pushes currently show only
@@ -300,8 +306,9 @@
         HTTP/SFTP/S3/WebDAV), across every DataMover.</li>
         <li><strong>Data in / Data out</strong> &mdash; combined instantaneous upload/download rate of every open
         Data Portal session, across every DataMover.</li>
-        <li><strong>Storage</strong> &mdash; aggregate used/total disk space across every DataMover volume, shown as
-        a percentage (hover the tile for the exact used/total figures).</li>
+        <li><strong>Storage</strong> &mdash; cumulative disk usage across all DataMovers: the space used and the total
+        capacity of every DataMover volume are added up and shown as a percentage (hover the tile for the exact
+        used/total figures).</li>
     </ul>
   </div>
 </div>
@@ -310,12 +317,17 @@
     <div id="cesiumContainer" style="width:100%;height:100%;"></div>
     <div id="globeHoverTooltip"></div>
     <div id="globeLegend">
+        <button type="button" class="globe-panel-close" id="globeLegendClose" title="Hide the legend" aria-label="Hide the legend">&times;</button>
         <div><span class="dot" style="background:#38bdf8;"></span>Active transfer</div>
         <div><span class="dot" style="background:#22c55e;"></span>Completed</div>
         <div><span class="dot" style="background:#ef4444;"></span>Failed / retransmitting</div>
         <div><span class="dot" style="background:#ffd166;"></span>OpenECPDS location</div>
         <div><span class="dot" style="background:#a78bfa;"></span>Continental Mover (connected)</div>
         <div><span class="dot" style="background:#a78bfa;opacity:.35;"></span>Continental Mover (not connected)</div>
+        <div class="globe-muted-text" style="margin-top:.25rem;">Cloud site (outline colour)</div>
+        <div><span class="dot" style="background:transparent;box-shadow:0 0 0 2px #ff9900;"></span><b>AWS</b> Amazon AWS</div>
+        <div><span class="dot" style="background:transparent;box-shadow:0 0 0 2px #34a853;"></span><b>GCS</b> Google Cloud</div>
+        <div><span class="dot" style="background:transparent;box-shadow:0 0 0 2px #0078d4;"></span><b>AZ</b> Microsoft Azure</div>
         <div class="globe-muted-text" style="margin-top:.25rem;max-width:160px;">Arrows point in the direction data is flowing</div>
         <div id="globeUnresolvedNote" class="globe-muted-text" style="display:none;margin-top:.35rem;max-width:160px;font-size:.72rem;line-height:1.3;">
             <i class="bi bi-exclamation-triangle" style="color:#d9a441;margin-right:.3rem;"></i><span id="globeUnresolvedNoteText"></span>
@@ -349,22 +361,23 @@
         <auth:link basePathKey="admin.basepath" href="/origin">Configure &rarr;</auth:link>
     </div>
     <div id="globeStatsPanel">
+        <button type="button" class="globe-panel-close" id="globeStatsClose" title="Hide the KPI panel" aria-label="Hide the KPI panel">&times;</button>
         <div class="globe-stats-row">
-            <div class="globe-stat-tile">
+            <div class="globe-stat-tile" title="Dissemination/Acquisition transfers currently active (matches the Direction filter)">
                 <div class="globe-stat-graphic"><i class="bi bi-arrow-left-right"></i></div>
                 <div class="globe-stat-text">
                     <span class="globe-stat-value" id="kpiTransfers">0</span>
                     <span class="globe-stat-label">Transfers</span>
                 </div>
             </div>
-            <div class="globe-stat-tile">
+            <div class="globe-stat-tile" title="Distinct Transfer Hosts with at least one active transfer">
                 <div class="globe-stat-graphic"><i class="bi bi-hdd-network"></i></div>
                 <div class="globe-stat-text">
                     <span class="globe-stat-value" id="kpiHosts">0</span>
                     <span class="globe-stat-label">Hosts</span>
                 </div>
             </div>
-            <div class="globe-stat-tile globe-stat-gauge">
+            <div class="globe-stat-tile globe-stat-gauge" title="Combined instantaneous rate of the active Dissemination/Acquisition transfers (matches the Direction filter); excludes Data Portal traffic, see Data in / Data out">
                 <div class="globe-stat-graphic">
                     <svg class="globe-gauge-svg" viewBox="0 0 120 68">
                         <path class="globe-gauge-arc-bg" d="M10,62 A50,50 0 0 1 110,62"></path>
@@ -385,14 +398,14 @@
             </div>
         </div>
         <div class="globe-stats-row">
-            <div class="globe-stat-tile">
+            <div class="globe-stat-tile" title="Incoming Users currently connected to the Data Portal (FTP/HTTP/SFTP/S3/WebDAV), across every DataMover">
                 <div class="globe-stat-graphic"><i class="bi bi-people-fill"></i></div>
                 <div class="globe-stat-text">
                     <span class="globe-stat-value" id="kpiSessions">0</span>
                     <span class="globe-stat-label">Sessions</span>
                 </div>
             </div>
-            <div class="globe-stat-tile globe-stat-gauge">
+            <div class="globe-stat-tile globe-stat-gauge" title="Combined instantaneous upload rate of every open Data Portal session, across every DataMover">
                 <div class="globe-stat-graphic">
                     <svg class="globe-gauge-svg" viewBox="0 0 120 68">
                         <path class="globe-gauge-arc-bg" d="M10,62 A50,50 0 0 1 110,62"></path>
@@ -404,7 +417,7 @@
                     <span class="globe-stat-label">Data in</span>
                 </div>
             </div>
-            <div class="globe-stat-tile globe-stat-gauge">
+            <div class="globe-stat-tile globe-stat-gauge" title="Combined instantaneous download rate of every open Data Portal session, across every DataMover">
                 <div class="globe-stat-graphic">
                     <svg class="globe-gauge-svg" viewBox="0 0 120 68">
                         <path class="globe-gauge-arc-bg" d="M10,62 A50,50 0 0 1 110,62"></path>
@@ -435,6 +448,7 @@
     </button>
     </div>
 </div>
+<div id="globePhonePanels"></div>
 
 <script src="/cesium/Cesium.js"></script>
 <script>
@@ -637,6 +651,18 @@
     };
     var ORIGIN_COLOR = Cesium.Color.fromCssColorString("#ffd166");
     var PROXY_HOST_COLOR = Cesium.Color.fromCssColorString("#a78bfa");
+    // Hosts certainly served by a public cloud get a provider-coloured ring (the fill keeps the transfer status).
+    var CLOUD_INFO = {
+        aws: { name: "Amazon AWS", short: "AWS", css: "#ff9900" },
+        gcs: { name: "Google Cloud", short: "GCS", css: "#34a853" },
+        azure: { name: "Microsoft Azure", short: "AZ", css: "#0078d4" }
+    };
+    function cloudRing(cloud) {
+        return cloud && CLOUD_INFO[cloud] ? Cesium.Color.fromCssColorString(CLOUD_INFO[cloud].css) : null;
+    }
+    function cloudName(cloud) {
+        return cloud && CLOUD_INFO[cloud] ? CLOUD_INFO[cloud].name : "";
+    }
     var TERMINAL_FADE_MS = 2500;
     var terminalEvents = Object.create(null);
     var terminalRefreshTimer = null;
@@ -1048,8 +1074,8 @@
         var pctRounded = Math.round(pct * 10) / 10;
         document.getElementById("kpiStoragePct").textContent = pctRounded + "%";
         updatePercentGaugeById("gaugeArcStorage", pct);
-        document.getElementById("storageTile").title = "Storage used: " + formatBytes(moverStorageUsedBytes) +
-            " / " + formatBytes(moverStorageTotalBytes);
+        document.getElementById("storageTile").title = "Cumulative storage across all DataMovers: " + formatBytes(moverStorageUsedBytes) +
+            " used of " + formatBytes(moverStorageTotalBytes) + " total (" + pctRounded + "%)";
     }
 
     // Never show the old unfiltered total as if it matched selected Host Types.
@@ -1399,7 +1425,7 @@
         return STATUS_COLOR.DONE;
     }
 
-    function upsertHost(name, lat, lon, label, transferMap) {
+    function upsertHost(name, lat, lon, label, transferMap, cloud) {
         if (!origin) {
             return;
         }
@@ -1425,8 +1451,8 @@
             point = mover.point;
             point.pixelSize = destPixelSize;
             point.color = color;
-            point.outlineColor = Cesium.Color.WHITE;
-            point.outlineWidth = 1;
+            point.outlineColor = cloudRing(cloud) || Cesium.Color.WHITE;
+            point.outlineWidth = cloud ? 3 : 1;
             point.hostName = name;
         } else {
             if (existing && existing.point) {
@@ -1436,8 +1462,8 @@
                 position: Cesium.Cartesian3.fromDegrees(lon, lat),
                 pixelSize: destPixelSize,
                 color: color,
-                outlineColor: Cesium.Color.WHITE,
-                outlineWidth: 1
+                outlineColor: cloudRing(cloud) || Cesium.Color.WHITE,
+                outlineWidth: cloud ? 3 : 1
             });
             point.hostName = name;
         }
@@ -1454,7 +1480,7 @@
             material: arcMaterial(color)
         });
         var entry = {
-            arc: arc, point: point, lat: lat, lon: lon, label: label || name, transfers: transferMap, agg: agg,
+            arc: arc, point: point, lat: lat, lon: lon, label: label || name, cloud: cloud || "", transfers: transferMap, agg: agg,
             arcOrigin: { lat: arcOrigin.lat, lon: arcOrigin.lon, pixelSize: originPixelSize },
             destPixelSize: destPixelSize, isAcquisition: agg.isAcquisition, mergedWithMover: !!mover,
             removeTimeout: null, pulsePhase: existing ? existing.pulsePhase : Math.random() * Math.PI * 2
@@ -1495,7 +1521,7 @@
     // Adds/updates the single aggregated arc/marker for one destination country - one arc summarising every
     // transfer currently going to any Host resolved to that country, so the globe stays readable even with
     // hundreds/thousands of individual Hosts (see viewMode).
-    function upsertCountry(code, lat, lon, hostCount, transferMap) {
+    function upsertCountry(code, lat, lon, hostCount, transferMap, cloud) {
         if (!origin) {
             return;
         }
@@ -1523,12 +1549,12 @@
             position: Cesium.Cartesian3.fromDegrees(lon, lat),
             pixelSize: destPixelSize,
             color: color,
-            outlineColor: Cesium.Color.WHITE,
-            outlineWidth: 1
+            outlineColor: cloudRing(cloud) || Cesium.Color.WHITE,
+            outlineWidth: cloud ? 3 : 1
         });
         point.countryCode = code;
         var entry = {
-            arc: arc, point: point, lat: lat, lon: lon, hostCount: hostCount, transfers: transferMap, agg: agg,
+            arc: arc, point: point, lat: lat, lon: lon, hostCount: hostCount, cloud: cloud || "", transfers: transferMap, agg: agg,
             arcOrigin: { lat: arcOrigin.lat, lon: arcOrigin.lon, pixelSize: originPixelSize },
             destPixelSize: destPixelSize, isAcquisition: agg.isAcquisition,
             removeTimeout: null, pulsePhase: existing ? existing.pulsePhase : Math.random() * Math.PI * 2
@@ -1611,13 +1637,16 @@
             }
             var group = byHost[sample.host];
             if (!group) {
-                group = byHost[sample.host] = { lat: sample.hostLat, lon: sample.hostLon, label: sample.hostLabel, transfers: Object.create(null) };
+                group = byHost[sample.host] = { lat: sample.hostLat, lon: sample.hostLon, label: sample.hostLabel, cloud: sample.cloud || "", transfers: Object.create(null) };
             }
             group.transfers[transferEventKey(sample)] = sample;
             if (sample.hostCountry) {
                 var cGroup = byCountry[sample.hostCountry];
                 if (!cGroup) {
-                    cGroup = byCountry[sample.hostCountry] = { latSum: 0, lonSum: 0, hosts: Object.create(null), transfers: Object.create(null) };
+                    cGroup = byCountry[sample.hostCountry] = { latSum: 0, lonSum: 0, hosts: Object.create(null), transfers: Object.create(null), cloud: sample.cloud || "" };
+                }
+                if (cGroup.cloud !== (sample.cloud || "")) {
+                    cGroup.cloud = "";
                 }
                 if (!cGroup.hosts[sample.host]) {
                     cGroup.hosts[sample.host] = true;
@@ -1650,7 +1679,7 @@
             clearAllCountryEntities();
             Object.keys(byHost).forEach(function (name) {
                 var g = byHost[name];
-                upsertHost(name, g.lat, g.lon, g.label, g.transfers);
+                upsertHost(name, g.lat, g.lon, g.label, g.transfers, g.cloud);
             });
             // Any Host marker still on the globe but absent from this snapshot (and not already fading out from a
             // previous terminal-only snapshot) is stale - drop it immediately.
@@ -1664,7 +1693,7 @@
             Object.keys(byCountry).forEach(function (code) {
                 var g = byCountry[code];
                 var hostCount = Object.keys(g.hosts).length;
-                upsertCountry(code, g.latSum / hostCount, g.lonSum / hostCount, hostCount, g.transfers);
+                upsertCountry(code, g.latSum / hostCount, g.lonSum / hostCount, hostCount, g.transfers, g.cloud);
             });
             Object.keys(countries).forEach(function (code) {
                 if (!byCountry[code] && !countries[code].removeTimeout) {
@@ -1850,8 +1879,8 @@
 
     var clusterMarkers = viewer.scene.primitives.add(new Cesium.BillboardCollection());
     var clusterImages = Object.create(null);
-    function clusterImage(count, color) {
-        var key = count + ":" + color;
+    function clusterImage(count, color, cloud) {
+        var key = count + ":" + color + ":" + (cloud || "");
         if (clusterImages[key]) return clusterImages[key];
         var size = Math.max(30, 18 + String(count).length * 9);
         var canvas = document.createElement("canvas");
@@ -1862,14 +1891,18 @@
         context.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
         context.fillStyle = color;
         context.fill();
-        context.strokeStyle = "#ffffff";
-        context.lineWidth = 2;
+        context.strokeStyle = cloud && CLOUD_INFO[cloud] ? CLOUD_INFO[cloud].css : "#ffffff";
+        context.lineWidth = cloud && CLOUD_INFO[cloud] ? 4 : 2;
         context.stroke();
         context.font = "bold 13px sans-serif";
         context.textAlign = "center";
         context.textBaseline = "middle";
         context.fillStyle = "#000000";
-        context.fillText(String(count), size / 2, size / 2);
+        context.fillText(String(count), size / 2, cloud && CLOUD_INFO[cloud] ? size / 2 - 3 : size / 2);
+        if (cloud && CLOUD_INFO[cloud]) {
+            context.font = "bold 8px sans-serif";
+            context.fillText(CLOUD_INFO[cloud].short, size / 2, size / 2 + 8);
+        }
         clusterImages[key] = canvas;
         return canvas;
     }
@@ -1937,10 +1970,14 @@
             var allProxy = group.every(function(member) { return member.proxy; });
             var color = hasFailed ? STATUS_COLOR.FAILED : hasActive ? STATUS_COLOR.ACTIVE
                 : allProxy ? PROXY_HOST_COLOR : STATUS_COLOR.DONE;
-            var image = clusterImage(group.length, color.toCssColorString());
+            var firstHost = hosts[group[0].name];
+            var clusterCloud = firstHost && firstHost.cloud && group.every(function(member) {
+                return hosts[member.name] && hosts[member.name].cloud === firstHost.cloud;
+            }) ? firstHost.cloud : "";
+            var image = clusterImage(group.length, color.toCssColorString(), clusterCloud);
             clusterMarkers.add({
                 position:seed.point.position,
-                id:{hostCluster:group},
+                id:{hostCluster:group, cloud:clusterCloud},
                 image:image, width:image.width / 2, height:image.height / 2,
                 color:Cesium.Color.WHITE.withAlpha(allProxy && !hasActive && !hasFailed && !hasConnectedProxy ? 0.35 : 1),
                 horizontalOrigin:Cesium.HorizontalOrigin.CENTER,
@@ -1970,7 +2007,8 @@
         }
         var samples = Object.keys(h.transfers).map(function (id) { return h.transfers[id]; });
         var destination = samples[0] && samples[0].destination;
-        renderInfoPanel((h.label || hostName) + (destination ? " (" + destination + ")" : ""), h.agg, samples);
+        renderInfoPanel((h.label || hostName) + (destination ? " (" + destination + ")" : ""), h.agg, samples,
+            h.cloud ? "<dt>Provider</dt><dd>" + cloudName(h.cloud) + "</dd>" : undefined);
         if (destination) {
             var label = document.createElement("dt");
             label.textContent = "Destination";
@@ -1987,7 +2025,8 @@
         }
         var samples = Object.keys(c.transfers).map(function (id) { return c.transfers[id]; });
         var title = countryDisplayName(code) + " (" + c.hostCount + " host" + (c.hostCount === 1 ? "" : "s") + ")";
-        renderInfoPanel(title, c.agg, samples);
+        renderInfoPanel(title, c.agg, samples,
+            c.cloud ? "<dt>Provider</dt><dd>" + cloudName(c.cloud) + " (all hosts)</dd>" : undefined);
     }
 
     // scene.pick() of a primitive added via a *Collection (PointPrimitiveCollection, in our case "points") does NOT
@@ -2046,7 +2085,8 @@
     handler.setInputAction(function (movement) {
         var primitive = pickedPrimitive(viewer.scene.pick(movement.endPosition));
         if (Cesium.defined(primitive) && primitive.hostCluster) {
-            hoverTooltip.textContent = primitive.hostCluster.length + " hosts - click to select";
+            hoverTooltip.textContent = primitive.hostCluster.length + " hosts"
+                + (primitive.cloud ? " on " + cloudName(primitive.cloud) : "") + " - click to select";
             hoverTooltip.style.left = (movement.endPosition.x + 14) + "px";
             hoverTooltip.style.top = (movement.endPosition.y + 10) + "px";
             hoverTooltip.style.display = "block";
@@ -2056,6 +2096,13 @@
             var mergedHost = hosts[primitive.moverName];
             var suffix = m && !m.connected ? " (not connected)" : (mergedHost ? " - transfer in progress" : "");
             hoverTooltip.textContent = (m ? m.label : primitive.moverName) + suffix;
+            hoverTooltip.style.left = (movement.endPosition.x + 14) + "px";
+            hoverTooltip.style.top = (movement.endPosition.y + 10) + "px";
+            hoverTooltip.style.display = "block";
+            viewer.scene.canvas.style.cursor = "pointer";
+        } else if (Cesium.defined(primitive) && (Cesium.defined(primitive.hostName) || Cesium.defined(primitive.countryCode))
+                && ((hosts[primitive.hostName] || countries[primitive.countryCode] || {}).cloud)) {
+            hoverTooltip.textContent = cloudName((hosts[primitive.hostName] || countries[primitive.countryCode]).cloud);
             hoverTooltip.style.left = (movement.endPosition.x + 14) + "px";
             hoverTooltip.style.top = (movement.endPosition.y + 10) + "px";
             hoverTooltip.style.display = "block";
@@ -2216,35 +2263,51 @@
         }
     }());
 
-    // Phone-only KPI panel toggle (see the "@media (max-width:700px)" rules above): the panel itself defaults to
-    // hidden below that breakpoint via CSS alone, so this just flips it open/closed on demand and keeps the button's
-    // icon/label in sync - never fighting the globe for screen space on a small device.
-    var statsPanel = document.getElementById("globeStatsPanel");
-    var statsToggleBtn = document.getElementById("globeStatsToggleBtn");
-    var statsToggleIcon = statsToggleBtn.querySelector("i");
-    var statsToggleLabel = document.getElementById("globeStatsToggleLabel");
-    statsToggleBtn.addEventListener("click", function () {
-        var isOpen = statsPanel.classList.toggle("globe-stats-open");
-        statsToggleIcon.className = isOpen ? "bi bi-x-lg" : "bi bi-graph-up";
-        statsToggleLabel.textContent = isOpen ? "Globe" : "KPIs";
-        statsToggleBtn.title = isOpen ? "Hide the KPI panel and show the globe" : "Show the KPI panel";
-        // Opening/closing the KPI panel changes the bottom-right stack's height (and, on very short phone screens,
-        // its top edge) - keep the country table's height cap (see adjustCountryTableMaxHeight()) in sync.
-        adjustCountryTableMaxHeight();
-    });
+    // KPI panel and legend can be hidden on any screen size. They are shown by default and the user's choice is
+    // remembered. On phones they are shown below the globe instead (see movePanelsForViewport()), ignoring this.
+    function setupCollapsible(panel, btn, closeBtn, prefKey, onChange) {
+        var saved = null;
+        try { saved = localStorage.getItem(prefKey); } catch (e) {}
+        var open = saved !== "closed";
+        function apply() {
+            panel.classList.toggle("globe-collapsed", !open);
+            btn.classList.toggle("globe-toggle-hidden", open);
+            if (onChange) onChange();
+        }
+        function toggle() {
+            open = !open;
+            try { localStorage.setItem(prefKey, open ? "open" : "closed"); } catch (e) {}
+            apply();
+        }
+        btn.addEventListener("click", toggle);
+        closeBtn.addEventListener("click", toggle);
+        apply();
+    }
+    setupCollapsible(document.getElementById("globeStatsPanel"), document.getElementById("globeStatsToggleBtn"),
+        document.getElementById("globeStatsClose"), "globeStatsPanelState", adjustCountryTableMaxHeight);
+    setupCollapsible(document.getElementById("globeLegend"), document.getElementById("globeLegendToggleBtn"),
+        document.getElementById("globeLegendClose"), "globeLegendState", null);
 
-    // Phone-only legend toggle (see the "@media (max-width:700px)" rules above): the legend itself defaults to
-    // hidden below that breakpoint via CSS alone, replaced by this small pill - so it never covers a large chunk of
-    // the globe on a small device unless the user explicitly asks to see it.
-    var legendPanel = document.getElementById("globeLegend");
-    var legendToggleBtn = document.getElementById("globeLegendToggleBtn");
-    var legendToggleIcon = legendToggleBtn.querySelector("i");
-    var legendToggleLabel = document.getElementById("globeLegendToggleLabel");
-    legendToggleBtn.addEventListener("click", function () {
-        var isOpen = legendPanel.classList.toggle("globe-legend-open");
-        legendToggleIcon.className = isOpen ? "bi bi-x-lg" : "bi bi-info-circle";
-        legendToggleLabel.textContent = isOpen ? "Hide" : "Legend";
-        legendToggleBtn.title = isOpen ? "Hide the legend and show the globe" : "Show the legend";
-    });
+    // On phones, stack the legend and KPI panel below the globe instead of overlaying it; move them back inside the
+    // globe container on wider screens.
+    var phoneQuery = window.matchMedia("(max-width:700px)");
+    var phoneHost = document.getElementById("globePhonePanels");
+    var statsHome = document.getElementById("globeStatsPanel").parentNode;
+    function legendPanel() { return document.getElementById("globeLegend"); }
+    function movePanelsForViewport() {
+        var legend = legendPanel(), stats = document.getElementById("globeStatsPanel");
+        if (phoneQuery.matches) {
+            [legend, stats].forEach(function (p) { p.classList.add("globe-phone-panel"); phoneHost.appendChild(p); });
+        } else {
+            [legend, stats].forEach(function (p) { p.classList.remove("globe-phone-panel"); });
+            document.getElementById("globeContainer").insertBefore(legend, document.getElementById("globeLegendToggleBtn"));
+            statsHome.insertBefore(stats, document.getElementById("globeStatsToggleBtn"));
+        }
+        adjustCountryTableMaxHeight();
+        if (typeof resizeGlobeContainer === "function") resizeGlobeContainer();
+    }
+    if (phoneQuery.addEventListener) phoneQuery.addEventListener("change", movePanelsForViewport);
+    else phoneQuery.addListener(movePanelsForViewport);
+    movePanelsForViewport();
 }());
 </script>

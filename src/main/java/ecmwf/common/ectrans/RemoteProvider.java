@@ -173,6 +173,21 @@ public abstract class RemoteProvider {
      *             the exception
      */
     public TransferModule loadTransferModule(final ECtransModule module) throws Exception {
+        return createTransferModule(module);
+    }
+
+    /**
+     * Creates a transfer module using the same class-loader selection as normal transfers, without connecting it.
+     *
+     * @param module
+     *            the transfer module definition
+     *
+     * @return the new module instance
+     *
+     * @throws Exception
+     *             if the module cannot be loaded or instantiated
+     */
+    public static TransferModule createTransferModule(final ECtransModule module) throws Exception {
         final var archive = Cnf.getValue(module.getArchive());
         final LoaderEntry entry;
         if (isNotEmpty(archive)) {

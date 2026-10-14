@@ -49,12 +49,16 @@ links and bookmarks.
    blank lines to one blank line in the generated or edited message. **Regenerate** rebuilds the message from the
    template and current values; **Preview** shows the final mail (subject, To/Cc/Bcc counts and body). The
    **Configuration Guide** button opens a side panel summarising all of this.
-5. **Send notice** registers the notice (`DLY-YYYY-NNNN`) and opens an Outlook message with the recipients in BCC, as the
-   *Products Delay* button does. ECPDS cannot see whether the mail is then sent from Outlook, so the notice is flagged
-   **to confirm** until the operator presses **I have sent it** (right after sending, or later from **Sent notices**,
-   where **Open Outlook again** reopens the message if needed). The confirmation records who confirmed and when. If the
-   BCC list is too long for a link, the product distribution lists are used and **Copy BCC emails** gives the explicit
-   list.
+5. Choose **Send with Outlook** to register the notice (`DLY-YYYY-NNNN`) and open an Outlook message with the
+   recipients in BCC, or **Send directly** to queue the email through the Master mail service. Direct sends are
+   acknowledged automatically when accepted by that service. Outlook sends remain **to confirm** until the operator
+   presses **I have sent it** (right after sending, or later from **Sent notices**). Pending messages can also be sent
+   directly from **Sent notices**. If direct sending fails, the notice remains registered and the Outlook message opens
+   as a fallback. If the BCC list is too long for an Outlook link, the product distribution lists are used and
+   **Copy BCC emails** gives the explicit list.
+
+The product summary email buttons offer the same Outlook and direct-send choices. Direct emails use the configured
+notification addresses and are queued through the Master mail service.
 
 The selected timing categories, layout, **Uniform cells**, and **Compact empty lines** settings are remembered in the
 browser for the signed-in user. Default Cc and additional Bcc recipient addresses, and the flags allowing these fields, are
@@ -77,6 +81,10 @@ load older ones). The Master allocates the references atomically, so several Mon
 time, and changes are protected by a version check: if someone else modified the same notice, the operation is retried
 on the fresh version. When upgrading an existing database, create the table once with `docker/ecpds/database/delay-notice.sql` (new
 databases get it from `ecpds.sql`). Models and the default Cc/Bcc addresses are stored in `SYS_CONFIG`.
+
+The report controls below the table generate a CSV for notices created in the selected inclusive date range, optionally
+filtered by status. The on-page summary shows status totals and the most affected products. The CSV includes affected
+product/cycle rows; message history and recipient addresses are optional, and addresses are excluded by default.
 
 Deploy the Master and the Monitors together, as the Monitor calls new Master operations.
 

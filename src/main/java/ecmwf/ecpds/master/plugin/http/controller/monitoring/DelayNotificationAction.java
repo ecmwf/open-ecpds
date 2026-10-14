@@ -19,6 +19,8 @@
 package ecmwf.ecpds.master.plugin.http.controller.monitoring;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -50,11 +52,10 @@ import ecmwf.web.model.users.User;
  * ECMWF Product Data Store (OpenECPDS) Project
  *
  * The Delay Notification page: lets the operators send one consistent notice for all the products and cycles affected
- * by a delay, then inform of the (partial) resolution, update, cancel or delete it. The mail itself is composed in the
- * browser (Outlook link, like the Delay/Resume buttons of the monitoring pages) and this action works out the
- * recipients and keeps the register of the notices in the database. As ECPDS cannot know whether the operator really
- * sent the message from Outlook, every message is registered as "awaiting confirmation" until the operator confirms it
- * from the page. The recipients are always recomputed here, never taken from the browser.
+ * by a delay, then inform of the (partial) resolution, update, cancel or delete it. Messages can be opened in Outlook
+ * or queued through the Master mail service; this action works out the recipients and keeps the register of the notices
+ * in the database. Outlook messages await operator confirmation, while messages queued directly are acknowledged
+ * automatically. The recipients are always recomputed here, never taken from the browser.
  *
  * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  *
@@ -94,10 +95,13 @@ public class DelayNotificationAction extends PDSAction {
             final var who = user.getName();
             switch (action) {
             case "data" -> data(body, out);
+            case "report" -> report(body, out);
             case "recipients" -> recipients(body, out);
             case "send" -> send(body, who, out);
             case "update" -> update(body, who, out);
             case "resolve" -> resolve(body, who, out);
+            case "resend" -> resend(body, who, out);
+            case "productemail" -> sendProductEmail(body, who, out);
             case "cancel" -> cancel(body, who, out);
             case "confirm" -> confirm(body, who);
             case "delete" -> {
@@ -146,11 +150,139 @@ public class DelayNotificationAction extends PDSAction {
         if (value == null || value.isBlank()) {
             return;
         }
-        for (final var address : value.split(";", -1)) {
+        for (final var address : value.split("[;,]", -1)) {
             if (!address.strip().matches(
                     "(?i)[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+")) {
                 throw new IllegalArgumentException("Enter valid email addresses separated by semicolons.");
             }
+        }
+    }
+
+    private static String normalizeAddresses(final String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        validateAddresses(value);
+        final var addresses = new ArrayList<String>();
+        for (final var address : value.split("[;,]")) {
+            if (!address.isBlank()) {
+                addresses.add(address.trim());
+            }
+        }
+        return String.join(",", addresses);
+    }
+
+    private static String productMessageSetting(final String name, final String defaultValue) throws Exception {
+        final var value = MasterManager.getDB().getProductStatusMessage(name);
+        return value == null || value.isBlank() ? defaultValue : value;
+    }
+
+    private static void queueEmail(final String to, final String cc, final String bcc, final String subject,
+            final String body) throws Exception {
+        final var recipients = normalizeAddresses(to);
+        if (recipients.isEmpty()) {
+            throw new IllegalArgumentException("The To address is not configured");
+        }
+        MasterManager.getMI().sendNotificationEmail(recipients.split(",", 2)[0], recipients, normalizeAddresses(cc),
+                normalizeAddresses(bcc), subject, body);
+    }
+
+    private void sendProductEmail(final Map<String, Object> body, final String who, final Map<String, Object> out)
+            throws Exception {
+        final var kind = str(body.get("kind"));
+        if (!"delay".equals(kind) && !"resumed".equals(kind)) {
+            throw new IllegalArgumentException("Unknown product email type");
+        }
+        final var product = str(body.get("product"));
+        final var time = str(body.get("time"));
+        final var allProducts = Boolean.TRUE.equals(body.get("allProducts"));
+        final String label;
+        if (allProducts) {
+            label = "All Products";
+        } else {
+            if (!product.matches("[A-Za-z0-9._*-]{1,100}") || !time.isEmpty() && !time.matches("[A-Za-z0-9_-]{1,32}")) {
+                throw new IllegalArgumentException("Invalid product or cycle");
+            }
+            label = time.isEmpty() ? product : time + "-" + product;
+        }
+        final var subject = ("delay".equals(kind) ? "ECMWF Products Delay (" : "ECMWF Products (") + label + ")";
+        final var messageBody = text(body, "body");
+        if (messageBody.isBlank()) {
+            throw new IllegalArgumentException("The message body is required");
+        }
+        final var bcc = new ArrayList<String>();
+        bcc.add(productMessageSetting(ProductStatusMessages.BCC_ADDRESS_NAME,
+                ProductStatusMessages.DEFAULT_BCC_ADDRESS));
+        if (allProducts) {
+            for (final var entry : DelayRecipients.cyclesPerProduct().entrySet()) {
+                for (final var cycle : entry.getValue()) {
+                    bcc.add("ecpds-product-" + cycle + "-" + entry.getKey() + "@ecmwf.int");
+                }
+            }
+        } else {
+            bcc.add("ecpds-product-" + label + "@ecmwf.int");
+        }
+        queueEmail(
+                productMessageSetting(ProductStatusMessages.TO_ADDRESS_NAME, ProductStatusMessages.DEFAULT_TO_ADDRESS),
+                "", String.join(",", bcc), subject, messageBody);
+        _log.info("Product {} email for {} queued directly by {}", kind, label, who);
+        out.put("sentDirectly", true);
+    }
+
+    private static void markSent(final String ref, final int index, final String who) throws Exception {
+        DelayNotices.modify(ref, notice -> {
+            final var history = list(notice, "history");
+            if (index < 0 || index >= history.size()) {
+                throw new IllegalArgumentException("Unknown message");
+            }
+            final var entry = history.get(index);
+            entry.put("confirmed", true);
+            entry.put("confirmedAt", now());
+            entry.put("confirmedBy", who);
+            entry.put("sentVia", "direct");
+        });
+    }
+
+    private static String noticeBcc(final Map<String, Object> entry) throws Exception {
+        @SuppressWarnings("unchecked")
+        final var emails = (Collection<String>) entry.get("emails");
+        final var bcc = new ArrayList<String>();
+        bcc.add(productMessageSetting(ProductStatusMessages.BCC_ADDRESS_NAME,
+                ProductStatusMessages.DEFAULT_BCC_ADDRESS));
+        if (emails != null) {
+            bcc.addAll(emails);
+        }
+        bcc.add(str(entry.get("bcc")));
+        return String.join(",", bcc);
+    }
+
+    private static void sendNoticeEmail(final String ref, final Map<String, Object> entry) throws Exception {
+        final var kind = str(entry.get("kind"));
+        final var updatePrefix = "update".equals(kind) ? "UPDATE - " : "";
+        queueEmail(
+                productMessageSetting(ProductStatusMessages.TO_ADDRESS_NAME, ProductStatusMessages.DEFAULT_TO_ADDRESS),
+                str(entry.get("cc")), noticeBcc(entry), "[" + ref + "] " + updatePrefix + str(entry.get("subject")),
+                str(entry.get("body")));
+    }
+
+    private void deliverDirectly(final String ref, final int index, final String who, final Map<String, Object> out) {
+        try {
+            final var notice = DelayNotices.get(ref);
+            if (notice == null) {
+                throw new IllegalArgumentException("Unknown notice: " + ref);
+            }
+            final var history = list(notice, "history");
+            if (index < 0 || index >= history.size()) {
+                throw new IllegalArgumentException("Unknown message");
+            }
+            sendNoticeEmail(ref, history.get(index));
+            markSent(ref, index, who);
+            _log.info("Message {} of delay notice {} queued directly by {}", index, ref, who);
+            out.put("sentDirectly", true);
+        } catch (final Exception e) {
+            _log.warn("Direct email for delay notice {} could not be queued", ref, e);
+            out.put("sentDirectly", false);
+            out.put("deliveryError", e.getMessage() == null ? e.toString() : e.getMessage());
         }
     }
 
@@ -192,6 +324,23 @@ public class DelayNotificationAction extends PDSAction {
         out.put("notices", notices);
         out.put("limit", limit);
         out.put("more", notices.size() >= limit);
+    }
+
+    private void report(final Map<String, Object> body, final Map<String, Object> out) throws Exception {
+        final var fromDate = str(body.get("fromDate"));
+        final var toDate = str(body.get("toDate"));
+        final LocalDate from;
+        final LocalDate to;
+        try {
+            from = LocalDate.parse(fromDate);
+            to = LocalDate.parse(toDate);
+        } catch (final DateTimeParseException e) {
+            throw new IllegalArgumentException("Select a valid report date range");
+        }
+        if (from.isAfter(to)) {
+            throw new IllegalArgumentException("The report start date must not be after the end date");
+        }
+        out.put("notices", DelayNotices.list(from.toString(), to.toString()));
     }
 
     /**
@@ -348,6 +497,9 @@ public class DelayNotificationAction extends PDSAction {
         out.put("ref", ref);
         out.put("index", 0);
         out.put("emails", r.emails());
+        if (Boolean.TRUE.equals(body.get("direct"))) {
+            deliverDirectly(ref, 0, who, out);
+        }
     }
 
     private static void open(final Map<String, Object> notice, final String what) {
@@ -410,6 +562,9 @@ public class DelayNotificationAction extends PDSAction {
         out.put("index", list(notice, "history").size() - 1);
         out.put("emails", all);
         out.put("addedEmails", added);
+        if (Boolean.TRUE.equals(body.get("direct"))) {
+            deliverDirectly(str(notice.get("ref")), (Integer) out.get("index"), who, out);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -465,6 +620,9 @@ public class DelayNotificationAction extends PDSAction {
         out.put("status", notice.get("status"));
         out.put("allowNoticeCc", allowCc);
         out.put("allowNoticeBcc", allowBcc);
+        if (Boolean.TRUE.equals(body.get("direct"))) {
+            deliverDirectly(str(notice.get("ref")), (Integer) out.get("index"), who, out);
+        }
     }
 
     private void cancel(final Map<String, Object> body, final String who, final Map<String, Object> out)
@@ -486,6 +644,31 @@ public class DelayNotificationAction extends PDSAction {
         out.put("emails", notice.get("emails"));
     }
 
+    private void resend(final Map<String, Object> body, final String who, final Map<String, Object> out)
+            throws Exception {
+        final var ref = str(body.get("ref"));
+        final int index;
+        try {
+            index = Integer.parseInt(str(body.get("index")));
+        } catch (final NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid message index");
+        }
+        final var notice = DelayNotices.get(ref);
+        if (notice == null) {
+            throw new IllegalArgumentException("Unknown notice: " + ref);
+        }
+        final var history = list(notice, "history");
+        if (index < 0 || index >= history.size()) {
+            throw new IllegalArgumentException("Unknown message");
+        }
+        if (Boolean.TRUE.equals(history.get(index).get("confirmed"))) {
+            throw new IllegalArgumentException("This message is already confirmed as sent");
+        }
+        sendNoticeEmail(ref, history.get(index));
+        markSent(ref, index, who);
+        out.put("sentDirectly", true);
+    }
+
     /** The operator confirms that a registered message was really sent. */
     private void confirm(final Map<String, Object> body, final String who) throws Exception {
         final int index;
@@ -503,6 +686,7 @@ public class DelayNotificationAction extends PDSAction {
             h.put("confirmed", true);
             h.put("confirmedAt", now());
             h.put("confirmedBy", who);
+            h.put("sentVia", "outlook");
         });
         _log.info("Message {} of delay notice {} confirmed as sent by {}", index, body.get("ref"), who);
     }

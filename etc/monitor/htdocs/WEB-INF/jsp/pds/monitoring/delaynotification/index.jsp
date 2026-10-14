@@ -15,7 +15,7 @@
 .dn-marker.possible { background: #ffc107; color: #000; }
 .dn-before-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: middle; }
 .dn-cell.na { background: var(--bs-tertiary-bg); color: #aaa; cursor: default; }
-.dn-matrix-wrap { max-height: 45vh; overflow: auto; }
+.dn-matrix-wrap { min-width: 0; overflow: auto; }
 #dnMatrix.dn-uniform { table-layout: fixed; width: max-content; min-width: 100%; }
 #dnMatrix.dn-uniform th:first-child, #dnMatrix.dn-uniform td:first-child { width: 160px; min-width: 160px; max-width: 160px; }
 #dnMatrix.dn-uniform td:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -33,8 +33,12 @@
 #dnBody { font-family: monospace; font-size: 0.85rem; }
 @media (min-width: 1200px) {
   #dnMatrixColumn, #dnNoticeColumn { display: flex; }
-  #dnMatrixColumn > .card, #dnNoticeColumn > .card { flex: 1 1 auto; }
+  #dnMatrixColumn > .card { flex: 1 1 auto; width: 100%; min-width: 0; }
+  #dnNoticeColumn > .card { flex: 1 1 auto; }
   #dnMatrixColumn .card-body, #dnNoticeColumn .card-body { flex: 1 1 auto; }
+  #dnMatrixColumn > .card > .card-body { display: flex; flex-direction: column; min-height: 0; }
+  #dnMatrixColumn .dn-matrix-wrap { flex: 0 0 auto; min-height: 0; }
+  #dnMatrixActions { margin-bottom: auto !important; }
 }
 </style>
 
@@ -108,7 +112,7 @@
      <span><i class="mon-dot mon-dot-6 me-1"></i>Transitional</span>
     </div>
     <div class="dn-matrix-wrap"><table class="table table-sm table-bordered align-middle mb-0" id="dnMatrix"></table></div>
-    <div class="mt-2 d-flex flex-wrap align-items-start gap-2">
+    <div id="dnMatrixActions" class="mt-2 d-flex flex-wrap align-items-start gap-2">
      <span class="small text-muted"><span id="dnSelCount">0</span> cell(s) selected</span>
      <div class="btn-group btn-group-sm ms-auto" role="group" aria-label="Select affected cells by generation timing">
       <button class="btn btn-outline-danger" id="dnMarkLateBtn" type="button" onclick="dnMarkByTiming('definite')" title="Mark all on-schedule/slightly-late and overdue product/cycle cells as Definite">Mark late/overdue D</button>
@@ -176,36 +180,84 @@
      </div>
      <textarea id="dnBody" class="form-control" rows="16" oninput="dnEdited()"></textarea>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
      <button class="btn btn-outline-secondary" type="button" onclick="dnEditedReset()"><i class="bi bi-arrow-clockwise me-1"></i>Regenerate</button>
      <button class="btn btn-outline-primary" type="button" id="dnPreviewBtn" onclick="dnPreview()"><i class="bi bi-eye me-1"></i>Preview</button>
-     <button class="btn btn-danger" id="dnSendBtn" onclick="dnSend()"><i class="bi bi-send me-1"></i><span id="dnSendLbl">Send notice</span></button>
-     <button class="btn btn-outline-secondary d-none" id="dnCancelUpd" onclick="dnLeaveUpdate()">Cancel update</button>
+     <button type="button" class="btn btn-danger" id="dnSendBtn" onclick="dnSend(false)"><i class="bi bi-box-arrow-up-right me-1"></i><span id="dnSendLbl">Send with Outlook</span></button>
+     <button type="button" class="btn btn-outline-danger" id="dnDirectBtn" onclick="dnSend(true)"><i class="bi bi-send-check me-1"></i><span id="dnDirectLbl">Send directly</span></button>
+     <button type="button" class="btn btn-outline-secondary d-none" id="dnCancelUpd" onclick="dnLeaveUpdate()">Cancel update</button>
     </div>
     <div class="modal fade" id="dnPreviewModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
      <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-eye me-1"></i>Message preview</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
      <div class="modal-body"><div id="dnPreviewHead" class="small mb-2"></div><pre id="dnPreviewBody" class="border rounded p-3 bg-body-tertiary" style="white-space:pre-wrap;font-family:inherit;font-size:0.9rem"></pre></div>
      <div class="modal-footer py-2"><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button></div></div></div></div>
-    <div class="small text-muted mt-2">The notice is registered, then an Outlook message opens with the recipients in BCC: press Send in Outlook to deliver it.</div>
+    <div class="small text-muted mt-2">Choose Outlook to review and send the message there, then acknowledge it here, or send directly through the Master mail service and have it acknowledged automatically.</div>
    </div>
   </div>
  </div>
 </div>
 
 <div id="dnSent" class="d-none">
- <div class="card border-0 shadow-sm"><div class="card-body p-0">
-  <table class="table table-sm align-middle mb-0">
-   <thead><tr><th>Reference</th><th>Status</th><th>Created</th><th>Reason</th><th>Products</th><th>Recipients</th><th style="width:330px"></th></tr></thead>
-   <tbody id="dnSentBody"></tbody>
-  </table>
+ <div class="card border-0 shadow-sm">
+  <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+   <i class="bi bi-journal-text text-primary"></i><span class="fw-semibold">Sent notices</span>
+   <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
+    <div class="input-group input-group-sm" style="width:auto">
+     <span class="input-group-text"><i class="bi bi-search"></i></span>
+     <input type="text" id="dnSentSearch" class="form-control" placeholder="Search notices..." style="min-width:180px">
+    </div>
+    <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
+     <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
+     <select id="dnSentPageLen" class="form-select form-select-sm" style="width:auto">
+      <option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="250">250</option>
+     </select>
+    </div>
+    <div class="dropdown">
+     <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="dnSentColModeBtn" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-layout-three-columns me-1"></i>Auto
+     </button>
+     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dnSentColModeBtn">
+      <li><a class="dropdown-item" href="#" data-dn-sent-mode="auto"><strong>Auto</strong><br><small class="text-muted">Hides columns based on screen width</small></a></li>
+      <li><a class="dropdown-item" href="#" data-dn-sent-mode="all"><strong>All</strong><br><small class="text-muted">Shows all columns</small></a></li>
+      <li><a class="dropdown-item" href="#" data-dn-sent-mode="compact"><strong>Compact</strong><br><small class="text-muted">Hides Reason and Products</small></a></li>
+     </ul>
+    </div>
+   </div>
+  </div>
+  <div class="card-body p-0">
+   <div class="table-responsive">
+    <table id="dnSentTable" class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
+     <thead class="table-warning"><tr><th>Reference</th><th>Status</th><th>Created</th><th>Reason</th><th>Products</th><th>Recipients</th><th style="width:330px"></th></tr></thead>
+     <tbody id="dnSentBody"></tbody>
+    </table>
+   </div>
+  </div>
+ <div class="card-footer text-center d-none" id="dnMore"><button class="btn btn-sm btn-outline-secondary" onclick="dnMoreNotices()">Load older notices</button></div>
+ <div class="card-footer">
+  <div class="d-flex flex-wrap align-items-end gap-2">
+   <div><label class="form-label small mb-1" for="dnReportFrom">From</label><input type="date" class="form-control form-control-sm" id="dnReportFrom"></div>
+   <div><label class="form-label small mb-1" for="dnReportTo">To</label><input type="date" class="form-control form-control-sm" id="dnReportTo"></div>
+   <div><label class="form-label small mb-1" for="dnReportStatus">Notice status</label>
+    <select class="form-select form-select-sm" id="dnReportStatus">
+     <option value="all">All statuses</option><option value="active">Active</option><option value="partial">Partially resolved</option><option value="resolved">Resolved</option><option value="cancelled">Cancelled</option>
+    </select>
+   </div>
+   <div class="d-flex flex-column gap-1 pb-1">
+    <div class="form-check form-check-sm"><input class="form-check-input" type="checkbox" id="dnReportHistory"><label class="form-check-label small" for="dnReportHistory">Include message history</label></div>
+    <div class="form-check form-check-sm"><input class="form-check-input" type="checkbox" id="dnReportAddresses"><label class="form-check-label small" for="dnReportAddresses">Include recipient addresses</label></div>
+   </div>
+   <span class="ms-auto" id="dnReportButtonWrap"><button class="btn btn-sm btn-primary" id="dnReportButton" type="button" onclick="dnGenerateReport()"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Generate report</button></span>
+  </div>
+  <div class="small text-muted mt-2">The period is based on notice creation date. Recipient addresses are excluded unless explicitly selected.</div>
+  <div id="dnReportResults" class="mt-3 d-none" aria-live="polite"></div>
  </div>
- <div class="card-footer text-center d-none" id="dnMore"><button class="btn btn-sm btn-outline-secondary" onclick="dnMoreNotices()">Load older notices</button></div></div>
+ </div>
 </div>
 
 <script>
 (function() {
 var BASE = '/do/monitoring/delaynotification/';
-var S = { cycles: {}, minutesBeforeSchedule: {}, minutesBeforeSchedulePerCycle: {}, generationStatusPerProduct: {}, generationStatusPerCycle: {}, models: {}, notices: [], sel: {}, emails: [], dests: {}, bodyEdited: false, update: null, defaultCc: '', defaultBcc: '', allowNoticeCc: true, allowNoticeBcc: true, limit: 100, more: false };
+var S = { cycles: {}, minutesBeforeSchedule: {}, minutesBeforeSchedulePerCycle: {}, generationStatusPerProduct: {}, generationStatusPerCycle: {}, models: {}, notices: [], sel: {}, emails: [], dests: {}, bodyEdited: false, update: null, defaultCc: '', defaultBcc: '', allowNoticeCc: true, allowNoticeBcc: true, limit: 100, more: false, sentTable: null };
 var BCC_LIST = 'op_delay_ecmwf@lists.ecmwf.int', TO_ADDRESS = 'operators@ecmwf.int'; // replaced by the values of Product Messages
 var MAX_URL = 6000;
 var PREF_KEY = 'delayNotificationPreferences:' + $('dnPreferences').dataset.user;
@@ -216,6 +268,9 @@ try {
 } catch (e) { preferences = {}; }
 
 function $(id) { return document.getElementById(id); }
+function localDate(date) {
+  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+}
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function generationStatusNumber(status) {
   var number = Number(status);
@@ -290,6 +345,9 @@ window.dnTab = function(t) {
   $('dnLayoutControls').classList.toggle('d-none', t !== 'compose');
   $('dnTabCompose').classList.toggle('active', t === 'compose');
   $('dnTabSent').classList.toggle('active', t === 'sent');
+  if (t === 'sent' && S.sentTable) {
+    setTimeout(function() { S.sentTable.columns.adjust().draw(false); }, 0);
+  }
 };
 window.dnSetLayout = function(layout) {
   if (['split', 'matrix', 'notice'].indexOf(layout) < 0) { layout = 'split'; }
@@ -736,30 +794,41 @@ window.dnPreview = function() {
   $('dnPreviewBody').textContent = $('dnBody').value;
   bootstrap.Modal.getOrCreateInstance($('dnPreviewModal')).show();
 };
-window.dnSend = function() {
+window.dnSend = function(direct) {
   if ($('dnCcOn').checked && !dnValidateCc()) { $('dnCc').focus(); return; }
   if ($('dnBccOn').checked && !dnValidateBcc()) { $('dnBcc').focus(); return; }
   var p = payload();
   if (!p.cells.length) { alertMsg('Select at least one product and cycle'); return; }
   if (!p.subject.trim() || !p.body.trim()) { alertMsg('The subject and message are required'); return; }
-  var btn = $('dnSendBtn'); btn.disabled = true;
+  direct = direct === true;
+  var btn = $('dnSendBtn'), directBtn = $('dnDirectBtn'); btn.disabled = true; directBtn.disabled = true;
   var upd = S.update;
   if (upd) { p.ref = upd.ref; }
+  p.direct = direct;
   post(upd ? 'update' : 'send', p).then(function(d) {
     var ref = upd ? upd.ref : d.ref;
     var cc = p.includeCc ? p.cc : '';
     var bcc = p.includeBcc ? p.bcc : '';
-    outlook('[' + ref + '] ' + (upd ? 'UPDATE - ' : '') + p.subject, p.body, d.emails, p.cells, cc, bcc);
+    var message = {subject: '[' + ref + '] ' + (upd ? 'UPDATE - ' : '') + p.subject, body: p.body, emails: d.emails, cells: p.cells, cc: cc, bcc: bcc};
     S.sel = {}; S.update = null; setUpdateMode(false); S.bodyEdited = false;
     afterSelection(); load();
-    askConfirm(ref, d.index, {subject: '[' + ref + '] ' + (upd ? 'UPDATE - ' : '') + p.subject, body: p.body, emails: d.emails, cells: p.cells, cc: cc, bcc: bcc});
-  }).catch(fail).then(function() { btn.disabled = false; });
+    if (direct && d.sentDirectly) {
+      alertMsg('Message queued through the Master mail service and acknowledged', 'success');
+    } else {
+      if (direct && d.deliveryError) {
+        alertMsg('Direct sending failed: ' + d.deliveryError + '. Outlook was opened instead.', 'warning');
+      }
+      outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc);
+      askConfirm(ref, d.index, message);
+    }
+  }).catch(fail).then(function() { btn.disabled = false; directBtn.disabled = false; });
 };
 
 function setUpdateMode(on, ref) {
   $('dnUpdBadge').classList.toggle('d-none', !on); $('dnUpdBadge').textContent = on ? 'Update ' + ref : '';
   $('dnCancelUpd').classList.toggle('d-none', !on);
-  $('dnSendLbl').textContent = on ? 'Send update' : 'Send notice';
+  $('dnSendLbl').textContent = on ? 'Send update with Outlook' : 'Send notice with Outlook';
+  $('dnDirectLbl').textContent = on ? 'Send update directly' : 'Send notice directly';
   $('dnTabComposeLbl').textContent = on ? 'Update ' + ref : 'Send delay notification';
 }
 window.dnLeaveUpdate = function() { S.update = null; setUpdateMode(false); S.sel = {}; S.bodyEdited = false; afterSelection(); };
@@ -768,36 +837,217 @@ function statusBadge(s) {
   var c = {active: 'danger', partial: 'warning', resolved: 'success', cancelled: 'secondary'}[s] || 'secondary';
   return '<span class="badge text-bg-' + c + '">' + esc(s) + '</span>';
 }
-function renderSent() {
-  $('dnSentCount').textContent = S.notices.length;
-  $('dnSentBody').innerHTML = S.notices.length ? S.notices.map(function(n, i) {
-    var open = n.status === 'active' || n.status === 'partial';
-    var prods = {}; (n.cells || []).forEach(function(c) { prods[c.product] = 1; });
-    var pending = (n.history || []).some(function(x) { return x.confirmed === false; });
-    var h = '<tr><td class="fw-semibold">' + esc(n.ref) + '</td><td>' + statusBadge(n.status) + (pending ? ' <span class="badge text-bg-warning" title="A message is registered but its sending is not confirmed">to confirm</span>' : '') + '</td><td class="small">' + esc(n.createdAt) + '<br>' + esc(n.createdBy) + '</td>'
-      + '<td class="small">' + esc(n.reason) + '</td><td class="small">' + esc(Object.keys(prods).join(', ')) + '</td>'
-      + '<td class="small">' + (n.destinations || []).length + ' dest., ' + (n.emails || []).length + ' emails</td><td class="text-nowrap">'
-      + (open ? '<button class="btn btn-sm btn-success" data-a="resolve" data-i="' + i + '"><i class="bi bi-check2-circle"></i> Inform resolution</button> '
-        + '<button class="btn btn-sm btn-outline-primary" data-a="update" data-i="' + i + '"><i class="bi bi-pencil"></i> Update</button> '
-        + '<button class="btn btn-sm btn-outline-warning" data-a="cancel" data-i="' + i + '"><i class="bi bi-x-circle"></i></button> ' : '')
-      + '<button class="btn btn-sm btn-outline-secondary" data-a="copy" data-i="' + i + '" title="Copy BCC emails"><i class="bi bi-clipboard"></i></button> '
-      + '<button class="btn btn-sm btn-outline-danger" data-a="delete" data-i="' + i + '"><i class="bi bi-trash"></i></button></td></tr>';
-    var hist = (n.history || []).map(function(x, k) {
-      return '<div>' + esc(x.at) + ' ' + esc(x.kind) + ' by ' + esc(x.by) + (x.addedEmails && x.addedEmails.length ? ' (+' + x.addedEmails.length + ' recipients)' : '')
-        + (x.confirmed === false ? ' <span class="badge text-bg-warning">not confirmed as sent</span> '
-            + '<button class="btn btn-sm btn-outline-success py-0" data-a="confirm" data-i="' + i + '" data-k="' + k + '">I have sent it</button> '
-            + '<button class="btn btn-sm btn-outline-secondary py-0" data-a="reopen" data-i="' + i + '" data-k="' + k + '">Open Outlook again</button>'
-          : (x.confirmedAt ? ' <span class="text-success"><i class="bi bi-check2"></i> sent, confirmed by ' + esc(x.confirmedBy) + ' (' + esc(x.confirmedAt) + ')</span>' : '')) + '</div>';
-    }).join('');
-    return h + '<tr id="dnRes' + i + '" class="d-none"><td colspan="7"></td></tr><tr><td colspan="7" class="small text-muted py-1">' + hist + '</td></tr>';
-  }).join('') : '<tr><td colspan="7" class="text-muted text-center py-3">No notice yet</td></tr>';
-  $('dnMore').classList.toggle('d-none', !S.more);
-  Array.prototype.forEach.call($('dnSentBody').querySelectorAll('button[data-a]'), function(b) {
-    b.onclick = function() { sentAction(b.dataset.a, S.notices[+b.dataset.i], +b.dataset.i, +b.dataset.k); };
+function csvCell(value) {
+  var text = String(value == null ? '' : value);
+  if (/^[\u0000-\u0020]*[=+\-@]/.test(text)) { text = "'" + text; }
+  return '"' + text.replace(/"/g, '""') + '"';
+}
+window.dnGenerateReport = function() {
+  var fromDate = $('dnReportFrom').value, toDate = $('dnReportTo').value;
+  if (!fromDate || !toDate || fromDate > toDate) {
+    alertMsg('Select a valid report date range; the start must not be after the end.', 'warning');
+    return;
+  }
+  var statusFilter = $('dnReportStatus').value;
+  var includeHistory = $('dnReportHistory').checked;
+  var includeAddresses = $('dnReportAddresses').checked;
+  var button = $('dnReportButton');
+  button.disabled = true;
+  post('report', {fromDate: fromDate, toDate: toDate}).then(function(data) {
+    var notices = (data.notices || []).filter(function(n) { return statusFilter === 'all' || n.status === statusFilter; });
+    var productCounts = {};
+    var statusCounts = {active: 0, partial: 0, resolved: 0, cancelled: 0};
+    var affectedCells = 0, unconfirmedMessages = 0;
+    notices.forEach(function(n) {
+      statusCounts[n.status] = (statusCounts[n.status] || 0) + 1;
+      affectedCells += (n.cells || []).length;
+      var seen = {};
+      (n.cells || []).forEach(function(c) {
+        if (!seen[c.product]) { productCounts[c.product] = (productCounts[c.product] || 0) + 1; seen[c.product] = true; }
+      });
+      (n.history || []).forEach(function(h) { if (h.confirmed === false) unconfirmedMessages++; });
+    });
+    var sortedProducts = Object.keys(productCounts).sort(function(a, b) {
+      return productCounts[b] - productCounts[a] || a.localeCompare(b);
+    });
+    var topProducts = sortedProducts.slice(0, 10);
+    var summary = '<div class="d-flex flex-wrap gap-2 mb-2">'
+      + '<span class="badge text-bg-primary">' + notices.length + ' notices</span>'
+      + '<span class="badge text-bg-danger">' + statusCounts.active + ' active</span>'
+      + '<span class="badge text-bg-warning">' + statusCounts.partial + ' partial</span>'
+      + '<span class="badge text-bg-success">' + statusCounts.resolved + ' resolved</span>'
+      + '<span class="badge text-bg-secondary">' + statusCounts.cancelled + ' cancelled</span>'
+      + '<span class="badge text-bg-info">' + affectedCells + ' affected product/cycles</span>'
+      + '<span class="badge text-bg-warning">' + unconfirmedMessages + ' messages to confirm</span></div>';
+    summary += '<div class="small mb-2"><strong>Most affected products:</strong> '
+      + (topProducts.length ? topProducts.map(function(p) { return esc(p) + ' (' + productCounts[p] + ')'; }).join(', ') : 'None') + '</div>';
+    var rows = [
+      ['Report summary', fromDate + ' to ' + toDate, 'Notices', notices.length, '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+      ['Status summary', '', 'Active', statusCounts.active, '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+      ['Status summary', '', 'Partial', statusCounts.partial, '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+      ['Status summary', '', 'Resolved', statusCounts.resolved, '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+      ['Status summary', '', 'Cancelled', statusCounts.cancelled, '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+    ];
+    sortedProducts.forEach(function(product) {
+      rows.push(['Product summary', '', productCounts[product] + ' notices', '', '', '', product, '', '', '', '', '', '', '', '', '', '', '']);
+    });
+    var headers = ['Record type', 'Created', 'Reference', 'Status', 'Created by', 'Reason', 'Product', 'Cycle', 'Destinations', 'Recipient count', 'To', 'Cc', 'Bcc', 'Message type', 'Message date', 'Message by', 'Subject', 'Confirmed'];
+    notices.forEach(function(n) {
+      var cells = n.cells || [];
+      var destinations = (n.destinations || []).join('; ');
+      var emails = (n.emails || []).join('; ');
+      var hasAddresses = includeAddresses;
+      if (!cells.length) { cells = [{product: '', time: ''}]; }
+      cells.forEach(function(c) {
+        rows.push(['Affected product/cycle', n.createdAt, n.ref, n.status, n.createdBy, n.reason, c.product, c.time,
+          destinations, (n.emails || []).length, hasAddresses ? emails : '', hasAddresses && n.includeCc ? n.cc : '',
+          hasAddresses && n.includeBcc ? n.bcc : '', '', '', '', '', '']);
+      });
+      if (includeHistory) {
+        (n.history || []).forEach(function(h) {
+          rows.push(['Message history', n.createdAt, n.ref, n.status, n.createdBy, n.reason, '', '', destinations,
+            (h.emails || []).length, hasAddresses ? (h.emails || []).join('; ') : '',
+            hasAddresses ? h.cc : '', hasAddresses ? h.bcc : '', h.kind, h.at, h.by, h.subject,
+            h.confirmed === false ? 'No' : h.confirmed === true ? 'Yes' : 'Not recorded']);
+        });
+      }
+    });
+    var csv = [headers].concat(rows).map(function(row) { return row.map(csvCell).join(','); }).join('\r\n');
+    var blob = new Blob(['\ufeff' + csv], {type: 'text/csv;charset=utf-8'});
+    var url = URL.createObjectURL(blob), link = document.createElement('a');
+    link.href = url;
+    link.download = 'delay-notices-' + fromDate + '-to-' + toDate + '.csv';
+    document.body.appendChild(link); link.click(); link.remove(); window.setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    $('dnReportResults').innerHTML = summary + '<div class="small text-muted">CSV report downloaded. Product counts are the number of notices affecting each product; select the optional flags to add message history or recipient addresses.</div>';
+    $('dnReportResults').classList.remove('d-none');
+  }).catch(fail).then(function() { updateReportButton(); });
+};
+function sentDetails(n, i) {
+  var affected = (n.cells || []).map(function(c) {
+    return '<span class="badge text-bg-light border me-1 mb-1">' + esc(c.product) + ' ' + esc(c.time)
+      + (c.resolved ? ' <i class="bi bi-check-circle text-success" title="Resolved"></i>' : '') + '</span>';
+  }).join('');
+  var hist = (n.history || []).map(function(x, k) {
+    return '<div class="py-1">' + esc(x.at) + ' ' + esc(x.kind) + ' by ' + esc(x.by) + (x.addedEmails && x.addedEmails.length ? ' (+' + x.addedEmails.length + ' recipients)' : '')
+      + (x.confirmed === false ? ' <span class="badge text-bg-warning">not confirmed as sent</span> '
+          + '<button class="btn btn-sm btn-outline-success py-0" data-a="confirm" data-i="' + i + '" data-k="' + k + '">I have sent it</button> '
+          + '<button class="btn btn-sm btn-outline-danger py-0" data-a="direct" data-i="' + i + '" data-k="' + k + '">Send directly</button> '
+          + '<button class="btn btn-sm btn-outline-secondary py-0" data-a="reopen" data-i="' + i + '" data-k="' + k + '">Open Outlook again</button>'
+        : (x.confirmedAt ? ' <span class="text-success"><i class="bi bi-check2"></i> ' + (x.sentVia === 'direct' ? 'queued directly' : 'sent') + ', acknowledged by ' + esc(x.confirmedBy) + ' (' + esc(x.confirmedAt) + ')</span>' : '')) + '</div>';
+  }).join('');
+  return '<div class="p-2"><div id="dnRes' + i + '" class="d-none"></div>'
+    + '<div class="small mb-2"><strong>Affected product/cycles:</strong><div class="mt-1">' + (affected || '<span class="text-muted">None recorded</span>') + '</div></div>'
+    + '<div class="small text-muted">' + (hist || 'No messages recorded') + '</div></div>';
+}
+function initSentTable() {
+  var $ = window.jQuery; // the page-level $ is the getElementById helper
+  var pageLen = 25;
+  try {
+    var saved = parseInt(localStorage.getItem('dnSentPageLen'), 10);
+    if ([10, 25, 50, 100, 250].indexOf(saved) >= 0) pageLen = saved;
+  } catch (e) {}
+  S.sentTable = $('#dnSentTable').DataTable({
+    paging: true, pageLength: pageLen, searching: true, ordering: true, info: true, autoWidth: false,
+    order: [[2, 'desc']],
+    columnDefs: [{orderable: false, targets: [1, 3, 4, 5, 6]}],
+    language: {info: 'Showing _START_-_END_ of _TOTAL_', infoEmpty: '', infoFiltered: '', emptyTable: 'No matching records found.', zeroRecords: 'No matching records found.'},
+    dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>',
+    drawCallback: function() {
+      // Hide the empty info/pagination bar so it doesn't leave a blank gap above the footer.
+      $(this.api().table().container()).children('.d-flex').toggleClass('d-none', this.api().page.info().recordsDisplay === 0);
+    }
+  });
+  $('#dnSentSearch').on('input', function() { S.sentTable.search(this.value).draw(); });
+  $('#dnSentPageLen').val(pageLen).on('change', function() {
+    var len = +this.value;
+    try { localStorage.setItem('dnSentPageLen', len); } catch (e) {}
+    S.sentTable.page.len(len).draw();
+  });
+  var mode = 'auto';
+  try { mode = localStorage.getItem('dnSentColMode') || 'auto'; } catch (e) {}
+  if (['auto', 'all', 'compact'].indexOf(mode) < 0) mode = 'auto';
+  function showCols(hidden) {
+    S.sentTable.columns().every(function(index) { this.visible(hidden.indexOf(index) < 0, false); });
+    S.sentTable.columns.adjust();
+  }
+  function applyMode(next) {
+    mode = next;
+    $('#dnSentColModeBtn').html('<i class="bi bi-layout-three-columns me-1"></i>' + next.charAt(0).toUpperCase() + next.slice(1));
+    $('#dnSentColModeBtn').toggleClass('btn-outline-secondary', next === 'auto').toggleClass('btn-primary', next !== 'auto');
+    $('#dnSentColModeBtn').closest('.dropdown').find('.dropdown-item').each(function() {
+      $(this).find('i.bi-check').remove();
+      if ($(this).data('dn-sent-mode') === next) $(this).prepend('<i class="bi bi-check me-1"></i>');
+    });
+    if (next === 'all') showCols([]);
+    else if (next === 'compact') showCols([3, 4]);
+    else showCols(window.innerWidth < 768 ? [2, 3, 4, 5] : window.innerWidth < 1200 ? [3, 4] : []);
+  }
+  $('#dnSentColModeBtn').closest('.dropdown').find('[data-dn-sent-mode]').on('click', function(e) {
+    e.preventDefault();
+    var next = $(this).data('dn-sent-mode');
+    try { localStorage.setItem('dnSentColMode', next); } catch (e) {}
+    applyMode(next);
+  });
+  $(window).on('resize.dnSentTable', function() { if (mode === 'auto') applyMode('auto'); });
+  applyMode(mode);
+  $('#dnSentBody').on('click', 'button[data-a]', function() {
+    var button = this;
+    sentAction(button.dataset.a, S.notices[+button.dataset.i], +button.dataset.i, +button.dataset.k);
   });
 }
+function updateReportButton() {
+  var button = $('dnReportButton'), empty = S.notices.length === 0;
+  button.disabled = empty;
+  button.parentNode.title = empty ? 'There are no notices to report on' : '';
+}
+function renderSent() {
+  $('dnSentCount').textContent = S.notices.length;
+  if (!S.sentTable) initSentTable();
+  var rows = S.notices.map(function(n, i) {
+    var open = n.status === 'active' || n.status === 'partial';
+    var products = {}, cycles = {};
+    (n.cells || []).forEach(function(c) { products[c.product] = 1; cycles[c.product + '@' + c.time] = 1; });
+    var pending = (n.history || []).some(function(x) { return x.confirmed === false; });
+    var status = statusBadge(n.status) + (pending ? ' <span class="badge text-bg-warning" title="A message is registered but its sending is not confirmed">to confirm</span>' : '');
+    var actions = (open ? '<button class="btn btn-sm btn-success" data-a="resolve" data-i="' + i + '"><i class="bi bi-check2-circle"></i> Inform resolution</button> '
+      + '<button class="btn btn-sm btn-outline-primary" data-a="update" data-i="' + i + '"><i class="bi bi-pencil"></i> Update</button> '
+      + '<button class="btn btn-sm btn-outline-warning" data-a="cancel" data-i="' + i + '" title="Cancel notice"><i class="bi bi-x-circle"></i></button> ' : '')
+      + '<button class="btn btn-sm btn-outline-secondary" data-a="details" data-i="' + i + '" title="Show affected product/cycles and message history"><i class="bi bi-clock-history"></i></button> '
+      + '<button class="btn btn-sm btn-outline-secondary" data-a="copy" data-i="' + i + '" title="Copy BCC emails"><i class="bi bi-clipboard"></i></button> '
+      + '<button class="btn btn-sm btn-outline-danger" data-a="delete" data-i="' + i + '" title="Delete notice"><i class="bi bi-trash"></i></button>';
+    return [
+      '<span class="fw-semibold">' + esc(n.ref) + '</span>',
+      status,
+      '<span class="small" data-order="' + esc(n.createdAt) + '">' + esc(n.createdAt) + '<br>' + esc(n.createdBy) + '</span>',
+      '<span class="small">' + esc(n.reason) + '</span>',
+      '<span class="small text-nowrap">' + Object.keys(products).length + ' products · ' + Object.keys(cycles).length + ' cycles</span>',
+      '<span class="small">' + (n.destinations || []).length + ' dest., ' + (n.emails || []).length + ' emails</span>',
+      '<div class="text-nowrap">' + actions + '</div>'
+    ];
+  });
+  S.sentTable.clear().rows.add(rows).draw(false);
+  S.sentTable.rows().every(function() { this.node().id = 'dnSentRow' + this.index(); });
+  $('dnMore').classList.toggle('d-none', !S.more);
+  updateReportButton();
+}
 function sentAction(a, n, i, k) {
+  if (a === 'details') {
+    var tableRow = S.sentTable.row('#dnSentRow' + i);
+    if (tableRow.child.isShown()) {
+      tableRow.child.hide();
+    } else {
+      tableRow.child(sentDetails(n, i)).show();
+    }
+    return;
+  }
   if (a === 'confirm') { confirmSent(n.ref, k); return; }
+  if (a === 'direct') {
+    post('resend', {ref: n.ref, index: k}).then(function() {
+      alertMsg('Message queued through the Master mail service and acknowledged', 'success');
+      load();
+    }).catch(fail);
+    return;
+  }
   if (a === 'reopen') {
     var m = n.history[k];
     outlook('[' + n.ref + '] ' + (m.kind === 'update' ? 'UPDATE - ' : '') + m.subject, m.body, m.emails || [], m.cells ? m.cells.map(function(c) { var j = c.lastIndexOf('@'); return {product: c.substring(0, j), time: c.substring(j + 1)}; }) : (n.cells || []), m.cc, m.bcc);
@@ -850,27 +1100,42 @@ function startUpdate(n) {
   setUpdateMode(true, n.ref); dnTab('compose'); dnRenderMatrix(); dnRecipients();
 }
 function openResolve(n, i) {
-  var row = $('dnRes' + i); row.classList.toggle('d-none');
+  var tableRow = S.sentTable.row('#dnSentRow' + i);
+  if (!tableRow.child.isShown()) {
+    tableRow.child(sentDetails(n, i)).show();
+  }
+  var row = $('dnRes' + i);
+  row.classList.remove('d-none');
   var openCells = (n.cells || []).filter(function(c) { return !c.resolved; });
   var products = describeProducts(openCells);
   row.firstChild.innerHTML = '<div class="p-2 border rounded"><div class="small mb-1">Cells to resolve:</div>'
     + openCells.map(function(c) { return '<label class="me-3 small"><input type="checkbox" class="form-check-input me-1" checked value="' + esc(c.product + '@' + c.time) + '">' + esc(c.product + ' ' + c.time) + '</label>'; }).join('')
     + '<input class="form-control form-control-sm my-2 rs-subj" value="' + esc('Resolved: ' + products.join(', ')) + '">'
     + '<textarea class="form-control form-control-sm mb-2 rs-body" rows="6">' + esc(S.resumedTemplate ? fillTemplate(S.resumedTemplate, products, openCells, {reason: n.reason, eta: n.eta, expectedDelay: n.delay, note: n.note}) : 'Dear users,\n\nThe delay affecting ' + products.join(', ') + ' has been resolved.\n\nBest regards,\nECMWF Operations') + '</textarea>'
-    + '<button class="btn btn-sm btn-success rs-go">Register and open the message</button></div>';
-  row.querySelector('.rs-go').onclick = function() {
+    + '<button class="btn btn-sm btn-success rs-go me-2">Register and open Outlook</button><button class="btn btn-sm btn-outline-success rs-direct">Send directly</button></div>';
+  function sendResolution(direct) {
     var picked = Array.prototype.map.call(row.querySelectorAll('input[type=checkbox]:checked'), function(c) { return c.value; });
     var subject = row.querySelector('.rs-subj').value, body = row.querySelector('.rs-body').value;
     if (!picked.length) { alertMsg('Select at least one cell'); return; }
-    post('resolve', {ref: n.ref, cells: picked.length === openCells.length ? [] : picked, subject: subject, body: body}).then(function(d) {
+    post('resolve', {ref: n.ref, cells: picked.length === openCells.length ? [] : picked, subject: subject, body: body, direct: direct}).then(function(d) {
       var cells = picked.map(function(k) { var j = k.lastIndexOf('@'); return {product: k.substring(0, j), time: k.substring(j + 1)}; });
       var cc = d.allowNoticeCc && S.allowNoticeCc && n.includeCc ? n.cc : '';
       var bcc = d.allowNoticeBcc && S.allowNoticeBcc && n.includeBcc ? n.bcc : '';
-      outlook('[' + n.ref + '] ' + subject, body, d.emails, cells, cc, bcc);
+      var message = {subject: '[' + n.ref + '] ' + subject, body: body, emails: d.emails, cells: cells, cc: cc, bcc: bcc};
       load();
-      askConfirm(n.ref, d.index, {subject: '[' + n.ref + '] ' + subject, body: body, emails: d.emails, cells: cells, cc: cc, bcc: bcc});
+      if (direct && d.sentDirectly) {
+        alertMsg('Resolution message queued through the Master mail service and acknowledged', 'success');
+      } else {
+        if (direct && d.deliveryError) {
+          alertMsg('Direct sending failed: ' + d.deliveryError + '. Outlook was opened instead.', 'warning');
+        }
+        outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc);
+        askConfirm(n.ref, d.index, message);
+      }
     }).catch(fail);
-  };
+  }
+  row.querySelector('.rs-go').onclick = function() { sendResolution(false); };
+  row.querySelector('.rs-direct').onclick = function() { sendResolution(true); };
 }
 
 window.dnMoreNotices = function() { S.limit += 100; load(); };
@@ -908,7 +1173,15 @@ function fromProductPage() {
       return false;
     });
     if (found < 0) { alertMsg('No open notice covers ' + label + '. Register a delay notice first.', 'warning'); return; }
-    dnTab('sent'); openResolve(S.notices[found], found);
+    dnTab('sent');
+    S.sentTable.search('').draw(false);
+    $('dnSentSearch').value = '';
+    var visibleRows = S.sentTable.rows({order: 'applied', search: 'applied'}).indexes().toArray();
+    var position = visibleRows.indexOf(found);
+    if (position >= 0) {
+      S.sentTable.page(Math.floor(position / S.sentTable.page.len())).draw(false);
+    }
+    openResolve(S.notices[found], found);
     Array.prototype.forEach.call($('dnRes' + found).querySelectorAll('input[type=checkbox]'), function(c) {
       var j = c.value.lastIndexOf('@'); c.checked = wanted(c.value.substring(0, j), c.value.substring(j + 1));
     });
@@ -921,6 +1194,10 @@ function fromProductPage() {
   afterSelection();
 }
 load().then(function() { dnAuto(); fromProductPage(); });
+var reportToday = new Date(), reportFrom = new Date(reportToday);
+reportFrom.setDate(reportFrom.getDate() - 30);
+$('dnReportFrom').value = localDate(reportFrom);
+$('dnReportTo').value = localDate(reportToday);
 })();
 </script>
 

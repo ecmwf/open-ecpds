@@ -27,10 +27,9 @@ import java.util.TreeSet;
  * ECMWF Product Data Store (OpenECPDS) Project
  *
  * Holds the built-in default text and the encoding logic for the two configurable product-status notification messages
- * ("Products Delay" and "Products Resumed") shown as pre-filled Outlook email bodies on the product monitoring page
- * ({@code product.jsp}). The actual, possibly customized, text is stored in the SYS_CONFIG database table (group
- * "ProductStatus") and edited from the Monitor UI (Admin Tasks &rarr; Product Status Messages), instead of being
- * hardcoded in the JSP page.
+ * ("Products Delay" and "Products Resumed") sent from the product monitoring page ({@code product.jsp}). The actual,
+ * possibly customized, text is stored in the SYS_CONFIG database table (group "ProductStatus") and edited from the
+ * Monitor UI (Admin Tasks &rarr; Product Status Messages), instead of being hardcoded in the JSP page.
  *
  * <p>
  * Each message has two variants, selected depending on whether the product/cycle currently being viewed is a "grouped"

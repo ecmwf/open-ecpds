@@ -22,10 +22,11 @@ import java.io.Serializable;
 
 /**
  * Immutable data record carrying per-host map data across the RMI boundary. Lat/lon are resolved (GeoIP or manual DB
- * entry) before transport.
+ * entry) before transport. The cloud value is {@code aws}, {@code gcs} or {@code azure} for hosts certainly served by
+ * those public clouds, otherwise empty.
  */
 public record HostMapData(String id, String nickname, String hostname, String type, boolean active, double lat,
-        double lon, String geo, String network, String method, String comment) implements Serializable {
+        double lon, String geo, String network, String method, String comment, String cloud) implements Serializable {
     @java.io.Serial
     private static final long serialVersionUID = 1L;
 }

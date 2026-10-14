@@ -116,7 +116,10 @@ import ecmwf.common.database.WebUser;
 import ecmwf.common.database.WeuCat;
 import ecmwf.common.ectrans.ECtransGroups;
 import ecmwf.common.ectrans.ECtransOptions;
+import ecmwf.common.ectrans.GeoLocationHint;
 import ecmwf.common.ectrans.ECtransSetup;
+import ecmwf.common.ectrans.RemoteProvider;
+import ecmwf.common.ectrans.TransferModule;
 import ecmwf.common.monitor.MonitorManager;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.GeoIP2Helper;
@@ -151,6 +154,86 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      */
     private static final Cache<String, GeoIpResult> GEOIP_CACHE = CacheBuilder.newBuilder().maximumSize(5_000)
             .expireAfterWrite(24, TimeUnit.HOURS).build();
+
+    /** Approximate coordinates for cloud-provider regions; these are not intended as precise facility locations. */
+    private static final Map<String, GeoIpResult> CLOUD_REGIONS = Map.ofEntries(
+            Map.entry("aws:us-east-1",
+                    cloudLocation(38.95, -77.45, "AWS region us-east-1", "North America", "US", "Virginia")),
+            Map.entry("aws:us-east-2",
+                    cloudLocation(40.0, -83.0, "AWS region us-east-2", "North America", "US", "Ohio")),
+            Map.entry("aws:us-west-1",
+                    cloudLocation(37.35, -121.95, "AWS region us-west-1", "North America", "US", "California")),
+            Map.entry("aws:us-west-2",
+                    cloudLocation(45.6, -122.6, "AWS region us-west-2", "North America", "US", "Oregon")),
+            Map.entry("aws:ca-central-1",
+                    cloudLocation(45.5, -73.6, "AWS region ca-central-1", "North America", "CA", "Montreal")),
+            Map.entry("aws:eu-west-1", cloudLocation(53.35, -6.25, "AWS region eu-west-1", "Europe", "IE", "Dublin")),
+            Map.entry("aws:eu-west-2", cloudLocation(51.5, -0.1, "AWS region eu-west-2", "Europe", "GB", "London")),
+            Map.entry("aws:eu-west-3", cloudLocation(48.86, 2.35, "AWS region eu-west-3", "Europe", "FR", "Paris")),
+            Map.entry("aws:eu-central-1",
+                    cloudLocation(50.1, 8.7, "AWS region eu-central-1", "Europe", "DE", "Frankfurt")),
+            Map.entry("aws:eu-north-1",
+                    cloudLocation(59.33, 18.07, "AWS region eu-north-1", "Europe", "SE", "Stockholm")),
+            Map.entry("aws:ap-southeast-1",
+                    cloudLocation(1.35, 103.82, "AWS region ap-southeast-1", "Asia", "SG", "Singapore")),
+            Map.entry("aws:ap-southeast-2",
+                    cloudLocation(-33.87, 151.2, "AWS region ap-southeast-2", "Oceania", "AU", "Sydney")),
+            Map.entry("aws:ap-northeast-1",
+                    cloudLocation(35.68, 139.69, "AWS region ap-northeast-1", "Asia", "JP", "Tokyo")),
+            Map.entry("aws:ap-south-1", cloudLocation(19.08, 72.88, "AWS region ap-south-1", "Asia", "IN", "Mumbai")),
+            Map.entry("aws:sa-east-1",
+                    cloudLocation(-23.55, -46.63, "AWS region sa-east-1", "South America", "BR", "Sao Paulo")),
+            Map.entry("gcs:us-central1",
+                    cloudLocation(41.26, -95.86, "GCS region us-central1", "North America", "US", "Iowa")),
+            Map.entry("gcs:us-east1",
+                    cloudLocation(33.2, -80.0, "GCS region us-east1", "North America", "US", "South Carolina")),
+            Map.entry("gcs:us-west1",
+                    cloudLocation(45.84, -119.7, "GCS region us-west1", "North America", "US", "Oregon")),
+            Map.entry("gcs:europe-west1",
+                    cloudLocation(50.45, 3.82, "GCS region europe-west1", "Europe", "BE", "St. Ghislain")),
+            Map.entry("gcs:europe-west2",
+                    cloudLocation(51.5, -0.1, "GCS region europe-west2", "Europe", "GB", "London")),
+            Map.entry("gcs:europe-west4",
+                    cloudLocation(53.44, 6.84, "GCS region europe-west4", "Europe", "NL", "Eemshaven")),
+            Map.entry("gcs:asia-east1",
+                    cloudLocation(24.05, 120.5, "GCS region asia-east1", "Asia", "TW", "Changhua County")),
+            Map.entry("gcs:asia-southeast1",
+                    cloudLocation(1.35, 103.82, "GCS region asia-southeast1", "Asia", "SG", "Singapore")),
+            Map.entry("gcs:us", cloudLocation(39.5, -98.35, "GCS location US", "North America", "US", "United States")),
+            Map.entry("gcs:eu", cloudLocation(50.45, 3.82, "GCS location EU", "Europe", "BE", "Western Europe")),
+            Map.entry("gcs:asia", cloudLocation(1.35, 103.82, "GCS location ASIA", "Asia", "SG", "Singapore")),
+            Map.entry("gcs:northamerica-northeast1",
+                    cloudLocation(45.5, -73.6, "GCS region northamerica-northeast1", "North America", "CA",
+                            "Montreal")),
+            Map.entry("gcs:southamerica-east1",
+                    cloudLocation(-23.55, -46.63, "GCS region southamerica-east1", "South America", "BR", "Sao Paulo")),
+            Map.entry("gcs:asia-northeast1",
+                    cloudLocation(35.68, 139.69, "GCS region asia-northeast1", "Asia", "JP", "Tokyo")),
+            Map.entry("gcs:asia-south1", cloudLocation(19.08, 72.88, "GCS region asia-south1", "Asia", "IN", "Mumbai")),
+            Map.entry("azure:eastus",
+                    cloudLocation(37.37, -79.82, "Azure region eastus", "North America", "US", "Virginia")),
+            Map.entry("azure:eastus2",
+                    cloudLocation(36.67, -78.39, "Azure region eastus2", "North America", "US", "Virginia")),
+            Map.entry("azure:westus",
+                    cloudLocation(37.35, -121.95, "Azure region westus", "North America", "US", "California")),
+            Map.entry("azure:westus2",
+                    cloudLocation(47.23, -119.85, "Azure region westus2", "North America", "US", "Washington")),
+            Map.entry("azure:centralus",
+                    cloudLocation(41.88, -93.1, "Azure region centralus", "North America", "US", "Iowa")),
+            Map.entry("azure:northeurope",
+                    cloudLocation(53.35, -6.25, "Azure region northeurope", "Europe", "IE", "Dublin")),
+            Map.entry("azure:westeurope",
+                    cloudLocation(52.37, 4.9, "Azure region westeurope", "Europe", "NL", "Amsterdam")),
+            Map.entry("azure:uksouth", cloudLocation(51.5, -0.1, "Azure region uksouth", "Europe", "GB", "London")),
+            Map.entry("azure:francecentral",
+                    cloudLocation(46.2, 6.15, "Azure region francecentral", "Europe", "FR", "Paris")),
+            Map.entry("azure:germanywestcentral",
+                    cloudLocation(50.1, 8.7, "Azure region germanywestcentral", "Europe", "DE", "Frankfurt")),
+            Map.entry("azure:japaneast", cloudLocation(35.68, 139.69, "Azure region japaneast", "Asia", "JP", "Tokyo")),
+            Map.entry("azure:southeastasia",
+                    cloudLocation(1.35, 103.82, "Azure region southeastasia", "Asia", "SG", "Singapore")),
+            Map.entry("azure:australiaeast",
+                    cloudLocation(-33.87, 151.2, "Azure region australiaeast", "Oceania", "AU", "Sydney")));
 
     /** Thread pool for parallel GeoIP lookups (shared by getHostsForMap and pre-warm). */
     private static final ExecutorService GEOIP_EXECUTOR = Executors
@@ -2836,6 +2919,140 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         return monitor.done(ecpds.getECtransModuleArray());
     }
 
+    private static GeoIpResult cloudLocation(final double latitude, final double longitude, final String description,
+            final String continent, final String country, final String city) {
+        return new GeoIpResult(latitude, longitude, description, continent, country, city);
+    }
+
+    static GeoIpResult resolveConfiguredGeoLocation(final ECpdsBase database, final Host host) {
+        try {
+            var transferMethod = host.getTransferMethod();
+            if (transferMethod == null) {
+                transferMethod = database.getTransferMethodObject(host.getTransferMethodName());
+            }
+            if (transferMethod == null) {
+                return null;
+            }
+            final var moduleDefinition = database.getECtransModuleObject(transferMethod.getECtransModuleName());
+            if (moduleDefinition == null) {
+                return null;
+            }
+            final var moduleClass = moduleDefinition.getClasse();
+            // Only instantiate the built-in modules with configuration-only hooks. Third-party constructors are
+            // arbitrary code and may perform work even though they are never connected here.
+            if (!"ecmwf.common.ectrans.module.AmazonS3Module".equals(moduleClass)
+                    && !"ecmwf.common.ectrans.module.GcsModule".equals(moduleClass)
+                    && !"ecmwf.common.ectrans.module.AzureModule".equals(moduleClass)) {
+                return null;
+            }
+            if (isNotEmpty(moduleDefinition.getArchive())) {
+                return null;
+            }
+            final TransferModule module = RemoteProvider.createTransferModule(moduleDefinition);
+            final var setup = new ECtransSetup(moduleDefinition.getName(), host.getData());
+            final GeoLocationHint hint = module.getGeoLocationHint(setup);
+            if (hint == null || isEmpty(hint.provider()) || isEmpty(hint.region())) {
+                return null;
+            }
+            final var key = hint.provider().trim().toLowerCase(Locale.ROOT) + ":"
+                    + hint.region().trim().toLowerCase(Locale.ROOT);
+            final var region = CLOUD_REGIONS.get(key);
+            if (region != null) {
+                return region;
+            }
+            return isNotEmpty(hint.lookupHost()) ? resolveGeoIp(hint.lookupHost()) : null;
+        } catch (final Exception e) {
+            _log.debug("Unable to resolve configured cloud region for host {}: {}", host.getName(), e.getMessage());
+            return null;
+        }
+    }
+
+    /** Transfer method name to its module class, so the map does not query the database for every host. */
+    private static final Cache<String, String> MODULE_CLASS_CACHE = CacheBuilder.newBuilder().maximumSize(500)
+            .expireAfterWrite(5, TimeUnit.MINUTES).build();
+
+    /**
+     * Identifies hosts that are certainly served by the public Amazon, Google or Microsoft cloud. Custom endpoints (an
+     * explicit URL, or a host name outside the provider's domains) are not reported, so S3-compatible services such as
+     * MinIO or Ceph never get a provider icon.
+     *
+     * @param database
+     *            the database
+     * @param host
+     *            the host
+     *
+     * @return {@code aws}, {@code gcs}, {@code azure} or an empty string
+     */
+    static String resolveCloudProvider(final ECpdsBase database, final Host host) {
+        try {
+            final var methodName = host.getTransferMethodName();
+            if (isEmpty(methodName)) {
+                return "";
+            }
+            var moduleClass = MODULE_CLASS_CACHE.getIfPresent(methodName);
+            if (moduleClass == null) {
+                final var transferMethod = database.getTransferMethodObject(methodName);
+                final var moduleDefinition = transferMethod != null
+                        ? database.getECtransModuleObject(transferMethod.getECtransModuleName()) : null;
+                // Custom archives may replace a built-in class, so they are never trusted.
+                moduleClass = moduleDefinition == null || isNotEmpty(moduleDefinition.getArchive()) ? ""
+                        : moduleDefinition.getClasse();
+                MODULE_CLASS_CACHE.put(methodName, moduleClass == null ? "" : moduleClass);
+            }
+            final var address = normalizeGeoAddress(host.getHost());
+            final var setup = new ECtransSetup(methodName, host.getData());
+            return switch (moduleClass) {
+            case "ecmwf.common.ectrans.module.AmazonS3Module" -> isEmpty(setup.getString(ECtransOptions.HOST_S3_URL))
+                    && (address.endsWith(".amazonaws.com") || address.endsWith(".amazonaws.com.cn")) ? "aws" : "";
+            case "ecmwf.common.ectrans.module.GcsModule" ->
+                    // Without gcs.url the SDK always talks to storage.googleapis.com.
+                    isEmpty(setup.getString(ECtransOptions.HOST_GCS_URL)) ? "gcs" : "";
+            case "ecmwf.common.ectrans.module.AzureModule" -> isEmpty(setup.getString(ECtransOptions.HOST_AZURE_URL))
+                    && address.endsWith(".windows.net") ? "azure" : "";
+            default -> "";
+            };
+        } catch (final Exception e) {
+            _log.debug("Unable to determine cloud provider for host {}: {}", host.getName(), e.getMessage());
+            return "";
+        }
+    }
+
+    private GeoIpResult resolveConfiguredGeoLocation(final Host host) {
+        return resolveConfiguredGeoLocation(ecpds, host);
+    }
+
+    static String normalizeGeoAddress(final String address) {
+        if (address == null || address.isBlank()) {
+            return "";
+        }
+        var value = address.trim();
+        final var scheme = value.indexOf("://");
+        if (scheme >= 0) {
+            value = value.substring(scheme + 3);
+        }
+        final var slash = value.indexOf('/');
+        if (slash >= 0) {
+            value = value.substring(0, slash);
+        }
+        final var query = value.indexOf('?');
+        if (query >= 0) {
+            value = value.substring(0, query);
+        }
+        final var at = value.lastIndexOf('@');
+        if (at >= 0) {
+            value = value.substring(at + 1);
+        }
+        if (value.startsWith("[") && value.contains("]")) {
+            value = value.substring(1, value.indexOf(']'));
+        } else if (value.indexOf(':') == value.lastIndexOf(':') && value.indexOf(':') >= 0) {
+            value = value.substring(0, value.indexOf(':'));
+        }
+        while (value.endsWith(".")) {
+            value = value.substring(0, value.length() - 1);
+        }
+        return value.toLowerCase(Locale.ROOT);
+    }
+
     /**
      * Gets the host.
      *
@@ -2861,38 +3078,42 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         }
         try {
             if (Boolean.TRUE.equals(host.getAutomaticLocation())) {
-                // For auto-location hosts the DB-stored lat/lon is the authoritative value —
-                // it is maintained by updateLocation() which resolves by IP and correctly
-                // applies any forced entries from the [GeoIP] config section.
-                // Only fall back to a live GeoIP lookup if the DB has no coordinates yet.
-                final var latitude = hostLocation.getLatitude();
-                final var longitude = hostLocation.getLongitude();
-                if (latitude != null && longitude != null) {
-                    // Use the stored IP (set by updateLocation) to get a rich description
-                    // (city/country/continent). For forced IPs this is a config lookup only;
-                    // for others the result is cached by IP so subsequent calls are free.
-                    final var ip = hostLocation.getIp();
-                    if (ip != null && !ip.isBlank()) {
-                        var cached = GEOIP_CACHE.getIfPresent(ip);
-                        if (cached == null) {
-                            cached = resolveGeoIp(ip);
-                            GEOIP_CACHE.put(ip, cached);
-                        }
-                        host.setGeoIpLocation(cached.description());
-                    } else {
-                        host.setGeoIpLocation(
-                                String.format(Locale.ROOT, "Coordinates: %.4f / %.4f", latitude, longitude));
-                    }
+                final var cloudLocation = resolveConfiguredGeoLocation(host);
+                if (cloudLocation != null && cloudLocation.latitude() != null && cloudLocation.longitude() != null) {
+                    hostLocation.setLatitude(cloudLocation.latitude());
+                    hostLocation.setLongitude(cloudLocation.longitude());
+                    host.setGeoIpLocation(cloudLocation.description());
                 } else {
-                    // No DB value yet — do a one-off lookup and cache by hostname.
-                    var cached = GEOIP_CACHE.getIfPresent(hostName);
-                    if (cached == null) {
-                        cached = resolveGeoIp(hostName);
-                        GEOIP_CACHE.put(hostName, cached);
+                    // For ordinary hosts, the DB-stored coordinates remain authoritative.
+                    final var latitude = hostLocation.getLatitude();
+                    final var longitude = hostLocation.getLongitude();
+                    if (latitude != null && longitude != null) {
+                        // Use the stored IP (set by updateLocation) to get a rich description
+                        // (city/country/continent). For forced IPs this is a config lookup only;
+                        // for others the result is cached by IP so subsequent calls are free.
+                        final var ip = hostLocation.getIp();
+                        if (ip != null && !ip.isBlank()) {
+                            var cached = GEOIP_CACHE.getIfPresent(ip);
+                            if (cached == null) {
+                                cached = resolveGeoIp(ip);
+                                GEOIP_CACHE.put(ip, cached);
+                            }
+                            host.setGeoIpLocation(cached.description());
+                        } else {
+                            host.setGeoIpLocation(
+                                    String.format(Locale.ROOT, "Coordinates: %.4f / %.4f", latitude, longitude));
+                        }
+                    } else {
+                        // No DB value yet — use configured region before hostname-based GeoIP.
+                        var cached = GEOIP_CACHE.getIfPresent(hostName);
+                        if (cached == null) {
+                            cached = resolveGeoIp(hostName);
+                            GEOIP_CACHE.put(hostName, cached);
+                        }
+                        hostLocation.setLatitude(cached.latitude());
+                        hostLocation.setLongitude(cached.longitude());
+                        host.setGeoIpLocation(cached.description());
                     }
-                    hostLocation.setLatitude(cached.latitude());
-                    hostLocation.setLongitude(cached.longitude());
-                    host.setGeoIpLocation(cached.description());
                 }
             } else {
                 // Manual location - do NOT use GeoIP
@@ -2934,10 +3155,16 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
                 "getHostsForMap(" + label + "," + filter + "," + network + "," + hostType + ")");
         final List<Host> rawHosts = ecpds.getHostsForMap(label, filter, network, hostType, hostSearch);
 
-        // For hosts without DB coordinates yet, pre-warm the cache in parallel.
+        final var cloudLocations = new java.util.HashMap<String, GeoIpResult>();
+        // Resolve explicit cloud regions first. Ordinary hostnames still use the parallel GeoIP lookup.
         final var futures = new java.util.HashMap<String, CompletableFuture<GeoIpResult>>();
         for (final var host : rawHosts) {
             if (Boolean.TRUE.equals(host.getAutomaticLocation())) {
+                final var cloudLocation = resolveConfiguredGeoLocation(host);
+                if (cloudLocation != null) {
+                    cloudLocations.put(host.getName(), cloudLocation);
+                    continue;
+                }
                 final var loc = host.getHostLocation();
                 if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
                     final var hostName = host.getHost();
@@ -2966,32 +3193,38 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
                 double lon;
                 String geo;
                 if (Boolean.TRUE.equals(host.getAutomaticLocation())) {
-                    // Prefer DB-stored coordinates (set authoritatively by updateLocation()).
-                    // Fall back to the GeoIP cache only if the DB has no value yet.
-                    final var loc = host.getHostLocation();
-                    if (loc != null && loc.getLatitude() != null && loc.getLongitude() != null) {
-                        lat = loc.getLatitude();
-                        lon = loc.getLongitude();
-                        // Use stored IP for a rich description; cached by IP after first lookup.
-                        final var ip = loc.getIp();
-                        if (ip != null && !ip.isBlank()) {
-                            var cached = GEOIP_CACHE.getIfPresent(ip);
-                            if (cached == null) {
-                                cached = resolveGeoIp(ip);
-                                GEOIP_CACHE.put(ip, cached);
-                            }
-                            geo = cached.description();
-                        } else {
-                            geo = String.format(Locale.ROOT, "Coordinates: %.4f / %.4f", lat, lon);
-                        }
+                    final var cloudLocation = cloudLocations.get(host.getName());
+                    if (cloudLocation != null && cloudLocation.latitude() != null
+                            && cloudLocation.longitude() != null) {
+                        lat = cloudLocation.latitude();
+                        lon = cloudLocation.longitude();
+                        geo = cloudLocation.description();
                     } else {
-                        final var cached = GEOIP_CACHE.getIfPresent(host.getHost());
-                        if (cached == null || cached.latitude() == null || cached.longitude() == null) {
-                            continue;
+                        // Prefer DB-stored coordinates for ordinary hosts; fall back to GeoIP when unset.
+                        final var loc = host.getHostLocation();
+                        if (loc != null && loc.getLatitude() != null && loc.getLongitude() != null) {
+                            lat = loc.getLatitude();
+                            lon = loc.getLongitude();
+                            final var ip = loc.getIp();
+                            if (ip != null && !ip.isBlank()) {
+                                var cached = GEOIP_CACHE.getIfPresent(ip);
+                                if (cached == null) {
+                                    cached = resolveGeoIp(ip);
+                                    GEOIP_CACHE.put(ip, cached);
+                                }
+                                geo = cached.description();
+                            } else {
+                                geo = String.format(Locale.ROOT, "Coordinates: %.4f / %.4f", lat, lon);
+                            }
+                        } else {
+                            final var cached = GEOIP_CACHE.getIfPresent(host.getHost());
+                            if (cached == null || cached.latitude() == null || cached.longitude() == null) {
+                                continue;
+                            }
+                            lat = cached.latitude();
+                            lon = cached.longitude();
+                            geo = cached.description();
                         }
-                        lat = cached.latitude();
-                        lon = cached.longitude();
-                        geo = cached.description();
                     }
                 } else {
                     final var loc = host.getHostLocation();
@@ -3008,7 +3241,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
                 result.add(new HostMapData(_safeStr(host.getName()), _safeStr(host.getNickname()),
                         _safeStr(host.getHost()), _safeStr(host.getType()), host.getActive(), lat, lon, _safeStr(geo),
                         _safeStr(host.getNetworkName()), _safeStr(host.getTransferMethodName()),
-                        _safeStr(host.getComment())));
+                        _safeStr(host.getComment()), resolveCloudProvider(ecpds, host)));
             } catch (final Exception e) {
                 _log.debug("Skipping host {} in map: {}", host.getName(), e.getMessage());
             }
@@ -3021,9 +3254,23 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         final var monitor = new MonitorCall("geoLocateIps(" + ips.size() + " IPs)");
         final var unique = ips.stream().filter(ip -> ip != null && !ip.isBlank()).distinct()
                 .collect(Collectors.toList());
+        final var cloudLocations = new java.util.HashMap<String, GeoIpResult>();
+        for (final var host : ecpds.getHostArray(new HostComparator())) {
+            if (!Boolean.TRUE.equals(host.getAutomaticLocation())) {
+                continue;
+            }
+            final var location = resolveConfiguredGeoLocation(host);
+            if (location != null) {
+                cloudLocations.put(normalizeGeoAddress(host.getHost()), location);
+                final var hostLocation = host.getHostLocation();
+                if (hostLocation != null && hostLocation.getIp() != null) {
+                    cloudLocations.put(normalizeGeoAddress(hostLocation.getIp()), location);
+                }
+            }
+        }
         final var futures = new java.util.HashMap<String, CompletableFuture<GeoIpResult>>();
         for (final var ip : unique) {
-            if (GEOIP_CACHE.getIfPresent(ip) == null) {
+            if (!cloudLocations.containsKey(normalizeGeoAddress(ip)) && GEOIP_CACHE.getIfPresent(ip) == null) {
                 futures.put(ip, CompletableFuture.supplyAsync(() -> resolveGeoIp(ip), GEOIP_EXECUTOR));
             }
         }
@@ -3041,7 +3288,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             if (ip == null || ip.isBlank()) {
                 continue;
             }
-            final var cached = GEOIP_CACHE.getIfPresent(ip);
+            final var configured = cloudLocations.get(normalizeGeoAddress(ip));
+            final var cached = configured != null ? configured : GEOIP_CACHE.getIfPresent(ip);
             if (cached != null) {
                 result.add(new GeoIpData(ip, cached.latitude(), cached.longitude(), cached.description()));
             } else {
@@ -4792,6 +5040,16 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getDelayNotices(" + refPattern + "," + limit + ")");
         return monitor.done(ecpds.getDelayNotices(refPattern, limit));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<Map<String, String>> getDelayNoticesInPeriod(final String fromDate, final String toDate)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getDelayNoticesInPeriod(" + fromDate + "," + toDate + ")");
+        return monitor.done(ecpds.getDelayNoticesInPeriod(fromDate, toDate));
     }
 
     /**

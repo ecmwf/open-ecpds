@@ -66,6 +66,8 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_GCS_URL;
 import static ecmwf.common.text.Util.isEmpty;
 import static ecmwf.common.text.Util.isNotEmpty;
 
+import ecmwf.common.ectrans.GeoLocationHint;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilterOutputStream;
@@ -119,6 +121,14 @@ public final class GcsModule extends TransferModule {
 
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(GcsModule.class);
+
+    /** {@inheritDoc} */
+    @Override
+    public GeoLocationHint getGeoLocationHint(final ECtransSetup setup) {
+        final var region = setup.getString(HOST_GCS_BUCKET_LOCATION);
+        return isNotEmpty(setup.getString(HOST_GCS_URL)) || isEmpty(region) ? null
+                : new GeoLocationHint("gcs", region, null);
+    }
 
     // GCS chunk size needs to be between 256KB and 2GB, default 5MB
     // capping the max chunk size to 50MB to prevent "Out of memory..." exceptions

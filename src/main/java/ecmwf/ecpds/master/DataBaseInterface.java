@@ -3015,6 +3015,24 @@ public interface DataBaseInterface extends Remote {
     List<Map<String, String>> getDelayNotices(String refPattern, int limit) throws DataBaseException, RemoteException;
 
     /**
+     * Gets delay notices created within a date range, inclusive of both dates.
+     *
+     * @param fromDate
+     *            the start date (yyyy-MM-dd)
+     * @param toDate
+     *            the end date (yyyy-MM-dd)
+     *
+     * @return matching rows, newest first
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    List<Map<String, String>> getDelayNoticesInPeriod(String fromDate, String toDate)
+            throws DataBaseException, RemoteException;
+
+    /**
      * Creates a delay notice and returns its new reference (DLY-YYYY-NNNN). The allocation is atomic, so several
      * Monitors can register notices at the same time.
      *

@@ -78,6 +78,8 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_S3_USE_BYTE_ARRAY_INPUT_S
 import static ecmwf.common.text.Util.isEmpty;
 import static ecmwf.common.text.Util.isNotEmpty;
 
+import ecmwf.common.ectrans.GeoLocationHint;
+
 import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -193,6 +195,16 @@ public final class AmazonS3Module extends TransferModule {
 
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(AmazonS3Module.class);
+
+    /** {@inheritDoc} */
+    @Override
+    public GeoLocationHint getGeoLocationHint(final ECtransSetup setup) {
+        final var region = setup.getString(HOST_S3_REGION);
+        if (isNotEmpty(setup.getString(HOST_S3_URL)) || isEmpty(region) || "auto".equalsIgnoreCase(region)) {
+            return null;
+        }
+        return new GeoLocationHint("aws", region, "s3." + region + ".amazonaws.com");
+    }
 
     /** The status. */
     private String currentStatus = "INIT";

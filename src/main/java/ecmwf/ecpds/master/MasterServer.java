@@ -5367,6 +5367,28 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
+     * Queues a notification with optional CC and BCC recipients through the Master mail service.
+     *
+     * @param to
+     *            the recipient(s)
+     * @param cc
+     *            the CC recipient(s)
+     * @param bcc
+     *            the BCC recipient(s)
+     * @param subject
+     *            the subject
+     * @param content
+     *            the message content
+     */
+    public void sendECpdsNotificationEmail(final String from, final String to, final String cc, final String bcc,
+            final String subject, final String content) {
+        if (theMailRepository == null) {
+            throw new IllegalStateException("Mail service is disabled");
+        }
+        theMailRepository.sendMail(from, to, cc, bcc, "[" + mailSubjectTag + "] " + subject, content, null, null);
+    }
+
+    /**
      * Sends the ecpds message.
      *
      * @param to

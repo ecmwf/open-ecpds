@@ -120,6 +120,14 @@ final class ManagementProxy implements ManagementInterface {
         return monitor.done(contactsRef.get());
     }
 
+    @Override
+    public void sendNotificationEmail(final String from, final String to, final String cc, final String bcc,
+            final String subject, final String body) throws RemoteException {
+        final var monitor = new MonitorCall("sendNotificationEmail(" + to + "," + subject + ")");
+        managementInterface.sendNotificationEmail(from, to, cc, bcc, subject, body);
+        monitor.done();
+    }
+
     /**
      * {@inheritDoc}
      *

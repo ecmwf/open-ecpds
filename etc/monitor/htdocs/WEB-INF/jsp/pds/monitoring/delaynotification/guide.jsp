@@ -89,11 +89,12 @@
 
       <div class="tab-pane fade" id="dng-life" role="tabpanel">
         <ol class="small mb-3 ps-3">
-          <li><strong>Send notice</strong> registers the notice (reference <code>DLY-year-number</code>) and opens Outlook.</li>
-          <li>ECPDS cannot see whether the mail was sent: confirm with <em>I have sent it</em>.</li>
+          <li><strong>Send with Outlook</strong> registers the notice (reference <code>DLY-year-number</code>) and opens Outlook; confirm with <em>I have sent it</em> after sending.</li>
+          <li><strong>Send directly</strong> queues the message through the Master mail service and acknowledges it automatically. Pending messages can also be sent directly from <em>Sent notices</em>.</li>
           <li>Later updates can add recipients.</li>
           <li><strong>Inform resolution</strong> (in <em>Sent notices</em>) pre-fills the message from the grouped <em>Products Resumed</em> message, using the same placeholders for the cells being resolved.</li>
           <li>Cancellation is also handled from <em>Sent notices</em>.</li>
+          <li>Use the report controls below the sent-notices table to export a date-bounded CSV summary, with optional message history and recipient addresses.</li>
         </ol>
         <p class="small text-muted mb-0">Notices are stored in the database (<code>DELAY_NOTICE</code> table).</p>
       </div>
