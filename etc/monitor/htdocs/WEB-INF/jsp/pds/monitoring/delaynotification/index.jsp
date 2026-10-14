@@ -34,6 +34,7 @@
 #dnBccOption .input-group { max-width: 32rem; }
 #dnReason, #dnCustomReason { max-width: 32rem; }
 .dn-eta-input-group { max-width: 22rem; }
+#dnBody.dn-edited { background-color: rgba(220, 53, 69, 0.06); }
 @media (min-width: 1200px) {
   #dnMatrixColumn, #dnNoticeColumn { display: flex; }
   #dnMatrixColumn > .card { flex: 1 1 auto; width: 100%; min-width: 0; }
@@ -269,6 +270,15 @@
 (function() {
 var BASE = '/do/monitoring/delaynotification/';
 var S = { cycles: {}, minutesBeforeSchedule: {}, minutesBeforeSchedulePerCycle: {}, generationStatusPerProduct: {}, generationStatusPerCycle: {}, models: {}, notices: [], sel: {}, emails: [], dests: {}, bodyEdited: false, update: null, defaultCc: '', defaultBcc: '', allowNoticeCc: true, allowNoticeBcc: true, markdown: true, previewData: null, previewPlain: false, limit: 100, more: false, sentTable: null, reportBusy: false, reportData: null };
+// A manually edited message is no longer regenerated automatically: flag it with a subtle red line.
+(function() {
+  var edited = false;
+  Object.defineProperty(S, 'bodyEdited', {enumerable: true, get: function() { return edited; }, set: function(v) {
+    edited = !!v;
+    var el = document.getElementById('dnBody');
+    if (el) { el.classList.toggle('dn-edited', edited); el.title = edited ? 'Edited manually: no longer updated automatically (use Regenerate)' : ''; }
+  }});
+})();
 var BCC_LIST = 'op_delay_ecmwf@lists.ecmwf.int', TO_ADDRESS = 'operators@ecmwf.int'; // replaced by the values of Product Messages
 var MAX_URL = 6000;
 var PREF_KEY = 'delayNotificationPreferences:' + $('dnPreferences').dataset.user;
