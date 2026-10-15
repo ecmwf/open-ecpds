@@ -23,6 +23,9 @@
               <tr>
                 <td><auth:link basePathKey="admin.basepath" href=""><i class="bi bi-gear"></i> Admin Tasks</auth:link></td>
               </tr>
+              <auth:link basePathKey="admin.basepath" href="/monitoringcolors" wrappingTags="tr,td">
+                <i class="bi bi-palette-fill"></i> Monitoring Status Colors
+              </auth:link>
 	      <auth:if basePathKey="monitoring.basepath" paths="/">
 	      	<auth:then>
 	      	<auth:if basePathKey="transferhistory.basepath" paths="/">

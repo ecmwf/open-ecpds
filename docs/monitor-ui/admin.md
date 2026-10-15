@@ -6,10 +6,21 @@ available to users with administrator privileges.
 
 ## Administration
 
-The admin home page provides access to: [Destination Metadata](../administration/destination-metadata.md) field configuration (defining custom fields attachable to destinations, e.g. contacts, procedures, Opsview notes), transfer requeue (bulk re-scheduling of failed transfers), file upload (injecting files directly into the data store), the audit/feedback log, [Product Descriptions](../administration/product-descriptions.md) (per-product/type Tips and Descriptions), [TLS certificate management](../administration/certificates.md), [Critical Password](../administration/critical-password.md) setup, and the destructive [Purge All Data](../administration/purge.md) reset tool.
+The admin home page provides access to: [Destination Metadata](../administration/destination-metadata.md) field configuration (defining custom fields attachable to destinations, e.g. contacts, procedures, Opsview notes), transfer requeue (bulk re-scheduling of failed transfers), file upload (injecting files directly into the data store), the audit/feedback log, [Product Descriptions](../administration/product-descriptions.md) (per-product/type Tips and Descriptions), [TLS certificate management](../administration/certificates.md), monitoring status colors, [Critical Password](../administration/critical-password.md) setup, and the destructive [Purge All Data](../administration/purge.md) reset tool.
 
 
 ![Administration](img/admin.png)
+
+## Monitoring Status Colors
+
+Administrators can configure the shared status palette at
+`/do/admin/monitoringcolors`. The settings cover product-generation,
+OpenView, and arrival/transfer statuses used by monitoring legends, indicators,
+and charts. Values are stored in `SYS_CONFIG` under the `MonitoringColors`
+group and must use `#RRGGBB` format. Saving a value equal to its built-in
+default removes the override; **Reset All to Defaults** removes every override.
+Changes apply immediately on the current Monitor and are picked up by other
+Monitor instances within 15 seconds.
 
 ## Scheduler Traffic
 
@@ -41,4 +52,3 @@ interface. It performs no database scans, Mover probes or transfer-path I/O and
 does not change scheduler behaviour. Access follows the normal administration
 URL permissions (`/do/admin/schedulertraffic`); deploy the updated Master and
 Monitor together.
-

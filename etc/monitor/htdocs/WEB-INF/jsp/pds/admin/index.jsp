@@ -252,6 +252,19 @@
     </div>
     </auth:link>
 
+    <auth:link basePathKey="admin.basepath" href="/monitoringcolors">
+    <div class="col">
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
+        <i class="bi bi-palette-fill text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title">Monitoring Status Colors</span>
+            <p class="tool-desc">Customize the shared colors used for product generation, arrival, transfer and
+            OpenView status indicators, legends and charts.</p>
+        </div>
+    </div>
+    </div>
+    </auth:link>
+
     <auth:link basePathKey="admin.basepath" href="/productdescriptions">
     <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">

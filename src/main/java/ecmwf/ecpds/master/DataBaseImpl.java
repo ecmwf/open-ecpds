@@ -5015,7 +5015,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
 
     /** The SYS_CONFIG groups the Monitor UI may read and write through the generic monitor configuration methods. */
     private static final Set<String> MONITOR_CONFIG_GROUPS = Set.of("ProductModelName", "ProductModel",
-            "DelayNoticeSettings");
+            "DelayNoticeSettings", "MonitoringColors");
 
     /**
      * Checks that the group is one of the accepted Monitor UI configuration groups.

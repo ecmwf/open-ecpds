@@ -30,6 +30,7 @@ import java.awt.Color;
 import java.util.Date;
 
 import ecmwf.common.database.MonitoringValue;
+import ecmwf.ecpds.master.plugin.http.controller.monitoring.MonitoringStatusColors;
 import ecmwf.ecpds.master.plugin.http.model.datafile.DataFile;
 import ecmwf.ecpds.master.plugin.http.model.transfer.ArrivalMonitoringParameters;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
@@ -118,8 +119,8 @@ public class ArrivalMonitoringParametersBean extends MonitoringParametersBaseBea
      */
     public Color getArrivalStatusColor() {
         final var status = this.getArrivalStatus();
-        if (status < COLORS.length) {
-            return COLORS[status];
+        if (status >= ARRIVAL_STATUS_NONE && status <= ARRIVAL_STATUS_NOT_BEFORE_TARGET4) {
+            return MonitoringStatusColors.arrivalTransferColor(status);
         }
         return Color.BLACK;
     }

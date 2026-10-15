@@ -153,10 +153,18 @@ var _TCM = ['#6c757d', '#e91e8c', '#dc3545', '#198754', '#fd7e14', '#0d6efd'];
 var _TCML = ['S', 'E', 'L', 'T', 'P', 'A'];
 var _TCMD = ['Scheduled', 'Earliest', 'Latest', 'Target', 'Predicted', 'Actual'];
 
-// Transfer status colours (for badge in tooltip/table)
-var _TCS  = ['#adb5bd','#17a2b8','#28a745','#4040d0','#d4a000','#e07800','#dc3545'];
-var _TCSBG  = ['#e2e3e5','#d1ecf1','#d4edda','#cce0ff','#fff3cd','#ffe5d0','#f8d7da'];
-var _TCSTXT = ['#41464b','#0c5460','#155724','#084298','#856404','#5c2e00','#721c24'];
+// Transfer status colors use the shared Monitoring Status Colors palette.
+var _TCS = Array.from({length: 7}, function(_, i) {
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue('--mon-arrival-transfer-status-' + i).trim();
+});
+var _TCSBG = _TCS.map(function(color) {
+  var channels = color.replace('#', '').match(/.{2}/g).map(function(channel) { return parseInt(channel, 16); });
+  return '#' + channels.map(function(channel) {
+    return Math.round(channel * 0.18 + 255 * 0.82).toString(16).padStart(2, '0');
+  }).join('');
+});
+var _TCSTXT = _TCS.map(function() { return '#212529'; });
 function _isDark() { return document.documentElement.getAttribute('data-bs-theme') === 'dark'; }
 
 // -- Format helpers ------------------------------------------------------------

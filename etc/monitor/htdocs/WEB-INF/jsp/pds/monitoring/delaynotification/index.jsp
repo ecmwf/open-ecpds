@@ -2,13 +2,14 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <style>
 .dn-cell { width: 84px; cursor: pointer; text-align: center; user-select: none; }
-.dn-cell.dn-status-0 { --bs-table-bg: rgba(173, 181, 189, 0.10); background-color: rgba(173, 181, 189, 0.10) !important; }
-.dn-cell.dn-status-1 { --bs-table-bg: rgba(32, 201, 151, 0.10); background-color: rgba(32, 201, 151, 0.10) !important; }
-.dn-cell.dn-status-2 { --bs-table-bg: rgba(40, 167, 69, 0.10); background-color: rgba(40, 167, 69, 0.10) !important; }
-.dn-cell.dn-status-3 { --bs-table-bg: rgba(253, 126, 20, 0.10); background-color: rgba(253, 126, 20, 0.10) !important; }
-.dn-cell.dn-status-4 { --bs-table-bg: rgba(255, 193, 7, 0.13); background-color: rgba(255, 193, 7, 0.13) !important; }
-.dn-cell.dn-status-5 { --bs-table-bg: rgba(220, 53, 69, 0.10); background-color: rgba(220, 53, 69, 0.10) !important; }
-.dn-cell.dn-status-6, .dn-cell.dn-status-7 { --bs-table-bg: rgba(111, 66, 193, 0.10); background-color: rgba(111, 66, 193, 0.10) !important; }
+.dn-cell.dn-status-0 { --bs-table-bg: color-mix(in srgb, var(--mon-product-status-0, #adb5bd) 10%, transparent); background-color: var(--bs-table-bg) !important; }
+.dn-cell.dn-status-1 { --bs-table-bg: color-mix(in srgb, var(--mon-product-status-1, #20c997) 10%, transparent); background-color: var(--bs-table-bg) !important; }
+.dn-cell.dn-status-2 { --bs-table-bg: color-mix(in srgb, var(--mon-product-status-2, #28a745) 10%, transparent); background-color: var(--bs-table-bg) !important; }
+.dn-cell.dn-status-3 { --bs-table-bg: color-mix(in srgb, var(--mon-product-status-3, #fd7e14) 10%, transparent); background-color: var(--bs-table-bg) !important; }
+.dn-cell.dn-status-4 { --bs-table-bg: color-mix(in srgb, var(--mon-product-status-4, #ffc107) 13%, transparent); background-color: var(--bs-table-bg) !important; }
+.dn-cell.dn-status-5 { --bs-table-bg: color-mix(in srgb, var(--mon-product-status-5, #dc3545) 10%, transparent); background-color: var(--bs-table-bg) !important; }
+.dn-cell.dn-status-6 { --bs-table-bg: color-mix(in srgb, var(--mon-product-status-6, #6f42c1) 10%, transparent); background-color: var(--bs-table-bg) !important; }
+.dn-cell.dn-status-7 { --bs-table-bg: color-mix(in srgb, var(--mon-product-status-7, #6f42c1) 10%, transparent); background-color: var(--bs-table-bg) !important; }
 .dn-cell[class*="dn-status-"]:hover { filter: brightness(0.96); }
 .dn-marker { display: inline-block; min-width: 1.25rem; padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 700; line-height: 1.2; }
 .dn-marker.definite { background: #dc3545; color: #fff; }

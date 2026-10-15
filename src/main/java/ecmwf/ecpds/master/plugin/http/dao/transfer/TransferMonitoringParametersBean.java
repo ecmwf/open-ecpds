@@ -33,6 +33,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.database.MonitoringValue;
+import ecmwf.ecpds.master.plugin.http.controller.monitoring.MonitoringStatusColors;
 import ecmwf.ecpds.master.plugin.http.model.datafile.DataFile;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferMonitoringParameters;
@@ -150,16 +151,8 @@ public class TransferMonitoringParametersBean extends MonitoringParametersBaseBe
      */
     public Color getTransferStatusColor() {
         final var status = getTransferStatus();
-        return switch (status) {
-        case TRANSFER_STATUS_NONE -> Color.WHITE;
-        case TRANSFER_STATUS_BEFORE_TARGET -> Color.CYAN;
-        case TRANSFER_STATUS_BEFORE_PREDICTED -> Color.GREEN;
-        case TRANSFER_STATUS_BEFORE_PREDICTED_PLUS_RANGE_BY_2 -> Color.BLUE;
-        case TRANSFER_STATUS_NOT_BEFORE_PREDICTED_PLUS_RANGE_BY_2 -> Color.YELLOW;
-        case TRANSFER_STATUS_NOT_BEFORE_PREDICTED_PLUS_RANGE_BY_4 -> Color.ORANGE;
-        case TRANSFER_STATUS_NOT_BEFORE_PREDICTED_PLUS_RANGE_BY_6 -> Color.RED;
-        default -> Color.BLACK;
-        };
+        return status >= TRANSFER_STATUS_NONE && status <= TRANSFER_STATUS_NOT_BEFORE_PREDICTED_PLUS_RANGE_BY_6
+                ? MonitoringStatusColors.arrivalTransferColor(status) : Color.BLACK;
     }
 
     /**
