@@ -187,13 +187,15 @@ bk-images: ## Backup images (args: app, tag)
 		$(DOCKER) save $$id | gzip > $$name.tar.gz; \
 	done
 
-rm-images: ## Remove images (args: app, tag)
+rm-images: ## Remove all local OpenECPDS images for ARCH, except dev containers
 	@images=$$($(DOCKER) images --format "{{.Repository}}:{{.Tag}}") || exit 1; \
-	for ref in $$(printf '%s\n' "$$images" | awk -F: -v app="$(app)" -v tag="$(tag)" \
-		'index($$1, "open-ecpds/") == 1 && $$1 != "open-ecpds/dev" && $$2 != "latest" \
-		&& (app == "" || $$1 == "open-ecpds/" app) && (tag == "" || $$2 == tag)' | sort -u); do \
-		echo "Removing image $$ref ..."; \
-		$(DOCKER) rmi $$ref || exit 1; \
+	for ref in $$(printf '%s\n' "$$images" | awk -F: \
+		'($$1 ~ /^open-ecpds\// || $$1 ~ /^ghcr.io\/ecmwf\/open-ecpds\//) && $$1 !~ /\/dev$$/' | sort -u); do \
+		arch=$$($(DOCKER) image inspect --format "{{.Architecture}}" "$$ref") || exit 1; \
+		if [ "$$arch" = "$(ARCH)" ]; then \
+			echo "Removing image $$ref (linux/$$arch) ..."; \
+			$(DOCKER) rmi "$$ref" || exit 1; \
+		fi; \
 	done
 
 # ─── Registry ─────────────────────────────────────────────────────────────────

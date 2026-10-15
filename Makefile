@@ -468,7 +468,7 @@ docs-publish: docs ## Build and publish the documentation to GitHub Pages (**)
 clean: ## Stop containers, remove images, JARs, RPMs and dependencies (**)
 	@$(call is-dev-container,"",inside)
 	@cd run/bin/ecpds && $(MAKE) -s down && $(MAKE) -s clean
-	@cd docker && $(MAKE) -s rm-images  || exit 1
+	@cd docker && $(MAKE) -s rm-images ARCH=$(ARCH) || exit 1
 	@cd docker && $(MAKE) clean  || exit 1
 	@mvn clean  || exit 1
 	@rm -f lib/*.jar lib/*.pom || exit 1
