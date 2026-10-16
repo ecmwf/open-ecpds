@@ -20,8 +20,9 @@ links and bookmarks.
    Clicking a product name cycles its whole row. Cycles come from the monitoring data. **Uniform cells** gives each
    cycle cell the same fixed size. **Mark late/overdue D** automatically marks cells on schedule/slightly late or
    overdue as Definite; **Mark 0-15m ahead P** marks cells received 0-15 minutes ahead as Possible. These buttons
-   follow the same schedule-adjusted categories as the cell colors and apply to all monitored products/cycles, even
-   those hidden by filters. **Clear all** removes the current selections.
+   follow the same schedule-adjusted categories as the cell colors and apply only to the cells shown by the current
+   filters. **Clear all** also only removes the selections of the filtered cells. Cells marked earlier but hidden by a
+   filter are kept, but are not counted, used for the recipients or included in the message until shown again.
    When filters leave no visible products, the matrix shows *No matching records found.* and the marking buttons
    are disabled. The layout buttons switch between side-by-side matrix and notice, matrix only, or notice only.
 3. The **To** pill shows the number of destinations concerned; click it to list them. They are the destinations
@@ -70,8 +71,11 @@ stored in `SYS_CONFIG` and managed in **Product Messages**.
 
 The register keeps every notice until an operator deletes it. For an active or partially resolved notice:
 
-- **Inform resolution** sends the resolution for all or only some cells (the notice becomes *partial* until all are
-  resolved, then *resolved*).
+- **Inform resolution** opens a form listing the open cells (at least one must stay ticked). The subject and message
+  are prefilled from the *Products Resumed* message and follow the ticked cells until edited manually (the message is
+  then tinted); **Regenerate** rebuilds them and **Preview** shows the final mail. The resolution can then be
+  registered and opened in Outlook, or sent directly. Resolving only some cells leaves the notice *partial* until all
+  are resolved, then *resolved*.
 - **Update** reopens the form prefilled; destinations that were not in the notice are highlighted and added to the
   recipients.
 - **Cancel** closes the notice without resolution.

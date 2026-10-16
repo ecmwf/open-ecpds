@@ -35,7 +35,7 @@
 #dnBccOption .input-group { max-width: 32rem; }
 #dnReason, #dnCustomReason { max-width: 32rem; }
 .dn-eta-input-group { max-width: 22rem; }
-#dnBody.dn-edited { background-color: rgba(220, 53, 69, 0.06); }
+#dnBody.dn-edited, .rs-body.dn-edited { background-color: rgba(220, 53, 69, 0.06); }
 @media (min-width: 1200px) {
   #dnMatrixColumn, #dnNoticeColumn { display: flex; }
   #dnMatrixColumn > .card { flex: 1 1 auto; width: 100%; min-width: 0; }
@@ -77,7 +77,7 @@
     <div class="d-flex align-items-center gap-2 mb-2">
      <div class="input-group input-group-sm flex-grow-1" style="min-width:0">
       <span class="input-group-text">Product name</span>
-      <input type="text" id="dnFilter" class="form-control" placeholder="e.g. GENFO, *ERA5*, !*TEST*" oninput="dnRenderMatrix()">
+      <input type="text" id="dnFilter" class="form-control" placeholder="e.g. GENFO, *ERA5*, !*TEST*" oninput="dnFilterChanged()">
      </div>
      <div class="dropdown flex-shrink-0 ms-auto" id="dnStatusFilter">
       <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
@@ -120,9 +120,9 @@
     <div id="dnMatrixActions" class="mt-2 d-flex flex-wrap align-items-start gap-2">
      <span class="small text-muted"><span id="dnSelCount">0</span> cell(s) selected</span>
      <div class="btn-group btn-group-sm ms-auto" role="group" aria-label="Select affected cells by generation timing">
-      <button class="btn btn-outline-danger" id="dnMarkLateBtn" type="button" onclick="dnMarkByTiming('definite')" title="Mark all on-schedule/slightly-late and overdue product/cycle cells as Definite">Mark late/overdue D</button>
-      <button class="btn btn-outline-warning" id="dnMarkAheadBtn" type="button" onclick="dnMarkByTiming('possible')" title="Mark all product/cycle cells received 0-15 minutes ahead as Possible">Mark 0-15m ahead P</button>
-      <button class="btn btn-outline-secondary" id="dnClearBtn" type="button" onclick="dnClear()">Clear all</button>
+      <button class="btn btn-outline-danger" id="dnMarkLateBtn" type="button" onclick="dnMarkByTiming('definite')" title="Mark all filtered on-schedule/slightly-late and overdue product/cycle cells as Definite">Mark late/overdue D</button>
+      <button class="btn btn-outline-warning" id="dnMarkAheadBtn" type="button" onclick="dnMarkByTiming('possible')" title="Mark all filtered product/cycle cells received 0-15 minutes ahead as Possible">Mark 0-15m ahead P</button>
+      <button class="btn btn-outline-secondary" id="dnClearBtn" type="button" onclick="dnClear()" title="Clear the selection of all filtered cells">Clear all</button>
      </div>
     </div>
    </div>
@@ -196,10 +196,6 @@
     <div id="dnNoSelectionWarning" class="alert alert-warning py-2 mt-2 mb-0 d-none" role="status">
      <i class="bi bi-exclamation-triangle me-1"></i>Select at least one product and cycle in the matrix before sending.
     </div>
-    <div class="modal fade" id="dnPreviewModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
-     <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-eye me-1"></i>Message preview</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-     <div class="modal-body"><div id="dnPreviewHead" class="small mb-2"></div><div id="dnPreviewHtml" class="border rounded p-3 bg-body-tertiary d-none" style="font-size:0.9rem"></div><pre id="dnPreviewBody" class="border rounded p-3 bg-body-tertiary" style="white-space:pre-wrap;font-family:inherit;font-size:0.9rem"></pre></div>
-     <div class="modal-footer py-2"><button type="button" class="btn btn-outline-secondary btn-sm me-auto d-none" id="dnPreviewToggle" onclick="dnPreviewToggle()"></button><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button></div></div></div></div>
     <div class="small text-muted mt-2">Choose Outlook to review and send the message there, then acknowledge it here, or send directly through the Master mail service and have it acknowledged automatically.</div>
    </div>
   </div>
@@ -262,6 +258,10 @@
  </div>
  </div>
 </div>
+<div class="modal fade" id="dnPreviewModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+<div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-eye me-1"></i>Message preview</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body"><div id="dnPreviewHead" class="small mb-2"></div><div id="dnPreviewHtml" class="border rounded p-3 bg-body-tertiary d-none" style="font-size:0.9rem"></div><pre id="dnPreviewBody" class="border rounded p-3 bg-body-tertiary" style="white-space:pre-wrap;font-family:inherit;font-size:0.9rem"></pre></div>
+<div class="modal-footer py-2"><button type="button" class="btn btn-outline-secondary btn-sm me-auto d-none" id="dnPreviewToggle" onclick="dnPreviewToggle()"></button><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button></div></div></div></div>
 <div class="modal fade" id="dnReportModal" tabindex="-1" aria-labelledby="dnReportTitle" aria-hidden="true">
  <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
   <div class="modal-header py-2"><h6 class="modal-title" id="dnReportTitle"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Delay notices report</h6><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
@@ -436,7 +436,7 @@ function renderModels() {
       b.setAttribute('aria-pressed', String(on));
       if (!b.matches(':focus-visible')) { b.blur(); }
       setPreference('models', Object.keys(activeModels).filter(function(m) { return activeModels[m]; }));
-      dnRenderMatrix();
+      dnFilterChanged();
     };
   });
 }
@@ -476,7 +476,7 @@ window.dnSetAllStatuses = function(all) {
   selectedStatuses = all ? [] : selectedStatuses;
   setPreference('statusFilters', selectedStatuses.slice());
   renderStatusFilter();
-  dnRenderMatrix();
+  dnFilterChanged();
 };
 Array.prototype.forEach.call(document.querySelectorAll('.dn-status-option'), function(option) {
   option.addEventListener('change', function() {
@@ -487,7 +487,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.dn-status-option'), fun
     }
     setPreference('statusFilters', selectedStatuses.slice());
     renderStatusFilter();
-    dnRenderMatrix();
+    dnFilterChanged();
   });
 });
 
@@ -560,7 +560,7 @@ window.dnRenderMatrix = function() {
   }
   $('dnMarkLateBtn').disabled = products.length === 0;
   $('dnMarkAheadBtn').disabled = products.length === 0;
-  $('dnClearBtn').disabled = Object.keys(S.sel).length === 0;
+  $('dnClearBtn').disabled = !visibleKeys().some(function(k) { return S.sel[k]; });
   $('dnMatrix').innerHTML = h + '</tbody>';
   $('dnMatrix').classList.toggle('dn-uniform', $('dnUniformCells').checked);
   Array.prototype.forEach.call($('dnMatrix').querySelectorAll('td[data-p]'), function(td) {
@@ -573,7 +573,7 @@ window.dnRenderMatrix = function() {
       afterSelection();
     };
   });
-  $('dnSelCount').textContent = Object.keys(S.sel).length;
+  $('dnSelCount').textContent = cellList().length;
 };
 function next(l) { return !l ? 'definite' : l === 'definite' ? 'possible' : ''; }
 function setCell(p, t, l, quiet) {
@@ -581,10 +581,19 @@ function setCell(p, t, l, quiet) {
   if (!quiet) { afterSelection(); }
 }
 function afterSelection() { dnRenderMatrix(); dnRecipients(); dnAuto(); }
-window.dnClear = function() { S.sel = {}; afterSelection(); };
+window.dnClear = function() {
+  visibleKeys().forEach(function(key) { delete S.sel[key]; });
+  afterSelection();
+};
+var filterTimer;
+window.dnFilterChanged = function() {
+  dnRenderMatrix();
+  clearTimeout(filterTimer);
+  filterTimer = setTimeout(function() { dnRecipients(); dnAuto(); }, 250);
+};
 window.dnMarkByTiming = function(level) {
   if (level !== 'definite' && level !== 'possible') { return; }
-  Object.keys(S.cycles).forEach(function(product) {
+  visibleProducts().forEach(function(product) {
     S.cycles[product].forEach(function(cycle) {
       var key = product + '@' + cycle;
       var status = beforeScheduleStatus(S.generationStatusPerCycle[key], S.minutesBeforeSchedulePerCycle[key]);
@@ -597,8 +606,17 @@ window.dnMarkByTiming = function(level) {
   afterSelection();
 };
 
+// Keys of the cells shown by the current filters (product name, models, timing status).
+function visibleKeys() {
+  var keys = [];
+  visibleProducts().forEach(function(p) { S.cycles[p].forEach(function(t) { keys.push(p + '@' + t); }); });
+  return keys;
+}
+// Only the selected cells matching the current filters; an update keeps its own cells regardless of filters.
 function cellList() {
-  return Object.keys(S.sel).sort().map(function(k) { var i = k.lastIndexOf('@'); return {product: k.substring(0, i), time: k.substring(i + 1), level: S.sel[k]}; });
+  var allowed = null;
+  if (!S.update) { allowed = {}; visibleKeys().forEach(function(k) { allowed[k] = 1; }); }
+  return Object.keys(S.sel).filter(function(k) { return !allowed || allowed[k]; }).sort().map(function(k) { var i = k.lastIndexOf('@'); return {product: k.substring(0, i), time: k.substring(i + 1), level: S.sel[k]}; });
 }
 // Same rule as {{CYCLES}} on the monitoring pages: 00,01,02,03,06 becomes 00-03,06 (when enabled in Product Messages).
 function compactTimes(times, sep) {
@@ -850,15 +868,18 @@ window.dnPreview = function() {
     + '<div><strong>Cc:</strong> ' + (cc.length ? esc(cc.join(', ')) : '<span class="text-muted">none</span>') + '</div>'
     + '<div><strong>Bcc:</strong> ' + (S.emails || []).length + ' recipient email(s) in ' + Object.keys(S.dests || {}).length + ' destination(s)'
     + (bcc.length ? ' + ' + bcc.length + ' additional (' + esc(bcc.join(', ')) + ')' : '') + '</div>';
-  $('dnPreviewBody').textContent = $('dnBody').value;
+  showPreviewModal($('dnBody').value);
+};
+function showPreviewModal(body) {
+  $('dnPreviewBody').textContent = body;
   S.previewData = null; S.previewPlain = false;
   $('dnPreviewToggle').classList.toggle('d-none', !S.markdown);
   showPreviewMode();
   bootstrap.Modal.getOrCreateInstance($('dnPreviewModal')).show();
   if (S.markdown) {
-    post('markdown', {markdown: $('dnBody').value}).then(function(d) { S.previewData = d; showPreviewMode(); }).catch(fail);
+    post('markdown', {markdown: body}).then(function(d) { S.previewData = d; showPreviewMode(); }).catch(fail);
   }
-};
+}
 // Markdown messages: formatted view (direct sending) or plain-text view (what Outlook will receive).
 function showPreviewMode() {
   var md = S.markdown, plain = S.previewPlain;
@@ -1216,11 +1237,43 @@ function openResolve(n, i) {
   row.classList.remove('d-none');
   var openCells = (n.cells || []).filter(function(c) { return !c.resolved; });
   var products = describeProducts(openCells);
-  row.firstChild.innerHTML = '<div class="p-2 border rounded"><div class="small mb-1">Cells to resolve:</div>'
+  function resolutionSubject(cells) { return 'Resolved: ' + describeProducts(cells).join(', '); }
+  function resolutionBody(cells) {
+    var names = describeProducts(cells);
+    return S.resumedTemplate ? fillTemplate(S.resumedTemplate, names, cells, {reason: n.reason, eta: n.eta, expectedDelay: n.delay, note: n.note}) : 'Dear users,\n\nThe delay affecting ' + names.join(', ') + ' has been resolved.\n\nBest regards,\nECMWF Operations';
+  }
+  row.innerHTML = '<div class="p-2 border rounded mb-2"><div class="small mb-1">Cells to resolve:</div>'
     + openCells.map(function(c) { return '<label class="me-3 small"><input type="checkbox" class="form-check-input me-1" checked value="' + esc(c.product + '@' + c.time) + '">' + esc(c.product + ' ' + c.time) + '</label>'; }).join('')
-    + '<input class="form-control form-control-sm my-2 rs-subj" value="' + esc('Resolved: ' + products.join(', ')) + '">'
-    + '<textarea class="form-control form-control-sm mb-2 rs-body" rows="6">' + esc(S.resumedTemplate ? fillTemplate(S.resumedTemplate, products, openCells, {reason: n.reason, eta: n.eta, expectedDelay: n.delay, note: n.note}) : 'Dear users,\n\nThe delay affecting ' + products.join(', ') + ' has been resolved.\n\nBest regards,\nECMWF Operations') + '</textarea>'
-    + '<button class="btn btn-sm btn-success rs-go me-2">Register and open Outlook</button><button class="btn btn-sm btn-outline-success rs-direct">Send directly</button></div>';
+    + '<input class="form-control form-control-sm my-2 rs-subj" value="' + esc(resolutionSubject(openCells)) + '">'
+    + '<textarea class="form-control form-control-sm mb-2 rs-body" rows="6">' + esc(resolutionBody(openCells)) + '</textarea>'
+    + '<button class="btn btn-sm btn-outline-secondary rs-regen me-2"><i class="bi bi-arrow-clockwise me-1"></i>Regenerate</button><button class="btn btn-sm btn-outline-primary rs-preview me-2"><i class="bi bi-eye me-1"></i>Preview</button><button class="btn btn-sm btn-success rs-go me-2">Register and open Outlook</button><button class="btn btn-sm btn-outline-success rs-direct">Send directly</button></div>';
+  // Follow the ticked cells until the operator edits the subject or the message.
+  var subjectField = row.querySelector('.rs-subj'), bodyField = row.querySelector('.rs-body'), edited = false;
+  function setEdited(value) {
+    edited = value;
+    bodyField.classList.toggle('dn-edited', edited);
+    bodyField.title = edited ? 'Edited manually: no longer updated automatically (use Regenerate)' : '';
+  }
+  function regenerate() {
+    var ticked = Array.prototype.map.call(row.querySelectorAll('input[type=checkbox]:checked'), function(c) { return c.value; });
+    var cells = openCells.filter(function(c) { return ticked.indexOf(c.product + '@' + c.time) >= 0; });
+    if (!cells.length) { return; }
+    subjectField.value = resolutionSubject(cells);
+    bodyField.value = resolutionBody(cells);
+    setEdited(false);
+  }
+  subjectField.oninput = bodyField.oninput = function() { setEdited(true); };
+  row.querySelector('.rs-regen').onclick = regenerate;
+  Array.prototype.forEach.call(row.querySelectorAll('input[type=checkbox]'), function(box) {
+    box.onchange = function() {
+      if (!row.querySelector('input[type=checkbox]:checked')) {
+        box.checked = true;
+        alertMsg('At least one cell must remain selected', 'warning');
+        return;
+      }
+      if (!edited) { regenerate(); }
+    };
+  });
   function sendResolution(direct) {
     var picked = Array.prototype.map.call(row.querySelectorAll('input[type=checkbox]:checked'), function(c) { return c.value; });
     var subject = row.querySelector('.rs-subj').value, body = row.querySelector('.rs-body').value;
@@ -1248,6 +1301,16 @@ function openResolve(n, i) {
       fail(e);
     });
   }
+  row.querySelector('.rs-preview').onclick = function() {
+    var cc = S.allowNoticeCc && n.includeCc ? addressList((n.cc || '').replace(/,/g, ';')) : [];
+    var bcc = S.allowNoticeBcc && n.includeBcc ? addressList(n.bcc) : [];
+    $('dnPreviewHead').innerHTML = '<div><strong>Subject:</strong> ' + esc('[' + n.ref + '] ' + subjectField.value) + '</div>'
+      + '<div><strong>To:</strong> ' + esc(TO_ADDRESS) + '</div>'
+      + '<div><strong>Cc:</strong> ' + (cc.length ? esc(cc.join(', ')) : '<span class="text-muted">none</span>') + '</div>'
+      + '<div><strong>Bcc:</strong> ' + (n.emails || []).length + ' recipient email(s) in ' + (n.destinations || []).length + ' destination(s)'
+      + (bcc.length ? ' + ' + bcc.length + ' additional (' + esc(bcc.join(', ')) + ')' : '') + '</div>';
+    showPreviewModal(bodyField.value);
+  };
   row.querySelector('.rs-go').onclick = function() { sendResolution(false); };
   row.querySelector('.rs-direct').onclick = function() { sendResolution(true); };
 }

@@ -35,6 +35,7 @@
               <tr><td>Click a product name</td><td>Applies the same level to all its cycles.</td></tr>
               <tr><td>Product name filter</td><td>As in <code>/do/monitoring</code>: comma-separated, <code>*</code> and <code>?</code> wildcards, <code>!</code> or <code>-</code> to exclude.</td></tr>
               <tr><td>Model buttons</td><td>Select all the products of a model (models are maintained in <em>Product Descriptions</em>).</td></tr>
+              <tr><td>Mark late/overdue D, Mark 0-15m ahead P, Clear all</td><td>Apply only to the <strong>filtered</strong> cells (product name, model and timing filters). Cells marked earlier but currently hidden by a filter are kept, but are not counted, notified or mailed until they are shown again.</td></tr>
               <tr><td>A dot</td><td>The product has no such cycle.</td></tr>
             </tbody>
           </table>
@@ -65,7 +66,9 @@
       <div class="tab-pane fade" id="dng-msg" role="tabpanel">
         <p class="small mb-2"><strong>Subject and message</strong> are generated from the grouped <em>Products Delay</em> message of
         <a href="/do/admin/productmessages">Product Messages</a>, your selection, and the reason, delay, ETA (UTC) and note. They stay editable;
-        <em>Regenerate</em> rebuilds them and <em>Preview</em> shows the final mail.</p>
+        <em>Regenerate</em> rebuilds them and <em>Preview</em> shows the final mail. A manually edited message is tinted and
+        is no longer updated automatically until you use <em>Regenerate</em>. Only the filtered selected cells are used
+        to build the message and the recipients.</p>
         <p class="small mb-2">Choose a predefined reason or select <em>Other (enter a reason)</em> to provide free text.</p>
         <p class="small mb-2">In <em>Product Messages</em>, place <code>{{REASON}}</code>, <code>{{ETA}}</code>,
         <code>{{EXPECTED_DELAY}}</code> and <code>{{NOTE}}</code> wherever those individual values should appear.
@@ -92,7 +95,7 @@
           <li><strong>Send with Outlook</strong> registers the notice (reference <code>DLY-year-number</code>) and opens Outlook; confirm with <em>I have sent it</em> after sending.</li>
           <li><strong>Send directly</strong> queues the message through the Master mail service and acknowledges it automatically. Pending messages can also be sent directly from <em>Sent notices</em>.</li>
           <li>Later updates can add recipients.</li>
-          <li><strong>Inform resolution</strong> (in <em>Sent notices</em>) pre-fills the message from the grouped <em>Products Resumed</em> message, using the same placeholders for the cells being resolved.</li>
+          <li><strong>Inform resolution</strong> (in <em>Sent notices</em>) opens a form listing the open cells. The subject and message are pre-filled from the grouped <em>Products Resumed</em> message, using the same placeholders, and follow the cells you tick until you edit them. <em>Regenerate</em> rebuilds them, <em>Preview</em> shows the final mail, then register it and open Outlook, or send it directly. Resolving only some of the cells leaves the notice partial.</li>
           <li>Cancellation is also handled from <em>Sent notices</em>.</li>
           <li>Use the report controls below the sent-notices table to export a date-bounded CSV summary, with optional message history and recipient addresses.</li>
         </ol>
