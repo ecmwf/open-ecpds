@@ -201,6 +201,7 @@
                 <auth:link basePathKey="admin.basepath" href="/origin" wrappingTags="li"><i class="bi <%=_originIconClass%>"></i>Origin Location</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/productmessages" wrappingTags="li"><i class="bi bi-envelope-paper-fill"></i>Product Messages</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/monitoringcolors" wrappingTags="li"><i class="bi bi-palette-fill"></i>Monitoring Status Colors</auth:link>
+                <auth:link basePathKey="admin.basepath" href="/storagepolicies" wrappingTags="li"><i class="bi bi-hdd-stack-fill"></i>Storage Lifecycle Policies</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/productdescriptions" wrappingTags="li"><i class="bi bi-card-list"></i>Product Descriptions</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/systemmessages" wrappingTags="li"><i class="bi bi-megaphone-fill"></i>System Messages</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/purge" wrappingTags="li"><i class="bi bi-trash3-fill"></i> Purge All Data</auth:link>

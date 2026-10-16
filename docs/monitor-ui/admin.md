@@ -11,6 +11,11 @@ The admin home page provides access to: [Destination Metadata](../administration
 
 ![Administration](img/admin.png)
 
+## Storage Lifecycle Policies
+
+At `/do/admin/storagepolicies`, administrators define policies controlling how long data
+files are retained on the Data Movers. See [Storage Lifecycle Policies](../administration/storage-lifecycle-policies.md).
+
 ## Monitoring Status Colors
 
 Administrators can configure the shared status palette at

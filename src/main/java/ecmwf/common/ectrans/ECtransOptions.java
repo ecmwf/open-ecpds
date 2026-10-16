@@ -202,6 +202,9 @@ public enum ECtransOptions {
     /** The destination scheduler version. */
     DESTINATION_SCHEDULER_VERSION("version", String.class, STRING_NONE),
 
+    /** The destination scheduler storage policy (name of a Storage Lifecycle Policy). */
+    DESTINATION_SCHEDULER_STORAGEPOLICY("storagePolicy", String.class, STRING_NONE),
+
     /** The destination scheduler requeueon. */
     DESTINATION_SCHEDULER_REQUEUEON("requeueon", String.class, STRING_NONE),
 

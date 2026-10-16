@@ -2871,6 +2871,76 @@ final class DataBaseProxy implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
+    public List<Map<String, String>> getStoragePolicies() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getStoragePolicies()");
+        try {
+            return monitor.done(dataBaseInterface.getStoragePolicies());
+        } catch (final RemoteException e) {
+            throw new DataBaseException("getStoragePolicies", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void insertStoragePolicy(final Map<String, String> policy, final String user)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("insertStoragePolicy(" + policy.get("name") + ")");
+        try {
+            dataBaseInterface.insertStoragePolicy(policy, user);
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("insertStoragePolicy", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean updateStoragePolicy(final Map<String, String> policy, final String user)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("updateStoragePolicy(" + policy.get("name") + ")");
+        try {
+            return monitor.done(dataBaseInterface.updateStoragePolicy(policy, user));
+        } catch (final RemoteException e) {
+            throw new DataBaseException("updateStoragePolicy", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteStoragePolicy(final String name) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteStoragePolicy(" + name + ")");
+        try {
+            dataBaseInterface.deleteStoragePolicy(name);
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("deleteStoragePolicy", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setStoragePolicyOrder(final List<String> names) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("setStoragePolicyOrder(" + names + ")");
+        try {
+            dataBaseInterface.setStoragePolicyOrder(names);
+            monitor.done();
+        } catch (final RemoteException e) {
+            throw new DataBaseException("setStoragePolicyOrder", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Map<String, String> getMonitorConfigGroup(final String group) throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getMonitorConfigGroup(" + group + ")");
         try {

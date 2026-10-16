@@ -1,0 +1,27 @@
+--
+-- Storage Lifecycle Policies (Admin > Storage Lifecycle Policies).
+--
+-- Existing databases need this script applied once, for example:
+--   mysql -u root -p ecpds < storage-policy.sql
+-- New databases already get the table from ecpds.sql.
+--
+
+CREATE TABLE IF NOT EXISTS `STORAGE_POLICY` (
+  `SPO_NAME` varchar(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+  `SPO_COMMENT` text DEFAULT NULL,
+  `SPO_ACTIVE` smallint(6) NOT NULL DEFAULT 1,
+  `SPO_MODE` varchar(16) NOT NULL DEFAULT 'DRY_RUN',
+  `SPO_ORDER` int(11) NOT NULL DEFAULT 0,
+  `SPO_DESTINATIONS` varchar(1024) DEFAULT NULL,
+  `SPO_DESTINATION_TYPES` varchar(256) DEFAULT NULL,
+  `SPO_TRANSFER_GROUPS` varchar(256) DEFAULT NULL,
+  `SPO_FILE_PATTERN` varchar(512) DEFAULT NULL,
+  `SPO_REQUEUE_WINDOW_MS` bigint(20) NOT NULL DEFAULT 604800000,
+  `SPO_RESTART_ON_REQUEUE` smallint(6) NOT NULL DEFAULT 0,
+  `SPO_DROP_REPLICAS` smallint(6) NOT NULL DEFAULT 0,
+  `SPO_DROP_REPLICAS_AFTER_MS` bigint(20) NOT NULL DEFAULT 3600000,
+  `SPO_UPDATED_AT` datetime NOT NULL,
+  `SPO_UPDATED_BY` varchar(64) NOT NULL DEFAULT '',
+  PRIMARY KEY (`SPO_NAME`),
+  KEY `SPO_ORDER_IDX` (`SPO_ORDER`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

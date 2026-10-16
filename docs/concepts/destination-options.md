@@ -35,6 +35,7 @@ These options affect the transfer requests created for the destination queue.
 
 | Option | Type | Default | Description |
 |---|---|---|---|
+| `scheduler.storagePolicy` | String | *none* | Name of the [Storage Lifecycle Policy](../administration/storage-lifecycle-policies.md) to apply to this destination, overriding the policy order |
 | `scheduler.requeueon` | JavaScript expression | *none* | Check for another transfer in the same destination with the same target name but a different transfer ID, then put the current transfer on hold when the expression evaluates as a duplicate. Available variables: `$time1`, `$time2`, `$size1`, `$size2`, `$destination`, `$target` |
 | `scheduler.requeuepattern` | Regex | *none* | Regex selecting target names that should be checked by `scheduler.requeueon` |
 | `scheduler.requeueignore` | Regex | *none* | Regex selecting target names that should be skipped by `scheduler.requeueon` |

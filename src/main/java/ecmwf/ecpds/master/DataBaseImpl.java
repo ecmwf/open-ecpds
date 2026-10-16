@@ -5086,6 +5086,56 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
      * {@inheritDoc}
      */
     @Override
+    public List<Map<String, String>> getStoragePolicies() throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("getStoragePolicies()");
+        return monitor.done(ecpds.getStoragePolicies());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void insertStoragePolicy(final Map<String, String> policy, final String user)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("insertStoragePolicy(" + policy.get("name") + ")");
+        ecpds.insertStoragePolicy(policy, user);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean updateStoragePolicy(final Map<String, String> policy, final String user)
+            throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("updateStoragePolicy(" + policy.get("name") + ")");
+        return monitor.done(ecpds.updateStoragePolicy(policy, user));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteStoragePolicy(final String name) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("deleteStoragePolicy(" + name + ")");
+        ecpds.deleteStoragePolicy(name);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setStoragePolicyOrder(final List<String> names) throws DataBaseException, RemoteException {
+        final var monitor = new MonitorCall("setStoragePolicyOrder(" + names + ")");
+        ecpds.setStoragePolicyOrder(names);
+        monitor.done();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Map<String, String> getMonitorConfigGroup(final String group) throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getMonitorConfigGroup(" + group + ")");
         checkMonitorConfigGroup(group);

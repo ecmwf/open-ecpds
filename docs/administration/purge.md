@@ -79,6 +79,9 @@ The system is ready to accept new transfers immediately.
 
 ---
 
+!!! info
+    To control how long files stay on the Data Movers, see [Storage Lifecycle Policies](storage-lifecycle-policies.md).
+
 ## Prerequisites
 
 - You must have **administrator** access to the Monitoring UI.

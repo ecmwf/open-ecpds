@@ -265,6 +265,19 @@
     </div>
     </auth:link>
 
+    <auth:link basePathKey="admin.basepath" href="/storagepolicies">
+    <div class="col">
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
+        <i class="bi bi-hdd-stack-fill text-secondary flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+        <div>
+            <span class="tool-title">Storage Lifecycle Policies</span>
+            <p class="tool-desc">Define how long data files are kept on the Data Movers per destination, destination
+            type or transfer group, and whether replicas are dropped. Policies never extend the transfer lifetime.</p>
+        </div>
+    </div>
+    </div>
+    </auth:link>
+
     <auth:link basePathKey="admin.basepath" href="/productdescriptions">
     <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">

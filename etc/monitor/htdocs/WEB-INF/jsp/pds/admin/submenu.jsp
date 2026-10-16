@@ -86,6 +86,8 @@
 		wrappingTags="tr,td"><i class="bi bi-envelope-paper-fill"></i> Product Messages</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/monitoringcolors"
 		wrappingTags="tr,td"><i class="bi bi-palette-fill"></i> Monitoring Status Colors</auth:link>
+	<auth:link basePathKey="admin.basepath" href="/storagepolicies"
+		wrappingTags="tr,td"><i class="bi bi-hdd-stack-fill"></i> Storage Lifecycle Policies</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/productdescriptions"
 		wrappingTags="tr,td"><i class="bi bi-card-list"></i> Product Descriptions</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/systemmessages"

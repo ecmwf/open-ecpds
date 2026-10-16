@@ -5656,6 +5656,150 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
+     * Gets all the storage lifecycle policies ordered by their order.
+     *
+     * @return the rows (keys: name, comment, active, mode, order, destinations, types, groups, pattern, window,
+     *         restart, drop, dropAfter, updatedAt, updatedBy)
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public List<Map<String, String>> getStoragePolicies() throws DataBaseException {
+        final List<Map<String, String>> result = new ArrayList<>();
+        try (var rs = executeSelect("ECpdsBase", "getStoragePolicies", new String[0])) {
+            while (rs.next()) {
+                final Map<String, String> row = new LinkedHashMap<>();
+                row.put("name", rs.getString("SPO_NAME"));
+                row.put("comment", rs.getString("SPO_COMMENT"));
+                row.put("active", String.valueOf(rs.getInt("SPO_ACTIVE")));
+                row.put("mode", rs.getString("SPO_MODE"));
+                row.put("order", String.valueOf(rs.getInt("SPO_ORDER")));
+                row.put("destinations", rs.getString("SPO_DESTINATIONS"));
+                row.put("types", rs.getString("SPO_DESTINATION_TYPES"));
+                row.put("groups", rs.getString("SPO_TRANSFER_GROUPS"));
+                row.put("pattern", rs.getString("SPO_FILE_PATTERN"));
+                row.put("window", String.valueOf(rs.getLong("SPO_REQUEUE_WINDOW_MS")));
+                row.put("restart", String.valueOf(rs.getInt("SPO_RESTART_ON_REQUEUE")));
+                row.put("drop", String.valueOf(rs.getInt("SPO_DROP_REPLICAS")));
+                row.put("dropAfter", String.valueOf(rs.getLong("SPO_DROP_REPLICAS_AFTER_MS")));
+                row.put("updatedAt", String.valueOf(rs.getTimestamp("SPO_UPDATED_AT")));
+                row.put("updatedBy", rs.getString("SPO_UPDATED_BY"));
+                result.add(row);
+            }
+        } catch (final Exception e) {
+            _log.warn("getStoragePolicies()", e);
+            throw new DataBaseException("getStoragePolicies", e);
+        }
+        return result;
+    }
+
+    /**
+     * Builds the parameters of the insert and update requests of a storage policy.
+     *
+     * @param policy
+     *            the policy
+     * @param user
+     *            the user
+     *
+     * @return the parameters
+     */
+    private static String[] storagePolicyParameters(final Map<String, String> policy, final String user) {
+        return new String[] { "name=" + policy.get("name"), "comment=" + nullToEmpty(policy.get("comment")),
+                "active=" + Long.parseLong(policy.get("active")), "mode=" + policy.get("mode"),
+                "destinations=" + nullToEmpty(policy.get("destinations")), "types=" + nullToEmpty(policy.get("types")),
+                "groups=" + nullToEmpty(policy.get("groups")), "pattern=" + nullToEmpty(policy.get("pattern")),
+                "window=" + Long.parseLong(policy.get("window")), "restart=" + Long.parseLong(policy.get("restart")),
+                "dropReplicas=" + Long.parseLong(policy.get("drop")),
+                "dropDelay=" + Long.parseLong(policy.get("dropAfter")), "user=" + user };
+    }
+
+    private static String nullToEmpty(final String value) {
+        return value == null ? "" : value;
+    }
+
+    /**
+     * Inserts a storage lifecycle policy (placed last in the order).
+     *
+     * @param policy
+     *            the policy (same keys as {@link #getStoragePolicies()})
+     * @param user
+     *            the user
+     *
+     * @throws DataBaseException
+     *             the data base exception (e.g. the name already exists)
+     */
+    public void insertStoragePolicy(final Map<String, String> policy, final String user) throws DataBaseException {
+        try {
+            executeUpdate("ECpdsBase", "insertStoragePolicy", storagePolicyParameters(policy, user));
+        } catch (final Exception e) {
+            _log.warn("insertStoragePolicy({})", policy.get("name"), e);
+            throw new DataBaseException("insertStoragePolicy", e);
+        }
+    }
+
+    /**
+     * Updates a storage lifecycle policy.
+     *
+     * @param policy
+     *            the policy (same keys as {@link #getStoragePolicies()})
+     * @param user
+     *            the user
+     *
+     * @return false if the policy does not exist anymore
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public boolean updateStoragePolicy(final Map<String, String> policy, final String user) throws DataBaseException {
+        try {
+            return executeUpdate("ECpdsBase", "updateStoragePolicy", storagePolicyParameters(policy, user)) > 0;
+        } catch (final Exception e) {
+            _log.warn("updateStoragePolicy({})", policy.get("name"), e);
+            throw new DataBaseException("updateStoragePolicy", e);
+        }
+    }
+
+    /**
+     * Deletes a storage lifecycle policy.
+     *
+     * @param name
+     *            the name
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void deleteStoragePolicy(final String name) throws DataBaseException {
+        try {
+            executeUpdate("ECpdsBase", "deleteStoragePolicy", new String[] { "name=" + name });
+        } catch (final Exception e) {
+            _log.warn("deleteStoragePolicy({})", name, e);
+            throw new DataBaseException("deleteStoragePolicy", e);
+        }
+    }
+
+    /**
+     * Sets the order of the storage lifecycle policies: the n-th name gets the order (n + 1) * 10.
+     *
+     * @param names
+     *            the policy names in the wanted order
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     */
+    public void setStoragePolicyOrder(final List<String> names) throws DataBaseException {
+        try {
+            var order = 10;
+            for (final var name : names) {
+                executeUpdate("ECpdsBase", "setStoragePolicyOrder", new String[] { "name=" + name, "order=" + order });
+                order += 10;
+            }
+        } catch (final Exception e) {
+            _log.warn("setStoragePolicyOrder()", e);
+            throw new DataBaseException("setStoragePolicyOrder", e);
+        }
+    }
+
+    /**
      * Retrieves all rows from the PRODUCT_METADATA table, ordered by product then type.
      *
      * @return the list of all configured product metadata entries (empty if none)

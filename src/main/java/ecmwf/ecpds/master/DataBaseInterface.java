@@ -3091,6 +3091,77 @@ public interface DataBaseInterface extends Remote {
     void deleteDelayNotice(String ref) throws DataBaseException, RemoteException;
 
     /**
+     * Gets all the storage lifecycle policies ordered by their order.
+     *
+     * @return the rows (keys: name, comment, active, mode, order, destinations, types, groups, pattern, window,
+     *         restart, drop, dropAfter, updatedAt, updatedBy)
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    List<Map<String, String>> getStoragePolicies() throws DataBaseException, RemoteException;
+
+    /**
+     * Inserts a storage lifecycle policy (placed last in the order).
+     *
+     * @param policy
+     *            the policy (same keys as {@link #getStoragePolicies()})
+     * @param user
+     *            the user
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void insertStoragePolicy(Map<String, String> policy, String user) throws DataBaseException, RemoteException;
+
+    /**
+     * Updates a storage lifecycle policy.
+     *
+     * @param policy
+     *            the policy (same keys as {@link #getStoragePolicies()})
+     * @param user
+     *            the user
+     *
+     * @return false if the policy does not exist anymore
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    boolean updateStoragePolicy(Map<String, String> policy, String user) throws DataBaseException, RemoteException;
+
+    /**
+     * Deletes a storage lifecycle policy.
+     *
+     * @param name
+     *            the name
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void deleteStoragePolicy(String name) throws DataBaseException, RemoteException;
+
+    /**
+     * Sets the order of the storage lifecycle policies.
+     *
+     * @param names
+     *            the policy names in the wanted order
+     *
+     * @throws DataBaseException
+     *             the data base exception
+     * @throws RemoteException
+     *             the remote exception
+     */
+    void setStoragePolicyOrder(List<String> names) throws DataBaseException, RemoteException;
+
+    /**
      * Stores (adds or updates) a parameter in one of the Monitor UI configuration groups (see
      * {@link #getMonitorConfigGroup}).
      *

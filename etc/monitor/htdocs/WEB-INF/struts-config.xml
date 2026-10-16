@@ -1469,6 +1469,10 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.MonitoringColorsAction">
 			<forward name="form" path=".pds.admin.monitoringcolors" />
 		</action>
+		<action path="/admin/storagepolicies"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.StoragePoliciesAction">
+			<forward name="form" path=".pds.admin.storagepolicies" />
+		</action>
 		<action path="/admin/feedback"
 			type="ecmwf.ecpds.master.plugin.http.controller.feedback.GetFeedbackAction">
 			<forward name="success" path=".pds.admin.feedback" />
