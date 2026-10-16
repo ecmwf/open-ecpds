@@ -56,6 +56,7 @@ ecmwf.ecpds.master.plugin.http.model.monitoring
 ecmwf.ecpds.master.plugin.http.model
 ecmwf.ecpds.master.plugin.service
 ecmwf.ecpds.master.transfer
+ecmwf.ecpds.master.storage
 ecmwf.common.database
 ecmwf.common.ftp
 ecmwf.common.monitor
