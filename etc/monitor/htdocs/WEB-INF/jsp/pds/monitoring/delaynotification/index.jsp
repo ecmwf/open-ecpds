@@ -60,7 +60,7 @@
 <ul class="nav nav-tabs mb-3">
  <li class="nav-item"><button class="nav-link active" id="dnTabCompose" type="button" onclick="dnTab('compose')"><i class="bi bi-send me-1"></i><span id="dnTabComposeLbl">Send delay notification</span></button></li>
  <li class="nav-item"><button class="nav-link" id="dnTabSent" type="button" onclick="dnTab('sent')"><i class="bi bi-journal-text me-1"></i>Sent notices <span class="badge text-bg-secondary" id="dnSentCount">0</span></button></li>
- <li class="nav-item ms-auto align-self-center" id="dnLayoutControls">
+ <li class="nav-item ms-auto align-self-center mt-2 mt-sm-0" id="dnLayoutControls">
   <div class="btn-group btn-group-sm" role="group" aria-label="Compose layout">
    <button type="button" class="btn btn-outline-secondary active" data-dn-layout="split" aria-label="Split view" aria-pressed="true" title="Show matrix and notice side by side"><i class="bi bi-columns-gap"></i></button>
    <button type="button" class="btn btn-outline-secondary" data-dn-layout="matrix" aria-label="Matrix only" aria-pressed="false" title="Show the matrix at full width"><i class="bi bi-layout-sidebar"></i></button>
@@ -192,6 +192,9 @@
      <button type="button" class="btn btn-danger" id="dnSendBtn" onclick="dnSend(false)"><i class="bi bi-box-arrow-up-right me-1"></i><span id="dnSendLbl">Send with Outlook</span></button>
      <button type="button" class="btn btn-outline-danger" id="dnDirectBtn" onclick="dnSend(true)"><i class="bi bi-send-check me-1"></i><span id="dnDirectLbl">Send directly</span></button>
      <button type="button" class="btn btn-outline-secondary d-none" id="dnCancelUpd" onclick="dnLeaveUpdate()">Cancel update</button>
+    </div>
+    <div id="dnNoSelectionWarning" class="alert alert-warning py-2 mt-2 mb-0 d-none" role="status">
+     <i class="bi bi-exclamation-triangle me-1"></i>Select at least one product and cycle in the matrix before sending.
     </div>
     <div class="modal fade" id="dnPreviewModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
      <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-eye me-1"></i>Message preview</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
@@ -421,14 +424,19 @@ function renderModels() {
   names.concat(['']).forEach(function(m) {
     var label = m || 'Unassigned';
     var on = activeModels[m];
-    html += '<button type="button" class="btn btn-sm ' + (on ? 'btn-primary' : 'btn-outline-primary') + ' me-1 mb-1" data-m="' + esc(m) + '">' + esc(label) + '</button>';
+    html += '<button type="button" class="btn btn-sm ' + (on ? 'btn-primary' : 'btn-outline-primary') + ' me-1 mb-1" data-m="' + esc(m) + '" aria-pressed="' + String(!!on) + '">' + esc(label) + '</button>';
   });
   $('dnModels').innerHTML = html;
   Array.prototype.forEach.call($('dnModels').querySelectorAll('button'), function(b) {
     b.onclick = function() {
-      activeModels[b.dataset.m] = !activeModels[b.dataset.m];
+      var model = b.dataset.m;
+      var on = activeModels[model] = !activeModels[model];
+      b.classList.toggle('btn-primary', on);
+      b.classList.toggle('btn-outline-primary', !on);
+      b.setAttribute('aria-pressed', String(on));
+      if (!b.matches(':focus-visible')) { b.blur(); }
       setPreference('models', Object.keys(activeModels).filter(function(m) { return activeModels[m]; }));
-      renderModels(); dnRenderMatrix();
+      dnRenderMatrix();
     };
   });
 }
@@ -677,6 +685,7 @@ function generate() {
   return {subject: subj, body: fillTemplate(tpl, products, cells, details)};
 }
 window.dnAuto = function() {
+  $('dnNoSelectionWarning').classList.toggle('d-none', cellList().length > 0);
   if ($('dnCompactEmptyLines').checked) {
     $('dnBody').value = compactEmptyLines($('dnBody').value);
   }
@@ -757,10 +766,26 @@ function addressList(value) {
   return (value || '').split(';').map(function(x) { return x.trim(); }).filter(Boolean);
 }
 
-function outlook(subject, body, emails, cells, ccText, bccText, markdown) {
+function openOutlookWindow() {
+  var popup = window.open('about:blank', '_blank');
+  if (!popup) {
+    alertMsg('Your browser blocked the Outlook window. Allow pop-ups for this site and try again.', 'warning');
+    return null;
+  }
+  popup.document.title = 'Preparing Outlook message';
+  popup.document.body.textContent = 'Preparing Outlook message…';
+  popup.opener = null;
+  return popup;
+}
+function closeOutlookWindow(popup) {
+  if (popup && !popup.closed) { popup.close(); }
+}
+function outlook(subject, body, emails, cells, ccText, bccText, markdown, popup) {
   if (markdown) {
     // Outlook links can only carry plain text: use the plain-text rendering of the Markdown message.
-    post('markdown', {markdown: body}).then(function(d) { outlook(subject, d.text, emails, cells, ccText, bccText, false); }).catch(fail);
+    post('markdown', {markdown: body}).then(function(d) {
+      outlook(subject, d.text, emails, cells, ccText, bccText, false, popup);
+    }).catch(function(e) { closeOutlookWindow(popup); fail(e); });
     return;
   }
   var cc = (ccText || '').split(/[;,]/).map(function(x) { return x.trim(); }).filter(Boolean).join(',');
@@ -776,7 +801,11 @@ function outlook(subject, body, emails, cells, ccText, bccText, markdown) {
     u = url([BCC_LIST].concat(Object.keys(lists), additionalBcc));
     alertMsg('The recipient list is too long for an Outlook link: the product distribution lists were used in BCC. Use "Copy BCC emails" for the explicit list.', 'warning');
   }
-  window.open(u, '_blank', 'noopener');
+  if (popup && !popup.closed) {
+    popup.location.replace(u);
+  } else {
+    window.open(u, '_blank', 'noopener');
+  }
 }
 
 function payload() {
@@ -797,7 +826,10 @@ function askConfirm(ref, index, m) {
     + '<button class="btn btn-sm btn-outline-secondary me-2" id="dnConfAgain"><i class="bi bi-box-arrow-up-right"></i> Open Outlook again</button>'
     + '<button class="btn btn-sm btn-link" id="dnConfLater">Confirm later (Sent notices)</button></div>';
   $('dnConfYes').onclick = function() { confirmSent(ref, index); };
-  $('dnConfAgain').onclick = function() { outlook(m.subject, m.body, m.emails, m.cells, m.cc, m.bcc, m.markdown); };
+  $('dnConfAgain').onclick = function() {
+    var popup = openOutlookWindow();
+    if (popup) { outlook(m.subject, m.body, m.emails, m.cells, m.cc, m.bcc, m.markdown, popup); }
+  };
   $('dnConfLater').onclick = function() { box.innerHTML = ''; };
 }
 function confirmSent(ref, index) {
@@ -848,6 +880,8 @@ window.dnSend = function(direct) {
   if (!p.cells.length) { alertMsg('Select at least one product and cycle'); return; }
   if (!p.subject.trim() || !p.body.trim()) { alertMsg('The subject and message are required'); return; }
   direct = direct === true;
+  var outlookWindow = direct ? null : openOutlookWindow();
+  if (!direct && !outlookWindow) { return; }
   var btn = $('dnSendBtn'), directBtn = $('dnDirectBtn'); btn.disabled = true; directBtn.disabled = true;
   var upd = S.update;
   if (upd) { p.ref = upd.ref; }
@@ -865,10 +899,14 @@ window.dnSend = function(direct) {
       if (direct && d.deliveryError) {
         alertMsg('Direct sending failed: ' + d.deliveryError + '. Outlook was opened instead.', 'warning');
       }
-      outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc, message.markdown);
+      outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc, message.markdown,
+        outlookWindow);
       askConfirm(ref, d.index, message);
     }
-  }).catch(fail).then(function() { btn.disabled = false; directBtn.disabled = false; });
+  }).catch(function(e) {
+    closeOutlookWindow(outlookWindow);
+    fail(e);
+  }).then(function() { btn.disabled = false; directBtn.disabled = false; });
 };
 
 function setUpdateMode(on, ref) {
@@ -1115,7 +1153,12 @@ function sentAction(a, n, i, k) {
   }
   if (a === 'reopen') {
     var m = n.history[k];
-    outlook('[' + n.ref + '] ' + (m.kind === 'update' ? 'UPDATE - ' : '') + m.subject, m.body, m.emails || [], m.cells ? m.cells.map(function(c) { var j = c.lastIndexOf('@'); return {product: c.substring(0, j), time: c.substring(j + 1)}; }) : (n.cells || []), m.cc, m.bcc, m.markdown !== false);
+    var popup = openOutlookWindow();
+    if (popup) {
+      outlook('[' + n.ref + '] ' + (m.kind === 'update' ? 'UPDATE - ' : '') + m.subject, m.body, m.emails || [],
+        m.cells ? m.cells.map(function(c) { var j = c.lastIndexOf('@'); return {product: c.substring(0, j), time: c.substring(j + 1)}; }) : (n.cells || []),
+        m.cc, m.bcc, m.markdown !== false, popup);
+    }
     return;
   }
   if (a === 'copy') { copy((n.emails || []).concat(n.includeBcc ? addressList(n.bcc) : []).join(',')).then(function() { alertMsg('Emails copied', 'success'); }); }
@@ -1182,6 +1225,8 @@ function openResolve(n, i) {
     var picked = Array.prototype.map.call(row.querySelectorAll('input[type=checkbox]:checked'), function(c) { return c.value; });
     var subject = row.querySelector('.rs-subj').value, body = row.querySelector('.rs-body').value;
     if (!picked.length) { alertMsg('Select at least one cell'); return; }
+    var outlookWindow = direct ? null : openOutlookWindow();
+    if (!direct && !outlookWindow) { return; }
     post('resolve', {ref: n.ref, cells: picked.length === openCells.length ? [] : picked, subject: subject, body: body, direct: direct}).then(function(d) {
       var cells = picked.map(function(k) { var j = k.lastIndexOf('@'); return {product: k.substring(0, j), time: k.substring(j + 1)}; });
       var cc = d.allowNoticeCc && S.allowNoticeCc && n.includeCc ? n.cc : '';
@@ -1194,10 +1239,14 @@ function openResolve(n, i) {
         if (direct && d.deliveryError) {
           alertMsg('Direct sending failed: ' + d.deliveryError + '. Outlook was opened instead.', 'warning');
         }
-        outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc, message.markdown);
+        outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc, message.markdown,
+          outlookWindow);
         askConfirm(n.ref, d.index, message);
       }
-    }).catch(fail);
+    }).catch(function(e) {
+      closeOutlookWindow(outlookWindow);
+      fail(e);
+    });
   }
   row.querySelector('.rs-go').onclick = function() { sendResolution(false); };
   row.querySelector('.rs-direct').onclick = function() { sendResolution(true); };
