@@ -58,6 +58,7 @@
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-8"  data-col="8"  checked><label class="form-check-label" for="chk-col-8">Mbits/s</label></div>
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-9"  data-col="9"       ><label class="form-check-label" for="chk-col-9">Size</label></div>
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-10" data-col="10" checked><label class="form-check-label" for="chk-col-10">Status</label></div>
+            <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-15" data-col="15"><label class="form-check-label" for="chk-col-15">Tries</label></div>
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-11" data-col="11" checked><label class="form-check-label" for="chk-col-11">Prior</label></div>
             <c:if test="${not empty ecpdsCanHandleQueue}">
             <div class="form-check mb-0"><input class="form-check-input custom-col-chk" type="checkbox" id="chk-col-12" data-col="12" checked><label class="form-check-label" for="chk-col-12">Actions</label></div>
@@ -101,7 +102,7 @@
   </div>
 </div>
 
-<%-- DataTable: 15 columns (Delivered name available only in Custom; Size hidden by default) --%>
+<%-- DataTable: 16 columns (Delivered and Tries available only in Custom; Size hidden by default) --%>
 <div style="overflow-x: auto">
 <table id="destTransferTable" class="table table-striped table-sm table-hover">
   <thead class="table-light">
@@ -118,6 +119,7 @@
       <th>Mbits/s</th>
       <th>Size</th>
       <th>Status</th>
+      <th title="Attempts to reach the current status (requeues + 1); 1 means no requeue">Tries</th>
       <th title="Priority">P</th>
       <th>Actions</th>
       <th style="cursor:pointer;white-space:nowrap" title="Click to select/unselect all transfers on this page" onclick="togglePageSelection()"><i id="hdr-star-icon" class="bi bi-star"></i></th>
@@ -156,7 +158,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
     $.fn.dataTable.ext.errMode = function () {};
 
     // Keep server and saved-preference column IDs stable when changing display order.
-    var columnIds = [0, 1, 2, 3, 4, 5, 14, 6, 7, 8, 9, 10, 11, 12, 13];
+    var columnIds = [0, 1, 2, 3, 4, 5, 14, 6, 7, 8, 9, 10, 15, 11, 12, 13];
 
     var table = $('#destTransferTable').DataTable({
         serverSide: true,
@@ -190,18 +192,19 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
             { data: 8, width: '85px' },
             { data: 9, width: '80px' },
             { data: 10, width: '130px' },
+            { data: 15, width: '45px', visible: false, className: 'text-center text-nowrap' },
             { data: 11, width: '45px' },
             { data: 12, width: '95px' },
             { data: 13, width: '40px' }
         ],
         columnDefs: [
             { targets: 5, className: 'col-target' },
-            { targets: [0, 7, 8, 9, 10, 11, 12, 13, 14], className: 'text-nowrap' },
+            { targets: [0, 7, 8, 9, 10, 11, 13, 14, 15], className: 'text-nowrap' },
             { targets: 8, orderable: false },
             { targets: 10, visible: false },
             { targets: 6, visible: false, className: 'text-break' },
-            { targets: 13, orderable: false, visible: canQueue },
-            { targets: 14, orderable: false }
+            { targets: 14, orderable: false, visible: canQueue },
+            { targets: 15, orderable: false }
         ],
         order: [[2, 'desc']],
         dom: "t<'d-flex align-items-start mt-2'i<'ms-auto'p>>",
@@ -350,7 +353,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
     // Additional columns hidden at small width (<768px): Start(3), Finish(4)
     var _SM_COLS = [3, 4];
     // Size(9) is always hidden in auto mode — only available in Custom mode
-    var _AUTO_ALWAYS_HIDE = [9, 14];
+    var _AUTO_ALWAYS_HIDE = [9, 14, 15];
     // Compact: hide Err + all MED cols
     var _COMPACT_HIDE = [0].concat(_MED_COLS.filter(function(c){return c!==0;}));
     // Small: hide everything in Compact + SM cols
@@ -368,7 +371,7 @@ var _dftSearchHelp = '<p class="mb-1 mt-2">You can conduct an extended search us
         for (var i = 0; i < total; i++) {
             var id = columnIds[i];
             var visible = hideCols.indexOf(id) === -1;
-            if (id === 14) visible = false; // Delivered name is opt-in through Custom only.
+            if (id === 14 || id === 15) visible = false; // Delivered and Tries are opt-in through Custom only.
             if (id === 12 && !canQueue) {
                 visible = false;
             }

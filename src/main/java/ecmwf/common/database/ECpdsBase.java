@@ -2970,6 +2970,7 @@ public final class ECpdsBase extends DataBase {
                     transfer.setReplicated(rs.getBoolean("DAT_REPLICATED"));
                     transfer.setExpiryTime(rs.getTimestamp("DAT_EXPIRY_TIME"));
                     transfer.setDeliveredName(rs.getString("DAT_DELIVERED_NAME"));
+                    transfer.setRequeueHistory(rs.getInt("DAT_REQUEUE_HISTORY"));
                     _setHost(this, transfer, rs.getString("HOS_NAME_BACKUP"), hosts, _SET_HOS_NAME_BACKUP);
                     _setHost(this, transfer, rs.getString("HOS_NAME_PROXY"), hosts, _SET_HOS_NAME_PROXY);
                     _setHost(this, transfer, rs.getString("HOS_NAME"), hosts);

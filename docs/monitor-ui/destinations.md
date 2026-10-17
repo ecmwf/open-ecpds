@@ -25,6 +25,13 @@ The destination detail page shows the current queue for that destination: pendin
 
 ![Destination Detail](img/destination-detail.png)
 
+### Transfer tries
+
+Choose **Cols → Custom → Tries** to show the number of attempts to reach each
+transfer's current status, using the same count as the destination timeline:
+requeues plus one. A value of **1** means no requeue. The column supports numeric
+sorting and is hidden by default; it is available only in Custom mode.
+
 ### Delivered filename
 
 **Target** remains the requested filename. Host settings can change the filename
