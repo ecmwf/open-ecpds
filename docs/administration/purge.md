@@ -38,8 +38,7 @@ Click **Confirm — Delete All Data** to execute.
 
 | Data | Mechanism |
 |---|---|
-| All `DATA_TRANSFER` rows | Marked as deleted; `DAT_EXPIRY_TIME` set in the past |
-| All `DATA_FILE` rows | Marked as deleted; picked up by the file-expiry scheduler |
+| All transfer requests and registered data files | Marked for deletion and picked up by the expiry schedulers |
 | Physical files on Data Movers | Removed during the next (or immediate) mover purge scan |
 | Transfer history, statistics, publications | Removed during the [immediate hard-delete](#immediate-database-hard-delete) if that option is selected |
 
@@ -49,15 +48,8 @@ Transfers are marked for deletion first; the **ExpiredDataFileScheduler** and **
 
 ## Immediate Database Hard-Delete
 
-When **Also hard-delete all database records immediately** is ticked, OpenECPDS performs a second pass that hard-deletes records in foreign-key-safe order:
-
-1. `UPLOAD_HISTORY` and `INCOMING_HISTORY` — foreign-key references to `DATA_FILE` are nulled out first.
-2. `TRANSFER_STATISTICS`
-3. `TRANSFER_HISTORY`
-4. `PUBLICATION` (rows referencing data files)
-5. `DATA_TRANSFER`
-6. `METADATA_VALUE`
-7. `DATA_FILE`
+When **Also hard-delete all database records immediately** is ticked, OpenECPDS
+immediately removes transfer, history, statistics, publication and file metadata records.
 
 After the database records are removed, OpenECPDS immediately triggers a **full disk scan** on every connected Data Mover via the `purgeAll()` RMI call. Because the mover scan works by comparing files on disk against entries in the database, any file no longer referenced in the database is deleted at this point — without waiting for the next scheduled scan cycle.
 

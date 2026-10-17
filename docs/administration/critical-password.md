@@ -39,7 +39,7 @@ Click **Renew Password**. The new hash is stored immediately and takes effect fo
 ## How It Works
 
 - The password is hashed with **SHA-256** (UTF-8 encoded, hex output) before being stored.
-- The hash is stored in the `SYS_CONFIG` database table under group `Master`, parameter name `criticalActionPasswordHash`.
+- The hash is stored in the Master-managed system configuration.
 - The plaintext password is never written to disk, logs, or configuration files.
 - All Monitor instances share the same value because they all query the same MasterServer database.
 - Renewing the password takes effect immediately — there is no need to restart any component.

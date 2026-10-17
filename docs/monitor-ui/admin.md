@@ -21,8 +21,8 @@ files are retained on the Data Movers. See [Storage Lifecycle Policies](../admin
 Administrators can configure the shared status palette at
 `/do/admin/monitoringcolors`. The settings cover product-generation,
 OpenView, and arrival/transfer statuses used by monitoring legends, indicators,
-and charts. Values are stored in `SYS_CONFIG` under the `MonitoringColors`
-group and must use `#RRGGBB` format. Saving a value equal to its built-in
+and charts. Values are stored in the shared system configuration and must use
+`#RRGGBB` format. Saving a value equal to its built-in
 default removes the override; **Reset All to Defaults** removes every override.
 Changes apply immediately on the current Monitor and are picked up by other
 Monitor instances within 15 seconds.

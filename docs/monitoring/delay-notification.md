@@ -65,7 +65,7 @@ notification addresses and are queued through the Master mail service.
 
 The selected timing categories, layout, **Uniform cells**, and **Compact empty lines** settings are remembered in the
 browser for the signed-in user. Default Cc and additional Bcc recipient addresses, and the flags allowing these fields, are
-stored in `SYS_CONFIG` and managed in **Product Messages**.
+managed in **Product Messages**.
 
 ## Sent notices
 
@@ -82,10 +82,10 @@ The register keeps every notice until an operator deletes it. For an active or p
 
 Resolved and cancelled notices can no longer be updated. **Delete** removes a notice from the register.
 
-Notices are kept in the dedicated `DELAY_NOTICE` table as a permanent history (the page shows the latest 100 and can
-load older ones). The Master allocates the references atomically, so several Monitors can register notices at the same
-time, and changes are protected by a version check: if someone else modified the same notice, the operation is retried
-on the fresh version. Models and the default Cc/Bcc addresses are stored in `SYS_CONFIG`.
+Notices are kept as a permanent history (the page shows the latest 100 and can load older
+ones). The Master allocates references atomically, so several Monitors can register notices
+at the same time, and protects changes with a version check to avoid overwriting a newer
+update. Models and the default Cc/Bcc addresses are managed in **Product Messages**.
 
 The report controls below the table generate a CSV for notices created in the selected inclusive date range, optionally
 filtered by status. The on-page summary shows status totals and the most affected products. The CSV includes affected

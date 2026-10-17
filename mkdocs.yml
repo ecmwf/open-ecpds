@@ -94,6 +94,7 @@ nav:
       - Data Transfer Lifecycle: architecture/data-transfer-lifecycle.md
       - Continental Data Movers: architecture/continental-data-movers.md
       - DataMover Allocation & Load Balancing: architecture/datamover-allocation.md
+      - Database: architecture/database.md
       - Java Dependencies: architecture/dependencies.md
   - Deployment:
       - Kubernetes: deployment/kubernetes.md

@@ -40,7 +40,7 @@ flags them as **Unassigned** in the user list.
 ## Portal Service modes
 
 The **Portal Service** field controls how visitors authenticate when they access the data
-portal for a given Data User. It is stored as a first-class column on the `INCOMING_USER` table.
+portal for a given Data User. The setting is managed with the user's account.
 
 ### Standard Login *(default)*
 
@@ -107,9 +107,8 @@ inherit it automatically.
    ```
 3. **Visitor** fills in the form (name, email address, country) and clicks
    **Send Verification Email**.
-4. OpenECPDS creates an inactive **subscriber record** in the `PORTAL_SUBSCRIBER` table,
-   generates a unique verification token and a random 12-character password, and sends
-   the visitor a verification email.
+4. OpenECPDS creates an inactive **subscriber record**, generates a unique verification
+   token and a random 12-character password, and sends the visitor a verification email.
 5. **Visitor** clicks the link in the email (`/ecpds/verify?token=…`).
    - If `portal.registrationAutoApprove = "true"` → subscriber is immediately activated and receives
      a second email containing their login credentials (username + personal password).
@@ -118,21 +117,6 @@ inherit it automatically.
 6. **Visitor** logs into the data portal using:
    - **Username:** the Data User's login (e.g. `myorg_data`)
    - **Password:** their personal auto-generated password
-
-#### Subscriber table (`PORTAL_SUBSCRIBER`)
-
-Each registrant is stored as an independent row:
-
-| Column | Description |
-|---|---|
-| `PSB_INU_ID` | The Data User this subscriber belongs to |
-| `PSB_EMAIL` | Subscriber's email (also their identifier; unique per Data User) |
-| `PSB_NAME` | Full name provided at registration |
-| `PSB_ISO` | Two-letter country code |
-| `PSB_PASSWORD` | Auto-generated personal password (plain text, stored server-side) |
-| `PSB_ACTIVE` | `1` = active (can log in), `0` = pending verification or disabled |
-| `PSB_VERIFY_TOKEN` | Token sent in the verification email; cleared on activation |
-| `PSB_CREATED_TIME` | Epoch-millisecond registration timestamp |
 
 #### Configuration reference
 
@@ -147,19 +131,6 @@ Each registrant is stored as an independent row:
     `portal.registrationAdminEmail` can also be set globally in `ecmwf.properties`
     (`[DataPortal]` section) as `registrationAdminEmail=you@org.com`. The per-user
     property takes precedence when set.
-
-#### Testing without email
-
-To test the flow without a live mail server, fetch the token directly from the database
-and call the verify endpoint manually:
-
-```sql
-SELECT PSB_EMAIL, PSB_PASSWORD, PSB_VERIFY_TOKEN, PSB_ACTIVE
-FROM PORTAL_SUBSCRIBER
-WHERE PSB_INU_ID = 'myorg_data';
-```
-
-Then open `https://<portal-host>/ecpds/verify?token=<PSB_VERIFY_TOKEN>` in a browser.
 
 **Use when:** the audience is too large or dynamic to provision manually, but you still
 want to know who is accessing the data and be able to revoke individual access — unlike

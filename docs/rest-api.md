@@ -322,8 +322,8 @@ Assigns one or more categories to an incoming user. The request body is a JSON a
 
     Alternatively, `incoming/category/add` can also activate/deactivate a user as a side effect: passing
     a category name that contains `ECPDS` (case-insensitive), e.g. `["ECPDS"]`, activates the user — this
-    is a special marker, not an actual category that needs to exist in the `CATEGORY` table (the
-    category list itself is not stored). Omitting an `ECPDS` marker deactivates the user again. This
+    is a special marker, not an actual category that needs to exist in the category list
+    (the list itself is not stored). Omitting an `ECPDS` marker deactivates the user again. This
     predates the `active` parameter and is kept for backward compatibility, but `active` is the more
     direct and self-explanatory option for new integrations.
 

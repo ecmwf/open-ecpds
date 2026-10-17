@@ -2,21 +2,17 @@
 
 OpenECPDS captures per-connection TCP socket statistics for every file transfer. These
 are surfaced in the monitoring portal on the transfer detail page (`/do/transfer/data/<id>`)
-under the **Network Statistics** card, and are stored persistently in the
-`TRANSFER_STATISTICS` database table.
+under the **Network Statistics** card, and are stored persistently for later inspection.
 
 ---
 
 ## How Statistics Are Collected
 
 At the end of each TCP connection used during a transfer, OpenECPDS reads OS-level socket
-diagnostics — equivalent to the Linux `tcp_info` structure — and persists one row per
-connection in `TRANSFER_STATISTICS`. This happens automatically for every connection
+diagnostics — equivalent to the Linux `tcp_info` structure — and persists one record per
+connection. This happens automatically for every connection
 opened by the transfer module (FTP, SFTP, WebDAV, S3, HTTP, …), requiring no manual
 instrumentation.
-
-The table references `DATA_TRANSFER` via a foreign key on `DAT_ID`, linking each
-statistics record back to its parent transfer.
 
 !!! note
     Statistics are only available if the Data Mover running the transfer supports
