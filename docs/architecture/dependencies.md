@@ -6,7 +6,7 @@ This page lists the key third-party Java libraries bundled with OpenECPDS, group
 
 | Requirement | Version | Purpose |
 |---|---|---|
-| [OpenJDK](https://openjdk.org/) | 25+ | Java runtime — required to run all OpenECPDS components |
+| [GraalVM Community Edition](https://www.graalvm.org/) | 25.2.4 (Java 25) | Java runtime used by the OpenECPDS container images; Java 25 is required to run all components |
 
 ---
 
