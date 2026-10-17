@@ -42,8 +42,3 @@ All entered criteria must match; empty criteria match anything.
 
 Use the up/down arrows to change the order, and **Which policy applies?** to test a
 destination and file name.
-
-## Upgrading an existing database
-
-Apply once: `docker/ecpds/database/storage-policy.sql`. Until then the page shows an
-error pointing to this file. New installations get the `STORAGE_POLICY` table from `ecpds.sql`.

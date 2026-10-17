@@ -85,8 +85,7 @@ Resolved and cancelled notices can no longer be updated. **Delete** removes a no
 Notices are kept in the dedicated `DELAY_NOTICE` table as a permanent history (the page shows the latest 100 and can
 load older ones). The Master allocates the references atomically, so several Monitors can register notices at the same
 time, and changes are protected by a version check: if someone else modified the same notice, the operation is retried
-on the fresh version. When upgrading an existing database, create the table once with `docker/ecpds/database/delay-notice.sql` (new
-databases get it from `ecpds.sql`). Models and the default Cc/Bcc addresses are stored in `SYS_CONFIG`.
+on the fresh version. Models and the default Cc/Bcc addresses are stored in `SYS_CONFIG`.
 
 The report controls below the table generate a CSV for notices created in the selected inclusive date range, optionally
 filtered by status. The on-page summary shows status totals and the most affected products. The CSV includes affected

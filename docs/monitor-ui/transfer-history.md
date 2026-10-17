@@ -19,5 +19,5 @@ updates it when a delivery completes. It is recorded only for a module-reported
 name that differs from Target; when no different name is recorded, the display and filter fall back to Target.
 Delivered is shown and searchable only for **DONE** transfers. Other statuses
 leave it empty, including failed and running transfers.
-See [Delivered filename](destinations.md#delivered-filename) for examples,
-attempt semantics and the required database upgrade.
+See [Delivered filename](destinations.md#delivered-filename) for examples and
+attempt semantics.
