@@ -84,6 +84,7 @@ ecmwf.ecpds.master.plugin.http.model.transfer
 ecmwf.ecpds.master.plugin.service
 ecmwf.ecpds.master.storage
 ecmwf.ecpds.master.transfer
+ecmwf.ecpds.master.weather
 ecmwf.ecpds.monitor
 ecmwf.ecpds.mover
 ecmwf.ecpds.mover.plugin.ecproxy
