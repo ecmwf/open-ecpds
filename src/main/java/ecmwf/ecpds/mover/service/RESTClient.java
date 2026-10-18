@@ -321,6 +321,107 @@ public final class RESTClient implements RESTInterface {
     }
 
     @Override
+    public ecmwf.ecpds.master.weather.WeatherCapabilities getWeatherCapabilities(String sourceId) throws Exception {
+        ecmwf.ecpds.master.weather.WeatherCapabilities.validateSource(sourceId);
+        final var capabilities = weatherRequest("weatherCapabilities", "GET", null, Map.of("source", sourceId),
+                ecmwf.ecpds.master.weather.WeatherCapabilities.class);
+        if (capabilities == null || !sourceId.equals(capabilities.sourceId())) {
+            throw new RestException("Missing or mismatched Network Weather capabilities");
+        }
+        return capabilities;
+    }
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherAcknowledgement deliverWeatherObservations(
+            ecmwf.ecpds.master.weather.WeatherBatch batch) throws Exception {
+        batch.encode();
+        final var acknowledgement = weatherRequest("weatherObservations", "PUT", batch, Map.of(),
+                ecmwf.ecpds.master.weather.WeatherAcknowledgement.class);
+        if (acknowledgement == null) {
+            throw new RestException("Missing Network Weather acknowledgement");
+        }
+        acknowledgement.validateFor(batch);
+        return acknowledgement;
+    }
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherSourceIdentity getWeatherSourceIdentity(java.util.UUID challenge)
+            throws Exception {
+        if (challenge == null) {
+            throw new IllegalArgumentException("Missing Network Weather source challenge");
+        }
+        if (TRUST_ALL_CERTS) {
+            throw new RestException("Network Weather source registration requires [MoverProxy] trustAllCerts=no");
+        }
+        for (final var target : getDataMover()) {
+            final var uri = java.net.URI.create(target);
+            if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null || uri.getUserInfo() != null) {
+                throw new RestException("Network Weather source registration requires credential-free HTTPS targets");
+            }
+        }
+        final var identity = weatherRequest("mover/", "weatherSourceIdentity", "GET", null,
+                Map.of("challenge", challenge.toString()), ecmwf.ecpds.master.weather.WeatherSourceIdentity.class);
+        if (identity == null || !challenge.equals(identity.challenge())) {
+            throw new RestException("Missing or mismatched Network Weather source identity");
+        }
+        try {
+            identity.verify(identity.sourceId(), challenge);
+        } catch (ecmwf.ecpds.master.weather.WeatherSourceIdentity.UnsupportedIdentityException e) {
+            throw new ecmwf.ecpds.master.weather.WeatherUnsupportedException(e.getMessage());
+        }
+        return identity;
+    }
+
+    private <T> T weatherRequest(String operation, String method, Object body, Map<String, String> query,
+            Class<T> responseType) throws Exception {
+        return weatherRequest("master/", operation, method, body, query, responseType);
+    }
+
+    private <T> T weatherRequest(String namespace, String operation, String method, Object body,
+            Map<String, String> query, Class<T> responseType) throws Exception {
+        if (!RESTSignature.ENABLED) {
+            throw new RestException("Network Weather requires authenticated REST control-channel signing");
+        }
+        RestException failure = null;
+        ecmwf.ecpds.master.weather.WeatherUnsupportedException unsupported = null;
+        final int connectionTimeout = Math.min(connectTimeout > 0 ? connectTimeout : 3000, 3000);
+        final long started = System.nanoTime();
+        int attempts = 0;
+        for (final String dataMover : getDataMover()) {
+            final long remainingMs = 5_000 - (System.nanoTime() - started) / 1_000_000;
+            if (remainingMs <= 0 || attempts++ >= 3) {
+                failure = new RestException("Network Weather " + operation + " relay budget exhausted");
+                break;
+            }
+            final int requestTimeout = (int) Math.min(remainingMs, connectionTimeout);
+            try (final var response = send(httpProxy, dataMover + "/ecpds/" + namespace + operation, connectionTimeout,
+                    requestTimeout, ecmwf.ecpds.master.weather.WeatherLimits.controlResponseBytes(), method, body,
+                    query)) {
+                final int code = response.getStatusCode();
+                if (code == 404 || code == 405 || code == 501) {
+                    unsupported = new ecmwf.ecpds.master.weather.WeatherUnsupportedException(
+                            "Network Weather " + operation + " is unsupported by " + dataMover);
+                    continue;
+                }
+                if (code != 200) {
+                    throw new RestException("Network Weather " + operation + " returned HTTP " + code);
+                }
+                return parse(response, responseType);
+            } catch (final RestException e) {
+                failure = e;
+            }
+        }
+        // An authentication/transport failure must not be disguised as mixed-version incompatibility.
+        if (failure != null) {
+            throw failure;
+        }
+        if (unsupported != null) {
+            throw unsupported;
+        }
+        throw new RestException("No MasterServer available");
+    }
+
+    @Override
     public boolean isLiveTransferMonitoringEnabled() throws RestException {
         _log.debug("REST sending request: isLiveTransferMonitoringEnabled()");
         RestException restException = null;
@@ -560,6 +661,12 @@ public final class RESTClient implements RESTInterface {
 
     private static CloseableClientResponse send(final String proxy, final String url, final int connectTimeout,
             final String method, final Object body, final Map<String, String> query) throws RestException {
+        return send(proxy, url, connectTimeout, connectTimeout, 0, method, body, query);
+    }
+
+    private static CloseableClientResponse send(final String proxy, final String url, final int connectTimeout,
+            final int requestTimeout, final int maxResponseBytes, final String method, final Object body,
+            final Map<String, String> query) throws RestException {
         try {
             final var cacheKey = (proxy != null ? proxy : "") + "|" + connectTimeout;
             final var client = HTTP_CLIENT_CACHE.computeIfAbsent(cacheKey, _ -> {
@@ -573,7 +680,7 @@ public final class RESTClient implements RESTInterface {
             final var uri = buildUri(url, query);
             final var builder = HttpRequest.newBuilder(uri).header("Accept", "application/json")
                     .header("Accept-Charset", "iso-8859-1");
-            final var timeout = timeout(connectTimeout);
+            final var timeout = timeout(requestTimeout);
             if (timeout != null) {
                 builder.timeout(timeout);
             }
@@ -587,7 +694,9 @@ public final class RESTClient implements RESTInterface {
                 request = builder.header("Content-Type", "application/json")
                         .method(method, HttpRequest.BodyPublishers.ofString(json)).build();
             }
-            return new CloseableClientResponse(client.send(request, HttpResponse.BodyHandlers.ofString()));
+            final var handler = HttpResponse.BodyHandlers.ofString();
+            return new CloseableClientResponse(client.send(request,
+                    maxResponseBytes > 0 ? HttpResponse.BodyHandlers.limiting(handler, maxResponseBytes) : handler));
         } catch (final IOException e) {
             throw new RestException("Calling " + url, e);
         } catch (final InterruptedException e) {

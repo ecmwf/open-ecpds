@@ -48,6 +48,12 @@ import ecmwf.common.technical.ProxySocket;
  */
 public interface MoverInterface extends ClientInterface {
 
+    ecmwf.ecpds.master.weather.WeatherSourceIdentity getWeatherSourceIdentity(java.util.UUID challenge)
+            throws RemoteException;
+
+    ecmwf.ecpds.master.weather.WeatherSourceIdentity getWeatherSourceIdentity(Host proxyHost, String sourceId,
+            java.util.UUID challenge) throws RemoteException;
+
     /**
      * Size.
      *

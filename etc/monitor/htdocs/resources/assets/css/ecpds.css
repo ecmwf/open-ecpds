@@ -5,6 +5,13 @@
    differ from the Bootstrap defaults.
    ============================================================ */
 
+.offcanvas .nav-tabs .nav-link.active {
+    color: var(--bs-white) !important;
+    background-color: var(--bs-primary) !important;
+    border-color: var(--bs-primary) !important;
+    font-weight: 600;
+}
+
 /* Monitoring status dots (moved from reload.jsp) */
 .mon-dot { 
   flex-shrink: 0; 

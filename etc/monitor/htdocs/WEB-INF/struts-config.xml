@@ -60,6 +60,8 @@
 	<!-- ========== Action Mapping Definitions ============================== -->
 
 	<action-mappings>
+        <action path="/monitoring/weather"
+            type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetWeatherAction"/>
 		<action path="/handleError"
 			type="ecmwf.web.controller.ErrorHandlerAction">
 			<forward name="error" path=".error" />
@@ -1472,6 +1474,10 @@
 		<action path="/admin/storagepolicies"
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.StoragePoliciesAction">
 			<forward name="form" path=".pds.admin.storagepolicies" />
+		</action>
+		<action path="/admin/networkweather"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.NetworkWeatherAction">
+			<forward name="form" path=".pds.admin.networkweather" />
 		</action>
 		<action path="/admin/feedback"
 			type="ecmwf.ecpds.master.plugin.http.controller.feedback.GetFeedbackAction">

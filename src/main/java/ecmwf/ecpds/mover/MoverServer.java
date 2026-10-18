@@ -217,6 +217,42 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     java.nio.file.Path.of(System.getProperty("mover.tmp", System.getProperty("java.io.tmpdir")),
                             "traffic-accounting.json").toString()));
     private final transient TrafficAccountingScheduler trafficAccountingScheduler;
+    private final transient WeatherNegotiationScheduler weatherNegotiationScheduler;
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherSourceIdentity getWeatherSourceIdentity(java.util.UUID challenge)
+            throws RemoteException {
+        final var scheduler = weatherNegotiationScheduler;
+        if (scheduler == null || scheduler.closed) {
+            throw new RemoteException("Network Weather source registration is disabled");
+        }
+        try {
+            return scheduler.signer.identify(challenge);
+        } catch (final java.security.GeneralSecurityException | IllegalArgumentException e) {
+            throw Format.getRemoteException("Network Weather source identity", e);
+        }
+    }
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherSourceIdentity getWeatherSourceIdentity(Host proxyHost, String sourceId,
+            java.util.UUID challenge) throws RemoteException {
+        try {
+            ecmwf.ecpds.master.weather.WeatherCapabilities.validateSource(sourceId);
+            if (proxyHost == null || !HostOption.PROXY.equals(proxyHost.getType()) || !proxyHost.getActive()) {
+                throw new IllegalArgumentException("Network Weather requires an active approved Proxy Host");
+            }
+            final var setup = HOST_PROXY.getECtransSetup(proxyHost.getData());
+            final var url = setup.getString(HOST_PROXY_HTTP_PROXY_URL);
+            final var target = setup.get(HOST_PROXY_HTTP_MOVER_URL, "https://" + proxyHost.getHost());
+            final var identity = getRESTInterface(url, target, 3000).getWeatherSourceIdentity(challenge);
+            identity.verify(sourceId, challenge);
+            return identity;
+        } catch (final ecmwf.ecpds.master.weather.WeatherUnsupportedException e) {
+            throw new RemoteException("Continental Mover does not support Network Weather source identity", e);
+        } catch (final Exception e) {
+            throw Format.getRemoteException("Network Weather Continental source identity", e);
+        }
+    }
 
     /** The ticketRepository. */
     private final transient TicketRepository ticketRepository;
@@ -1108,6 +1144,12 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         }
         trafficAccountingScheduler = new TrafficAccountingScheduler();
         trafficAccountingScheduler.start();
+        if (Cnf.at("Server", "networkWeatherNegotiation", true)) {
+            weatherNegotiationScheduler = new WeatherNegotiationScheduler();
+            weatherNegotiationScheduler.start();
+        } else {
+            weatherNegotiationScheduler = null;
+        }
         if (Cnf.at("Server", "liveStatsRepository", true)) {
             _log.debug("Starting LiveStatsRepository");
             liveStatsRepository = new LiveStatsRepository("LiveStatsRepository");
@@ -2717,6 +2759,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     public DataTransfer put(final Host[] hostsForSource, final DataTransfer transfer, final String targetName,
             final long localPosn, final long remotePosn) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(transfer, "put"));
+        MoverCallback callBack = null;
         try {
             _checkInProgress(transfer);
             final var proxyHost = transfer.getProxyHost();
@@ -2773,7 +2816,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             GenericFile file = dataFile.getFileSystem() == null ? null
                     : new FileChecker(GenericFile.getGenericFile(getRepository(), getPath(dataFile)));
             var size = dataFile.getSize();
-            final var callBack = new MoverCallback(transfer, targetName);
+            callBack = new MoverCallback(transfer, targetName);
             final var setup = HOST_ECTRANS.getECtransSetup(host.getData());
             // Do we have to compress the file?
             final String filter;
@@ -2876,6 +2919,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 }
             }
         } catch (final Throwable t) {
+            if (callBack != null) {
+                callBack.captureWeather(null, false);
+            }
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
             if (cookieSet) {
@@ -3358,6 +3404,11 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      *             Signals that an I/O exception has occurred.
      */
     public boolean closeDataTransfer(final DataTransfer transfer) throws IOException {
+        return closeDataTransfer(transfer, false);
+    }
+
+    private boolean closeDataTransfer(final DataTransfer transfer, final boolean cancellationRequested)
+            throws IOException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(transfer, "close"));
         try {
             // We first try to stop it on the current DataMover, just in case it
@@ -3366,8 +3417,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final var startCount = transfer.getStartCount();
             for (var i = startCount; i >= 1; i--) {
                 final var id = _getCookie(transfer, i, null);
-                if (ectrans.close(id, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(),
-                        null)) {
+                if (ectrans.close(id, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
+                        cancellationRequested)) {
                     _log.info("Transfer {} successfuly closed ({})", transfer.getId(), id);
                     return true;
                 }
@@ -3416,7 +3467,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     @Override
     public boolean close(final DataTransfer transfer) throws RemoteException {
         try {
-            return closeDataTransfer(transfer);
+            return closeDataTransfer(transfer, true);
         } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
@@ -3532,6 +3583,13 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             } catch (final IOException e) {
                 _log.warn("Final traffic accounting checkpoint failed", e);
             }
+        }
+        if (weatherNegotiationScheduler != null) {
+            weatherNegotiationScheduler.closed = true;
+            weatherNegotiationScheduler.negotiation.close();
+            weatherNegotiationScheduler.probes.close();
+            weatherNegotiationScheduler.outbox.clear();
+            weatherNegotiationScheduler.shutdown();
         }
         if (ticketRepository != null) {
             ticketRepository.shutdown();
@@ -4291,6 +4349,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     private final class MoverCallback implements ProgressHandler, ECtransCallback {
         private final String _liveAttemptId = java.util.UUID.randomUUID().toString();
+        private final ecmwf.ecpds.master.weather.WeatherCapture.Execution weather;
         /** The _name. */
         private final String _name;
 
@@ -4363,6 +4422,48 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             _transfer.setRatio(1);
             _transfer.setPutTime(null);
             _timeout = _setup.getDuration(HOST_ECTRANS_STREAM_TIMEOUT).toMillis();
+            ecmwf.ecpds.master.weather.WeatherCapture.Execution capture = null;
+            if (weatherNegotiationScheduler != null) {
+                try {
+                    final var host = transfer.getHost();
+                    capture = weatherNegotiationScheduler.capture.start(transfer.getId(), transfer.getDestinationName(),
+                            host.getName(), host.getHost(), host.getTransferMethodName());
+                } catch (final RuntimeException e) {
+                    _log.warn("Network Weather could not freeze transfer {} execution scope", transfer.getId(), e);
+                }
+            }
+            weather = capture;
+            _transfer.setWeatherExecutionId(capture == null ? null : capture.executionId().toString());
+        }
+
+        @Override
+        public void executionFinished(final TransferModule module, final boolean successful) {
+            captureWeather(module, successful);
+        }
+
+        private void captureWeather(final TransferModule module, final boolean successful) {
+            if (weather == null) {
+                return;
+            }
+            try {
+                final var statistics = module == null ? null : module.getAttribute(ClientSocketStatistics.class);
+                final var operation = module == null ? null : module.getAttribute("remote.operation");
+                final var cancelled = !successful && module != null
+                        && Boolean.TRUE.equals(module.getAttribute("ectrans.cancellationRequested"));
+                final var outcome = cancelled ? ecmwf.ecpds.master.weather.WeatherObservation.Outcome.CANCELLED
+                        : !successful ? ecmwf.ecpds.master.weather.WeatherObservation.Outcome.FAILURE
+                                : module == null || module.getAvailable() || "exec".equals(operation)
+                                        || "copy".equals(operation)
+                                                ? ecmwf.ecpds.master.weather.WeatherObservation.Outcome.UNKNOWN
+                                                : ecmwf.ecpds.master.weather.WeatherObservation.Outcome.SUCCESS;
+                weather.finish(outcome,
+                        cancelled ? ecmwf.ecpds.master.weather.WeatherObservation.Category.CANCELLED
+                                : ecmwf.ecpds.master.weather.WeatherObservation.Category.UNCLASSIFIED,
+                        statistics == null ? null : statistics.snapshot());
+            } catch (final RuntimeException e) {
+                _log.warn("Network Weather capture failed for transfer {}; delivery processing continues",
+                        _transfer.getId(), e);
+            }
         }
 
         @Override
@@ -4416,6 +4517,12 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         @Override
         public void connected(final TransferModule module) {
             _module = module;
+            if (weather != null) {
+                final var statistics = module.getAttribute(ClientSocketStatistics.class);
+                if (statistics != null) {
+                    statistics.setSnapshotListener(weather::supplement);
+                }
+            }
         }
 
         /**
@@ -4575,6 +4682,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
          */
         @Override
         public void completed(final TransferModule module) {
+            captureWeather(module, true);
             if (!closeTransferAndMonitor()) { // If it is closed then no need to process the transfer history again!
                 return;
             }
@@ -4685,6 +4793,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
          */
         @Override
         public void failed(final TransferModule module, String comment) {
+            captureWeather(module, false);
             if (!closeTransferAndMonitor()) { // If it is closed then no need to process the transfer history again!
                 return;
             }
@@ -5939,14 +6048,101 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         }
     }
 
-    /**
-     * The Class LiveStatsRepository.
-     *
-     * Batches and periodically pushes {@link LiveTransferSample}s to the MasterServer, feeding the "Live ECPDS Earth"
-     * globe visualisation (Phase 0 - backend plumbing only, see {@link LiveTransferRegistry}). Samples are coalesced
-     * per transfer id (only the most recent sample for a given transfer is kept between two pushes) to keep the payload
-     * bounded regardless of how often {@link #offer(LiveTransferSample)} is called.
-     */
+    private final class WeatherNegotiationScheduler extends ecmwf.common.ecaccess.MBeanScheduler {
+        private final ecmwf.ecpds.master.weather.WeatherSourceSigner signer = new ecmwf.ecpds.master.weather.WeatherSourceSigner(
+                getRoot());
+        private volatile boolean closed;
+        private final ecmwf.ecpds.master.weather.WeatherNegotiation negotiation = new ecmwf.ecpds.master.weather.WeatherNegotiation(
+                getRoot());
+        private final ecmwf.ecpds.master.weather.WeatherOutbox outbox = new ecmwf.ecpds.master.weather.WeatherOutbox();
+        private final ecmwf.ecpds.master.weather.WeatherCapture capture = new ecmwf.ecpds.master.weather.WeatherCapture(
+                getRoot(), negotiation, outbox, signer.epoch());
+        private final ecmwf.ecpds.master.weather.WeatherProbeRunner probes = new ecmwf.ecpds.master.weather.WeatherProbeRunner(
+                getRoot(), signer.epoch());
+        private ecmwf.ecpds.master.weather.WeatherSelection lastSelection;
+        private int failures;
+        private volatile String state;
+
+        WeatherNegotiationScheduler() {
+            super("WeatherNegotiationScheduler");
+            setPriority(Thread.MIN_PRIORITY);
+            setDelay(30 * Timer.ONE_SECOND);
+            setJammedTimeout(5 * Timer.ONE_MINUTE);
+        }
+
+        @Override
+        public String getActivity() {
+            final var lease = negotiation.current();
+            return (state == null ? "Not negotiated" : state)
+                    + (lease == null ? "; no valid control lease"
+                            : "; ingress=" + lease.capabilities().observationIngress() + "; collection="
+                                    + lease.capabilities().selection().enabled())
+                    + "; capture=" + capture.status() + "; probes=" + probes.status();
+        }
+
+        @Override
+        public int nextStep() {
+            try {
+                final long sentAtMs = System.currentTimeMillis();
+                final long sentAtNanos = System.nanoTime();
+                final var previous = lastSelection;
+                final var capabilities = getMasterProxy().getWeatherCapabilities(getRoot());
+                negotiation.update(capabilities, sentAtMs, sentAtNanos);
+                if (previous == null || !capabilities.selection().enabled()
+                        || !previous.masterEpoch().equals(capabilities.selection().masterEpoch())
+                        || previous.revision() != capabilities.selection().revision()) {
+                    outbox.clear();
+                }
+                lastSelection = capabilities.selection();
+                if (!capabilities.selection().enabled()) {
+                    probes.cancel();
+                }
+                final var lease = negotiation.current();
+                probes.reconcile(lease);
+                if (lease != null && capabilities.selection().enabled()) {
+                    for (final var job : capabilities.probeJobs()) {
+                        probes.offer(job, lease);
+                    }
+                    final var results = probes.results();
+                    if (!results.isEmpty()) {
+                        final var report = signer.sign(new ecmwf.ecpds.master.weather.WeatherBatch(1,
+                                java.util.UUID.randomUUID(), capabilities.selection().masterEpoch(), getRoot(),
+                                java.util.List.of(), "", 0, results));
+                        final var receipt = getMasterProxy().deliverWeatherObservations(report);
+                        receipt.validateFor(report);
+                        probes.acknowledge(receipt.probeReceipts());
+                    }
+                }
+                ecmwf.ecpds.master.weather.WeatherDelivery.deliver(negotiation, outbox, signer,
+                        batch -> getMasterProxy().deliverWeatherObservations(batch));
+                failures = 0;
+                setDelay((capabilities.selection().enabled() ? 10 : 30) * Timer.ONE_SECOND);
+                if (!"AVAILABLE".equals(state)) {
+                    _log.info("Network Weather control negotiated; observation ingress={}, collection={}",
+                            capabilities.observationIngress(), capabilities.selection().enabled());
+                }
+                state = "AVAILABLE";
+            } catch (final ecmwf.ecpds.master.weather.WeatherUnsupportedException e) {
+                negotiation.invalidate();
+                probes.cancel();
+                outbox.clear();
+                setDelay(5 * Timer.ONE_MINUTE);
+                if (!"UNSUPPORTED".equals(state)) {
+                    _log.warn("Network Weather negotiation unsupported; will retry in five minutes", e);
+                }
+                state = "UNSUPPORTED";
+            } catch (final Exception e) {
+                negotiation.invalidate();
+                probes.cancel();
+                failures = Math.min(failures + 1, 4);
+                setDelay(Math.min(30 * Timer.ONE_SECOND * (1L << failures), 5 * Timer.ONE_MINUTE));
+                _log.warn("Network Weather negotiation failed; cached permission invalidated, will retry", e);
+                state = "FAILED";
+            }
+            return NEXT_STEP_DELAY;
+        }
+    }
+
     private final class TrafficAccountingScheduler extends ecmwf.common.ecaccess.MBeanScheduler {
         private Map<String, String> acknowledged = Map.of();
 
@@ -5976,6 +6172,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         }
     }
 
+    /**
+     * Batches live globe samples per transfer; this viewer-driven stream is independent of Network Weather.
+     */
     private final class LiveStatsRepository extends MBeanRepository<LiveTransferSample> {
 
         /** Pending samples, coalesced by transfer id. */

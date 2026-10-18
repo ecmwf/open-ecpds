@@ -22,7 +22,7 @@ define its own variants.
 | Profile | Account | Categories | What the user sees |
 |---|---|---|---|
 | **End user** | `monitor` | `mstate`, `monitoring`, `transfers`, `hourly_aq operations` | Only the destination(s) granted to the user (here `hourly_aq`), with their own transfers and status. No **Operations** section, no administration. |
-| **Operator** | `operator` | `operator`, `administrator`, `monitoring`, `transfer info`, `transfers`, `operations` | **All destinations**, the **Operations** section (Dissemination, Acquisition, Live Earth, System Topology, Delay Notification) and transfer information, but none of the data-file, transfer-admin or system administration pages. |
+| **Operator** | `operator` | `operator`, `administrator`, `monitoring`, `transfer info`, `transfers`, `operations` | **All destinations**, the **Operations** section (Monitoring Overview, Dissemination, Acquisition, Live Earth, System Topology, Delay Notification) and transfer information, but none of the data-file, transfer-admin or system administration pages. |
 | **Administrator** | `admin` | all of the above plus `admin`, `datafile`, `transfer admin`, `mstate` | Everything, including managing destinations, hosts, users, categories, resources and the global configuration of the application. |
 
 Destination access is granted by per-destination categories (for example `hourly_aq operations`)

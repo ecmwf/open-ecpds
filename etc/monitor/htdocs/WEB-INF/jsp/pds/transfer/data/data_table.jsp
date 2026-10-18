@@ -402,7 +402,7 @@
   parallel streams, or when a connection drops and is retried.</p>
 
   <p class="mb-2"><strong class="text-body">Multiple attempts vs. multiple connections</strong><br>
-  Connections are grouped by <em>sending attempt</em> (requeue count). If the transfer was requeued
+  Connections are grouped by a recorded <em>sending index</em>, not a count of requeues. If the transfer was retried or requeued
   and restarted, each restart appears as a separate attempt group labelled <em>Attempt 1, Attempt 2&hellip;</em>.
   Within a single attempt, multiple connections indicate that the transfer module opened parallel
   TCP sessions &mdash; common with S3 or Azure multi-part uploads.</p>
@@ -489,6 +489,7 @@ var _nstGlobalMin = ${_globalMin}, _nstGlobalMax = ${_globalMax};
 <c:set var="_nstTotalSent" value="0"/>
 <c:set var="_nstTotalRecv" value="0"/>
 <c:set var="_nstMaxRate"   value="0"/>
+<c:set var="_nstHasRate"   value="false"/>
 <c:set var="_nstMinStart"  value="0"/>
 <c:set var="_nstMaxEnd"    value="0"/>
 <c:set var="_nstHasSent"   value="false"/>
@@ -502,8 +503,11 @@ var _nstGlobalMin = ${_globalMin}, _nstGlobalMax = ${_globalMax};
     <c:set var="_nstTotalRecv" value="${_nstTotalRecv + ts.bytesReceived}"/>
     <c:set var="_nstHasRecv" value="true"/>
   </c:if>
-  <c:if test="${not empty ts.deliveryRateBps and ts.deliveryRateBps > _nstMaxRate}">
-    <c:set var="_nstMaxRate" value="${ts.deliveryRateBps}"/>
+  <c:if test="${not empty ts.deliveryRateBps}">
+    <c:set var="_nstHasRate" value="true"/>
+    <c:if test="${ts.deliveryRateBps > _nstMaxRate}">
+      <c:set var="_nstMaxRate" value="${ts.deliveryRateBps}"/>
+    </c:if>
   </c:if>
   <c:if test="${loop.first or ts.startTime < _nstMinStart}">
     <c:set var="_nstMinStart" value="${ts.startTime}"/>
@@ -518,13 +522,22 @@ var _nstGlobalMin = ${_globalMin}, _nstGlobalMax = ${_globalMax};
 <%-- Panel: hidden for all but the last attempt; single-group always visible --%>
 <div id="${_grpId}" class="nst-panel" style="${fn:length(transferStatisticsGroups) == 1 || grpStatus.last ? '' : 'display:none;'}">
 
-<%-- Panel header (only for multi-group) --%>
-<c:if test="${fn:length(transferStatisticsGroups) > 1}">
+<%-- Sending provenance applies to single-group panels too. --%>
 <div class="d-flex align-items-center gap-2 mb-2">
   <span class="badge bg-primary rounded-pill fs-6">Attempt ${grp[0].requeueHistory + 1}</span>
+  <c:choose>
+    <c:when test="${grp[0].weatherProvenanceUnavailable}">
+      <span class="text-warning small ms-1">Sending provenance could not be read; inspect the Master log</span>
+    </c:when>
+    <c:when test="${not empty grp[0].weatherOutcome}">
+      <span class="badge bg-secondary ms-1"><c:out value="${grp[0].weatherOutcome}"/></span>
+      <span class="text-muted small ms-1">Sending outcome; not an outcome for each connection</span>
+    </c:when>
+    <c:otherwise><span class="text-muted small ms-1">Sending provenance unavailable (legacy or collection schema not ready)</span></c:otherwise>
+  </c:choose>
   <span class="text-muted small">${fn:length(grp)} connection${fn:length(grp) > 1 ? 's' : ''}</span>
   <c:if test="${grp[0].requeueHistory > 0}">
-    <span class="text-muted small">&mdash; after ${grp[0].requeueHistory} requeue${grp[0].requeueHistory > 1 ? 's' : ''}</span>
+    <span class="text-muted small">&mdash; sending index ${grp[0].requeueHistory}</span>
   </c:if>
   <span class="text-muted small ms-2">
     <i class="bi bi-clock me-1"></i><span class="nst-abs-time" data-ts="${_nstMinStart}"></span>
@@ -533,7 +546,6 @@ var _nstGlobalMin = ${_globalMin}, _nstGlobalMax = ${_globalMax};
     (${_nstMaxEnd - _nstMinStart}&nbsp;ms)
   </span>
 </div>
-</c:if>
 
 <%-- Summary stats row --%>
 <div class="d-flex flex-wrap gap-3 mb-2 small text-muted">
@@ -549,7 +561,12 @@ var _nstGlobalMin = ${_globalMin}, _nstGlobalMax = ${_globalMax};
       <c:otherwise><strong class="text-body">&#8212;</strong></c:otherwise>
     </c:choose>
   </span>
-  <span><i class="bi bi-speedometer2 text-warning me-1"></i>Peak delivery: <strong class="text-body nst-rate" data-bps="${_nstMaxRate}">${_nstMaxRate} bps</strong></span>
+  <span><i class="bi bi-speedometer2 text-warning me-1"></i>Peak delivery:
+    <c:choose>
+      <c:when test="${_nstHasRate}"><strong class="text-body nst-rate" data-bps="${_nstMaxRate}">${_nstMaxRate} bps</strong></c:when>
+      <c:otherwise><strong class="text-body">&#8212;</strong></c:otherwise>
+    </c:choose>
+  </span>
   <c:if test="${_nstHasSent}">
   <span><i class="bi bi-graph-up text-info me-1"></i>Avg throughput: <strong class="text-body nst-rate" data-bps="${_nstTotalSent * 1000 / _nstSpan}">${_nstTotalSent * 1000 / _nstSpan} bps</strong></span>
   </c:if>

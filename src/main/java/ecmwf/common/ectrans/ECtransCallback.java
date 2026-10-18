@@ -32,6 +32,10 @@ import ecmwf.common.database.MSUser;
  * The Interface ECtransCallback.
  */
 public interface ECtransCallback {
+    /** Optional evidence hook, also invoked when action cleanup prevents the ordinary terminal callback. */
+    default void executionFinished(TransferModule module, boolean successful) {
+    }
+
     /** Whether transfer stream boundaries should report byte increments to this callback. */
     default boolean isByteAccountingEnabled() {
         return false;

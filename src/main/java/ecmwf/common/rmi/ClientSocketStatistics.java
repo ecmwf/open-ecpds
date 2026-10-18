@@ -31,6 +31,10 @@ import java.net.Socket;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -46,11 +50,13 @@ public class ClientSocketStatistics {
 
     /** The elements. */
     private final Map<Socket, StatisticsElement> elements = Collections.synchronizedMap(new HashMap<>());
+    private volatile Consumer<Snapshot> snapshotListener;
 
     /**
      * The Class StatisticsElement.
      */
     public static class StatisticsElement {
+        private UUID connectionId;
 
         /** The start time. */
         final long startTime;
@@ -107,7 +113,7 @@ public class ClientSocketStatistics {
                 final var ssOutput = SocketOptions.getSSOutput(socket).trim();
                 if (!ssOutput.isBlank()) {
                     _log.debug("Socket Statistics: {}", ssOutput);
-                    elements.put(socket, new StatisticsElement(startTime, System.currentTimeMillis(), ssOutput));
+                    record(socket, startTime, System.currentTimeMillis(), ssOutput);
                 } else {
                     _log.warn("Socket Statistics not available for {} (empty output) - (sd={},pid={})", socket,
                             SocketOptions.getSocketDescriptor(socket), ProcessHandle.current().pid());
@@ -128,6 +134,67 @@ public class ClientSocketStatistics {
      */
     public boolean isEmpty() {
         return elements.isEmpty();
+    }
+
+    void record(Socket socket, long startTime, long endTime, String statistics) {
+        final var next = new StatisticsElement(startTime, endTime, statistics);
+        synchronized (elements) {
+            final var previous = elements.get(socket);
+            if (previous != null) {
+                next.connectionId = previous.connectionId;
+            }
+            elements.put(socket, next);
+        }
+        final var listener = snapshotListener;
+        if (listener != null) {
+            try {
+                listener.accept(snapshot());
+            } catch (final RuntimeException e) {
+                _log.warn("Optional socket evidence listener failed; legacy statistics remain available", e);
+            }
+        }
+    }
+
+    /** Optional late-close evidence; listeners must be nonblocking and must not retain transport objects. */
+    public void setSnapshotListener(Consumer<Snapshot> listener) {
+        snapshotListener = listener;
+    }
+
+    /** Copies bounded immutable values only; no Socket escapes into optional telemetry queues. */
+    public Snapshot snapshot() {
+        final var result = new ArrayList<SocketSnapshot>();
+        int omitted;
+        synchronized (elements) {
+            int examined = 0;
+            int characters = 0;
+            for (final var element : elements.values()) {
+                if (examined++ == 16) {
+                    break;
+                }
+                if (element.statistics.length() <= 8192 && element.statistics.length() <= 64 * 1024 - characters) {
+                    characters += element.statistics.length();
+                    if (element.connectionId == null) {
+                        element.connectionId = UUID.randomUUID();
+                    }
+                    result.add(new SocketSnapshot(element.connectionId, element.startTime, element.endTime,
+                            element.statistics));
+                }
+            }
+            omitted = elements.size() - result.size();
+        }
+        return new Snapshot(List.copyOf(result), omitted);
+    }
+
+    public record SocketSnapshot(UUID connectionId, long startTime, long endTime, String statistics) {
+    }
+
+    public record Snapshot(List<SocketSnapshot> connections, int omitted) {
+        public Snapshot {
+            connections = List.copyOf(connections);
+            if (connections.size() > 16 || omitted < 0) {
+                throw new IllegalArgumentException("Invalid socket snapshot bounds");
+            }
+        }
     }
 
     /**

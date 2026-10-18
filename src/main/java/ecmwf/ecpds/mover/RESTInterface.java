@@ -41,6 +41,15 @@ import ecmwf.ecpds.mover.service.RESTClient.UpdateDataRequest;
  * The Interface RESTInterface.
  */
 public interface RESTInterface {
+
+    ecmwf.ecpds.master.weather.WeatherSourceIdentity getWeatherSourceIdentity(java.util.UUID challenge)
+            throws Exception;
+
+    ecmwf.ecpds.master.weather.WeatherCapabilities getWeatherCapabilities(String sourceId) throws Exception;
+
+    ecmwf.ecpds.master.weather.WeatherAcknowledgement deliverWeatherObservations(
+            ecmwf.ecpds.master.weather.WeatherBatch batch) throws Exception;
+
     /**
      * Gets the version of the remote ECaccess software (mover).
      *

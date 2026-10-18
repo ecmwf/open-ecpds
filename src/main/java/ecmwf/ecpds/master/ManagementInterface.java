@@ -1962,6 +1962,31 @@ public interface ManagementInterface extends Remote {
     /** Returns authoritative rolling application-byte totals keyed by Host type, excluding Data Portal traffic. */
     java.util.Map<String, Long> getLiveTransferBytes24hByType() throws RemoteException;
 
+    ecmwf.ecpds.master.weather.WeatherAdministration.Status getWeatherAdministration(ECpdsSession session)
+            throws Exception;
+
+    ecmwf.ecpds.master.weather.WeatherAdministration.Status saveWeatherSelection(ECpdsSession session,
+            long expectedRevision, java.util.Set<ecmwf.ecpds.master.weather.WeatherObservation.Path> paths)
+            throws Exception;
+
+    ecmwf.ecpds.master.weather.WeatherAdministration.Status setWeatherCollectionEnabled(ECpdsSession session,
+            long expectedRevision, boolean enabled) throws Exception;
+
+    ecmwf.ecpds.master.weather.WeatherViewer getWeatherViewer(ECpdsSession session, boolean includePaths)
+            throws Exception;
+
+    ecmwf.ecpds.master.weather.WeatherAutomation.Status getWeatherAutomation(ECpdsSession session) throws Exception;
+
+    ecmwf.ecpds.master.weather.WeatherProbes.Status getWeatherProbes(ECpdsSession session) throws Exception;
+
+    void configureWeatherAutomation(ECpdsSession session,
+            ecmwf.ecpds.master.weather.WeatherAutomation.Configuration configuration) throws Exception;
+
+    void reassessWeather(ECpdsSession session) throws Exception;
+
+    java.util.List<ecmwf.common.database.WeatherDiscoveryStore.Candidate> findWeatherCandidates(ECpdsSession session,
+            String source, int days, String protocol) throws Exception;
+
     /**
      * Gets the names of every currently active ProxyHost (a Data Mover reachable only through another Data Mover's REST
      * interface, i.e. without a direct RMI connection to the MasterServer), for display as a distinct marker on the

@@ -191,6 +191,31 @@ Country and major city names can similarly be shown on the globe, using the same
 globeLabelsCacheDir=/var/lib/ecpds/monitor/globe-labels
 ```
 
+### Network Weather overlay
+
+When an administrator has activated Network Weather collection, a
+<i class="bi bi-cloud-lightning-rain"></i> icon appears in the globe toolbar. Click
+it to show (highlighted) or hide recent delivery conditions for the paths you are
+allowed to see; it is off by default and the choice is remembered in your browser.
+The icon is hidden, and the overlay cleared, while collection is not active.
+Gray or missing evidence means no coverage, not a healthy path. See
+[Live Earth weather overlay](admin.md#live-earth-weather-overlay) for details.
+
+
+### Globe flyover
+
+The airplane action icon starts a camera tour in **3D Earth mode**. It flies between
+distinct resolved locations with active transfers, respecting the Host Type filter.
+When there is no active transfer activity, it visits the central location and
+configured Proxy Host locations in random order, including offline proxies.
+At least two distinct locations are required; the control is disabled in flat-map mode.
+The route is refreshed from the latest live snapshot at each stop.
+
+Click the stop icon, press **Escape**, or drag, touch or zoom the globe to interrupt
+the tour immediately. Re-centering, flying to a country, switching to map mode or
+leaving the page also stops it. The tour never starts automatically.
+The action toolbar remains available at the top right in fullscreen, including
+the flyover start/stop, filters, labels, map/Earth mode and exit-fullscreen controls.
 
 ## System Topology
 

@@ -212,6 +212,7 @@ public class DataTransfer extends DataBaseObject {
 
     /** The statistics. */
     protected String statistics;
+    private String weatherExecutionId;
 
     /** The compressed. */
     protected String compressed = null;
@@ -436,6 +437,20 @@ public class DataTransfer extends DataBaseObject {
      */
     public void setStatistics(final String statistics) {
         this.statistics = statistics;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    public String getWeatherExecutionId() {
+        return weatherExecutionId;
+    }
+
+    public void setWeatherExecutionId(String executionId) {
+        if (executionId != null) {
+            if (executionId.length() != 36 || !java.util.UUID.fromString(executionId).toString().equals(executionId)) {
+                throw new IllegalArgumentException("Invalid Network Weather execution identity");
+            }
+        }
+        weatherExecutionId = executionId;
     }
 
     /**

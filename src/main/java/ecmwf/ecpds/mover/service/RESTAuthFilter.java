@@ -90,7 +90,27 @@ public final class RESTAuthFilter implements ContainerRequestFilter {
             reject(requestContext, "Timestamp outside of the allowed window");
             return;
         }
-        final var body = readAndResetBody(requestContext);
+        final byte[] body;
+        if (path.startsWith("master/weatherObservations")) {
+            try {
+                final var input = requestContext.getEntityStream();
+                body = input == null ? new byte[0]
+                        : input.readNBytes(ecmwf.ecpds.master.weather.WeatherBatch.MAX_BYTES + 1);
+                if (body.length > ecmwf.ecpds.master.weather.WeatherBatch.MAX_BYTES) {
+                    _log.warn("Rejecting oversized Network Weather observation batch");
+                    requestContext
+                            .abortWith(Response.status(413).entity("Network Weather batch exceeds 256 KiB").build());
+                    return;
+                }
+                requestContext.setEntityStream(new ByteArrayInputStream(body));
+            } catch (final java.io.IOException e) {
+                _log.warn("Cannot read Network Weather batch for signature verification", e);
+                reject(requestContext, "Cannot read Network Weather batch");
+                return;
+            }
+        } else {
+            body = readAndResetBody(requestContext);
+        }
         final var requestUri = requestContext.getUriInfo().getRequestUri();
         final var pathAndQuery = requestUri.getRawPath()
                 + (requestUri.getRawQuery() != null ? "?" + requestUri.getRawQuery() : "");

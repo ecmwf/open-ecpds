@@ -202,6 +202,7 @@
                 <auth:link basePathKey="admin.basepath" href="/productmessages" wrappingTags="li"><i class="bi bi-envelope-paper-fill"></i>Product Messages</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/monitoringcolors" wrappingTags="li"><i class="bi bi-palette-fill"></i>Monitoring Status Colors</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/storagepolicies" wrappingTags="li"><i class="bi bi-hdd-stack-fill"></i>Storage Lifecycle Policies</auth:link>
+                <auth:link basePathKey="admin.basepath" href="/networkweather" wrappingTags="li"><i class="bi bi-cloud-sun"></i>Network Weather</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/productdescriptions" wrappingTags="li"><i class="bi bi-card-list"></i>Product Descriptions</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/systemmessages" wrappingTags="li"><i class="bi bi-megaphone-fill"></i>System Messages</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/purge" wrappingTags="li"><i class="bi bi-trash3-fill"></i> Purge All Data</auth:link>
@@ -218,6 +219,7 @@
                         <a href="/do/operations" class="home-section-hdr-link"><i class="bi bi-eye text-info"></i> Operations</a>
                     </div>
                     <ul class="home-menu">
+                        <auth:link basePathKey="monitoring.basepath" href="" wrappingTags="li"><i class="bi bi-grid-3x3-gap-fill"></i>Monitoring Overview</auth:link>
                         <auth:link basePathKey="monitoring.basepath" href="?type=9|10|11|12|13|14|15|16|17|19|21|22|24|25|26|28|29|30&status=&network=&" wrappingTags="li"><i class="bi bi-broadcast-pin"></i>Dissemination</auth:link>
                         <auth:link basePathKey="monitoring.basepath" href="?type=0|1|2|3|4|5|6|7|8|18|20|21|22|23|27&status=&network=&" wrappingTags="li"><i class="bi bi-cloud-arrow-down"></i>Acquisition</auth:link>
                         <auth:link basePathKey="monitoring.basepath" href="/globe" wrappingTags="li"><i class="bi bi-globe2"></i>Live Earth</auth:link>

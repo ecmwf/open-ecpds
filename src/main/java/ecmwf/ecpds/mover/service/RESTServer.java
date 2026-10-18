@@ -549,6 +549,87 @@ public final class RESTServer {
         }
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("master/weatherCapabilities")
+    public Response weatherCapabilities(@Context UriInfo ui, @QueryParam("source") String sourceId) {
+        checkIsControlChannel(ui);
+        if (!RESTSignature.ENABLED) {
+            _log.warn("Rejecting Network Weather negotiation: REST control-channel signing is not configured");
+            throw new WebApplicationException("Network Weather requires authenticated control-channel signing",
+                    Response.Status.FORBIDDEN);
+        }
+
+        checkParameter("source", sourceId);
+        try {
+            ecmwf.ecpds.master.weather.WeatherCapabilities.validateSource(sourceId);
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("capabilities", mover.getMasterProxy().getWeatherCapabilities(sourceId));
+            return message.getResponse();
+        } catch (final ecmwf.ecpds.master.weather.WeatherUnsupportedException e) {
+            _log.warn("Network Weather negotiation unsupported by upstream Master");
+            return Response.fromResponse(RESTMessage.getErrorMessage(e).getResponse()).status(501).build();
+        } catch (final WebApplicationException e) {
+            _log.warn("weatherCapabilities", e);
+            throw e;
+        } catch (final Exception e) {
+            _log.warn("weatherCapabilities", e);
+            return RESTMessage.getErrorMessage(e).getResponse();
+        }
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("mover/weatherSourceIdentity")
+    public Response weatherSourceIdentity(@Context UriInfo ui, @QueryParam("challenge") String challenge) {
+        checkIsControlChannel(ui);
+        if (!RESTSignature.ENABLED) {
+            throw new WebApplicationException("Network Weather requires authenticated control-channel signing",
+                    Response.Status.FORBIDDEN);
+        }
+        try {
+            if (challenge == null || challenge.length() != 36) {
+                throw new IllegalArgumentException("Invalid Network Weather source challenge");
+            }
+            final var nonce = java.util.UUID.fromString(challenge);
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("identity", mover.getWeatherSourceIdentity(nonce));
+            return message.getResponse();
+        } catch (final Exception e) {
+            _log.warn("weatherSourceIdentity", e);
+            return RESTMessage.getErrorMessage(e).getResponse();
+        }
+    }
+
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("master/weatherObservations")
+    public Response weatherObservations(@Context UriInfo ui, final java.io.InputStream body) {
+        checkIsControlChannel(ui);
+        if (!RESTSignature.ENABLED) {
+            _log.warn("Rejecting Network Weather observations: REST control-channel signing is not configured");
+            throw new WebApplicationException("Network Weather requires authenticated control-channel signing",
+                    Response.Status.FORBIDDEN);
+        }
+        try {
+            final var batch = ecmwf.ecpds.master.weather.WeatherBatch
+                    .decode(body.readNBytes(ecmwf.ecpds.master.weather.WeatherBatch.MAX_BYTES + 1));
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("acknowledgement", mover.getMasterProxy().deliverWeatherObservations(batch));
+            return message.getResponse();
+        } catch (final ecmwf.ecpds.master.weather.WeatherUnsupportedException e) {
+            _log.warn("Network Weather observation transport unsupported by upstream Master");
+            return Response.fromResponse(RESTMessage.getErrorMessage(e).getResponse()).status(501).build();
+        } catch (final WebApplicationException e) {
+            _log.warn("weatherObservations", e);
+            throw e;
+        } catch (final Exception e) {
+            _log.warn("weatherObservations", e);
+            return RESTMessage.getErrorMessage(e).getResponse();
+        }
+    }
+
     /**
      * Proxy host is alive.
      *

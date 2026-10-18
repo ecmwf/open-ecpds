@@ -1,6 +1,12 @@
 <%@ page session="true" contentType="text/html;charset=UTF-8"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <style>
+#dnTabs .nav-link.active {
+    color: var(--bs-white);
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    font-weight: 600;
+}
 .dn-cell { width: 84px; cursor: pointer; text-align: center; user-select: none; }
 .dn-cell.dn-status-0 { --bs-table-bg: color-mix(in srgb, var(--mon-product-status-0, #adb5bd) 10%, transparent); background-color: var(--bs-table-bg) !important; }
 .dn-cell.dn-status-1 { --bs-table-bg: color-mix(in srgb, var(--mon-product-status-1, #20c997) 10%, transparent); background-color: var(--bs-table-bg) !important; }
@@ -57,7 +63,7 @@
 <div id="dnAlert"></div>
 <div id="dnPreferences" data-user="<c:out value="${dnPreferenceUser}"/>"></div>
 
-<ul class="nav nav-tabs mb-3">
+<ul class="nav nav-tabs mb-3" id="dnTabs">
  <li class="nav-item"><button class="nav-link active" id="dnTabCompose" type="button" onclick="dnTab('compose')"><i class="bi bi-send me-1"></i><span id="dnTabComposeLbl">Send delay notification</span></button></li>
  <li class="nav-item"><button class="nav-link" id="dnTabSent" type="button" onclick="dnTab('sent')"><i class="bi bi-journal-text me-1"></i>Sent notices <span class="badge text-bg-secondary" id="dnSentCount">0</span></button></li>
  <li class="nav-item ms-auto align-self-center mt-2 mt-sm-0" id="dnLayoutControls">

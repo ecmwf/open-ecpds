@@ -265,6 +265,19 @@
     </div>
     </auth:link>
 
+    <auth:link basePathKey="admin.basepath" href="/networkweather">
+    <div class="col">
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
+        <i class="bi bi-cloud-sun text-secondary flex-shrink-0" style="font-size:1.6rem;"></i>
+        <div>
+            <span class="tool-title">Network Weather</span>
+            <p class="tool-desc">Monitor delivery conditions between Data Movers and dissemination Hosts:
+            choose paths, activate collection, schedule probes and view measurements.</p>
+        </div>
+    </div>
+    </div>
+    </auth:link>
+
     <auth:link basePathKey="admin.basepath" href="/storagepolicies">
     <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">

@@ -4849,7 +4849,14 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     public List<TransferStatistics> getTransferStatisticsByDataTransferId(final long dataTransferId)
             throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getTransferStatisticsByDataTransferId(" + dataTransferId + ")");
-        return monitor.done(ecpds.getTransferStatisticsByDataTransferId(dataTransferId));
+        final var statistics = ecpds.getTransferStatisticsByDataTransferId(dataTransferId);
+        try {
+            ecmwf.common.database.WeatherSocketStore.decorate(dataTransferId, statistics);
+        } catch (RuntimeException e) {
+            _log.warn("Network Weather socket provenance could not be read for transfer {}", dataTransferId, e);
+            statistics.forEach(row -> row.setWeatherProvenanceUnavailable(true));
+        }
+        return monitor.done(statistics);
     }
 
     /**

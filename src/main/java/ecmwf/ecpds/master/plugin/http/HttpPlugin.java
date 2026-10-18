@@ -230,6 +230,7 @@ public final class HttpPlugin extends PluginThread implements HandlerReceiver, H
             // War deployer for monitor
             final var monitor = new WebAppContext();
             monitor.setContextPath("/");
+            monitor.setMaxFormContentSize(Cnf.at("MonitorPlugin", "maxFormContentSize", 200_000));
             monitor.setParentLoaderPriority(false);
             monitor.setAllowDuplicateFragmentNames(false);
             monitor.setAttribute("ecpds.HttpPlugin", this);

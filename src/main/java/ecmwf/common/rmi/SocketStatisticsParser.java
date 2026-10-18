@@ -103,8 +103,9 @@ public final class SocketStatisticsParser {
                 addrIndex++;
             } else if (token.startsWith("rtt:")) {
                 // rtt:7.65/0.014 — take the first (smoothed) value
-                final var rttPart = token.substring(4).split("/")[0];
-                parseDouble(rttPart, ts::setRttMs);
+                final var rtt = token.substring(4);
+                final int separator = rtt.indexOf('/');
+                parseDouble(separator < 0 ? rtt : rtt.substring(0, separator), ts::setRttMs);
             } else if (token.startsWith("bytes_sent:")) {
                 parseLong(token.substring(11), ts::setBytesSent);
             } else if (token.startsWith("bytes_received:")) {

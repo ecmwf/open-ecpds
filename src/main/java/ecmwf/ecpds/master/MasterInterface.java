@@ -110,6 +110,11 @@ public interface MasterInterface extends ProviderInterface {
 
     void updateTrafficAccounting(String mover, java.util.Map<String, String> snapshot) throws RemoteException;
 
+    ecmwf.ecpds.master.weather.WeatherCapabilities getWeatherCapabilities(String sourceId) throws RemoteException;
+
+    ecmwf.ecpds.master.weather.WeatherAcknowledgement deliverWeatherObservations(
+            ecmwf.ecpds.master.weather.WeatherBatch batch) throws RemoteException;
+
     /**
      * Whether the MasterServer currently wants to receive live transfer statistics (e.g. because at least one "Live
      * ECPDS Earth" globe visualisation client is connected). DataMovers should poll this periodically and skip

@@ -47,6 +47,33 @@ public final class TransferStatistics extends DataBaseObject {
     protected Integer TST_SEGS_IN;
     protected String TST_RAW;
     protected int TST_REQUEUE_HISTORY;
+    private String weatherOutcome;
+    private String weatherExecutionId;
+    private boolean weatherProvenanceUnavailable;
+
+    public boolean getWeatherProvenanceUnavailable() {
+        return weatherProvenanceUnavailable;
+    }
+
+    public void setWeatherProvenanceUnavailable(boolean unavailable) {
+        weatherProvenanceUnavailable = unavailable;
+    }
+
+    public String getWeatherOutcome() {
+        return weatherOutcome;
+    }
+
+    public void setWeatherOutcome(String outcome) {
+        weatherOutcome = outcome;
+    }
+
+    public String getWeatherExecutionId() {
+        return weatherExecutionId;
+    }
+
+    public void setWeatherExecutionId(String executionId) {
+        weatherExecutionId = executionId;
+    }
 
     public long getId() {
         return TST_ID != null ? TST_ID : 0;

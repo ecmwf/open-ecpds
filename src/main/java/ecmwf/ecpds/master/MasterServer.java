@@ -150,6 +150,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Scanner;
@@ -386,7 +387,211 @@ public final class MasterServer extends ECaccessProvider
 
     private final transient Map<String, TrafficAccounting> actualTraffic = new ConcurrentHashMap<>();
     private volatile boolean actualTrafficReady;
+    private final transient ecmwf.ecpds.master.weather.WeatherAdministration weatherAdministration = new ecmwf.ecpds.master.weather.WeatherAdministration(
+            new ecmwf.ecpds.master.weather.WeatherAdministration.Store() {
+                @Override
+                public String load() throws Exception {
+                    return getECpdsBase().getSysConfigValue("NetworkWeather", "configuration");
+                }
+
+                @Override
+                public void save(String document) throws Exception {
+                    ecmwf.common.database.WeatherSocketStore.checkConfigurationCapacity(document);
+                    getECpdsBase().setSysConfigValue("NetworkWeather", "configuration", document);
+                }
+            });
+
+    ecmwf.ecpds.master.weather.WeatherAdministration getWeatherAdministration() {
+        return weatherAdministration;
+    }
+
+    private final transient ecmwf.ecpds.master.weather.WeatherAutomation weatherAutomation = new ecmwf.ecpds.master.weather.WeatherAutomation(
+            new ecmwf.ecpds.master.weather.WeatherAutomation.Environment() {
+                public String load() throws Exception {
+                    return getECpdsBase().getSysConfigValue("NetworkWeather", "automation");
+                }
+
+                public void save(String document) throws Exception {
+                    ecmwf.common.database.WeatherSocketStore.checkConfigurationCapacity(document);
+                    getECpdsBase().setSysConfigValue("NetworkWeather", "automation", document);
+                }
+
+                public Set<ecmwf.ecpds.master.weather.WeatherObservation.Path> candidates(
+                        ecmwf.ecpds.master.weather.WeatherAutomation.Configuration policy) throws Exception {
+                    return new ecmwf.common.database.WeatherDiscoveryStore().candidates(policy.approved(),
+                            policy.sourceGroups());
+                }
+
+                public void select(Set<ecmwf.ecpds.master.weather.WeatherObservation.Path> paths) throws Exception {
+                    weatherAdministration.reconcile(paths);
+                }
+
+                public Set<ecmwf.ecpds.master.weather.WeatherObservation.Path> selected() {
+                    return Set.copyOf(weatherAdministration.status().paths());
+                }
+
+                public void probes(boolean enabled, Set<ecmwf.ecpds.master.weather.WeatherProbe.Policy> policies) {
+                    weatherAdministration.probes().configure(enabled, policies);
+                }
+            }, new ecmwf.common.database.WeatherDiscoveryStore());
+
+    ecmwf.ecpds.master.weather.WeatherAutomation getWeatherAutomation() {
+        return weatherAutomation;
+    }
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherCapabilities getWeatherCapabilities(String sourceId)
+            throws RemoteException {
+        try {
+            return weatherAdministration.capabilities(sourceId);
+        } catch (final IllegalArgumentException | IllegalStateException e) {
+            throw Format.getRemoteException("Network Weather capabilities", e);
+        }
+    }
+
     private final transient TrafficAccountingMaintenance trafficAccountingMaintenance;
+    private final transient WeatherSourceScheduler weatherSourceScheduler;
+    private final transient WeatherPersistenceScheduler weatherPersistenceScheduler;
+    private final transient WeatherAutomationScheduler weatherAutomationScheduler;
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherAcknowledgement deliverWeatherObservations(
+            ecmwf.ecpds.master.weather.WeatherBatch batch) throws RemoteException {
+        try {
+            final var callback = batch == null ? null : weatherSourceScheduler.registration(batch.sourceId());
+            return weatherAdministration.receive(batch, callback);
+        } catch (final IOException | IllegalArgumentException | IllegalStateException e) {
+            throw Format.getRemoteException("Network Weather observations", e);
+        }
+    }
+
+    private final class WeatherSourceScheduler extends MBeanScheduler {
+        private final ecmwf.ecpds.master.weather.WeatherSourceProbe probe = new ecmwf.ecpds.master.weather.WeatherSourceProbe(
+                (callback, challenge) -> {
+                    if (callback instanceof ecmwf.ecpds.master.weather.WeatherRelayRegistration route) {
+                        return route.identify(challenge);
+                    }
+                    return ((MoverInterface) callback).getWeatherSourceIdentity(challenge);
+                });
+        private volatile Map<String, ecmwf.ecpds.master.weather.WeatherRelayRegistration> routes = Map.of();
+        private long refreshed;
+        private Set<String> lastSources = Set.of();
+
+        Object registration(String source) {
+            final var direct = getClientInterface("DataMover/" + source, MoverInterface.class);
+            if (direct != null) {
+                return direct;
+            }
+            final var route = routes.get(source);
+            if (route == null || !route.hostId().equals(Cnf.at("NetworkWeatherRelay", source, ""))
+                    || System.nanoTime() - refreshed < 0 || System.nanoTime() - refreshed >= 60_000_000_000L || !route
+                            .relay().equals(getClientInterface("DataMover/" + route.relayId(), MoverInterface.class))) {
+                return null;
+            }
+            return route;
+        }
+
+        private void refreshRoutes(Set<String> selected) throws Exception {
+            final long now = System.nanoTime();
+            if (selected.equals(lastSources) && now - refreshed >= 0 && now - refreshed < 30_000_000_000L) {
+                return;
+            }
+            // Expire the previous topology before SQL: failure must not keep an old approval alive.
+            routes = Map.of();
+            refreshed = now;
+            lastSources = Set.copyOf(selected);
+            final Map<String, ecmwf.ecpds.master.weather.WeatherRelayRegistration> next = new HashMap<>();
+            for (final var source : selected) {
+                final var hostId = Cnf.at("NetworkWeatherRelay", source, "");
+                if (hostId.isEmpty() || getClientInterface("DataMover/" + source, MoverInterface.class) != null) {
+                    continue;
+                }
+                try {
+                    final var host = getECpdsBase().getHost(hostId);
+                    if (host == null || !host.getActive() || !HostOption.PROXY.equals(host.getType())) {
+                        throw new IOException("Network Weather relay mapping requires an active Proxy Host");
+                    }
+                    for (final var server : getECpdsBase().getTransferServers(host.getTransferGroupName())) {
+                        final var callback = getClientInterface("DataMover/" + server.getName(), MoverInterface.class);
+                        if (callback != null) {
+                            next.put(source, new ecmwf.ecpds.master.weather.WeatherRelayRegistration(source, host,
+                                    server.getName(), callback));
+                            break;
+                        }
+                    }
+                } catch (final Exception e) {
+                    _log.warn("Network Weather approved route unavailable for source {}", source, e);
+                }
+            }
+            routes = Map.copyOf(next);
+        }
+
+        WeatherSourceScheduler() {
+            super("WeatherSourceScheduler");
+            setPriority(Thread.MIN_PRIORITY);
+            setDelay(Math.max(1, Math.min(2 * Timer.ONE_SECOND,
+                    40_000 / ecmwf.ecpds.master.weather.WeatherLimits.configured().maxSources())));
+            setJammedTimeout(5 * Timer.ONE_MINUTE);
+        }
+
+        @Override
+        public int nextStep() {
+            try {
+                final var selected = weatherAdministration.selectedSources();
+                refreshRoutes(selected);
+                final Map<String, Object> callbacks = new HashMap<>();
+                for (final var source : selected) {
+                    final var callback = registration(source);
+                    if (callback != null) {
+                        callbacks.put(source, callback);
+                    }
+                }
+                weatherAdministration.sources().poll(selected, callbacks, probe);
+            } catch (final Exception e) {
+                _log.warn("Network Weather source verification failed; that source's evidence is not admitted", e);
+            }
+            return NEXT_STEP_DELAY;
+        }
+
+        @Override
+        public void shutdown() {
+            probe.close();
+            super.shutdown();
+        }
+    }
+
+    private final class WeatherPersistenceScheduler extends MBeanScheduler {
+        WeatherPersistenceScheduler() {
+            super("WeatherPersistenceScheduler");
+            setPriority(Thread.MIN_PRIORITY);
+            setDelay(Timer.ONE_SECOND);
+            setJammedTimeout(5 * Timer.ONE_MINUTE);
+        }
+
+        @Override
+        public int nextStep() {
+            weatherAdministration.persistence().step();
+            weatherAdministration.refreshAvailability();
+            final var state = weatherAdministration.status();
+            weatherAdministration.probes().step(state.collector().enabled(), state.collector().masterEpoch(),
+                    Set.copyOf(state.paths()), System.currentTimeMillis());
+            return NEXT_STEP_DELAY;
+        }
+    }
+
+    private final class WeatherAutomationScheduler extends MBeanScheduler {
+        WeatherAutomationScheduler() {
+            super("WeatherAutomationScheduler");
+            setPriority(Thread.MIN_PRIORITY);
+            setDelay(60 * Timer.ONE_SECOND);
+        }
+
+        @Override
+        public int nextStep() {
+            weatherAutomation.step(System.currentTimeMillis());
+            return NEXT_STEP_DELAY;
+        }
+    }
 
     private static String trafficSourceKey(String mover) {
         try {
@@ -812,8 +1017,24 @@ public final class MasterServer extends ECaccessProvider
             theMoverAvailabilityScheduler = null;
         }
         _loadActualTrafficFromDb();
+        try {
+            weatherAdministration.load();
+        } catch (final Exception e) {
+            _log.error("Network Weather control state unavailable; ordinary delivery is unaffected", e);
+        }
         trafficAccountingMaintenance = new TrafficAccountingMaintenance();
         trafficAccountingMaintenance.start();
+        weatherSourceScheduler = new WeatherSourceScheduler();
+        weatherSourceScheduler.start();
+        weatherPersistenceScheduler = new WeatherPersistenceScheduler();
+        weatherPersistenceScheduler.start();
+        try {
+            weatherAutomation.load();
+        } catch (Exception e) {
+            _log.error("Weather automation configuration unavailable; discovery/probes remain disabled", e);
+        }
+        weatherAutomationScheduler = new WeatherAutomationScheduler();
+        weatherAutomationScheduler.start();
         _log.debug("Monitors to notify: {}", containersToNotify);
         _log.debug("Passwords allowed from: {}", allowedPasswordOn);
         localContainer.startPlugins();
@@ -4794,6 +5015,7 @@ public final class MasterServer extends ECaccessProvider
                             local.setCompressed(transfer.getCompressed());
                             local.setCompressedOnTheFly(transfer.getCompressedOnTheFly());
                             local.setStatistics(transfer.getStatistics());
+                            local.setWeatherExecutionId(transfer.getWeatherExecutionId());
                             local.setProxyName(transfer.getProxyHostName());
                             final var hostName = transfer.getHostName();
                             if (hostName != null) {
@@ -7054,6 +7276,11 @@ public final class MasterServer extends ECaccessProvider
             theMoverAvailabilityScheduler.shutdown();
         }
         trafficAccountingMaintenance.shutdown();
+        weatherAdministration.sources().close();
+        weatherSourceScheduler.shutdown();
+        weatherAdministration.persistence().close();
+        weatherPersistenceScheduler.shutdown();
+        weatherAutomationScheduler.shutdown();
         if (theDissDownloadScheduler != null) {
             theDissDownloadScheduler.shutdown();
         }
@@ -7688,27 +7915,36 @@ public final class MasterServer extends ECaccessProvider
                     _log.debug("UploadHistory created for DataTransfer {} (statistics: {})", transfer.getId(),
                             socketStatistics);
                     // Persist per-connection TCP statistics
-                    if (!"none".equals(socketStatistics)) {
-                        final var ecpdsBase = getDataBase(ECpdsBase.class);
-                        // Use a sending index that always increments across retries and requeues.
-                        // transfer.getRequeueHistory() only increments on a requeue (maxStart hit),
-                        // not on plain retries, so multiple sendings within the same requeue cycle
-                        // would otherwise all get index 0 and end up in one group in the UI.
-                        final var existing = ecpdsBase.getTransferStatisticsByDataTransferId(transfer.getId());
-                        final var maxExisting = existing.stream().mapToInt(s -> s.getRequeueHistory()).max().orElse(-1);
-                        final var sendingIndex = existing.isEmpty() ? transfer.getRequeueHistory()
-                                : Math.max(transfer.getRequeueHistory(), maxExisting + 1);
-                        _log.info(
-                                "TransferStatistics for DataTransfer {}: existing={}, maxExisting={}, "
-                                        + "transfer.requeueHistory={}, sendingIndex={}",
-                                transfer.getId(), existing.size(), maxExisting, transfer.getRequeueHistory(),
-                                sendingIndex);
-                        for (final var stats : SocketStatisticsParser.parse(transfer.getId(),
-                                transfer.getStatistics())) {
-                            stats.setRequeueHistory(sendingIndex);
-                            if (!ecpdsBase.tryInsertTransferStatistics(stats)) {
-                                _log.warn("TransferStatistics NOT inserted for DataTransfer {} (sendingIndex={})",
-                                        transfer.getId(), sendingIndex);
+                    if (!"none".equals(socketStatistics) && transfer.getWeatherExecutionId() == null) {
+                        try (final var mutex = Synchronized.getInstance(ecmwf.common.database.WeatherSocketStore.class)
+                                .getMutex(transfer.getId())) {
+                            synchronized (mutex.lock()) {
+                                final var ecpdsBase = getDataBase(ECpdsBase.class);
+                                // Use a sending index that always increments across retries and requeues.
+                                // transfer.getRequeueHistory() only increments on a requeue (maxStart hit),
+                                // not on plain retries, so multiple sendings within the same requeue cycle
+                                // would otherwise all get index 0 and end up in one group in the UI.
+                                final var existing = ecpdsBase.getTransferStatisticsByDataTransferId(transfer.getId());
+                                final var maxExisting = existing.stream().mapToInt(s -> s.getRequeueHistory()).max()
+                                        .orElse(-1);
+                                final var legacyIndex = existing.isEmpty() ? transfer.getRequeueHistory()
+                                        : Math.max(transfer.getRequeueHistory(), maxExisting + 1);
+                                final var sendingIndex = ecmwf.common.database.WeatherSocketStore
+                                        .legacySendingIndex(transfer.getId(), legacyIndex);
+                                _log.info(
+                                        "TransferStatistics for DataTransfer {}: existing={}, maxExisting={}, "
+                                                + "transfer.requeueHistory={}, sendingIndex={}",
+                                        transfer.getId(), existing.size(), maxExisting, transfer.getRequeueHistory(),
+                                        sendingIndex);
+                                for (final var stats : SocketStatisticsParser.parse(transfer.getId(),
+                                        transfer.getStatistics())) {
+                                    stats.setRequeueHistory(sendingIndex);
+                                    if (!ecpdsBase.tryInsertTransferStatistics(stats)) {
+                                        _log.warn(
+                                                "TransferStatistics NOT inserted for DataTransfer {} (sendingIndex={})",
+                                                transfer.getId(), sendingIndex);
+                                    }
+                                }
                             }
                         }
                     }

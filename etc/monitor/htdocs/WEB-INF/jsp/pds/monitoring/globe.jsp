@@ -5,12 +5,16 @@
 <style>
 #globeHeader{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-bottom:.65rem;padding-bottom:.6rem;border-bottom:1px solid var(--bs-border-color);}
 #globeHeader .title-group{display:flex;align-items:center;gap:.6rem;}
-#globeHeader .actions-group{display:flex;align-items:center;gap:.5rem;}
+#globeActions{display:flex;align-items:center;gap:.5rem;}
+#globeContainer:fullscreen #globeActions{position:absolute;top:10px;right:10px;z-index:30;max-width:calc(100% - 20px);flex-wrap:wrap;justify-content:flex-end;padding:.4rem;border-radius:8px;background:var(--bs-body-bg);box-shadow:0 2px 10px rgba(0,0,0,.25);}
+#globeContainer:fullscreen #globeLegend,#globeContainer:fullscreen #globeLegendToggleBtn,#globeContainer:fullscreen #globeRightPanels{top:calc(var(--globe-toolbar-height,44px) + 20px);}
 .globe-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border:none;border-radius:6px;background:transparent;color:var(--bs-secondary-color,#6c757d);font-size:1rem;line-height:1;transition:background .15s ease,color .15s ease;}
 .globe-icon-btn i{display:inline-flex;align-items:center;justify-content:center;width:100%;height:100%;}
 .globe-icon-btn:hover{background:var(--bs-tertiary-bg,#f1f3f5);color:var(--bs-body-color,#212529);}
 .globe-icon-btn:focus{outline:none;box-shadow:0 0 0 .15rem rgba(13,202,240,.35);}
 .globe-icon-btn.active{color:#0dcaf0;background:rgba(13,202,240,.12);}
+.globe-icon-btn[hidden]{display:none!important;}
+.globe-icon-btn:disabled{opacity:.45;cursor:not-allowed;}
 #globeStatusBadge{display:inline-flex;align-items:center;gap:.4rem;height:30px;padding:0 .7rem;border-radius:8px;font-size:.72rem;font-weight:600;line-height:1;letter-spacing:.01em;}
 #globeStatusBadge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.9;}
 .globe-badge-connected{background:rgba(25,135,84,.15);color:#198754;}
@@ -148,7 +152,7 @@
             <div class="subtitle" id="globeSubtitle">Connecting...</div>
         </div>
     </div>
-    <div class="actions-group">
+    <div class="actions-group" id="globeActions">
         <span class="globe-badge-connecting" id="globeStatusBadge">Connecting...</span>
         <div class="dropdown d-inline-block">
             <button type="button" id="globeViewModeBtn" class="globe-icon-btn" title="Group arcs by host or country"
@@ -234,6 +238,14 @@
                 </li>
             </ul>
         </div>
+        <button type="button" id="globeWeatherToggle" class="globe-icon-btn" hidden aria-pressed="false"
+            aria-label="Network Weather overlay" title="Network Weather overlay">
+            <i class="bi bi-cloud-lightning-rain" aria-hidden="true"></i>
+        </button>
+        <button type="button" id="globeTourBtn" class="globe-icon-btn" disabled aria-pressed="false"
+            aria-label="Start globe flyover" title="Waiting for flyover locations">
+            <i class="bi bi-airplane" aria-hidden="true"></i>
+        </button>
         <button type="button" id="globeRecenterBtn" class="globe-icon-btn" title="Re-center on OpenECPDS location">
             <i class="bi bi-crosshair"></i>
         </button>
@@ -275,12 +287,20 @@
         and Proxy.</li>
         <li><strong>Labels</strong> toggles country/town name overlays; the map icon switches between the 3D globe
         and a flat 2D map (same arcs and markers, just reprojected); the fullscreen button expands the view to
-        fill the whole browser window.</li>
+        fill the whole browser window, with the same action icons available at the top right.</li>
+        <li><strong>Flyover</strong> &mdash; the airplane icon starts a camera tour in 3D Earth mode, moving between
+        locations with active transfers. When there is no activity, it visits the central location and configured
+        Proxy Hosts in random order. At least two distinct resolved locations are needed. Click the stop icon,
+        press Escape or interact with the globe to stop; switching to map mode also stops the tour.</li>
         <li><strong>Cloud sites</strong> &mdash; hosts located in a public cloud are outlined in the provider's colour
         and, when grouped in a cluster, tagged with its label: <strong>AWS</strong> (Amazon AWS, orange),
         <strong>GCS</strong> (Google Cloud, green) or <strong>AZ</strong> (Microsoft Azure, blue). The provider is
         also shown in the host details panel and in the hover tooltip. A country marker is outlined only when all its
         hosts share the same provider.</li>
+        <li><strong>Network Weather</strong> &mdash; when collection is active, the
+        <i class="bi bi-cloud-lightning-rain"></i> icon shows recent delivery conditions for the paths you are
+        allowed to see (highlighted = on). Gray or missing evidence means no coverage, not a healthy path. The icon
+        is hidden while collection is not active.</li>
     </ul>
     <strong class="d-block mb-1">Data Portal Activity panel (bottom-right)</strong>
     <ul class="mb-0 ps-3">
@@ -449,8 +469,25 @@
     </div>
 </div>
 <div id="globePhonePanels"></div>
+<section class="card mt-2" id="globeWeatherPanel" aria-label="Network Weather evidence" hidden>
+    <div class="card-body">
+        <p id="globeWeatherStatus" role="status"></p>
+        <label for="globeWeatherSearch" class="form-label">Filter permitted weather paths</label>
+        <input type="search" class="form-control form-control-sm mb-2" id="globeWeatherSearch">
+        <div class="table-responsive"><table class="table table-sm">
+            <thead><tr><th>Source</th><th>Host / method</th><th>Evidence</th><th>Success / failure / cancelled / unknown</th>
+                <th>Sendings with sockets</th><th>Mean socket RTT</th><th>Last observed</th><th>Latest diagnostic</th></tr></thead>
+            <tbody id="globeWeatherRows"></tbody>
+        </table></div>
+        <p class="small mb-0">Failures include application and storage errors, not just connectivity.
+            Missing samples or coordinates mean unavailable coverage. Halos locate configured hosts, not faulty regions.
+            Collection and probes do not depend on opening this panel.</p>
+    </div>
+</section>
 
 <script src="/cesium/Cesium.js"></script>
+<script src="/js/network-weather.js"></script>
+<script src="/js/globe-tour.js"></script>
 <script>
 (async function () {
     "use strict";
@@ -747,6 +784,50 @@
     // without them, just less easy to orient on. Country and town names are toggled independently (see
     // globeCountryLabelsToggle/globeCityLabelsToggle below) and remembered across page reloads via localStorage.
     var COUNTRY_LABELS_PREF_KEY = "globeCountryLabelsVisible";
+    var weatherLayer = viewer.scene.primitives.add(new Cesium.PointPrimitiveCollection());
+    var weatherRows = [];
+    function renderWeather(rows, message) {
+        weatherRows = rows;
+        weatherLayer.removeAll();
+        var panel = document.getElementById("globeWeatherPanel");
+        var weatherToggle = document.getElementById("globeWeatherToggle");
+        panel.hidden = weatherToggle.hidden || weatherToggle.getAttribute("aria-pressed") !== "true";
+        document.getElementById("globeWeatherStatus").textContent = message;
+        var body = document.getElementById("globeWeatherRows");
+        body.replaceChildren();
+        var search = document.getElementById("globeWeatherSearch").value.toLowerCase();
+        rows.filter(function (p) {
+            return selectedHostTypes.has("Dissemination") &&
+                (p.source + " " + p.hostId + " " + p.protocol).toLowerCase().indexOf(search) !== -1;
+        }).forEach(function (p) {
+            var observed = p.successes + p.failures + p.cancellations + p.unknown;
+            var tr = document.createElement("tr");
+            [p.source, p.hostId + " / " + p.protocol,
+                !observed ? "No recent evidence" : p.failures ? "Delivery trouble observed" : "Observed delivery activity",
+                p.successes + " / " + p.failures + " / " + p.cancellations + " / " + p.unknown,
+                p.sockets, p.rttMs == null ? "Unavailable" : p.rttMs.toFixed(2) + " ms",
+                p.lastObserved ? new Date(p.lastObserved).toLocaleString() : "Unavailable",
+                p.probedAt ? p.probeMode + ": " + p.probeOutcome + " (" + new Date(p.probedAt).toLocaleString() + ")" :
+                    "No approved diagnostic result"].forEach(function (text) {
+                var td = document.createElement("td");
+                td.textContent = text;
+                tr.appendChild(td);
+            });
+            body.appendChild(tr);
+            if (Number.isFinite(p.latitude) && Number.isFinite(p.longitude)) {
+                weatherLayer.add({position: Cesium.Cartesian3.fromDegrees(p.longitude, p.latitude),
+                    pixelSize: 28, color: (p.failures ? Cesium.Color.ORANGE : Cesium.Color.GRAY).withAlpha(0.25),
+                    outlineColor: p.failures ? Cesium.Color.ORANGE : Cesium.Color.GRAY, outlineWidth: 2});
+            }
+        });
+        viewer.scene.requestRender();
+    }
+    var weatherControl = createNetworkWeather({toggle: document.getElementById("globeWeatherToggle"),
+        storage: localStorage, fetch: window.fetch.bind(window), render: renderWeather});
+    document.getElementById("globeWeatherSearch").addEventListener("input", function () {
+        renderWeather(weatherRows, document.getElementById("globeWeatherStatus").textContent);
+    });
+    window.addEventListener("pagehide", function () { weatherControl.close(); });
     var CITY_LABELS_PREF_KEY = "globeCityLabelsVisible";
     var countryLabelsVisible = localStorage.getItem(COUNTRY_LABELS_PREF_KEY) === "true"; // hidden by default
     var cityLabelsVisible = localStorage.getItem(CITY_LABELS_PREF_KEY) === "true"; // hidden by default
@@ -1270,7 +1351,7 @@
             outlineColor: Cesium.Color.WHITE,
             outlineWidth: 2
         });
-        if (firstTime) {
+        if (firstTime && !(globeTour && globeTour.running())) {
             viewer.camera.flyTo({
                 destination: Cesium.Cartesian3.fromDegrees(lon, lat, 12000000)
             });
@@ -1612,6 +1693,7 @@
         lastSamples = selectedHostTypes.size === ALL_HOST_TYPES.length ? visibleSamples : visibleSamples.filter(function (s) {
             return selectedHostTypes.has(sampleHostType(s));
         });
+        updateTourButton();
         var byHost = Object.create(null);
         // Continental Mover markers come straight from the server's independent "proxyHosts" list (every one
         // currently enabled Proxy Host), not from transfer samples - so a Continental Mover with zero current
@@ -1794,6 +1876,7 @@
         localStorage.setItem(HOST_TYPE_FILTER_PREF_KEY, JSON.stringify(Array.from(selectedHostTypes)));
         updateHostTypeBtnState();
         applySnapshot(rawSamples, lastProxyHosts);
+        renderWeather(weatherRows,document.getElementById("globeWeatherStatus").textContent);
     }
 
     function formatBytes(n) {
@@ -2190,8 +2273,65 @@
         fetch("/do/monitoring/globe/keepalive", { method: "GET", credentials: "same-origin" }).catch(function () {});
     }, SESSION_KEEPALIVE_PERIOD_MS);
 
+    var tourBtn = document.getElementById("globeTourBtn");
+    function tourLocations() {
+        return GlobeTour.locations(lastSamples, origin, lastProxyHosts);
+    }
+    function updateTourButton() {
+        if (!tourBtn) return;
+        var running = globeTour && globeTour.running();
+        var enabled = sceneMode === "3D" && viewer.scene.mode === Cesium.SceneMode.SCENE3D;
+        var enough = tourLocations().length >= 2;
+        if (running && (!enabled || !enough)) {
+            globeTour.stop();
+            return;
+        }
+        tourBtn.disabled = !enabled || !enough;
+        tourBtn.classList.toggle("active", !!running);
+        tourBtn.setAttribute("aria-pressed", String(!!running));
+        tourBtn.querySelector("i").className = running ? "bi bi-stop-circle-fill" : "bi bi-airplane";
+        tourBtn.title = running ? "Stop globe flyover (Escape)"
+            : !enabled ? "Flyover is available in 3D Earth mode"
+            : !enough ? "Flyover needs at least two distinct resolved locations" : "Start globe flyover";
+        tourBtn.setAttribute("aria-label", tourBtn.title);
+    }
+    var globeTour = GlobeTour.create({
+        locations: tourLocations,
+        enabled: function () {
+            return sceneMode === "3D" && viewer.scene.mode === Cesium.SceneMode.SCENE3D && !document.hidden;
+        },
+        fly: function (point, complete, cancel) {
+            viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(point.lon, point.lat, 4000000),
+                orientation: {heading: 0, pitch: -Cesium.Math.PI_OVER_TWO, roll: 0},
+                duration: 6,
+                complete: complete,
+                cancel: cancel
+            });
+        },
+        cancel: function () { viewer.camera.cancelFlight(); },
+        changed: updateTourButton
+    });
+    tourBtn.addEventListener("click", function () {
+        if (globeTour.running()) globeTour.stop();
+        else globeTour.start();
+    });
+    viewer.scene.canvas.addEventListener("pointerdown", globeTour.stop);
+    viewer.scene.canvas.addEventListener("wheel", globeTour.stop, {passive: true});
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" || viewer.scene.canvas === document.activeElement) globeTour.stop();
+    });
+    document.addEventListener("visibilitychange", function () {
+        if (document.hidden) globeTour.stop();
+    });
+    window.addEventListener("pagehide", globeTour.stop);
+    viewer.scene.morphStart.addEventListener(globeTour.stop);
+    viewer.scene.morphComplete.addEventListener(updateTourButton);
+    updateTourButton();
+
     var recenterBtn = document.getElementById("globeRecenterBtn");
     recenterBtn.addEventListener("click", function () {
+        globeTour.stop();
         if (!origin) {
             return;
         }
@@ -2207,6 +2347,7 @@
         if (!btn) {
             return;
         }
+        globeTour.stop();
         var lat = parseFloat(btn.getAttribute("data-lat"));
         var lon = parseFloat(btn.getAttribute("data-lon"));
         if (isNaN(lat) || isNaN(lon)) {
@@ -2226,6 +2367,7 @@
     }
     applyMapModeButtonState();
     mapModeBtn.addEventListener("click", function () {
+        globeTour.stop();
         sceneMode = sceneMode === "2D" ? "3D" : "2D";
         localStorage.setItem(SCENE_MODE_PREF_KEY, sceneMode);
         if (sceneMode === "2D") {
@@ -2238,6 +2380,13 @@
 
     var fullscreenBtn = document.getElementById("globeFullscreenBtn");
     var fullscreenIcon = fullscreenBtn.querySelector("i");
+    var globeActions = document.getElementById("globeActions");
+    var actionsPlaceholder = document.createComment("Live Earth actions");
+    globeActions.before(actionsPlaceholder);
+    function measureFullscreenActions() {
+        globeContainerEl.style.setProperty("--globe-toolbar-height", globeActions.offsetHeight + "px");
+    }
+    new ResizeObserver(measureFullscreenActions).observe(globeActions);
     fullscreenBtn.addEventListener("click", function () {
         if (!document.fullscreenElement) {
             document.getElementById("globeContainer").requestFullscreen();
@@ -2247,6 +2396,9 @@
     });
     document.addEventListener("fullscreenchange", function () {
         var isFullscreen = !!document.fullscreenElement;
+        if (document.fullscreenElement === globeContainerEl) globeContainerEl.appendChild(globeActions);
+        else actionsPlaceholder.after(globeActions);
+        measureFullscreenActions();
         fullscreenIcon.className = isFullscreen ? "bi bi-fullscreen-exit" : "bi bi-arrows-fullscreen";
         fullscreenBtn.title = isFullscreen ? "Exit full screen" : "Toggle full screen";
     });

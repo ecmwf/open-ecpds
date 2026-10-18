@@ -1356,6 +1356,11 @@
 		<put name="content" value="/WEB-INF/jsp/pds/admin/storagepolicies/index.jsp" />
 	</definition>
 
+	<definition name=".pds.admin.networkweather" extends=".pds.admin">
+		<put name="title" value="Network Weather" />
+		<put name="content" value="/WEB-INF/jsp/pds/admin/networkweather/index.jsp" />
+	</definition>
+
 	<definition name=".pds.admin.metafields" extends=".pds.admin">
 		<put name="title" value="Metadata Field Definitions" />
 		<put name="content" value="/WEB-INF/jsp/pds/admin/metadata_fields.jsp" />

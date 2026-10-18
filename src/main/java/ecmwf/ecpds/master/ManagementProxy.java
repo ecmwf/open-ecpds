@@ -91,6 +91,59 @@ final class ManagementProxy implements ManagementInterface {
         this.managementInterface = managementInterface;
     }
 
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherAdministration.Status getWeatherAdministration(ECpdsSession session)
+            throws Exception {
+        return managementInterface.getWeatherAdministration(session);
+    }
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherAdministration.Status saveWeatherSelection(ECpdsSession session,
+            long expectedRevision, java.util.Set<ecmwf.ecpds.master.weather.WeatherObservation.Path> paths)
+            throws Exception {
+        return managementInterface.saveWeatherSelection(session, expectedRevision, paths);
+    }
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherAdministration.Status setWeatherCollectionEnabled(ECpdsSession session,
+            long expectedRevision, boolean enabled) throws Exception {
+        return managementInterface.setWeatherCollectionEnabled(session, expectedRevision, enabled);
+    }
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherViewer getWeatherViewer(ECpdsSession session, boolean includePaths)
+            throws Exception {
+        return managementInterface.getWeatherViewer(session, includePaths);
+    }
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherAutomation.Status getWeatherAutomation(ECpdsSession session)
+            throws Exception {
+        return managementInterface.getWeatherAutomation(session);
+    }
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherProbes.Status getWeatherProbes(ECpdsSession session) throws Exception {
+        return managementInterface.getWeatherProbes(session);
+    }
+
+    @Override
+    public void configureWeatherAutomation(ECpdsSession session,
+            ecmwf.ecpds.master.weather.WeatherAutomation.Configuration configuration) throws Exception {
+        managementInterface.configureWeatherAutomation(session, configuration);
+    }
+
+    @Override
+    public void reassessWeather(ECpdsSession session) throws Exception {
+        managementInterface.reassessWeather(session);
+    }
+
+    @Override
+    public java.util.List<ecmwf.common.database.WeatherDiscoveryStore.Candidate> findWeatherCandidates(
+            ECpdsSession session, String source, int days, String protocol) throws Exception {
+        return managementInterface.findWeatherCandidates(session, source, days, protocol);
+    }
+
     /**
      * {@inheritDoc}
      *

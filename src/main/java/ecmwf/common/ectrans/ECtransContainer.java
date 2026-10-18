@@ -760,6 +760,12 @@ public final class ECtransContainer implements MBeanService {
         return close(defaultProvider, cookie, ecuser, remote, location);
     }
 
+    /** Explicit stop intent, separate from routine cleanup and error closure. */
+    public boolean close(final String cookie, final String ecuser, final String remote, final String location,
+            final boolean cancellationRequested) throws IOException {
+        return close(defaultProvider, cookie, ecuser, remote, location, cancellationRequested);
+    }
+
     /**
      * Close.
      *
@@ -781,6 +787,11 @@ public final class ECtransContainer implements MBeanService {
      */
     public boolean close(final RemoteProvider provider, final String cookie, final String ecuser, final String remote,
             final String location) throws IOException {
+        return close(provider, cookie, ecuser, remote, location, false);
+    }
+
+    private boolean close(final RemoteProvider provider, final String cookie, final String ecuser, final String remote,
+            final String location, final boolean cancellationRequested) throws IOException {
         if (cookieRepository == null) {
             _log.warn("No repository, DataTransfer not closed.");
             return false;
@@ -796,6 +807,9 @@ public final class ECtransContainer implements MBeanService {
         final var module = cookieRepository.remove(provider, ecuser, address, location, cookie);
         final var removed = module != null;
         if (removed) {
+            if (cancellationRequested) {
+                module.setAttribute("ectrans.cancellationRequested", Boolean.TRUE);
+            }
             _log.info("Removing TransferModule for cookie {}", cookie);
             @SuppressWarnings("null")
             final var setup = new DefaultCallback(provider, module.getMSUser()).getECtransSetup();
@@ -1771,7 +1785,19 @@ public final class ECtransContainer implements MBeanService {
                 if (module != null) {
                     module.setClosedOnError(!completed);
                 }
-                action.close(module, closeTimeout, asynchronous);
+                boolean closed = false;
+                try {
+                    action.close(module, closeTimeout, asynchronous);
+                    closed = true;
+                } finally {
+                    try {
+                        callback.executionFinished(module,
+                                closed && completed && (history == null || !history.getError()));
+                    } catch (final RuntimeException e) {
+                        _log.warn("Optional execution evidence callback failed; ordinary terminal processing continues",
+                                e);
+                    }
+                }
                 if (completed && (history == null || !history.getError())) {
                     callback.completed(module);
                 } else {

@@ -3968,9 +3968,211 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         return master.getActualTrafficTotals();
     }
 
+    private record WeatherViewerKey(String user, long revision) {
+    }
+
+    private final com.google.common.cache.Cache<WeatherViewerKey, ecmwf.ecpds.master.weather.WeatherViewer> weatherViewers = com.google.common.cache.CacheBuilder
+            .newBuilder().maximumSize(200).expireAfterWrite(15, java.util.concurrent.TimeUnit.SECONDS).build();
+    private final com.google.common.cache.Cache<java.util.List<String>, Map<String, GeoPoint>> weatherLocations = com.google.common.cache.CacheBuilder
+            .newBuilder().maximumSize(4).expireAfterWrite(5, java.util.concurrent.TimeUnit.MINUTES).build();
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherViewer getWeatherViewer(ECpdsSession session, boolean includePaths)
+            throws Exception {
+        if (session == null || session.getWebUser() == null) {
+            throw new MasterException("Authenticated weather viewer required");
+        }
+        final var base = master.getECpdsBase();
+        final var user = base.getWebUser(session.getWebUser().getId());
+        if (!user.getActive()) {
+            throw new MasterException("Inactive weather viewer");
+        }
+        final var categories = base.getCategoriesPerUserId(user.getId());
+        final var required = base.getCategoriesPerResourceId("/do/monitoring/");
+        if (categories.stream().noneMatch(
+                c -> c.getActive() && required.stream().anyMatch(r -> r.getActive() && r.getId() == c.getId()))) {
+            throw new MasterException("Weather viewer access denied");
+        }
+        if (!master.getWeatherAdministration().viewerEnabled()) {
+            weatherViewers.invalidateAll();
+            return new ecmwf.ecpds.master.weather.WeatherViewer(false, System.currentTimeMillis(), java.util.List.of());
+        }
+        final var key = new WeatherViewerKey(user.getId(), master.getWeatherAdministration().viewerRevision());
+        if (!includePaths)
+            return new ecmwf.ecpds.master.weather.WeatherViewer(true, System.currentTimeMillis(), java.util.List.of());
+        final var cached = weatherViewers.getIfPresent(key);
+        if (cached != null)
+            return cached;
+        final var hosts = java.util.Set.copyOf(base.getAuthorisedHosts(user.getId()));
+        final var destinations = java.util.Set.copyOf(base.getAuthorisedDestinations(user.getId()));
+        final var snapshot = master.getWeatherAdministration().viewer(hosts, destinations, false);
+        final var targets = master.getWeatherAdministration().status().paths().stream()
+                .map(ecmwf.ecpds.master.weather.WeatherObservation.Path::configuredTarget).distinct().sorted().toList();
+        final var resolved = targets.isEmpty() ? java.util.Map.<String, GeoPoint> of()
+                : weatherLocations.get(targets, () -> Map.copyOf(getGeoLocations(targets.toArray(String[]::new))));
+        final var locations = new java.util.HashMap<String, GeoPoint>();
+        for (final var path : master.getWeatherAdministration().status().paths()) {
+            if (snapshot.paths().stream().anyMatch(p -> p.hostId().equals(path.hostId()))) {
+                if (resolved.get(path.configuredTarget()) != null) {
+                    locations.put(path.hostId(), resolved.get(path.configuredTarget()));
+                }
+            }
+        }
+        final var result = new ecmwf.ecpds.master.weather.WeatherViewer(snapshot.enabled(), snapshot.measuredAt(),
+                snapshot.paths().stream().map(p -> {
+                    final var geo = locations.get(p.hostId());
+                    return new ecmwf.ecpds.master.weather.WeatherViewer.Path(p.source(), p.hostId(), p.protocol(),
+                            p.successes(), p.failures(), p.cancellations(), p.unknown(), p.sockets(), p.lastObserved(),
+                            p.rttMs(), geo == null ? null : geo.latitude(), geo == null ? null : geo.longitude(),
+                            p.probeMode(), p.probeOutcome(), p.probedAt(), p.probeLatencyMs());
+                }).toList());
+        weatherViewers.put(key, result);
+        return result;
+    }
+
+    private void requireWeatherAdministrator(ECpdsSession session) throws Exception {
+        if (session == null || session.getWebUser() == null) {
+            throw new MasterException("Administrator session required");
+        }
+        final var base = master.getECpdsBase();
+        final var webUser = base.getWebUser(session.getWebUser().getId());
+        if (!webUser.getActive()) {
+            throw new MasterException("Inactive administrator");
+        }
+        final var required = base.getCategoriesPerResourceId("/do/admin/");
+        for (final var category : base.getCategoriesPerUserId(webUser.getId())) {
+            if (category.getActive() && required.stream()
+                    .anyMatch(allowed -> allowed.getActive() && allowed.getId() == category.getId())) {
+                return;
+            }
+        }
+        throw new MasterException("Network Weather administration access denied");
+    }
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherAdministration.Status getWeatherAdministration(ECpdsSession session)
+            throws Exception {
+        requireWeatherAdministrator(session);
+        return master.getWeatherAdministration().status();
+    }
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherAdministration.Status saveWeatherSelection(ECpdsSession session,
+            long expectedRevision, java.util.Set<ecmwf.ecpds.master.weather.WeatherObservation.Path> paths)
+            throws Exception {
+        requireWeatherAdministrator(session);
+        validateWeatherPaths(paths);
+        if (master.getWeatherAutomation().status().configuration().automatic())
+            throw new IllegalStateException("Disable automatic selection before saving a fixed manual scope");
+        final var action = master.startECpdsAction(session, "saveNetworkWeatherSelection");
+        Exception failure = null;
+        try {
+            return master.getWeatherAdministration().save(expectedRevision, paths, session.getWebUser().getId());
+        } catch (Exception e) {
+            failure = e;
+            throw e;
+        } finally {
+            master.logECpdsAction(action,
+                    "Manual Network Weather scope: " + paths.size() + " paths; collection disabled", failure);
+        }
+    }
+
+    private void validateWeatherPaths(java.util.Set<ecmwf.ecpds.master.weather.WeatherObservation.Path> paths)
+            throws Exception {
+        if (paths == null) {
+            throw new IllegalArgumentException("Missing Network Weather paths");
+        }
+        ecmwf.ecpds.master.weather.WeatherLimits.configured().validateSelection(paths);
+        final var base = master.getECpdsBase();
+        for (final var path : paths) {
+            final var host = base.getHost(path.hostId());
+            if (!host.getActive() || !ecmwf.ecpds.master.transfer.HostOption.DISSEMINATION.equals(host.getType())
+                    || !java.util.Objects.equals(host.getHost(), path.configuredTarget())
+                    || !java.util.Objects.equals(host.getTransferMethodName(), path.protocol())
+                    || !"DISSEMINATION".equals(path.leg())) {
+                throw new IllegalArgumentException("Path does not match an active dissemination host configuration");
+            }
+        }
+    }
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherAdministration.Status setWeatherCollectionEnabled(ECpdsSession session,
+            long expectedRevision, boolean enabled) throws Exception {
+        requireWeatherAdministrator(session);
+        final var action = master.startECpdsAction(session,
+                enabled ? "activateNetworkWeatherCollection" : "deactivateNetworkWeatherCollection");
+        Exception failure = null;
+        try {
+            if (enabled) {
+                validateWeatherPaths(java.util.Set.copyOf(master.getWeatherAdministration().status().paths()));
+            }
+            return master.getWeatherAdministration().setCollectionEnabled(expectedRevision, enabled,
+                    session.getWebUser().getId());
+        } catch (Exception e) {
+            failure = e;
+            throw e;
+        } finally {
+            master.logECpdsAction(action, "Network Weather collection " + (enabled ? "activation" : "deactivation")
+                    + "; expected revision=" + expectedRevision, failure);
+        }
+    }
+
     /**
      * {@inheritDoc}
      */
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherAutomation.Status getWeatherAutomation(ECpdsSession session)
+            throws Exception {
+        requireWeatherAdministrator(session);
+        return master.getWeatherAutomation().status();
+    }
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherProbes.Status getWeatherProbes(ECpdsSession session) throws Exception {
+        requireWeatherAdministrator(session);
+        return master.getWeatherAdministration().probes().status();
+    }
+
+    @Override
+    public void configureWeatherAutomation(ECpdsSession session,
+            ecmwf.ecpds.master.weather.WeatherAutomation.Configuration configuration) throws Exception {
+        requireWeatherAdministrator(session);
+        final var action = master.startECpdsAction(session, "configureNetworkWeatherAutomation");
+        Exception failure = null;
+        try {
+            master.getWeatherAutomation().configure(configuration);
+        } catch (Exception e) {
+            failure = e;
+            throw e;
+        } finally {
+            master.logECpdsAction(action, "Weather discovery/probe policy revision=" + configuration.revision(),
+                    failure);
+        }
+    }
+
+    @Override
+    public void reassessWeather(ECpdsSession session) throws Exception {
+        requireWeatherAdministrator(session);
+        final var action = master.startECpdsAction(session, "reassessNetworkWeather");
+        Exception failure = null;
+        try {
+            master.getWeatherAutomation().request();
+        } catch (Exception e) {
+            failure = e;
+            throw e;
+        } finally {
+            master.logECpdsAction(action, "Weather reassessment requested; completion is asynchronous", failure);
+        }
+
+    }
+
+    @Override
+    public java.util.List<ecmwf.common.database.WeatherDiscoveryStore.Candidate> findWeatherCandidates(
+            ECpdsSession session, String source, int days, String protocol) throws Exception {
+        requireWeatherAdministrator(session);
+        return new ecmwf.common.database.WeatherDiscoveryStore().successfulCandidates(source, days, protocol);
+    }
+
     @Override
     public String[] getActiveProxyHostNames() throws RemoteException {
         return master.getActiveProxyHostNames();

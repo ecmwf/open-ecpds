@@ -135,6 +135,17 @@ final class MasterREST implements MasterProxy {
         _rest.updateTrafficAccounting(mover, snapshot);
     }
 
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherCapabilities getWeatherCapabilities(String sourceId) throws Exception {
+        return _rest.getWeatherCapabilities(sourceId);
+    }
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherAcknowledgement deliverWeatherObservations(
+            ecmwf.ecpds.master.weather.WeatherBatch batch) throws Exception {
+        return _rest.deliverWeatherObservations(batch);
+    }
+
     /**
      * {@inheritDoc}
      *

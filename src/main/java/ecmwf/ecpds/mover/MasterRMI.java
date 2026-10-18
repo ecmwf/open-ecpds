@@ -108,6 +108,40 @@ final class MasterRMI implements MasterProxy {
         _mover.getMasterInterface().updateTrafficAccounting(mover, snapshot);
     }
 
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherCapabilities getWeatherCapabilities(String sourceId) throws Exception {
+        try {
+            return _mover.getMasterInterface().getWeatherCapabilities(sourceId);
+        } catch (final java.rmi.RemoteException e) {
+            if (ecmwf.ecpds.master.weather.WeatherUnsupportedException.isUnsupportedRmiMethod(e)) {
+                throw new ecmwf.ecpds.master.weather.WeatherUnsupportedException(
+                        "Master does not support Network Weather negotiation");
+            }
+
+            throw e;
+        }
+    }
+
+    @Override
+    public ecmwf.ecpds.master.weather.WeatherAcknowledgement deliverWeatherObservations(
+            ecmwf.ecpds.master.weather.WeatherBatch batch) throws Exception {
+        batch.encode();
+        try {
+            final var acknowledgement = _mover.getMasterInterface().deliverWeatherObservations(batch);
+            if (acknowledgement == null) {
+                throw new java.io.IOException("Missing Network Weather acknowledgement");
+            }
+            acknowledgement.validateFor(batch);
+            return acknowledgement;
+        } catch (final java.rmi.RemoteException e) {
+            if (ecmwf.ecpds.master.weather.WeatherUnsupportedException.isUnsupportedRmiMethod(e)) {
+                throw new ecmwf.ecpds.master.weather.WeatherUnsupportedException(
+                        "Master does not support Network Weather observations");
+            }
+            throw e;
+        }
+    }
+
     /**
      * {@inheritDoc}
      *

@@ -20,6 +20,8 @@ investigating. The table set may also differ where a deployment has site-specifi
 | `UPLOAD_HISTORY` | Records of completed data uploads and their transfer details. |
 | `INCOMING_HISTORY` | History of incoming-user and Data Portal file operations. |
 | `TRANSFER_STATISTICS` | Per-connection network statistics captured during a transfer. |
+| `WEATHER_SENDING` | Immutable source/path, execution identity and terminal outcome for Network Weather's opt-in transactional socket writer, including failed sendings without socket rows. |
+| `WEATHER_CONNECTION` | Stable connection identities linking sendings to socket statistics, with uniqueness for replay-safe transactional persistence and late-close supplements. |
 | `MONITORING_VALUE` | Timing values used to monitor expected, earliest, latest and predicted product arrival. |
 | `PRODUCT_STATUS` | Current status and timing information for monitored products and cycles. |
 | `PUBLICATION` | Scheduled publication or notification work associated with a transfer. |
@@ -102,3 +104,47 @@ The table names are included as a reference for developers, administrators and p
 investigating OpenECPDS. They are implementation details rather than part of the
 end-user configuration interface. This catalog is not a column reference, entity
 relationship diagram or database upgrade guide.
+
+Network Weather remains disabled by default and never performs automatic DDL.
+Fresh installations include its identity tables. Existing installations use the
+additive `docker/ecpds/database/network-weather.sql` under the site's change
+procedure, not the full fresh-install dump. Its online statistics covering-index
+build reads existing data and requires DBA load/metadata-lock planning. The background capability check
+requires the parent and identity tables, InnoDB, writer columns, unique identity
+indexes and cascading foreign keys before allowing runtime activation.
+Capacity limits are configured in the Master's `[NetworkWeather]` section and
+reported to the Monitor. Fresh databases use `MEDIUMTEXT` for configuration documents;
+existing databases need `docker/ecpds/database/network-weather-policy-capacity.sql`
+before storing policies larger than the old 65,535-byte `TEXT` capacity. This optional
+capacity change is separate from installing the Network Weather tables. See
+[deployment capacity](../monitor-ui/admin.md#deployment-capacity).
+
+For an existing database that has **neither** Network Weather migration applied,
+`docker/ecpds/database/production-upgrade-20261018.sql` combines the new tables,
+statistics index and configuration capacity change into one script. It covers only
+the Network Weather schema delta, not earlier feature upgrades or fresh-install
+seed data. Apply it once, without the client's `--force` option, after a backup and
+DBA review. Do not combine it with the individual scripts on the same database:
+duplicate objects intentionally cause an error. DDL auto-commits, so review any
+partially applied run before retrying.
+Ordinary delivery and the legacy successful-only writer do not require the new
+tables. Tagged executions use the new writer exclusively; untagged executions
+retain legacy behavior.
+
+Sending headers, connection identities and statistics commit together; neither
+volatile admission receipts nor assessment counters promise a committed ledger.
+Reads of transfer-detail provenance are indexed by transfer ID and gated on
+cached schema availability; they are not added to legacy history writes.
+The identity tables cascade with transfer/socket deletion, preserving existing
+purge behavior rather than introducing an indefinite history archive.
+
+Automatic Network Weather selection stores its separate policy and bounded discovery
+cursors under `SYS_CONFIG` (`NetworkWeather`, `automation`). Historical ranking is
+explicitly opt-in: indexed seven-day upload keysets and destination/time samples
+run only on its low-priority scheduler, never on a transfer callback or globe/admin
+refresh. It borrows from the existing Hikari pool only with spare capacity, uses
+a per-borrow 100-ms deadline, restores read-only state and applies two-second
+statement timeouts within a 30-second run budget. Missing indexes, cancellation
+failures and pool pressure are surfaced, not replaced with unrestricted queries.
+Returned-row limits are not examined-row guarantees; representative query plans
+and off/on load remain a test-system rollout gate.
