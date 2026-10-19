@@ -21,7 +21,8 @@
     }
 
     function key(kind, fields) {
-        return kind === "groups" ? fields[0] : fields.join("\u0000");
+        var normalized = fields.map(function (field) { return String(field).trim(); });
+        return kind === "groups" ? normalized[0] : normalized.join("\u0000");
     }
 
     function checkText(value, what) {
@@ -97,9 +98,20 @@
         return serialize(rows);
     }
 
+    function newCandidates(text, candidates) {
+        var existing = new Set(parse("paths", text).filter(function (row) { return !row.invalid; })
+            .map(function (row) { return key("paths", row.fields); }));
+        return candidates.filter(function (host) {
+            var k = key("paths", [host.source, host.id, host.target, host.method]);
+            if (existing.has(k)) return false;
+            existing.add(k);
+            return true;
+        });
+    }
+
     var api = {parse: parse, serialize: serialize, add: add, checkText: checkText, probeFields: probeFields,
         intervals: intervals, interval: interval, suggestPort: suggestPort, available: available,
-        mergeCandidates: mergeCandidates, MODES: MODES};
+        mergeCandidates: mergeCandidates, newCandidates: newCandidates, MODES: MODES};
     root.NetworkWeatherAdmin = api;
     if (typeof document === "undefined") return;
 
@@ -221,7 +233,12 @@
         var rows = parse(kind, textarea.value);
         var prefix = "nwb" + (++counter);
         var box = el("div", "border rounded p-2");
-        var table = el("table", "table table-sm align-middle mb-2");
+        var tableWrap = el("div", "table-responsive mb-2");
+        tableWrap.tabIndex = 0;
+        tableWrap.setAttribute("role", "region");
+        var label = document.querySelector("label[for='" + textarea.id + "']");
+        tableWrap.setAttribute("aria-label", (label ? label.textContent.trim() : "Scope entries") + " table");
+        var table = el("table", "table table-sm align-middle mb-0");
         var head = {paths: ["Source", "Host", "Target", "Method"], groups: ["Source", "Transfer group"],
             probes: ["Source", "Host", "Target", "Method", "Port", "Mode", "Interval"]}[kind];
         var thead = el("thead"), headRow = el("tr");
@@ -441,7 +458,8 @@
 
         var footer = el("div", "d-flex justify-content-between align-items-center mt-1");
         footer.append(feedback, count);
-        box.append(table, form);
+        tableWrap.appendChild(table);
+        box.append(tableWrap, form);
         if (quick) box.appendChild(quick);
         box.appendChild(footer);
         textarea.hidden = true;
@@ -450,7 +468,6 @@
             rows = parse(kind, textarea.value);
             sync();
         });
-        var label = document.querySelector("label[for='" + textarea.id + "']");
         if (label) label.htmlFor = prefix + "-source";
         sync();
     }
@@ -580,7 +597,8 @@
                         || protocol.value !== parameters.get("protocol")) {
                         throw new Error("Search settings changed. Search again to update the preview.");
                     }
-                    matches = result.candidates;
+                    matches = newCandidates(document.getElementById("nwApproved").value, result.candidates);
+                    var alreadyApproved = result.candidates.length - matches.length;
                     selected = new Set(matches.map(function (_, index) { return index; }));
                     var filter = el("input", "form-control form-control-sm mb-2");
                     filter.type = "search";
@@ -656,7 +674,10 @@
                     });
                     render();
                     feedback.textContent = matches.length ? matches.length + " matching Hosts. Review before adding."
-                        : "No active dissemination Hosts with a successful transfer in this period.";
+                        : alreadyApproved ? "All matching paths are already approved."
+                            : "No active dissemination Hosts with a successful transfer in this period.";
+                    if (alreadyApproved && matches.length)
+                        feedback.textContent += " " + alreadyApproved + " already-approved or duplicate paths omitted.";
                 } catch (error) {
                     feedback.textContent = error.name === "AbortError" ? "History search timed out. Try a shorter period."
                         : "Unable to search history: " + error.message;

@@ -2068,9 +2068,10 @@ final class ECpdsGet {
      *             Signals that an I/O exception has occurred.
      */
     <T extends DataBaseObject> DBIterator<T> getDataTransfersToReplicate(final int paramLimit,
-            final Class<T> resultClass) throws SQLException, IOException {
+            final ECpdsBase.ReplicationCursor cursor, final Class<T> resultClass) throws SQLException, IOException {
         return _database.executeQuery("ECpdsBase", "getDataTransfersToReplicate", resultClass,
-                new String[] { "limit=" + paramLimit });
+                new String[] { "limit=" + paramLimit, "afterId=" + cursor.id(), "afterHeld=" + cursor.held(),
+                        "afterPriority=" + cursor.priority(), "afterQueued=" + cursor.queued() });
     }
 
     /**

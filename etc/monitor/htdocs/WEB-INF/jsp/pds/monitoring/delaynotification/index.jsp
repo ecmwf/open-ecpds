@@ -80,10 +80,14 @@
   <div class="card border-0 shadow-sm">
    <div class="card-header fw-semibold" style="background:var(--bs-secondary-bg)"><i class="bi bi-grid-3x3-gap text-primary me-1"></i>Affected products and cycles</div>
    <div class="card-body">
-    <div class="d-flex align-items-center gap-2 mb-2">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
      <div class="input-group input-group-sm flex-grow-1" style="min-width:0">
       <span class="input-group-text">Product name</span>
       <input type="text" id="dnFilter" class="form-control" placeholder="e.g. GENFO, *ERA5*, !*TEST*" oninput="dnFilterChanged()">
+     </div>
+     <div class="input-group input-group-sm" style="width:auto">
+      <label class="input-group-text" for="dnCycleFilter">Cycle</label>
+      <select id="dnCycleFilter" class="form-select" onchange="dnFilterChanged()"><option value="">All cycles</option></select>
      </div>
      <div class="dropdown flex-shrink-0 ms-auto" id="dnStatusFilter">
       <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
@@ -421,6 +425,7 @@ function matches(filter, name) {
 }
 
 var activeModels = {};
+var preferencesRestored = false;
 function modelOf(product) {
   for (var m in S.models) { if (S.models[m].some(function(p) { return p.toLowerCase() === product.toLowerCase(); })) { return m; } }
   return '';
@@ -507,7 +512,7 @@ function statusMatchesFilter(status) {
 function visibleProducts() {
   var any = Object.keys(activeModels).some(function(k) { return activeModels[k]; });
   return Object.keys(S.cycles).filter(function(p) {
-    var hasMatchingCycle = S.cycles[p].some(function(cycle) {
+    var hasMatchingCycle = visibleCycles(p).some(function(cycle) {
       var key = p + '@' + cycle;
       var status = beforeScheduleStatus(S.generationStatusPerCycle[key], S.minutesBeforeSchedulePerCycle[key]);
       return statusMatchesFilter(status);
@@ -515,9 +520,13 @@ function visibleProducts() {
     return matches($('dnFilter').value, p) && (!any || activeModels[modelOf(p)]) && hasMatchingCycle;
   });
 }
+function visibleCycles(product) {
+  var cycle = $('dnCycleFilter').value;
+  return S.cycles[product].filter(function(time) { return !cycle || cycle === time; });
+}
 function allCycles(products) {
   var set = {};
-  products.forEach(function(p) { S.cycles[p].forEach(function(t) { set[t] = 1; }); });
+  products.forEach(function(p) { visibleCycles(p).forEach(function(t) { set[t] = 1; }); });
   return Object.keys(set).sort();
 }
 window.dnSetUniformCells = function(uniform) {
@@ -574,8 +583,8 @@ window.dnRenderMatrix = function() {
   });
   Array.prototype.forEach.call($('dnMatrix').querySelectorAll('td[data-row]'), function(td) {
     td.onclick = function() {
-      var p = td.dataset.row, n = next(S.sel[p + '@' + S.cycles[p][0]]);
-      S.cycles[p].forEach(function(t) { setCell(p, t, n, true); });
+      var p = td.dataset.row, cycles = visibleCycles(p), n = next(S.sel[p + '@' + cycles[0]]);
+      cycles.forEach(function(t) { setCell(p, t, n, true); });
       afterSelection();
     };
   });
@@ -600,7 +609,7 @@ window.dnFilterChanged = function() {
 window.dnMarkByTiming = function(level) {
   if (level !== 'definite' && level !== 'possible') { return; }
   visibleProducts().forEach(function(product) {
-    S.cycles[product].forEach(function(cycle) {
+    visibleCycles(product).forEach(function(cycle) {
       var key = product + '@' + cycle;
       var status = beforeScheduleStatus(S.generationStatusPerCycle[key], S.minutesBeforeSchedulePerCycle[key]);
       if ((level === 'definite' && (status === 4 || status === 5))
@@ -615,7 +624,7 @@ window.dnMarkByTiming = function(level) {
 // Keys of the cells shown by the current filters (product name, models, timing status).
 function visibleKeys() {
   var keys = [];
-  visibleProducts().forEach(function(p) { S.cycles[p].forEach(function(t) { keys.push(p + '@' + t); }); });
+  visibleProducts().forEach(function(p) { visibleCycles(p).forEach(function(t) { keys.push(p + '@' + t); }); });
   return keys;
 }
 // Only the selected cells matching the current filters; an update keeps its own cells regardless of filters.
@@ -1326,6 +1335,15 @@ function load() {
   return post('data', {limit: S.limit}).then(function(d) {
     S.more = d.more;
     S.cycles = d.cycles; S.minutesBeforeSchedule = d.minutesBeforeSchedule || {};
+    var selectedCycle = $('dnCycleFilter').value;
+    var cycles = {};
+    Object.keys(S.cycles).forEach(function(product) {
+      S.cycles[product].forEach(function(cycle) { cycles[cycle] = true; });
+    });
+    $('dnCycleFilter').innerHTML = '<option value="">All cycles</option>' + Object.keys(cycles).sort().map(function(cycle) {
+      return '<option value="' + esc(cycle) + '">' + esc(cycle) + '</option>';
+    }).join('');
+    $('dnCycleFilter').value = cycles[selectedCycle] ? selectedCycle : '';
     S.minutesBeforeSchedulePerCycle = d.minutesBeforeSchedulePerCycle || {};
     S.generationStatusPerProduct = d.generationStatusPerProduct || {};
     S.generationStatusPerCycle = d.generationStatusPerCycle || {};
@@ -1339,7 +1357,8 @@ function load() {
     S.compactCycles = d.compactCycles; S.delayTemplate = d.delayTemplate; S.resumedTemplate = d.resumedTemplate; S.descriptions = d.descriptions;
     if (!$('dnCc').value && !S.update) { $('dnCc').value = d.defaultCc || ''; }
     if (!$('dnBcc').value && !S.update) { $('dnBcc').value = d.defaultBcc || ''; }
-    restorePreferences(); renderModels(); renderSent(); dnRenderMatrix();
+    if (!preferencesRestored) { restorePreferences(); preferencesRestored = true; }
+    renderModels(); renderSent(); dnRenderMatrix();
   }).catch(fail);
 }
 // Entry points from a monitoring page: ?product=GWAVE&time=18&action=delay|resumed ("*" matches everything)
@@ -1347,6 +1366,18 @@ function fromProductPage() {
   var q = new URLSearchParams(window.location.search);
   var product = q.get('product'), time = q.get('time'), action = q.get('action');
   if (!product || !time) { return; }
+  $('dnFilter').value = product === '*' ? '' : product;
+  activeModels = {};
+  selectedStatuses = [];
+  renderModels();
+  renderStatusFilter();
+  if (time !== '*' && !Array.prototype.some.call($('dnCycleFilter').options, function(option) { return option.value === time; })) {
+    var option = document.createElement('option');
+    option.value = time; option.textContent = time;
+    $('dnCycleFilter').appendChild(option);
+  }
+  $('dnCycleFilter').value = time === '*' ? '' : time;
+  dnRenderMatrix();
   var label = (product === '*' ? 'all products' : product) + (time === '*' ? '' : ' ' + time);
   function wanted(p, t) { return (product === '*' || product === p) && (time === '*' || time === t); }
   if (action === 'resumed') {

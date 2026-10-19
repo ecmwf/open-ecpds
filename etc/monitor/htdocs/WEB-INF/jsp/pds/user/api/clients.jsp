@@ -97,8 +97,8 @@ function validate(path, message) {
           (regex) that matches the service name being invoked. Managed on the client detail page.</li>
         <li><strong>Last Used / Last IP</strong> &mdash; updated on every successful authentication.</li>
       </ul>
-      <p class="mb-0 text-muted">Clients originally configured in the <code>[API]</code> section of the Cnf file
-        are automatically migrated to this database on startup.</p>
+      <p class="mb-0 text-muted">Client definitions in the <code>[API]</code> section of the Cnf file
+        are imported into this database during startup provisioning.</p>
     </div>
   </div>
 

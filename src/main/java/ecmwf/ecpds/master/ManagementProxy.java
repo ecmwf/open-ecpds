@@ -139,6 +139,27 @@ final class ManagementProxy implements ManagementInterface {
     }
 
     @Override
+    public Map<String, String> getStorageLifecycleState(final long fileId) throws Exception {
+        return managementInterface.getStorageLifecycleState(fileId);
+    }
+
+    @Override
+    public Map<String, Map<String, String>> getStorageLifecycleReport(final ECpdsSession session) throws Exception {
+        return managementInterface.getStorageLifecycleReport(session);
+    }
+
+    @Override
+    public String getStorageLifecycleActivity(final ECpdsSession session) throws Exception {
+        return managementInterface.getStorageLifecycleActivity(session);
+    }
+
+    @Override
+    public void setStorageFilePin(final ECpdsSession session, final long fileId, final long until, final String reason)
+            throws Exception {
+        managementInterface.setStorageFilePin(session, fileId, until, reason);
+    }
+
+    @Override
     public java.util.List<ecmwf.common.database.WeatherDiscoveryStore.Candidate> findWeatherCandidates(
             ECpdsSession session, String source, int days, String protocol) throws Exception {
         return managementInterface.findWeatherCandidates(session, source, days, protocol);

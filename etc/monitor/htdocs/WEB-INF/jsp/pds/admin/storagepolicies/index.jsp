@@ -26,11 +26,8 @@
      style="background:rgba(25,135,84,0.07);border-left:4px solid #198754;font-size:0.85rem;color:var(--bs-body-color);">
     <div class="d-flex align-items-start gap-2">
         <i class="bi bi-hdd-stack-fill text-success flex-shrink-0 mt-1"></i>
-        <span>Storage Lifecycle Policies decide how long data files stay on the Data Movers. Policies are
-        evaluated in the order shown (first match wins) and a policy can only <b>shorten</b> the retention,
-        never keep a file longer than the transfer lifetime. The original copy is always kept for the
-        <b>requeue window</b> so that end users can ask for a re-queue. In this first stage the policies are only
-        defined and evaluated: <b>no file is removed yet</b>.</span>
+        <span>Manage replica retention on Data Movers while preserving originals until normal expiry.
+        Enforcement is off by default.</span>
         <a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('spGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Configuration Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide</a>
     </div>
 </div>
@@ -45,6 +42,63 @@
     <i class="bi bi-check-circle-fill mt-1"></i><span><c:out value="<%=spSuccess%>" /></span>
 </div>
 <% } %>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header fw-semibold"><i class="bi bi-activity me-2"></i>Runtime and storage savings</div>
+    <div class="card-body">
+        <p class="small mb-2"><c:out value="${spRuntimeActivity}"/></p>
+        <c:if test="${not empty spRuntimeError}"><div class="alert alert-warning mb-2" role="alert">
+            Runtime status unavailable: <c:out value="${spRuntimeError}"/></div></c:if>
+        <p class="small text-muted mb-0">Activation: <code>[StoragePolicy] enabled=yes</code> on the Master.
+            This immediately honours existing <code>ENFORCE</code> policies. Missing schema, busy files and unverified
+            originals block removal. Candidate estimates come from the last complete scan; shared files appear under each applicable policy.</p>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Policy</th><th>Eligible files</th><th>Reclaimable bytes</th><th>Reclaimed bytes</th>
+                <th>Replicas dropped</th><th>Last applied (UTC)</th><th>Last complete scan (UTC)</th></tr></thead>
+            <tbody>
+            <c:forEach var="r" items="${spReport}">
+                <tr><td><c:out value="${r.name}"/></td><td><c:out value="${r.candidates}"/></td>
+                    <td><c:out value="${r.reclaimableBytes}"/></td><td><c:out value="${r.reclaimedBytes}"/></td>
+                    <td><c:out value="${r.replicasDropped}"/></td><td><c:out value="${r.lastAppliedText}"/></td>
+                    <td><c:out value="${r.lastScanText}"/></td></tr>
+            </c:forEach>
+            <c:if test="${empty spReport}"><tr><td colspan="7" class="text-muted py-3">
+                No runtime report available. Enable the feature and configure an active policy to collect assessments.
+            </td></tr></c:if>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header fw-semibold"><i class="bi bi-pin-angle me-2"></i>File status and operator hold</div>
+    <div class="card-body">
+        <form method="get" action="/do/admin/storagepolicies" class="d-flex align-items-end gap-2 mb-3">
+            <div><label for="spFileId" class="form-label">Data File ID</label>
+                <input id="spFileId" name="fileId" type="number" min="1" required class="form-control"
+                       value="<c:out value="${spFileId}"/>"></div>
+            <button class="btn btn-outline-primary" type="submit">Show status</button>
+        </form>
+        <jsp:include page="/WEB-INF/jsp/pds/datafile/datafile/lifecycle.jsp"/>
+        <c:if test="${not empty spFileId and storageLifecycle.enabled eq 'true'}">
+        <form method="post" action="/do/admin/storagepolicies" class="row g-2 align-items-end">
+            <input type="hidden" name="csrf" value="<c:out value="${spCsrf}"/>">
+            <input type="hidden" name="fileId" value="<c:out value="${spFileId}"/>">
+            <div class="col-md-4"><label for="spPinUntil" class="form-label">Hold until (UTC, blank means expiry)</label>
+                <input type="datetime-local" id="spPinUntil" name="pinUntil" class="form-control"></div>
+            <div class="col-md-5"><label for="spPinReason" class="form-label">Reason (optional)</label>
+                <input type="text" id="spPinReason" name="pinReason" maxlength="512" class="form-control"
+                       value="<c:out value="${storageLifecycle.SLC_PIN_REASON}"/>"></div>
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-primary" name="op" value="pin" type="submit">Save hold</button>
+                <button class="btn btn-outline-secondary" name="op" value="unpin" type="submit">Remove hold</button>
+            </div>
+        </form>
+        </c:if>
+    </div>
+</div>
 
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
@@ -109,7 +163,8 @@
                 <li><strong>Replicas</strong> &mdash; whether the copies on the other Data Movers are dropped.</li>
                 <li><strong>default</strong> &mdash; the built-in policy used when nothing matches, shown as <em>EXPIRY</em>: files are kept until the transfer expiry.</li>
             </ul>
-            <p class="mb-0 text-muted">No file is removed yet: policies are only defined and evaluated.</p>
+            <p class="mb-0 text-muted">Only redundant replicas are removed. A runnable, failed or stopped transfer
+                or an operator hold keeps every existing copy. The original must be verified before each removal.</p>
         </div>
     </div>
     <div class="table-responsive">
@@ -131,6 +186,7 @@
                     <tr class="${p.active eq '1' ? '' : 'text-muted'}">
                         <td data-order="<c:out value="${p.order}" />">
                             <form method="post" action="/do/admin/storagepolicies" class="d-inline-flex gap-1 align-items-center">
+                                <input type="hidden" name="csrf" value="<c:out value="${spCsrf}"/>">
                                 <input type="hidden" name="name" value="<c:out value="${p.name}" />">
                                 <span class="me-1"><c:out value="${p.order}" /></span>
                                 <button type="submit" name="op" value="up" class="btn btn-sm btn-outline-secondary"
@@ -168,8 +224,9 @@
                         <td>
                             <div class="d-flex align-items-center gap-1">
                             <a href="/do/admin/storagepolicies?edit=<c:out value="${p.name}" />" class="btn btn-sm btn-outline-primary" title="Edit this policy"><i class="bi bi-pencil"></i></a>
-                            <form method="post" action="/do/admin/storagepolicies" class="d-flex m-0"
-                                  onsubmit="return confirm('Delete the policy ' + this.name.value + '?');">
+                            <form method="post" action="/do/admin/storagepolicies" class="d-flex m-0" data-sp-delete>
+                                <input type="hidden" name="csrf" value="<c:out value="${spCsrf}"/>">
+                                <input type="hidden" name="op" value="delete">
                                 <input type="hidden" name="name" value="<c:out value="${p.name}" />">
                                 <button type="submit" name="op" value="delete" class="btn btn-sm btn-outline-danger" title="Delete this policy"><i class="bi bi-trash"></i></button>
                             </form>
@@ -197,6 +254,7 @@
 
 <% if (edit != null) { %>
 <form method="post" action="/do/admin/storagepolicies" class="card shadow-sm mb-4">
+    <input type="hidden" name="csrf" value="<c:out value="${spCsrf}"/>">
     <input type="hidden" name="op" value="save">
     <input type="hidden" name="original" value="<c:out value="<%=original%>" />">
     <div class="card-header fw-semibold">
@@ -299,6 +357,37 @@
                     </select>
                 </div>
             </div>
+            <div class="col-12"><div class="form-text">Both the requeue window and replica delay must elapse.
+                Any live transfer using Keep all, EXPIRY or DISABLED vetoes removal. Any DRY_RUN match prevents enforcement.</div></div>
+            <div class="col-md-4">
+                <label class="form-label" for="spMinimum">Minimum replica retention from arrival (hours)</label>
+                <input id="spMinimum" type="number" min="0" name="minRetention" class="form-control"
+                       value="<c:out value="${spminRetentionHours}"/>">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="spGrace">Extra grace after eligibility (hours)</label>
+                <input id="spGrace" type="number" min="0" name="grace" class="form-control"
+                       value="<c:out value="${spgraceHours}"/>">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="spLazy">Lazy replication delay from arrival (hours)</label>
+                <input id="spLazy" type="number" min="0" name="lazy" class="form-control"
+                       value="<c:out value="${splazyHours}"/>">
+                <div class="form-text">0 keeps normal eager replication. An unhealthy original bypasses the delay.
+                    Redundancy is reduced during deferral; ENFORCE only.</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="spHigh">Disk-pressure high watermark (%)</label>
+                <input id="spHigh" type="number" min="0" max="100" name="high" class="form-control"
+                       value="<c:out value="${spEdit.high}"/>">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="spLow">Disk-pressure low watermark (%)</label>
+                <input id="spLow" type="number" min="0" max="100" name="low" class="form-control"
+                       value="<c:out value="${spEdit.low}"/>">
+            </div>
+            <div class="col-12"><div class="form-text">Set both watermarks to 0 to disable pressure handling.
+                Pressure skips only extra grace; it never shortens the requeue window, replica delay or minimum retention.</div></div>
         </div>
     </div>
     <div class="card-footer d-flex gap-2">
@@ -309,6 +398,7 @@
 <% } %>
 
 <form method="post" action="/do/admin/storagepolicies" class="card shadow-sm mb-4">
+    <input type="hidden" name="csrf" value="<c:out value="${spCsrf}"/>">
     <input type="hidden" name="op" value="test">
     <div class="card-header d-flex align-items-center gap-2 fw-semibold">
         <i class="bi bi-search"></i><span>Which policy applies?</span>
@@ -326,7 +416,7 @@
                 <li>A destination option <code>scheduler.storagePolicy</code> wins over the order.</li>
                 <li>Otherwise the first active policy whose criteria all match, else the built-in <code>default</code>.</li>
                 <li>Enter a real file name (no wildcards): it is checked against the policies' file name patterns, which accept <code>*</code> and <code>?</code>.</li>
-                <li>The result also shows the effective retention, and warns if the destination lifetime is shorter than the requeue window.</li>
+                <li>The result shows the requeue window and warns if the destination lifetime is shorter.</li>
             </ul>
             <p class="mb-0 text-muted">Nothing is changed by this check.</p>
         </div>
@@ -363,6 +453,22 @@
         <code>scheduler.storagePolicy = "&lt;policy name&gt;"</code>, which always wins over the order.</div>
     </div>
 </form>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('form[data-sp-delete]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            confirmationDialog({
+                title: 'Delete storage policy',
+                message: 'Delete policy "' + form.elements.name.value + '"? Referenced policies cannot be deleted.',
+                confirmText: 'Delete policy',
+                allowHtml: false,
+                onConfirm: function () { form.submit(); }
+            });
+        });
+    });
+});
+</script>
 
 <ul id="spDestData" style="display:none">
     <c:forEach var="d" items="${spDestinationOptions}">

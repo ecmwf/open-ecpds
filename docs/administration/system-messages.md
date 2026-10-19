@@ -4,6 +4,8 @@
 
 This is the recommended way to announce planned outages, maintenance windows, or other service-wide notices (e.g. *"The service will be unavailable for maintenance from 20:00 to 22:00 UTC"*) without having to manually add and remove a banner before and after the event.
 
+The page's **Configuration Guide** explains the fields, timing, visibility and list actions in a side panel.
+
 ---
 
 ## How it works
@@ -17,6 +19,7 @@ Each message has:
 | **Start** / **End** | The announced outage/maintenance window. The Start is when the service may become unavailable, so the message is shown **as soon as it is created** — warning users in advance — and remains visible until the End, after which it **disappears automatically**; there is nothing to clean up for it to stop being displayed. |
 
 The **Create**/**Edit** form lets you pick Start and End directly, or use the **Quick duration** shortcuts (`+1h`, `+6h`, `+1d`, `+1 week`) to set the End relative to the Start.
+Form times use your browser's local timezone; the list displays Start and End in UTC.
 
 A **Status** column in the list shows, for each message, whether it is currently:
 

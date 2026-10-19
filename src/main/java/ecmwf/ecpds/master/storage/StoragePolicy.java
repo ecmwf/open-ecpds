@@ -31,8 +31,6 @@ import java.util.regex.PatternSyntaxException;
  * A Storage Lifecycle Policy. A policy can only shorten the physical retention of a data file, never extend it beyond
  * the lifetime (expiry) of the related transfers.
  *
- * <p>
- * Stage 1: the policies are only defined and evaluated (no file is removed).
  */
 public final class StoragePolicy {
 
@@ -100,6 +98,12 @@ public final class StoragePolicy {
     /** The delay before dropping the replicas in milliseconds. */
     private final long dropReplicasAfterMs;
 
+    private final long minRetentionMs;
+    private final long graceMs;
+    private final long lazyReplicationMs;
+    private final int highWatermark;
+    private final int lowWatermark;
+
     /**
      * Instantiates a new storage policy.
      *
@@ -131,7 +135,19 @@ public final class StoragePolicy {
         restartOnRequeue = flag(row, "restart", false);
         dropReplicas = flag(row, "drop", false);
         dropReplicasAfterMs = number(row, "dropAfter", DEFAULT_DROP_REPLICAS_AFTER_MS);
-        if (requeueWindowMs < 0 || dropReplicasAfterMs < 0) {
+        minRetentionMs = number(row, "minRetention", 0);
+        graceMs = number(row, "grace", 0);
+        lazyReplicationMs = number(row, "lazy", 0);
+        final long high = number(row, "high", 0);
+        final long low = number(row, "low", 0);
+        if (high < 0 || high > 100 || low < 0 || low > 100 || high == 0 && low != 0
+                || high != 0 && (low == 0 || low >= high)) {
+            throw new IllegalArgumentException("Watermarks must both be zero (disabled), or 0 < low < high <= 100");
+        }
+        highWatermark = (int) high;
+        lowWatermark = (int) low;
+        if (requeueWindowMs < 0 || dropReplicasAfterMs < 0 || minRetentionMs < 0 || graceMs < 0
+                || lazyReplicationMs < 0) {
             throw new IllegalArgumentException("Durations cannot be negative");
         }
     }
@@ -161,16 +177,12 @@ public final class StoragePolicy {
      * @param rows
      *            the rows
      *
-     * @return the policies (invalid rows are skipped)
+     * @return the policies
      */
     public static List<StoragePolicy> fromRows(final List<Map<String, String>> rows) {
         final List<StoragePolicy> policies = new ArrayList<>();
         for (final var row : rows) {
-            try {
-                policies.add(new StoragePolicy(row));
-            } catch (final IllegalArgumentException e) {
-                // Skip the invalid policy (it can be fixed from the Admin page).
-            }
+            policies.add(new StoragePolicy(row));
         }
         return policies;
     }
@@ -227,6 +239,10 @@ public final class StoragePolicy {
                             "Selected by the destination option scheduler.storagePolicy = \"" + policy.name + "\"");
                 }
             }
+            if (DEFAULT_NAME.equals(explicit.trim())) {
+                return new Match(defaultPolicy(), "Explicit expiry-only destination policy");
+            }
+            throw new IllegalArgumentException("Destination references missing storage policy: " + explicit);
         }
         for (final var policy : sorted) {
             if (policy.active && policy.mode != Mode.DISABLED && policy.matches(subject)) {
@@ -271,7 +287,31 @@ public final class StoragePolicy {
      * @return the time until which the requeue is guaranteed
      */
     public long guaranteedUntil(final long windowStart, final long expiry) {
-        return Math.min(windowStart + requeueWindowMs, expiry);
+        return Math.min(addDuration(windowStart, requeueWindowMs), expiry);
+    }
+
+    public static long addDuration(final long start, final long duration) {
+        return duration > Long.MAX_VALUE - start ? Long.MAX_VALUE : start + duration;
+    }
+
+    public long getMinRetentionMs() {
+        return minRetentionMs;
+    }
+
+    public long getGraceMs() {
+        return graceMs;
+    }
+
+    public long getLazyReplicationMs() {
+        return lazyReplicationMs;
+    }
+
+    public int getHighWatermark() {
+        return highWatermark;
+    }
+
+    public int getLowWatermark() {
+        return lowWatermark;
     }
 
     // Wildcards ("*", "?") by default, or a regular expression when prefixed with "regex:".
@@ -349,8 +389,14 @@ public final class StoragePolicy {
 
     private static boolean flag(final Map<String, String> row, final String key, final boolean defaultValue) {
         final var value = value(row, key);
-        return value.isEmpty() ? defaultValue
-                : "1".equals(value) || "true".equalsIgnoreCase(value) || "on".equalsIgnoreCase(value);
+        if (value.isEmpty()) {
+            return defaultValue;
+        }
+        return switch (value.toLowerCase(java.util.Locale.ROOT)) {
+        case "1", "true", "on", "yes" -> true;
+        case "0", "false", "off", "no" -> false;
+        default -> throw new IllegalArgumentException("Invalid flag " + key + ": " + value);
+        };
     }
 
     private static long number(final Map<String, String> row, final String key, final long defaultValue) {

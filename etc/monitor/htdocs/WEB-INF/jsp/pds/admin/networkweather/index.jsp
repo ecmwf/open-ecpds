@@ -5,11 +5,8 @@
      style="background:rgba(13,202,240,0.07);border-left:4px solid #0dcaf0;font-size:0.85rem;color:var(--bs-body-color);">
     <div class="d-flex align-items-start gap-2">
         <i class="bi bi-cloud-lightning-rain text-info flex-shrink-0 mt-1"></i>
-        <span>Network Weather shows the recent delivery conditions between the Data Movers and the dissemination
-        Hosts. Choose the paths to follow (manually or automatically), then <b>activate collection</b>; scheduled
-        probes can add connectivity tests. Every feature is <b>off by default</b> and can be changed at any time
-        without restarting services. A path without measurements has <b>no coverage</b>; it is not reported as
-        healthy.</span>
+        <span>Follow recent delivery conditions between Data Movers and dissemination Hosts.
+        Collection and optional probes are off by default.</span>
         <a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('nwGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Configuration Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide</a>
     </div>
 </div>
@@ -42,6 +39,27 @@
     border-color: var(--bs-primary);
     font-weight: 600;
 }
+.nw-admin-content .card-body > :last-child,
+.nw-admin-content dl.row,
+.nw-admin-content dl.row > dt,
+.nw-admin-content dl.row > dd {
+    margin-bottom: 0;
+}
+.nw-admin-content dl.row {
+    row-gap: 0.375rem;
+}
+.nw-admin-content .card,
+.nw-admin-content .card-body,
+.nw-admin-content .table-responsive {
+    min-width: 0;
+}
+.nw-admin-content .table-responsive {
+    max-width: 100%;
+}
+.nw-admin-content table.dataTable {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
 </style>
 <ul class="nav nav-tabs nw-admin-tabs mb-3" id="nwTabs" role="tablist">
     <li class="nav-item" role="presentation"><button class="nav-link active" id="nw-tab-overview" data-bs-toggle="tab" data-bs-target="#nw-overview" type="button" role="tab" aria-controls="nw-overview" aria-selected="true">
@@ -63,7 +81,7 @@
         <i class="bi bi-activity me-1"></i>Measurements</button></li>
 </ul>
 
-<div class="tab-content">
+<div class="tab-content nw-admin-content">
 
 <%-- Overview --%>
 <div class="tab-pane fade show active" id="nw-overview" role="tabpanel" aria-labelledby="nw-tab-overview">
@@ -102,10 +120,11 @@
         </div>
     </form>
     <div class="row g-3">
-        <div class="col-lg-6"><div class="card shadow-sm h-100">
+        <div class="col-lg-6"><div class="card shadow-sm">
             <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-check2-square text-info"></i><span class="fw-semibold">Capabilities</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-capabilities" aria-expanded="false" aria-controls="nwInfo-capabilities" title="About this section"><i class="bi bi-info-circle"></i></button></div>
         <div class="collapse" id="nwInfo-capabilities"><div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">Shows the current state of collection, database persistence, automatic selection and
- scheduled probes. Disabled means switched off; unavailable means a required dependency is not ready.</div></div>
+ scheduled probes. Disabled means switched off. Socket persistence is unavailable while the background writer
+ is starting or cannot currently save measurements. See the Storage card and Master log for details.</div></div>
             <div class="card-body">
                 <c:if test="${empty nwCapabilities}">
                     <div class="d-flex align-items-start gap-2 text-muted">
@@ -126,7 +145,7 @@
                 </c:if>
             </div>
         </div></div>
-        <div class="col-lg-6"><div class="card shadow-sm h-100">
+        <div class="col-lg-6"><div class="card shadow-sm">
             <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-database text-info"></i><span class="fw-semibold">Storage</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-storage" aria-expanded="false" aria-controls="nwInfo-storage" title="About this section"><i class="bi bi-info-circle"></i></button></div>
         <div class="collapse" id="nwInfo-storage"><div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">State of the background worker saving measurements in the database: whether it is
  ready, how many measurements are waiting and how many were saved, dropped or expired. Dropped or expired
@@ -275,7 +294,7 @@
                 </div>
             </c:if>
             <c:if test="${not empty nwAutomationInfo}">
-            <dl class="row">
+            <dl class="row mb-2">
                 <c:forEach var="entry" items="${nwAutomationInfo}">
                     <dt class="col-sm-3"><c:out value="${entry.key}"/></dt>
                     <dd class="col-sm-9"><c:out value="${entry.value}"/></dd>
@@ -284,7 +303,7 @@
             </c:if>
             <c:if test="${not empty nwSelectionReasons}">
                 <h3 class="h6">Latest changes</h3>
-                <ul class="small"><c:forEach var="reason" items="${nwSelectionReasons}"><li><c:out value="${reason}"/></li></c:forEach></ul>
+                <ul class="small mb-2"><c:forEach var="reason" items="${nwSelectionReasons}"><li><c:out value="${reason}"/></li></c:forEach></ul>
             </c:if>
             <form method="post" action="/do/admin/networkweather">
                 <input type="hidden" name="op" value="reassess">
@@ -326,7 +345,8 @@
             </select>
             <p class="form-text mb-0">Group scopes permit every active dissemination Host in each group, including Hosts without
                 recent successful transfers. Only one transfer group per source is supported. Existing entries are kept;
-                duplicates are not added. Nothing is saved until you click Save.</p>
+                already-approved paths are omitted from the search results and duplicates are not added.
+                Nothing is saved until you click Save.</p>
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -461,4 +481,4 @@
 </div>
 </c:if>
 <jsp:include page="/WEB-INF/jsp/pds/admin/networkweather/guide.jsp"/>
-<script src="/js/network-weather-admin.js"></script>
+<script src="/js/network-weather-admin.js?v=20261019a"></script>

@@ -103,38 +103,29 @@ investigating. The table set may also differ where a deployment has site-specifi
 The table names are included as a reference for developers, administrators and people
 investigating OpenECPDS. They are implementation details rather than part of the
 end-user configuration interface. This catalog is not a column reference, entity
-relationship diagram or database upgrade guide.
+relationship diagram or schema-management guide.
 
 Network Weather remains disabled by default and never performs automatic DDL.
-Fresh installations include its identity tables. Existing installations use the
-additive `docker/ecpds/database/network-weather.sql` under the site's change
-procedure, not the full fresh-install dump. Its online statistics covering-index
-build reads existing data and requires DBA load/metadata-lock planning. The background capability check
+The supplied installation schema includes its identity tables and statistics
+covering index. Database schema operations require DBA load/metadata-lock planning.
+The background capability check
 requires the parent and identity tables, InnoDB, writer columns, unique identity
 indexes and cascading foreign keys before allowing runtime activation.
 Capacity limits are configured in the Master's `[NetworkWeather]` section and
-reported to the Monitor. Fresh databases use `MEDIUMTEXT` for configuration documents;
-existing databases need `docker/ecpds/database/network-weather-policy-capacity.sql`
-before storing policies larger than the old 65,535-byte `TEXT` capacity. This optional
-capacity change is separate from installing the Network Weather tables. See
+reported to the Monitor. Configuration documents use `MEDIUMTEXT` storage; the
+Master verifies actual column capacity before saving larger policies. See
 [deployment capacity](../monitor-ui/admin.md#deployment-capacity).
 
-For an existing database that has **neither** Network Weather migration applied,
-`docker/ecpds/database/production-upgrade-20261018.sql` combines the new tables,
-statistics index and configuration capacity change into one script. It covers only
-the Network Weather schema delta, not earlier feature upgrades or fresh-install
-seed data. Apply it once, without the client's `--force` option, after a backup and
-DBA review. Do not combine it with the individual scripts on the same database:
-duplicate objects intentionally cause an error. DDL auto-commits, so review any
-partially applied run before retrying.
-Ordinary delivery and the legacy successful-only writer do not require the new
-tables. Tagged executions use the new writer exclusively; untagged executions
-retain legacy behavior.
+Do not load the destructive full installation dump into a populated database.
+Database DDL auto-commits and must follow the site's backup and change procedures.
+Ordinary delivery and the successful-only statistics writer do not require the
+Weather identity tables. Tagged executions use the transactional Weather writer
+exclusively; untagged executions use successful-only statistics.
 
 Sending headers, connection identities and statistics commit together; neither
 volatile admission receipts nor assessment counters promise a committed ledger.
 Reads of transfer-detail provenance are indexed by transfer ID and gated on
-cached schema availability; they are not added to legacy history writes.
+cached schema availability; they are not added to untagged history writes.
 The identity tables cascade with transfer/socket deletion, preserving existing
 purge behavior rather than introducing an indefinite history archive.
 

@@ -56,6 +56,17 @@ import ecmwf.web.util.bean.Pair;
  */
 public final class Util {
 
+    public static void loadStorageLifecycle(final HttpServletRequest request, final long fileId) throws Exception {
+        final var state = new java.util.LinkedHashMap<>(
+                ecmwf.ecpds.master.MasterManager.getMI().getStorageLifecycleState(fileId));
+        for (final var field : List.of("SLC_PIN_UNTIL", "SLC_ELIGIBLE_AT", "SLC_GUARANTEED_UNTIL",
+                "SLC_EVALUATED_AT")) {
+            final long time = Long.parseLong(state.getOrDefault(field, "0"));
+            state.put(field + "_TEXT", time == 0 ? "Not available" : java.time.Instant.ofEpochMilli(time).toString());
+        }
+        request.setAttribute("storageLifecycle", state);
+    }
+
     /**
      * Gets the ecpds session from object.
      *

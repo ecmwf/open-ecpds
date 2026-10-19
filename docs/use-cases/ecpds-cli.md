@@ -162,7 +162,7 @@ The protocol is symmetric with the one used to secure the
 3. The server computes the expected response the same way and compares it in constant
    time. On mismatch, the connection is closed before any command is processed.
 
-This mechanism is **disabled by default** and fully backward-compatible: if no shared
+This mechanism is **disabled by default**: if no shared
 secret is configured on the Master Server, the challenge-response step is skipped
 entirely and the connection proceeds straight to the IncomingUser/ECUSER checks above.
 

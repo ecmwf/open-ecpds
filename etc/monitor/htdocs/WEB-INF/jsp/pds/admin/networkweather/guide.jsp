@@ -82,7 +82,8 @@
         <p class="small">Use <strong>Find candidates from successful transfers</strong> to search the last 1&ndash;30 days.
         Optionally filter by protocol. Choose a source to assign (history does not identify the source for each Host), review the matching active
         dissemination Hosts and add individual paths or source/group scopes. Group scopes also permit other Hosts in the
-        group; only one group per source is supported. Entries are added to the form, not saved automatically.</p>
+        group; only one group per source is supported. Already-approved paths are omitted from the preview;
+        applying results also skips duplicates. Entries are added to the form, not saved automatically.</p>
         <p class="small text-muted mb-0">While automatic selection is on, the manual scope cannot be edited. Use
         <strong>Request reassessment</strong> to recompute the selection without waiting for the next day.</p>
       </div>

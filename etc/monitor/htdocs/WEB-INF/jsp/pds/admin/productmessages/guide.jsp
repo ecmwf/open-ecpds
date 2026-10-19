@@ -29,6 +29,11 @@
     <div class="tab-content">
 
       <div class="tab-pane fade show active" id="pmg-usage" role="tabpanel">
+        <p class="small text-muted mb-2">Product summary pages show <strong>Delay Notification</strong> and
+        <strong>Legacy Email Actions</strong> inside <strong>Email Notifications</strong>, only when explicit contact
+        emails are available for that page. A single-cycle page uses that cycle's contacts; all-cycles and
+        all-products pages combine and deduplicate contacts across their scope. Legacy email actions do not
+        register a notice.</p>
         <div class="table-responsive mb-3">
           <table class="table table-sm table-bordered small mb-0">
             <thead class="table-light"><tr><th>Message</th><th>Variant</th><th>Used by</th></tr></thead>

@@ -184,6 +184,8 @@ import ecmwf.common.security.HttpCertificateProvider;
  * The Class MoverServer.
  */
 public final class MoverServer extends StarterServer implements MoverInterface {
+    private final Object storageReplicaLock = new Object();
+    private final Map<FileDescriptor, Boolean> storageReaders = new java.util.WeakHashMap<>();
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = -8236856567764955573L;
 
@@ -1804,6 +1806,12 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     @Override
     public DataFile filter(final DataFile dataFile, final boolean remove) throws RemoteException {
+        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(dataFile.getId())) {
+            return filterWithStorageLease(dataFile, remove);
+        }
+    }
+
+    private DataFile filterWithStorageLease(final DataFile dataFile, final boolean remove) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(dataFile, "filter"));
         try {
             final var filter = StreamManagerImp.getFilters(dataFile.getFilterName(), dataFile.getSize());
@@ -1951,6 +1959,13 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     @Override
     public DataFile replicate(final DataFile dataFile, final Host targetHost, final Host[] hostsForSource)
             throws RemoteException {
+        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(dataFile.getId())) {
+            return replicateWithStorageLease(dataFile, targetHost, hostsForSource);
+        }
+    }
+
+    private DataFile replicateWithStorageLease(final DataFile dataFile, final Host targetHost,
+            final Host[] hostsForSource) throws RemoteException {
         final var operation = HostOption.BACKUP.equals(targetHost.getType()) ? "backup"
                 : HostOption.PROXY.equals(targetHost.getType()) ? "proxy" : "replicate";
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(dataFile, operation));
@@ -2028,12 +2043,16 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             }
             // Now we process the transmission synchronously!
             final var descriptor = new FileDescriptor(null, dataFile, file, fileSize, 0, -1, null, null);
-            final var put = new ECtransPut(fileName, descriptor, 0, fileSize, toFilter, null);
-            final var accountingCallback = new DefaultCallback(HOST_ECTRANS.getECtransSetup(targetHost.getData()));
-            accountingCallback.setByteCounter(bytes -> trafficAccounting.add(targetHost.getType(), bytes));
-            new ECtransContainer(new MoverProvider(new LocalRepository(targetHost)), false).syncExec(put, null,
-                    targetHost.getECUserName(), targetHost.getName() + "@" + targetHost.getTransferMethodName(), null,
-                    accountingCallback, true);
+            try {
+                final var put = new ECtransPut(fileName, descriptor, 0, fileSize, toFilter, null);
+                final var accountingCallback = new DefaultCallback(HOST_ECTRANS.getECtransSetup(targetHost.getData()));
+                accountingCallback.setByteCounter(bytes -> trafficAccounting.add(targetHost.getType(), bytes));
+                new ECtransContainer(new MoverProvider(new LocalRepository(targetHost)), false).syncExec(put, null,
+                        targetHost.getECUserName(), targetHost.getName() + "@" + targetHost.getTransferMethodName(),
+                        null, accountingCallback, true);
+            } finally {
+                descriptor.releaseStorageReader();
+            }
             _log.info("File {} successfully transmitted on {}", fileName, targetHost.getNickname());
             return dataFile;
         } catch (final Throwable t) {
@@ -2336,6 +2355,13 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     @Override
     public DataFile download(final DataFile dataFile, final Host hostForSource) throws RemoteException {
+        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(dataFile.getId())) {
+            return downloadWithStorageLease(dataFile, hostForSource);
+        }
+    }
+
+    private DataFile downloadWithStorageLease(final DataFile dataFile, final Host hostForSource)
+            throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(dataFile, "download"));
         GenericFile file = null;
         try {
@@ -2640,6 +2666,91 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
+    @Override
+    public long inspectStorageReplica(final DataFile dataFile) throws RemoteException {
+        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.tryWrite(dataFile.getId())) {
+            if (lease == null) {
+                return -2;
+            }
+            synchronized (storageReplicaLock) {
+                try {
+                    return storageReplicaBytes(dataFile);
+                } catch (final IOException e) {
+                    throw Format.getRemoteException("Inspect storage replica on " + getRoot(), e);
+                }
+            }
+        }
+    }
+
+    private long storageReplicaBytes(final DataFile dataFile) throws IOException {
+        if (!OPERATIONAL || dataFile.getFileSystem() == null) {
+            throw new IOException("Storage lifecycle requires operational filesystem-backed storage");
+        }
+        for (final var descriptor : storageReaders.keySet()) {
+            if (descriptor.getDataFile().getId() == dataFile.getId()) {
+                return -2;
+            }
+        }
+        final GenericFile file = new FileChecker(GenericFile.getGenericFile(getRepository(), getPath(dataFile)));
+        if (!file.exists()) {
+            return -1;
+        }
+        if (!file.canRead() || file.length() != dataFile.getSize()) {
+            return -2;
+        }
+        long bytes = file.length();
+        final var directory = file.getParentFile();
+        final var related = directory.list(new DataFileFilter(file));
+        if (related == null) {
+            throw new IOException("Cannot list replica directory for DataFile " + dataFile.getId());
+        }
+        for (final var name : related) {
+            final var filtered = GenericFile.getGenericFile(directory, name);
+            if (!filtered.getAbsolutePath().equals(file.getAbsolutePath())) {
+                bytes = Math.addExact(bytes, filtered.length());
+            }
+        }
+        return bytes;
+    }
+
+    @Override
+    public long dropStorageReplica(final DataFile dataFile) throws RemoteException {
+        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.tryWrite(dataFile.getId())) {
+            if (lease == null) {
+                return -2;
+            }
+            synchronized (storageReplicaLock) {
+                try {
+                    final long bytes = storageReplicaBytes(dataFile);
+                    if (bytes < 0) {
+                        return bytes;
+                    }
+                    final GenericFile file = new FileChecker(
+                            GenericFile.getGenericFile(getRepository(), getPath(dataFile)));
+                    final var directory = file.getParentFile();
+                    final var related = directory.list(new DataFileFilter(file));
+                    if (related == null) {
+                        throw new IOException("Cannot list replica directory for DataFile " + dataFile.getId());
+                    }
+                    for (final var name : related) {
+                        final var filtered = GenericFile.getGenericFile(directory, name);
+                        if (!filtered.getAbsolutePath().equals(file.getAbsolutePath()) && !filtered.delete()) {
+                            throw new IOException("Cannot remove filtered replica " + filtered.getAbsolutePath());
+                        }
+                    }
+                    if (!file.delete()) {
+                        throw new IOException("Cannot remove replica " + file.getAbsolutePath());
+                    }
+                    _log.info("Storage lifecycle dropped DataFile {} instance={} bytes={}", dataFile.getId(),
+                            dataFile.getFileInstance(), bytes);
+                    return bytes;
+                } catch (final IOException | ArithmeticException e) {
+                    throw Format.getRemoteException("Drop storage replica on " + getRoot(), e);
+                }
+            }
+        }
+    }
+
     @Override
     public boolean del(final DataFile dataFile) throws RemoteException {
         if (dataFile.getFileSystem() == null) {
@@ -4063,49 +4174,59 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         private FileDescriptor(final Host[] hostsForSource, final DataFile dataFile, final GenericFile file,
                 final long size, final long posn, final long length, final String filter, final String inputFilter)
                 throws SourceNotAvailableException, IOException {
-            final boolean exists;
-            final boolean readable;
-            final boolean lengthOk;
-            if (file != null) {
-                exists = file.exists();
-                readable = file.canRead();
-                if (StreamManager.NONE.equals(inputFilter)) {
-                    lengthOk = exists && file.length() == size;
+            synchronized (storageReplicaLock) {
+                final boolean exists;
+                final boolean readable;
+                final boolean lengthOk;
+                if (file != null) {
+                    exists = file.exists();
+                    readable = file.canRead();
+                    if (StreamManager.NONE.equals(inputFilter)) {
+                        lengthOk = exists && file.length() == size;
+                    } else {
+                        lengthOk = true;
+                    }
                 } else {
-                    lengthOk = true;
+                    exists = false;
+                    readable = false;
+                    lengthOk = !StreamManager.NONE.equals(inputFilter);
                 }
-            } else {
-                exists = false;
-                readable = false;
-                lengthOk = !StreamManager.NONE.equals(inputFilter);
+                if (OPERATIONAL && (!exists || !lengthOk || !readable)) {
+                    final var path = file != null ? file.getAbsolutePath() : "(no filesystem)";
+                    if (!exists) {
+                        _log.debug("DataFile {} not found locally (path={}, exists=false)", dataFile.getId(), path);
+                    } else if (!readable) {
+                        _log.debug("DataFile {} not found locally (path={}, exists=true, readable=false)",
+                                dataFile.getId(), path);
+                    } else {
+                        _log.debug("DataFile {} not found locally (path={}, exists=true, size={}, expected={})",
+                                dataFile.getId(), path, file.length(), size);
+                    }
+                    _local = false;
+                    if (hostsForSource == null || hostsForSource.length == 0) {
+                        throw new SourceNotAvailableException("DataFile " + dataFile.getId() + " not found on "
+                                + getRoot()
+                                + (!exists ? " (path not found: " + path + ")"
+                                        : !readable ? " (not readable: " + path + ")" : " (size mismatch: actual="
+                                                + file.length() + ", expected=" + size + ", path=" + path + ")"));
+                    }
+                }
+                _hostsForSource = hostsForSource;
+                _dataFile = dataFile;
+                _file = file;
+                _size = size;
+                _posn = posn;
+                _length = length;
+                _filter = filter;
+                _inputFilter = inputFilter;
+                storageReaders.put(this, Boolean.TRUE);
             }
-            if (OPERATIONAL && (!exists || !lengthOk || !readable)) {
-                final var path = file != null ? file.getAbsolutePath() : "(no filesystem)";
-                if (!exists) {
-                    _log.debug("DataFile {} not found locally (path={}, exists=false)", dataFile.getId(), path);
-                } else if (!readable) {
-                    _log.debug("DataFile {} not found locally (path={}, exists=true, readable=false)", dataFile.getId(),
-                            path);
-                } else {
-                    _log.debug("DataFile {} not found locally (path={}, exists=true, size={}, expected={})",
-                            dataFile.getId(), path, file.length(), size);
-                }
-                _local = false;
-                if (hostsForSource == null || hostsForSource.length == 0) {
-                    throw new SourceNotAvailableException("DataFile " + dataFile.getId() + " not found on " + getRoot()
-                            + (!exists ? " (path not found: " + path + ")"
-                                    : !readable ? " (not readable: " + path + ")" : " (size mismatch: actual="
-                                            + file.length() + ", expected=" + size + ", path=" + path + ")"));
-                }
+        }
+
+        public void releaseStorageReader() {
+            synchronized (storageReplicaLock) {
+                storageReaders.remove(this);
             }
-            _hostsForSource = hostsForSource;
-            _dataFile = dataFile;
-            _file = file;
-            _size = size;
-            _posn = posn;
-            _length = length;
-            _filter = filter;
-            _inputFilter = inputFilter;
         }
 
         /**
@@ -4686,99 +4807,105 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             if (!closeTransferAndMonitor()) { // If it is closed then no need to process the transfer history again!
                 return;
             }
-            if (_transfer.getDuration() == 0) {
-                // If the transfer was less than a millisecond then we set 1
-                // millisecond to allow the processing of the rate!
-                _log.debug("0ms duration detected for DataTransfer-{} push (forcing 1ms)", _transfer.getId());
-                _transfer.setDuration(1);
-            }
-            final var statistics = module.getAttribute(ClientSocketStatistics.class);
-            final var hostName = (String) module.getAttribute("remote.hostName");
-            final var fileName = (String) module.getAttribute("remote.fileName");
-            final var operation = (String) module.getAttribute("remote.operation");
-            final var targetName = isNotEmpty(fileName) ? fileName : _fileName;
-            final var from = masterManager != null ? "DataMover=" + getRoot() : "Proxy Host="
-                    + _transfer.getProxyHostName() + " (" + _transfer.getProxyHost().getNickname() + ")";
-            final String comment;
-            boolean usedCompressedFile = false;
-            if ("exec".equals(operation)) {
-                comment = "External transfer initiated from " + from + " to " + hostName + " at " + targetName;
-            } else if ("copy".equals(operation)) {
-                comment = "Local copy initiated from " + from + " to " + hostName + " at " + targetName;
-            } else {
-                final var sourceHost = _descriptor != null ? _descriptor.getSelectedSourceHost() : null;
-                final var source = sourceHost != null
-                        ? " using Host=" + sourceHost.getName() + " (" + sourceHost.getNickname() + ")" : "";
-                if (module.getAvailable()) {
-                    // The file is available but not sent anywhere (data portal), so we have to make
-                    // sure there will be no transfer rate displayed!
-                    _transfer.setSent(0);
-                    comment = "Available on " + from + source + " as " + targetName;
-                } else { // operation == sent
-                    // The file has been transmitted successfully!
-                    if (module.getAttribute("compression.fileSize") instanceof final Long fileSize) {
-                        // This was compression on the fly so let's compute the ratio
-                        // and the number of bytes sent now that we have the data!
-                        _transfer.setCompressedOnTheFly(true);
-                        if (fileSize > 0) {
-                            _transfer.setRatio((double) _fileSize / (double) fileSize);
-                        } else {
-                            _transfer.setRatio(1); // safe default
-                        }
-                        _transfer.setSent(fileSize);
-                        _filtered = true;
-                    }
-                    final var rate = Format.getMBitsPerSeconds(_transfer.getSent(), _transfer.getDuration());
-                    final var ratio = (int) (100 / _transfer.getRatio());
-                    final String compression;
-                    if (_filter != null) {
-                        final var onTheFly = _transfer.getCompressedOnTheFly() ? " on-the-fly" : "";
-                        compression = " " + _filter + (_filtered ? " (" + ratio + "%" + onTheFly + ")" : "");
-                        usedCompressedFile = !_transfer.getCompressedOnTheFly();
-                    } else {
-                        compression = "";
-                    }
-                    comment = "Sent" + compression + " from " + from + source + " to "
-                            + (isNotEmpty(hostName) ? hostName + " at " : "") + targetName
-                            + (rate == -1 ? "" : " (" + rate + " Mbits/s)")
-                            + (module.getAttribute("s3.discoveredRegion") instanceof final String r
-                                    ? " [s3.region=" + r + "]" : "");
+            try {
+                if (_transfer.getDuration() == 0) {
+                    // If the transfer was less than a millisecond then we set 1
+                    // millisecond to allow the processing of the rate!
+                    _log.debug("0ms duration detected for DataTransfer-{} push (forcing 1ms)", _transfer.getId());
+                    _transfer.setDuration(1);
                 }
-            }
-            final var statisticsString = statistics != null && !statistics.isEmpty() ? statistics.toString() : null;
-            synchronized (transferRepository) {
-                updateFinishTime();
-                _transfer.setComment(comment);
-                _transfer.recordDeliveredName(fileName);
-                _transfer.setStatistics(statisticsString);
-                _transfer.setCompressed(_filter);
-                _transfer.setStatusCode(StatusFactory.DONE);
-                transferRepository.notifyAll();
-            }
-            _log.info("Transfer {} ({}) completed: {} - statistics: '{}'", _transfer.getId(), targetName, comment,
-                    statisticsString != null ? statisticsString : "none");
-            _offerLiveSample(LiveTransferSample.STATUS_DONE);
-            if (usedCompressedFile && _descriptor != null && _descriptor.isLocal()) {
-                // We have successfully transmitted a local compressed file, so we might now
-                // unlink the uncompressed version of it to save some disk space!
-                try {
-                    final var localFile = _descriptor.getFile(false);
-                    if (localFile != null && localFile.supportsUnlinkWhileOpen()) {
-                        if (Cnf.at("Mover", "unlinkUncompressedFileOnSuccess", false)) {
-                            if (localFile.delete()) {
-                                _log.debug("File successfully unlinked after transmission: {}",
-                                        localFile.getAbsolutePath());
+                final var statistics = module.getAttribute(ClientSocketStatistics.class);
+                final var hostName = (String) module.getAttribute("remote.hostName");
+                final var fileName = (String) module.getAttribute("remote.fileName");
+                final var operation = (String) module.getAttribute("remote.operation");
+                final var targetName = isNotEmpty(fileName) ? fileName : _fileName;
+                final var from = masterManager != null ? "DataMover=" + getRoot() : "Proxy Host="
+                        + _transfer.getProxyHostName() + " (" + _transfer.getProxyHost().getNickname() + ")";
+                final String comment;
+                boolean usedCompressedFile = false;
+                if ("exec".equals(operation)) {
+                    comment = "External transfer initiated from " + from + " to " + hostName + " at " + targetName;
+                } else if ("copy".equals(operation)) {
+                    comment = "Local copy initiated from " + from + " to " + hostName + " at " + targetName;
+                } else {
+                    final var sourceHost = _descriptor != null ? _descriptor.getSelectedSourceHost() : null;
+                    final var source = sourceHost != null
+                            ? " using Host=" + sourceHost.getName() + " (" + sourceHost.getNickname() + ")" : "";
+                    if (module.getAvailable()) {
+                        // The file is available but not sent anywhere (data portal), so we have to make
+                        // sure there will be no transfer rate displayed!
+                        _transfer.setSent(0);
+                        comment = "Available on " + from + source + " as " + targetName;
+                    } else { // operation == sent
+                        // The file has been transmitted successfully!
+                        if (module.getAttribute("compression.fileSize") instanceof final Long fileSize) {
+                            // This was compression on the fly so let's compute the ratio
+                            // and the number of bytes sent now that we have the data!
+                            _transfer.setCompressedOnTheFly(true);
+                            if (fileSize > 0) {
+                                _transfer.setRatio((double) _fileSize / (double) fileSize);
                             } else {
-                                _log.warn("Cannot unlink file after successful transmission: {}",
+                                _transfer.setRatio(1); // safe default
+                            }
+                            _transfer.setSent(fileSize);
+                            _filtered = true;
+                        }
+                        final var rate = Format.getMBitsPerSeconds(_transfer.getSent(), _transfer.getDuration());
+                        final var ratio = (int) (100 / _transfer.getRatio());
+                        final String compression;
+                        if (_filter != null) {
+                            final var onTheFly = _transfer.getCompressedOnTheFly() ? " on-the-fly" : "";
+                            compression = " " + _filter + (_filtered ? " (" + ratio + "%" + onTheFly + ")" : "");
+                            usedCompressedFile = !_transfer.getCompressedOnTheFly();
+                        } else {
+                            compression = "";
+                        }
+                        comment = "Sent" + compression + " from " + from + source + " to "
+                                + (isNotEmpty(hostName) ? hostName + " at " : "") + targetName
+                                + (rate == -1 ? "" : " (" + rate + " Mbits/s)")
+                                + (module.getAttribute("s3.discoveredRegion") instanceof final String r
+                                        ? " [s3.region=" + r + "]" : "");
+                    }
+                }
+                final var statisticsString = statistics != null && !statistics.isEmpty() ? statistics.toString() : null;
+                synchronized (transferRepository) {
+                    updateFinishTime();
+                    _transfer.setComment(comment);
+                    _transfer.recordDeliveredName(fileName);
+                    _transfer.setStatistics(statisticsString);
+                    _transfer.setCompressed(_filter);
+                    _transfer.setStatusCode(StatusFactory.DONE);
+                    transferRepository.notifyAll();
+                }
+                _log.info("Transfer {} ({}) completed: {} - statistics: '{}'", _transfer.getId(), targetName, comment,
+                        statisticsString != null ? statisticsString : "none");
+                _offerLiveSample(LiveTransferSample.STATUS_DONE);
+                if (usedCompressedFile && _descriptor != null && _descriptor.isLocal()) {
+                    // We have successfully transmitted a local compressed file, so we might now
+                    // unlink the uncompressed version of it to save some disk space!
+                    try {
+                        final var localFile = _descriptor.getFile(false);
+                        if (localFile != null && localFile.supportsUnlinkWhileOpen()) {
+                            if (Cnf.at("Mover", "unlinkUncompressedFileOnSuccess", false)) {
+                                if (localFile.delete()) {
+                                    _log.debug("File successfully unlinked after transmission: {}",
+                                            localFile.getAbsolutePath());
+                                } else {
+                                    _log.warn("Cannot unlink file after successful transmission: {}",
+                                            localFile.getAbsolutePath());
+                                }
+                            } else {
+                                _log.debug("Unlink of uncompressed file on success is disabled: {}",
                                         localFile.getAbsolutePath());
                             }
-                        } else {
-                            _log.debug("Unlink of uncompressed file on success is disabled: {}",
-                                    localFile.getAbsolutePath());
                         }
+                    } catch (final Throwable t) {
+                        _log.warn("Cannot unlink file after successful transmission", t);
                     }
-                } catch (final Throwable t) {
-                    _log.warn("Cannot unlink file after successful transmission", t);
+                }
+            } finally {
+                if (_descriptor != null) {
+                    _descriptor.releaseStorageReader();
                 }
             }
         }
@@ -4797,36 +4924,42 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             if (!closeTransferAndMonitor()) { // If it is closed then no need to process the transfer history again!
                 return;
             }
-            comment = isNotEmpty(comment) ? comment : null;
-            var existingComment = _transfer.getComment();
-            existingComment = isNotEmpty(existingComment) ? existingComment : null;
-            if (comment == null && existingComment == null) {
-                comment = "Transmission failed";
-            } else if (comment != null && existingComment != null) {
-                comment = comment + " (" + existingComment + ")";
-            } else {
-                if (comment == null) {
-                    comment = existingComment;
+            try {
+                comment = isNotEmpty(comment) ? comment : null;
+                var existingComment = _transfer.getComment();
+                existingComment = isNotEmpty(existingComment) ? existingComment : null;
+                if (comment == null && existingComment == null) {
+                    comment = "Transmission failed";
+                } else if (comment != null && existingComment != null) {
+                    comment = comment + " (" + existingComment + ")";
+                } else {
+                    if (comment == null) {
+                        comment = existingComment;
+                    }
+                }
+                final String statisticsString;
+                if (module != null) {
+                    final var statistics = module.getAttribute(ClientSocketStatistics.class);
+                    statisticsString = statistics != null && !statistics.isEmpty() ? statistics.toString() : null;
+                } else {
+                    statisticsString = null;
+                }
+                synchronized (transferRepository) {
+                    updateFinishTime();
+                    _transfer.setComment(comment);
+                    _transfer.setFailedTime(new Timestamp(System.currentTimeMillis()));
+                    _transfer.setStatistics(statisticsString);
+                    _transfer.setStatusCode(StatusFactory.RETR);
+                    transferRepository.notifyAll();
+                }
+                _log.warn("Transfer {} ({}) failed: {} - statistics: '{}'", _transfer.getId(), _dataFile.getSource(),
+                        comment, statisticsString != null ? statisticsString : "none");
+                _offerLiveSample(LiveTransferSample.STATUS_FAILED);
+            } finally {
+                if (_descriptor != null) {
+                    _descriptor.releaseStorageReader();
                 }
             }
-            final String statisticsString;
-            if (module != null) {
-                final var statistics = module.getAttribute(ClientSocketStatistics.class);
-                statisticsString = statistics != null && !statistics.isEmpty() ? statistics.toString() : null;
-            } else {
-                statisticsString = null;
-            }
-            synchronized (transferRepository) {
-                updateFinishTime();
-                _transfer.setComment(comment);
-                _transfer.setFailedTime(new Timestamp(System.currentTimeMillis()));
-                _transfer.setStatistics(statisticsString);
-                _transfer.setStatusCode(StatusFactory.RETR);
-                transferRepository.notifyAll();
-            }
-            _log.warn("Transfer {} ({}) failed: {} - statistics: '{}'", _transfer.getId(), _dataFile.getSource(),
-                    comment, statisticsString != null ? statisticsString : "none");
-            _offerLiveSample(LiveTransferSample.STATUS_FAILED);
         }
     }
 
@@ -5010,6 +5143,20 @@ public final class MoverServer extends StarterServer implements MoverInterface {
          */
         @Override
         public InputStream getDataInputStream(final Object ticket) throws IOException {
+            final var descriptor = (FileDescriptor) ticket;
+            return new java.io.FilterInputStream(openDataInputStream(ticket)) {
+                @Override
+                public void close() throws IOException {
+                    try {
+                        super.close();
+                    } finally {
+                        java.lang.ref.Reference.reachabilityFence(descriptor);
+                    }
+                }
+            };
+        }
+
+        private InputStream openDataInputStream(final Object ticket) throws IOException {
             final var desc = (FileDescriptor) ticket;
             final var file = desc.getFile(false);
             final var dataFile = desc.getDataFile();

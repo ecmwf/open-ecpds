@@ -13,8 +13,12 @@ The admin home page provides access to: [Destination Metadata](../administration
 
 ## Storage Lifecycle Policies
 
-At `/do/admin/storagepolicies`, administrators define policies controlling how long data
-files are retained on the Data Movers. See [Storage Lifecycle Policies](../administration/storage-lifecycle-policies.md).
+At `/do/admin/storagepolicies`, administrators define and test replica-retention policies,
+inspect dry-run estimates and persistent savings counters, and set per-file operator
+holds. Opt-in enforcement preserves original copies until normal expiry; advanced
+settings include pressure watermarks and lazy replication. File and transfer details
+show retention status and link to hold management.
+See [Storage Lifecycle Policies](../administration/storage-lifecycle-policies.md).
 
 ## Network Weather
 
@@ -103,12 +107,10 @@ consume its single worker. Probe execution retains its independent rate limit.
 Increasing the policy count does not automatically increase probe execution frequency
 or the event queues' capacity.
 
-Fresh databases use `MEDIUMTEXT` for `SYS_CONFIG.SCF_PARAM_VALUE`. Before saving
-policies larger than 65,535 bytes in an existing database, apply
-[`network-weather-policy-capacity.sql`](https://github.com/ecmwf/open-ecpds/blob/master/docker/ecpds/database/network-weather-policy-capacity.sql)
-through the normal database change procedure. The Master checks actual storage
+The installation schema uses `MEDIUMTEXT` for `SYS_CONFIG.SCF_PARAM_VALUE`,
+providing storage for larger policies. The Master checks actual storage
 capacity before saving a larger document and fails explicitly rather than allowing truncation.
-Do not reload the full fresh-install dump. Plan this column change with the DBA.
+Do not load the full installation dump into a populated database. Coordinate schema operations with the DBA.
 
 Large browser submissions also need adequate Monitor form capacity. Set, for example,
 `maxFormContentSize=16777216` under `[MonitorPlugin]` in the Monitor's properties file
@@ -153,6 +155,7 @@ and is applied in the database search.
 Choose the source to assign explicitly: transfer history identifies the successful
 Host but not its historical source. Only currently
 active dissemination Hosts with a `DONE` history entry in that period are suggested.
+Already-approved paths for the chosen source are omitted from the preview.
 Review and select matches, then add individual Approved candidates or source/group
 scopes. Group scopes also permit Hosts without a recent success and support only
 one group per source. Existing entries are preserved and duplicates are skipped;
@@ -227,14 +230,16 @@ silently qualify for this capability.
 ### Live Earth weather overlay
 
 The Network Weather icon (<i class="bi bi-cloud-lightning-rain"></i>) in the Live Earth
-toolbar is shown **only while collection is active**. Click it to switch the overlay on
+toolbar is shown while collection is active or its state cannot yet be confirmed.
+Click it to switch the overlay on
 (highlighted) or off (normal); it starts **off**. Its preference is saved
 in browser local storage, independently of transfer animation and other globe
 preferences. Enabling it displays a searchable table of permitted source/Host/method
 evidence, socket coverage, observation age and available diagnostic summaries, plus
 independent Host-location halos. Gray/absent evidence means unknown coverage, not
 healthy connectivity; orange delivery trouble is not a network-fault diagnosis.
-Unresolved coordinates do not create invented locations. The Dissemination filter
+Unresolved coordinates (including internal addresses) do not create invented locations,
+but never hide the icon or permitted table rows. The Dissemination filter
 also applies to the overlay.
 
 The server filters by the viewer's active monitoring authorization, Host and
@@ -246,7 +251,8 @@ not zero-latency success. Viewing the overlay never starts collection or a probe
 
 When collection is disabled or suspended, the server returns no weather paths and
 the icon is hidden and the overlay cleared on the next refresh. Errors and stalled
-requests also clear the overlay. Refresh is every 15 seconds with an eight-second
+requests also clear stale evidence, but keep the icon available: its tooltip and opened
+panel show the failure rather than silently disappearing. Refresh is every 15 seconds with an eight-second
 request deadline; a disabled collection therefore overrides even a saved `on`
 preference. The preference is retained, so it can resume when collection becomes
 available again. Off viewers request only control state, not path/geolocation data.
@@ -299,8 +305,8 @@ The Master verifies a fresh Ed25519 challenge using the callback already
 registered through DataMover subscription authentication. It never installs a
 public key from an observation, incoming IP or arbitrary URL. The process-private
 key is not returned or exposed in the UI. The signed identity must advertise
-collection protocol version 1 (dispatch timing and per-execution writer handover);
-earlier preparation-only components do not qualify. Deploy matching Master,
+collection protocol version 1 (dispatch timing and per-execution writer handover).
+Deploy matching Master,
 Monitor, local relay and Continental Mover versions.
 
 One background worker checks at most one selected source per step,
@@ -395,26 +401,21 @@ guarantee; validate shared database/pool pressure on the test system.
 One transaction records the immutable sending header, deduplicated connection
 identity and `TRANSFER_STATISTICS` rows. Replay after a lost acknowledgement
 reuses the identities; conflicting immutable evidence is rejected. Tagged
-executions use this writer exclusively, including failures, and untagged/old or
-unselected executions keep the legacy successful-only writer. Legacy index
+executions use this writer exclusively, including failures, and untagged or
+unselected executions use the successful-only writer. Successful-only index
 allocation also checks the indexed Weather headers, so socket-less failures do
-not share an index with later successful legacy statistics. Successful upload
+not share an index with later successful statistics. Successful upload
 history is unchanged. Transfer details show sending outcome when available and
 identify missing provenance; the sending index is not a requeue count.
 
-### Test-system rollout
+### Deployment validation
 
-1. Keep collection disabled and deploy matching components. For an existing
-   database, review and apply the additive
-   [`network-weather.sql`](https://github.com/ecmwf/open-ecpds/blob/master/docker/ecpds/database/network-weather.sql)
-   once using the site's database change procedure. **Do not load the destructive
-   full fresh-install dump into an existing database.** No historical backfill is
-   required. The two existing parent tables must be InnoDB with matching key
-   types. The script also builds a covering statistics index for sending-index
-   lookup: **schedule this database-reading operation with the DBA**, not during
-   peak load. It requests online, nonblocking DDL and fails if unsupported;
-   initial/final metadata locks and resource pressure still need planning.
-   Fresh installations already include the index and new tables.
+1. Keep collection disabled and deploy matching components. Verify the required
+   Weather identity tables, covering statistics index, InnoDB parent tables and
+   matching key types. The supplied installation schema includes these objects.
+   **Do not load the destructive full installation dump into a populated database.**
+   Schema operations require the site's database change procedure, backups and DBA
+   review of metadata locks and resource pressure.
 2. Configure approved Continental routes and verified HTTPS/signing, then save a
    small local and Continental scope. Wait for writer readiness and source
    registration. Activate from the administrator page; no service restart is

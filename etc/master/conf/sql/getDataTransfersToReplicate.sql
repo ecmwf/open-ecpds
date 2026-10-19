@@ -10,6 +10,10 @@
 ##
 #prompt "currentTimeMillis;Current Time in Milliseconds;;long"
 #prompt "limit;Limit;%;int"
+#prompt "afterId;Cursor transfer ID;;long"
+#prompt "afterHeld;Cursor standby rank;;int"
+#prompt "afterPriority;Cursor priority;;int"
+#prompt "afterQueued;Cursor queue time;;long"
 
 ##
 ## Request(s)
@@ -24,6 +28,10 @@ JOIN TRANSFER_SERVER ts1
     ON dt.TRS_NAME_ORIGINAL = ts1.TRS_NAME
 WHERE 
     dt.DAT_EXPIRY_TIME > $currentTimeMillis
+    AND ($afterId = 0 OR
+        (CASE WHEN dt.STA_CODE = 'HOLD' THEN 1 ELSE 0 END,
+         COALESCE(dt.DAT_PRIORITY, 0), COALESCE(dt.DAT_QUEUE_TIME, 0), dt.DAT_ID)
+        > ($afterHeld, $afterPriority, $afterQueued, $afterId))
     AND dt.STA_CODE IN ('WAIT', 'RETR', 'HOLD')
     AND NOT (dt.DAT_REPLICATED = 1 AND dt.DAT_REPLICATE_TIME IS NULL)
     AND (
@@ -82,7 +90,7 @@ WHERE
     ) > 1
 ORDER BY 
     CASE WHEN dt.STA_CODE = 'HOLD' THEN 1 ELSE 0 END ASC,
-    dt.DAT_PRIORITY ASC,
-    dt.DAT_QUEUE_TIME ASC,
+    COALESCE(dt.DAT_PRIORITY, 0) ASC,
+    COALESCE(dt.DAT_QUEUE_TIME, 0) ASC,
     dt.DAT_ID ASC
 LIMIT $limit;

@@ -513,19 +513,17 @@ public class MonitoringRequest {
     }
 
     /**
-     * Gets the contacts, keyed by {@code "product@time"} (matching {@link #refreshContactsList}). For products
-     * configured to group all their cycles/times onto a single monitoring page (see {@link #loadGroupedProductNames}),
-     * also synthesizes an aggregated entry keyed {@code "product@"} (empty time), whose value is the union of the
-     * emails registered against every individual cycle of that product &mdash; this is the key the grouped monitoring
-     * page ({@code product.jsp}, whose merged {@code productStatus.time} is empty) looks up, so the Email Notifications
-     * card is shown there too instead of never matching any contact.
+     * Gets the contacts, keyed by {@code "product@time"} (matching {@link #refreshContactsList}). For products viewed
+     * across all cycles, also synthesizes an aggregated entry keyed {@code "product@"} (empty time), whose value is the
+     * union of the emails registered against every individual cycle. This applies even when the product is not
+     * configured to use grouped links. The {@code "*@"} entry covers the all-products summary.
      *
      * @return the contacts
      */
     public Map<String, String> getContacts() {
         final Map<String, String> result = new HashMap<>();
-        final var groupedProducts = loadGroupedProductNames();
         final Map<String, Set<String>> groupedEmails = new HashMap<>();
+        final Set<String> allEmails = new LinkedHashSet<>();
         synchronized (contacts) {
             for (final String key : contacts.keySet()) {
                 final var contactList = contacts.get(key);
@@ -536,15 +534,15 @@ public class MonitoringRequest {
                 result.put(key, sb.toString());
                 final var at = key.lastIndexOf('@');
                 final var product = at >= 0 ? key.substring(0, at) : key;
-                if (groupedProducts.contains(product)) {
-                    groupedEmails.computeIfAbsent(product, _ -> new LinkedHashSet<>())
-                            .addAll(contactList.emailList.keySet());
-                }
+                groupedEmails.computeIfAbsent(product, _ -> new LinkedHashSet<>())
+                        .addAll(contactList.emailList.keySet());
+                allEmails.addAll(contactList.emailList.keySet());
             }
         }
         for (final var e : groupedEmails.entrySet()) {
             result.put(e.getKey() + "@", String.join(",", e.getValue()));
         }
+        result.put("*@", String.join(",", allEmails));
         return result;
     }
 

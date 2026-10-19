@@ -238,8 +238,8 @@
                 </li>
             </ul>
         </div>
-        <button type="button" id="globeWeatherToggle" class="globe-icon-btn" hidden aria-pressed="false"
-            aria-label="Network Weather overlay" title="Network Weather overlay">
+        <button type="button" id="globeWeatherToggle" class="globe-icon-btn" aria-pressed="false"
+            aria-label="Network Weather overlay" title="Network Weather overlay - waiting for collection state">
             <i class="bi bi-cloud-lightning-rain" aria-hidden="true"></i>
         </button>
         <button type="button" id="globeTourBtn" class="globe-icon-btn" disabled aria-pressed="false"
@@ -300,7 +300,9 @@
         <li><strong>Network Weather</strong> &mdash; when collection is active, the
         <i class="bi bi-cloud-lightning-rain"></i> icon shows recent delivery conditions for the paths you are
         allowed to see (highlighted = on). Gray or missing evidence means no coverage, not a healthy path. The icon
-        is hidden while collection is not active.</li>
+        is hidden when collection is confirmed disabled or suspended. If the weather request fails, the icon
+        remains available to show the error. An unresolved/internal Host address prevents its halo, not the icon
+        or the permitted evidence table.</li>
     </ul>
     <strong class="d-block mb-1">Data Portal Activity panel (bottom-right)</strong>
     <ul class="mb-0 ps-3">
@@ -315,12 +317,12 @@
         their completion/failure, not live progress. Event delivery retries transient failures but is not durable history.</li>
         <li><strong>24h total</strong> &mdash; recorded bytes moved over the last 24 hours,
         summed across the selected Host Types (Dissemination, Acquisition, Replication, Source, Backup and Proxy).
-        Data Portal uploads/downloads are separate. Upgraded Movers continuously count application-stream bytes,
+        Data Portal uploads/downloads are separate. Movers continuously count application-stream bytes,
         including retries and partial attempts, even when nobody views this page; no force-enabled setting is needed.
         Background checkpoints/delivery run every 10 seconds by default. A crash can lose bytes since the last
         successful local checkpoint. Protocol overhead, TCP retransmissions and handler-based transfers are excluded;
         optimized modules report bytes consumed/emitted, not confirmed remote receipt.
-        The minute-bucket window needs 24 hours to fill after upgrading all Movers and the Master.
+        The minute-bucket window needs 24 hours of continuous collection to fill.
         Keep mover clocks synchronized and checkpoint files on persistent storage.</li>
         <li><strong>Sessions</strong> &mdash; number of Incoming Users currently connected to the Data Portal (FTP/
         HTTP/SFTP/S3/WebDAV), across every DataMover.</li>
@@ -486,7 +488,7 @@
 </section>
 
 <script src="/cesium/Cesium.js"></script>
-<script src="/js/network-weather.js"></script>
+<script src="/js/network-weather.js?v=20261018b"></script>
 <script src="/js/globe-tour.js"></script>
 <script>
 (async function () {

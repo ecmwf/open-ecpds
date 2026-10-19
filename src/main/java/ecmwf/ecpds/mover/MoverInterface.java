@@ -48,6 +48,12 @@ import ecmwf.common.technical.ProxySocket;
  */
 public interface MoverInterface extends ClientInterface {
 
+    /** Returns local replica bytes, -1 if absent, or -2 if in use/unverifiable. */
+    long inspectStorageReplica(DataFile file) throws RemoteException;
+
+    /** Removes only this instance and its filtered copies; never an in-use file. */
+    long dropStorageReplica(DataFile file) throws RemoteException;
+
     ecmwf.ecpds.master.weather.WeatherSourceIdentity getWeatherSourceIdentity(java.util.UUID challenge)
             throws RemoteException;
 

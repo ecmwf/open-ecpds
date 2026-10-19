@@ -3,6 +3,20 @@
 The Monitoring section provides a real-time overview of the OpenECPDS system.
 It is the first page shown after login and the primary operational dashboard.
 
+Product summary pages provide an **Email Notifications** card containing two inner
+cards: **Delay Notification** on the left and **Legacy Email Actions** on the right
+(stacked below it on narrower screens).
+**Products Delay** and **Products Resumed** open Outlook;
+the corresponding **Send** buttons use the Master mail service without registering a
+notice. **Copy BCC Emails** copies the explicit contacts, combined across cycles on
+all-cycles pages (and across products on the all-products summary). The entire
+**Email Notifications** card, including both sets of buttons, is shown only when
+explicit contact email addresses are available for the current product/cycle scope.
+Registering and tracking notices remains a separate workflow.
+**Register Delay Notice** opens the matrix filtered to that product and, when specified,
+that cycle, without applying saved model or generation-timing filters. The **Cycle**
+selector can restore all cycles; row selection and bulk actions respect the visible cycle.
+
 
 ## Dashboard (admin view)
 
@@ -76,7 +90,7 @@ Data Portal uploads and downloads are accounted for separately.
 The 24-hour KPI uses **continuous application-stream accounting**, independently
 of the viewer-driven samples used for arcs and instantaneous rates.
 `[Server] liveTransferMonitoringForceEnabled=yes` is **not required** for this
-counter. Every upgraded Mover keeps six fixed-size sets of 1,440 minute buckets.
+counter. Every Mover keeps six fixed-size sets of 1,440 minute buckets.
 Bytes from retries and partial failed attempts count when observed at the stream
 boundary, rather than being inferred from completed file sizes or progress deltas.
 Resume offsets are not added again. Host type determines the bucket, including
@@ -101,8 +115,7 @@ not per transfer. Monitor instances retrieve cached totals in one shared call,
 not one database query per browser. Counter arrays are fixed-size per producer;
 producer identities survive ordinary restarts. An hourly background sweep removes
 expired producer state and its database rows after all its bytes leave the window.
-Legacy `liveTransferBytesScheduler` settings and `LiveTransfer` rows no longer
-drive this KPI.
+This KPI uses the application-stream counters, not `LiveTransfer` progress samples.
 
 Configure each **Mover**, including Continental Movers, as follows:
 
@@ -133,9 +146,9 @@ Mover startup rather than silently resetting accounting. Local checkpoint/delive
 failures are logged and retried; shutdown attempts a final checkpoint.
 
 !!! warning "Accuracy and deployment"
-    Upgrade and restart the Master, **all** Movers (including Continental Movers
-    and their REST relays), and Monitor together. Unupgraded Movers do not
-    contribute; legacy sample-based history is not mixed into this counter.
+    Deploy matching Master, Mover (including Continental Movers and their REST
+    relays) and Monitor components. Only Movers providing application-stream
+    counters contribute; progress-sample history is not mixed into this counter.
     Allow 24 hours of continuous collection for a full window. Keep host clocks
     synchronized: future-minute snapshots are rejected until time catches up.
     A process crash can lose increments after the last successful local checkpoint
@@ -156,7 +169,7 @@ failures are logged and retried; shutdown attempts a final checkpoint.
     explicit warning in the Mover log. Portal publication's local consume-only
     operation and simulated Test-module transfers are excluded; actual Data Portal
     user traffic remains separate.
-    A Monitor receiving no authoritative totals displays **N/A**, not a legacy
+    A Monitor receiving no authoritative totals displays **N/A**, not a
     sample total presented as reliable accounting.
 
 A second row of that same panel, **Data Portal**, covers the separate world of end-user Data Portal traffic (FTP, HTTP, SFTP, S3, WebDAV) that the transfer arcs above do not — since incoming/outgoing user sessions are not tied to a specific destination Host and so cannot be drawn as an arc. It shows the number of currently open Data Portal sessions across every Data Mover, plus a data-in and a data-out speed-meter computed from a live 5-second rolling average of bytes uploaded/downloaded by those sessions, all refreshed by the same WebSocket feed and requiring no extra configuration. A fourth tile, **Storage**, uses the same semicircular speed-meter style (rather than a literal capacity/percentage gauge) to show the aggregate used/total disk space across every volume of every Data Mover as a percentage — reusing the same cached figures already shown per-Mover on the Data Movers page, so it never triggers extra disk I/O of its own; hovering the tile reveals the exact used/total figures, and it only turns amber/red once the aggregate crosses 75%/90% respectively, as an early warning that some Data Movers may be running low on space.

@@ -157,6 +157,12 @@ public class GetDataTransferAction extends PDSAction {
             request.setAttribute("datatransfer", transfer);
             request.setAttribute("datafile", transfer.getDataFile());
             try {
+                Util.loadStorageLifecycle(request, Long.parseLong(transfer.getDataFile().getId()));
+            } catch (final Exception e) {
+                log.warn("Cannot load storage lifecycle state for DataTransfer {}", transfer.getId(), e);
+                request.setAttribute("storageLifecycleError", e.getMessage());
+            }
+            try {
                 request.setAttribute("destination", DestinationHome.findByPrimaryKey(transfer.getDestinationName()));
             } catch (final Exception e) {
                 log.warn("Could not load destination '{}' for transfer {}", transfer.getDestinationName(),

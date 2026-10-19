@@ -116,6 +116,13 @@ public class GetDataFileAction extends PDSAction {
             // To allow setting the links in the comments!
             df.setUser(user);
             request.setAttribute("datafile", df);
+            try {
+                Util.loadStorageLifecycle(request, Long.parseLong(df.getId()));
+            } catch (final Exception e) {
+                org.apache.logging.log4j.LogManager.getLogger(GetDataFileAction.class)
+                        .warn("Cannot load storage lifecycle state for DataFile {}", df.getId(), e);
+                request.setAttribute("storageLifecycleError", e.getMessage());
+            }
         }
         return mapping.findForward("success");
     }

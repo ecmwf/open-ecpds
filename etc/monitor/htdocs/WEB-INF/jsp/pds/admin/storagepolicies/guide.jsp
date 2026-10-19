@@ -13,8 +13,9 @@
     <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-start gap-2">
       <i class="bi bi-info-circle flex-shrink-0 mt-1"></i>
       <div>A policy decides how long data files stay on the Data Movers. It can only <strong>shorten</strong> the retention:
-      a file is never kept beyond the transfer lifetime (<code>min(requeue window, expiry)</code>).
-      <strong>Currently policies are only defined and evaluated: no file is removed yet.</strong></div>
+      the requeue guarantee is capped by expiry, and other retention conditions may delay replica removal further.
+      <strong>ENFORCE removes redundant replicas only when the Master feature is enabled.
+      Original copies remain until normal expiry.</strong></div>
     </div>
 
     <ul class="nav nav-tabs nav-fill mb-3" role="tablist">
@@ -56,13 +57,18 @@
           <table class="table table-sm table-bordered small mb-0">
             <thead class="table-light"><tr><th>Setting</th><th>Effect</th></tr></thead>
             <tbody>
-              <tr><td>Requeue window</td><td>How long the original copy is kept so that end users can ask for a re-queue (default 7 days). Never beyond the transfer lifetime.</td></tr>
-              <tr><td>Restart on requeue</td><td>When ticked, a re-queue restarts the window. Off by default.</td></tr>
-              <tr><td>Drop replicas / after</td><td>Keep only the original copy, removing the replicas on the other Data Movers after the given delay.</td></tr>
+              <tr><td>Requeue window</td><td>No replicas are removed until this window has elapsed (default 7 days). Expiry still wins. The original remains until normal expiry, even after the window.</td></tr>
+              <tr><td>Restart on requeue</td><td>Use the latest successful completion as the window start after a requeue. Off: use the first successful completion. No replicas are removed while the requeued transfer is pending.</td></tr>
+              <tr><td>Drop replicas / after</td><td>Both the window and delay from the latest completion must elapse. Every live transfer must allow removal; all known original copies are protected.</td></tr>
+              <tr><td>Minimum retention / grace</td><td>Minimum replica retention from arrival, plus optional grace after all retention conditions are met.</td></tr>
+              <tr><td>Disk-pressure watermarks</td><td>High starts pressure mode; low ends it, using the file's volume across connected Movers in its group. Only extra grace is skipped. Set both to zero to disable.</td></tr>
+              <tr><td>Lazy replication</td><td>Optional delay from arrival, ENFORCE only. Zero keeps eager replication. An eager policy, hold or unhealthy original bypasses deferral. Normal failover selects another source if the original is unavailable.</td></tr>
+              <tr><td>Operator hold</td><td>Use the file-status tool or the link on a file/transfer page. Holds protect all existing copies but never extend expiry or restore previously removed replicas.</td></tr>
             </tbody>
           </table>
         </div>
-        <p class="small text-muted mb-0">A file with a transfer that can still run is never removed.</p>
+        <p class="small text-muted mb-0">Any runnable, failed or stopped transfer, active background job or download blocks removal.
+        Unavailable/unverifiable originals also block removal. Original-only files remain downloadable and requeue restores normal replication.</p>
       </div>
 
       <div class="tab-pane fade" id="spg-modes" role="tabpanel">
@@ -76,7 +82,10 @@
             </tbody>
           </table>
         </div>
-        <p class="small text-muted mb-0">An inactive policy is ignored whatever its mode.</p>
+        <p class="small text-muted mb-0">Enable <code>[StoragePolicy] enabled=yes</code> on the Master only when the
+        required database tables and matching Mover components are available. Saved ENFORCE policies take effect immediately. Default: disabled.
+        Automatic selection ignores inactive policies; an explicitly selected inactive/disabled policy keeps all copies.
+        Per-policy reporting is also available through the StorageLifecycleScheduler JMX MBean.</p>
       </div>
 
     </div>

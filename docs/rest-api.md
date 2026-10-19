@@ -76,13 +76,13 @@ If the `Authorization` header is missing or malformed, the API returns `401 Unau
     directly. When a client is created there, a random secret is generated and shown to you **once**; only
     its hash is stored server-side, and it can be reset at any time without editing configuration files or
     restarting the server. Permissions can also be toggled per-service from the same page. Setting plaintext
-    passwords directly in the properties file still works (for backward compatibility, and for values already
-    provisioned at startup), but is **not recommended** since the password is stored and distributed in clear
+    passwords directly in the properties file is supported for startup provisioning,
+    but is **not recommended** since the password is stored and distributed in clear
     text wherever that configuration file is deployed.
 
 API users and their allowed operations can also be defined in the OpenECPDS properties file under the `[API]`
 section — this is mainly useful for bootstrapping the first client(s) before the web interface is available, or
-for automated deployments that provision configuration files. Entries found here are migrated into the
+for automated deployments that provision configuration files. Entries found here are imported into the
 database-backed API client store on startup (and then manageable from `/do/user/api` like any other client).
 The format is:
 
@@ -323,9 +323,8 @@ Assigns one or more categories to an incoming user. The request body is a JSON a
     Alternatively, `incoming/category/add` can also activate/deactivate a user as a side effect: passing
     a category name that contains `ECPDS` (case-insensitive), e.g. `["ECPDS"]`, activates the user — this
     is a special marker, not an actual category that needs to exist in the category list
-    (the list itself is not stored). Omitting an `ECPDS` marker deactivates the user again. This
-    predates the `active` parameter and is kept for backward compatibility, but `active` is the more
-    direct and self-explanatory option for new integrations.
+    (the list itself is not stored). Omitting an `ECPDS` marker deactivates the user again.
+    Prefer the explicit `active` parameter for controlling activation.
 
 ---
 

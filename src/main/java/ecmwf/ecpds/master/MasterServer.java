@@ -454,6 +454,22 @@ public final class MasterServer extends ECaccessProvider
     private final transient WeatherPersistenceScheduler weatherPersistenceScheduler;
     private final transient WeatherAutomationScheduler weatherAutomationScheduler;
 
+    private final transient ecmwf.ecpds.master.storage.StorageLifecycleScheduler storageLifecycle = new ecmwf.ecpds.master.storage.StorageLifecycleScheduler(
+            this);
+
+    public ecmwf.ecpds.master.storage.StorageLifecycleScheduler getStorageLifecycle() {
+        return storageLifecycle;
+    }
+
+    public boolean isStorageFileBusy(final long id) {
+        return getProgressInterface(id) != null
+                || theFilterScheduler != null && theFilterScheduler._filterThreads.containsKey(id)
+                || theReplicateScheduler != null && theReplicateScheduler._replicateThreads.containsKey(id)
+                || theBackupScheduler != null && theBackupScheduler._backupThreads.containsKey(id)
+                || theProxyScheduler != null && theProxyScheduler._proxyThreads.containsKey(id)
+                || thePurgeScheduler != null && thePurgeScheduler._purgeThreads.containsKey(id);
+    }
+
     @Override
     public ecmwf.ecpds.master.weather.WeatherAcknowledgement deliverWeatherObservations(
             ecmwf.ecpds.master.weather.WeatherBatch batch) throws RemoteException {
@@ -743,6 +759,7 @@ public final class MasterServer extends ECaccessProvider
      * so the last known state is always available for display.
      */
     private final transient Map<String, long[][]> moverUsageCache = new ConcurrentHashMap<>();
+    private final transient Map<String, Long> moverUsageUpdated = new ConcurrentHashMap<>();
 
     /** The management. */
     private final transient ManagementImpl management;
@@ -1035,6 +1052,7 @@ public final class MasterServer extends ECaccessProvider
         }
         weatherAutomationScheduler = new WeatherAutomationScheduler();
         weatherAutomationScheduler.start();
+        storageLifecycle.start();
         _log.debug("Monitors to notify: {}", containersToNotify);
         _log.debug("Passwords allowed from: {}", allowedPasswordOn);
         localContainer.startPlugins();
@@ -2284,8 +2302,9 @@ public final class MasterServer extends ECaccessProvider
      *             the data base exception
      */
     public boolean deleteDataFile(final DataFile file) throws DataBaseException {
-        // For the EcpdsPlugin!
-        return TransferScheduler.purge(_getTransferServers(file), file).complete;
+        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(file.getId())) {
+            return TransferScheduler.purge(_getTransferServers(file), file).complete;
+        }
     }
 
     /**
@@ -2302,6 +2321,12 @@ public final class MasterServer extends ECaccessProvider
      *             the data base exception
      */
     public PurgeResult purgeDataFile(final DataFile file, final String byAndFrom) throws DataBaseException {
+        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(file.getId())) {
+            return purgeDataFileLocked(file, byAndFrom);
+        }
+    }
+
+    private PurgeResult purgeDataFileLocked(final DataFile file, final String byAndFrom) throws DataBaseException {
         // Let's do the purge!
         final var start = System.currentTimeMillis();
         final var result = TransferScheduler.purge(_getTransferServers(file), file);
@@ -3446,6 +3471,7 @@ public final class MasterServer extends ECaccessProvider
             final var total = usage[1];
             // Cache per-mover raw data for the dashboard
             moverUsageCache.put(server.getName(), new long[][] { used.clone(), total.clone() });
+            moverUsageUpdated.put(server.getName(), System.currentTimeMillis());
             if (!initialised) {
                 System.arraycopy(used, 0, volumeUsage[0], 0, volumeCount);
                 System.arraycopy(total, 0, volumeUsage[1], 0, volumeCount);
@@ -3491,6 +3517,13 @@ public final class MasterServer extends ECaccessProvider
             return entry != null ? Map.of(moverName, entry) : Map.of();
         }
         return new HashMap<>(moverUsageCache);
+    }
+
+    public long[][] getStorageVolumeUsage(final String moverName) {
+        final var updated = moverUsageUpdated.get(moverName);
+        return updated != null
+                && System.currentTimeMillis() - updated <= Cnf.durationAt("StoragePolicy", "maxUsageAge", 120_000)
+                        ? moverUsageCache.get(moverName) : null;
     }
 
     /**
@@ -3991,6 +4024,15 @@ public final class MasterServer extends ECaccessProvider
     public boolean updateTransferStatus(final DataTransfer transfer, String code, final boolean commit,
             final String username, final String byAndFrom, final boolean synchronous, final boolean reset,
             final boolean addHistory) throws MasterException {
+        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(transfer.getDataFileId())) {
+            return updateTransferStatusLocked(transfer, code, commit, username, byAndFrom, synchronous, reset,
+                    addHistory);
+        }
+    }
+
+    private boolean updateTransferStatusLocked(final DataTransfer transfer, String code, final boolean commit,
+            final String username, final String byAndFrom, final boolean synchronous, final boolean reset,
+            final boolean addHistory) throws MasterException {
         final var file = transfer.getDataFile();
         final var expiry = transfer.getExpiryTime();
         if ((transfer.getDeleted() || file != null && file.getDeleted()
@@ -4059,6 +4101,12 @@ public final class MasterServer extends ECaccessProvider
                 if (StatusFactory.RETR.equals(code) && reset) {
                     transfer.setRequeueCount(0);
                     transfer.setStartCount(0);
+                }
+                if (StatusFactory.RETR.equals(code)) {
+                    // A lifecycle policy may have removed the previous replicas.
+                    transfer.setReplicated(false);
+                    transfer.setReplicateTime(null);
+                    transfer.setReplicateCount(0);
                 }
                 if (addHistory && !StatusFactory.STOP.equals(code)) {
                     addTransferHistory(transfer);
@@ -7281,6 +7329,7 @@ public final class MasterServer extends ECaccessProvider
         weatherAdministration.persistence().close();
         weatherPersistenceScheduler.shutdown();
         weatherAutomationScheduler.shutdown();
+        storageLifecycle.shutdown();
         if (theDissDownloadScheduler != null) {
             theDissDownloadScheduler.shutdown();
         }
@@ -9522,13 +9571,15 @@ public final class MasterServer extends ECaccessProvider
                         if (file == null) {
                             continue;
                         }
-                        synchronized (_filterThreads) {
-                            if (!_filterThreads.containsKey(_currentKey = _getKey(file))) {
-                                final var thread = new FilterThread(file);
-                                thread.setThreadNameAndCookie(null, null, "DataFile-" + file.getId(), null);
-                                thread.execute();
-                                _filterThreads.put(_currentKey, thread);
-                                processed++;
+                        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(file.getId())) {
+                            synchronized (_filterThreads) {
+                                if (!_filterThreads.containsKey(_currentKey = _getKey(file))) {
+                                    final var thread = new FilterThread(file);
+                                    thread.setThreadNameAndCookie(null, null, "DataFile-" + file.getId(), null);
+                                    thread.execute();
+                                    _filterThreads.put(_currentKey, thread);
+                                    processed++;
+                                }
                             }
                         }
                     } catch (final Throwable t) {
@@ -9705,6 +9756,7 @@ public final class MasterServer extends ECaccessProvider
      */
     public final class ReplicateScheduler extends MBeanScheduler {
 
+        private ECpdsBase.ReplicationCursor replicationCursor = ECpdsBase.ReplicationCursor.empty();
         /** The _time out replicate thread. */
         private long _timeOutReplicateThread = Cnf.durationAt("Scheduler", "timeOutReplicateThread", -1);
 
@@ -9926,7 +9978,12 @@ public final class MasterServer extends ECaccessProvider
             if (getReplicateThreadsCount() >= _maxReplicateThreads) {
                 return NEXT_STEP_DELAY;
             }
-            try (var it = getECpdsBase().getDataTransfersToReplicateIterator(2 * _maxReplicateThreads)) {
+            if (!storageLifecycle.enabled()) {
+                replicationCursor = ECpdsBase.ReplicationCursor.empty();
+            }
+            try (var it = getECpdsBase().getDataTransfersToReplicateIterator(2 * _maxReplicateThreads,
+                    replicationCursor)) {
+                int fetched = 0;
                 while (isRunning() && it.hasNext()) {
                     // Check capacity before fetching the next row from the DB cursor so we stop
                     // consuming the result set the moment the pool is full.
@@ -9935,6 +9992,11 @@ public final class MasterServer extends ECaccessProvider
                     }
                     try {
                         final var transfer = it.next();
+                        fetched++;
+                        if (storageLifecycle.enabled()) {
+                            // Deferred files must not hide later eager/eligible files behind the query limit.
+                            replicationCursor = ECpdsBase.ReplicationCursor.after(transfer);
+                        }
                         if (transfer.getReplicated()) {
                             _log.warn("DataTransfer " + transfer.getId() + " already replicated");
                             continue;
@@ -9949,22 +10011,32 @@ public final class MasterServer extends ECaccessProvider
                                 continue;
                             }
                         }
-                        final var sourceMover = TransferScheduler.getTransferServerUsedForRetrieval(transfer);
-                        if (getThreadCount(sourceMover) >= _maxReplicateThreadsPerMover) {
-                            continue;
-                        }
-                        synchronized (_replicateThreads) {
-                            if (!_replicateThreads.containsKey(_currentKey = _getKey(transfer))) {
-                                final var thread = new ReplicateThread(sourceMover, transfer);
-                                thread.setThreadNameAndCookie(null, null, "DataFile-" + _currentKey, null);
-                                thread.execute(true);
-                                _replicateThreads.put(_currentKey, thread);
-                                processed++;
+                        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks
+                                .read(transfer.getDataFileId())) {
+                            if (!storageLifecycle.shouldReplicate(transfer)) {
+                                continue;
+                            }
+                            final var sourceMover = storageLifecycle.replicationSource(transfer,
+                                    TransferScheduler.getTransferServerUsedForRetrieval(transfer));
+                            if (getThreadCount(sourceMover) >= _maxReplicateThreadsPerMover) {
+                                continue;
+                            }
+                            synchronized (_replicateThreads) {
+                                if (!_replicateThreads.containsKey(_currentKey = _getKey(transfer))) {
+                                    final var thread = new ReplicateThread(sourceMover, transfer);
+                                    thread.setThreadNameAndCookie(null, null, "DataFile-" + _currentKey, null);
+                                    thread.execute(true);
+                                    _replicateThreads.put(_currentKey, thread);
+                                    processed++;
+                                }
                             }
                         }
                     } catch (final Throwable t) {
                         _log.warn("nextStep", t);
                     }
+                }
+                if (!it.hasNext() && fetched < 2 * _maxReplicateThreads) {
+                    replicationCursor = ECpdsBase.ReplicationCursor.empty();
                 }
                 synchronized (_toRemove) {
                     for (final long key : _toRemove) {
@@ -10293,13 +10365,15 @@ public final class MasterServer extends ECaccessProvider
                         if (getPurgeThreadsCount() >= _maxPurgeThreads) {
                             break;
                         }
-                        synchronized (_purgeThreads) {
-                            if (!_purgeThreads.containsKey(_currentKey = _getKey(dataFile))) {
-                                final var thread = new PurgeThread(dataFile);
-                                thread.setThreadNameAndCookie(null, null, "DataFile-" + _currentKey, null);
-                                thread.execute(true);
-                                _purgeThreads.put(_currentKey, thread);
-                                processed++;
+                        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(dataFile.getId())) {
+                            synchronized (_purgeThreads) {
+                                if (!_purgeThreads.containsKey(_currentKey = _getKey(dataFile))) {
+                                    final var thread = new PurgeThread(dataFile);
+                                    thread.setThreadNameAndCookie(null, null, "DataFile-" + _currentKey, null);
+                                    thread.execute(true);
+                                    _purgeThreads.put(_currentKey, thread);
+                                    processed++;
+                                }
                             }
                         }
                     } catch (final Throwable t) {
@@ -10615,13 +10689,16 @@ public final class MasterServer extends ECaccessProvider
                         if (getThreadCount(hostForBackup) >= hostForBackup.getMaxConnections()) {
                             continue;
                         }
-                        synchronized (_backupThreads) {
-                            if (!_backupThreads.containsKey(_currentKey = _getKey(transfer))) {
-                                final var thread = new BackupThread(hostForBackup, transfer);
-                                thread.setThreadNameAndCookie(null, null, "DataFile-" + _currentKey, null);
-                                thread.execute(true);
-                                _backupThreads.put(_currentKey, thread);
-                                processed++;
+                        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks
+                                .read(transfer.getDataFileId())) {
+                            synchronized (_backupThreads) {
+                                if (!_backupThreads.containsKey(_currentKey = _getKey(transfer))) {
+                                    final var thread = new BackupThread(hostForBackup, transfer);
+                                    thread.setThreadNameAndCookie(null, null, "DataFile-" + _currentKey, null);
+                                    thread.execute(true);
+                                    _backupThreads.put(_currentKey, thread);
+                                    processed++;
+                                }
                             }
                         }
                     } catch (final Throwable t) {
@@ -11038,13 +11115,16 @@ public final class MasterServer extends ECaccessProvider
                             }
                             continue;
                         }
-                        synchronized (_proxyThreads) {
-                            if (!_proxyThreads.containsKey(_currentKey = _getKey(transfer))) {
-                                final var thread = new ProxyThread(hostsForProxy, transfer);
-                                thread.setThreadNameAndCookie(null, null, "DataFile-" + _currentKey, null);
-                                thread.execute(true);
-                                _proxyThreads.put(_currentKey, thread);
-                                processed++;
+                        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks
+                                .read(transfer.getDataFileId())) {
+                            synchronized (_proxyThreads) {
+                                if (!_proxyThreads.containsKey(_currentKey = _getKey(transfer))) {
+                                    final var thread = new ProxyThread(hostsForProxy, transfer);
+                                    thread.setThreadNameAndCookie(null, null, "DataFile-" + _currentKey, null);
+                                    thread.execute(true);
+                                    _proxyThreads.put(_currentKey, thread);
+                                    processed++;
+                                }
                             }
                         }
                     } catch (final Throwable t) {

@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -256,7 +257,7 @@ public final class NetworkWeatherAction extends PDSAction {
             automationInfo.put("Candidates", automation.candidates());
             automationInfo.put("Added / removed", automation.added() + " / " + automation.removed());
             automationInfo.put("History rows read", automation.rows() + (automation.partial() ? " (partial)" : ""));
-            request.setAttribute("nwAutomationInfo", automationInfo);
+            request.setAttribute("nwAutomationInfo", displayRows(automationInfo));
             request.setAttribute("nwAutomationError", automation.error());
             request.setAttribute("nwSelectionReasons", automation.changes());
             final var probeStatus = MasterManager.getMI().getWeatherProbes(Util.getECpdsSessionFromObject(user));
@@ -265,7 +266,7 @@ public final class NetworkWeatherAction extends PDSAction {
             probeInfo.put("Pending jobs", probeStatus.pending());
             probeInfo.put("Expired or cancelled", probeStatus.expired());
             probeInfo.put("Rejected results", probeStatus.rejected());
-            request.setAttribute("nwProbeInfo", probeInfo);
+            request.setAttribute("nwProbeInfo", displayRows(probeInfo));
             final var probeRows = new ArrayList<Map<String, Object>>();
             for (final var c : probeStatus.completed()) {
                 final Map<String, Object> row = new LinkedHashMap<>();
@@ -452,13 +453,24 @@ public final class NetworkWeatherAction extends PDSAction {
         }
     }
 
-    /** Insertion-ordered map whose entries JSP EL can read (unlike Map.of entries). */
-    private static Map<String, Object> ordered(final Object... keyValues) {
+    private static List<Map<String, Object>> ordered(final Object... keyValues) {
         final Map<String, Object> map = new LinkedHashMap<>();
         for (var i = 0; i < keyValues.length; i += 2) {
             map.put((String) keyValues[i], keyValues[i + 1]);
         }
-        return map;
+        return displayRows(map);
+    }
+
+    /** Map.Entry implementations are not readable by the Monitor's JSP EL resolver. */
+    private static List<Map<String, Object>> displayRows(final Map<String, Object> values) {
+        final List<Map<String, Object>> rows = new ArrayList<>();
+        values.forEach((key, value) -> {
+            final Map<String, Object> row = new LinkedHashMap<>();
+            row.put("key", key);
+            row.put("value", value);
+            rows.add(row);
+        });
+        return rows;
     }
 
     private static String time(final long epochMillis) {

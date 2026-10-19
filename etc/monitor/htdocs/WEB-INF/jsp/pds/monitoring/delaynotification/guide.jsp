@@ -26,22 +26,28 @@
     <div class="tab-content">
 
       <div class="tab-pane fade show active" id="dng-matrix" role="tabpanel">
-        <p class="small text-muted mb-2">The matrix lists the products and cycles currently known to the monitoring. Filter products by name, model, or one or more generation timings; a product is shown when any of its cycles matches. The <strong>Before</strong> column uses a colored dot for the nearest cycle status; hover it to see the exact time before schedule or how long it is overdue. Cycle cells use a soft background tint from the same Product Generation legend; hover a cell for that cycle's exact timing.</p>
+        <p class="small text-muted mb-2">The matrix lists the products and cycles currently known to the monitoring. Filter products by name, model, cycle, or one or more generation timings; a product is shown when any of its visible cycles matches. The <strong>Before</strong> column uses a colored dot for the nearest cycle status across all cycles; hover it to see the exact time before schedule or how long it is overdue. Cycle cells use a soft background tint from the same Product Generation legend; hover a cell for that cycle's exact timing.</p>
         <div class="table-responsive mb-3">
           <table class="table table-sm table-bordered small mb-0">
             <thead class="table-light"><tr><th>Action</th><th>Effect</th></tr></thead>
             <tbody>
               <tr><td>Click a cell</td><td>Cycles between <strong>D</strong> (Definite, affected), <strong>P</strong> (Possible, might be) and cleared. Both levels are listed separately in the message and both receive it.</td></tr>
-              <tr><td>Click a product name</td><td>Applies the same level to all its cycles.</td></tr>
+              <tr><td>Click a product name</td><td>Applies the same level to its visible cycles.</td></tr>
               <tr><td>Product name filter</td><td>As in <code>/do/monitoring</code>: comma-separated, <code>*</code> and <code>?</code> wildcards, <code>!</code> or <code>-</code> to exclude.</td></tr>
               <tr><td>Model buttons</td><td>Select all the products of a model (models are maintained in <em>Product Descriptions</em>).</td></tr>
-              <tr><td>Mark late/overdue D, Mark 0-15m ahead P, Clear all</td><td>Apply only to the <strong>filtered</strong> cells (product name, model and timing filters). Cells marked earlier but currently hidden by a filter are kept, but are not counted, notified or mailed until they are shown again.</td></tr>
+              <tr><td>Cycle</td><td>Show one cycle column, or choose <em>All cycles</em> to restore every available cycle.</td></tr>
+              <tr><td>Mark late/overdue D, Mark 0-15m ahead P, Clear all</td><td>Apply only to the <strong>filtered</strong> cells (product name, model, cycle and timing filters). Cells marked earlier but currently hidden by a filter are kept, but are not counted, notified or mailed until they are shown again.</td></tr>
               <tr><td>A dot</td><td>The product has no such cycle.</td></tr>
             </tbody>
           </table>
         </div>
         <p class="small text-muted mb-0">Your selection drives the recipients and fills the message. The page can also be opened from the
-        <em>Register Delay Notice</em> buttons of a monitoring product page, with the product and cycle pre-selected.</p>
+        <em>Register Delay Notice</em> buttons of a monitoring product page: the Product name is filled in, model and timing filters are cleared for this visit, and only the requested cycle is shown (or all cycles for an all-cycles link). Matching cells are pre-selected. Saved model and timing preferences are not overwritten by the link.</p>
+        <p class="small text-muted mt-2 mb-0">On product summary pages, <strong>Email Notifications</strong> contains
+        <strong>Delay Notification</strong> on the left and <strong>Legacy Email Actions</strong> on the right
+        (stacked on narrower screens). Both are hidden when no explicit contact emails are available. Contacts cover
+        the current product/cycle, all cycles of a product, or all products and cycles, with duplicates removed from
+        combined lists. Legacy Outlook/direct-send buttons do not register a notice.</p>
       </div>
 
       <div class="tab-pane fade" id="dng-rcpt" role="tabpanel">

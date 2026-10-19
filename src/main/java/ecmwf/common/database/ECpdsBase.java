@@ -2473,7 +2473,23 @@ public final class ECpdsBase extends DataBase {
      */
     public DBIterator<DataTransfer> getDataTransfersToReplicateIterator(final int limit)
             throws IOException, SQLException {
-        return ecpds.getDataTransfersToReplicate(limit, DataTransfer.class);
+        return getDataTransfersToReplicateIterator(limit, ReplicationCursor.empty());
+    }
+
+    public record ReplicationCursor(long id, int held, int priority, long queued) {
+        public static ReplicationCursor empty() {
+            return new ReplicationCursor(0, 0, 0, 0);
+        }
+
+        public static ReplicationCursor after(final DataTransfer transfer) {
+            return new ReplicationCursor(transfer.getId(), "HOLD".equals(transfer.getStatusCode()) ? 1 : 0,
+                    transfer.getPriority(), transfer.getQueueTime() == null ? 0 : transfer.getQueueTime().getTime());
+        }
+    }
+
+    public DBIterator<DataTransfer> getDataTransfersToReplicateIterator(final int limit, final ReplicationCursor cursor)
+            throws IOException, SQLException {
+        return ecpds.getDataTransfersToReplicate(limit, cursor, DataTransfer.class);
     }
 
     /**
@@ -5683,6 +5699,11 @@ public final class ECpdsBase extends DataBase {
                 row.put("restart", String.valueOf(rs.getInt("SPO_RESTART_ON_REQUEUE")));
                 row.put("drop", String.valueOf(rs.getInt("SPO_DROP_REPLICAS")));
                 row.put("dropAfter", String.valueOf(rs.getLong("SPO_DROP_REPLICAS_AFTER_MS")));
+                row.put("minRetention", String.valueOf(rs.getLong("SPO_MIN_RETENTION_MS")));
+                row.put("grace", String.valueOf(rs.getLong("SPO_GRACE_MS")));
+                row.put("lazy", String.valueOf(rs.getLong("SPO_LAZY_REPLICATION_MS")));
+                row.put("high", String.valueOf(rs.getInt("SPO_HIGH_WATERMARK")));
+                row.put("low", String.valueOf(rs.getInt("SPO_LOW_WATERMARK")));
                 row.put("updatedAt", String.valueOf(rs.getTimestamp("SPO_UPDATED_AT")));
                 row.put("updatedBy", rs.getString("SPO_UPDATED_BY"));
                 result.add(row);
@@ -5711,7 +5732,12 @@ public final class ECpdsBase extends DataBase {
                 "groups=" + nullToEmpty(policy.get("groups")), "pattern=" + nullToEmpty(policy.get("pattern")),
                 "window=" + Long.parseLong(policy.get("window")), "restart=" + Long.parseLong(policy.get("restart")),
                 "dropReplicas=" + Long.parseLong(policy.get("drop")),
-                "dropDelay=" + Long.parseLong(policy.get("dropAfter")), "user=" + user };
+                "dropDelay=" + Long.parseLong(policy.get("dropAfter")),
+                "minimumRetention=" + Long.parseLong(policy.getOrDefault("minRetention", "0")),
+                "extraGrace=" + Long.parseLong(policy.getOrDefault("grace", "0")),
+                "lazyDelay=" + Long.parseLong(policy.getOrDefault("lazy", "0")),
+                "highWatermark=" + Long.parseLong(policy.getOrDefault("high", "0")),
+                "lowWatermark=" + Long.parseLong(policy.getOrDefault("low", "0")), "user=" + user };
     }
 
     private static String nullToEmpty(final String value) {
@@ -5771,6 +5797,14 @@ public final class ECpdsBase extends DataBase {
      */
     public void deleteStoragePolicy(final String name) throws DataBaseException {
         try {
+            for (final var destination : getDestinationArray(false)) {
+                final var setup = ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_SCHEDULER
+                        .getECtransSetup(destination.getData());
+                if (name.equals(
+                        setup.getString(ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_STORAGEPOLICY))) {
+                    throw new DataBaseException("Policy is referenced by destination " + destination.getName());
+                }
+            }
             executeUpdate("ECpdsBase", "deleteStoragePolicy", new String[] { "name=" + name });
         } catch (final Exception e) {
             _log.warn("deleteStoragePolicy({})", name, e);

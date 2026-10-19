@@ -2379,3 +2379,9 @@ table.dataTable td.dt-empty {
 .cert-actions-grid form.contents{display:contents;}
 .cert-actions-grid form.contents .btn{width:100%;}
 .fp-wrap{word-break:break-all;font-size:.78rem;}
+
+.btn[title="Open Configuration Guide"],
+.btn[title="Configuration Guide"],
+.btn[data-label="Configuration Guide"] {
+    align-self: flex-start;
+}

@@ -72,7 +72,9 @@ The system is ready to accept new transfers immediately.
 ---
 
 !!! info
-    To control how long files stay on the Data Movers, see [Storage Lifecycle Policies](storage-lifecycle-policies.md).
+    To reduce redundant Data Mover replicas before normal expiry, see
+    [Storage Lifecycle Policies](storage-lifecycle-policies.md). Lifecycle holds never
+    extend expiry or block this explicit purge operation.
 
 ## Prerequisites
 

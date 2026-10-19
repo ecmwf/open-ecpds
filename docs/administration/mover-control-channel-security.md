@@ -73,26 +73,21 @@ Generate a strong random value, for example:
 openssl rand -base64 32
 ```
 
-!!! warning "Unset by default, for backward compatibility"
+!!! warning "Disabled by default"
     If `RCC_SHARED_SECRET`/`rccSharedSecret` is left unset (the default in the
     shipped `mover.cnf`/`proxy.cnf` templates), the control channel remains
-    unauthenticated exactly as before this feature was introduced — a warning
+    unauthenticated — a warning
     is logged at startup to make the operator aware. Setting a shared secret
     is strongly recommended on any Data Mover that is reachable from outside
     a fully trusted network.
 
-## Rollout order
+## Component configuration
 
-To enable this without downtime across a fleet of Movers:
-
-1. Set `rccSharedSecret` on the **Proxy/Continental Data Movers first** (the
-   REST clients) and restart them. They start signing their requests; Data
-   Movers that don't have the secret configured yet simply ignore the extra
-   signature headers, so nothing breaks.
-2. Then set `rccSharedSecret` on the **regular Data Movers** (the REST servers)
-   and restart them. From that point on, they require and verify a valid
-   signature on every `mover/*`/`master/*` request — which every
-   Proxy/Continental Data Mover is by then already sending.
+Set the same `rccSharedSecret` on the Proxy/Continental Data Movers (REST clients)
+and the regular Data Movers (REST servers), then restart the affected services.
+Clients sign their requests; servers with the secret configured require and
+verify a valid signature on every `mover/*`/`master/*` request. A client must be
+configured to sign before its server requires signatures.
 
 ## Relationship with `checkControlChannelIsSecure`
 

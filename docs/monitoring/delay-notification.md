@@ -8,10 +8,10 @@ links and bookmarks.
 ## Send a notice
 
 1. Filter products by name (same syntax as the monitoring page: comma-separated, `*`/`?` wildcards, `!` or `-` to
-   exclude), by [model](../administration/product-descriptions.md#product-models), and/or by generation timing. The
+   exclude), by [model](../administration/product-descriptions.md#product-models), by **Cycle**, and/or by generation timing. Choose **All cycles** to show every available cycle. The
    timing filter is multi-select: *No data / pending*, *Received >30m ahead*, *Received 15-30m ahead*,
    *Received 0-15m ahead*, *On schedule / slightly late*, *Not received / overdue*, and *Transitional / other*.
-   A product remains visible when any of its cycles matches the selected timing categories; **All timings** disables
+   A product remains visible when any of its visible cycles matches the selected timing categories; **All timings** disables
    this filter. Where a schedule offset is available, the timing category is based on that offset (including for
    completed products), so it agrees with the cell tint and hover text. Otherwise the generation status is used.
 2. The **Before** column shows a colored dot for the nearest cycle status; hover it to see the exact time before
@@ -95,11 +95,17 @@ Deploy the Master and the Monitors together, as the Monitor calls new Master ope
 
 ## From a monitoring page
 
-The **Email Notifications** card of a product page (e.g. `/do/monitoring/summary/GWAVE/18`) has a *Register a notice*
-group next to the existing Outlook ones, which are unchanged. The same group is available on the all-cycles page of a
-product (`/do/monitoring/summary/GWAVE`, all its cycles) and on the all-products page (`/do/monitoring/summary/`):
+The **Email Notifications** card contains two inner cards: **Delay Notification** on the left and
+**Legacy Email Actions** on the right (stacked on narrower screens). The entire card appears only when explicit
+contact email addresses are available for the page's scope: one product/cycle, the deduplicated union across a
+product's cycles (`/do/monitoring/summary/GWAVE`), or across all products and cycles
+(`/do/monitoring/summary/`). All-cycles aggregation also works for products not configured to use grouped links.
+Legacy Outlook/direct-send actions do not register a notice; **Copy BCC Emails** copies the explicit contacts.
 
-- **Register Delay Notice** opens this page with that product and cycle already selected as *Definite*.
+- **Register Delay Notice** fills **Product name**, clears model and timing filters for this visit, and shows only
+  the requested cycle (or all cycles for an all-cycles link). Matching cells are selected as *Definite*. Saved model
+  and timing preferences are not overwritten. Use **Cycle** to change the visible cycle; row selection, bulk actions,
+  clearing and notice recipients respect the visible cycle filter.
 - **Register Resumed Notice** opens the *Sent notices* tab with the resolution form of the open notice covering that
   product and cycle (only that cycle ticked). If no open notice covers it, a warning is shown.
 

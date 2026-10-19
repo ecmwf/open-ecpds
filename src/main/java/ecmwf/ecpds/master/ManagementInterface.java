@@ -1984,6 +1984,14 @@ public interface ManagementInterface extends Remote {
 
     void reassessWeather(ECpdsSession session) throws Exception;
 
+    Map<String, String> getStorageLifecycleState(long fileId) throws Exception;
+
+    Map<String, Map<String, String>> getStorageLifecycleReport(ECpdsSession session) throws Exception;
+
+    String getStorageLifecycleActivity(ECpdsSession session) throws Exception;
+
+    void setStorageFilePin(ECpdsSession session, long fileId, long until, String reason) throws Exception;
+
     java.util.List<ecmwf.common.database.WeatherDiscoveryStore.Candidate> findWeatherCandidates(ECpdsSession session,
             String source, int days, String protocol) throws Exception;
 

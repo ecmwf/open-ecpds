@@ -56,7 +56,7 @@ th {
 			anchor.href = 'https://outlook.office365.com/mail/deeplink/compose'
 					+ '?subject=' + escape(subject) + '&body=' + body
 					+ '&from=' + escape('<c:out value="${noticeToAddress}" />') + '&to='
-					+ escape('<c:out value="${noticeToAddress}" />') + '?bcc=' + bcc;
+					+ escape('<c:out value="${noticeToAddress}" />') + '&bcc=' + encodeURIComponent(bcc);
 
 		} catch (e) {
 			showToast("Error: " + e, "danger");
@@ -392,46 +392,59 @@ th {
 </c:if>
 
 
-<c:set var="key" value="${productStatus.product}@${productStatus.time}" />
+<c:set var="key" value="${productName}@${productStatus.time}" />
+<c:if test="${allProducts}"><c:set var="key" value="*@" /></c:if>
 <c:set var="emails" value="${reqData.contacts[key]}" />
+<c:if test="${not empty emails}">
 <c:set var="regProduct" value="${allProducts ? '*' : productStatus.product}" />
 <c:set var="regTime" value="${empty productStatus.time ? '*' : productStatus.time}" />
+<c:set var="emailBcc" value="${noticeBccAddress}" />
+<c:choose>
+    <c:when test="${allProducts}">
+        <c:forEach var="emailProduct" items="${products}">
+            <c:set var="emailBcc" value="${emailBcc},ecpds-product-${emailProduct.time}-${emailProduct.product}@ecmwf.int" />
+        </c:forEach>
+    </c:when>
+    <c:otherwise>
+        <c:set var="emailBcc" value="${emailBcc},ecpds-product-${productNameAndTime}@ecmwf.int" />
+    </c:otherwise>
+</c:choose>
 <c:choose>
     <c:when test="${allProducts}"><c:set var="regLabel" value="all products" /></c:when>
     <c:when test="${empty productStatus.time}"><c:set var="regLabel" value="${productStatus.product} (all cycles)" /></c:when>
     <c:otherwise><c:set var="regLabel" value="${productNameAndTime}" /></c:otherwise>
 </c:choose>
-<c:if test="${empty emails and (allProducts or empty productStatus.time)}">
-    <div class="card mt-4 border-secondary-subtle">
-        <div class="card-header py-2 px-3 d-flex align-items-center gap-2">
-            <i class="bi bi-envelope-fill text-secondary"></i>
-            <span class="fw-semibold text-secondary" style="font-size:0.82rem;">Email Notifications &mdash; ${regLabel}</span>
-        </div>
-        <div class="card-body py-2 px-3 d-flex align-items-stretch flex-wrap gap-3">
-            <div class="border rounded px-2 py-1">
-                <div class="text-muted mb-1" style="font-size:0.72rem;"><i class="bi bi-journal-text me-1"></i>Register a notice (opens the Delay Notification page)</div>
-                <div class="d-flex flex-wrap gap-2">
-            <a href="<bean:message key="monitoring.basepath"/>/delaynotification?action=delay&product=<c:out value="${regProduct}" />&time=<c:out value="${regTime}" />"
-               title="Register a delay notice for ${regLabel}, to be confirmed once sent"
-               class="btn btn-sm btn-warning">
-                <i class="bi bi-journal-plus me-1"></i>Register Delay Notice
-            </a>
-            <a href="<bean:message key="monitoring.basepath"/>/delaynotification?action=resumed&product=<c:out value="${regProduct}" />&time=<c:out value="${regTime}" />"
-               title="Register the resolution of the open notice(s) covering ${regLabel}, to be confirmed once sent"
-               class="btn btn-sm btn-success">
-                <i class="bi bi-journal-check me-1"></i>Register Resumed Notice
-            </a>
+<div class="card mt-4 border-secondary-subtle">
+    <div class="card-header py-2 px-3 d-flex align-items-center gap-2">
+        <i class="bi bi-envelope-fill text-secondary"></i>
+        <span class="fw-semibold text-secondary" style="font-size:0.82rem;">Email Notifications &mdash; ${productNameAndTime}</span>
+    </div>
+    <div class="card-body d-flex flex-column flex-xl-row gap-3">
+            <div class="card border-secondary-subtle" style="flex:1; min-width:0;">
+                <div class="card-header py-2 px-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-journal-text text-secondary"></i>
+                    <span class="fw-semibold text-secondary" style="font-size:0.82rem;">Delay Notification</span>
+                </div>
+                <div class="card-body py-2 px-3">
+                    <div class="text-muted mb-2" style="font-size:0.72rem;">Register a notice (opens the Delay Notification page)</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="<bean:message key="monitoring.basepath"/>/delaynotification?action=delay&product=<c:out value="${regProduct}" />&time=<c:out value="${regTime}" />"
+                           title="Register a delay notice for ${regLabel}, to be confirmed once sent"
+                           class="btn btn-sm btn-warning">
+                            <i class="bi bi-journal-plus me-1"></i>Register Delay Notice
+                        </a>
+                        <a href="<bean:message key="monitoring.basepath"/>/delaynotification?action=resumed&product=<c:out value="${regProduct}" />&time=<c:out value="${regTime}" />"
+                           title="Register the resolution of the open notice(s) covering ${regLabel}, to be confirmed once sent"
+                           class="btn btn-sm btn-success">
+                            <i class="bi bi-journal-check me-1"></i>Register Resumed Notice
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-</c:if>
-
-<c:if test="${not empty emails}">
-    <div class="card mt-4 border-secondary-subtle">
+    <div class="card border-secondary-subtle" style="flex:1; min-width:0;">
         <div class="card-header py-2 px-3 d-flex align-items-center gap-2">
             <i class="bi bi-envelope-fill text-secondary"></i>
-            <span class="fw-semibold text-secondary" style="font-size:0.82rem;">Email Notifications &mdash; ${productNameAndTime}</span>
+            <span class="fw-semibold text-secondary" style="font-size:0.82rem;">Legacy Email Actions</span>
         </div>
         <div class="card-body py-2 px-3 d-flex align-items-stretch flex-wrap gap-3">
             <div class="border rounded px-2 py-1">
@@ -464,21 +477,6 @@ th {
                 </div>
             </div>
             <div class="border rounded px-2 py-1">
-                <div class="text-muted mb-1" style="font-size:0.72rem;"><i class="bi bi-journal-text me-1"></i>Register a notice (opens the Delay Notification page)</div>
-                <div class="d-flex flex-wrap gap-2">
-            <a href="<bean:message key="monitoring.basepath"/>/delaynotification?action=delay&product=<c:out value="${regProduct}" />&time=<c:out value="${regTime}" />"
-               title="Register a delay notice for ${regLabel}, to be confirmed once sent"
-               class="btn btn-sm btn-warning">
-                <i class="bi bi-journal-plus me-1"></i>Register Delay Notice
-            </a>
-            <a href="<bean:message key="monitoring.basepath"/>/delaynotification?action=resumed&product=<c:out value="${regProduct}" />&time=<c:out value="${regTime}" />"
-               title="Register the resolution of the open notice(s) covering ${regLabel}, to be confirmed once sent"
-               class="btn btn-sm btn-success">
-                <i class="bi bi-journal-check me-1"></i>Register Resumed Notice
-            </a>
-                </div>
-            </div>
-            <div class="border rounded px-2 py-1">
                 <div class="text-muted mb-1" style="font-size:0.72rem;"><i class="bi bi-tools me-1"></i>Tools</div>
             <button type="button"
                     class="btn btn-sm btn-outline-secondary"
@@ -489,6 +487,8 @@ th {
             </div>
         </div>
     </div>
+    </div>
+</div>
 
     <textarea id="delayEmailBody" class="d-none"><c:out value="${ECMWFProductsDelayText}" /></textarea>
     <textarea id="resumedEmailBody" class="d-none"><c:out value="${ECMWFProductsText}" /></textarea>
@@ -552,13 +552,13 @@ th {
 
         setHrefForSendingEmail(
             document.getElementById('delayEmail'),
-            '<c:out value="${noticeBccAddress}" />,ecpds-product-${productNameAndTime}@ecmwf.int',
+            '<c:out value="${emailBcc}" />',
             'ECMWF Products Delay (${productNameAndTime})',
             '${ECMWFProductsDelay}');
 
         setHrefForSendingEmail(
             document.getElementById('productEmail'),
-            '<c:out value="${noticeBccAddress}" />,ecpds-product-${productNameAndTime}@ecmwf.int',
+            '<c:out value="${emailBcc}" />',
             'ECMWF Products (${productNameAndTime})',
             '${ECMWFProducts}');
     </script>

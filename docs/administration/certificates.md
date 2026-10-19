@@ -155,26 +155,24 @@ fingerprint does not change. New files use Java's standard AES-256/PBES2 with PB
 SHA-256 MAC, and can be read by OpenSSL without `-legacy`. The replacement is validated
 before an atomic write; existing file permissions and ownership are preserved.
 
-Older Java writes could mix Bouncy Castle password encoding with SunJCE encryption,
-creating a file that ECPDS could read but OpenSSL could not decrypt. Updated services
-register Bouncy Castle after the built-in providers so Java's PBE key factory and
+Services register Bouncy Castle after the built-in providers so Java's PBE key factory and
 cipher use consistent password encoding. Code explicitly selecting Bouncy Castle
 continues to use it. An explicit `bouncyCastleProviderPosition` must also be after
-SunJCE; remove an earlier-position override rather than keeping the incompatible setup.
+SunJCE to ensure compatible password encoding.
 
 When Master, Monitor, or Mover HTTP/MQTT services start, an incompatible existing
 PKCS#12 keystore containing a private key is automatically repackaged in the current
 OpenSSL-compatible format; already-compatible files are left unchanged. The configured
 password is used to read and write it; the certificate, private key, complete chain,
 and SHA-256 fingerprint are preserved. The replacement is validated before an atomic
-write, and existing file permissions and ownership are preserved. A legacy provider
+write, and existing file permissions and ownership are preserved. An alternative provider
 is tried when the default Java provider cannot read the file. JKS and certificate-only
 truststores are left unchanged. If a keystore cannot be read with the configured
-password or has unsupported entries, it is not replaced and the migration failure is
+password or has unsupported entries, it is not replaced and the conversion failure is
 logged.
 
 This also updates the keystore used by Hawtio when it shares the service's PKCS#12
-file. Verify the migrated file locally with:
+file. Verify the file locally with:
 
 ```bash
 openssl pkcs12 -in /path/to/ecpds-mover.pfx -info -noout

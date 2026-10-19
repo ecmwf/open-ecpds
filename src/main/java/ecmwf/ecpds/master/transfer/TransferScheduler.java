@@ -1042,7 +1042,8 @@ public final class TransferScheduler extends MBeanScheduler {
         final var provider = new TransferServerProvider("get", dataFile.getTransferGroupName(),
                 transfer.getDestinationName(), dataFile.getSize(), transfer.getTransferServer(),
                 dataFile.getFileSystem());
-        final var servers = provider.getTransferServersByLeastActivity();
+        final var servers = MASTER.getStorageLifecycle().retrievalOrder(transfer,
+                provider.getTransferServersByLeastActivity());
         final var count = servers.size();
         MasterException exception = null;
         for (var i = 0; i < count; i++) {

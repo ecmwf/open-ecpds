@@ -28,6 +28,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.UUID;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -48,11 +56,12 @@ import ecmwf.web.ECMWFException;
 import ecmwf.web.model.users.User;
 
 /**
- * Creates, updates, orders and deletes the Storage Lifecycle Policies (Stage 1: the policies are only defined and
- * evaluated, no file is removed).
+ * Storage Lifecycle Policy administration and runtime reporting.
  */
 public class StoragePoliciesAction extends PDSAction {
 
+    private static final Logger LOG = LogManager.getLogger(StoragePoliciesAction.class);
+    private static final String TOKEN = StoragePoliciesAction.class.getName() + ".csrf";
     private static final Pattern NAME = Pattern.compile("[A-Za-z0-9_.-]{1,32}");
 
     private static final long HOUR = 3600L * 1000;
@@ -60,9 +69,24 @@ public class StoragePoliciesAction extends PDSAction {
     private static final long DAY = 24 * HOUR;
 
     @Override
+    protected boolean isAuthorized(final User user, final String path, final HttpServletRequest request)
+            throws ECMWFException {
+        return super.isAuthorized(user, path, request) && user.hasAccess("/do/admin/");
+    }
+
+    @Override
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
+        response.setHeader("Cache-Control", "no-store");
+        final String token;
+        synchronized (request.getSession()) {
+            if (!(request.getSession().getAttribute(TOKEN) instanceof String)) {
+                request.getSession().setAttribute(TOKEN, UUID.randomUUID().toString());
+            }
+            token = (String) request.getSession().getAttribute(TOKEN);
+        }
+        request.setAttribute("spCsrf", token);
         final DataBaseInterface db;
         try {
             db = MasterManager.getDB();
@@ -72,16 +96,55 @@ public class StoragePoliciesAction extends PDSAction {
         }
         if ("POST".equalsIgnoreCase(request.getMethod())) {
             try {
-                post(db, request, user.getName());
+                final var submitted = request.getParameter("csrf");
+                if (submitted == null || submitted.length() > 128 || !MessageDigest
+                        .isEqual(token.getBytes(StandardCharsets.UTF_8), submitted.getBytes(StandardCharsets.UTF_8))) {
+                    throw new IllegalArgumentException("The form expired or is invalid; reload before saving.");
+                }
+                if ("pin".equals(param(request, "op")) || "unpin".equals(param(request, "op"))) {
+                    final long id = Long.parseLong(param(request, "fileId"));
+                    final long until = "unpin".equals(param(request, "op")) ? 0 : param(request, "pinUntil").isEmpty()
+                            ? -1
+                            : LocalDateTime.parse(param(request, "pinUntil")).toInstant(ZoneOffset.UTC).toEpochMilli();
+                    MasterManager.getMI().setStorageFilePin(Util.getECpdsSessionFromObject(user), id, until,
+                            param(request, "pinReason"));
+                    request.setAttribute("spSuccess", until == 0 ? "Storage hold removed." : "Storage hold saved.");
+                } else {
+                    post(db, request, user.getName());
+                }
             } catch (final Exception e) {
+                LOG.warn("Storage policy administration operation failed", e);
                 request.setAttribute("spError", e.getMessage());
             }
         }
         try {
             load(db, request);
         } catch (final Exception e) {
-            request.setAttribute("spError", "Unable to load the policies (has docker/ecpds/database/storage-policy.sql"
-                    + " been applied to the database?): " + e.getMessage());
+            LOG.warn("Cannot load storage policies", e);
+            request.setAttribute("spError", "Unable to load policies; check storage-policy.sql and "
+                    + "storage-lifecycle-runtime.sql: " + e.getMessage());
+        }
+        try {
+            final var management = MasterManager.getMI();
+            final var session = Util.getECpdsSessionFromObject(user);
+            request.setAttribute("spRuntimeActivity", management.getStorageLifecycleActivity(session));
+            final var report = new ArrayList<Map<String, String>>();
+            for (final var entry : management.getStorageLifecycleReport(session).entrySet()) {
+                final var row = new LinkedHashMap<>(entry.getValue());
+                row.put("name", entry.getKey());
+                row.put("lastScanText", timestamp(row.get("lastScan")));
+                row.put("lastAppliedText", timestamp(row.get("lastApplied")));
+                report.add(row);
+            }
+            request.setAttribute("spReport", report);
+            if (!param(request, "fileId").isEmpty()) {
+                final long id = Long.parseLong(param(request, "fileId"));
+                Util.loadStorageLifecycle(request, id);
+                request.setAttribute("spFileId", String.valueOf(id));
+            }
+        } catch (final Exception e) {
+            LOG.warn("Cannot load storage lifecycle runtime state", e);
+            request.setAttribute("spRuntimeError", e.getMessage());
         }
         return mapping.findForward("form");
     }
@@ -119,6 +182,11 @@ public class StoragePoliciesAction extends PDSAction {
         row.put("restart", request.getParameter("restart") != null ? "1" : "0");
         row.put("drop", request.getParameter("drop") != null ? "1" : "0");
         row.put("dropAfter", String.valueOf(duration(request, "dropAfter", 1, HOUR)));
+        row.put("minRetention", String.valueOf(duration(request, "minRetention", 0, HOUR)));
+        row.put("grace", String.valueOf(duration(request, "grace", 0, HOUR)));
+        row.put("lazy", String.valueOf(duration(request, "lazy", 0, HOUR)));
+        row.put("high", param(request, "high").isEmpty() ? "0" : param(request, "high"));
+        row.put("low", param(request, "low").isEmpty() ? "0" : param(request, "low"));
         request.setAttribute("spEdit", row);
         request.setAttribute("spEditOriginal", original);
         if (!NAME.matcher(name).matches() || StoragePolicy.DEFAULT_NAME.equalsIgnoreCase(name)) {
@@ -140,6 +208,7 @@ public class StoragePoliciesAction extends PDSAction {
         } else if (!db.updateStoragePolicy(row, user)) {
             throw new IllegalArgumentException("Policy \"" + name + "\" does not exist anymore.");
         }
+        LOG.info("Storage policy {} saved by {} mode={}", name, user, row.get("mode"));
         request.removeAttribute("spEdit");
         request.removeAttribute("spEditOriginal");
         request.setAttribute("spSuccess", "Policy \"" + name + "\" saved.");
@@ -240,6 +309,11 @@ public class StoragePoliciesAction extends PDSAction {
             request.setAttribute("spDropAfterUnit", dropAfter % DAY == 0 ? "days" : "hours");
             request.setAttribute("spEditTypes", StoragePolicy.splitList((String) editRow.get("types")));
             request.setAttribute("spEditGroups", StoragePolicy.splitList((String) editRow.get("groups")));
+            for (final var field : List.of("minRetention", "grace", "lazy")) {
+                final var millis = Long
+                        .parseLong(String.valueOf(editRow.containsKey(field) ? editRow.get(field) : "0"));
+                request.setAttribute("sp" + field + "Hours", millis / HOUR);
+            }
         }
     }
 
@@ -265,8 +339,18 @@ public class StoragePoliciesAction extends PDSAction {
         if (amount < 0) {
             throw new IllegalArgumentException("Durations cannot be negative.");
         }
-        final var unit = "hours".equals(param(request, name + "Unit")) ? HOUR : DAY;
-        return amount * (text.isEmpty() ? defaultUnit : unit);
+        final var unitText = param(request, name + "Unit");
+        final var unit = unitText.isEmpty() ? defaultUnit : "hours".equals(unitText) ? HOUR : DAY;
+        try {
+            return Math.multiplyExact(amount, unit);
+        } catch (final ArithmeticException e) {
+            throw new IllegalArgumentException("Duration is too large: " + name);
+        }
+    }
+
+    private static String timestamp(final String value) {
+        return value == null || "0".equals(value) ? "Not yet"
+                : java.time.Instant.ofEpochMilli(Long.parseLong(value)).toString();
     }
 
     private static String param(final HttpServletRequest request, final String name) {

@@ -59,6 +59,12 @@ public final class FileDescriptorTicket extends AbstractTicket {
         return _file;
     }
 
+    @Override
+    public void completed() {
+        super.completed();
+        _file.releaseStorageReader();
+    }
+
     /**
      * {@inheritDoc}
      *

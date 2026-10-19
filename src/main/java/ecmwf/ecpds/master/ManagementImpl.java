@@ -4046,7 +4046,42 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                 return;
             }
         }
-        throw new MasterException("Network Weather administration access denied");
+        throw new MasterException("Administration access denied");
+    }
+
+    @Override
+    public Map<String, String> getStorageLifecycleState(final long fileId) throws Exception {
+        return master.getStorageLifecycle().describe(fileId);
+    }
+
+    @Override
+    public Map<String, Map<String, String>> getStorageLifecycleReport(final ECpdsSession session) throws Exception {
+        requireWeatherAdministrator(session);
+        return master.getStorageLifecycle().report();
+    }
+
+    @Override
+    public String getStorageLifecycleActivity(final ECpdsSession session) throws Exception {
+        requireWeatherAdministrator(session);
+        return master.getStorageLifecycle().getActivity();
+    }
+
+    @Override
+    public void setStorageFilePin(final ECpdsSession session, final long fileId, final long until, final String reason)
+            throws Exception {
+        requireWeatherAdministrator(session);
+        final var file = base.getDataFile(fileId);
+        final var action = master.startECpdsAction(session, "storagehold", file);
+        Exception failure = null;
+        try {
+            master.getStorageLifecycle().pin(fileId, until, reason, session.getWebUser().getName());
+        } catch (final Exception e) {
+            failure = e;
+            _log.warn("Storage hold update failed for DataFile {}", fileId, e);
+            throw e;
+        } finally {
+            master.logECpdsAction(action, null, failure);
+        }
     }
 
     @Override

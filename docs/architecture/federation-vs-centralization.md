@@ -38,7 +38,7 @@ ECMWF-operated instance:
   is no ECPDS-specific wire protocol that a partner system must implement to
   interoperate. This means an organisation's applications and production workflows are
   not inherently tied to ECPDS as a piece of technology — if a team later chose a
-  different transfer solution, migration is a question of protocol compatibility, not of
+  different transfer solution, switching is a question of protocol compatibility, not of
   unwinding a proprietary integration.
 - **No software lock-in.** Because OpenECPDS is open source, an organisation can deploy,
   operate, inspect, and even modify its own instance instead of depending on a
@@ -122,7 +122,7 @@ and arguably the model the platform is best suited to — looks like this:
 In this model, centralisation is a **deployment and governance choice made per
 instance**, not a property baked into the architecture. An organisation can start by
 consuming the centrally operated service, and move to operating its own instance later
-(or the reverse) without a protocol-level migration, because both sides of that move
+(or the reverse) without changing protocols, because both sides of that move
 speak the same open standards.
 
 ## Summary
