@@ -47,7 +47,10 @@ links and bookmarks.
    disabled when that list is empty.
    The ETA is picked with hour/minute selectors (UTC) so no invalid time can be entered; the message and subject are
    generated as soon as the page loads. **Compact empty lines** is remembered per browser user and reduces runs of
-   blank lines to one blank line in the generated or edited message. **Regenerate** rebuilds the message from the
+   blank lines to one blank line in the generated or edited message. Subjects include the selected cycles,
+   respecting **Automatically compact grouped cycle lists** in Product Messages. Editing either the subject or
+   message tints both fields and stops automatic regeneration; **Regenerate** resets both fields and their tint.
+   **Regenerate** rebuilds the message from the
    template and current values; **Preview** shows the final mail (subject, To/Cc/Bcc counts and body). When the Product
    Messages are written in Markdown (the default), the preview is formatted and a button at the bottom switches to the
    plain-text view used by Outlook (direct sends are HTML). The

@@ -72,8 +72,9 @@
       <div class="tab-pane fade" id="dng-msg" role="tabpanel">
         <p class="small mb-2"><strong>Subject and message</strong> are generated from the grouped <em>Products Delay</em> message of
         <a href="/do/admin/productmessages">Product Messages</a>, your selection, and the reason, delay, ETA (UTC) and note. They stay editable;
-        <em>Regenerate</em> rebuilds them and <em>Preview</em> shows the final mail. A manually edited message is tinted and
-        is no longer updated automatically until you use <em>Regenerate</em>. Only the filtered selected cells are used
+        Subjects include the selected cycles and respect <em>Automatically compact grouped cycle lists</em> in Product Messages.
+        <em>Regenerate</em> rebuilds them and <em>Preview</em> shows the final mail. Editing either field tints both the subject and message and
+        stops automatic updates until you use <em>Regenerate</em>, which also clears their tint. Only the filtered selected cells are used
         to build the message and the recipients.</p>
         <p class="small mb-2">Choose a predefined reason or select <em>Other (enter a reason)</em> to provide free text.</p>
         <p class="small mb-2">In <em>Product Messages</em>, place <code>{{REASON}}</code>, <code>{{ETA}}</code>,

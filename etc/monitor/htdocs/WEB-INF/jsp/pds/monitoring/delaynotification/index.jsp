@@ -41,7 +41,7 @@
 #dnBccOption .input-group { max-width: 32rem; }
 #dnReason, #dnCustomReason { max-width: 32rem; }
 .dn-eta-input-group { max-width: 22rem; }
-#dnBody.dn-edited, .rs-body.dn-edited { background-color: rgba(220, 53, 69, 0.06); }
+#dnSubject.dn-edited, #dnBody.dn-edited, .rs-subj.dn-edited, .rs-body.dn-edited { background-color: rgba(220, 53, 69, 0.06); }
 @media (min-width: 1200px) {
   #dnMatrixColumn, #dnNoticeColumn { display: flex; }
   #dnMatrixColumn > .card { flex: 1 1 auto; width: 100%; min-width: 0; }
@@ -185,7 +185,7 @@
       <select id="dnDelay" class="form-select form-select-sm" onchange="dnAuto()"><option value="">-</option><option>~15 min</option><option>~30 min</option><option>~45 min</option><option>~90 min</option><option>Under investigation</option></select></div>
      <div class="col-12"><label class="form-label small mb-1">Note</label><input type="text" id="dnNote" class="form-control form-control-sm" maxlength="500" oninput="dnAuto()"></div>
     </div>
-    <div class="mb-2"><label class="form-label small mb-1">Subject</label><input type="text" id="dnSubject" class="form-control form-control-sm" oninput="dnEdited()"></div>
+    <div class="mb-2"><label class="form-label small mb-1" for="dnSubject">Subject</label><textarea id="dnSubject" class="form-control" rows="2" oninput="this.value = this.value.replace(/[\r\n]+/g, ' '); dnEdited()"></textarea></div>
     <div class="mb-2">
      <div class="d-flex align-items-center justify-content-between mb-1">
       <label class="form-label small mb-0" for="dnBody">Message</label>
@@ -289,8 +289,10 @@ var S = { cycles: {}, minutesBeforeSchedule: {}, minutesBeforeSchedulePerCycle: 
   var edited = false;
   Object.defineProperty(S, 'bodyEdited', {enumerable: true, get: function() { return edited; }, set: function(v) {
     edited = !!v;
-    var el = document.getElementById('dnBody');
-    if (el) { el.classList.toggle('dn-edited', edited); el.title = edited ? 'Edited manually: no longer updated automatically (use Regenerate)' : ''; }
+    ['dnSubject', 'dnBody'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) { el.classList.toggle('dn-edited', edited); el.title = edited ? 'Edited manually: no longer updated automatically (use Regenerate)' : ''; }
+    });
   }});
 })();
 var BCC_LIST = 'op_delay_ecmwf@lists.ecmwf.int', TO_ADDRESS = 'operators@ecmwf.int'; // replaced by the values of Product Messages
@@ -655,6 +657,11 @@ function describeProducts(cells) {
   var names = {}; cells.forEach(function(c) { names[c.product] = 1; });
   return Object.keys(names).sort();
 }
+function subjectCycles(cells) {
+  var times = {}; cells.forEach(function(c) { times[c.time] = 1; });
+  var cycles = compactTimes(Object.keys(times), ',');
+  return cycles ? ' (cycles: ' + cycles + 'Z)' : '';
+}
 
 function fillTemplate(tpl, products, cells, details) {
   details = details || {};
@@ -699,6 +706,7 @@ function generate() {
   var cells = cellList();
   var products = describeProducts(cells);
   var subj = 'Delay notification' + (products.length ? ': ' : '') + (products.length > 4 ? products.slice(0, 4).join(', ') + ' and ' + (products.length - 4) + ' more' : products.join(', '));
+  subj += subjectCycles(cells);
   var tpl = S.delayTemplate || 'Dear users,\n\nWe are currently experiencing a delay.\n\nBest regards,\nECMWF Operations';
   var details = noticeDetails();
   var includeDetails = {
@@ -1252,22 +1260,24 @@ function openResolve(n, i) {
   row.classList.remove('d-none');
   var openCells = (n.cells || []).filter(function(c) { return !c.resolved; });
   var products = describeProducts(openCells);
-  function resolutionSubject(cells) { return 'Resolved: ' + describeProducts(cells).join(', '); }
+  function resolutionSubject(cells) { return 'Resolved: ' + describeProducts(cells).join(', ') + subjectCycles(cells); }
   function resolutionBody(cells) {
     var names = describeProducts(cells);
     return S.resumedTemplate ? fillTemplate(S.resumedTemplate, names, cells, {reason: n.reason, eta: n.eta, expectedDelay: n.delay, note: n.note}) : 'Dear users,\n\nThe delay affecting ' + names.join(', ') + ' has been resolved.\n\nBest regards,\nECMWF Operations';
   }
   row.innerHTML = '<div class="p-2 border rounded mb-2"><div class="small mb-1">Cells to resolve:</div>'
     + openCells.map(function(c) { return '<label class="me-3 small"><input type="checkbox" class="form-check-input me-1" checked value="' + esc(c.product + '@' + c.time) + '">' + esc(c.product + ' ' + c.time) + '</label>'; }).join('')
-    + '<input class="form-control form-control-sm my-2 rs-subj" value="' + esc(resolutionSubject(openCells)) + '">'
+    + '<textarea class="form-control my-2 rs-subj" rows="2" aria-label="Resolution subject">' + esc(resolutionSubject(openCells)) + '</textarea>'
     + '<textarea class="form-control form-control-sm mb-2 rs-body" rows="6">' + esc(resolutionBody(openCells)) + '</textarea>'
     + '<button class="btn btn-sm btn-outline-secondary rs-regen me-2"><i class="bi bi-arrow-clockwise me-1"></i>Regenerate</button><button class="btn btn-sm btn-outline-primary rs-preview me-2"><i class="bi bi-eye me-1"></i>Preview</button><button class="btn btn-sm btn-success rs-go me-2">Register and open Outlook</button><button class="btn btn-sm btn-outline-success rs-direct">Send directly</button></div>';
   // Follow the ticked cells until the operator edits the subject or the message.
   var subjectField = row.querySelector('.rs-subj'), bodyField = row.querySelector('.rs-body'), edited = false;
   function setEdited(value) {
     edited = value;
-    bodyField.classList.toggle('dn-edited', edited);
-    bodyField.title = edited ? 'Edited manually: no longer updated automatically (use Regenerate)' : '';
+    [subjectField, bodyField].forEach(function(field) {
+      field.classList.toggle('dn-edited', edited);
+      field.title = edited ? 'Edited manually: no longer updated automatically (use Regenerate)' : '';
+    });
   }
   function regenerate() {
     var ticked = Array.prototype.map.call(row.querySelectorAll('input[type=checkbox]:checked'), function(c) { return c.value; });
@@ -1277,7 +1287,11 @@ function openResolve(n, i) {
     bodyField.value = resolutionBody(cells);
     setEdited(false);
   }
-  subjectField.oninput = bodyField.oninput = function() { setEdited(true); };
+  subjectField.oninput = function() {
+    subjectField.value = subjectField.value.replace(/[\r\n]+/g, ' ');
+    setEdited(true);
+  };
+  bodyField.oninput = function() { setEdited(true); };
   row.querySelector('.rs-regen').onclick = regenerate;
   Array.prototype.forEach.call(row.querySelectorAll('input[type=checkbox]'), function(box) {
     box.onchange = function() {
