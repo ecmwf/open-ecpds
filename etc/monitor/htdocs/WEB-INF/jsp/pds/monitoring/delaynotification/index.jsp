@@ -183,12 +183,18 @@
      <div class="w-100"></div>
      <div class="col-6"><label class="form-label small mb-1">Expected delay</label>
       <select id="dnDelay" class="form-select form-select-sm" onchange="dnAuto()"><option value="">-</option><option>~15 min</option><option>~30 min</option><option>~45 min</option><option>~90 min</option><option>Under investigation</option></select></div>
-     <div class="col-12"><label class="form-label small mb-1">Note</label><input type="text" id="dnNote" class="form-control form-control-sm" maxlength="500" oninput="dnAuto()"></div>
+     <div class="col-12">
+      <div class="form-check"><input class="form-check-input" type="checkbox" id="dnNoteOn" onchange="dnNoteToggle()"><label class="form-check-label small d-flex align-items-center gap-2" for="dnNoteOn">Add a note <span id="dnNoteMarkdownHint" class="d-inline-flex align-items-center gap-1 border-start ps-2 text-muted d-none" title="Use Markdown for bold text, bullet lists and links. Preview shows the formatted message.">Markdown enabled <i class="bi bi-info-circle"></i></span></label></div>
+      <div id="dnNoteWrap" class="d-none"><label class="form-label small mb-1" for="dnNote">Note</label><textarea id="dnNote" class="form-control" rows="2" maxlength="500" oninput="dnAuto()"></textarea></div>
+     </div>
     </div>
     <div class="mb-2"><label class="form-label small mb-1" for="dnSubject">Subject</label><textarea id="dnSubject" class="form-control" rows="2" oninput="this.value = this.value.replace(/[\r\n]+/g, ' '); dnEdited()"></textarea></div>
     <div class="mb-2">
      <div class="d-flex align-items-center justify-content-between mb-1">
-      <label class="form-label small mb-0" for="dnBody">Message</label>
+      <div class="d-flex align-items-center gap-2">
+       <label class="form-label small mb-0" for="dnBody">Message</label>
+       <span id="dnMarkdownHint" class="small d-inline-flex align-items-center gap-1 border-start ps-2 text-muted d-none" title="Use Markdown for bold text, bullet lists and links. Preview shows the formatted message.">Markdown enabled <i class="bi bi-info-circle"></i></span>
+      </div>
       <div class="form-check form-switch small mb-0" title="Replace sequences of multiple blank lines with one blank line">
        <input class="form-check-input" type="checkbox" role="switch" id="dnCompactEmptyLines" checked onchange="dnSetCompactEmptyLines(this.checked)">
        <label class="form-check-label" for="dnCompactEmptyLines">Compact empty lines</label>
@@ -689,7 +695,7 @@ function fillTemplate(tpl, products, cells, details) {
   return $('dnCompactEmptyLines').checked ? compactEmptyLines(body) : body;
 }
 function noticeDetails() {
-  return {reason: reasonValue(), eta: $('dnEta').value.trim(), expectedDelay: $('dnDelay').value, note: $('dnNote').value.trim()};
+  return {reason: reasonValue(), eta: $('dnEta').value.trim(), expectedDelay: $('dnDelay').value, note: $('dnNoteOn').checked ? $('dnNote').value.trim() : ''};
 }
 function affectedBlock(cells, details, includeDetails) {
   var lines = [];
@@ -732,6 +738,10 @@ window.dnAuto = function() {
   }
   if (S.bodyEdited) { return; }
   var g = generate(); $('dnSubject').value = g.subject; $('dnBody').value = g.body;
+};
+window.dnNoteToggle = function() {
+  $('dnNoteWrap').classList.toggle('d-none', !$('dnNoteOn').checked);
+  dnAuto();
 };
 window.dnEdited = function() { S.bodyEdited = true; };
 window.dnEditedReset = function() { S.bodyEdited = false; dnAuto(); };
@@ -855,7 +865,7 @@ function payload() {
   }
   return {cells: cellList(), includeNonMonitored: $('dnNonMon').checked, includeCc: $('dnCcOn').checked, cc: $('dnCc').value,
     includeBcc: $('dnBccOn').checked, bcc: $('dnBcc').value,
-    reason: reasonValue(), eta: $('dnEta').value, delay: $('dnDelay').value, note: $('dnNote').value,
+    reason: reasonValue(), eta: $('dnEta').value, delay: $('dnDelay').value, note: $('dnNoteOn').checked ? $('dnNote').value : '',
     subject: $('dnSubject').value, body: $('dnBody').value};
 }
 // ECPDS cannot know whether the message was really sent from Outlook, so the operator confirms it here.
@@ -1247,6 +1257,7 @@ function startUpdate(n) {
   }
   $('dnCustomReason').classList.toggle('d-none', $('dnReason').value !== '__custom__');
   setEta(n.eta); $('dnDelay').value = n.delay || ''; $('dnNote').value = n.note || '';
+  $('dnNoteOn').checked = !!n.note; dnNoteToggle();
   S.bodyEdited = false; dnAuto();
   $('dnSubject').value = n.subject; $('dnBody').value = 'UPDATE\n\n' + n.body; S.bodyEdited = true;
   setUpdateMode(true, n.ref); dnTab('compose'); dnRenderMatrix(); dnRecipients();
@@ -1362,7 +1373,10 @@ function load() {
     S.generationStatusPerProduct = d.generationStatusPerProduct || {};
     S.generationStatusPerCycle = d.generationStatusPerCycle || {};
     S.models = d.models; S.notices = d.notices; S.defaultCc = d.defaultCc; S.defaultBcc = d.defaultBcc;
-    S.markdown = d.markdownMessages !== false; S.allowNoticeCc = d.allowNoticeCc !== false; S.allowNoticeBcc = d.allowNoticeBcc !== false;
+    S.markdown = d.markdownMessages !== false;
+    $('dnMarkdownHint').classList.toggle('d-none', !S.markdown);
+    $('dnNoteMarkdownHint').classList.toggle('d-none', !S.markdown);
+    S.allowNoticeCc = d.allowNoticeCc !== false; S.allowNoticeBcc = d.allowNoticeBcc !== false;
     $('dnCcOption').classList.toggle('d-none', !S.allowNoticeCc);
     $('dnBccOption').classList.toggle('d-none', !S.allowNoticeBcc);
     if (!S.allowNoticeCc) $('dnCcOn').checked = false;

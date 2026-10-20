@@ -76,7 +76,8 @@
         <em>Regenerate</em> rebuilds them and <em>Preview</em> shows the final mail. Editing either field tints both the subject and message and
         stops automatic updates until you use <em>Regenerate</em>, which also clears their tint. Only the filtered selected cells are used
         to build the message and the recipients.</p>
-        <p class="small mb-2">Choose a predefined reason or select <em>Other (enter a reason)</em> to provide free text.</p>
+        <p class="small mb-2">Choose a predefined reason or select <em>Other (enter a reason)</em> to provide free text.
+        The optional note is hidden and excluded by default; select <em>Add a note</em> to show the editor and include it in the generated message.</p>
         <p class="small mb-2">In <em>Product Messages</em>, place <code>{{REASON}}</code>, <code>{{ETA}}</code>,
         <code>{{EXPECTED_DELAY}}</code> and <code>{{NOTE}}</code> wherever those individual values should appear.
         <code>{{ETA}}</code> includes <code>UTC</code> when set. A value placed with its own placeholder is omitted

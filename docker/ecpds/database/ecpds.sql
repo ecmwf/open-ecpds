@@ -1865,6 +1865,8 @@ INSERT INTO `SYS_CONFIG` (`SCF_GROUP`, `SCF_PARAM_NAME`, `SCF_PARAM_VALUE`, `SCF
 
 The dissemination of ECMWF {{PRODUCT}} products for the {{CYCLE}}Z cycle is delayed.
 
+**Product descriptions:**
+
 {{DESCRIPTION}}
 
 Our teams and partners are actively working to restore services.
@@ -1872,16 +1874,18 @@ Our teams and partners are actively working to restore services.
 We will provide an update as soon as further information is available.
 
 For the latest information, please refer to the ECMWF service status page:
-https://www.ecmwf.int/en/service-status
+<https://www.ecmwf.int/en/service-status>
 
 We apologise for the inconvenience.
 
 Kind regards,
 
-ECMWF Duty Manager', NULL),
+**ECMWF Duty Manager**', NULL),
 ('ProductStatus', 'productResumedMessage', 'Dear colleagues,
 
 The issues affecting the {{PRODUCT}} {{CYCLE}}Z cycle have been resolved and dissemination has resumed.
+
+**Product descriptions:**
 
 {{DESCRIPTION}}
 
@@ -1889,16 +1893,18 @@ We apologise for the inconvenience caused by the delay.
 
 Kind regards,
 
-ECMWF Duty Manager', NULL),
+**ECMWF Duty Manager**', NULL),
 ('ProductStatus', 'productDelayMessageGrouped', 'Dear colleagues,
 
 The dissemination of ECMWF {{PRODUCTS}} products for the {{CYCLES}}Z cycles is delayed.
 
+**Product descriptions:**
+
 {{DESCRIPTION}}
 
-Reason: {{REASON}}
-Expected delay: {{EXPECTED_DELAY}}
-Estimated time of availability: {{ETA}}
+- **Reason:** {{REASON}}
+- **Expected delay:** {{EXPECTED_DELAY}}
+- **Estimated time of availability:** {{ETA}}
 
 {{AFFECTED}}
 
@@ -1909,22 +1915,24 @@ Our teams and partners are actively working to restore services.
 We will provide an update as soon as further information is available.
 
 For the latest information, please refer to the ECMWF service status page:
-https://www.ecmwf.int/en/service-status
+<https://www.ecmwf.int/en/service-status>
 
 We apologise for the inconvenience caused by this delay.
 
 Kind regards,
 
-ECMWF Duty Manager', NULL),
+**ECMWF Duty Manager**', NULL),
 ('ProductStatus', 'productResumedMessageGrouped', 'Dear colleagues,
 
 The issues affecting the {{PRODUCTS}} {{CYCLES}}Z cycles have been resolved and dissemination has resumed.
 
+**Product descriptions:**
+
 {{DESCRIPTION}}
 
-Original reason: {{REASON}}
-Expected delay: {{EXPECTED_DELAY}}
-Previous estimated time of availability: {{ETA}}
+- **Original reason:** {{REASON}}
+- **Expected delay:** {{EXPECTED_DELAY}}
+- **Previous estimated time of availability:** {{ETA}}
 
 {{NOTE}}
 
@@ -1932,7 +1940,7 @@ We apologise for the inconvenience caused by the delay.
 
 Kind regards,
 
-ECMWF Duty Manager', NULL);
+**ECMWF Duty Manager**', NULL);
 
 --
 -- Table structure for table `SCHEDULER_VALUE`

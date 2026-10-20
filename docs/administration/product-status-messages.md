@@ -53,6 +53,7 @@ The messages are written in **Markdown** by default (switch **"Write the message
 - **Send with Outlook** (and the product page email buttons) opens Outlook with a **plain-text approximation** of the message (paragraphs, lists, links as `text (url)`), because Outlook links cannot carry HTML.
 - On the Delay Notification page, **Preview** shows the formatted message and a button at the bottom switches to the plain-text view to check what Outlook will receive.
 - The built-in default messages are written in Markdown (bold labels, bullet lists for the reason, delay and ETA, a clickable status-page link). When the switch is off, the uncustomized defaults are automatically converted to plain text, so no Markdown symbols appear.
+- Existing installations that still have the original plain-text defaults stored in `SYS_CONFIG` can apply [`product-status-markdown-defaults.sql`](../../docker/ecpds/database/product-status-markdown-defaults.sql). It removes only rows matching those exact original defaults; customized messages are preserved and the application then supplies the Markdown defaults.
 - Disable the switch to send the messages as plain text exactly as written. A notice keeps the format it was created with for its updates and resolutions.
 
 ---

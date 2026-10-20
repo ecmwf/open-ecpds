@@ -31,7 +31,8 @@ links and bookmarks.
    are de-duplicated and the list is always recomputed by the Monitor when the notice is registered.
 4. Choose a predefined reason or select **Other (enter a reason)** and enter a free-text reason in the adjacent field.
    The reason, ETA and expected delay are added to the message; free-text reasons are saved with the notice and
-   restored when it is reopened. Add a note and review the editable subject and message. The message starts from the
+   restored when it is reopened. **Add a note** is unchecked by default; select it to show the note editor and include
+   the note in the message. A saved note is shown when reopening a notice. Review the editable subject and message. The message starts from the
    grouped *Products Delay* message managed in **Product Messages** (`/do/admin/productmessages`); `{{PRODUCTS}}` (or
    `{{PRODUCT}}`) becomes the list of selected products, `{{CYCLES}}` the selected cycles and `{{DESCRIPTION}}` the
    product descriptions. The Definite/Possible lists, reason, expected delay, ETA and note are inserted at
