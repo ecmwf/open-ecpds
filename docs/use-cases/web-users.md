@@ -50,7 +50,7 @@ Navigate to `/do/user/user` and click **Create**. The required fields are:
 
 Navigate to `/do/user/user/edit/update_form/<login>`. Changes are saved on clicking **Save**. The page shows:
 
-- Current **TOTP state** note below the password field (see [TOTP Authentication](#totp-authentication) below)
+- Current **TOTP state** note below the password field (see [TOTP Authentication](#totp-two-factor-authentication) below)
 - **Category** assignment with a picker for adding/removing categories
 
 ### Viewing a user

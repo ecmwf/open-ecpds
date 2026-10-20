@@ -31,7 +31,7 @@ ectrans.hostSelector = "($network == internal) 10.0.0.5"
 
 !!! tip
     For the [HTTP module](http.md), see also `http.minRequestInterval`, `http.honorRetryAfter`, `http.maxRetryAfter`,
-    `http.rateLimitRetryCount` and `http.rateLimitBackoff` under [Rate limiting & overload protection](http.md#rate-limiting--overload-protection)
+    `http.rateLimitRetryCount` and `http.rateLimitBackoff` under [Rate limiting & overload protection](http.md#rate-limiting-overload-protection)
     — these pace/retry individual requests to avoid overloading or getting banned by a slow or rate-limiting site,
     complementing the whole-transfer retry mechanism above.
 

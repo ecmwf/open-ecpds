@@ -89,7 +89,7 @@ The `ecpds` CLI supports two authentication modes.
 
 ### IncomingUser authentication (recommended)
 
-Use the `-user` and `-pass` options to authenticate as an [IncomingUser](../concepts/entities.md#incoming-users)
+Use the `-user` and `-pass` options to authenticate as an [IncomingUser](data-users.md)
 (also called a *data user*). The server:
 
 1. Validates the credentials against the OpenECPDS user database.
