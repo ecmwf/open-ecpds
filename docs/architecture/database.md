@@ -84,6 +84,8 @@ investigating. The table set may also differ where a deployment has site-specifi
 | `SYSTEM_MESSAGE` | Scheduled system messages displayed to users. |
 | `DELAY_NOTICE` | Registered delay notices and their status and content history. |
 | `STORAGE_POLICY` | Storage lifecycle policy definitions and their matching criteria. |
+| `STORAGE_LIFECYCLE` | Per-file lifecycle evaluation state, pinning details, eligibility times and reclamation results. |
+| `STORAGE_POLICY_METRIC` | Cumulative reclaimed-byte and dropped-replica metrics, plus the last application time, per storage policy. |
 | `SYS_CONFIG` | Named, shared system settings managed by OpenECPDS features. |
 | `FEEDBACK` | Feedback submitted through the Monitoring Interface. |
 
