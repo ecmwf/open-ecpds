@@ -82,6 +82,8 @@ JOLOKIA_POLICY_LOCATION="file:/etc/ecpds/monitor/jolokia-access.xml"
 ```
 
 The policy is opt-in; keep Jolokia authentication and network restrictions enabled.
+The Hawtio gateway preserves the browser's original origin for remote connections, so
+an HTTPS gateway does not require an HTTP origin entry in the service's policy.
 The backend HTTP connection is not encrypted. For remote services, prefer end-to-end
 HTTPS rather than TLS termination.
 

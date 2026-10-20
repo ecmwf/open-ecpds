@@ -132,7 +132,7 @@ error_log /dev/stderr;
 events { worker_connections 1024; }
 http {
     access_log /dev/stdout;
-    # Jetty only sees plain HTTP from nginx and rejects a browser "https://" Origin.
+    # Hawtio's local Jolokia agent receives HTTP and requires a matching Origin scheme.
     map $http_origin $hawtio_origin {
         default $http_origin;
         "~^https://(?<origin_rest>.+)$" "http://$origin_rest";
@@ -159,7 +159,8 @@ http {
             auth_basic_user_file /run/hawtio/htpasswd;
             proxy_pass http://127.0.0.1:8081;
             proxy_set_header Host $host;
-            proxy_set_header Origin $hawtio_origin;
+            # Remote agents must receive the browser's original Origin for their policies.
+            proxy_set_header Origin $http_origin;
             proxy_intercept_errors on;
             error_page 401 =403 @jolokia_denied;
         }
