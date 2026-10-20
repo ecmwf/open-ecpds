@@ -257,7 +257,7 @@ public final class WeatherAutomation {
                 .limit(Math.max(1, maximum * 3L / 10)).forEach(priority::add);
         final var groups = new LinkedHashMap<String, ArrayDeque<Path>>();
         for (final var p : rankedByScore)
-            groups.computeIfAbsent(p.sourceId() + "/" + p.protocol(), k -> new ArrayDeque<>()).add(p);
+            groups.computeIfAbsent(p.sourceId() + "/" + p.protocol(), _ -> new ArrayDeque<>()).add(p);
         final long diversityLimit = priority.size() + Math.max(1, maximum / 5);
         while (priority.size() < diversityLimit && groups.values().stream().anyMatch(q -> !q.isEmpty())) {
             for (final var group : groups.values())

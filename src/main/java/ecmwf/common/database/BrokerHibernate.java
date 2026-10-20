@@ -363,7 +363,7 @@ final class BrokerHibernate implements Broker {
      * @see ecmwf.common.database.Broker#executeQuery(java.lang.String)
      */
     @Override
-    public CloseableResultSetWrapper executeQuery(final boolean release, final String sql)
+    public CloseableResultSetWrapper executeQuery(final boolean release, final String sql, final int timeout)
             throws BrokerException, SQLException {
         validateSqlEncoding(sql);
         setReadOnly(true);
@@ -380,11 +380,13 @@ final class BrokerHibernate implements Broker {
                     final var selectStmt = trimmedSql.substring(forIndex + "for ".length()).trim();
 
                     try (var setStatement = connection.createStatement()) {
+                        if (timeout >= 0)
+                            setStatement.setQueryTimeout(timeout);
                         setStatement.execute(setStmt);
                     }
-                    return createStreamingResultSet(connection, selectStmt);
+                    return createStreamingResultSet(connection, selectStmt, timeout);
                 } else {
-                    return createStreamingResultSet(connection, sql);
+                    return createStreamingResultSet(connection, sql, timeout);
                 }
             });
         } catch (final Exception e) {
@@ -406,13 +408,15 @@ final class BrokerHibernate implements Broker {
      * @throws SQLException
      *             the SQL exception
      */
-    private CloseableResultSetWrapper createStreamingResultSet(final Connection connection, final String sql)
-            throws SQLException {
+    private CloseableResultSetWrapper createStreamingResultSet(final Connection connection, final String sql,
+            final int timeout) throws SQLException {
         if (ENABLE_STREAMING_FETCH) {
             PreparedStatement ps = null;
             try {
                 ps = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
                 ps.setFetchSize(Integer.MIN_VALUE);
+                if (timeout >= 0)
+                    ps.setQueryTimeout(timeout);
                 return new CloseableResultSetWrapper(ps, ps.executeQuery());
             } catch (final Exception ex) {
                 if (ps != null) {
@@ -429,6 +433,8 @@ final class BrokerHibernate implements Broker {
             try {
                 statement = connection.createStatement();
                 statement.setFetchSize(FETCH_SIZE);
+                if (timeout >= 0)
+                    statement.setQueryTimeout(timeout);
                 return new CloseableResultSetWrapper(statement, statement.executeQuery(sql));
             } catch (final Exception ex) {
                 if (statement != null) {
@@ -456,7 +462,7 @@ final class BrokerHibernate implements Broker {
      * @see ecmwf.common.database.Broker#executeUpdate(java.lang.String)
      */
     @Override
-    public int executeUpdate(final String sql) throws BrokerException, SQLException {
+    public int executeUpdate(final String sql, final int timeout) throws BrokerException, SQLException {
         validateSqlEncoding(sql);
         setReadOnly(false);
         final var affectedRows = new int[1]; // or use AtomicInteger
@@ -468,6 +474,8 @@ final class BrokerHibernate implements Broker {
             }
             session.doWork(connection -> {
                 try (var statement = connection.createStatement()) {
+                    if (timeout >= 0)
+                        statement.setQueryTimeout(timeout);
                     affectedRows[0] = statement.executeUpdate(sql);
                 }
             });
@@ -599,14 +607,16 @@ final class BrokerHibernate implements Broker {
      * @see ecmwf.common.database.Broker#getIterator(java.lang.Class, java.lang.String)
      */
     @Override
-    public <T extends DataBaseObject> CloseableIterator<T> getIterator(final Class<T> target, final String sql)
-            throws BrokerException {
+    public <T extends DataBaseObject> CloseableIterator<T> getIterator(final Class<T> target, final String sql,
+            final int timeout) throws BrokerException {
         validateSqlEncoding(sql);
         setReadOnly(true);
         session.setDefaultReadOnly(true);
         ScrollableResults<T> results = null;
         try {
             final NativeQuery<T> query = session.createNativeQuery(sql, target);
+            if (timeout >= 0)
+                query.setTimeout(timeout);
             query.setFetchSize(FETCH_SIZE);
             query.setReadOnly(true);
             query.setCacheable(false);

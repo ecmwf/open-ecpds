@@ -187,7 +187,7 @@ public final class WeatherCollector {
         events.put(eventId, new Seen(observation, now));
         retainedConnectionReferences += observation.connections().size();
         if (sending.bucketKey != null) {
-            final var bucket = buckets.computeIfAbsent(sending.bucketKey, ignored -> new Bucket());
+            final var bucket = buckets.computeIfAbsent(sending.bucketKey, _ -> new Bucket());
             if (previous == null) {
                 switch (observation.outcome()) {
                 case SUCCESS -> bucket.success++;
@@ -295,7 +295,7 @@ public final class WeatherCollector {
 
     private Bucket timedBucket(WeatherObservation observation, long offset, long now) {
         final var key = timedKey(observation, offset, now);
-        return key == null ? null : buckets.computeIfAbsent(key, ignored -> new Bucket());
+        return key == null ? null : buckets.computeIfAbsent(key, _ -> new Bucket());
     }
 
     private BucketKey timedKey(WeatherObservation observation, long offset, long now) {

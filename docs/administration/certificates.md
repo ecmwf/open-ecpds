@@ -14,7 +14,8 @@ The **TLS Certificates** entry in the Admin Tasks card, the left-hand navigation
 | 🟡 **Yellow** — *Attention* badge | At least one certificate is self-signed or expires within 30 days. |
 | Default grey | All certificates are CA-signed and not close to expiry. |
 
-The status is computed by the MasterServer, cached for up to one hour, and **immediately invalidated** after any certificate is deployed or reloaded through the UI — so all Monitor instances always see the same up-to-date value without requiring a restart or manual refresh.
+Certificate status is shared across Monitor instances and refreshed after a
+certificate is deployed or reloaded through the UI.
 
 ---
 
@@ -149,24 +150,16 @@ Pushes the current Monitor certificate to every connected Data Mover over RMI. E
 
 This is the recommended way to synchronise all components after importing a new CA-signed certificate.
 
-Deployment repackages the certificate, private key and complete chain into each Mover's
-PKCS#12 file using that Mover's configured keystore password. The certificate's SHA-256
-fingerprint does not change. New files use Java's standard AES-256/PBES2 with PBKDF2-HMAC-SHA256 and a
-SHA-256 MAC, and can be read by OpenSSL without `-legacy`. The replacement is validated
-before an atomic write; existing file permissions and ownership are preserved.
-
-Services register Bouncy Castle after the built-in providers so Java's PBE key factory and
-cipher use consistent password encoding. Code explicitly selecting Bouncy Castle
-continues to use it. An explicit `bouncyCastleProviderPosition` must also be after
-SunJCE to ensure compatible password encoding.
+Each Mover retains its configured keystore password, file permissions and ownership.
+The certificate, private key and complete chain are preserved, and the SHA-256
+fingerprint does not change. The PKCS#12 file can be read by OpenSSL without `-legacy`.
 
 When Master, Monitor, or Mover HTTP/MQTT services start, an incompatible existing
 PKCS#12 keystore containing a private key is automatically repackaged in the current
 OpenSSL-compatible format; already-compatible files are left unchanged. The configured
 password is used to read and write it; the certificate, private key, complete chain,
-and SHA-256 fingerprint are preserved. The replacement is validated before an atomic
-write, and existing file permissions and ownership are preserved. An alternative provider
-is tried when the default Java provider cannot read the file. JKS and certificate-only
+and SHA-256 fingerprint are preserved, as are file permissions and ownership.
+JKS and certificate-only
 truststores are left unchanged. If a keystore cannot be read with the configured
 password or has unsupported entries, it is not replaced and the conversion failure is
 logged.

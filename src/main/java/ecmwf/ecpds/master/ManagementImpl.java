@@ -4205,7 +4205,13 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     public java.util.List<ecmwf.common.database.WeatherDiscoveryStore.Candidate> findWeatherCandidates(
             ECpdsSession session, String source, int days, String protocol) throws Exception {
         requireWeatherAdministrator(session);
-        return new ecmwf.common.database.WeatherDiscoveryStore().successfulCandidates(source, days, protocol);
+        try {
+            return new ecmwf.common.database.WeatherDiscoveryStore(base).successfulCandidates(source, days, protocol);
+        } catch (final DataBaseException e) {
+            _log.warn("Searching Network Weather candidate history", e);
+            // RMI clients do not load JDBC driver classes, including exception causes.
+            throw new IllegalStateException("Unable to query candidate history: " + e.getMessage());
+        }
     }
 
     @Override

@@ -47,7 +47,7 @@
         <strong>Delay Notification</strong> on the left and <strong>Legacy Email Actions</strong> on the right
         (stacked on narrower screens). Both are hidden when no explicit contact emails are available. Contacts cover
         the current product/cycle, all cycles of a product, or all products and cycles, with duplicates removed from
-        combined lists. Legacy Outlook/direct-send buttons do not register a notice.</p>
+        combined lists. Legacy email buttons open Outlook only and do not register a notice.</p>
       </div>
 
       <div class="tab-pane fade" id="dng-rcpt" role="tabpanel">

@@ -5965,4 +5965,100 @@ public final class ECpdsBase extends DataBase {
         logSqlRequest("getTransferStatisticsByDataTransferId", list.size());
         return list;
     }
+
+    record WeatherHost(String name, String target, String method, String nickname, String group) {
+    }
+
+    record WeatherUpload(long time, long id, String target, long bytes) {
+    }
+
+    record WeatherTransfer(String host, long time, boolean error) {
+    }
+
+    List<WeatherHost> getWeatherSuccessfulHosts(final String protocol, final long since, final long until,
+            final long limit) throws DataBaseException {
+        return getWeatherHosts("getWeatherSuccessfulHosts",
+                new String[] { "protocol=" + protocol, "since=" + since, "until=" + until, "limit=" + limit });
+    }
+
+    List<WeatherHost> getWeatherApprovedHosts(final List<String> hosts) throws DataBaseException {
+        if (hosts.isEmpty())
+            return List.of();
+        return getWeatherHosts("getWeatherApprovedHosts", new String[] { "hosts-=" + weatherHostList(hosts) });
+    }
+
+    List<WeatherHost> getWeatherGroupHosts(final String group, final long limit) throws DataBaseException {
+        return getWeatherHosts("getWeatherGroupHosts", new String[] { "group=" + group, "limit=" + limit });
+    }
+
+    private List<WeatherHost> getWeatherHosts(final String name, final String[] parameters) throws DataBaseException {
+        final var hosts = new ArrayList<WeatherHost>();
+        try (final var rows = executeSelect("ECpdsBase", name, parameters)) {
+            while (rows.next()) {
+                hosts.add(new WeatherHost(rows.getString("HOS_NAME"), rows.getString("HOS_HOST"),
+                        rows.getString("TME_NAME"), rows.getString("HOS_NICKNAME"), rows.getString("TRG_NAME")));
+            }
+            logSqlRequest(name, hosts.size());
+            return List.copyOf(hosts);
+        } catch (SQLException | IOException e) {
+            _log.warn(name, e);
+            throw new DataBaseException(name, e);
+        }
+    }
+
+    private static String weatherHostList(final List<String> hosts) {
+        return hosts.stream().map(host -> "'" + escapeSql(host) + "'")
+                .collect(java.util.stream.Collectors.joining(","));
+    }
+
+    List<WeatherUpload> getWeatherUploadHistory(final long since, final long until, final long cursorTime,
+            final long cursorId) throws DataBaseException {
+        final var uploads = new ArrayList<WeatherUpload>();
+        try (final var rows = executeSelect("ECpdsBase", "getWeatherUploadHistory", new String[] { "since=" + since,
+                "until=" + until, "cursorTime=" + cursorTime, "cursorId=" + cursorId })) {
+            while (rows.next()) {
+                uploads.add(new WeatherUpload(rows.getLong("UPH_QUEUE_TIME"), rows.getLong("UPH_ID"),
+                        rows.getString("UPH_HOST_ADDRESS"), rows.getLong("UPH_FILE_SIZE")));
+            }
+            logSqlRequest("getWeatherUploadHistory", uploads.size());
+            return List.copyOf(uploads);
+        } catch (SQLException | IOException e) {
+            _log.warn("getWeatherUploadHistory", e);
+            throw new DataBaseException("getWeatherUploadHistory", e);
+        }
+    }
+
+    List<String> getWeatherDestinations(final List<String> hosts, final String cursor) throws DataBaseException {
+        if (hosts.isEmpty())
+            return List.of();
+        final var destinations = new ArrayList<String>();
+        try (final var rows = executeSelect("ECpdsBase", "getWeatherDestinations",
+                new String[] { "hosts-=" + weatherHostList(hosts), "cursor=" + cursor })) {
+            while (rows.next()) {
+                destinations.add(rows.getString("DES_NAME"));
+            }
+            logSqlRequest("getWeatherDestinations", destinations.size());
+            return List.copyOf(destinations);
+        } catch (SQLException | IOException e) {
+            _log.warn("getWeatherDestinations", e);
+            throw new DataBaseException("getWeatherDestinations", e);
+        }
+    }
+
+    List<WeatherTransfer> getWeatherTransferHistory(final String destination, final long since, final long until,
+            final int limit) throws DataBaseException {
+        final var transfers = new ArrayList<WeatherTransfer>();
+        try (final var rows = executeSelect("ECpdsBase", "getWeatherTransferHistory",
+                new String[] { "destination=" + destination, "since=" + since, "until=" + until, "limit=" + limit })) {
+            while (rows.next()) {
+                transfers.add(new WeatherTransfer(rows.getString("HOS_NAME"), rows.getLong("TRH_TIME"),
+                        rows.getBoolean("TRH_ERROR")));
+            }
+            logSqlRequest("getWeatherTransferHistory", transfers.size());
+            return List.copyOf(transfers);
+        } catch (SQLException | IOException e) {
+            _log.warn("getWeatherTransferHistory", e);
+            throw new DataBaseException("getWeatherTransferHistory", e);
+        }
+    }
 }

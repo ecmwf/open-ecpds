@@ -20,8 +20,8 @@ investigating. The table set may also differ where a deployment has site-specifi
 | `UPLOAD_HISTORY` | Records of completed data uploads and their transfer details. |
 | `INCOMING_HISTORY` | History of incoming-user and Data Portal file operations. |
 | `TRANSFER_STATISTICS` | Per-connection network statistics captured during a transfer. |
-| `WEATHER_SENDING` | Immutable source/path, execution identity and terminal outcome for Network Weather's opt-in transactional socket writer, including failed sendings without socket rows. |
-| `WEATHER_CONNECTION` | Stable connection identities linking sendings to socket statistics, with uniqueness for replay-safe transactional persistence and late-close supplements. |
+| `WEATHER_SENDING` | Network Weather sending outcomes, including failures without socket measurements. |
+| `WEATHER_CONNECTION` | Connection records associated with Network Weather measurements. |
 | `MONITORING_VALUE` | Timing values used to monitor expected, earliest, latest and predicted product arrival. |
 | `PRODUCT_STATUS` | Current status and timing information for monitored products and cycles. |
 | `PUBLICATION` | Scheduled publication or notification work associated with a transfer. |
@@ -102,42 +102,35 @@ investigating. The table set may also differ where a deployment has site-specifi
 
 ## How to read this catalog
 
-The table names are included as a reference for developers, administrators and people
-investigating OpenECPDS. They are implementation details rather than part of the
-end-user configuration interface. This catalog is not a column reference, entity
-relationship diagram or schema-management guide.
-
-Network Weather remains disabled by default and never performs automatic DDL.
-The supplied installation schema includes its identity tables and statistics
-covering index. Database schema operations require DBA load/metadata-lock planning.
-The background capability check
-requires the parent and identity tables, InnoDB, writer columns, unique identity
-indexes and cascading foreign keys before allowing runtime activation.
-Capacity limits are configured in the Master's `[NetworkWeather]` section and
-reported to the Monitor. Configuration documents use `MEDIUMTEXT` storage; the
-Master verifies actual column capacity before saving larger policies. See
-[deployment capacity](../monitor-ui/admin.md#deployment-capacity).
+This catalog is a database administration reference, not an end-user configuration
+interface. Use the Monitor UI or supported APIs to manage operational records.
+Table names and layouts can change between releases.
 
 Do not load the destructive full installation dump into a populated database.
-Database DDL auto-commits and must follow the site's backup and change procedures.
-Ordinary delivery and the successful-only statistics writer do not require the
-Weather identity tables. Tagged executions use the transactional Weather writer
-exclusively; untagged executions use successful-only statistics.
+Schema operations must follow the site's backup and database change procedures.
+Optional features report database-readiness problems on their administration pages.
 
-Sending headers, connection identities and statistics commit together; neither
-volatile admission receipts nor assessment counters promise a committed ledger.
-Reads of transfer-detail provenance are indexed by transfer ID and gated on
-cached schema availability; they are not added to untagged history writes.
-The identity tables cascade with transfer/socket deletion, preserving existing
-purge behavior rather than introducing an indefinite history archive.
+## SQL script timeouts
 
-Automatic Network Weather selection stores its separate policy and bounded discovery
-cursors under `SYS_CONFIG` (`NetworkWeather`, `automation`). Historical ranking is
-explicitly opt-in: indexed seven-day upload keysets and destination/time samples
-run only on its low-priority scheduler, never on a transfer callback or globe/admin
-refresh. It borrows from the existing Hikari pool only with spare capacity, uses
-a per-borrow 100-ms deadline, restores read-only state and applies two-second
-statement timeouts within a 30-second run budget. Missing indexes, cancellation
-failures and pool pressure are surfaced, not replaced with unrestricted queries.
-Returned-row limits are not examined-row guarantees; representative query plans
-and off/on load remain a test-system rollout gate.
+Administrators maintaining named SQL scripts in `conf/sql` can specify a timeout in
+whole seconds alongside their `#menu`, `#name` and `#group` directives:
+
+```text
+#timeout "10"
+```
+
+Without this directive, the default statement timeout is unchanged.
+Use `#timeout "0"` to explicitly disable the statement timeout. Other database,
+driver and connection limits still apply.
+Use a single non-negative whole number of seconds. Invalid or duplicate directives
+reject the request.
+
+Timeouts apply to selects, counts, mapped-object queries and updates. For scripts
+containing multiple statements or `LOOP`/`CHUNK` operations, the value applies to
+each statement, not to the total script duration. Timeout enforcement depends on
+the database driver; it does not limit connection waiting time.
+
+After editing a loaded script, invoke `updateScriptContent(menu, group, name)` on
+the Master's database MBean to refresh that script, or `reloadRepository()` to
+reload the repository (including new scripts). The new SQL and timeout are used
+by subsequent requests without restarting; already running statements are unchanged.

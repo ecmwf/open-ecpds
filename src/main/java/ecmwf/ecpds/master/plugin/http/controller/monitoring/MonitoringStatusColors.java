@@ -29,7 +29,6 @@ import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ecmwf.ecpds.master.DataBaseInterface;
 import ecmwf.ecpds.master.MasterManager;
 
 /**

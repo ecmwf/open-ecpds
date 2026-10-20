@@ -72,6 +72,9 @@
 #globeRightPanels{position:absolute;right:10px;top:10px;z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-height:calc(100% - 20px);pointer-events:none;}
 #globeRightPanels>div{pointer-events:auto;position:static;}
 #globeInfoPanel{position:absolute;right:0;top:0;bottom:0;width:340px;max-width:100%;z-index:25;background:rgba(20,25,30,.96);color:#eee;padding:1rem;font-size:.82rem;display:none;overflow:auto;box-sizing:border-box;box-shadow:0 4px 16px rgba(0,0,0,.35);}
+@media(min-width:701px){
+    #globeContainer:fullscreen #globeInfoPanel{top:calc(var(--globe-toolbar-height,44px) + 20px);}
+}
 #globeContainer.globe-details-open #cesiumContainer{width:calc(100% - 340px)!important;}
 #globeContainer.globe-details-open #globeRightPanels,#globeContainer.globe-details-open #globeBottomRightPanels{right:350px;}
 #globeHostChoices{display:flex;flex-direction:column;gap:.35rem;margin-bottom:.75rem;}
@@ -294,9 +297,11 @@
         press Escape or interact with the globe to stop; switching to map mode also stops the tour.</li>
         <li><strong>Cloud sites</strong> &mdash; hosts located in a public cloud are outlined in the provider's colour
         and, when grouped in a cluster, tagged with its label: <strong>AWS</strong> (Amazon AWS, orange),
-        <strong>GCS</strong> (Google Cloud, green) or <strong>AZ</strong> (Microsoft Azure, blue). The provider is
-        also shown in the host details panel and in the hover tooltip. A country marker is outlined only when all its
-        hosts share the same provider.</li>
+        <strong>GCS</strong> (Google Cloud, green) or <strong>AZ</strong> (Microsoft Azure, blue).
+        Mixed-provider clusters have equal coloured ring segments, one per provider, not proportional to host counts.
+        Hover to list the providers; click to select a host and see its provider in the details. The provider is
+        also shown in the host details panel and in the hover tooltip. Country markers use the same segmented
+        rings and list all represented cloud providers in their details.</li>
         <li><strong>Network Weather</strong> &mdash; when collection is active, the
         <i class="bi bi-cloud-lightning-rain"></i> icon shows recent delivery conditions for the paths you are
         allowed to see (highlighted = on). Gray or missing evidence means no coverage, not a healthy path. The icon
@@ -347,6 +352,7 @@
         <div><span class="dot" style="background:#a78bfa;"></span>Continental Mover (connected)</div>
         <div><span class="dot" style="background:#a78bfa;opacity:.35;"></span>Continental Mover (not connected)</div>
         <div class="globe-muted-text" style="margin-top:.25rem;">Cloud site (outline colour)</div>
+        <div class="globe-muted-text" style="max-width:180px;">Mixed clusters: one equal ring segment per provider</div>
         <div><span class="dot" style="background:transparent;box-shadow:0 0 0 2px #ff9900;"></span><b>AWS</b> Amazon AWS</div>
         <div><span class="dot" style="background:transparent;box-shadow:0 0 0 2px #34a853;"></span><b>GCS</b> Google Cloud</div>
         <div><span class="dot" style="background:transparent;box-shadow:0 0 0 2px #0078d4;"></span><b>AZ</b> Microsoft Azure</div>
@@ -681,6 +687,7 @@
     }
 
     var points = viewer.scene.primitives.add(new Cesium.PointPrimitiveCollection());
+    var countryMarkers = viewer.scene.primitives.add(new Cesium.BillboardCollection());
     var arcs = viewer.scene.primitives.add(new Cesium.PolylineCollection());
 
     var STATUS_COLOR = {
@@ -701,6 +708,10 @@
     }
     function cloudName(cloud) {
         return cloud && CLOUD_INFO[cloud] ? CLOUD_INFO[cloud].name : "";
+    }
+    function transferClouds(transferMap) {
+        var present = new Set(Object.keys(transferMap).map(function(key) { return transferMap[key].cloud; }));
+        return Object.keys(CLOUD_INFO).filter(function(provider) { return present.has(provider); });
     }
     var TERMINAL_FADE_MS = 2500;
     var terminalEvents = Object.create(null);
@@ -1584,7 +1595,7 @@
             arcs.remove(c.arc);
         }
         if (c.point) {
-            points.remove(c.point);
+            countryMarkers.remove(c.point);
         }
         delete countries[code];
     }
@@ -1616,7 +1627,7 @@
         }
         if (existing) {
             if (existing.arc) arcs.remove(existing.arc);
-            if (existing.point) points.remove(existing.point);
+            if (existing.point) countryMarkers.remove(existing.point);
         }
         var arcOrigin = agg.arcOrigin || origin;
         var originPixelSize = agg.arcOrigin ? MOVER_PIXEL_SIZE : ORIGIN_PIXEL_SIZE;
@@ -1628,16 +1639,16 @@
             width: rateWidth(agg.totalRate),
             material: arcMaterial(color)
         });
-        var point = points.add({
+        var clouds = transferClouds(transferMap);
+        var image = clusterImage(hostCount, color.toCssColorString(), clouds);
+        var point = countryMarkers.add({
             position: Cesium.Cartesian3.fromDegrees(lon, lat),
-            pixelSize: destPixelSize,
-            color: color,
-            outlineColor: cloudRing(cloud) || Cesium.Color.WHITE,
-            outlineWidth: cloud ? 3 : 1
+            image: image, width: image.width / 2, height: image.height / 2,
+            color: Cesium.Color.WHITE
         });
         point.countryCode = code;
         var entry = {
-            arc: arc, point: point, lat: lat, lon: lon, hostCount: hostCount, cloud: cloud || "", transfers: transferMap, agg: agg,
+            arc: arc, point: point, lat: lat, lon: lon, hostCount: hostCount, cloud: cloud || "", clouds: clouds, transfers: transferMap, agg: agg,
             arcOrigin: { lat: arcOrigin.lat, lon: arcOrigin.lon, pixelSize: originPixelSize },
             destPixelSize: destPixelSize, isAcquisition: agg.isAcquisition,
             removeTimeout: null, pulsePhase: existing ? existing.pulsePhase : Math.random() * Math.PI * 2
@@ -1947,7 +1958,9 @@
             var luminance = 0.2126 * markerColor.red + 0.7152 * markerColor.green + 0.0722 * markerColor.blue;
             button.style.setProperty("--host-marker-text", luminance > 0.5 ? "#000000" : "#ffffff");
             button.setAttribute("aria-pressed", "false");
-            button.textContent = (entry.label || member.name) + (member.proxy ? " - Proxy Host" : " - Target Host");
+            var hostCloud = hosts[member.name] && hosts[member.name].cloud;
+            button.textContent = (entry.label || member.name) + (member.proxy ? " - Proxy Host" : " - Target Host")
+                + (CLOUD_INFO[hostCloud] ? " - " + CLOUD_INFO[hostCloud].short : "");
             button.addEventListener("click", function() {
                 Array.from(choices.children).forEach(function(choice) {
                     var selected = choice === button;
@@ -1964,8 +1977,9 @@
 
     var clusterMarkers = viewer.scene.primitives.add(new Cesium.BillboardCollection());
     var clusterImages = Object.create(null);
-    function clusterImage(count, color, cloud) {
-        var key = count + ":" + color + ":" + (cloud || "");
+    function clusterImage(count, color, clouds) {
+        var cloud = clouds.length === 1 ? clouds[0] : "";
+        var key = count + ":" + color + ":" + clouds.join(",");
         if (clusterImages[key]) return clusterImages[key];
         var size = Math.max(30, 18 + String(count).length * 9);
         var canvas = document.createElement("canvas");
@@ -1976,9 +1990,20 @@
         context.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
         context.fillStyle = color;
         context.fill();
-        context.strokeStyle = cloud && CLOUD_INFO[cloud] ? CLOUD_INFO[cloud].css : "#ffffff";
-        context.lineWidth = cloud && CLOUD_INFO[cloud] ? 4 : 2;
-        context.stroke();
+        if (clouds.length) {
+            context.lineWidth = 4;
+            clouds.forEach(function(provider, index) {
+                var start = -Math.PI / 2 + index * Math.PI * 2 / clouds.length;
+                context.beginPath();
+                context.arc(size / 2, size / 2, size / 2 - 2, start, start + Math.PI * 2 / clouds.length);
+                context.strokeStyle = CLOUD_INFO[provider].css;
+                context.stroke();
+            });
+        } else {
+            context.strokeStyle = "#ffffff";
+            context.lineWidth = 2;
+            context.stroke();
+        }
         context.font = "bold 13px sans-serif";
         context.textAlign = "center";
         context.textBaseline = "middle";
@@ -2017,7 +2042,8 @@
         });
         var signature = visible.map(function(member) {
             return member.name + ":" + member.proxy + ":" + Math.round(member.screen.x)
-                + ":" + Math.round(member.screen.y) + ":" + member.point.color.toCssColorString();
+                + ":" + Math.round(member.screen.y) + ":" + member.point.color.toCssColorString()
+                + ":" + ((hosts[member.name] || {}).cloud || "");
         }).join("|");
         // Snapshot updates can replace primitives without changing their screen positions.
         var samePoints = visible.length === clusteredPoints.length
@@ -2055,14 +2081,15 @@
             var allProxy = group.every(function(member) { return member.proxy; });
             var color = hasFailed ? STATUS_COLOR.FAILED : hasActive ? STATUS_COLOR.ACTIVE
                 : allProxy ? PROXY_HOST_COLOR : STATUS_COLOR.DONE;
-            var firstHost = hosts[group[0].name];
-            var clusterCloud = firstHost && firstHost.cloud && group.every(function(member) {
-                return hosts[member.name] && hosts[member.name].cloud === firstHost.cloud;
-            }) ? firstHost.cloud : "";
-            var image = clusterImage(group.length, color.toCssColorString(), clusterCloud);
+            var clusterClouds = Object.keys(CLOUD_INFO).filter(function(provider) {
+                return group.some(function(member) {
+                    return hosts[member.name] && hosts[member.name].cloud === provider;
+                });
+            });
+            var image = clusterImage(group.length, color.toCssColorString(), clusterClouds);
             clusterMarkers.add({
                 position:seed.point.position,
-                id:{hostCluster:group, cloud:clusterCloud},
+                id:{hostCluster:group, clouds:clusterClouds},
                 image:image, width:image.width / 2, height:image.height / 2,
                 color:Cesium.Color.WHITE.withAlpha(allProxy && !hasActive && !hasFailed && !hasConnectedProxy ? 0.35 : 1),
                 horizontalOrigin:Cesium.HorizontalOrigin.CENTER,
@@ -2111,7 +2138,7 @@
         var samples = Object.keys(c.transfers).map(function (id) { return c.transfers[id]; });
         var title = countryDisplayName(code) + " (" + c.hostCount + " host" + (c.hostCount === 1 ? "" : "s") + ")";
         renderInfoPanel(title, c.agg, samples,
-            c.cloud ? "<dt>Provider</dt><dd>" + cloudName(c.cloud) + " (all hosts)</dd>" : undefined);
+            c.clouds.length ? "<dt>Cloud providers</dt><dd>" + c.clouds.map(cloudName).join(", ") + "</dd>" : undefined);
     }
 
     // scene.pick() of a primitive added via a *Collection (PointPrimitiveCollection, in our case "points") does NOT
@@ -2171,7 +2198,9 @@
         var primitive = pickedPrimitive(viewer.scene.pick(movement.endPosition));
         if (Cesium.defined(primitive) && primitive.hostCluster) {
             hoverTooltip.textContent = primitive.hostCluster.length + " hosts"
-                + (primitive.cloud ? " on " + cloudName(primitive.cloud) : "") + " - click to select";
+                + (primitive.clouds.length ? " - " + primitive.clouds.map(function(provider) {
+                    return CLOUD_INFO[provider].short;
+                }).join(" / ") : "") + " - click to select";
             hoverTooltip.style.left = (movement.endPosition.x + 14) + "px";
             hoverTooltip.style.top = (movement.endPosition.y + 10) + "px";
             hoverTooltip.style.display = "block";
@@ -2186,8 +2215,10 @@
             hoverTooltip.style.display = "block";
             viewer.scene.canvas.style.cursor = "pointer";
         } else if (Cesium.defined(primitive) && (Cesium.defined(primitive.hostName) || Cesium.defined(primitive.countryCode))
-                && ((hosts[primitive.hostName] || countries[primitive.countryCode] || {}).cloud)) {
-            hoverTooltip.textContent = cloudName((hosts[primitive.hostName] || countries[primitive.countryCode]).cloud);
+                && ((hosts[primitive.hostName] || countries[primitive.countryCode] || {}).cloud
+                    || ((countries[primitive.countryCode] || {}).clouds || []).length)) {
+            var cloudEntry = hosts[primitive.hostName] || countries[primitive.countryCode];
+            hoverTooltip.textContent = cloudEntry.clouds ? cloudEntry.clouds.map(cloudName).join(" / ") : cloudName(cloudEntry.cloud);
             hoverTooltip.style.left = (movement.endPosition.x + 14) + "px";
             hoverTooltip.style.top = (movement.endPosition.y + 10) + "px";
             hoverTooltip.style.display = "block";

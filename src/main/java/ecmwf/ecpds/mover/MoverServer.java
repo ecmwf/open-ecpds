@@ -72,7 +72,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.Deflater;
@@ -1806,7 +1805,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     @Override
     public DataFile filter(final DataFile dataFile, final boolean remove) throws RemoteException {
-        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(dataFile.getId())) {
+        try (final var _ = ecmwf.ecpds.master.storage.StorageFileLocks.read(dataFile.getId())) {
             return filterWithStorageLease(dataFile, remove);
         }
     }
@@ -1959,7 +1958,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     @Override
     public DataFile replicate(final DataFile dataFile, final Host targetHost, final Host[] hostsForSource)
             throws RemoteException {
-        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(dataFile.getId())) {
+        try (final var _ = ecmwf.ecpds.master.storage.StorageFileLocks.read(dataFile.getId())) {
             return replicateWithStorageLease(dataFile, targetHost, hostsForSource);
         }
     }
@@ -2355,7 +2354,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     @Override
     public DataFile download(final DataFile dataFile, final Host hostForSource) throws RemoteException {
-        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(dataFile.getId())) {
+        try (final var _ = ecmwf.ecpds.master.storage.StorageFileLocks.read(dataFile.getId())) {
             return downloadWithStorageLease(dataFile, hostForSource);
         }
     }

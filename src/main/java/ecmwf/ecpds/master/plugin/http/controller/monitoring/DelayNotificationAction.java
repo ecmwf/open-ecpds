@@ -485,7 +485,7 @@ public class DelayNotificationAction extends PDSAction {
 
     @SuppressWarnings("unchecked")
     private static List<Map<String, Object>> list(final Map<String, Object> notice, final String key) {
-        return (List<Map<String, Object>>) notice.computeIfAbsent(key, k -> new ArrayList<>());
+        return (List<Map<String, Object>>) notice.computeIfAbsent(key, _ -> new ArrayList<>());
     }
 
     private void send(final Map<String, Object> body, final String who, final Map<String, Object> out)

@@ -146,7 +146,7 @@ public final class WeatherSocketStore {
                     final var name = indexes.getString("INDEX_NAME");
                     final var column = indexes.getString("COLUMN_NAME");
                     if (name != null && column != null) {
-                        unique.computeIfAbsent(name, ignored -> new java.util.TreeMap<>())
+                        unique.computeIfAbsent(name, _ -> new java.util.TreeMap<>())
                                 .put(indexes.getInt("ORDINAL_POSITION"), column);
                     }
                 }
@@ -186,7 +186,7 @@ public final class WeatherSocketStore {
                 SELECT NWS_ID,DAT_ID,NWS_SENDING_INDEX,NWS_EVENT_ID,NWS_SOURCE_EPOCH,NWS_SOURCE,NWS_DESTINATION,
                     NWS_HOST,NWS_CONFIGURED_TARGET,NWS_PROTOCOL,NWS_LEG,NWS_OUTCOME,NWS_CATEGORY,NWS_SOURCE_TIME
                 FROM WEATHER_SENDING WHERE 1=0
-                """); final var ignored = statement.executeQuery()) {
+                """); final var _ = statement.executeQuery()) {
         }
         try (final var statement = prepare(connection,
                 """
@@ -195,7 +195,7 @@ public final class WeatherSocketStore {
                             S.TST_PACING_RATE_BPS,S.TST_DELIVERY_RATE_BPS,S.TST_CWND,S.TST_SEGS_OUT,S.TST_SEGS_IN
                         FROM WEATHER_CONNECTION C JOIN TRANSFER_STATISTICS S ON C.TST_ID=S.TST_ID WHERE 1=0
                         """);
-                final var ignored = statement.executeQuery()) {
+                final var _ = statement.executeQuery()) {
         }
     }
 

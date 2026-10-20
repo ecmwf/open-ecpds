@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -55,7 +54,6 @@ import ecmwf.common.database.StorageLifecycleStore.Snapshot;
 import ecmwf.common.mbean.MBeanManager;
 import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.master.MasterServer;
-import ecmwf.ecpds.master.transfer.StatusFactory;
 import ecmwf.common.ecaccess.MBeanScheduler;
 
 /** Only removes redundant copies. Normal expiry remains the sole owner of original-file removal. */
@@ -286,7 +284,7 @@ public final class StorageLifecycleScheduler extends MBeanScheduler {
 
     private void estimate(final StorageRetention.Decision decision, final long candidates, final long bytes) {
         for (final var policy : decision.policies()) {
-            final var stats = scan.computeIfAbsent(policy, ignored -> new long[2]);
+            final var stats = scan.computeIfAbsent(policy, _ -> new long[2]);
             stats[0] += candidates;
             stats[1] = Math.addExact(stats[1], bytes);
         }
@@ -473,7 +471,7 @@ public final class StorageLifecycleScheduler extends MBeanScheduler {
             throw new IllegalStateException("Enable StoragePolicy before changing holds");
         }
         policies();
-        try (final var lease = StorageFileLocks.read(id)) {
+        try (final var _ = StorageFileLocks.read(id)) {
             final var snapshot = snapshot(id);
             final long now = System.currentTimeMillis();
             final long expiry = snapshot.transfers().stream().mapToLong(t -> t.expiry()).max().orElse(0);

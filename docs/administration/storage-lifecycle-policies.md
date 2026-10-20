@@ -73,8 +73,8 @@ Pins are persisted across service restarts and replacement instances of the same
 
 `ORIGINAL_ONLY` means the assessment found no remaining non-original copies on the
 configured Movers; it is not a continuously refreshed inventory. Downloads prefer
-the original after reduction. Requeue resets replication bookkeeping so normal
-replication can run again, subject to any opted-in lazy delay.
+the original after reduction. Requeue allows normal replication to run again,
+subject to any opted-in lazy delay.
 On-demand access may recreate a replica, which a later assessment can remove again.
 
 ## Pressure and lazy replication
@@ -103,8 +103,8 @@ undercount savings; counters are operational measurements, not a billing ledger.
 The `ECaccess:service=StorageLifecycleScheduler` JMX MBean exposes `Enabled`,
 `Errors`, `LastCompleteScan` and tabular `PolicyMetrics`. The bundled Prometheus JMX
 exporter can expose these numeric metrics; see [JMX export](../monitoring/jmx-export.md).
-Per-file outcomes and holds are persisted, while scan estimates and pressure
-hysteresis restart with the Master. History records identify the policy and Mover
+Per-file outcomes and holds survive a restart; estimates are recalculated after
+a Master restart. History records identify the policy and Mover
 for successful replica removals.
 
 ## Deployment and sizing
@@ -123,13 +123,12 @@ maxRelatedTransfers=10000
 maxUsageAge=2m
 ```
 
-The scheduler scans by file ID in bounded batches without loading the entire store.
-`stepBudget` limits work between files, not an RPC already in progress. Tune the
+`batchSize` controls how many files are assessed at a time, and `stepBudget`
+limits when further files can be started; an operation in progress can finish. Tune the
 batch size and interval for the installation and watch `LastCompleteScan`; estimates
 remain explicitly unavailable until a complete scan finishes. A file exceeding
 `maxRelatedTransfers` fails closed with an explicit error instead of truncating its
-related transfers. Replication uses a bounded cursor while lifecycle is enabled so
-deferred files do not hide later eligible files behind a query limit.
+related transfers.
 
 Policy edits are refreshed within 30 seconds; an already admitted removal can finish.
 The supplied configuration reloads the `StoragePolicy` group automatically. Preserve
@@ -137,9 +136,9 @@ The supplied configuration reloads the `StoragePolicy` group automatically. Pres
 the Master after configuration changes. Enablement, batch/budget limits and usage age
 are read dynamically; interval, time ranges and jammed timeout require a restart.
 
-Lifecycle deletion requires Movers with guarded inspection/removal RPCs.
-Movers without these capabilities are excluded from deletion. With lifecycle disabled, ordinary
-replication, downloads and expiry continue without reading runtime tables.
-Set `enabled=no` as the kill switch; any destructive RPC already admitted may finish.
+Lifecycle deletion requires compatible Movers; unsupported Movers are excluded
+from deletion. With lifecycle disabled, ordinary replication, downloads and expiry
+continue unchanged.
+Set `enabled=no` as the kill switch; a removal already in progress may finish.
 Full release of an unexpired original, automatic original promotion, checksum
 deduplication and size/metadata matching extensions are **not included**.

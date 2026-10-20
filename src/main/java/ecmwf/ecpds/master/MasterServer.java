@@ -418,7 +418,7 @@ public final class MasterServer extends ECaccessProvider
 
                 public Set<ecmwf.ecpds.master.weather.WeatherObservation.Path> candidates(
                         ecmwf.ecpds.master.weather.WeatherAutomation.Configuration policy) throws Exception {
-                    return new ecmwf.common.database.WeatherDiscoveryStore().candidates(policy.approved(),
+                    return new ecmwf.common.database.WeatherDiscoveryStore(getECpdsBase()).candidates(policy.approved(),
                             policy.sourceGroups());
                 }
 
@@ -433,7 +433,7 @@ public final class MasterServer extends ECaccessProvider
                 public void probes(boolean enabled, Set<ecmwf.ecpds.master.weather.WeatherProbe.Policy> policies) {
                     weatherAdministration.probes().configure(enabled, policies);
                 }
-            }, new ecmwf.common.database.WeatherDiscoveryStore());
+            }, new ecmwf.common.database.WeatherDiscoveryStore(getECpdsBase()));
 
     ecmwf.ecpds.master.weather.WeatherAutomation getWeatherAutomation() {
         return weatherAutomation;
@@ -626,7 +626,7 @@ public final class MasterServer extends ECaccessProvider
             throw new RemoteException("Invalid accounting mover identity");
         final var key = trafficSourceKey(mover);
         try {
-            actualTraffic.compute(key, (ignored, existing) -> {
+            actualTraffic.compute(key, (_, existing) -> {
                 final var counter = existing != null ? existing : new TrafficAccounting();
                 final var previous = counter.snapshot();
                 final var merged = new TrafficAccounting();
@@ -676,7 +676,7 @@ public final class MasterServer extends ECaccessProvider
         public int nextStep() {
             if (actualTrafficReady) {
                 for (final var key : actualTraffic.keySet()) {
-                    actualTraffic.computeIfPresent(key, (ignored, counter) -> {
+                    actualTraffic.computeIfPresent(key, (_, counter) -> {
                         if (counter.totals().values().stream().anyMatch(value -> value > 0))
                             return counter;
                         try {
@@ -2302,7 +2302,7 @@ public final class MasterServer extends ECaccessProvider
      *             the data base exception
      */
     public boolean deleteDataFile(final DataFile file) throws DataBaseException {
-        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(file.getId())) {
+        try (final var _ = ecmwf.ecpds.master.storage.StorageFileLocks.read(file.getId())) {
             return TransferScheduler.purge(_getTransferServers(file), file).complete;
         }
     }
@@ -2321,7 +2321,7 @@ public final class MasterServer extends ECaccessProvider
      *             the data base exception
      */
     public PurgeResult purgeDataFile(final DataFile file, final String byAndFrom) throws DataBaseException {
-        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(file.getId())) {
+        try (final var _ = ecmwf.ecpds.master.storage.StorageFileLocks.read(file.getId())) {
             return purgeDataFileLocked(file, byAndFrom);
         }
     }
@@ -3692,8 +3692,7 @@ public final class MasterServer extends ECaccessProvider
                 final var separator = entry.getKey().lastIndexOf('.');
                 if (separator <= 0)
                     throw new IllegalArgumentException("Invalid traffic accounting key: " + entry.getKey());
-                actualTraffic
-                        .computeIfAbsent(entry.getKey().substring(0, separator), ignored -> new TrafficAccounting())
+                actualTraffic.computeIfAbsent(entry.getKey().substring(0, separator), _ -> new TrafficAccounting())
                         .merge(Map.of(entry.getKey().substring(separator + 1), entry.getValue()));
             }
             actualTrafficReady = true;
@@ -4024,7 +4023,7 @@ public final class MasterServer extends ECaccessProvider
     public boolean updateTransferStatus(final DataTransfer transfer, String code, final boolean commit,
             final String username, final String byAndFrom, final boolean synchronous, final boolean reset,
             final boolean addHistory) throws MasterException {
-        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(transfer.getDataFileId())) {
+        try (final var _ = ecmwf.ecpds.master.storage.StorageFileLocks.read(transfer.getDataFileId())) {
             return updateTransferStatusLocked(transfer, code, commit, username, byAndFrom, synchronous, reset,
                     addHistory);
         }
@@ -9571,7 +9570,7 @@ public final class MasterServer extends ECaccessProvider
                         if (file == null) {
                             continue;
                         }
-                        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(file.getId())) {
+                        try (final var _ = ecmwf.ecpds.master.storage.StorageFileLocks.read(file.getId())) {
                             synchronized (_filterThreads) {
                                 if (!_filterThreads.containsKey(_currentKey = _getKey(file))) {
                                     final var thread = new FilterThread(file);
@@ -10011,8 +10010,7 @@ public final class MasterServer extends ECaccessProvider
                                 continue;
                             }
                         }
-                        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks
-                                .read(transfer.getDataFileId())) {
+                        try (final var _ = ecmwf.ecpds.master.storage.StorageFileLocks.read(transfer.getDataFileId())) {
                             if (!storageLifecycle.shouldReplicate(transfer)) {
                                 continue;
                             }
@@ -10365,7 +10363,7 @@ public final class MasterServer extends ECaccessProvider
                         if (getPurgeThreadsCount() >= _maxPurgeThreads) {
                             break;
                         }
-                        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks.read(dataFile.getId())) {
+                        try (final var _ = ecmwf.ecpds.master.storage.StorageFileLocks.read(dataFile.getId())) {
                             synchronized (_purgeThreads) {
                                 if (!_purgeThreads.containsKey(_currentKey = _getKey(dataFile))) {
                                     final var thread = new PurgeThread(dataFile);
@@ -10689,8 +10687,7 @@ public final class MasterServer extends ECaccessProvider
                         if (getThreadCount(hostForBackup) >= hostForBackup.getMaxConnections()) {
                             continue;
                         }
-                        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks
-                                .read(transfer.getDataFileId())) {
+                        try (final var _ = ecmwf.ecpds.master.storage.StorageFileLocks.read(transfer.getDataFileId())) {
                             synchronized (_backupThreads) {
                                 if (!_backupThreads.containsKey(_currentKey = _getKey(transfer))) {
                                     final var thread = new BackupThread(hostForBackup, transfer);
@@ -11115,8 +11112,7 @@ public final class MasterServer extends ECaccessProvider
                             }
                             continue;
                         }
-                        try (final var lease = ecmwf.ecpds.master.storage.StorageFileLocks
-                                .read(transfer.getDataFileId())) {
+                        try (final var _ = ecmwf.ecpds.master.storage.StorageFileLocks.read(transfer.getDataFileId())) {
                             synchronized (_proxyThreads) {
                                 if (!_proxyThreads.containsKey(_currentKey = _getKey(transfer))) {
                                     final var thread = new ProxyThread(hostsForProxy, transfer);

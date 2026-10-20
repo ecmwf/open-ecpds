@@ -89,7 +89,12 @@ interface Broker extends AutoCloseable {
      * @throws SQLException
      *             the SQL exception
      */
-    CloseableResultSetWrapper executeQuery(boolean release, String sql) throws BrokerException, SQLException;
+    default CloseableResultSetWrapper executeQuery(boolean release, String sql) throws BrokerException, SQLException {
+        return executeQuery(release, sql, -1);
+    }
+
+    CloseableResultSetWrapper executeQuery(boolean release, String sql, int timeout)
+            throws BrokerException, SQLException;
 
     /**
      * Execute update.
@@ -104,7 +109,11 @@ interface Broker extends AutoCloseable {
      * @throws SQLException
      *             the SQL exception
      */
-    int executeUpdate(String sql) throws BrokerException, SQLException;
+    default int executeUpdate(String sql) throws BrokerException, SQLException {
+        return executeUpdate(sql, -1);
+    }
+
+    int executeUpdate(String sql, int timeout) throws BrokerException, SQLException;
 
     /**
      * Gets the.
@@ -148,7 +157,13 @@ interface Broker extends AutoCloseable {
      * @throws BrokerException
      *             the broker exception
      */
-    <T extends DataBaseObject> CloseableIterator<T> getIterator(Class<T> target, String sql) throws BrokerException;
+    default <T extends DataBaseObject> CloseableIterator<T> getIterator(Class<T> target, String sql)
+            throws BrokerException {
+        return getIterator(target, sql, -1);
+    }
+
+    <T extends DataBaseObject> CloseableIterator<T> getIterator(Class<T> target, String sql, int timeout)
+            throws BrokerException;
 
     /**
      * Gets the primary key values.

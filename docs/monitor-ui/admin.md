@@ -47,9 +47,9 @@ combinations are refused immediately, and saved entries that no longer match an
 active Dissemination Host are flagged. Pins, exclusions and probes can also be
 picked from the approved candidates. For probes, a port is suggested from the
 transfer method but remains an explicit operator choice. The builders only assist
-entry; the Master still validates every save. Selector choices (Movers, transfer
-groups and active Dissemination Hosts, up to the deployment's `maxHostChoices`) are shared by administrators
-and reloaded at most every five minutes, or immediately with **Refresh choices**.
+entry; every save is validated. Selector choices (Movers, transfer
+groups and active Dissemination Hosts, up to the deployment's `maxHostChoices`) can
+be updated with **Refresh choices**.
 Without JavaScript, the underlying one-entry-per-line fields remain usable.
 Path builders hide entries already added for the selected source, including in
 the approved-candidate shortcut. Removing an entry makes it selectable again;
@@ -72,9 +72,8 @@ unfinished builder input or switch changes. Cancel keeps the current form.
 ### Deployment capacity
 
 Capacity is configured in the Master's properties file under `[NetworkWeather]`.
-The Master reports its effective limits to the Monitor; builder counters, help text,
-manual saves, discovery, selection and probe validation use those same limits.
-Matching updated components are required, but these capacity values do not need to
+The page displays the effective limits and validates entries against them.
+These capacity values do not need to
 be duplicated in the Monitor or Mover configuration. Restart the Master after changing
 them; lowering limits below an existing saved policy requires reducing that policy first.
 Collection and probe activation remain separate runtime switches in the administration UI.
@@ -86,7 +85,7 @@ Collection and probe activation remain separate runtime switches in the administ
 | `maxCandidates` | 500 | Explicit approved pool and combined group-discovered pool; also bounds exclusions. Must be at least `maxSelectedPaths`. |
 | `maxProbePolicies` | 50 | Configured scheduled probe policies. |
 | `maxHostChoices` | 5000 | Hosts available to the selectors; the filter shows at most 300 matches at once. |
-| `maxConfigurationBytes` | 49152 | UTF-8 size of each saved JSON configuration, including its metadata; up to the `MEDIUMTEXT` capacity (16,777,215 bytes). |
+| `maxConfigurationBytes` | 49152 | Maximum size in bytes of each saved configuration; up to 16,777,215 bytes. |
 
 For example, a larger deployment can use:
 
@@ -100,27 +99,19 @@ maxHostChoices=20000
 maxConfigurationBytes=4194304
 ```
 
-These are sizing examples, not throughput guarantees. Candidate queries remain
-deadline-bounded and approved Host lookups are batched. Source verification polling
-scales with the configured source capacity, but slow or unavailable callbacks still
-consume its single worker. Probe execution retains its independent rate limit.
-Increasing the policy count does not automatically increase probe execution frequency
-or the event queues' capacity.
-
-The installation schema uses `MEDIUMTEXT` for `SYS_CONFIG.SCF_PARAM_VALUE`,
-providing storage for larger policies. The Master checks actual storage
-capacity before saving a larger document and fails explicitly rather than allowing truncation.
-Do not load the full installation dump into a populated database. Coordinate schema operations with the DBA.
+These are sizing examples, not throughput guarantees. Increasing the policy count
+does not automatically increase probe execution frequency or collection capacity.
+Larger configurations also require sufficient database storage capacity.
 
 Large browser submissions also need adequate Monitor form capacity. Set, for example,
 `maxFormContentSize=16777216` under `[MonitorPlugin]` in the Monitor's properties file
 and restart it. The default is 200,000 bytes; budget for all submitted fields together
 and URL encoding, not just one policy field. Check any reverse proxy's request limit too.
 
-For many selected paths on an individual Continental Mover, its REST capability response
+For many selected paths on an individual Continental Mover, its control response
 may exceed the default 65,536-byte bound. Set `[NetworkWeather] maxControlResponseBytes`
 to an appropriate positive byte count on Movers and relays receiving those replies,
-and restart those services. This setting is local to the REST client, not supplied by the Master.
+and restart those services. This setting is local to those services, not supplied by the Master.
 
 ### Automatic selection and historical discovery
 
@@ -162,36 +153,20 @@ one group per source. Existing entries are preserved and duplicates are skipped;
 conflicting groups and capacity errors leave the form unchanged. The preview is
 searchable and paginated (50 Hosts per page), with selections retained across pages.
 Search results use `maxHostChoices`; adding paths uses `maxCandidates`.
-Click **Save** to persist the additions. Searches use bounded, read-only database access and report
-timeouts or result-limit errors rather than silently returning incomplete results.
+Click **Save** to persist the additions. Search failures and result-limit errors
+are displayed rather than silently returning incomplete results.
 
 **Historical discovery** is separate: it ranks already permitted candidates using
 up to seven days of activity, volume and error signals. It neither populates approval
 lists nor limits selection to Hosts with successful transfers.
 
-Policy, selection and bounded pagination progress survive restart. Assessment
-counters and reasons are transient. Query errors, pressure skips and partial samples
+Policy, selection and discovery progress survive restart. Assessment
+counters and reasons are transient. Query errors and partial samples
 are visible in the administration status. Disable automatic selection before saving
 a fixed manual scope. Automatic policy changes are rejected during an in-flight
-reassessment rather than racing its persisted selection; retry after it finishes.
-
-Historical reads use the existing Hikari pool, require two idle connections and no
-pool waiters, and have a separate 100-ms acquisition limit. One low-priority,
-non-overlapping reassessment has a 30-second SQL work budget and two-second statement
-timeouts, plus a per-connection network timeout capped at three seconds and restored
-before pool return. Upload pages contain at most 500 rows, with at most ten pages per run.
-Destination discovery returns at most 101 names and visits at most 100 indexed
-destination/time ranges, sampling at most 50 history rows each. The history run
-returns at most 10,000 rows, including destination discovery. Upload timestamp/ID
-and destination continuations are saved; incomplete samples are never presented
-as an exhaustive history scan. No DDL, pool-wide timeout changes or historical
-backfill is performed.
-
-**Returned-row caps do not bound rows examined by the database.** Validate representative
-`EXPLAIN` plans, driver/server cancellation, shared-pool pressure and collection-off/on
-load on the test system before enabling historical discovery in production. Unsupported
-pools and missing indexes fail explicitly; discovery does not fall back to an
-unbounded read. The administration and globe refresh paths do not query history.
+reassessment; retry after it finishes.
+Historical discovery samples activity rather than providing an exhaustive history
+scan. Assess its database load on a test system before enabling it in production.
 
 ### Scheduled diagnostics
 
@@ -204,28 +179,16 @@ require at least 300 seconds. New automatically selected paths do **not** acquir
 probe approval. MTR needs a JSON-capable `mtr` executable and suitable privileges
 on the actual emitting Mover.
 
-Jobs run asynchronously on the exact local or Continental source, through the
-existing signed RMI/REST control and result transport, without local-source fallback.
-There is one pending job per source, at most twenty globally, and at most twelve
-starts per minute, with jitter and failure backoff. Jobs expire after 60 seconds.
-Source execution has one worker and no waiting-job queue, a bounded DNS wait with
-one resolver thread, a three-second TCP connect limit and a twenty-second MTR limit,
-within a 25-second execution budget. An uninterruptible DNS implementation cannot
-create replacement resolver threads. MTR output is limited to 32 KiB and 32 hops;
-its process tree is terminated on timeout or control loss. A missing tool,
+Jobs run in the background on the selected local or Continental source, not on
+a substitute source. A missing tool,
 insufficient privileges, malformed output, no target response and missing source
 results are distinct from measured connectivity success. Intermediate-hop loss
 does not establish an end-to-end fault.
 
-Completed diagnostics and source-unavailable notices are capped and kept for one
-hour in Master memory. They are not a durable probe archive. Result replays after
-a lost acknowledgement are idempotent. Collection deactivation or probe-policy
-removal stops further admission/scheduling; a source cancels optional work when
-it learns of control loss. Existing transfers and interactive diagnostics are unchanged.
-
-Deploy matching Master, Monitor and Mover code: signed collection capability
-**version 2** covers the extended job/result transport. Older sources cannot
-silently qualify for this capability.
+Completed diagnostics and source-unavailable notices are kept for one hour and
+do not survive a Master restart. They are not a permanent probe archive.
+Collection deactivation or probe-policy removal stops further scheduled work.
+Existing transfers and interactive diagnostics are unchanged.
 
 ### Live Earth weather overlay
 
@@ -233,7 +196,7 @@ The Network Weather icon (<i class="bi bi-cloud-lightning-rain"></i>) in the Liv
 toolbar is shown while collection is active or its state cannot yet be confirmed.
 Click it to switch the overlay on
 (highlighted) or off (normal); it starts **off**. Its preference is saved
-in browser local storage, independently of transfer animation and other globe
+in the browser, independently of transfer animation and other globe
 preferences. Enabling it displays a searchable table of permitted source/Host/method
 evidence, socket coverage, observation age and available diagnostic summaries, plus
 independent Host-location halos. Gray/absent evidence means unknown coverage, not
@@ -242,8 +205,8 @@ Unresolved coordinates (including internal addresses) do not create invented loc
 but never hide the icon or permitted table rows. The Dissemination filter
 also applies to the overlay.
 
-The server filters by the viewer's active monitoring authorization, Host and
-destination permissions before aggregation. Paths lacking permitted retained
+Visibility follows the viewer's monitoring, Host and destination permissions.
+Paths lacking permitted retained
 delivery evidence are not disclosed to restricted viewers. Raw endpoint addresses,
 MTR hops, transfer IDs and administrative errors are not sent to the globe.
 Idle paths with previously permitted retained evidence show no recent observations,
@@ -252,12 +215,9 @@ not zero-latency success. Viewing the overlay never starts collection or a probe
 When collection is disabled or suspended, the server returns no weather paths and
 the icon is hidden and the overlay cleared on the next refresh. Errors and stalled
 requests also clear stale evidence, but keep the icon available: its tooltip and opened
-panel show the failure rather than silently disappearing. Refresh is every 15 seconds with an eight-second
-request deadline; a disabled collection therefore overrides even a saved `on`
+panel show the failure rather than silently disappearing. A disabled collection overrides a saved `on`
 preference. The preference is retained, so it can resume when collection becomes
-available again. Off viewers request only control state, not path/geolocation data.
-Geographic lookups are shared and cached for five minutes, rather than repeated
-for every viewer refresh.
+available again.
 
 ### Scope and runtime controls
 
@@ -268,55 +228,32 @@ must exactly match an active Dissemination Host; these settings are checked agai
 on activation. The limits come from the Master's deployment configuration. A blank scope clears the
 selection. **Saving scope disables collection**, requiring explicit reactivation.
 
-Activation requires restored control state, the transactional schema/writer and
-fresh verified identities for every selected source. The page displays blockers,
+Activation requires database readiness and verified registration for every
+selected source. The page displays blockers,
 registration state, five-minute observed counts and persistence health. Source
 loss after activation gates that source independently; it does not stop unrelated
-sources. Controls require administration permission at both Monitor and Master,
-use CSRF-protected POSTs and revision checks, and are audited.
+sources. Controls require administration permission and are audited.
 
-Deactivation stops Master admission before saving the disabled intent. Source
-capture stops on its next negotiation or control-lease expiry, within 60 seconds.
-Already admitted socket writes can finish; retained measurements are not erased.
+Deactivation stops collection; source capture can take up to 60 seconds to stop.
+Measurements already being saved can finish; retained measurements are not erased.
 If recording deactivation fails, the Master stays stopped and reports the error:
 retry before restarting, because the previously saved activation intent can
 otherwise be restored. Ordinary transfer processing, KPI byte accounting and
 viewer-driven animation are not stopped.
 
 The scope and activation intent survive Master restarts. Restored activation
-starts suspended until the background schema check succeeds. Missing schema or
-repeated transaction failures suspend collection; readiness recovery can resume
-saved activation intent. Pending evidence and the assessment itself are
-memory-only and do not survive a restart.
+starts suspended until readiness checks succeed. Database problems can suspend
+collection; recovery can resume saved activation intent. Pending measurements
+and the current assessment do not survive a restart.
 
 ### Source registration and transport
 
 Updated Movers negotiate by default (`[Server] networkWeatherNegotiation=yes`).
 An explicit `no` remains a per-Mover opt-out. Negotiation alone captures nothing.
-A low-priority scheduler negotiates and delivers every 30 seconds, using direct
-RMI or the existing Continental REST relay. REST Weather operations require
-`[Security] rccSharedSecret` signing at every hop, without changing legacy
-endpoints. Cached control expires monotonically after at most 60 seconds.
-Failed, mismatched or slow replies invalidate it. Older unsupported services
-back off for five minutes; other failures use bounded backoff and explicit logs.
-Scheduler MBeans expose lease, capture and outbox status.
-
-The Master verifies a fresh Ed25519 challenge using the callback already
-registered through DataMover subscription authentication. It never installs a
-public key from an observation, incoming IP or arbitrary URL. The process-private
-key is not returned or exposed in the UI. The signed identity must advertise
-collection protocol version 1 (dispatch timing and per-execution writer handover).
-Deploy matching Master,
-Monitor, local relay and Continental Mover versions.
-
-One background worker checks at most one selected source per step,
-refreshing after 30 seconds with 120-second monotonic proof expiry. An existing
-valid proof retains its original expiry during refresh; callback replacement,
-failed verification or lost subscription invalidates it. The callback deadline
-is five seconds with no queued work or extra workers for a stuck transport.
-Neither administration refreshes nor ingress perform identity callbacks or
-topology queries. Registration inherits, and does not strengthen, existing
-subscription authentication.
+Continental routes require `[Security] rccSharedSecret` signing at every hop.
+Deploy matching Master, Monitor, local relay and Continental Mover versions.
+Sources must be registered and verified before collection can start; the
+**Sources** tab shows their current registration state.
 
 For a selected Continental source without a direct subscription, an operator
 can explicitly approve its existing Proxy Host on the Master:
@@ -328,104 +265,53 @@ continental-source.example=101
 
 The key is the actual Continental Mover root; the value is the existing active
 Proxy Host ID, not an arbitrary URL or relay hostname. A subscribed local Mover
-from that Host's configured transfer group forwards the challenge over the Host's
-existing REST route. The returned identity must match the configured source and
-challenge; route changes, relay subscription replacement or loss invalidate the
-registration. Host route snapshots are refreshed in the background at most once
-per 30 seconds, for the configured selected sources, and expire after 60 seconds.
-Only these explicitly mapped hosts are looked up; page refresh and observation
-ingress never perform topology SQL. A failed source mapping is logged and does
-not stop verification of other sources.
+from that Host's configured transfer group must be available to reach the
+Continental source. A failed source mapping does not stop verification of other
+sources.
 
 The local relay must use `[MoverProxy] trustAllCerts=no`, valid HTTPS target
 names and an appropriate JVM truststore. Registration rejects HTTP, URL user
 credentials and trust-all certificate mode; shared request signing alone does
-not authenticate the public-key response. All target alternatives must satisfy
-these checks. The REST operation shares the existing five-second/three-attempt,
-64-KiB-response Weather budget and requires control-channel signing at the
-Continental service as well. No identity is synthesized from transfer history,
-an incoming observation, a heartbeat or an IP address.
+not authenticate the source. All target alternatives must satisfy these checks.
+Keep service clocks synchronised: excessive clock differences can prevent
+measurements from being assigned reliable observation times.
 
-Each outgoing batch carries a domain-separated signature covering the typed
-envelope, dispatch timestamp, identities, fields and reported queue ages. Relays
-preserve the original proof; JSON property order does not affect verification.
-The Master checks the current callback/route and unexpired process key before
-and after cryptography, with at most 100 signature-check starts per second.
-Source/signature/timing rejections and temporary deferrals are visible separately
-from verified batches; verified does not mean admitted or committed.
+### Measurements and coverage
 
-Challenge timing estimates clock offset and uncertainty. The Master independently
-bounds signed dispatch/event age; underreporting queue age cannot bypass expiry.
-Uncertain minute boundaries or excessive clock offset remain untimed evidence,
-not falsely precise buckets. A signature authenticates the source's claim, not
-its diagnosis; no network fault is inferred from arbitrary error text.
-
-### Persistence, budgets and coverage
-
-Execution identity and source/path scope are frozen before preparation/submission,
-independently of Live Earth viewers. Success, failure, explicit cancellation,
-post-callback preparation/submission errors and cleanup failures produce bounded
-terminal evidence. Late socket closes supplement the same sending. Routine
-cleanup is not cancellation; success despite stop intent remains success.
-Failures before callback/module creation can remain uncovered. Acquisition and
-other transfer legs are not included.
+Collection records dissemination outcomes and available socket measurements
+independently of Live Earth viewers. Successful and failed sendings and explicit
+cancellations can contribute evidence. Some early failures have no measurements.
+Acquisition and other transfer legs are not included.
 
 Existing module socket-statistics settings still determine available measurements;
-capture launches no additional socket-statistics subprocess. At most 16 connections
-are copied per sending. Missing/invalid/oversized snapshots, contention, drops and
-expiry are coverage loss, not packet loss. Socket-less failures remain sending
-outcomes, not invented zero-valued connections. New structured rows carry
-addresses, timing, RTT, sent/received bytes, pacing/delivery rates, congestion
-window and segment counts when available. Missing values remain unavailable,
-including peak rate in the summary; raw socket text is not transmitted or invented.
+missing or dropped measurements mean coverage loss, not packet loss.
+Failures without socket measurements remain sending outcomes, not zero-valued
+connections. RTT, sent/received bytes, rates and other socket measurements are
+shown when available; missing values remain unavailable.
 
-Each source outbox and the Master writer queue is bounded to 1,000 events,
-8 MiB reserved memory and five-minute expiry. Batches hold at most 100 events,
-64 KiB per event and 256 KiB overall, with JSON and Java-serialization bounds.
-Weather HTTP replies default to 64 KiB (`maxControlResponseBytes`) and relay attempts to three within
-five seconds. Partial receipts retire only acknowledged events; temporary failure
-retains stable identities. Scope/epoch changes or disabling discard optional
-source work with counters.
-
-**An accepted receipt means bounded pipeline admission, not a committed database
-transaction.** Ingress and delivery callbacks perform no new SQL. One low-priority
-Master worker starts at most ten events/100 connection rows per second and stops
-starting work after a 200-ms step budget; individual SQL statements have a
-two-second timeout, so this is not a hard 200-ms transaction deadline. Transactions
-have two retries with backoff. Deleted transfers, missing terminal headers,
-transaction failures, queue pressure and expiry are visible coverage gaps.
-Schema metadata is checked in the background every 30 seconds, without historical
-scans or automatic DDL. These caps are safeguards, not a production latency
-guarantee; validate shared database/pool pressure on the test system.
-
-One transaction records the immutable sending header, deduplicated connection
-identity and `TRANSFER_STATISTICS` rows. Replay after a lost acknowledgement
-reuses the identities; conflicting immutable evidence is rejected. Tagged
-executions use this writer exclusively, including failures, and untagged or
-unselected executions use the successful-only writer. Successful-only index
-allocation also checks the indexed Weather headers, so socket-less failures do
-not share an index with later successful statistics. Successful upload
-history is unchanged. Transfer details show sending outcome when available and
-identify missing provenance; the sending index is not a requeue count.
+The **Overview** and **Measurements** tabs show collection and persistence health.
+Accepted observations may still be awaiting storage; acceptance alone does not
+mean they have been saved. Database failures, capacity limits and expired
+observations can leave coverage gaps. Transfer details show sending outcomes when
+available and identify missing provenance; the sending index is not a requeue count.
 
 ### Deployment validation
 
-1. Keep collection disabled and deploy matching components. Verify the required
-   Weather identity tables, covering statistics index, InnoDB parent tables and
-   matching key types. The supplied installation schema includes these objects.
+1. Keep collection disabled and deploy matching components. Confirm database
+   readiness on the administration page.
    **Do not load the destructive full installation dump into a populated database.**
    Schema operations require the site's database change procedure, backups and DBA
-   review of metadata locks and resource pressure.
+   review.
 2. Configure approved Continental routes and verified HTTPS/signing, then save a
    small local and Continental scope. Wait for writer readiness and source
    registration. Activate from the administrator page; no service restart is
    needed for subsequent controls.
 3. Exercise successful and failed deliveries, plain retries/requeues, cancellation,
    late socket cleanup, relay outages and service restarts. Check source capture,
-   admission counts, committed socket rows and queue/loss counters. Test with
+   saved measurements and reported coverage gaps. Test with
    nobody viewing Live Earth, and compare transfer latency, database/pool load
    and ordinary byte totals against the disabled baseline.
-4. Deactivate and verify immediate Master refusal and source lease expiry while
+4. Deactivate and verify that collection stops while
    transfers continue. Only enable in production after the test-system outcome
    and the normal deployment review are satisfactory.
 
@@ -465,8 +351,7 @@ members of a Mover group; Proxy/Backup select the source internally and Proxy
 Host selection may change during an attempt. File size is not bytes moved:
 these blocking operations do not expose reliable live percentage or throughput.
 
-Refresh retrieves detached in-memory worker snapshots through the management
-interface. It performs no database scans, Mover probes or transfer-path I/O and
-does not change scheduler behaviour. Access follows the normal administration
+Refreshing the page does not start transfers or change scheduler behaviour.
+Access follows the normal administration
 URL permissions (`/do/admin/schedulertraffic`); deploy the updated Master and
 Monitor together.

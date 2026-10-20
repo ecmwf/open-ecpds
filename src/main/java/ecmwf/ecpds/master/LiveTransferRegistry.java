@@ -29,7 +29,6 @@ package ecmwf.ecpds.master;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLongArray;
@@ -92,12 +91,6 @@ public final class LiveTransferRegistry {
     private volatile long _lastPolledAt = 0;
 
     /**
-     * Last known cumulative {@link LiveTransferSample#getByteSent()} per transfer id, used to derive per-sample byte
-     * deltas (each sample carries a cumulative total, not an incremental one) for the rolling 24h totals below.
-     */
-    private final Map<Long, Long> _lastKnownBytes = new ConcurrentHashMap<>();
-
-    /**
      * Dissemination bytes transferred per one-minute bucket, indexed by {@code (epochMinute % BUCKET_COUNT)}; a bucket
      * is reset to zero the first time it is reused for a new minute, giving an always-accurate rolling 24h window
      * without ever growing unbounded. Kept separate from {@link #_bucketBytesAcq} so the "Transferred (24h)" KPI can be
@@ -110,7 +103,7 @@ public final class LiveTransferRegistry {
     private final AtomicLongArray _bucketBytesAcq = new AtomicLongArray(BUCKET_COUNT);
 
     private final Map<String, AtomicLongArray> _typeBuckets = HOST_TYPES.stream()
-            .collect(java.util.stream.Collectors.toMap(type -> type, type -> new AtomicLongArray(BUCKET_COUNT)));
+            .collect(java.util.stream.Collectors.toMap(type -> type, _ -> new AtomicLongArray(BUCKET_COUNT)));
 
     /**
      * The epoch-minute each bucket in {@link #_bucketBytesDiss}/{@link #_bucketBytesAcq} currently holds data for;
@@ -347,43 +340,6 @@ public final class LiveTransferRegistry {
             } catch (final NumberFormatException e) {
                 _log.warn("Skipping malformed {} traffic bucket: {}", type, entry, e);
             }
-        }
-    }
-
-    /** Adds cumulative sample deltas to both direction and Host-type minute buckets. */
-    private void _recordBytes(final LiveTransferSample sample) {
-        final var previous = _lastKnownBytes.getOrDefault(sample.getTransferId(), 0L);
-        final var current = sample.getByteSent();
-        if (!sample.isTerminal()) {
-            _lastKnownBytes.put(sample.getTransferId(), current);
-        }
-        // Guard against a transfer restarting from zero after a retry (which would otherwise look like a negative
-        // delta), and against not-yet-known byte counts.
-        final var delta = current - previous;
-        if (delta <= 0) {
-            return;
-        }
-        final var buckets = _bucketsFor(sample.getDirection());
-        final var minute = System.currentTimeMillis() / 60_000;
-        final var index = (int) (minute % BUCKET_COUNT);
-        // Reset both direction buckets the first time this slot is (re)used for this minute, so stale data from
-        // ~24h ago is dropped. Synchronized (rather than a bare getAndSet) to avoid a race where a second thread's
-        // concurrent addAndGet below could land in between this reset's getAndSet and its set(0), and be wiped out
-        // by the latter.
-        synchronized (_bucketBytesDiss) {
-            if (_bucketMinute.getAndSet(index, minute) != minute) {
-                _bucketBytesDiss.set(index, 0);
-                _bucketBytesAcq.set(index, 0);
-                for (final var typeBucket : _typeBuckets.values()) {
-                    typeBucket.set(index, 0);
-                }
-            }
-            buckets.addAndGet(index, delta);
-            final var reportedType = sample.getHostType();
-            final var type = _typeBuckets.containsKey(reportedType) ? reportedType
-                    : LiveTransferSample.DIRECTION_ACQUISITION.equals(sample.getDirection()) ? "Acquisition"
-                            : "Dissemination";
-            _typeBuckets.get(type).addAndGet(index, delta);
         }
     }
 

@@ -28,6 +28,15 @@ The dashboard shows all destinations and their current transfer status. Each row
 
 ## Live Earth
 
+Cloud hosts have provider-coloured outlines: AWS orange, GCS green and Azure (AZ)
+blue. Clusters containing multiple providers use equal ring segments for each
+provider present, not proportions of hosts or traffic. The centre colour still
+indicates transfer status. Hover lists the providers; clicking opens a host
+selector with provider labels and the selected host's details.
+In **Per country** view, each country marker also shows the host count and
+provider ring, including multiple providers. Its tooltip and details pane list
+the represented cloud providers.
+
 Nearby Proxy and Target Hosts share a counted marker when their screen positions
 are within 28 pixels. The host count is centred inside the marker bubble.
 Click the bubble to select a host from the

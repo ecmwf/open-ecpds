@@ -76,6 +76,8 @@ final class DBResultSet implements AutoCloseable {
     /** The hasCalcFoundRows. */
     private final boolean hasCalcFoundRows;
 
+    private final int timeout;
+
     /**
      * Instantiates a new DB result set.
      *
@@ -90,9 +92,14 @@ final class DBResultSet implements AutoCloseable {
      *             the SQL exception
      */
     DBResultSet(final Broker broker, final String sql) throws BrokerException, SQLException {
+        this(broker, sql, -1);
+    }
+
+    DBResultSet(final Broker broker, final String sql, final int timeout) throws BrokerException, SQLException {
+        this.timeout = timeout;
         hasCalcFoundRows = Pattern.compile("(?i)^\\s*SELECT\\s+SQL_CALC_FOUND_ROWS\\s+").matcher(sql).find();
         sqlQuery = hasCalcFoundRows && EMULATE_CALC_FOUND_ROWS ? getInitialSQL(sql) : sql;
-        wrapper = broker.executeQuery(true, sqlQuery);
+        wrapper = broker.executeQuery(true, sqlQuery, timeout);
         resultSet = wrapper.getResultSet();
         this.broker = broker;
         TRACKER.onOpen();
@@ -176,7 +183,7 @@ final class DBResultSet implements AutoCloseable {
             // Either We are required to process the second SQL query to find the total
             // number of entries without limits or we rely on the special MySQL feature!
             try (var setWrapper = broker.executeQuery(true,
-                    EMULATE_CALC_FOUND_ROWS ? getFoundRowsSQL(sqlQuery) : "SELECT FOUND_ROWS()")) {
+                    EMULATE_CALC_FOUND_ROWS ? getFoundRowsSQL(sqlQuery) : "SELECT FOUND_ROWS()", timeout)) {
                 final var set = setWrapper.getResultSet();
                 if (set.next()) {
                     foundRows = set.getInt(1);

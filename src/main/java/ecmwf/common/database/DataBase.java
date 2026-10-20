@@ -427,13 +427,17 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *             the SQL exception
      */
     protected DBResultSet executeSelect(final String sql) throws SQLException {
+        return executeSelect(sql, -1);
+    }
+
+    private DBResultSet executeSelect(final String sql, final int timeout) throws SQLException {
         DBResultSet result = null;
         if (debugSql) {
             _log.debug("executeSelect: {}", sql);
         }
         try (var broker = brokerFactory.getBroker()) {
             final var start = System.currentTimeMillis();
-            result = new DBResultSet(broker, sql);
+            result = new DBResultSet(broker, sql, timeout);
             logSqlRequest(sql, start, System.currentTimeMillis(), result.getFoundRows());
             return result;
         } catch (final SQLException e) {
@@ -608,7 +612,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @throws SQLException
      *             the SQL exception
      */
-    private void processAction(final String columnName, final String action, final List<Object> ids)
+    private void processAction(final String columnName, final String action, final List<Object> ids, final int timeout)
             throws SQLException {
         if (!ids.isEmpty()) {
             final var st = new StringTokenizer(action, " ");
@@ -630,7 +634,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
                 sb.append(sb.length() > 0 ? "," : "").append("'").append(id).append("'");
             }
             ids.clear();
-            executeCustomUpdate(sb.insert(0, action + " (").append(")").toString());
+            executeCustomUpdate(sb.insert(0, action + " (").append(")").toString(), timeout);
         }
     }
 
@@ -646,6 +650,10 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      *             the SQL exception
      */
     private final int executeCustomUpdate(final String sql) throws SQLException {
+        return executeCustomUpdate(sql, -1);
+    }
+
+    private int executeCustomUpdate(final String sql, final int timeout) throws SQLException {
         // Check if this is not a loop request to execute?
         if (sql.toUpperCase().startsWith("LOOP ")) {
             final var st = new StringTokenizer(sql, " ");
@@ -656,7 +664,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
                 var totalNumberOfRows = 0;
                 var currentNumberOfRows = 0;
                 do {
-                    currentNumberOfRows = executeCustomUpdate(request);
+                    currentNumberOfRows = executeCustomUpdate(request, timeout);
                     totalNumberOfRows += currentNumberOfRows;
                 } while (currentNumberOfRows >= limit);
                 return totalNumberOfRows;
@@ -676,7 +684,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
                     final List<Object> ids = new ArrayList<>();
                     var totalNumberOfRows = 0;
                     String columnName = null;
-                    try (var rs = executeSelect(request.substring(index + 4).trim())) {
+                    try (var rs = executeSelect(request.substring(index + 4).trim(), timeout)) {
                         while (rs.next()) {
                             if (columnName == null) {
                                 columnName = rs.getColumnName(1);
@@ -684,11 +692,11 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
                             ids.add(rs.getObject(1));
                             totalNumberOfRows++;
                             if (ids.size() > limit) {
-                                processAction(columnName, action, ids);
+                                processAction(columnName, action, ids, timeout);
                             }
                         }
                         if (columnName != null) {
-                            processAction(columnName, action, ids);
+                            processAction(columnName, action, ids, timeout);
                         }
                     }
                     return totalNumberOfRows;
@@ -704,10 +712,10 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
             final int numberOfRows;
             if (sql.toUpperCase().startsWith("ANALYZE ")) {
                 // This is treated as a query, not an update
-                broker.executeQuery(false, sql).close(); // We don't need to read the result!
+                broker.executeQuery(false, sql, timeout).close(); // We don't need to read the result!
                 numberOfRows = 0;
             } else {
-                numberOfRows = broker.executeUpdate(sql);
+                numberOfRows = broker.executeUpdate(sql, timeout);
             }
             logSqlRequest(sql, start, System.currentTimeMillis(), numberOfRows);
             return numberOfRows;
@@ -1558,8 +1566,8 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
          *             the SQL exception
          */
         @Override
-        public DBResultSet executeQuery(final String sql) throws SQLException {
-            return executeSelect(sql);
+        public DBResultSet executeQuery(final String sql, final int timeout) throws SQLException {
+            return executeSelect(sql, timeout);
         }
 
         /**
@@ -1578,14 +1586,14 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
          *             the SQL exception
          */
         @Override
-        public <T extends DataBaseObject> DBIterator<T> executeQuery(final Class<T> resultClass, final String sql)
-                throws SQLException {
+        public <T extends DataBaseObject> DBIterator<T> executeQuery(final Class<T> resultClass, final String sql,
+                final int timeout) throws SQLException {
             if (debugSql) {
                 _log.debug("executeQuery: {}", sql);
             }
             try (var broker = brokerFactory.getBroker()) {
                 final var start = System.currentTimeMillis();
-                final var result = new DBIterator<>(broker, resultClass, sql);
+                final var result = new DBIterator<>(broker, resultClass, sql, timeout);
                 logSqlRequest(sql, start, System.currentTimeMillis(), -1);
                 return result;
             } catch (final Exception e) {
@@ -1606,13 +1614,13 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
          *             the SQL exception
          */
         @Override
-        public int executeUpdate(final String sql) throws SQLException {
+        public int executeUpdate(final String sql, final int timeout) throws SQLException {
             final var tokenizer = new StringTokenizer(sql, ";");
             var rowsAffected = 0;
             while (tokenizer.hasMoreElements()) {
                 final var subquery = tokenizer.nextToken().trim();
                 if (!subquery.isEmpty()) {
-                    rowsAffected += executeCustomUpdate(subquery);
+                    rowsAffected += executeCustomUpdate(subquery, timeout);
                 }
             }
             return rowsAffected;

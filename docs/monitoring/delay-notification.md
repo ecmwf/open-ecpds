@@ -64,8 +64,8 @@ links and bookmarks.
    as a fallback. If the BCC list is too long for an Outlook link, the product distribution lists are used and
    **Copy BCC emails** gives the explicit list.
 
-The product summary email buttons offer the same Outlook and direct-send choices. Direct emails use the configured
-notification addresses and are queued through the Master mail service.
+The product summary's **Legacy Email Actions** open Outlook only. Direct sending through the Master mail service
+is available on the Delay Notification page.
 
 The selected timing categories, layout, **Uniform cells**, and **Compact empty lines** settings are remembered in the
 browser for the signed-in user. Default Cc and additional Bcc recipient addresses, and the flags allowing these fields, are
@@ -104,7 +104,7 @@ The **Email Notifications** card contains two inner cards: **Delay Notification*
 contact email addresses are available for the page's scope: one product/cycle, the deduplicated union across a
 product's cycles (`/do/monitoring/summary/GWAVE`), or across all products and cycles
 (`/do/monitoring/summary/`). All-cycles aggregation also works for products not configured to use grouped links.
-Legacy Outlook/direct-send actions do not register a notice; **Copy BCC Emails** copies the explicit contacts.
+Legacy Outlook actions do not register a notice; **Copy BCC Emails** copies the explicit contacts.
 
 - **Register Delay Notice** fills **Product name**, clears model and timing filters for this visit, and shows only
   the requested cycle (or all cycles for an all-cycles link). Matching cells are selected as *Definite*. Saved model

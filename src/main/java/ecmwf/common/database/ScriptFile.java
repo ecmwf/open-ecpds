@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.script.ScriptException;
 
@@ -90,11 +92,34 @@ public abstract class ScriptFile {
      * @return the string
      */
     private static final String evalString(String target, final String name, final String value) {
-        int ind;
-        while ((ind = target.indexOf(name)) != -1) {
-            target = target.substring(0, ind) + value + target.substring(ind + name.length());
+        return target.replace(name, value);
+    }
+
+    private static String substituteParameters(final String sql, final Map<String, String> values) {
+        if (values.isEmpty())
+            return sql;
+        // Do not interpret parameter-like text inside substituted values as more template input.
+        final var alternatives = values.keySet().stream()
+                .sorted((left, right) -> Integer.compare(right.length(), left.length()))
+                .map(name -> Pattern.quote("$" + name)).collect(java.util.stream.Collectors.joining("|"));
+        final var pattern = Pattern.compile(alternatives);
+        final var result = new StringBuilder(sql.length());
+        for (final var line : sql.split("\n", -1)) {
+            final boolean javascript = line.startsWith("#if $(") || line.startsWith("#else");
+            final var matcher = pattern.matcher(line);
+            final var substituted = new StringBuilder();
+            while (matcher.find()) {
+                final var value = values.get(matcher.group().substring(1));
+                matcher.appendReplacement(substituted,
+                        Matcher.quoteReplacement(javascript ? escapeForJs(value) : value));
+            }
+            matcher.appendTail(substituted);
+            result.append(substituted).append("\n");
         }
-        return target;
+        return result.toString();
+    }
+
+    private record Request(String sql, int timeout) {
     }
 
     /**
@@ -303,12 +328,12 @@ public abstract class ScriptFile {
      * @param request
      *            the request
      *
-     * @return the string
+     * @return the rendered SQL and its statement timeout
      *
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    private final String executeRequest(Map<String, String> values, final String request) throws IOException {
+    private final Request executeRequest(Map<String, String> values, final String request) throws IOException {
         final Map<String, String> params = new HashMap<>();
         final List<String> keys = new ArrayList<>();
         final Map<String, String> resolved = new HashMap<>();
@@ -319,6 +344,8 @@ public abstract class ScriptFile {
         String confirm = null;
         String name = null;
         String menu = null;
+        int timeout = -1;
+        boolean timeoutSpecified = false;
         // Introduce default parameters
         if (values == null) {
             values = new HashMap<>();
@@ -338,6 +365,18 @@ public abstract class ScriptFile {
                     if (line.startsWith("# ") && line.length() > 2) {
                         help.append(line.substring(2)).append("\n");
                     } else {
+                        if (line.startsWith("#timeout")) {
+                            if (timeoutSpecified || !line.matches("#timeout \"[0-9]+\"")) {
+                                throw new IOException("Invalid SQL script timeout: " + line);
+                            }
+                            try {
+                                timeout = Integer.parseInt(line.substring(10, line.length() - 1));
+                            } catch (final NumberFormatException e) {
+                                throw new IOException("SQL script timeout exceeds the maximum number of seconds", e);
+                            }
+                            timeoutSpecified = true;
+                            continue;
+                        }
                         if (line.startsWith("#menu \"") && line.length() > 8) {
                             menu = line.substring(7, line.lastIndexOf("\""));
                             continue;
@@ -415,32 +454,9 @@ public abstract class ScriptFile {
                     return null;
                 }
                 resolved.put(parameter, value.toString());
-                // Substitute the parameter value into the SQL template.
-                // For #if $() lines the value is embedded inside a JS double-quoted string
-                // literal, so it must be JS-escaped to prevent logic injection.
-                final var paramToken = "$" + parameter;
-                final var rawValue = value.toString();
-                final String eval;
-                if (sql.indexOf("#if $(") != -1) {
-                    // Apply JS-safe escaping on #if $() lines, plain value everywhere else.
-                    final var sb = new StringBuilder(sql.length() + 16);
-                    for (final String sqlLine : sql.toString().split("\n", -1)) {
-                        if (sqlLine.startsWith("#if $(") || sqlLine.startsWith("#else")) {
-                            sb.append(evalString(sqlLine, paramToken, escapeForJs(rawValue)));
-                        } else {
-                            sb.append(evalString(sqlLine, paramToken, rawValue));
-                        }
-                        sb.append("\n");
-                    }
-                    eval = sb.toString();
-                } else {
-                    eval = evalString(sql.toString(), paramToken, rawValue);
-                }
-                sql.setLength(0);
-                sql.append(eval);
             }
             // process sql - #if - #else - #fi
-            final var eval = evalQuery(sql.toString());
+            final var eval = evalQuery(substituteParameters(sql.toString(), resolved));
             sql.setLength(0);
             sql.append(eval);
             showHelp(sql.toString(), help.toString());
@@ -449,7 +465,7 @@ public abstract class ScriptFile {
             if (confirm != null && !getConfirmation(menu + " -> " + name, confirm)) {
                 return null;
             }
-            return sql.toString();
+            return new Request(sql.toString(), timeout);
         }
         return null;
     }
@@ -475,7 +491,8 @@ public abstract class ScriptFile {
      */
     public DBResultSet executeQuery(final String menu, final String group, final String name,
             final Map<String, String> values) throws SQLException, IOException {
-        return executeQuery(executeRequest(values, getScriptContent(menu, group, name)));
+        final var request = executeRequest(values, getScriptContent(menu, group, name));
+        return request == null ? null : executeQuery(request.sql(), request.timeout());
     }
 
     /**
@@ -504,7 +521,8 @@ public abstract class ScriptFile {
     public <T extends DataBaseObject> DBIterator<T> executeQuery(final String menu, final String group,
             final String name, final Class<T> resultClass, final Map<String, String> values)
             throws SQLException, IOException {
-        return executeQuery(resultClass, executeRequest(values, getScriptContent(menu, group, name)));
+        final var request = executeRequest(values, getScriptContent(menu, group, name));
+        return request == null ? null : executeQuery(resultClass, request.sql(), request.timeout());
     }
 
     /**
@@ -526,7 +544,7 @@ public abstract class ScriptFile {
      */
     public DBResultSet executeQuery(final String menu, final String group, final String name)
             throws SQLException, IOException {
-        return executeQuery(executeRequest(null, getScriptContent(menu, group, name)));
+        return executeQuery(menu, group, name, (Map<String, String>) null);
     }
 
     /**
@@ -552,7 +570,7 @@ public abstract class ScriptFile {
      */
     public <T extends DataBaseObject> DBIterator<T> executeQuery(final String menu, final String group,
             final String name, final Class<T> resultClass) throws SQLException, IOException {
-        return executeQuery(resultClass, executeRequest(null, getScriptContent(menu, group, name)));
+        return executeQuery(menu, group, name, resultClass, null);
     }
 
     /**
@@ -566,7 +584,11 @@ public abstract class ScriptFile {
      * @throws java.sql.SQLException
      *             the SQL exception
      */
-    public abstract DBResultSet executeQuery(String sql) throws SQLException;
+    public DBResultSet executeQuery(String sql) throws SQLException {
+        return executeQuery(sql, -1);
+    }
+
+    public abstract DBResultSet executeQuery(String sql, int timeout) throws SQLException;
 
     /**
      * Execute query.
@@ -583,7 +605,11 @@ public abstract class ScriptFile {
      * @throws java.sql.SQLException
      *             the SQL exception
      */
-    public abstract <T extends DataBaseObject> DBIterator<T> executeQuery(Class<T> resultClass, String sql)
+    public <T extends DataBaseObject> DBIterator<T> executeQuery(Class<T> resultClass, String sql) throws SQLException {
+        return executeQuery(resultClass, sql, -1);
+    }
+
+    public abstract <T extends DataBaseObject> DBIterator<T> executeQuery(Class<T> resultClass, String sql, int timeout)
             throws SQLException;
 
     /**
@@ -607,7 +633,8 @@ public abstract class ScriptFile {
      */
     public int executeUpdate(final String menu, final String group, final String name, final Map<String, String> values)
             throws SQLException, IOException {
-        return executeUpdate(executeRequest(values, getScriptContent(menu, group, name)));
+        final var request = executeRequest(values, getScriptContent(menu, group, name));
+        return request == null ? 0 : executeUpdate(request.sql(), request.timeout());
     }
 
     /**
@@ -645,7 +672,11 @@ public abstract class ScriptFile {
      * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
-    public abstract int executeUpdate(String sql) throws SQLException, IOException;
+    public int executeUpdate(String sql) throws SQLException, IOException {
+        return executeUpdate(sql, -1);
+    }
+
+    public abstract int executeUpdate(String sql, int timeout) throws SQLException, IOException;
 
     /**
      * Gets the value.

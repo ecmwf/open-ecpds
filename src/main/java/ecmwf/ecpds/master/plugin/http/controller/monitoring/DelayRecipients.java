@@ -70,7 +70,7 @@ public final class DelayRecipients {
         final Map<String, TreeSet<String>> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         for (final var ps : ProductStatusHome.findFromMemory().values()) {
             if (ps.getProduct() != null && ps.getTime() != null && !ps.getTime().isEmpty()) {
-                result.computeIfAbsent(ps.getProduct(), k -> new TreeSet<>()).add(ps.getTime());
+                result.computeIfAbsent(ps.getProduct(), _ -> new TreeSet<>()).add(ps.getTime());
             }
         }
         return result;
