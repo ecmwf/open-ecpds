@@ -27,6 +27,7 @@ package ecmwf.ecpds.mover;
  */
 
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ECTRANS;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_ALLOW_SOURCE_SIZE_MISMATCH_PATTERN;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ACQUISITION_SKIP_POST_RETRIEVAL_SIZE_CHECK_PATTERN;
 import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.ecpds.master.DataFilePath.getPath;
@@ -185,12 +186,18 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
                         }
                     } else {
                         // This is not an index so we try to get the file directly!
-                        sourceFileSize = MOVER.size(copy, sourceFileName);
+                        final var skipRemoteSize = setup
+                                .matches(HOST_ACQUISITION_SKIP_POST_RETRIEVAL_SIZE_CHECK_PATTERN, sourceFileName);
+                        sourceFileSize = skipRemoteSize ? -1 : MOVER.size(copy, sourceFileName);
+                        if (skipRemoteSize) {
+                            _log.info("Skipping remote size query and expected-size validation for {}", sourceFileName);
+                        }
                         final var fifo = sourceFileSize == 0 && fileSize == -1;
                         final var link = sourceFileSize >= 0 && fileSize == -1;
-                        if (fifo || link || (sourceFileSize == -1 && acquisition && i == hostsForSource.length - 1)
-                                || (sourceFileSize != fileSize && setup.matches(
-                                        HOST_ACQUISITION_SKIP_POST_RETRIEVAL_SIZE_CHECK_PATTERN, sourceFileName))
+                        if (skipRemoteSize || fifo || link
+                                || (sourceFileSize == -1 && acquisition && i == hostsForSource.length - 1)
+                                || (sourceFileSize != fileSize && setup
+                                        .matches(HOST_ACQUISITION_ALLOW_SOURCE_SIZE_MISMATCH_PATTERN, sourceFileName))
                                 || sourceFileSize == fileSize) {
                             if (fifo) {
                                 _log.debug("Fifo detected on the remote host (removing {}.hostList)", module);
@@ -252,8 +259,7 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
     }
 
     /**
-     * Get the source file size from the remote host. If HOST_ACQUISITION_SKIP_POST_RETRIEVAL_SIZE_CHECK_PATTERN is set,
-     * this may differ from the file size indicated in the data file.
+     * Get the source file size from the remote host, or -1 when the query is skipped or the size is unknown.
      *
      * @return the source file size
      */

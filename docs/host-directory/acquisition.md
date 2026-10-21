@@ -142,6 +142,28 @@ The **Test on Server** button in the Directory card header sends the current edi
 
 **Preview File Content:**
 
+After loading a structured listing, click **Parse Preview** beside that file to check
+CSV, JSON, XML, STAC or S3 inventory extraction. Parsing uses the current
+**Options → Properties** values, including unsaved edits to `http.parser` and
+`http.parserOptions`; it does not save changes or download any linked files.
+The results show each record's name, URL, size in bytes and UTC timestamp, with
+warnings for missing metadata and a view of the source record. Complete size and
+timestamp information avoids additional per-file metadata requests during acquisition.
+Results and errors appear directly below the file header, with a record count and
+warning summary. The **Source content** section collapses when parsing starts;
+expand it to compare the original document with the results.
+The **Configuration check** panel compares the detected document format with the
+configured parser and flags likely delimiter mismatches, empty results, missing
+fields and non-HTTP links. It recommends relevant column or field options to review;
+the metadata counts cover all extracted records, not just the displayed rows.
+Detection is heuristic: STAC/JSON and S3/CSV are compatible format families, and the
+correct size unit must be confirmed against the source documentation. Recommendations
+never change Properties automatically.
+The preview checks only the loaded sample (up to 1 MB), which may be truncated, and
+shows at most 2,000 parsed records. It does not apply acquisition filters or verify
+download authentication. Multi-line formats are parsed as a document, not as separate
+physical lines. HTML and script-based listing modes are not supported by Parse Preview.
+
 When the resolved output contains one or more file paths/URIs, a **Preview File Content** button appears below the result. Clicking it fetches the actual content of up to five of those paths — live, via the host's configured transfer module on the DataMover, the same `ECtransGet` mechanism used for real retrieval — and displays it with format detection (JSON/XML pretty-printing, syntax highlighting) and Raw/Pretty copy controls. This is only offered for Acquisition and Source hosts, since their Directory field resolves to paths that genuinely exist on the remote server; it is not available for Dissemination (or Replication/Backup/Proxy) hosts, whose Directory field instead resolves to the *destination* path a file would be written to, not one that can be meaningfully read back. The list of paths to fetch is shown in an editable textarea, so individual entries can be adjusted before fetching.
 
 **Tips:**
@@ -258,7 +280,59 @@ If a file already exists in the database, the scheduler evaluates whether it sho
 |---|---|---|
 | `acquisition.wildcardFilter` | *(empty)* | Glob-style string appended to the path before sending the list request to the remote server. Reduces the number of entries the DataMover returns. E.g. `*.nc` sends `/data/feed/20240101/*.nc` to the server. |
 | `acquisition.regexPattern` | *(empty)* | Regex passed to the DataMover to filter entries at the listing call level (before the AcquisitionThread receives them). Complements the per-line `{regex}` filter. |
-| `acquisition.skipPostRetrievalSizeCheckPattern` | — | Regex matched against the source filename during retrieval. If it matches, the post-retrieval size verification step is skipped. Useful for servers that report incorrect file sizes. |
+| `acquisition.skipPostRetrievalSizeCheckPattern` | — | Full-source-filename regex. Matching normal (non-index) files bypass the remote size query and expected-size validation. Download until EOF and record the actual downloaded length, even if no catalogue size is available. Transport errors still fail retrieval, but an incomplete response ending cleanly cannot be detected by size. Takes precedence over `allowSourceSizeMismatchPattern`. |
+| `acquisition.allowSourceSizeMismatchPattern` | — | Full-source-filename regex. Allow a mismatch between the stored/catalogue size and the source-reported size. The remote query still runs, and the downloaded length is checked against that size when known. Query errors/timeouts still fail retrieval. This is the previous behavior of `skipPostRetrievalSizeCheckPattern`. |
+
+### Migrating existing size-check settings
+
+The meaning of `acquisition.skipPostRetrievalSizeCheckPattern` has changed. To
+**preserve the old behavior**, rename existing settings to
+`acquisition.allowSourceSizeMismatchPattern` before resuming retrieval with the
+updated Movers. Leave the old name only on hosts where you intentionally want to
+skip the remote query and expected-size validation. Neither option changes index-file
+retrieval.
+
+For example, to bypass the query for all normal files on a host:
+
+```properties
+acquisition.skipPostRetrievalSizeCheckPattern = ".*"
+```
+
+Back up the operational database and pause acquisition/retrieval during the upgrade.
+The following **MariaDB** migration renames only active property assignments in
+`HOST.HOS_DATA`, preserving their values, whitespace and other properties. It is
+safe to rerun. Hosts already containing both options are excluded and must be
+reviewed manually; the preview identifies them. This is a data migration, not a
+schema change.
+
+```sql
+SET @old_pattern =
+  '(?m)^([[:blank:]]*)acquisition[.]skipPostRetrievalSizeCheckPattern([[:blank:]]*=)';
+SET @new_pattern =
+  '(?m)^[[:blank:]]*acquisition[.]allowSourceSizeMismatchPattern[[:blank:]]*=';
+
+SELECT HOS_NAME, HOS_NICKNAME,
+       HOS_DATA REGEXP @new_pattern AS needs_manual_review
+FROM HOST
+WHERE HOS_DATA REGEXP @old_pattern;
+
+START TRANSACTION;
+UPDATE HOST
+SET HOS_DATA = REGEXP_REPLACE(
+    HOS_DATA, @old_pattern,
+    CONCAT(CHAR(92), '1acquisition.allowSourceSizeMismatchPattern', CHAR(92), '2'))
+WHERE HOS_DATA REGEXP @old_pattern
+  AND NOT (HOS_DATA REGEXP @new_pattern);
+SELECT ROW_COUNT() AS migrated_hosts;
+
+-- Review before committing; use ROLLBACK instead if necessary.
+COMMIT;
+```
+
+Deploy matching Master, Monitor and Mover versions and restart the Master after
+the SQL migration to reload cached host settings. Resume retrieval only after
+all Movers are updated. Renaming to the new option on an old Mover would silently
+lose the mismatch allowance, so do not run a mixed-version retrieval workload.
 
 ### Diagnostics
 

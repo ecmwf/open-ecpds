@@ -55,26 +55,7 @@ public class FieldMappingEngine {
 
     private MappingSuggestion inferCsv(String sample) {
 
-        String[] firstLine = sample.split("\n")[0].split(",");
-
-        Map<String, String> map = new HashMap<>();
-
-        for (int i = 0; i < firstLine.length; i++) {
-
-            String col = firstLine[i].toLowerCase();
-
-            if (col.contains("name") || col.contains("file")) {
-                map.put("nameCol", String.valueOf(i));
-            }
-
-            if (col.contains("url") || col.contains("href") || col.contains("link")) {
-                map.put("urlCol", String.valueOf(i));
-            }
-
-            if (col.contains("time") || col.contains("date")) {
-                map.put("timeCol", String.valueOf(i));
-            }
-        }
+        Map<String, String> map = new CsvMappingInferer().infer(sample);
 
         return new MappingSuggestion("csv", map, 0.80, "CSV columns inferred from header keywords");
     }
@@ -91,6 +72,7 @@ public class FieldMappingEngine {
         map.put("nameField", "name");
         map.put("urlField", "url");
         map.put("timeField", "time");
+        map.put("sizeField", "size");
 
         return new MappingSuggestion("json", map, 0.60, "Default JSON structure assumption (items[] array)");
     }
@@ -107,6 +89,7 @@ public class FieldMappingEngine {
         map.put("nameField", "id");
         map.put("urlField", "assets.data.href");
         map.put("timeField", "properties.start_datetime");
+        map.put("sizeField", "assets.data.file:size");
 
         return new MappingSuggestion("stac", map, 0.95, "STAC structure detected (features + assets + properties)");
     }
@@ -123,6 +106,7 @@ public class FieldMappingEngine {
         map.put("nameField", "name");
         map.put("urlField", "url");
         map.put("timeField", "time");
+        map.put("sizeField", "size");
 
         return new MappingSuggestion("xml", map, 0.70, "Generic XML structure assumed (items/item nodes)");
     }
@@ -150,9 +134,9 @@ public class FieldMappingEngine {
 
         map.put("delimiter", ",");
         map.put("header", "true");
-        map.put("keyField", "key");
-        map.put("sizeField", "size");
-        map.put("timeField", "last_modified");
+        map.put("keyCol", "key");
+        map.put("sizeCol", "size");
+        map.put("timeCol", "last_modified");
 
         return new MappingSuggestion("s3", map, 0.90, "S3 inventory CSV structure assumed");
     }

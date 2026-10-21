@@ -1,6 +1,5 @@
 package ecmwf.common.parser.parsers;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +10,7 @@ import ecmwf.common.ftp.FtpParser;
 import ecmwf.common.parser.core.ParserConfig;
 import ecmwf.common.parser.core.RemoteListingParser;
 import ecmwf.common.parser.format.JsonPath;
+import ecmwf.common.parser.format.ListingMetadata;
 
 public class XmlListingParser implements RemoteListingParser {
 
@@ -30,6 +30,7 @@ public class XmlListingParser implements RemoteListingParser {
     @Override
     public FtpParser.FileEntry[] parse(String input, ParserConfig config) throws Exception {
 
+        ListingMetadata metadata = new ListingMetadata(config);
         JsonNode root = mapper.readTree(input);
 
         String arrayPath = config.getOrDefault("arrayPath", "items.item");
@@ -59,6 +60,7 @@ public class XmlListingParser implements RemoteListingParser {
         String nameField = config.getOrDefault("nameField", "name");
         String urlField = config.getOrDefault("urlField", "url");
         String timeField = config.getOrDefault("timeField", "time");
+        String sizeField = config.getOrDefault("sizeField", "size");
 
         List<FtpParser.FileEntry> out = new ArrayList<>();
 
@@ -70,13 +72,8 @@ public class XmlListingParser implements RemoteListingParser {
             e.link = JsonPath.text(n, urlField);
             e.line = n.toString();
 
-            try {
-                String t = JsonPath.text(n, timeField);
-                if (t != null) {
-                    e.time = Instant.parse(t).toEpochMilli();
-                }
-            } catch (Exception ignored) {
-            }
+            e.time = ListingMetadata.time(JsonPath.text(n, timeField));
+            e.size = metadata.size(JsonPath.text(n, sizeField));
 
             out.add(e);
         }

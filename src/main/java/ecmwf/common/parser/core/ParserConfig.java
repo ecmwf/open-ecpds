@@ -1,8 +1,30 @@
 package ecmwf.common.parser.core;
 
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Locale;
 
 public class ParserConfig {
+
+    public static ParserConfig forHttpListing(String type, String options) {
+        type = type.toLowerCase(Locale.ROOT);
+        Map<String, String> values = new HashMap<>();
+        if ("csv".equals(type)) {
+            values.putAll(Map.of("delimiter", ",", "nameCol", "0", "timeCol", "1", "urlCol", "2"));
+        } else if (!java.util.Set.of("json", "xml", "stac", "s3").contains(type)) {
+            throw new IllegalArgumentException(
+                    "Parse Preview supports CSV, JSON, XML, STAC and S3 inventory; configured parser: " + type);
+        }
+        if (options != null && !options.isBlank()) {
+            for (String pair : options.split(",")) {
+                int eq = pair.indexOf('=');
+                if (eq > 0) {
+                    values.put(pair.substring(0, eq).trim(), pair.substring(eq + 1).trim());
+                }
+            }
+        }
+        return new ParserConfig(type, values);
+    }
 
     private final String type;
     private final Map<String, String> properties;

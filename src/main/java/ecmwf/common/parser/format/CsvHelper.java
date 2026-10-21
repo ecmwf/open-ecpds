@@ -17,4 +17,15 @@ public final class CsvHelper {
 
         return format.parse(new StringReader(input));
     }
+
+    public static String value(CSVRecord record, String column) {
+        if (column == null || column.isBlank() || "-1".equals(column)) {
+            return null;
+        }
+        if (column.matches("\\d+")) {
+            int index = Integer.parseInt(column);
+            return index < record.size() ? record.get(index) : null;
+        }
+        return record.isMapped(column) && record.isSet(column) ? record.get(column) : null;
+    }
 }

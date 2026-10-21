@@ -2500,10 +2500,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             // TODO: could remove the file on source if
             // dataFile.getDeleteOriginal()
             final var stop = System.currentTimeMillis();
-            // This may be an acquisition file that was a symbolic link, or the remote file
-            // size may have differed while
-            // HOST_ACQUISITION_SKIP_POST_RETRIEVAL_SIZE_CHECK_PATTERN was set; therefore,
-            // set the data file size to the actual file size.
+            // Use the downloaded length when the remote size query was skipped or returned an unknown size.
             dataFile.setSize(sourceFileSize != -1 ? sourceFileSize : file.length());
             // Let's set all other parameters on the DataFile
             dataFile.setRemoteHost(ectransIn.getRemoteHostName());

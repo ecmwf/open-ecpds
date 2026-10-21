@@ -1788,35 +1788,6 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * Merges a set of user-supplied key=value pairs (comma-separated) into a copy of the provided defaults map. User
-     * options take precedence over defaults. Entries with a blank key or value are silently ignored.
-     *
-     * @param defaults
-     *            the default parser properties
-     * @param options
-     *            a comma-separated string of key=value pairs, e.g. {@code arrayPath=results,nameField=filename}; may be
-     *            null or empty
-     *
-     * @return a new mutable map containing the merged properties
-     */
-    private static Map<String, String> mergeParserOptions(final Map<String, String> defaults, final String options) {
-        final var result = new HashMap<>(defaults);
-        if (options != null && !options.isBlank()) {
-            for (final var pair : options.split(",")) {
-                final var eq = pair.indexOf('=');
-                if (eq > 0) {
-                    final var key = pair.substring(0, eq).trim();
-                    final var value = pair.substring(eq + 1).trim();
-                    if (!key.isEmpty()) {
-                        result.put(key, value);
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
-    /**
      * The Class FormattingVisitor.
      */
     // the formatting rules, implemented in a breadth-first DOM traverse
@@ -2196,23 +2167,9 @@ public final class HttpModule extends TransferModule {
                                     }
                                 }
                             }
-                        } else if (parser.equalsIgnoreCase("csv")) {
-                            config = new ParserConfig("csv",
-                                    mergeParserOptions(
-                                            Map.of("delimiter", ",", "nameCol", "0", "timeCol", "1", "urlCol", "2"),
-                                            parserOptions));
-                        } else if (parser.equalsIgnoreCase("json")) {
-                            config = new ParserConfig("json", mergeParserOptions(Map.of("arrayPath", "items",
-                                    "nameField", "name", "urlField", "url", "timeField", "time"), parserOptions));
-                        } else if (parser.equalsIgnoreCase("xml")) {
-                            config = new ParserConfig("xml", mergeParserOptions(Map.of("arrayPath", "items.item",
-                                    "nameField", "name", "urlField", "url", "timeField", "time"), parserOptions));
-                        } else if (parser.equalsIgnoreCase("stac")) {
-                            config = new ParserConfig("stac",
-                                    mergeParserOptions(
-                                            Map.of("arrayPath", "features", "nameField", "id", "urlField",
-                                                    "assets.data.href", "timeField", "properties.start_datetime"),
-                                            parserOptions));
+                        } else if (java.util.Set.of("csv", "json", "xml", "stac", "s3")
+                                .contains(parser.toLowerCase(java.util.Locale.ROOT))) {
+                            config = ParserConfig.forHttpListing(parser, parserOptions);
                         } else if (parser.equalsIgnoreCase("script")) {
                             config = null;
                         } else {
@@ -2231,7 +2188,8 @@ public final class HttpModule extends TransferModule {
                                     }
                                 }
                             } catch (final Exception e) {
-                                _log.warn("Parsing: {}", config.getType(), e);
+                                throw new IOException(
+                                        "Unable to parse " + config.getType() + " listing: " + e.getMessage(), e);
                             }
                         }
                     }

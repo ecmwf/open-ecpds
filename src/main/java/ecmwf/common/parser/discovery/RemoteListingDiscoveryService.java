@@ -9,6 +9,8 @@ import ecmwf.common.parser.mapping.MappingSuggestion;
 
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Discovery service responsible for auto-detecting remote listing formats, inferring mappings, and producing preview
@@ -68,10 +70,12 @@ public class RemoteListingDiscoveryService {
         // ------------------------------------------------------------
         FtpParser.FileEntry[] entries;
 
+        String parseError = null;
         try {
             entries = engine.process(config, sampleContent);
         } catch (Exception e) {
             entries = new FtpParser.FileEntry[0];
+            parseError = "Unable to parse preview: " + e.getMessage();
         }
 
         // Limit preview size (UI-friendly)
@@ -86,7 +90,7 @@ public class RemoteListingDiscoveryService {
         result.setConfidence(detection.getConfidence());
         result.setSuggestedConfig(configMap);
         result.setPreviewEntries(preview);
-        result.setWarnings(buildWarnings(suggestion, entries));
+        result.setWarnings(parseError != null ? List.of(parseError) : buildWarnings(suggestion, entries));
 
         return result;
     }
@@ -114,10 +118,17 @@ public class RemoteListingDiscoveryService {
             return List.of("No entries extracted - check mapping configuration");
         }
 
+        List<String> warnings = new ArrayList<>();
         if (suggestion.getConfidence() < 0.5) {
-            return List.of("Low confidence detection - manual review recommended");
+            warnings.add("Low confidence detection - manual review recommended");
         }
-
-        return List.of();
+        if (Arrays.stream(entries).anyMatch(entry -> entry.size < 0 || entry.time < 0)) {
+            warnings.add("Some entries lack a valid size or timestamp; HTTP acquisition may request per-file metadata");
+        }
+        if (suggestion.getSuggestedConfig().containsKey("sizeCol")
+                || suggestion.getSuggestedConfig().containsKey("sizeField")) {
+            warnings.add("Verify the source size unit; sizeUnit defaults to B (bytes)");
+        }
+        return warnings;
     }
 }

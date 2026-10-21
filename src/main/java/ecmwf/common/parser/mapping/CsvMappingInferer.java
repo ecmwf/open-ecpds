@@ -2,33 +2,41 @@ package ecmwf.common.parser.mapping;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Locale;
+
+import ecmwf.common.parser.core.ParserConfig;
+import ecmwf.common.parser.format.CsvHelper;
 
 public class CsvMappingInferer {
 
     public Map<String, String> infer(String firstLine) {
 
-        String[] cols = firstLine.split(",");
-
         Map<String, String> m = new HashMap<>();
+        try (var parser = CsvHelper.parse(firstLine, new ParserConfig("csv", Map.of()))) {
+            for (var column : parser.getHeaderMap().entrySet()) {
+                int i = column.getValue();
+                String c = column.getKey().toLowerCase(Locale.ROOT);
 
-        for (int i = 0; i < cols.length; i++) {
+                if (c.contains("name") || c.contains("file")) {
 
-            String c = cols[i].toLowerCase();
+                    m.put("nameCol", "" + i);
+                }
 
-            if (c.contains("name") || c.contains("file")) {
+                if (c.contains("url") || c.contains("href") || c.contains("link")) {
 
-                m.put("nameCol", "" + i);
+                    m.put("urlCol", "" + i);
+                }
+
+                if (c.contains("time") || c.contains("date")) {
+
+                    m.put("timeCol", "" + i);
+                }
+                if (c.contains("size") || c.equals("bytes") || c.equals("length")) {
+                    m.put("sizeCol", "" + i);
+                }
             }
-
-            if (c.contains("url") || c.contains("href")) {
-
-                m.put("urlCol", "" + i);
-            }
-
-            if (c.contains("time") || c.contains("date")) {
-
-                m.put("timeCol", "" + i);
-            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Unable to infer CSV column mappings", e);
         }
 
         return m;

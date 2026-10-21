@@ -470,6 +470,9 @@
 		<action path="/transfer/host/edit/fetchContent/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.FetchContentAction">
 		</action>
+		<action path="/transfer/host/edit/parseContent/*" parameter="{1}"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.ParseContentAction">
+		</action>
 		<action path="/transfer/host/edit/resolveDirText/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.host.ResolveDirTextAction">
 		</action>

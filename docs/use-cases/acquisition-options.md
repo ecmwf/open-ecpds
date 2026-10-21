@@ -73,7 +73,12 @@ When a new file is discovered it is registered as a data transfer. These options
 | `acquisition.requeueonsamesize` | Boolean | `false` | Requeue even when only the timestamp has changed (size is the same). Equivalent to `acquisition.requeueon = "$time2 > $time1"`. Only used when `acquisition.requeueonupdate` is set and `acquisition.requeueon` is not |
 | `acquisition.requeueOnFailure` | Boolean | `false` | Requeue the transfer after a retrieval failure. Useful for MQTT-based acquisition where notifications are sent only once |
 | `acquisition.requeueon` | String | *none* | Custom JavaScript boolean expression controlling requeue behaviour. Variables: `$size1` (original size), `$size2` (new size), `$time1` (original timestamp), `$time2` (new timestamp), `$destination`, `$target`, `$original`. Takes precedence over `requeueonupdate` / `requeueonsamesize` |
-| `acquisition.skipPostRetrievalSizeCheckPattern` | String | *none* | Regex pattern matching filenames for which the post-retrieval size check (comparing discovered size vs. retrieved size) should be skipped |
+| `acquisition.skipPostRetrievalSizeCheckPattern` | String | *none* | Full-source-filename regex for normal (non-index) files: skip the remote size query and expected-size validation, download until EOF, and record the actual length. Works with an unknown catalogue size. Transport errors still fail retrieval. Takes precedence over `allowSourceSizeMismatchPattern` |
+| `acquisition.allowSourceSizeMismatchPattern` | String | *none* | Full-source-filename regex allowing catalogue/source size mismatches. Still query the remote size and validate the download against it when known; query errors/timeouts fail retrieval. Preserves the former behavior of `skipPostRetrievalSizeCheckPattern` |
+
+Existing size-check settings require review before upgrading Movers. See
+[Migrating existing size-check settings](../host-directory/acquisition.md#migrating-existing-size-check-settings)
+for the behavior change and MariaDB migration preserving the old behavior.
 
 ## Queue & Listing Control
 

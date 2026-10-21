@@ -18,6 +18,9 @@
 
 package ecmwf.common.technical;
 
+import java.util.Locale;
+import java.util.regex.Pattern;
+
 /**
  * ECMWF Product Data Store (OpenECPDS) Project.
  *
@@ -28,6 +31,24 @@ package ecmwf.common.technical;
  * @since 2024-07-01
  */
 public class ByteSize {
+
+    private static final Pattern SIZE_PATTERN = Pattern.compile("(\\d+)([A-Z]*)");
+
+    /**
+     * Returns bytes per unit. Historical KB/MB-style suffixes retain their binary meaning.
+     */
+    public static long unitMultiplier(final String unit) {
+        return switch (unit.trim().toUpperCase(Locale.ROOT)) {
+        case "", "B", "BYTES" -> 1L;
+        case "KB", "KIB" -> 1L << 10;
+        case "MB", "MIB" -> 1L << 20;
+        case "GB", "GIB" -> 1L << 30;
+        case "TB", "TIB" -> 1L << 40;
+        case "PB", "PIB" -> 1L << 50;
+        case "EB", "EIB" -> 1L << 60;
+        default -> throw new IllegalArgumentException("Unsupported byte size unit: " + unit);
+        };
+    }
 
     /** The Constant ZERO. */
     public static final ByteSize ZERO = new ByteSize(0);
@@ -261,58 +282,15 @@ public class ByteSize {
      * @return the long
      */
     private static long parseByteSize(final String byteSizeString) {
-        // Remove any space and convert it to upper-case
-        var value = byteSizeString.replaceAll("\\s", "").toUpperCase();
-        final String unit;
-        // Check if the string ends with a valid byte unit and extract it
-        if (value.endsWith("KB")) {
-            value = value.substring(0, value.length() - 2);
-            unit = "KB";
-        } else if (value.endsWith("MB")) {
-            value = value.substring(0, value.length() - 2);
-            unit = "MB";
-        } else if (value.endsWith("GB")) {
-            value = value.substring(0, value.length() - 2);
-            unit = "GB";
-        } else if (value.endsWith("TB")) {
-            value = value.substring(0, value.length() - 2);
-            unit = "TB";
-        } else if (value.endsWith("PB")) {
-            value = value.substring(0, value.length() - 2);
-            unit = "PB";
-        } else if (value.endsWith("EB")) {
-            value = value.substring(0, value.length() - 2);
-            unit = "EB";
-        } else {
-            if (value.endsWith("B")) {
-                value = value.substring(0, value.length() - 1);
-            } else if (value.endsWith("BYTES")) {
-                value = value.substring(0, value.length() - 5);
-            }
-            unit = "B";
-        }
-        // The value should only contains digits
-        if (!value.matches("\\d+")) {
+        final var value = byteSizeString.replaceAll("\\s", "").toUpperCase(Locale.ROOT);
+        final var matcher = SIZE_PATTERN.matcher(value);
+        if (!matcher.matches()) {
             throw new IllegalArgumentException("Invalid byte size string: " + byteSizeString);
         }
-        // Extract the numeric value
-        final var numericValue = Double.parseDouble(value);
-        // Calculate the byte count based on the unit
-        if ("KB".equals(unit)) {
-            return (long) (numericValue * 1024L);
-        }
-        if ("MB".equals(unit)) {
-            return (long) (numericValue * 1048576L);
-        } else if ("GB".equals(unit)) {
-            return (long) (numericValue * 1073741824L);
-        } else if ("TB".equals(unit)) {
-            return (long) (numericValue * 1099511627776L);
-        } else if ("PB".equals(unit)) {
-            return (long) (numericValue * 1125899906842624L);
-        } else if ("EB".equals(unit)) {
-            return (long) (numericValue * 1152921504606846976L);
-        } else {
-            return (long) numericValue;
+        try {
+            return Math.multiplyExact(Long.parseLong(matcher.group(1)), unitMultiplier(matcher.group(2)));
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("Byte size exceeds supported range: " + byteSizeString, e);
         }
     }
 }

@@ -41,24 +41,30 @@ URL returns a machine-readable manifest (e.g. a NASA CMR CSV, an S3 inventory, a
 http.dodir = "yes"
 http.parser = "csv"
 # parserOptions keys (comma-separated key=value):
-#   nameCol   -> 0-based column index for the file name  (default: 0)
-#   urlCol    -> 0-based column index for the download URL
-#   timeCol   -> 0-based column index for the timestamp  (default: disabled)
+#   nameCol   -> file name column                         (default: 0)
+#   urlCol    -> download URL column                      (default: 2)
+#   timeCol   -> timestamp column                         (default: 1)
+#   sizeCol   -> size column                              (default: disabled)
+# Columns accept 0-based indexes or exact header names; -1 disables a column.
+#   sizeUnit  -> size unit                                (default: B)
 #   delimiter -> field separator                          (default: ,)
 #   header    -> skip the first (header) row             (default: true)
-http.parserOptions = "nameCol=0,urlCol=4,timeCol=2"
+http.parserOptions = "nameCol=0,urlCol=2,timeCol=1,sizeCol=3"
 
 # Example - NASA CMR granules.csv:
-# Granule UR | Producer ID | Start Time | End Time | Online Access URLs | ...
-#  col 0        col 1         col 2        col 3       col 4
+# Granule UR | Producer ID | Start Time | End Time | Online Access URLs | ... | Size
+#  col 0        col 1         col 2        col 3       col 4                   col 8
+# Use nameCol=1,urlCol=4,timeCol=2.
+# Only add sizeCol=8 with sizeUnit set to the catalogue's documented unit.
+# For a feed reporting binary megabytes, add: ,sizeCol=8,sizeUnit=MiB
 ```
 
 #### JSON
 
 ```properties
 http.parser = "json"
-# Defaults: arrayPath=items, nameField=name, urlField=url, timeField=time
-http.parserOptions = "arrayPath=results,nameField=filename,urlField=downloadUrl,timeField=updatedAt"
+# Defaults: arrayPath=items, nameField=name, urlField=url, timeField=time, sizeField=size
+http.parserOptions = "arrayPath=results,nameField=filename,urlField=downloadUrl,timeField=updatedAt,sizeField=bytes"
 ```
 
 #### STAC (SpatioTemporal Asset Catalog)
@@ -67,6 +73,7 @@ http.parserOptions = "arrayPath=results,nameField=filename,urlField=downloadUrl,
 http.parser = "stac"
 # Defaults: arrayPath=features, nameField=id
 #           urlField=assets.data.href, timeField=properties.start_datetime
+# Size defaults to file:size on the selected asset (assets.data.file:size here).
 http.parserOptions = "arrayPath=features,nameField=id,urlField=assets.data.href,timeField=properties.start_datetime"
 ```
 
@@ -74,9 +81,60 @@ http.parserOptions = "arrayPath=features,nameField=id,urlField=assets.data.href,
 
 ```properties
 http.parser = "xml"
-# Defaults: arrayPath=items.item, nameField=name, urlField=url, timeField=time
-http.parserOptions = "arrayPath=catalog.file,nameField=name,urlField=href"
+# Defaults: arrayPath=items.item, nameField=name, urlField=url, timeField=time, sizeField=size
+http.parserOptions = "arrayPath=catalog.file,nameField=name,urlField=href,sizeField=length"
 ```
+
+#### S3 inventory CSV
+
+For an inventory available over HTTP, use `s3` and provide an HTTP base URL for
+the objects. The inventory must be uncompressed CSV.
+
+```properties
+http.parser = "s3"
+# Defaults: keyCol=key, bucketCol=bucket, sizeCol=size, timeCol=last_modified
+http.parserOptions = "keyCol=key,sizeCol=size,timeCol=last_modified,baseUrl=https://storage.example.com/bucket"
+```
+
+Columns accept exact header names or zero-based indexes. For a headerless inventory,
+set `header=false` and map the indexes to its configured column order.
+
+#### Sizes, timestamps and metadata requests
+
+Use **Test on Server → Preview File Content → Parse Preview** to verify extraction
+against the current **Options → Properties**, including unsaved edits. Each parsed
+record shows its name, URL, byte size, UTC timestamp and missing-metadata warnings.
+This parses only the loaded sample; it does not download linked files or apply
+acquisition filters.
+
+CSV, JSON, XML, STAC and S3 inventory use the same `sizeUnit` option. The default
+is `B` (bytes); `bytes` is also accepted. Units match ECtrans byte-size options:
+`KB`, `MB`, `GB`, `TB`, `PB`, `EB` and their explicit binary aliases
+`KiB`, `MiB`, `GiB`, `TiB`, `PiB`, `EiB` all use powers of 1,024.
+For example, `MB` and `MiB` both mean 1,048,576 bytes, not 1,000,000 bytes.
+Unit names are case-insensitive. Fractional catalogue values are converted to bytes and rounded
+to the nearest byte, with halves rounded up. Zero is a valid size for an empty file.
+Choose the unit documented by the source; it is not inferred from the numeric value.
+For a source reporting decimal megabytes, convert its sizes to bytes before using
+them; `sizeUnit=MB` does not select decimal units. ECtrans byte-size properties
+accept whole numbers (for example, `http.maxSize="10MiB"`); fractional values are
+supported only for catalogue metadata conversion.
+
+For JSON and XML, `sizeField` accepts a dot-separated field path, like the other
+field mappings. For STAC, it defaults to `file:size` on the asset identified by
+`urlField`; override `sizeField` when the catalogue uses another field.
+
+Timestamps accept ISO-8601 instants, dates (`YYYY-MM-DD`, interpreted at midnight UTC)
+or epoch milliseconds. Missing or invalid sizes and timestamps remain unknown;
+invalid values are logged. Unsupported size units fail the listing explicitly.
+If both a valid size and timestamp are available, HTTP acquisition uses them without
+an additional per-file metadata request. Otherwise it uses HEAD (or GET when
+`http.useHead=no`) to obtain the missing information.
+
+FTP-style listings already provide sizes in bytes and retain their native timestamp
+parsing. HTML listings do not have structured size fields and continue to obtain
+metadata per file. MQTT uses its existing `http.mqttSize` (bytes) and
+`http.mqttTime` (epoch milliseconds) mappings.
 
 !!! info
     For REST API URLs containing `?` parameters, set `http.urldir = "no"` to prevent a trailing slash from being appended automatically.

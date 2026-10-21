@@ -98,44 +98,62 @@ http.ftpLike = "yes"           # parse response as FTP-style lines</pre>
               <button class="accordion-button collapsed small py-2 fw-semibold" type="button"
                       data-bs-toggle="collapse" data-bs-target="#hgl-structured">
                 <span class="badge bg-primary rounded-pill me-2">B</span>
-                Structured data &mdash; CSV / JSON / XML / STAC
+                Structured data &mdash; CSV / JSON / XML / STAC / S3 inventory
               </button>
             </h2>
             <div id="hgl-structured" class="accordion-collapse collapse"
                  data-bs-parent="#httpGuideListingAcc">
               <div class="accordion-body py-2 px-3">
                 <p class="small mb-2">URL returns a machine-readable manifest (e.g. a NASA CMR CSV, an S3 inventory, a STAC catalog). Set <code>http.parser</code> and map columns/fields via <code>http.parserOptions</code>.</p>
+                <p class="small mb-2">To verify extraction, use <strong>Test on Server</strong>, then <strong>Preview File Content</strong> and <strong>Parse Preview</strong>. Parsing reads the current <strong>Options &rarr; Properties</strong>, including unsaved edits, and shows names, URLs, byte sizes, UTC timestamps and missing-metadata warnings. Results and errors appear below the file header with a record count and warning summary. <strong>Source content</strong> collapses when parsing starts and can be expanded for comparison. It parses only the loaded sample, without downloading linked files or applying acquisition filters.</p>
+                <p class="small mb-2">The <strong>Configuration check</strong> panel warns about likely format or delimiter mismatches and recommends options to review for empty results, missing fields or non-HTTP links. Metadata checks cover all extracted records. Format detection is heuristic; STAC/JSON and S3/CSV are compatible families. Verify size units against the source documentation. Recommendations do not change Properties automatically.</p>
 
                 <p class="small fw-semibold mb-1">CSV</p>
 <pre class="bg-body-secondary rounded p-2 mb-2" style="font-size:0.75rem;white-space:pre-wrap">http.dodir = "yes"
 http.parser = "csv"
 # parserOptions keys (comma-separated key=value):
-#   nameCol   -> 0-based column index for the file name  (default: 0)
-#   urlCol    -> 0-based column index for the download URL
-#   timeCol   -> 0-based column index for the timestamp  (default: disabled)
+#   nameCol   -> file name column                         (default: 0)
+#   urlCol    -> download URL column                      (default: 2)
+#   timeCol   -> timestamp column                         (default: 1)
+#   sizeCol   -> size column                              (default: disabled)
+# Columns accept 0-based indexes or exact header names; -1 disables a column.
+#   sizeUnit  -> size unit                                (default: B)
 #   delimiter -> field separator                          (default: ,)
 #   header    -> skip the first (header) row             (default: true)
-http.parserOptions = "nameCol=0,urlCol=4,timeCol=2"
+http.parserOptions = "nameCol=0,urlCol=2,timeCol=1,sizeCol=3"
 
 # Example - NASA CMR granules.csv:
-# Granule UR | Producer ID | Start Time | End Time | Online Access URLs | ...
-#  col 0        col 1         col 2        col 3       col 4</pre>
+# Granule UR | Producer ID | Start Time | End Time | Online Access URLs | ... | Size
+#  col 0        col 1         col 2        col 3       col 4                   col 8
+# Use nameCol=1,urlCol=4,timeCol=2.
+# Only add sizeCol=8 with sizeUnit set to the catalogue's documented unit.
+# For binary megabytes, add: ,sizeCol=8,sizeUnit=MiB</pre>
 
                 <p class="small fw-semibold mb-1">JSON</p>
 <pre class="bg-body-secondary rounded p-2 mb-2" style="font-size:0.75rem;white-space:pre-wrap">http.parser = "json"
-# Defaults: arrayPath=items, nameField=name, urlField=url, timeField=time
-http.parserOptions = "arrayPath=results,nameField=filename,urlField=downloadUrl,timeField=updatedAt"</pre>
+# Defaults: arrayPath=items, nameField=name, urlField=url, timeField=time, sizeField=size
+http.parserOptions = "arrayPath=results,nameField=filename,urlField=downloadUrl,timeField=updatedAt,sizeField=bytes"</pre>
 
                 <p class="small fw-semibold mb-1">STAC (SpatioTemporal Asset Catalog)</p>
 <pre class="bg-body-secondary rounded p-2 mb-2" style="font-size:0.75rem;white-space:pre-wrap">http.parser = "stac"
 # Defaults: arrayPath=features, nameField=id
 #           urlField=assets.data.href, timeField=properties.start_datetime
+# Size defaults to file:size on the selected asset.
 http.parserOptions = "arrayPath=features,nameField=id,urlField=assets.data.href,timeField=properties.start_datetime"</pre>
 
                 <p class="small fw-semibold mb-1">XML</p>
 <pre class="bg-body-secondary rounded p-2 mb-1" style="font-size:0.75rem;white-space:pre-wrap">http.parser = "xml"
-# Defaults: arrayPath=items.item, nameField=name, urlField=url, timeField=time
-http.parserOptions = "arrayPath=catalog.file,nameField=name,urlField=href"</pre>
+# Defaults: arrayPath=items.item, nameField=name, urlField=url, timeField=time, sizeField=size
+http.parserOptions = "arrayPath=catalog.file,nameField=name,urlField=href,sizeField=length"</pre>
+
+                <p class="small fw-semibold mb-1">S3 inventory CSV over HTTP</p>
+<pre class="bg-body-secondary rounded p-2 mb-2" style="font-size:0.75rem;white-space:pre-wrap">http.parser = "s3"
+# Defaults: keyCol=key, bucketCol=bucket, sizeCol=size, timeCol=last_modified
+http.parserOptions = "keyCol=key,sizeCol=size,timeCol=last_modified,baseUrl=https://storage.example.com/bucket"
+# For headerless CSV, set header=false and map columns by zero-based index.</pre>
+
+                <p class="small mb-2">All structured formats accept <code>sizeUnit</code>: <code>B</code> (default; also <code>bytes</code>), or <code>KB/MB/GB/TB/PB/EB</code> and explicit binary aliases <code>KiB/MiB/GiB/TiB/PiB/EiB</code>, case-insensitively. All use powers of 1,024, matching ECtrans byte-size properties: <code>MB</code> and <code>MiB</code> both mean 1,048,576 bytes. Fractional catalogue values round to the nearest byte, halves up. Units are not inferred; convert decimal-unit sources to bytes first. ECtrans properties such as <code>http.maxSize="10MiB"</code> still require whole numbers. JSON/XML <code>sizeField</code> accepts dot-separated paths; STAC defaults to <code>file:size</code> on the selected asset.</p>
+                <p class="small mb-2">Timestamps accept ISO-8601 instants, UTC dates or epoch milliseconds. With both valid size and timestamp, acquisition skips per-file metadata requests. Missing or invalid values require HEAD/GET checks; invalid values are logged and unsupported units fail the listing. FTP-style listings retain native byte sizes and date parsing; HTML uses per-file checks, and MQTT retains its byte-size and epoch-millisecond mappings.</p>
 
                 <div class="alert alert-light border py-1 px-2 mb-0 small">
                   For REST API URLs containing <code>?</code> parameters, set <code>http.urldir = "no"</code>

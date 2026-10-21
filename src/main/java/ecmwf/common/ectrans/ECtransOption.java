@@ -239,7 +239,7 @@ public class ECtransOption<T> {
             format = "";
         } else if (clazz.equals(ByteSize.class)) {
             sb.append("a number of bytes");
-            format = "e.g. \"10MB\" or \"1024B\"";
+            format = "e.g. \"10MiB\", \"10MB\" or \"1024B\"; KB/MB/GB/TB/PB/EB and KiB/MiB/GiB/TiB/PiB/EiB use powers of 1024";
         } else if (clazz.equals(TimeRange.class)) {
             sb.append("a time range");
             format = "ISO-8601 extended local time format e.g. \"10:15-11:25:30\"";

@@ -127,8 +127,8 @@ function checkValueForType(type, choices, currentLine, subOptions, freeForm) {
 			const integerRegex = /^-?\d+$/;
 			result = iso8601PeriodRegex.test(value) || integerRegex.test(value) ? null : "The value should be a period (e.g. \"P2Y\", \"P3M\", \"P4W\", \"P5D\", \"P1Y2M3D\", or \"P1Y2M3W4D\")";
 		} else if (type === "ByteSize") {
-			const byteSizeRegex = /^(\d+)(b|kb|mb|gb|pb|tb|eb)?$/i;
-			result = "max-size" === value || byteSizeRegex.test(value) ? null : "The value should be a number of bytes (e.g. \"10MB\" or \"1024B\")";
+			const byteSizeRegex = /^(\d+)(b|bytes|[kmgtpe]i?b)?$/i;
+			result = "max-size" === value || byteSizeRegex.test(value.replace(/\s/g, '')) ? null : "The value should be a number of bytes (e.g. \"10MiB\", \"10MB\" or \"1024B\"; units use powers of 1024)";
 		} else if (type === "TimeRange") {
 			const localTimeRegex = /^(?:[01]\d|2[0-3]):[0-5]\d(:[0-5]\d(\.\d{1,9})?)?$/;
 			const isValidTimeRange = function(v) {
@@ -892,7 +892,7 @@ function _detectContentFormat(content) {
     if (tabCounts[0] > 0 && tabCounts.slice(1).every(function(c) { return Math.abs(c - tabCounts[0]) <= 1; })) {
       var cols = tabCounts[0] + 1;
       return { format: 'tsv', label: 'TSV', color: 'info',
-        stats: lineCount + ' rows \u00B7 ' + cols + ' columns', canPretty: false };
+        stats: lineCount + ' rows \u00B7 ' + cols + ' columns', canPretty: false, delimiter: '\t' };
     }
   }
 
@@ -906,7 +906,7 @@ function _detectContentFormat(content) {
       if (counts[0] > 0 && counts.slice(1).every(function(c) { return Math.abs(c - counts[0]) <= 1; })) {
         var csvCols = counts[0] + 1;
         return { format: 'csv', label: sep === ',' ? 'CSV' : 'CSV (;)', color: 'info',
-          stats: lineCount + ' rows \u00B7 ' + csvCols + ' columns', canPretty: false };
+          stats: lineCount + ' rows \u00B7 ' + csvCols + ' columns', canPretty: false, delimiter: sep };
       }
     }
   }
@@ -1181,6 +1181,8 @@ function _fetchUrlContentViaMover(paths, hostId) {
                 + ' style="font-size:0.7rem;" onclick="_prettyPrintToggle(this,\'' + blockId + '\')">'
                 + '<i class="bi bi-braces me-1"></i>Pretty</button>'
               : '';
+            var parseHtml = '<button type="button" class="btn btn-outline-primary btn-sm py-0 px-2"'
+              + ' onclick="_fcParseBlock(this,\'' + blockId + '\')">Parse Preview</button>';
             var copyHtml = '<button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 flex-shrink-0'
               + (det.canPretty ? '' : ' ms-auto') + '"'
               + ' style="font-size:0.7rem;" onclick="_fcCopyBlock(this,\'' + blockId + '\')">'
@@ -1188,10 +1190,14 @@ function _fetchUrlContentViaMover(paths, hostId) {
             html += '<div class="' + headerBg + ' px-3 py-2 border-bottom d-flex align-items-center gap-1 flex-wrap">'
                   + '<i class="bi ' + icon + ' flex-shrink-0" style="font-size:0.9rem"></i>'
                   + '<code class="small text-break user-select-all" style="flex:1 1 auto;min-width:0;">' + _escHtml(f.source) + '</code>'
-                  + badgeHtml + statsHtml + prettyHtml + copyHtml
+                  + badgeHtml + statsHtml + prettyHtml + parseHtml + copyHtml
                   + '</div>'
+                  + '<div id="' + blockId + '_parsed" class="border-bottom p-2" role="status" hidden></div>'
+                  + '<details id="' + blockId + '_source" open>'
+                  + '<summary class="px-3 py-2 small bg-body-tertiary">Source content</summary>'
                   + '<div id="' + blockId + '" data-format="' + det.format + '" style="font-family:monospace;font-size:0.82rem;">';
             _fcRawStore[blockId] = content;
+            _fcBlockIds[_fcBlockIds.length - 1].hostId = hostId;
           } else {
             var errBlockId = 'fcBlock_' + Math.random().toString(36).slice(2);
             _fcBlockIds.push({ id: errBlockId, source: f.source, error: true });
@@ -1219,7 +1225,9 @@ function _fetchUrlContentViaMover(paths, hostId) {
                     + '</div>';
             });
           }
-          html += '</div></div>';
+          html += '</div>';
+          if (!hasError) html += '</details>';
+          html += '</div>';
         });
 
         // Sticky nav bar — only shown when there are 2+ files
@@ -1278,6 +1286,148 @@ function _fetchUrlContentViaMover(paths, hostId) {
   });
 }
 
+/** Advisory checks only: never change the current parser configuration. */
+function _fcConfigurationReview(data, content) {
+  var detected = _detectContentFormat(content);
+  var parser = (data.parser || '').toLowerCase();
+  var options = data.options || {};
+  var checks = data.checks || {};
+  var warnings = [];
+  var notes = [];
+  var delimited = parser === 'csv' || parser === 's3';
+  var json = parser === 'json' || parser === 'stac';
+  var compatible = (delimited && (detected.format === 'csv' || detected.format === 'tsv'))
+    || (json && detected.format === 'json') || (parser === 'xml' && detected.format === 'xml');
+  if (!content.trim()) {
+    warnings.push('The loaded sample is empty. Load listing content before checking the configuration.');
+  } else if (detected.format === 'text') {
+    notes.push('The sample format could not be identified reliably; check the configured parser manually.');
+  } else if (parser && !compatible) {
+    var hint = {csv: 'csv (or s3 for S3 inventory)', tsv: 'csv with a tab delimiter',
+      json: 'json (or stac for a STAC catalogue)', xml: 'xml'}[detected.format];
+    warnings.push('Possible format mismatch: detected ' + detected.label + ', but http.parser=' + parser
+      + '. ' + (hint ? 'Review http.parser; the sample suggests ' + hint + '.'
+        : detected.format === 'html' ? 'Check whether this is a login/error page instead of the expected listing.'
+        : detected.format === 'ndjson' ? 'JSON Lines is not supported by the JSON document parser.'
+        : 'Check the source document and parser.'));
+  }
+  if (delimited && detected.delimiter && (options.delimiter || ',') !== detected.delimiter) {
+    warnings.push('Possible delimiter mismatch. Review delimiter in http.parserOptions: the sample appears to use '
+      + (detected.delimiter === '\t' ? 'tabs rather than the configured delimiter' : '"' + detected.delimiter + '"') + '.');
+  }
+  if (data.error || data.total === 0) {
+    warnings.push('No usable parse result. Check ' + (delimited
+      ? 'delimiter, header (true/false), and column mappings (zero-based indexes or exact header names).'
+      : 'arrayPath and field paths against the source document.')
+      + ' The loaded sample may also be truncated.');
+  }
+  var mappings = [
+    ['missingNames', delimited ? (parser === 's3' ? 'keyCol' : 'nameCol') : 'nameField', 'name'],
+    ['missingUrls', delimited ? (parser === 's3' ? 'baseUrl and keyCol' : 'urlCol') : 'urlField', 'URL'],
+    ['missingSizes', delimited ? 'sizeCol' : 'sizeField', 'size'],
+    ['missingTimes', delimited ? 'timeCol' : 'timeField', 'timestamp']
+  ];
+  mappings.forEach(function(mapping) {
+    if (checks[mapping[0]]) warnings.push(checks[mapping[0]] + ' record(s) have missing or invalid '
+      + mapping[2] + '. Review ' + mapping[1] + ' in http.parserOptions'
+      + (mapping[0] === 'missingTimes' ? '; supported timestamps are ISO instants, UTC dates or epoch milliseconds.'
+        : mapping[0] === 'missingSizes' ? ' and verify that the source provides a numeric size.' : '.'));
+  });
+  if (checks.nonHttpUrls) warnings.push(checks.nonHttpUrls + ' record(s) have non-HTTP/HTTPS URLs.'
+    + (parser === 's3' ? ' Set baseUrl to the HTTP/HTTPS object endpoint in http.parserOptions.'
+      : ' Review the URL mapping and the source links.'));
+  if (checks.missingSizes || checks.missingTimes) notes.push(
+    'Missing size or timestamp can cause additional per-file metadata requests during acquisition.');
+  if (!data.error && data.total > 0) notes.push('Verify sizeUnit against the source documentation'
+    + ' (current: ' + (options.sizeUnit || 'B') + '; KB/KiB, MB/MiB, etc. are binary units).'
+    + ' The correct source unit cannot be inferred from numeric values.');
+  if (!warnings.length && compatible && data.total > 0) notes.unshift(
+    'No obvious format or metadata-mapping problems found in the loaded sample.'
+    + ' This does not verify that the selected fields or units are semantically correct.');
+  var html = '<div class="alert alert-' + (warnings.length ? 'warning' : 'info')
+    + ' py-2 small" role="alert"><strong>Configuration check</strong>'
+    + '<div>Detected: ' + _escHtml(detected.label) + ' (heuristic). Configured: '
+    + _escHtml(parser || 'unavailable') + '.</div>';
+  warnings.concat(notes).forEach(function(message) {
+    html += '<div class="mt-1">' + _escHtml(message) + '</div>';
+  });
+  return html + '<div class="mt-1 text-muted">Recommendations are advisory; Properties are not changed.</div></div>';
+}
+
+/** Parse the raw document, not its pretty-printed display or individual physical lines. */
+function _fcParseBlock(button, blockId) {
+  var block = _fcBlockIds.find(function(b) { return b.id === blockId; });
+  var output = document.getElementById(blockId + '_parsed');
+  if (!block || !output) return;
+  var source = document.getElementById(blockId + '_source');
+  if (source) source.open = false;
+  output.hidden = false;
+  var propertiesElement = document.querySelector('pre#properties');
+  var payload = { content: _fcRawStore[blockId] || '' };
+  if (propertiesElement && propertiesElement.env && propertiesElement.env.editor) {
+    payload.properties = propertiesElement.env.editor.getValue();
+  } else if (propertiesElement) {
+    output.textContent = 'Properties editor is not ready. Reopen the host page before parsing.';
+    return;
+  }
+  var originalLabel = button.textContent;
+  button.disabled = true;
+  button.textContent = 'Parsing...';
+  output.textContent = 'Parsing...';
+  fetch('/do/transfer/host/edit/parseContent/' + encodeURIComponent(block.hostId), {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(function(response) {
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    return response.json();
+  })
+  .then(function(data) {
+    var review = _fcConfigurationReview(data, payload.content);
+    if (data.error) {
+      output.innerHTML = review + '<div class="alert alert-danger py-2" role="alert">'
+        + _escHtml('Unable to parse preview: ' + data.error) + '</div>';
+      return;
+    }
+    var warningCount = (data.entries || []).filter(function(entry) {
+      return entry.warnings && entry.warnings.length;
+    }).length;
+    var html = review + '<div class="small mb-2"><strong>' + _escHtml(data.parser) + '</strong>: '
+      + data.total + ' record(s). <span class="'
+      + (warningCount ? 'text-warning-emphasis' : 'text-success') + '">'
+      + warningCount + ' record(s) with warnings'
+      + (data.limited ? ' among the displayed records' : '') + '.</span>'
+      + ' Uses current Options &rarr; Properties; no settings are saved.'
+      + ' This parses only the loaded sample, which may be truncated; it does not test downloads or acquisition filters.</div>';
+    html += '<div class="small text-muted mb-2">Options: '
+      + _escHtml(JSON.stringify(data.options)) + '</div>';
+    if (data.limited) html += '<div class="alert alert-warning py-1">Showing the first 2,000 records.</div>';
+    if (!data.total) html += '<div class="alert alert-warning py-1">No records extracted. Check parser, field paths and column mappings.</div>';
+    html += '<div class="table-responsive"><table class="table table-sm small mb-0">'
+      + '<thead><tr><th>#</th><th>Name</th><th>URL</th><th>Bytes</th><th>Timestamp (UTC)</th><th>Result</th></tr></thead><tbody>';
+    (data.entries || []).forEach(function(entry) {
+      var messages = entry.warnings || [];
+      var status = messages.length ? messages.join('; ')
+        : 'Complete metadata: no per-file lookup needed';
+      html += '<tr><td>' + entry.record + '</td><td class="text-break">' + _escHtml(entry.name)
+        + '</td><td class="text-break">' + _escHtml(entry.url)
+        + '</td><td>' + _escHtml(entry.size == null ? 'Unknown' : entry.size)
+        + '</td><td>' + _escHtml(entry.timestamp || 'Unknown') + '</td><td>'
+        + '<span class="' + (messages.length ? 'text-warning-emphasis' : 'text-success') + '">'
+        + _escHtml(status) + '</span><details><summary>Source record</summary><pre class="text-wrap">'
+        + _escHtml(entry.raw) + '</pre></details></td></tr>';
+    });
+    output.innerHTML = html + '</tbody></table></div>';
+  })
+  .catch(function(error) {
+    output.textContent = 'Unable to parse preview: ' + error.message
+      + '. Check Options \u2192 Properties and whether the loaded document is complete.';
+  })
+  .finally(function() { button.disabled = false; button.textContent = originalLabel; });
+}
+
 /** Escape a string for safe insertion into HTML. */
 function _escHtml(s) {
   if (!s) return '';
@@ -1290,6 +1440,20 @@ function _showFetchBtn(show) {
   var area     = document.getElementById('testResultUrlArea');
   var copyFC   = document.getElementById('testResultCopyControls');
   var copySimp = document.getElementById('testResultCopySimpleBtn');
+  var rawMode = document.getElementById('fcCopyRaw');
+  var prettyMode = document.getElementById('fcCopyPretty');
+  var canPretty = show && _fcBlockIds.some(function(b) { return !b.error && b.canPretty; });
+  if (prettyMode) {
+    prettyMode.disabled = !canPretty;
+    var prettyLabel = document.querySelector('label[for="fcCopyPretty"]');
+    if (prettyLabel) prettyLabel.title = canPretty
+      ? 'Format JSON, XML and HTML; other formats remain unchanged.'
+      : 'Pretty formatting is not available for the loaded content.';
+    if (!canPretty) {
+      prettyMode.checked = false;
+      if (rawMode) rawMode.checked = true;
+    }
+  }
   if (btn)      btn.style.display      = show ? '' : 'none';
   if (area)     area.style.display     = show ? '' : 'none';
   // testResultCopyControls carries Bootstrap's "d-flex" utility class, whose stylesheet rule is
@@ -1695,13 +1859,13 @@ function confirmCloseAll(path, count) {
 }
 
 /*
- * Shared helpers for parsing ECtrans host Properties values (byte sizes with optional KB/MB/GB/TB
+ * Shared helpers for parsing ECtrans host Properties values (binary byte-size units
  * suffixes, and "yes"/"no"/"true"/"false" booleans). Used by the per-module memory estimators
  * below.
  */
 function _ectransToBytes(raw) {
-	var unit = { b: 1, k: 1024, m: 1024 * 1024, g: 1024 * 1024 * 1024, t: 1024 * 1024 * 1024 * 1024 };
-	var m = String(raw).trim().replace(/["']/g, '').match(/^([0-9]+(?:\.[0-9]+)?)\s*(b|kb|mb|gb|tb)?$/i);
+	var unit = { b: 1, k: 1024, m: 1024 ** 2, g: 1024 ** 3, t: 1024 ** 4, p: 1024 ** 5, e: 1024 ** 6 };
+	var m = String(raw).replace(/["'\s]/g, '').match(/^([0-9]+(?:\.[0-9]+)?)(b|bytes|[kmgtpe]i?b)?$/i);
 	if (!m) return null;
 	var n = parseFloat(m[1]);
 	var u = (m[2] || 'b').toLowerCase().charAt(0);

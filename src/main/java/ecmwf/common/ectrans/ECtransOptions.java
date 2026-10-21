@@ -583,6 +583,9 @@ public enum ECtransOptions {
     HOST_ACQUISITION_SKIP_POST_RETRIEVAL_SIZE_CHECK_PATTERN("skipPostRetrievalSizeCheckPattern", String.class,
             STRING_NONE),
 
+    /** The host acquisition allow source size mismatch pattern. */
+    HOST_ACQUISITION_ALLOW_SOURCE_SIZE_MISMATCH_PATTERN("allowSourceSizeMismatchPattern", String.class, STRING_NONE),
+
     /** The host proxy http proxy url. */
     HOST_PROXY_HTTP_PROXY_URL("httpProxyUrl", String.class, STRING_NONE),
 
@@ -1489,7 +1492,7 @@ public enum ECtransOptions {
     HOST_HTTP_MAX_SIZE("maxSize", ByteSize.class, ByteSize.ofMB(10)),
 
     /** The host http parser. */
-    HOST_HTTP_PARSER("parser", String.class, Arrays.asList("html", "csv", "json", "xml", "stac", "script")),
+    HOST_HTTP_PARSER("parser", String.class, Arrays.asList("html", "csv", "json", "xml", "stac", "s3", "script")),
 
     /** The host http parser options. */
     HOST_HTTP_PARSER_OPTIONS("parserOptions", String.class, STRING_NONE),

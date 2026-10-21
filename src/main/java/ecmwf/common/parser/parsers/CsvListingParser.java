@@ -1,18 +1,15 @@
 package ecmwf.common.parser.parsers;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
 
 import ecmwf.common.ftp.FtpParser;
 import ecmwf.common.parser.core.ParserConfig;
 import ecmwf.common.parser.core.RemoteListingParser;
 import ecmwf.common.parser.format.CsvHelper;
+import ecmwf.common.parser.format.ListingMetadata;
 
 public class CsvListingParser implements RemoteListingParser {
 
@@ -27,69 +24,33 @@ public class CsvListingParser implements RemoteListingParser {
         return "csv".equalsIgnoreCase(hint) || "cmr".equalsIgnoreCase(hint) || "nasa".equalsIgnoreCase(hint);
     }
 
-    private String safeGet(CSVRecord r, int idx) {
-        if (idx < 0 || idx >= r.size()) {
-            return null;
-        }
-        return r.get(idx);
-    }
-
     @Override
     public FtpParser.FileEntry[] parse(String input, ParserConfig config) throws Exception {
 
-        CSVParser parser = CsvHelper.parse(input, config);
-
-        int nameCol = config.getInt("nameCol", 0);
-        int timeCol = config.getInt("timeCol", -1);
-        int urlCol = config.getInt("urlCol", -1);
+        String nameCol = config.getOrDefault("nameCol", "0");
+        String timeCol = config.getOrDefault("timeCol", "-1");
+        String urlCol = config.getOrDefault("urlCol", "-1");
+        String sizeCol = config.get("sizeCol");
+        ListingMetadata metadata = new ListingMetadata(config);
 
         List<FtpParser.FileEntry> out = new ArrayList<>();
 
-        for (CSVRecord r : parser) {
+        try (CSVParser parser = CsvHelper.parse(input, config)) {
+            for (var r : parser) {
 
-            FtpParser.FileEntry e = new FtpParser.FileEntry();
+                FtpParser.FileEntry e = new FtpParser.FileEntry();
 
-            e.name = safeGet(r, nameCol);
-            e.link = safeGet(r, urlCol);
-            e.line = r.toString();
+                e.name = CsvHelper.value(r, nameCol);
+                e.link = CsvHelper.value(r, urlCol);
+                e.line = r.toString();
+                e.size = metadata.size(CsvHelper.value(r, sizeCol));
+                e.time = ListingMetadata.time(CsvHelper.value(r, timeCol));
 
-            // safer time parsing
-            if (timeCol >= 0) {
-                String t = safeGet(r, timeCol);
-                if (t != null) {
-                    e.time = parseTimeSafe(t);
-                }
+                out.add(e);
             }
-
-            out.add(e);
         }
 
         return out.toArray(new FtpParser.FileEntry[0]);
     }
 
-    private long parseTimeSafe(String value) {
-
-        if (value == null) {
-            return -1;
-        }
-
-        value = value.trim();
-
-        try {
-            return Instant.parse(value).toEpochMilli();
-        } catch (Exception ignored) {
-        }
-
-        try {
-            return LocalDate.parse(value).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();
-        } catch (Exception ignored) {
-        }
-
-        try {
-            return Long.parseLong(value);
-        } catch (Exception ignored) {
-        }
-
-        return -1;
-    }
 }
