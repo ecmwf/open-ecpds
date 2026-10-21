@@ -425,11 +425,11 @@ public final class Format {
      * @param duration
      *            duration in milliseconds
      *
-     * @return formatted string, e.g., "1h 5m 30s" or "250ms"
+     * @return formatted string, e.g., "1h 5m 30s" or "250ms"; "0ms" for non-positive durations
      */
     public static String formatDuration(long duration) {
-        if (duration < 0)
-            duration = 0;
+        if (duration <= 0)
+            return "0ms";
         final var ms = duration % 1000;
         final var totalSeconds = duration / 1000;
         final var s = totalSeconds % 60;
