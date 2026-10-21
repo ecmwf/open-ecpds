@@ -8,12 +8,6 @@
 
 <tiles:insert page="/WEB-INF/jsp/pds/datafile/datafile/data.jsp"/>
 <jsp:include page="/WEB-INF/jsp/pds/datafile/datafile/lifecycle.jsp"/>
-<auth:if paths="/do/admin/storagepolicies">
-<auth:then>
-<a href="/do/admin/storagepolicies?fileId=${datafile.id}" class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-pin-angle me-1"></i>Manage storage hold</a>
-</auth:then>
-</auth:if>
 
 <auth:if basePathKey="datafile.basepath" paths="">
 <auth:then>
