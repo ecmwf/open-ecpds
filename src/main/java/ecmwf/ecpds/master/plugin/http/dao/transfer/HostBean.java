@@ -364,6 +364,41 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
         return setup.getProperties(true);
     }
 
+    @Override
+    public boolean isSizeVerificationBypassConfigured() {
+        final var pattern = setup.getString(ECtransOptions.HOST_ACQUISITION_SKIP_POST_RETRIEVAL_SIZE_CHECK_PATTERN);
+        return pattern != null && !pattern.isBlank();
+    }
+
+    @Override
+    public String getSizeVerificationBypassExplanation() {
+        if (!isSizeVerificationBypassConfigured()) {
+            return "";
+        }
+        final var skip = setup.getString(ECtransOptions.HOST_ACQUISITION_SKIP_POST_RETRIEVAL_SIZE_CHECK_PATTERN);
+        final var allow = setup.getString(ECtransOptions.HOST_ACQUISITION_ALLOW_SOURCE_SIZE_MISMATCH_PATTERN);
+        final var explanation = new StringBuilder("Saved Properties: acquisition.skipPostRetrievalSizeCheckPattern = ")
+                .append(skip)
+                .append(". Applies to normal (non-index) files whose full source filename matches this regex. ")
+                .append("Bytes received are recorded, but the downloaded length is not checked against a catalogue or remote size. ")
+                .append("An incomplete response that ends without a transport error cannot be detected by size. ")
+                .append("To restore remote size checking, edit this host, open Options > Properties, then remove this option ")
+                .append("or narrow its pattern to exclude the files to be checked, and save. ");
+        if (allow != null && !allow.isBlank()) {
+            explanation.append("acquisition.allowSourceSizeMismatchPattern is also configured as ").append(allow)
+                    .append(". The skip pattern takes precedence where both match. After removing the skip option, ")
+                    .append("remote size queries resume; catalogue/source mismatches remain allowed for files matching ")
+                    .append("the allow pattern, with downloaded length checked against the remote size when known. ")
+                    .append("Remove both options to restore the default catalogue/source comparison.");
+        } else {
+            explanation.append("No acquisition.allowSourceSizeMismatchPattern is configured. Removing the skip option ")
+                    .append("restores the default catalogue/source comparison. To allow those sizes to differ while ")
+                    .append("retaining remote size checking, replace the skip option with ")
+                    .append("acquisition.allowSourceSizeMismatchPattern using the desired regex.");
+        }
+        return explanation.toString();
+    }
+
     /**
      * {@inheritDoc}
      *

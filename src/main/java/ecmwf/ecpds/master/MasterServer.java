@@ -13938,7 +13938,8 @@ public final class MasterServer extends ECaccessProvider
                                     + (isNotEmpty(remoteHost) ? " from " + remoteHost : "") + " on DataMover="
                                     + dataFile.getGetHost() + " ("
                                     + Format.getMBitsPerSeconds(dataFile.getSize(), dataFile.getGetDuration())
-                                    + " Mbits/s)");
+                                    + " Mbits/s)" + (dr.dataFile.isRetrievalSizeVerificationBypassed()
+                                            ? " - Size verification bypassed" : ""));
                             addTransferHistory(transfer, _source, transfer.getStatusCode(), transfer.getComment(),
                                     false);
                             // Do we have to store it in Splunk?

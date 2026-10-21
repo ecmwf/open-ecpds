@@ -150,6 +150,17 @@ public class DataFile extends DataBaseObject {
     /** The monitoring value. */
     protected MonitoringValue monitoringValue;
 
+    // Serialized with the download result, but not mapped to a database column.
+    private boolean retrievalSizeVerificationBypassed;
+
+    public boolean isRetrievalSizeVerificationBypassed() {
+        return retrievalSizeVerificationBypassed;
+    }
+
+    public void setRetrievalSizeVerificationBypassed(final boolean bypassed) {
+        retrievalSizeVerificationBypassed = bypassed;
+    }
+
     /**
      * Instantiates a new data file.
      */

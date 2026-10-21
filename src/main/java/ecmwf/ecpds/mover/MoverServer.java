@@ -2354,6 +2354,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     @Override
     public DataFile download(final DataFile dataFile, final Host hostForSource) throws RemoteException {
+        dataFile.setRetrievalSizeVerificationBypassed(false);
         try (final var _ = ecmwf.ecpds.master.storage.StorageFileLocks.read(dataFile.getId())) {
             return downloadWithStorageLease(dataFile, hostForSource);
         }
@@ -2502,6 +2503,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final var stop = System.currentTimeMillis();
             // Use the downloaded length when the remote size query was skipped or returned an unknown size.
             dataFile.setSize(sourceFileSize != -1 ? sourceFileSize : file.length());
+            dataFile.setRetrievalSizeVerificationBypassed(ectransIn.isSizeVerificationBypassed());
             // Let's set all other parameters on the DataFile
             dataFile.setRemoteHost(ectransIn.getRemoteHostName());
             dataFile.setGetHost(getRoot());
@@ -6302,6 +6304,12 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         public int nextStep() {
             try {
                 final var snapshot = trafficAccounting.checkpoint(trafficAccountingPath);
+                if (masterManager != null && !masterManager.isConnected()) {
+                    return NEXT_STEP_DELAY;
+                }
+                if (masterManager == null && (restProvider == null || !Cnf.has("MoverProxy"))) {
+                    return NEXT_STEP_DELAY;
+                }
                 final var changes = ecmwf.ecpds.master.TrafficAccounting.changedBuckets(snapshot, acknowledged);
                 if (!changes.isEmpty()) {
                     getMasterProxy().updateTrafficAccounting(getRoot() + ":" + trafficAccounting.getSourceId(),

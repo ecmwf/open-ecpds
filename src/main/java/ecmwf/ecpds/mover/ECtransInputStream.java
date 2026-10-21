@@ -85,6 +85,12 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
     /** The source file size. */
     private long sourceFileSize;
 
+    private boolean sizeVerificationBypassed;
+
+    public boolean isSizeVerificationBypassed() {
+        return sizeVerificationBypassed;
+    }
+
     /** The in. */
     private SourceInputStream in = null;
 
@@ -212,6 +218,7 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
                             this.in = new SimpleInputStream(MOVER.get(out, copy, sourceFileName, posn, dataFile),
                                     new PipedInputStream(out, StreamPlugThread.DEFAULT_BUFF_SIZE), copy,
                                     sourceFileName);
+                            sizeVerificationBypassed = skipRemoteSize;
                             _log.info("File {} will be retrieved from {}", sourceFileName, copy.getNickname());
                             return;
                         }

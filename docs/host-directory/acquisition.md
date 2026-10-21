@@ -291,6 +291,13 @@ acquisition.skipPostRetrievalSizeCheckPattern = ".*"
 
 Neither option changes index-file retrieval.
 
+When a non-empty `skipPostRetrievalSizeCheckPattern` is configured, acquisition
+host headers show a compact **Size verification bypassed** warning. Hover over it
+for the explanation, which is also available to screen readers on keyboard focus. Successful retrieval history
+messages include **Size verification bypassed** only for files whose download
+actually bypassed verification. Bytes received are recorded, but an incomplete
+response that ends without a transport error cannot be detected by size.
+
 ### Diagnostics
 
 | Option | Default | Description |

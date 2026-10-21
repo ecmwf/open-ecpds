@@ -256,7 +256,7 @@ $(document).ready(function() {
     });
     // Bootstrap tooltip initialisation for elements using data-bs-toggle="tooltip"
     $('[data-bs-toggle="tooltip"]').each(function() {
-        new bootstrap.Tooltip(this);
+        bootstrap.Tooltip.getOrCreateInstance(this);
     });
     // Bootstrap popover initialisation for elements using data-bs-toggle="popover"
     $('[data-bs-toggle="popover"]').each(function() {

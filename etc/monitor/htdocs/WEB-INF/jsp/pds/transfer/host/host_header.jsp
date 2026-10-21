@@ -54,6 +54,14 @@
         <c:if test="${not empty host.filterName and host.filterName ne 'none'}">
             <jsp:include page="/WEB-INF/jsp/pds/transfer/compression_icon.jsp"><jsp:param name="name" value="${host.filterName}"/></jsp:include>
         </c:if>
+        <c:if test="${host.type == 'Acquisition' and host.sizeVerificationBypassConfigured}">
+            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fs-status"
+                  tabindex="0" aria-describedby="hostSizeVerificationExplanation"
+                  title="${fn:escapeXml(host.sizeVerificationBypassExplanation)}">
+                <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Size verification bypassed
+            </span>
+            <span id="hostSizeVerificationExplanation" class="visually-hidden"><c:out value="${host.sizeVerificationBypassExplanation}"/></span>
+        </c:if>
         </div>
         <%-- Desktop: full icon bar, hidden on mobile --%>
         <div id="_hostIconBar" class="d-none d-sm-flex gap-2 align-items-center ms-auto">

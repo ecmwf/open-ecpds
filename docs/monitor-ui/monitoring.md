@@ -113,6 +113,10 @@ it to false. Custom publication/simulation modules should also opt out this way;
 the core does not directly reference plugin classes, which can be loaded separately.
 A background scheduler atomically checkpoints the Mover's cumulative buckets,
 then sends only changed absolute buckets, every **10 seconds** by default.
+Local checkpointing continues while disconnected. Direct Movers defer delivery
+until their Master connection is established; REST-connected Movers defer it until
+their REST provider and proxy configuration are available. Failed deliveries remain
+unacknowledged and are retried.
 The Master merges maxima per producer/minute/type and persists the changed totals
 before acknowledging. Duplicate deliveries,
 lost acknowledgements and out-of-order updates do not add bytes twice.

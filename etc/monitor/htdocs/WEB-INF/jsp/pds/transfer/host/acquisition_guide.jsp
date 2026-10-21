@@ -293,6 +293,8 @@
           </table>
         </div>
 
+        <p class="small mb-3">A non-empty <code>skipPostRetrievalSizeCheckPattern</code> displays a compact <strong>Size verification bypassed</strong> badge in the acquisition host header; hover for the explanation, also available to screen readers on keyboard focus. Successful retrieval history includes the same warning only when verification was actually bypassed for that file. Bytes received are recorded, but an incomplete response that ends without a transport error cannot be detected by size.</p>
+
         <p class="small fw-semibold mb-1"><i class="bi bi-bug text-primary me-1"></i>Diagnostics</p>
         <div class="table-responsive mb-0">
           <table class="table table-sm table-bordered small mb-0">

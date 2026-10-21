@@ -412,6 +412,10 @@ public interface Host extends ModelBean, CollectionSizeBean {
      */
     String getProperties();
 
+    boolean isSizeVerificationBypassConfigured();
+
+    String getSizeVerificationBypassExplanation();
+
     /**
      * Gets the javascript.
      *
