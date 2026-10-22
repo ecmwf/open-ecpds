@@ -14,6 +14,14 @@ The **AcquisitionScheduler** runs continuously inside the MasterServer. On each 
 
 A host is only picked up when its *Acquisition Time* has elapsed since the last run. The thread count is capped by `Scheduler.maxAcquisitionThreads` (default 100). If the cap is reached the scheduler waits until threads finish before starting new ones.
 
+### File retrieval concurrency
+
+File retrieval is scheduled separately from directory listing. Concurrent retrievals
+respect both the Acquisition Host's and the Destination's **Max Connections**, plus
+the download scheduler's pool limit. The Host limit is per Destination unless
+`ectrans.sharedConnectionLimit="true"` is set in the Host Properties.
+See [File-transfer connection limits](index.md#file-transfer-connection-limits).
+
 ### AcquisitionThread lifecycle
 
 1. **Read the Directory field.** Each non-empty line is a *listing spec*. If the entire content is wrapped in `$(...)` it is evaluated as a script on a DataMover first; the output of the script is then treated as the listing spec lines.

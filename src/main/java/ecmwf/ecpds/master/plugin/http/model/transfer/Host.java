@@ -534,6 +534,16 @@ public interface Host extends ModelBean, CollectionSizeBean {
     int getMaxConnections();
 
     /**
+     * Describes scheduled file-transfer limits for a Destination using this Host.
+     *
+     * @param destinationMaximum
+     *            the Destination connection limit
+     *
+     * @return the Host scope and effective upper bound
+     */
+    String connectionLimitDescription(int destinationMaximum);
+
+    /**
      * Sets the max connections.
      *
      * @param i

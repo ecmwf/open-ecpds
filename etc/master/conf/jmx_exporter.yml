@@ -4,13 +4,15 @@
 # Purpose: Prometheus JMX exporter mapping rules for the Master-Server (OpenECPDS)
 #
 # Used only when PROMETHEUS_JMX_PORT is set (see docs/monitoring/jmx-export.md).
-# This default exports every registered MBean attribute as-is; narrow the
+# Per-transfer MBeans are excluded to avoid unbounded metric cardinality. Narrow the
 # "pattern" rules below once you know which metrics you actually want in Grafana.
 #
 
 startDelaySeconds: 0
 lowercaseOutputName: false
 lowercaseOutputLabelNames: false
+excludeObjectNames:
+  - "Transfer:*"
 rules:
   # Destination MBeans are created per running Destination; expose its name as a label.
   - pattern: 'Destination<destination=([^>]+)><>(\w+)'

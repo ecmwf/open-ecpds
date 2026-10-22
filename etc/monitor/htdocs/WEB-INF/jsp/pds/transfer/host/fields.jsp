@@ -255,6 +255,22 @@ oninput="validatePatternInput(this,'nickNameFeedback')" />
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 <i class="bi bi-speedometer2 text-primary"></i>
 <span class="fw-semibold">Throughput</span>
+<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0"
+  data-bs-toggle="collapse" data-bs-target="#throughputInfoPanel"
+  aria-expanded="false" aria-controls="throughputInfoPanel" title="About Throughput settings">
+  <i class="bi bi-info-circle"></i>
+</button>
+</div>
+<div class="collapse" id="throughputInfoPanel">
+  <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;">
+    <i class="bi bi-info-circle-fill me-1"></i>
+    <strong>Max Connections</strong> applies separately per Destination for acquisition and
+    dissemination Hosts by default. To share this Host's limit across all Destinations on the
+    same Master, set <code>ectrans.sharedConnectionLimit="true"</code> in
+    <strong>Options &rarr; Properties</strong>. The Destination's own Max Connections limit
+    still applies. The shared limit counts active file transfers, not directory listings or
+    idle connections.
+  </div>
 </div>
 <div class="card-body">
 <div class="row g-3">
@@ -1590,4 +1606,3 @@ oninput="validateMailInput(this); toggleMailRows()" />
     </div>
   </div>
 </div>
-

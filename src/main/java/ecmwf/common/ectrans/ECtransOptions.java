@@ -238,6 +238,9 @@ public enum ECtransOptions {
     /** The host ectrans connect time out. */
     HOST_ECTRANS_CONNECT_TIME_OUT("connectTimeOut", Duration.class, Duration.ofMinutes(1)),
 
+    /** Share this Host's scheduled file-transfer limit across Destinations. */
+    HOST_ECTRANS_SHARED_CONNECTION_LIMIT("sharedConnectionLimit", Boolean.class, false),
+
     /** The host ectrans close time out. */
     HOST_ECTRANS_CLOSE_TIME_OUT("closeTimeOut", Duration.class, Duration.ofMinutes(1)),
 

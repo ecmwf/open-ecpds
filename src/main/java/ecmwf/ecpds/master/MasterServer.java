@@ -265,6 +265,7 @@ import ecmwf.common.version.Version;
 import ecmwf.ecpds.master.plugin.ecpds.ECpdsClient;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 import ecmwf.ecpds.master.transfer.HostOption;
+import ecmwf.ecpds.master.transfer.HostConnectionLimits;
 import ecmwf.ecpds.master.transfer.StatusFactory;
 import ecmwf.ecpds.master.transfer.TransferComparator;
 import ecmwf.ecpds.master.transfer.TransferManagement;
@@ -369,6 +370,12 @@ public final class MasterServer extends ECaccessProvider
 
     /** The host mutex provider. */
     private final transient Synchronized hostMutexProvider = new Synchronized();
+
+    private final transient HostConnectionLimits hostConnectionLimits = new HostConnectionLimits();
+
+    public HostConnectionLimits getHostConnectionLimits() {
+        return hostConnectionLimits;
+    }
 
     /** The host stats mutex provider. */
     private final transient Synchronized hostStatsMutexProvider = new Synchronized();
@@ -4355,6 +4362,7 @@ public final class MasterServer extends ECaccessProvider
             if (name.equals(transfer.getDestinationName()) && StatusFactory.EXEC.equals(transfer.getStatusCode())) {
                 theTransferRepository.removeValue(transfer);
                 _closeDataTransfer(transfer);
+                theTransferScheduler.releaseHostReservation(transfer);
                 transfer.setStatusCode(StatusFactory.INTR);
                 transfer.setFailedTime(new Timestamp(System.currentTimeMillis()));
                 transfer.setComment(comment);
@@ -13639,16 +13647,16 @@ public final class MasterServer extends ECaccessProvider
                                 final var name = destination.getName();
                                 var count = 0;
                                 for (final DownloadThread thread : _downloadThreads.values()) {
-                                    if (name.equals(thread._transfer.getDestinationName()) && ++count >= limit) {
-                                        // We have already the maximum number of retrievals for this Destination, so
-                                        // let's delay the retrieval!
-                                        if (_debug) {
-                                            _log.debug("Delay Download for DataTransfer " + transfer.getId()
-                                                    + " (max connections is " + count + " for " + name + ")");
-                                        }
-                                        goToNext = true;
-                                        break;
+                                    if (name.equals(thread._transfer.getDestinationName())) {
+                                        count++;
                                     }
+                                }
+                                if (count >= limit) {
+                                    if (_debug) {
+                                        _log.debug("Delay Download for DataTransfer " + transfer.getId()
+                                                + " (max connections is " + count + " for " + name + ")");
+                                    }
+                                    goToNext = true;
                                 }
                             }
                         } else {
@@ -13683,10 +13691,29 @@ public final class MasterServer extends ECaccessProvider
                         // processed by this scheduler!
                         synchronized (_downloadThreads) {
                             if (!_downloadThreads.containsKey(_currentKey = _getKey(transfer))) {
-                                final var thread = new DownloadThread(transfer);
-                                thread.setThreadNameAndCookie(null, null, "DataFile-" + transfer.getDataFileId(), null);
-                                thread.execute(true);
-                                _downloadThreads.put(_currentKey, thread);
+                                final var source = isAcquisition
+                                        ? getECpdsBase().getHost(transfer.getDataFile().getHostForAcquisitionName())
+                                        : null;
+                                final var reservation = isAcquisition
+                                        ? hostConnectionLimits.acquire(source, destination.getName()) : null;
+                                if (isAcquisition && reservation == null) {
+                                    _log.debug("Delay retrieval {}: Host {} connection limit reached", transfer.getId(),
+                                            source.getName());
+                                    continue;
+                                }
+                                final var thread = new DownloadThread(transfer, source, reservation);
+                                try {
+                                    thread.setThreadNameAndCookie(null, null, "DataFile-" + transfer.getDataFileId(),
+                                            null);
+                                    _downloadThreads.put(_currentKey, thread);
+                                    thread.execute(true);
+                                } catch (final Throwable t) {
+                                    _downloadThreads.remove(_currentKey, thread);
+                                    if (reservation != null) {
+                                        reservation.close();
+                                    }
+                                    throw t;
+                                }
                                 processed++;
                             } else if (_debug) {
                                 _log.debug("Download already in progress for DataTransfer " + transfer.getId());
@@ -13733,6 +13760,8 @@ public final class MasterServer extends ECaccessProvider
             /** The source Host which is used for the retrieval. */
             private Host _source = null;
 
+            private final HostConnectionLimits.Lease _reservation;
+
             /** Whether this is a genuine Acquisition retrieval (as opposed to a Dissemination-side source pull). */
             private boolean _acquisition = false;
 
@@ -13756,8 +13785,11 @@ public final class MasterServer extends ECaccessProvider
              * @param transfer
              *            the transfer
              */
-            private DownloadThread(final DataTransfer transfer) {
+            private DownloadThread(final DataTransfer transfer, final Host source,
+                    final HostConnectionLimits.Lease reservation) {
                 _transfer = transfer;
+                _source = source;
+                _reservation = reservation;
             }
 
             /**
@@ -13870,6 +13902,14 @@ public final class MasterServer extends ECaccessProvider
              */
             @Override
             public void configurableRun() {
+                try (_reservation) {
+                    retrieve();
+                } finally {
+                    _toRemove.add(_getKey(_transfer));
+                }
+            }
+
+            private void retrieve() {
                 var complete = false;
                 final var key = _getKey(_transfer);
                 final List<DataTransfer> relatedTransfers = new ArrayList<>();
@@ -13885,7 +13925,9 @@ public final class MasterServer extends ECaccessProvider
                     _acquisition = acquisition;
                     if (acquisition) {
                         _log.debug("Registered by the Acquisition Thread");
-                        _source = base.getHost(hostForSourceName);
+                        if (_source == null) {
+                            _source = base.getHost(hostForSourceName);
+                        }
                     } else {
                         _source = _transfer.getDestination().getHostForSource();
                     }
@@ -14167,7 +14209,6 @@ public final class MasterServer extends ECaccessProvider
                     } catch (final Throwable t) {
                         _log.debug("Sending terminal LiveTransferSample for DataFile-{}", key, t);
                     }
-                    _toRemove.add(key);
                     _log.info("DataFile " + key + " downloaded: " + complete);
                 }
             }

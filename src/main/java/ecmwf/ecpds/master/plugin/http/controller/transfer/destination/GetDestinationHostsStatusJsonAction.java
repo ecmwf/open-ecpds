@@ -52,9 +52,12 @@ import ecmwf.web.controller.ECMWFActionForm;
 import ecmwf.web.model.users.User;
 
 /**
- * Serves the per-destination Dissemination Hosts live status as JSON.
+ * Serves dissemination dispatch status and acquisition retrieval counts as JSON.
  */
 public class GetDestinationHostsStatusJsonAction extends PDSAction {
+
+    private static final org.apache.logging.log4j.Logger LOG = org.apache.logging.log4j.LogManager
+            .getLogger(GetDestinationHostsStatusJsonAction.class);
 
     /** Shared Jackson mapper (thread-safe). */
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -74,8 +77,9 @@ public class GetDestinationHostsStatusJsonAction extends PDSAction {
             hostsStatus = destinationName != null ? MasterManager.getMI().getDestinationHostsStatus(destinationName)
                     : java.util.List.of();
         } catch (final Exception e) {
-            // Best-effort: e.g. the destination is currently off-line (no live HostProvider to query yet).
-            hostsStatus = java.util.List.of();
+            LOG.warn("Could not load live Host status for Destination " + destinationName, e);
+            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            return null;
         }
 
         try {
@@ -83,7 +87,7 @@ public class GetDestinationHostsStatusJsonAction extends PDSAction {
             response.setCharacterEncoding("UTF-8");
             MAPPER.writeValue(response.getWriter(), hostsStatus);
         } catch (final Exception e) {
-            // Response already committed or I/O error — nothing to recover
+            LOG.warn("Could not write live Host status for Destination " + destinationName, e);
         }
         return null;
     }

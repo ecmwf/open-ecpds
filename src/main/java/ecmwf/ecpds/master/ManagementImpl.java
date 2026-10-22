@@ -3398,7 +3398,19 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     public java.util.List<Map<String, Object>> getDestinationHostsStatus(final String destinationName)
             throws MasterException {
         final var monitor = new MonitorCall("getDestinationHostsStatus(" + destinationName + ")");
-        return monitor.done(master.getTransferScheduler().getDestinationThread(destinationName).getHostsStatus());
+        final var statuses = new ArrayList<Map<String, Object>>(
+                master.getTransferScheduler().getDestinationHostsStatus(destinationName));
+        try {
+            for (final Host host : master.getECpdsBase().getHostsByDestinationId(destinationName)) {
+                if (ecmwf.ecpds.master.transfer.HostOption.ACQUISITION.equals(host.getType())) {
+                    statuses.add(master.getHostConnectionLimits().status(host, destinationName));
+                }
+            }
+        } catch (final DataBaseException e) {
+            _log.warn("Could not load acquisition Host status for " + destinationName, e);
+            throw new MasterException("Could not load acquisition Host status for " + destinationName);
+        }
+        return monitor.done(statuses);
     }
 
     /**

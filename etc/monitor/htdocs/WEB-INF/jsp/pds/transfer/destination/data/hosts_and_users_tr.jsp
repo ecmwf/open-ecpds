@@ -43,8 +43,6 @@
 				<c:if test="${disseminationHostname eq ' ()'}">
 					<c:set var="disseminationHostname" value="" scope="page" />
 				</c:if>
-				<c:set var="disseminationHostBottleneck" value="${disseminationHost.name.maxConnections lt destination.maxConnections}" scope="page" />
-				<c:set var="disseminationHostOverProvisioned" value="${disseminationHost.name.maxConnections gt destination.maxConnections}" scope="page" />
 				<tr data-host-name="${disseminationHost.name.name}">
 					<td>
 						<c:if test="${disseminationHost.name.active}">
@@ -57,14 +55,8 @@
 								href="/do/transfer/host/${disseminationHost.name.name}"
 								style="text-decoration:line-through;color:var(--bs-secondary-color)">${disseminationHost.name.nickName}</a>${disseminationHostname}
 						</c:if>
-						<c:if test="${disseminationHostBottleneck}">
-							<i class="bi bi-exclamation-triangle-fill text-warning ms-1" style="font-size:0.75rem;cursor:pointer;"
-								title="This host allows at most ${disseminationHost.name.maxConnections} parallel connection(s), lower than the Destination's ${destination.maxConnections}. The effective limit for transfers through this host is the more restrictive of the two: ${disseminationHost.name.maxConnections}."></i>
-						</c:if>
-						<c:if test="${disseminationHostOverProvisioned}">
-							<i class="bi bi-info-circle-fill text-info ms-1" style="font-size:0.75rem;cursor:pointer;"
-								title="This host allows up to ${disseminationHost.name.maxConnections} parallel connection(s), higher than the Destination's ${destination.maxConnections}. The Destination's limit is more restrictive, so the effective limit for transfers through this host is capped at ${destination.maxConnections}; the extra capacity on this host is unused."></i>
-						</c:if>
+						<c:set var="connectionLimitHost" value="${disseminationHost.name}" />
+						<%@ include file="host_connection_limit.jsp" %>
 						<span class="host-live-status"></span>
 					</td>
 					<td>${disseminationHost.value}</td>
@@ -113,7 +105,7 @@
 				columnDefs:   [{ type: 'num', targets: 1 }<c:if test="${not empty ecpdsCanHandleHosts}">, { orderable: false, targets: -1 }</c:if>],
 				language:     { emptyTable: 'No matching records found.' }
 			});
-			refreshDisseminationHostsStatus();
+			<c:if test="${!destination.acquisition}">refreshDisseminationHostsStatus();</c:if>
 		});
 
 		function refreshDisseminationHostsStatus() {
@@ -127,12 +119,31 @@
 				})
 				.then(function (statuses) {
 					(statuses || []).forEach(function (status) {
+						if (status.type === 'acquisition') {
+							if (!document.getElementById('acquisitionHostsTable')) return;
+							var table = $('#acquisitionHostsTable').DataTable();
+							var acqRow = $(table.rows().nodes()).filter(function() {
+								return this.getAttribute('data-acq-host-id') === String(status.hostName);
+							}).find('.acq-retrieval-status');
+							var count = Number(status.activeConnections);
+							var tooltip = 'This Destination: ' + count + ' active file retrieval(s) through this Host. ';
+							if (status.sharedConnectionLimit) {
+								tooltip += 'Across all Destinations: ' + status.totalConnections
+									+ (status.maxConnections < 0 ? ' active (unlimited Host).' : ' / ' + status.maxConnections + ' Host slots in use.');
+							} else {
+								tooltip += 'The Host maximum applies separately per Destination.';
+							}
+							tooltip += ' Directory discovery is shown separately by the acquisition spinner.';
+							acqRow.attr('class', 'acq-retrieval-status badge rounded-pill ms-1 ' + (count > 0 ? 'text-bg-success' : 'text-bg-secondary'))
+								.attr('title', tooltip).text(count + ' retrieving');
+							return;
+						}
 						var row = document.querySelector('#disseminationHostsTable tr[data-host-name="' + status.hostName + '"] .host-live-status');
 						if (!row) { return; }
 						row.innerHTML = '';
 						var connBadge = document.createElement('span');
 						connBadge.className = 'badge rounded-pill text-bg-secondary ms-1';
-						connBadge.title = 'Connections this destination currently has open on this host (other destinations sharing this host are counted separately)';
+						connBadge.title = 'Active uploads for this Destination on this Host, not the combined count across Destinations. The Host connection limit may be shared; see the limit information icon.';
 						connBadge.textContent = status.activeConnections + ' active';
 						row.appendChild(connBadge);
 						if (status.selected) {
@@ -146,7 +157,14 @@
 						}
 					});
 				})
-				.catch(function () { /* best-effort widget: leave rows unchanged on any failure */ });
+				.catch(function (error) {
+					var pills = document.getElementById('acquisitionHostsTable')
+						? $($('#acquisitionHostsTable').DataTable().rows().nodes()).find('.acq-retrieval-status')
+						: $('.acq-retrieval-status');
+					pills.attr('class', 'acq-retrieval-status badge rounded-pill text-bg-warning ms-1')
+						.attr('title', 'Live retrieval counts are unavailable.').text('retrievals unavailable');
+					console.warn('Could not refresh Destination Host status', error);
+				});
 		}
 		</script>
 	</div>
@@ -216,6 +234,10 @@
 									</span>
 								</span>${acquisitionHostname}
 							</c:if>
+							<c:set var="connectionLimitHost" value="${acquisitionHost.name}" />
+							<%@ include file="host_connection_limit.jsp" %>
+							<span class="acq-retrieval-status badge rounded-pill text-bg-secondary ms-1"
+								title="Loading active file retrieval count">retrievals &hellip;</span>
 						</td>
 						<td>${acquisitionHost.value}</td>
 						<c:if test="${not empty ecpdsCanHandleHosts}">
@@ -276,6 +298,7 @@
 					row.find('.acq-run-btn').toggle(!running);
 				}
 				function _pollAcqHosts() {
+					refreshDisseminationHostsStatus();
 					$('#acquisitionHostsTable tr[data-acq-host-id]').each(function() {
 						var hostId = $(this).data('acq-host-id');
 						if (!hostId) return;
@@ -341,4 +364,3 @@
 		</c:if>
 
 </div>
-

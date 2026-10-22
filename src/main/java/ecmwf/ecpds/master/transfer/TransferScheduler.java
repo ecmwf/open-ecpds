@@ -137,6 +137,8 @@ public final class TransferScheduler extends MBeanScheduler {
     /** The _threads. */
     private final Map<String, DestinationThread> _threads = new ConcurrentHashMap<>();
 
+    private final Map<Long, HostConnectionLimits.Lease> _hostReservations = new ConcurrentHashMap<>();
+
     /** The _pendings. */
     private final Map<String, Integer> _pendings = new ConcurrentHashMap<>();
 
@@ -181,10 +183,18 @@ public final class TransferScheduler extends MBeanScheduler {
         final var destination = transfer.getDestination();
         final var thread = _threads.get(destination.getName());
         if (thread == null) {
+            releaseHostReservation(transfer);
             _log.warn("DestinationThread {} not found (completion notification ignored)", destination.getName());
         } else {
             thread.updateCount(transfer, false);
             thread.wakeup();
+        }
+    }
+
+    public void releaseHostReservation(final DataTransfer transfer) {
+        final var reservation = _hostReservations.remove(transfer.getId());
+        if (reservation != null) {
+            reservation.close();
         }
     }
 
@@ -318,6 +328,11 @@ public final class TransferScheduler extends MBeanScheduler {
             throw new MasterException("Destination " + destinationName + " is off line");
         }
         return thread;
+    }
+
+    public java.util.List<Map<String, Object>> getDestinationHostsStatus(final String destinationName) {
+        final var thread = _threads.get(destinationName);
+        return thread == null ? java.util.List.of() : thread.getHostsStatus();
     }
 
     /**
@@ -3213,6 +3228,9 @@ public final class TransferScheduler extends MBeanScheduler {
          *            the start
          */
         void updateCount(final DataTransfer transfer, final boolean start) {
+            if (!start) {
+                releaseHostReservation(transfer);
+            }
             final var code = transfer.getStatusCode();
             final var stop = StatusFactory.STOP.equals(code) || StatusFactory.FAIL.equals(code);
             final var retry = StatusFactory.RETR.equals(code) || StatusFactory.INTR.equals(code);
@@ -3723,18 +3741,31 @@ public final class TransferScheduler extends MBeanScheduler {
             }
             if (StatusFactory.WAIT.equals(_currentTransfer.getStatusCode())) {
                 _destinationStep = DestinationStep.DESTINATION_STEP_PROCESS_WAIT;
-                _log.info("Processing DataTransfer " + _currentTransfer.getId() + " (startCount="
-                        + _currentTransfer.getStartCount() + ",retryTime="
-                        + Format.formatTime(_currentTransfer.getRetryTime().getTime()) + ")");
-                _currentTransfer.setStatusCode(StatusFactory.EXEC);
-                _currentTransfer.setFinishTime(null);
-                _currentTransfer.setComment(null);
-                _currentTransfer.setDuration(0);
-                _currentTransfer.setSent(0);
-                _currentTransfer.setPutTime(null);
                 var updateCount = false;
+                HostConnectionLimits.Lease reservation = null;
+                var handedOff = false;
                 try {
                     final var host = _provider.getHost();
+                    reservation = MASTER.getHostConnectionLimits().acquire(host, _destination.getName());
+                    if (reservation == null) {
+                        _log.debug("Delay dissemination {}: Host {} connection limit reached", _currentTransfer.getId(),
+                                host.getName());
+                        return NEXT_STEP_DELAY;
+                    }
+                    if (_hostReservations.putIfAbsent(_currentTransfer.getId(), reservation) != null) {
+                        _log.warn("DataTransfer {} already has a Host connection reservation",
+                                _currentTransfer.getId());
+                        return NEXT_STEP_DELAY;
+                    }
+                    _log.info("Processing DataTransfer " + _currentTransfer.getId() + " (startCount="
+                            + _currentTransfer.getStartCount() + ",retryTime="
+                            + Format.formatTime(_currentTransfer.getRetryTime().getTime()) + ")");
+                    _currentTransfer.setStatusCode(StatusFactory.EXEC);
+                    _currentTransfer.setFinishTime(null);
+                    _currentTransfer.setComment(null);
+                    _currentTransfer.setDuration(0);
+                    _currentTransfer.setSent(0);
+                    _currentTransfer.setPutTime(null);
                     _currentTransfer.setHost(host);
                     _currentTransfer.setHostName(host.getName());
                     _currentTransfer.setStartCount(_currentTransfer.getStartCount() + 1);
@@ -3806,6 +3837,7 @@ public final class TransferScheduler extends MBeanScheduler {
                         MASTER.removeDataTransfer(_currentTransfer);
                         return NEXT_STEP_DELAY;
                     }
+                    handedOff = true;
                     removeValue(_currentTransfer);
                     return NEXT_STEP_CONTINUE;
                 } catch (final NoHostException e) {
@@ -3823,6 +3855,11 @@ public final class TransferScheduler extends MBeanScheduler {
                     }
                     MASTER.addTransferHistory(_currentTransfer);
                     _update(_currentTransfer, true);
+                } finally {
+                    if (!handedOff && reservation != null) {
+                        _hostReservations.remove(_currentTransfer.getId(), reservation);
+                        reservation.close();
+                    }
                 }
             }
             return NEXT_STEP_DELAY;

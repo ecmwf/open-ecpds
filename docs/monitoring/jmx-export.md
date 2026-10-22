@@ -103,6 +103,13 @@ configurations are provided at `etc/master/conf/jmx_exporter.yml`,
 mapping to expose only the metrics needed. Restrict access to the metrics port to
 Prometheus and other trusted clients.
 
+All shipped exporter configurations exclude `Transfer:*` MBeans to prevent a new
+set of time series being created for every transfer ID. This affects Prometheus
+only: per-transfer MBeans remain available through Hawtio/Jolokia. Destination
+metrics and the existing ECPlugin metric names are preserved. Deploy the updated
+configuration to each service. Previously collected per-transfer series remain in Prometheus until its
+retention policy removes them.
+
 The Master configuration exports per-Destination MBean attributes as one metric per
 attribute, with the Destination name in the `destination` label. For example:
 
