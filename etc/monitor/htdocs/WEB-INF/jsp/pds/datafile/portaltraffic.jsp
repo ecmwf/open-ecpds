@@ -104,7 +104,7 @@ const ptTotalConn = ptConnections.reduce((a,b)=>a+b,0);
 const ptPeakIn   = Math.max(...ptRateIn);
 const ptPeakOut  = Math.max(...ptRateOut);
 
-var _ptChartConn = null, _ptChartBw = null, _ptObsTheme = null, _ptPeriod = 0;
+var _ptChartConn = null, _ptChartBw = null, _ptChartVol = null, _ptObsTheme = null, _ptPeriod = 0;
 
 function ptGetThemeColors() {
   var s = getComputedStyle(document.documentElement);
@@ -167,12 +167,15 @@ function ptUpdateStats() {
 function ptBuildCharts() {
   if (_ptChartConn) { _ptChartConn.destroy(); _ptChartConn = null; }
   if (_ptChartBw)   { _ptChartBw.destroy();   _ptChartBw   = null; }
+  if (_ptChartVol)  { _ptChartVol.destroy();  _ptChartVol  = null; }
   var idx = ptGetPeriodIndices();
   if (_ptReversed) idx = idx.slice().reverse();
   var labels = idx.map(function(i) { return ptTimes[i]; });
   var conn   = idx.map(function(i) { return ptConnections[i]; });
   var rIn    = idx.map(function(i) { return ptRateIn[i]; });
   var rOut   = idx.map(function(i) { return ptRateOut[i]; });
+  var vIn    = idx.map(function(i) { return ptBytesIn[i]; });
+  var vOut   = idx.map(function(i) { return ptBytesOut[i]; });
   var theme = ptGetThemeColors();
   _ptChartConn = new Chart(document.getElementById('ptConnChart'), {
     type: 'bar',
@@ -196,6 +199,19 @@ function ptBuildCharts() {
       scales:{ x:{ticks:{color:theme.bodyColor},grid:{color:theme.borderColor}},
                y:{beginAtZero:document.getElementById('ptRateAxisZero').checked,title:{display:true,text:'Mbps',color:theme.bodyColor},
                   ticks:{color:theme.bodyColor},grid:{color:theme.borderColor}} }}
+  });
+  _ptChartVol = new Chart(document.getElementById('ptVolChart'), {
+    type: 'bar',
+    data: { labels: labels, datasets: [
+      { label:'Upload volume',   data:vIn,  backgroundColor:'rgba(253,126,20,0.55)', borderColor:'#fd7e14', borderWidth:1 },
+      { label:'Download volume', data:vOut, backgroundColor:'rgba(25,135,84,0.55)',  borderColor:'#198754', borderWidth:1 }
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+      plugins:{ legend:{labels:{color:theme.bodyColor}},
+                tooltip:{callbacks:{label:function(c) { return c.dataset.label + ': ' + ptFmtBytes(c.parsed.y); }}} },
+      scales:{ x:{ticks:{color:theme.bodyColor},grid:{color:theme.borderColor}},
+               y:{beginAtZero:true,title:{display:true,text:'Volume',color:theme.bodyColor},
+                  ticks:{color:theme.bodyColor,callback:function(v) { return ptFmtBytes(v); }},grid:{color:theme.borderColor}} }}
   });
 }
 
@@ -245,7 +261,7 @@ function ptSetRateAxisZero(enabled) {
     var t = document.documentElement.getAttribute('data-bs-theme') || 'light';
     if (t === _ptObsTheme) return;
     _ptObsTheme = t;
-    if (_ptChartConn || _ptChartBw) ptBuildCharts();
+    if (_ptChartConn || _ptChartBw || _ptChartVol) ptBuildCharts();
   }).observe(document.documentElement, { attributes:true, attributeFilter:['data-bs-theme'] });
 });
 </script>
@@ -314,6 +330,11 @@ function ptSetRateAxisZero(enabled) {
     <div class="col-12">
       <div class="p-2 border rounded" style="position:relative; height:280px;">
         <canvas id="ptBwChart"></canvas>
+      </div>
+    </div>
+    <div class="col-12">
+      <div class="p-2 border rounded" style="position:relative; height:280px;">
+        <canvas id="ptVolChart" aria-label="Daily upload and download volumes" role="img"></canvas>
       </div>
     </div>
   </div>

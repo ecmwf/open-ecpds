@@ -45,6 +45,8 @@ Shows throughput charts per Data Mover and per destination over a configurable t
 
 Displays upload and download activity through the Data Portal, broken down by Data User and destination. Helps identify heavy users and quota candidates.
 
+Chart view shows daily connections, upload/download rates in Mbps, and upload/download volumes for the selected period. The same charts are available for an individual Data User's Portal Traffic page.
+
 
 ![Portal Traffic](img/portal-traffic.png)
 
