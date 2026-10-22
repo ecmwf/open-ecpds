@@ -3136,6 +3136,12 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     public ECproxyCallback get(final OutputStream out, final Host host, final String source, final long remotePosn,
             final DataFile dataFile) throws ECtransException {
+        return get(out, host, source, remotePosn, dataFile,
+                dataFile == null ? null : dataFile.getRetrievalWeatherContext());
+    }
+
+    ECproxyCallback get(final OutputStream out, final Host host, final String source, final long remotePosn,
+            final DataFile dataFile, final DataFile.RetrievalWeatherContext context) throws ECtransException {
         final boolean deleteOriginal;
         if (dataFile != null) {
             deleteOriginal = dataFile.getDeleteOriginal();
@@ -3143,11 +3149,23 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             deleteOriginal = false;
         }
         final var ecproxyCallback = new ECproxyCallback(new ECaccessTicket(ECaccessTicket.OUTPUT), host.getData(), out);
+        if (context != null && HostOption.ACQUISITION.equals(host.getType()) && weatherNegotiationScheduler != null) {
+            try {
+                ecproxyCallback.weather = weatherNegotiationScheduler.capture.start(context.transferId(),
+                        context.destination(), host.getName() == null && dataFile != null
+                                ? dataFile.getHostForAcquisitionName() : host.getName(),
+                        host.getHost(), host.getTransferMethodName(), "ACQUISITION");
+            } catch (final RuntimeException e) {
+                _log.warn("Network Weather could not freeze retrieval scope for transfer {}", context.transferId(), e);
+            }
+        }
         ecproxyCallback.setByteCounter(
                 bytes -> trafficAccounting.add(host.getType() != null ? host.getType() : HostOption.PROXY, bytes));
         new ECtransContainer(new MoverProvider(new StreamRepository(host, out)), false).asyncExec(
                 new ECtransGet(source, null, remotePosn, deleteOriginal), null, host.getECUserName(),
-                host.getName() + "@" + host.getTransferMethodName(), null, null, ecproxyCallback);
+                host.getName() + "@" + host.getTransferMethodName(), null,
+                HostOption.ACQUISITION.equals(host.getType()) ? new Options("ectransAction=get", ";\n") : null,
+                ecproxyCallback);
         return ecproxyCallback;
     }
 
@@ -4353,6 +4371,39 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * The Class ECproxyCallback.
      */
     public final class ECproxyCallback extends DefaultCallback {
+        private ecmwf.ecpds.master.weather.WeatherCapture.Execution weather;
+
+        @Override
+        public void connected(final TransferModule module) {
+            if (weather != null) {
+                final var statistics = module.getAttribute(ClientSocketStatistics.class);
+                if (statistics != null)
+                    statistics.setSnapshotListener(weather::supplement);
+            }
+        }
+
+        @Override
+        public void executionFinished(final TransferModule module, final boolean successful) {
+            if (weather == null)
+                return;
+            try {
+                final var statistics = module == null ? null : module.getAttribute(ClientSocketStatistics.class);
+                final var cancelled = !successful && module != null
+                        && Boolean.TRUE.equals(module.getAttribute("ectrans.cancellationRequested"));
+                weather.finish(
+                        cancelled ? ecmwf.ecpds.master.weather.WeatherObservation.Outcome.CANCELLED
+                                : !successful ? ecmwf.ecpds.master.weather.WeatherObservation.Outcome.FAILURE
+                                        : module == null || module.getAvailable()
+                                                ? ecmwf.ecpds.master.weather.WeatherObservation.Outcome.UNKNOWN
+                                                : ecmwf.ecpds.master.weather.WeatherObservation.Outcome.SUCCESS,
+                        cancelled ? ecmwf.ecpds.master.weather.WeatherObservation.Category.CANCELLED
+                                : ecmwf.ecpds.master.weather.WeatherObservation.Category.UNCLASSIFIED,
+                        statistics == null ? null : statistics.snapshot());
+            } catch (final RuntimeException e) {
+                _log.warn("Network Weather retrieval capture failed; retrieval processing continues", e);
+            }
+        }
+
         /** The _ticket. */
         private final ECaccessTicket _ticket;
 

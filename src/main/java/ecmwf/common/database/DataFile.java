@@ -177,6 +177,24 @@ public class DataFile extends DataBaseObject {
         setId(id);
     }
 
+    /** Frozen retrieval attribution sent to the Mover; not mapped to a database column. */
+    public record RetrievalWeatherContext(long transferId, String destination) implements java.io.Serializable {
+        public RetrievalWeatherContext {
+            if (transferId <= 0 || destination == null || destination.isBlank())
+                throw new IllegalArgumentException("Invalid retrieval weather context");
+        }
+    }
+
+    private RetrievalWeatherContext retrievalWeatherContext;
+
+    public RetrievalWeatherContext getRetrievalWeatherContext() {
+        return retrievalWeatherContext;
+    }
+
+    public void setRetrievalWeatherContext(RetrievalWeatherContext context) {
+        retrievalWeatherContext = context;
+    }
+
     /**
      * Gets the host for acquisition name.
      *

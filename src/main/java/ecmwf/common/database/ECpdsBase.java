@@ -5966,7 +5966,7 @@ public final class ECpdsBase extends DataBase {
         return list;
     }
 
-    record WeatherHost(String name, String target, String method, String nickname, String group) {
+    record WeatherHost(String name, String target, String method, String nickname, String group, String type) {
     }
 
     record WeatherUpload(long time, long id, String target, long bytes) {
@@ -5996,7 +5996,8 @@ public final class ECpdsBase extends DataBase {
         try (final var rows = executeSelect("ECpdsBase", name, parameters)) {
             while (rows.next()) {
                 hosts.add(new WeatherHost(rows.getString("HOS_NAME"), rows.getString("HOS_HOST"),
-                        rows.getString("TME_NAME"), rows.getString("HOS_NICKNAME"), rows.getString("TRG_NAME")));
+                        rows.getString("TME_NAME"), rows.getString("HOS_NICKNAME"), rows.getString("TRG_NAME"),
+                        rows.getString("HOS_TYPE")));
             }
             logSqlRequest(name, hosts.size());
             return List.copyOf(hosts);
@@ -6009,6 +6010,22 @@ public final class ECpdsBase extends DataBase {
     private static String weatherHostList(final List<String> hosts) {
         return hosts.stream().map(host -> "'" + escapeSql(host) + "'")
                 .collect(java.util.stream.Collectors.joining(","));
+    }
+
+    List<WeatherUpload> getWeatherRetrievalHistory(final String host, final long since, final long until,
+            final int limit) throws DataBaseException {
+        final var retrievals = new ArrayList<WeatherUpload>();
+        try (final var rows = executeSelect("ECpdsBase", "getWeatherRetrievalHistory",
+                new String[] { "host=" + host, "since=" + since, "until=" + until, "limit=" + limit })) {
+            while (rows.next())
+                retrievals.add(new WeatherUpload(rows.getLong("DAF_GET_TIME"), rows.getLong("DAF_ID"), host,
+                        rows.getLong("DAF_SIZE")));
+            logSqlRequest("getWeatherRetrievalHistory", retrievals.size());
+            return List.copyOf(retrievals);
+        } catch (SQLException | IOException e) {
+            _log.warn("getWeatherRetrievalHistory", e);
+            throw new DataBaseException("getWeatherRetrievalHistory", e);
+        }
     }
 
     List<WeatherUpload> getWeatherUploadHistory(final long since, final long until, final long cursorTime,

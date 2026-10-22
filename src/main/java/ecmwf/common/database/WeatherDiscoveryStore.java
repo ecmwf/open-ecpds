@@ -27,9 +27,8 @@ public final class WeatherDiscoveryStore {
         for (final var host : database.getWeatherSuccessfulHosts(protocol, now - days * 86400_000L, now,
                 (long) limits.maxHostChoices() + 1)) {
             try {
-                candidates
-                        .add(new Candidate(new Path(source, host.name(), host.target(), host.method(), "DISSEMINATION"),
-                                host.nickname(), host.group()));
+                candidates.add(new Candidate(new Path(source, host.name(), host.target(), host.method(),
+                        host.type().toUpperCase(Locale.ROOT)), host.nickname(), host.group()));
             } catch (IllegalArgumentException e) {
                 throw new DataBaseException("Cannot suggest Host " + host.name() + ": " + e.getMessage());
             }
@@ -47,14 +46,17 @@ public final class WeatherDiscoveryStore {
         }
     }
 
-    public record Progress(long uploadTime, long uploadId, String destination) implements java.io.Serializable {
+    public record Progress(long uploadTime, long uploadId, String destination, String retrievalHost)
+            implements java.io.Serializable {
         public Progress {
-            if (uploadTime < 0 || uploadId < -1 || destination == null || destination.length() > 255)
+            retrievalHost = retrievalHost == null ? "" : retrievalHost;
+            if (uploadTime < 0 || uploadId < -1 || destination == null || destination.length() > 255
+                    || retrievalHost.length() > 32)
                 throw new IllegalArgumentException("Invalid discovery cursor");
         }
 
         public static Progress empty() {
-            return new Progress(0, -1, "");
+            return new Progress(0, -1, "", "");
         }
     }
 
@@ -71,10 +73,17 @@ public final class WeatherDiscoveryStore {
         return read(approved, cursor, System.currentTimeMillis(), deadline);
     }
 
-    public Set<Path> candidates(Set<Path> approved, Map<String, String> sourceGroups) throws DataBaseException {
+    public record RejectedHost(String hostId, String reason) implements java.io.Serializable {
+    }
+
+    public record Candidates(Set<Path> paths, List<RejectedHost> rejectedHosts) {
+    }
+
+    public Candidates candidates(Set<Path> approved, Map<String, String> sourceGroups) throws DataBaseException {
         final var limits = WeatherLimits.configured();
         final long deadline = System.nanoTime() + 30_000_000_000L;
         final var candidates = new LinkedHashSet<Path>();
+        final var rejected = new TreeMap<String, RejectedHost>();
         if (approved.size() > limits.maxCandidates())
             throw new DataBaseException("Approved paths exceed the configured candidate limit");
         final var byHost = approved.stream().collect(java.util.stream.Collectors.groupingBy(Path::hostId));
@@ -85,29 +94,40 @@ public final class WeatherDiscoveryStore {
             final var batch = ids.subList(offset, Math.min(ids.size(), offset + 500));
             for (final var host : database.getWeatherApprovedHosts(batch)) {
                 for (final var path : byHost.getOrDefault(host.name(), List.of())) {
-                    if (path.configuredTarget().equals(host.target()) && path.protocol().equals(host.method()))
+                    if (path.configuredTarget().equals(host.target()) && path.protocol().equals(host.method())
+                            && path.leg().equals(host.type().toUpperCase(Locale.ROOT)))
                         candidates.add(path);
                 }
             }
         }
         for (final var source : sourceGroups.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
+            new Path(source.getKey(), "validation", "validation", "validation", "DISSEMINATION");
             if (System.nanoTime() > deadline)
                 throw new DataBaseException("Candidate discovery exhausted its 30-second budget");
-            for (final var host : database.getWeatherGroupHosts(source.getValue(), (long) limits.maxCandidates() + 1)) {
+            final var hosts = database.getWeatherGroupHosts(source.getValue(), (long) limits.maxCandidates() + 1);
+            if (hosts.size() > limits.maxCandidates())
+                throw new DataBaseException("Approved group exceeds the configured " + limits.maxCandidates()
+                        + " Host discovery limit; narrow the scope or raise maxCandidates");
+            for (final var host : hosts) {
                 try {
-                    candidates
-                            .add(new Path(source.getKey(), host.name(), host.target(), host.method(), "DISSEMINATION"));
+                    candidates.add(new Path(source.getKey(), host.name(), host.target(), host.method(),
+                            host.type().toUpperCase(Locale.ROOT)));
                 } catch (IllegalArgumentException e) {
-                    throw new DataBaseException("Cannot discover Network Weather candidates for source "
-                            + source.getKey() + ", transfer group " + source.getValue() + ": Host " + host.name()
-                            + " has an invalid configuration (" + e.getMessage() + ")");
+                    final var reason = "Invalid configuredTarget".equals(e.getMessage())
+                            ? "Configured hostname/address "
+                                    + (host.target() == null || host.target().isBlank() ? "is empty"
+                                            : host.target().length() > 255 ? "exceeds 255 characters"
+                                                    : "contains a control character (such as a tab or newline)")
+                            : e.getMessage();
+                    rejected.putIfAbsent(host.name(), new RejectedHost(host.name(), reason));
+                    continue;
                 }
                 if (candidates.size() > limits.maxCandidates())
                     throw new DataBaseException("Approved groups exceed the configured " + limits.maxCandidates()
                             + " candidate limit; narrow the scope or raise the limit");
             }
         }
-        return Set.copyOf(candidates);
+        return new Candidates(Set.copyOf(candidates), List.copyOf(rejected.values()));
     }
 
     private Result read(Set<Path> approved, Progress cursor, long now, long deadline) throws DataBaseException {
@@ -115,15 +135,44 @@ public final class WeatherDiscoveryStore {
             return new Result(Map.of(), 0, 0, false, Progress.empty());
         final long since = now - 7L * 86400_000;
         final var signals = new HashMap<String, Signal>();
-        final var hosts = approved.stream().map(Path::hostId).collect(java.util.stream.Collectors.toSet());
+        final var hosts = approved.stream().filter(p -> "DISSEMINATION".equals(p.leg())).map(Path::hostId)
+                .collect(java.util.stream.Collectors.toSet());
+        final var acquisitionHosts = approved.stream().filter(p -> "ACQUISITION".equals(p.leg())).map(Path::hostId)
+                .distinct().sorted().toList();
         final var targets = new HashMap<String, Set<String>>();
         for (final var path : approved) {
-            targets.computeIfAbsent(path.configuredTarget(), _ -> new HashSet<>()).add(path.hostId());
+            if ("DISSEMINATION".equals(path.leg()))
+                targets.computeIfAbsent(path.configuredTarget(), _ -> new HashSet<>()).add(path.hostId());
         }
         int rows = 0, pages = 0;
         long time = Math.max(since, cursor.uploadTime()), id = time == cursor.uploadTime() ? cursor.uploadId() : -1;
-        boolean partial = cursor.uploadTime() > since || !cursor.destination().isEmpty(), uploadComplete = false;
-        for (int page = 0; page < 10 && System.nanoTime() < deadline; page++) {
+        boolean partial = cursor.uploadTime() > since || !cursor.destination().isEmpty()
+                || !cursor.retrievalHost().isEmpty(), uploadComplete = hosts.isEmpty();
+        String retrievalCursor = cursor.retrievalHost();
+        int retrievalHostsRead = 0;
+        for (final var host : acquisitionHosts) {
+            if (host.compareTo(cursor.retrievalHost()) <= 0)
+                continue;
+            if (retrievalHostsRead == 100 || System.nanoTime() >= deadline) {
+                partial = true;
+                break;
+            }
+            final var retrievals = database.getWeatherRetrievalHistory(host, since, now, 50);
+            for (final var retrieval : retrievals) {
+                signals.put(host, signals.getOrDefault(host, new Signal(0, 0, 0, 0)).plus(1,
+                        Math.max(0, retrieval.bytes()), 0, retrieval.time()));
+            }
+            rows += retrievals.size();
+            pages++;
+            retrievalHostsRead++;
+            retrievalCursor = host;
+            if (retrievals.size() == 50)
+                partial = true;
+        }
+        final boolean retrievalComplete = acquisitionHosts.isEmpty()
+                || retrievalCursor.compareTo(acquisitionHosts.getLast()) >= 0;
+        for (int page = 0; !hosts.isEmpty() && page < 10 && rows + 500 + 101 <= 10_000
+                && System.nanoTime() < deadline; page++) {
             int count = 0;
             for (final var upload : database.getWeatherUploadHistory(since, now, time, id)) {
                 count++;
@@ -144,7 +193,7 @@ public final class WeatherDiscoveryStore {
                 partial = true;
         }
         final var cohort = new ArrayList<String>();
-        final var orderedHosts = hosts.stream().sorted().toList();
+        final var orderedHosts = approved.stream().map(Path::hostId).distinct().sorted().toList();
         final boolean destinationsRead = System.nanoTime() < deadline;
         if (destinationsRead) {
             cohort.addAll(database.getWeatherDestinations(orderedHosts, cursor.destination()));
@@ -162,7 +211,7 @@ public final class WeatherDiscoveryStore {
                 rows++;
                 count++;
                 final var host = transfer.host();
-                if (hosts.contains(host)) {
+                if (hosts.contains(host) || acquisitionHosts.contains(host)) {
                     signals.put(host, signals.getOrDefault(host, new Signal(0, 0, 0, 0)).plus(0, 0,
                             transfer.error() ? 1 : 0, transfer.time()));
                 }
@@ -172,8 +221,9 @@ public final class WeatherDiscoveryStore {
             pages++;
         }
         final boolean destinationsComplete = destinationsRead && visited == cohort.size();
-        partial |= !uploadComplete || !destinationsComplete || System.nanoTime() >= deadline;
-        return new Result(Map.copyOf(signals), rows, pages, partial, new Progress(uploadComplete ? 0 : time,
-                uploadComplete ? -1 : id, destinationsComplete ? "" : destinationCursor));
+        partial |= !uploadComplete || !destinationsComplete || !retrievalComplete || System.nanoTime() >= deadline;
+        return new Result(Map.copyOf(signals), rows, pages, partial,
+                new Progress(uploadComplete ? 0 : time, uploadComplete ? -1 : id,
+                        destinationsComplete ? "" : destinationCursor, retrievalComplete ? "" : retrievalCursor));
     }
 }

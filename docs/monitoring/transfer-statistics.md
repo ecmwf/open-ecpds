@@ -1,8 +1,11 @@
 # Transfer Network Statistics
 
-OpenECPDS captures per-connection TCP socket statistics for every file transfer. These
-are surfaced in the monitoring portal on the transfer detail page (`/do/transfer/data/<id>`)
-under the **Network Statistics** card, and are stored persistently for later inspection.
+OpenECPDS captures available per-connection TCP socket statistics for file transfers.
+The transfer detail page (`/do/transfer/data/<id>`) separates recorded measurements into
+**Retrieval socket statistics**, **Dissemination socket statistics** and
+**Socket statistics - unidentified leg**. Only nonempty sections appear.
+The leg comes from recorded execution provenance, never from addresses or byte direction.
+Legacy rows and rows whose provenance cannot be read remain unidentified.
 
 ---
 
@@ -10,14 +13,20 @@ under the **Network Statistics** card, and are stored persistently for later ins
 
 At the end of each TCP connection used during a transfer, OpenECPDS reads OS-level socket
 diagnostics — equivalent to the Linux `tcp_info` structure — and persists one record per
-connection. This happens automatically for every connection
-opened by the transfer module (FTP, SFTP, WebDAV, S3, HTTP, …), requiring no manual
-instrumentation.
+connection when supported and enabled. Acquisition payload GETs request the same
+socket diagnostics as dissemination; listing and size queries do not enable them.
+The Host's `ectrans.socketStatistics` setting is respected (default `true`).
+Network Weather consumes immutable snapshots of these measurements and accepts late
+socket-close supplements. Retrieval measurements are persisted through active
+Network Weather collection for selected acquisition paths; enabling the socket setting
+alone does not activate collection or select a path.
 
 !!! note
     Statistics are only available if the Data Mover running the transfer supports
-    socket-level introspection. All built-in transfer modules do. Custom or legacy
-    modules may not populate these records.
+    socket-level introspection and the module instruments its sockets. Linux `ss`
+    must be available. Module-specific limitations remain; for example FTP socket
+    statistics require keep-alive to be disabled. Missing measurements indicate no
+    socket coverage, not zero RTT or a healthy connection.
 
 ---
 
@@ -35,14 +44,16 @@ Many transfer protocols open more than one TCP socket during a single transfer:
 - **Control + data channels** — FTP uses separate sockets for commands and file data;
   only the data channel is instrumented.
 
-All connections belonging to the same sending attempt share the same *requeue count*
-and appear as a single group in the portal.
+Connections are grouped by the recorded attempt index within their leg's section.
+Each section has independent navigation, timelines and totals.
 
 ### Multiple Sending Attempts (Requeues)
 
 If a transfer fails completely and is requeued — either automatically by the scheduler
 or manually by an operator — each restart is a new attempt. The portal labels these
-**Attempt 1, Attempt 2, …** based on the requeue history counter. An orange badge in
+**Attempt N** based on the stored attempt index, not a count of operator requeues.
+Indices can have gaps because they are shared across recorded transfer executions.
+An orange badge in
 the card header indicates how many attempts are present.
 
 ---
@@ -52,7 +63,7 @@ the card header indicates how many attempts are present.
 | Metric | Description |
 |--------|-------------|
 | **Bytes Sent** | Cumulative TCP payload bytes transmitted on this socket, including protocol framing and overhead. Usually larger than the raw file size. |
-| **Bytes Received** | Cumulative bytes received on this socket (ACKs, responses, control data). |
+| **Bytes Received** | Cumulative TCP payload bytes received on this socket, including retrieved data and protocol responses. |
 | **Delivery Rate** | Peak TCP goodput measured by the kernel on this socket (bytes/sec). Reflects the sustained network-layer throughput, not application-level speed. |
 | **RTT** | Smoothed round-trip time as reported by the kernel. High RTT indicates distant or congested network paths. |
 | **Retransmits** | TCP segments retransmitted due to loss or timeout. Any non-zero value suggests congestion or packet loss on the path to the destination. |
@@ -98,13 +109,17 @@ delivery rate, and may span a much longer time window.
 
 ## Monitoring Portal
 
-In the transfer detail page, the **Network Statistics** card provides:
+In the transfer detail page, each socket-statistics section provides:
 
 - A **count badge** showing the total number of TCP connections recorded
-- An **attempts badge** (orange) when more than one sending attempt is present
+- An **attempts badge** (orange) when more than one recorded attempt is present
 - An **ⓘ info button** that expands an explanation panel inline
 - A **collapsible table** grouped by attempt, showing one row per connection
 
-The card is only shown when at least one statistics record exists for the transfer.
-If the card is absent, the transfer module either did not support socket introspection,
-or the statistics were already purged by the nightly maintenance job.
+Average throughput uses received bytes for retrieval and sent bytes for dissemination,
+converted to bits per second over the attempt's socket time span. It is omitted when
+the leg is unidentified; sent/received totals remain visible separately.
+
+A section is only shown when at least one statistics record exists for that leg.
+Absent sections can mean disabled capture, unsupported introspection, no selected
+Network Weather retrieval path, no measurements yet, or already-purged records.

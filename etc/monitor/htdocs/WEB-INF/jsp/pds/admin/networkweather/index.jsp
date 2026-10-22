@@ -5,7 +5,7 @@
      style="background:rgba(13,202,240,0.07);border-left:4px solid #0dcaf0;font-size:0.85rem;color:var(--bs-body-color);">
     <div class="d-flex align-items-start gap-2">
         <i class="bi bi-cloud-lightning-rain text-info flex-shrink-0 mt-1"></i>
-        <span>Follow recent delivery conditions between Data Movers and dissemination Hosts.
+        <span>Follow recent delivery and retrieval conditions between Data Movers and dissemination/acquisition Hosts.
         Collection and optional probes are off by default.</span>
         <a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('nwGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Configuration Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide</a>
     </div>
@@ -22,6 +22,19 @@
 </c:if>
 
 <c:if test="${nwLoaded}">
+<c:if test="${not empty nwRejectedHosts}">
+    <div class="alert alert-warning py-2" role="status">
+        <strong><c:out value="${nwRejectedHosts.size()}"/> invalid Host(s) rejected.</strong>
+        Valid Hosts continue to be processed. This applies to Network Weather candidate discovery only.
+        <details class="mt-1"><summary>Rejected Host IDs and reasons</summary>
+            <ul class="mb-0">
+                <c:forEach var="rejected" items="${nwRejectedHosts}">
+                    <li>Host <c:out value="${rejected.id}"/>: <c:out value="${rejected.reason}"/></li>
+                </c:forEach>
+            </ul>
+        </details>
+    </div>
+</c:if>
 <script type="application/json" id="nwChoices">${nwChoices}</script>
 
 <%-- Shared automation form: its fields live in the Automatic selection and Probes tabs (form attribute). --%>
@@ -103,11 +116,47 @@
                 <dt class="col-sm-3">Selection mode</dt>
                 <dd class="col-sm-9"><c:choose><c:when test="${nwAutomatic}">Automatic</c:when><c:otherwise>Manual</c:otherwise></c:choose></dd>
                 <dt class="col-sm-3">Selected paths</dt><dd class="col-sm-9"><c:out value="${nwCount}"/> / <c:out value="${nwMaxSelectedPaths}"/></dd>
-                <dt class="col-sm-3">Last saved</dt><dd class="col-sm-9"><c:out value="${nwUpdatedAt}"/> by <c:out value="${nwUpdatedBy}"/></dd>
+                <dt class="col-sm-3">Last saved</dt><dd class="col-sm-9"><c:out value="${nwUpdatedAt}"/><c:if test="${not empty nwUpdatedBy}"> by <c:out value="${nwUpdatedBy}"/></c:if></dd>
             </dl>
             <c:if test="${not empty nwActivationBlocker}">
                 <div class="alert alert-warning mb-2" id="nwActivationBlocker" role="status">
                     <strong>Activation blocked:</strong> <c:out value="${nwActivationBlocker}"/>
+                    <c:if test="${nwCount == 0}">
+                        <div class="mt-1">
+                            <c:choose>
+                                <c:when test="${nwAutomatic}">
+                                    Open <button type="button" class="btn btn-link p-0 align-baseline"
+                                        data-nw-open-tab="nw-tab-auto">Automatic selection</button>.
+                                    <c:choose>
+                                        <c:when test="${not empty nwSourceGroups or not empty nwApproved}">
+                                            Candidate scopes are already saved, but automatic reassessment has not
+                                            selected any monitoring paths. Individual Approved candidates are not
+                                            required when using a Source / transfer group.
+                                            Click Request reassessment rather than waiting for the daily run.
+                                            The scheduler normally checks every 60 seconds; allow about a minute,
+                                            then reload to see the result in the Status card.
+                                            If no paths are selected, check the Status error, rejected Hosts and exclusions,
+                                            and confirm the saved groups contain active dissemination or acquisition Hosts.
+                                        </c:when>
+                                        <c:otherwise>
+                                            Add a Source / transfer group or an approved candidate, then Save.
+                                            Click Request reassessment rather than waiting for the daily run.
+                                            The scheduler normally checks every 60 seconds; allow about a minute,
+                                            then reload to check the result in the Status card.
+                                        </c:otherwise>
+                                    </c:choose>
+                                    Return to Overview once Selected paths is greater than zero.
+                                    Collection can then be activated if the other readiness checks pass.
+                                </c:when>
+                                <c:otherwise>
+                                    Open <button type="button" class="btn btn-link p-0 align-baseline"
+                                        data-nw-open-tab="nw-tab-manual">Manual scope</button>,
+                                    choose a Source and dissemination or acquisition Host, click Add, then Save.
+                                    Return to Overview to activate collection.
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+                    </c:if>
                 </div>
             </c:if>
         </div>
@@ -206,7 +255,7 @@
     <form method="post" action="/do/admin/networkweather" class="card shadow-sm mb-3">
         <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-signpost-split text-info"></i><span class="fw-semibold">Manual scope</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-manual" aria-expanded="false" aria-controls="nwInfo-manual" title="About this section"><i class="bi bi-info-circle"></i></button></div>
         <div class="collapse" id="nwInfo-manual"><div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">Fixed list of paths followed when <strong>automatic selection is off</strong>.
- A path is a Data Mover (source), a dissemination Host and its transfer method.
+ A path is a Data Mover (source), a dissemination or acquisition Host, its transfer method and type.
  <ul class="mb-0"><li>Select a source and a Host, then press <strong>Add</strong>; the target and method come from the Host.</li>
  <li>At most <c:out value="${nwMaxSelectedPaths}"/> paths across <c:out value="${nwMaxSources}"/> sources.</li>
  <li>Saving deactivates collection until it is activated again from the Overview tab.</li>
@@ -222,7 +271,7 @@
             <label for="nwPaths" class="form-label fw-semibold">Paths</label>
             <textarea id="nwPaths" name="paths" rows="8" maxlength="${nwMaxConfigurationBytes}" class="form-control font-monospace"
                 data-nw-builder="paths" data-nw-max="${nwMaxSelectedPaths}"><c:out value="${nwPaths}"/></textarea>
-            <noscript><p class="form-text">One path per line: <code>source | host ID | target | method</code>.</p></noscript>
+            <noscript><p class="form-text">One path per line: <code>source | host ID | target | method | DISSEMINATION or ACQUISITION</code>.</p></noscript>
         </div>
         <div class="card-footer d-flex gap-2">
             <button type="submit" class="btn btn-primary" <c:if test="${not nwCanSave or nwAutomatic}">disabled</c:if>>Save manual scope</button>
@@ -238,7 +287,7 @@
         <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-magic text-info"></i><span class="fw-semibold">Automatic selection</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-auto" aria-expanded="false" aria-controls="nwInfo-auto" title="About this section"><i class="bi bi-info-circle"></i></button></div>
         <div class="collapse" id="nwInfo-auto"><div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">Lets the Master choose up to <c:out value="${nwMaxSelectedPaths}"/> paths once a day among the candidates.
  <ul class="mb-0"><li><strong>Historical discovery</strong>: uses up to seven days of activity, volume and errors to rank already permitted candidates; it does not populate the candidate lists.</li>
- <li><strong>Source / transfer group</strong>: every active dissemination Host of the group becomes a candidate.</li>
+ <li><strong>Source / transfer group</strong>: every active dissemination or acquisition Host of the group becomes a candidate.</li>
  <li><strong>Approved candidates</strong>: individual paths that may be selected (up to <c:out value="${nwMaxCandidates}"/>).</li>
  <li><strong>Pinned</strong>: always selected. <strong>Excluded</strong>: never selected; exclusions win over pins.</li></ul>
  While automatic selection is on, the manual scope cannot be edited.</div></div>
@@ -267,7 +316,7 @@
             <label for="nwExclusions" class="form-label fw-semibold mt-3">Excluded (never selected)</label>
             <textarea form="nwAutomationForm" id="nwExclusions" name="exclusions" rows="3" maxlength="${nwMaxConfigurationBytes}" class="form-control font-monospace"
                 data-nw-builder="paths" data-nw-max="${nwMaxCandidates}" data-nw-suggest="nwApproved"><c:out value="${nwExclusions}"/></textarea>
-            <noscript><p class="form-text">One entry per line: <code>source | host ID | target | method</code>;
+            <noscript><p class="form-text">One entry per line: <code>source | host ID | target | method | DISSEMINATION or ACQUISITION</code>;
                 groups: <code>source | transfer group</code>.</p></noscript>
         </div>
         <div class="card-footer d-flex gap-2">
@@ -303,7 +352,10 @@
             </c:if>
             <c:if test="${not empty nwSelectionReasons}">
                 <h3 class="h6">Latest changes</h3>
-                <ul class="small mb-2"><c:forEach var="reason" items="${nwSelectionReasons}"><li><c:out value="${reason}"/></li></c:forEach></ul>
+                <div class="overflow-auto border rounded p-2 mb-2" style="height:12rem; overflow-wrap:anywhere"
+                    role="region" aria-label="Latest changes" tabindex="0">
+                    <ul class="small mb-0"><c:forEach var="reason" items="${nwSelectionReasons}"><li><c:out value="${reason}"/></li></c:forEach></ul>
+                </div>
             </c:if>
             <form method="post" action="/do/admin/networkweather">
                 <input type="hidden" name="op" value="reassess">
@@ -322,7 +374,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-            <p class="small text-muted">Find active dissemination Hosts with at least one successful transfer in the chosen period.
+            <p class="small text-muted">Find active dissemination Hosts with a successful delivery or acquisition Hosts with a successful retrieval in the chosen period.
                 History identifies the Host, not the source for that transfer: choose the source to assign to these candidates.</p>
             <form id="nwHistorySearch" class="row g-2 align-items-end mb-3">
                 <div id="nwHistorySource" class="col-md-4"></div>
@@ -343,7 +395,7 @@
                 <option value="paths">Individual paths in Approved candidates</option>
                 <option value="groups">Source / transfer group candidates</option>
             </select>
-            <p class="form-text mb-0">Group scopes permit every active dissemination Host in each group, including Hosts without
+            <p class="form-text mb-0">Group scopes permit every active dissemination or acquisition Host in each group, including Hosts without
                 recent successful transfers. Only one transfer group per source is supported. Existing entries are kept;
                 already-approved paths are omitted from the search results and duplicates are not added.
                 Nothing is saved until you click Save.</p>
@@ -363,7 +415,7 @@
  without credentials or login.
  <ul class="mb-0"><li><strong>TCP_CONNECT</strong>: opens a TCP connection to the port (every minute at most).</li>
  <li><strong>MTR_ICMP</strong> / <strong>MTR_TCP</strong>: route trace (every 5 minutes at most; requires <code>mtr</code> on the Data Mover).</li>
- <li>Use the port really used by the Host transfer method; a usual port is suggested.</li>
+ <li>Port, Mode and Interval are shared by manual and approved-candidate additions. Selecting a Host fills its configured service port; verify it and override if needed.</li>
  <li>Probes run only while collection is active and the path is selected.</li></ul></div></div>
         <div class="card-body">
             <div class="form-check form-switch mb-3"><input form="nwAutomationForm" class="form-check-input" type="checkbox" role="switch" id="nwProbesEnabled" name="probesEnabled" <c:if test="${nwProbesEnabled}">checked</c:if>>
@@ -372,7 +424,7 @@
             <textarea form="nwAutomationForm" id="nwProbePolicies" name="probePolicies" rows="4" maxlength="${nwMaxConfigurationBytes}" class="form-control font-monospace"
                 data-nw-builder="probes" data-nw-max="${nwMaxProbePolicies}" data-nw-suggest="nwApproved"><c:out value="${nwProbePolicies}"/></textarea>
             <noscript><p class="form-text">One entry per line:
-                <code>source | host ID | target | method | port | TCP_CONNECT, MTR_ICMP or MTR_TCP | seconds</code>.</p></noscript>
+                <code>source | host ID | target | method | DISSEMINATION or ACQUISITION | port | TCP_CONNECT, MTR_ICMP or MTR_TCP | seconds</code>.</p></noscript>
         </div>
         <div class="card-footer d-flex gap-2">
             <button form="nwAutomationForm" type="submit" class="btn btn-primary">Save</button>
@@ -404,15 +456,15 @@
             </c:if>
         </div>
         <div class="table-responsive">
-            <table id="nwProbeTable" data-nw-table="nwProbeTable" data-nw-order="6:desc" data-nw-empty="No recent results." class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
-                <thead><tr><th scope="col">Source</th><th scope="col">Host</th><th scope="col">Mode</th>
+            <table id="nwProbeTable" data-nw-table="nwProbeTable" data-nw-order="7:desc" data-nw-empty="No recent results." class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
+                <thead><tr><th scope="col">Source</th><th scope="col">Host</th><th scope="col">Type</th><th scope="col">Mode</th>
                     <th scope="col">Outcome</th><th scope="col">Endpoint</th><th scope="col" class="text-end">Latency (ms)</th>
                     <th scope="col">Received</th></tr></thead>
                 <tbody>
                 <c:forEach var="row" items="${nwProbeRows}">
                     <c:set var="outcome" value="${row.outcome}"/>
                     <tr><td class="fw-semibold"><c:out value="${row.source}"/></td><td><c:out value="${row.host}"/></td>
-                        <td><span class="badge text-bg-light border"><c:out value="${row.mode}"/></span></td>
+                        <td><c:out value="${row.type}"/></td><td><span class="badge text-bg-light border"><c:out value="${row.mode}"/></span></td>
                         <td><span class="badge ${outcome eq 'CONNECTED' or outcome eq 'RESPONSE' ? 'text-bg-success' : (outcome eq 'SOURCE_UNAVAILABLE' or outcome eq 'TOOL_UNAVAILABLE' or outcome eq 'PRIVILEGE_DENIED' ? 'text-bg-secondary' : (outcome eq 'NO_RESPONSE' or outcome eq 'DEADLINE' ? 'text-bg-warning' : 'text-bg-danger'))}"><c:out value="${outcome}"/></span></td>
                         <td class="small"><c:out value="${row.endpoint}"/></td><td class="text-end"><c:out value="${row.latency}"/></td>
                         <td class="small text-nowrap"><c:out value="${row.received}"/></td></tr>
@@ -458,8 +510,9 @@
             <table id="nwSummaryTable" data-nw-table="nwSummaryTable" data-nw-empty="No selected paths." class="table table-sm table-hover table-striped align-middle mb-0" style="width:100%">
                 <thead><tr>
                     <th scope="col">Source</th><th scope="col">Host</th><th scope="col">Target</th><th scope="col">Method</th>
+                    <th scope="col">Type</th>
                     <th scope="col" class="text-end">Success</th><th scope="col" class="text-end">Failure</th><th scope="col" class="text-end">Cancelled</th>
-                    <th scope="col" class="text-end">Unknown</th><th scope="col" class="text-end">Sendings with sockets</th>
+                    <th scope="col" class="text-end">Unknown</th><th scope="col" class="text-end">Transfers with sockets</th>
                 </tr></thead>
                 <tbody>
                 <c:forEach var="row" items="${nwSummaries}">
@@ -467,6 +520,7 @@
                     <tr class="${observed eq 0 ? 'text-muted' : ''}"><td class="fw-semibold"><c:out value="${row.source}"/></td>
                         <td><c:out value="${row.host}"/><c:if test="${observed eq 0}"><span class="badge text-bg-secondary ms-1">no coverage</span></c:if></td>
                         <td class="small"><c:out value="${row.target}"/></td><td><span class="badge text-bg-light border"><c:out value="${row.protocol}"/></span></td>
+                        <td><c:out value="${row.type}"/></td>
                         <td class="text-end${row.success gt 0 ? ' text-success fw-semibold' : ''}"><c:out value="${row.success}"/></td>
                         <td class="text-end${row.failure gt 0 ? ' text-danger fw-semibold' : ''}"><c:out value="${row.failure}"/></td>
                         <td class="text-end"><c:out value="${row.cancelled}"/></td><td class="text-end"><c:out value="${row.unknown}"/></td>
@@ -481,4 +535,4 @@
 </div>
 </c:if>
 <jsp:include page="/WEB-INF/jsp/pds/admin/networkweather/guide.jsp"/>
-<script src="/js/network-weather-admin.js?v=20261019a"></script>
+<script src="/js/network-weather-admin.js?v=20261021d"></script>

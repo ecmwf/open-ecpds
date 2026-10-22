@@ -94,7 +94,8 @@ public final class NetworkWeatherAction extends PDSAction {
                                 .append(quote(path.configuredTarget())).append(",\"method\":")
                                 .append(quote(path.protocol())).append(",\"nickname\":")
                                 .append(quote(candidate.nickname())).append(",\"group\":")
-                                .append(quote(candidate.group())).append('}');
+                                .append(quote(candidate.group())).append(",\"type\":").append(quote(path.leg()))
+                                .append('}');
                         first = false;
                     }
                     response.setContentType("application/json;charset=UTF-8");
@@ -170,8 +171,7 @@ public final class NetworkWeatherAction extends PDSAction {
                 request.setAttribute("nwPaths", WeatherAdministration.formatPaths(status.paths()));
             }
             request.setAttribute("nwUpdatedBy", status.updatedBy());
-            request.setAttribute("nwUpdatedAt", status.updatedAt() == 0 ? "Not saved"
-                    : java.time.Instant.ofEpochMilli(status.updatedAt()).toString());
+            request.setAttribute("nwUpdatedAt", status.updatedAt() == 0 ? "Not saved" : time(status.updatedAt()));
             request.setAttribute("nwControlError", status.error());
             request.setAttribute("nwCanSave", status.restored() && !status.saving());
             request.setAttribute("nwEnabled", status.collector().enabled());
@@ -208,6 +208,7 @@ public final class NetworkWeatherAction extends PDSAction {
                 row.put("host", summary.path().hostId());
                 row.put("target", summary.path().configuredTarget());
                 row.put("protocol", summary.path().protocol());
+                row.put("type", summary.path().leg());
                 row.put("success", summary.successes());
                 row.put("failure", summary.failures());
                 row.put("cancelled", summary.cancellations());
@@ -222,8 +223,7 @@ public final class NetworkWeatherAction extends PDSAction {
                 row.put("source", source.sourceId());
                 row.put("state", source.state());
                 row.put("epoch", source.sourceEpoch());
-                row.put("verified", source.verifiedAt() == 0 ? "Not verified"
-                        : java.time.Instant.ofEpochMilli(source.verifiedAt()).toString());
+                row.put("verified", source.verifiedAt() == 0 ? "Not verified" : time(source.verifiedAt()));
                 row.put("rtt", source.roundTripMs());
                 row.put("detail", source.detail());
                 sources.add(row);
@@ -259,6 +259,9 @@ public final class NetworkWeatherAction extends PDSAction {
             automationInfo.put("History rows read", automation.rows() + (automation.partial() ? " (partial)" : ""));
             request.setAttribute("nwAutomationInfo", displayRows(automationInfo));
             request.setAttribute("nwAutomationError", automation.error());
+            final var rejected = automation.rejectedHosts();
+            request.setAttribute("nwRejectedHosts", rejected == null ? List.of()
+                    : rejected.stream().map(host -> Map.of("id", host.hostId(), "reason", host.reason())).toList());
             request.setAttribute("nwSelectionReasons", automation.changes());
             final var probeStatus = MasterManager.getMI().getWeatherProbes(Util.getECpdsSessionFromObject(user));
             final Map<String, Object> probeInfo = new LinkedHashMap<>();
@@ -272,6 +275,7 @@ public final class NetworkWeatherAction extends PDSAction {
                 final Map<String, Object> row = new LinkedHashMap<>();
                 row.put("source", c.job().policy().path().sourceId());
                 row.put("host", c.job().policy().path().hostId());
+                row.put("type", c.job().policy().path().leg());
                 row.put("mode", c.job().policy().mode());
                 row.put("outcome", c.result().outcome());
                 row.put("endpoint", c.result().endpoint() == null ? "" : c.result().endpoint());
@@ -283,6 +287,7 @@ public final class NetworkWeatherAction extends PDSAction {
                 final Map<String, Object> row = new LinkedHashMap<>();
                 row.put("source", c.job().policy().path().sourceId());
                 row.put("host", c.job().policy().path().hostId());
+                row.put("type", c.job().policy().path().leg());
                 row.put("mode", c.job().policy().mode());
                 row.put("outcome", "SOURCE_UNAVAILABLE");
                 row.put("endpoint", "");
@@ -331,19 +336,19 @@ public final class NetworkWeatherAction extends PDSAction {
             if (line.isBlank())
                 continue;
             final var fields = line.split("\\|", -1);
-            if (fields.length != 7)
+            if (fields.length != 8)
                 throw new IllegalArgumentException("Probe policies, line " + lineNumber
-                        + ": use source | host ID | target | method | service port | mode | seconds");
+                        + ": use source | host ID | target | method | type | service port | mode | seconds");
             try {
                 if (java.util.Arrays.stream(ecmwf.ecpds.master.weather.WeatherProbe.Mode.values())
-                        .noneMatch(mode -> mode.name().equals(fields[5].trim())))
+                        .noneMatch(mode -> mode.name().equals(fields[6].trim())))
                     throw new IllegalArgumentException("Choose mode TCP_CONNECT, MTR_ICMP or MTR_TCP");
-                final var path = WeatherAdministration.parsePaths(String.join("|", java.util.Arrays.copyOf(fields, 4)),
+                final var path = WeatherAdministration.parsePaths(String.join("|", java.util.Arrays.copyOf(fields, 5)),
                         1, limits.maxConfigurationBytes()).iterator().next();
                 final var policy = new ecmwf.ecpds.master.weather.WeatherProbe.Policy(path,
-                        Integer.parseInt(fields[4].trim()),
-                        ecmwf.ecpds.master.weather.WeatherProbe.Mode.valueOf(fields[5].trim()),
-                        Integer.parseInt(fields[6].trim()));
+                        Integer.parseInt(fields[5].trim()),
+                        ecmwf.ecpds.master.weather.WeatherProbe.Mode.valueOf(fields[6].trim()),
+                        Integer.parseInt(fields[7].trim()));
                 if (!policies.add(policy))
                     throw new IllegalArgumentException("This probe policy is already listed");
                 if (policies.size() > limits.maxProbePolicies())
@@ -426,7 +431,8 @@ public final class NetworkWeatherAction extends PDSAction {
                 var truncated = false;
                 for (final var host : db.getHostArray()) {
                     if (!host.getActive()
-                            || !ecmwf.ecpds.master.transfer.HostOption.DISSEMINATION.equals(host.getType())) {
+                            || !(ecmwf.ecpds.master.transfer.HostOption.DISSEMINATION.equals(host.getType())
+                                    || ecmwf.ecpds.master.transfer.HostOption.ACQUISITION.equals(host.getType()))) {
                         continue;
                     }
                     if (++count > maximum) {
@@ -437,7 +443,9 @@ public final class NetworkWeatherAction extends PDSAction {
                             .append(",\"nickname\":").append(quote(host.getNickname())).append(",\"target\":")
                             .append(quote(host.getHost())).append(",\"method\":")
                             .append(quote(host.getTransferMethodName())).append(",\"group\":")
-                            .append(quote(host.getTransferGroupName())).append('}');
+                            .append(quote(host.getTransferGroupName())).append(",\"port\":").append(probePort(host))
+                            .append(",\"type\":").append(quote(host.getType().toUpperCase(java.util.Locale.ROOT)))
+                            .append('}');
                     first = false;
                 }
                 json.append("],\"truncated\":").append(truncated).append(",\"loadedAt\":").append(now).append('}');
@@ -451,6 +459,27 @@ public final class NetworkWeatherAction extends PDSAction {
             choicesJson = json.toString();
             return choicesJson;
         }
+    }
+
+    static Integer probePort(final ecmwf.common.database.Host host) {
+        final var method = host.getTransferMethod();
+        if (method == null || method.getECtransModuleName() == null) {
+            return null;
+        }
+        final var module = method.getECtransModuleName().toLowerCase(java.util.Locale.ROOT);
+        final var option = switch (module) {
+        case "ftp" -> ecmwf.common.ectrans.ECtransOptions.HOST_FTP_PORT;
+        case "ftps" -> ecmwf.common.ectrans.ECtransOptions.HOST_FTPS_PORT;
+        case "sftp" -> ecmwf.common.ectrans.ECtransOptions.HOST_SFTP_PORT;
+        case "http" -> ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_PORT;
+        case "s3" -> ecmwf.common.ectrans.ECtransOptions.HOST_S3_PORT;
+        case "gcs" -> ecmwf.common.ectrans.ECtransOptions.HOST_GCS_PORT;
+        case "azure" -> ecmwf.common.ectrans.ECtransOptions.HOST_AZURE_PORT;
+        case "ecauth" -> ecmwf.common.ectrans.ECtransOptions.HOST_ECAUTH_PORT;
+        case "webdav" -> ecmwf.common.ectrans.ECtransOptions.HOST_WEBDAV_PORT;
+        default -> null;
+        };
+        return option == null ? null : new ecmwf.common.ectrans.ECtransSetup(module, host.getData()).getInteger(option);
     }
 
     private static List<Map<String, Object>> ordered(final Object... keyValues) {

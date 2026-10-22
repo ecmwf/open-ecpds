@@ -22,7 +22,7 @@ See [Storage Lifecycle Policies](../administration/storage-lifecycle-policies.md
 
 ## Network Weather
 
-`/do/admin/networkweather` controls **bounded passive dissemination collection**
+`/do/admin/networkweather` controls **bounded passive dissemination and acquisition collection**
 for selected local and Continental Movers. Collection starts **disabled**. An
 administrator can **Activate collection** or **Deactivate collection** at runtime
 without restarting the Master, Monitor or Movers. The same page separately controls
@@ -45,10 +45,15 @@ then press **Add**. The Host target and method are filled in from the Host
 configuration; duplicates, limits, invalid characters and probe mode/interval
 combinations are refused immediately, and saved entries that no longer match an
 active Dissemination Host are flagged. Pins, exclusions and probes can also be
-picked from the approved candidates. For probes, a port is suggested from the
-transfer method but remains an explicit operator choice. The builders only assist
+picked from the approved candidates. Probe **Port**, **Mode** and **Interval** are
+in a shared settings block used by both add methods. Selecting a Host or candidate
+fills the port from that Host's transfer-module Properties (including the module's
+default when unset). Selecting another Host or candidate refreshes it; manual
+overrides remain possible. When no configured port is available, a usual port is
+suggested and labelled for verification, or the port must be entered manually.
+Saved policies keep their explicit port; Host changes do not rewrite them. The builders only assist
 entry; every save is validated. Selector choices (Movers, transfer
-groups and active Dissemination Hosts, up to the deployment's `maxHostChoices`) can
+groups and active dissemination/acquisition Hosts, up to the deployment's `maxHostChoices`) can
 be updated with **Refresh choices**.
 Without JavaScript, the underlying one-entry-per-line fields remain usable.
 Path builders hide entries already added for the selected source, including in
@@ -57,6 +62,13 @@ the same Host remains available for other sources. Probe builders still allow
 the same path with different probe settings, but hide exact policies already added
 from both Host and approved-candidate selectors. Changing the port, mode or interval
 refreshes those choices; removing a policy makes it available again.
+Source/group candidate discovery skips Hosts with invalid path configuration and
+continues with valid Hosts. A warning reports the number of distinct rejected Hosts;
+expand **Rejected Host IDs and reasons** to identify and correct them. The report
+reflects the latest candidate check during Save or automatic reassessment and is
+refreshed on the next check; it is not a permanent rejection list. Host configurations
+and ordinary transfers are not modified. Database errors, discovery limits and
+invalid individually approved paths still fail explicitly.
 The source/group builder allows one transfer group per source: its group selector
 and Add button are disabled for a source already listed, until that entry is removed.
 The same transfer group can still be assigned to other sources.
@@ -116,8 +128,9 @@ and restart those services. This setting is local to those services, not supplie
 ### Automatic selection and historical discovery
 
 In the **Automatic selection** tab, approve explicit candidates
-using `source | host ID | configured target | transfer method`, or approve bounded
-`source | transfer group` scopes. Group scopes discover active Dissemination Hosts
+using `source | host ID | configured target | transfer method | type`, where type
+is `DISSEMINATION` or `ACQUISITION`, or approve bounded
+`source | transfer group` scopes. Group scopes discover active dissemination and acquisition Hosts
 without maintaining an individual list. A source/group approval is administrative
 scope, **not evidence that this source performed a historical transfer**.
 The candidate, selected-path and emitting-source limits are deployment-configurable
@@ -127,8 +140,12 @@ override pins. Saving the automatic policy does not activate passive collection.
 
 Enable **Automatic selection** to reassess daily, or request an earlier reassessment.
 Enable **Allow bounded historical SQL discovery** separately to rank candidates using
-seven days of upload activity and destination-scoped trouble samples. Historical
-addresses are only matched to currently approved Host targets; historical rows never
+seven days of upload activity, successful retrievals and destination-scoped trouble samples.
+Retrieval samples use downloaded DataFiles linked to the acquisition Host (up to 50
+recent files per Host, 100 Hosts per assessment, with a resumable Host cursor);
+deleted DataFiles cannot contribute. Upload addresses are matched only to approved
+dissemination targets, so a retrieval is not inferred from an upload to the same address.
+Historical rows never
 establish actual emitting-source identity. Ranking mixes activity, trouble and
 source/method diversity. Existing valid coverage is retained on partial input or
 failure; complete runs can replace at most 10% of the configured selected-path capacity
@@ -145,7 +162,9 @@ such as FTP or SFTP). The protocol filter uses the Host's current transfer metho
 and is applied in the database search.
 Choose the source to assign explicitly: transfer history identifies the successful
 Host but not its historical source. Only currently
-active dissemination Hosts with a `DONE` history entry in that period are suggested.
+active dissemination Hosts with a `DONE` history entry, and acquisition Hosts with a
+successfully downloaded DataFile in that period, are suggested. Retrieval timestamps
+come from the DataFile's recorded completion time, not from a later dissemination.
 Already-approved paths for the chosen source are omitted from the preview.
 Review and select matches, then add individual Approved candidates or source/group
 scopes. Group scopes also permit Hosts without a recent success and support only
@@ -171,7 +190,9 @@ scan. Assess its database load on a test system before enabling it in production
 ### Scheduled diagnostics
 
 Approve probes separately with:
-`source | host ID | configured hostname | method | approved service port | mode | interval seconds`.
+`source | host ID | configured hostname | method | type | approved service port | mode | interval seconds`.
+Both dissemination and acquisition paths support probes; the type is retained in
+the policy, result tables and Live Earth overlay.
 Review the explicit port against the real transfer-module service configuration;
 the scheduler never guesses a port, performs protocol login or sends credentials.
 `TCP_CONNECT` requires an interval of at least 60 seconds; `MTR_ICMP` and `MTR_TCP`
@@ -202,8 +223,8 @@ evidence, socket coverage, observation age and available diagnostic summaries, p
 independent Host-location halos. Gray/absent evidence means unknown coverage, not
 healthy connectivity; orange delivery trouble is not a network-fault diagnosis.
 Unresolved coordinates (including internal addresses) do not create invented locations,
-but never hide the icon or permitted table rows. The Dissemination filter
-also applies to the overlay.
+but never hide the icon or permitted table rows. The Dissemination and Acquisition
+filters apply to their respective overlay paths.
 
 Visibility follows the viewer's monitoring, Host and destination permissions.
 Paths lacking permitted retained
@@ -222,9 +243,9 @@ available again.
 ### Scope and runtime controls
 
 The **Manual scope** builder stores paths as
-`source | host ID | configured target | transfer method`.
+`source | host ID | configured target | transfer method | type`.
 Use the actual emitting Mover root, not its relay. The target and transfer method
-must exactly match an active Dissemination Host; these settings are checked again
+and type must exactly match an active dissemination or acquisition Host; these settings are checked again
 on activation. The limits come from the Master's deployment configuration. A blank scope clears the
 selection. **Saving scope disables collection**, requiring explicit reactivation.
 
@@ -278,13 +299,22 @@ measurements from being assigned reliable observation times.
 
 ### Measurements and coverage
 
-Collection records dissemination outcomes and available socket measurements
-independently of Live Earth viewers. Successful and failed sendings and explicit
+Collection records dissemination and acquisition GET outcomes and available socket measurements
+independently of Live Earth viewers.
+Acquisition evidence is attributed to the requesting transfer and destination, including
+individual GETs in indexed retrievals; listing and size queries are not counted as payload
+retrievals. Shared-file aliases do not fabricate additional destination evidence.
+Successful and failed transfer attempts and explicit
 cancellations can contribute evidence. Some early failures have no measurements.
-Acquisition and other transfer legs are not included.
+Other Host types (such as backup, replication and proxy) are not included.
 
 Existing module socket-statistics settings still determine available measurements;
-missing or dropped measurements mean coverage loss, not packet loss.
+acquisition payload GETs request diagnostics just as dissemination does, without
+overriding `ectrans.socketStatistics="false"`. Late socket closures can supplement
+their recorded execution. The transfer detail page separates retrieval and
+dissemination socket measurements using the stored leg; unidentified legacy rows
+are not assigned to a leg by inference.
+Missing or dropped measurements mean coverage loss, not packet loss.
 Failures without socket measurements remain sending outcomes, not zero-valued
 connections. RTT, sent/received bytes, rates and other socket measurements are
 shown when available; missing values remain unavailable.

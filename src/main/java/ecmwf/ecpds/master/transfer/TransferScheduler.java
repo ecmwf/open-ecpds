@@ -2328,6 +2328,8 @@ public final class TransferScheduler extends MBeanScheduler {
                             MASTER.addTransferHistory(related, hostForSource, related.getStatusCode(),
                                     "Trying retrieval on DataMover=" + moverName, false);
                         }
+                        dr.dataFile.setRetrievalWeatherContext(
+                                new DataFile.RetrievalWeatherContext(transfer.getId(), transfer.getDestinationName()));
                         dr.dataFile = mover.download(dr.dataFile, hostForSource);
                         dr.complete = true;
                         break;

@@ -87,7 +87,7 @@ public final class WeatherSocketStore {
         try (final var session = factory.openSession()) {
             session.doWork(connection -> {
                 try (final var statement = prepare(connection, """
-                        SELECT C.TST_ID,H.NWS_ID,H.NWS_OUTCOME FROM WEATHER_SENDING H
+                        SELECT C.TST_ID,H.NWS_ID,H.NWS_OUTCOME,H.NWS_LEG FROM WEATHER_SENDING H
                         JOIN WEATHER_CONNECTION C ON C.NWS_ID=H.NWS_ID WHERE H.DAT_ID=?
                         """)) {
                     statement.setLong(1, transferId);
@@ -97,6 +97,7 @@ public final class WeatherSocketStore {
                             if (row != null) {
                                 row.setWeatherExecutionId(result.getString(2));
                                 row.setWeatherOutcome(result.getString(3));
+                                row.setWeatherLeg(result.getString(4));
                             }
                         }
                     }

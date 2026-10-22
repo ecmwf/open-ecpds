@@ -173,6 +173,7 @@ public class GetDataTransferAction extends PDSAction {
                         .getTransferStatisticsByDataTransferId(Long.parseLong(transfer.getId()));
                 request.setAttribute("transferStatistics", stats);
                 request.setAttribute("transferStatisticsGroups", groupStatsByAttempt(stats));
+                request.setAttribute("transferStatisticsSections", statisticsSections(stats));
             } catch (final Exception e) {
                 log.warn("Could not load transfer statistics for {}", transfer.getId(), e);
             }
@@ -181,10 +182,7 @@ public class GetDataTransferAction extends PDSAction {
     }
 
     /**
-     * Groups a list of TransferStatistics by their recorded requeueHistory value. Each distinct value represents one
-     * sending attempt, so grouping is exact with no time-gap heuristics. Results are ordered by ascending
-     * requeueHistory (i.e. attempt 1 first). Records pre-dating this field (requeueHistory == 0) all fall into the
-     * first group, which is the correct backward-compatible behaviour for transfers that were never requeued.
+     * Groups a leg's connections by their recorded attempt index, preserving database order without time heuristics.
      */
     private static List<List<ecmwf.common.database.TransferStatistics>> groupStatsByAttempt(
             final List<ecmwf.common.database.TransferStatistics> stats) {
@@ -195,6 +193,26 @@ public class GetDataTransferAction extends PDSAction {
             }
         }
         return new ArrayList<>(groups.values());
+    }
+
+    private static List<Map<String, Object>> statisticsSections(
+            final List<ecmwf.common.database.TransferStatistics> stats) {
+        final var sections = new ArrayList<Map<String, Object>>();
+        for (final var leg : List.of("ACQUISITION", "DISSEMINATION", "UNKNOWN")) {
+            final var rows = stats.stream().filter(row -> {
+                final var recordedLeg = row.getWeatherProvenanceUnavailable() ? null : row.getWeatherLeg();
+                return leg.equals("UNKNOWN")
+                        ? !"ACQUISITION".equals(recordedLeg) && !"DISSEMINATION".equals(recordedLeg)
+                        : leg.equals(recordedLeg);
+            }).toList();
+            if (!rows.isEmpty())
+                sections.add(Map.of("id", leg.toLowerCase(java.util.Locale.ROOT), "title", switch (leg) {
+                case "ACQUISITION" -> "Retrieval socket statistics";
+                case "DISSEMINATION" -> "Dissemination socket statistics";
+                default -> "Socket statistics - unidentified leg";
+                }, "retrieval", leg.equals("ACQUISITION"), "rows", rows, "groups", groupStatsByAttempt(rows)));
+        }
+        return sections;
     }
 
     /**

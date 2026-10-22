@@ -935,7 +935,8 @@ final class ECtransInputStream extends InputStream implements AutoCloseable {
                                 // SimpleInputStream to allow the ECtransGet to provide a notification if
                                 // required!
                                 in = new SimpleInputStream(
-                                        MOVER.get(pout, host, source, 0, index == fileNames.size() ? dataFile : null),
+                                        MOVER.get(pout, host, source, 0, index == fileNames.size() ? dataFile : null,
+                                                dataFile.getRetrievalWeatherContext()),
                                         pin, host, source);
                                 break;
                             } catch (final Throwable t) {

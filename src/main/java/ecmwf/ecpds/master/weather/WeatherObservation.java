@@ -126,6 +126,8 @@ public record WeatherObservation(int schemaVersion, UUID eventId, UUID execution
             text(configuredTarget, "configuredTarget", 255);
             text(protocol, "protocol", 128);
             text(leg, "leg", 32);
+            if (!"DISSEMINATION".equals(leg) && !"ACQUISITION".equals(leg))
+                throw new IllegalArgumentException("Path type must be DISSEMINATION or ACQUISITION");
         }
     }
 

@@ -303,7 +303,7 @@
         also shown in the host details panel and in the hover tooltip. Country markers use the same segmented
         rings and list all represented cloud providers in their details.</li>
         <li><strong>Network Weather</strong> &mdash; when collection is active, the
-        <i class="bi bi-cloud-lightning-rain"></i> icon shows recent delivery conditions for the paths you are
+        <i class="bi bi-cloud-lightning-rain"></i> icon shows recent delivery and retrieval conditions for the paths you are
         allowed to see (highlighted = on). Gray or missing evidence means no coverage, not a healthy path. The icon
         is hidden when collection is confirmed disabled or suspended. If the weather request fails, the icon
         remains available to show the error. An unresolved/internal Host address prevents its halo, not the icon
@@ -494,7 +494,7 @@
 </section>
 
 <script src="/cesium/Cesium.js"></script>
-<script src="/js/network-weather.js?v=20261018b"></script>
+<script src="/js/network-weather.js?v=20261021a"></script>
 <script src="/js/globe-tour.js"></script>
 <script>
 (async function () {
@@ -810,13 +810,14 @@
         body.replaceChildren();
         var search = document.getElementById("globeWeatherSearch").value.toLowerCase();
         rows.filter(function (p) {
-            return selectedHostTypes.has("Dissemination") &&
-                (p.source + " " + p.hostId + " " + p.protocol).toLowerCase().indexOf(search) !== -1;
+            return selectedHostTypes.has(p.leg === "ACQUISITION" ? "Acquisition" : "Dissemination") &&
+                (p.source + " " + p.hostId + " " + p.protocol + " " + p.leg).toLowerCase().indexOf(search) !== -1;
         }).forEach(function (p) {
             var observed = p.successes + p.failures + p.cancellations + p.unknown;
             var tr = document.createElement("tr");
-            [p.source, p.hostId + " / " + p.protocol,
-                !observed ? "No recent evidence" : p.failures ? "Delivery trouble observed" : "Observed delivery activity",
+            var activity = p.leg === "ACQUISITION" ? "Retrieval" : "Delivery";
+            [p.source, p.hostId + " / " + p.protocol + " / " + p.leg,
+                !observed ? "No recent evidence" : p.failures ? activity + " trouble observed" : activity + " activity observed",
                 p.successes + " / " + p.failures + " / " + p.cancellations + " / " + p.unknown,
                 p.sockets, p.rttMs == null ? "Unavailable" : p.rttMs.toFixed(2) + " ms",
                 p.lastObserved ? new Date(p.lastObserved).toLocaleString() : "Unavailable",

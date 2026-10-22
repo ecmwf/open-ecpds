@@ -1,7 +1,7 @@
 /* Network Weather administration builders: they only assist entry; the Master validates every submission. */
 (function (root) {
     "use strict";
-    var FIELDS = {paths: 4, groups: 2, probes: 7};
+    var FIELDS = {paths: 5, groups: 2, probes: 8};
     var MODES = {TCP_CONNECT: 60, MTR_ICMP: 300, MTR_TCP: 300};
     var INTERVALS = [60, 300, 900, 1800, 3600, 10800, 21600, 43200, 86400];
     var COMMON_PORTS = [21, 22, 80, 443, 990];
@@ -46,7 +46,7 @@
     function suggestPort(method) {
         method = String(method || "").toLowerCase();
         if (/sftp|ssh|scp/.test(method)) return 22;
-        if (/ftps/.test(method)) return 990;
+        if (/ftps/.test(method)) return 21;
         if (/ftp/.test(method)) return 21;
         if (/https|s3|azure|gcs|google/.test(method)) return 443;
         if (/http/.test(method)) return 80;
@@ -102,7 +102,7 @@
         var existing = new Set(parse("paths", text).filter(function (row) { return !row.invalid; })
             .map(function (row) { return key("paths", row.fields); }));
         return candidates.filter(function (host) {
-            var k = key("paths", [host.source, host.id, host.target, host.method]);
+            var k = key("paths", [host.source, host.id, host.target, host.method, host.type]);
             if (existing.has(k)) return false;
             existing.add(k);
             return true;
@@ -150,7 +150,7 @@
 
     function hostLabel(host) {
         return host.id + (host.nickname && host.nickname !== host.id ? " \u2014 " + host.nickname : "") +
-            " (" + host.target + ", " + host.method + ")";
+            " (" + host.target + ", " + host.method + ", " + host.type + ")";
     }
 
     function field(label, control, width) {
@@ -200,7 +200,7 @@
             var current = list.value;
             var words = filter.value.toLowerCase().split(/\s+/).filter(Boolean);
             var matches = (choices.hosts || []).filter(function (host) {
-                var text = (host.id + " " + host.nickname + " " + host.target + " " + host.method + " " + host.group)
+                var text = (host.id + " " + host.nickname + " " + host.target + " " + host.method + " " + host.group + " " + host.type)
                     .toLowerCase();
                 return allowed(host) && words.every(function (word) { return text.indexOf(word) !== -1; });
             });
@@ -208,7 +208,7 @@
             matches.slice(0, 300).forEach(function (host) { list.appendChild(option(host.id, hostLabel(host))); });
             if (matches.slice(0, 300).some(function (host) { return host.id === current; })) list.value = current;
             info.textContent = matches.length > 300 ? "Showing 300 of " + matches.length + "; refine the filter." :
-                matches.length + " active dissemination Host(s)" + (choices.truncated ? " (list truncated)" : "");
+                matches.length + " active dissemination/acquisition Host(s)" + (choices.truncated ? " (list truncated)" : "");
         }
         filter.addEventListener("input", fill);
         fill();
@@ -219,7 +219,7 @@
             var host = hostsById.get(list.value);
             if (!host) throw new Error("Select a Host");
             return [checkText(host.id, "a Host"), checkText(host.target, "the Host target"),
-                checkText(host.method, "the Host method")];
+                checkText(host.method, "the Host method"), checkText(host.type, "the Host type")];
         }};
     }
 
@@ -239,8 +239,8 @@
         var label = document.querySelector("label[for='" + textarea.id + "']");
         tableWrap.setAttribute("aria-label", (label ? label.textContent.trim() : "Scope entries") + " table");
         var table = el("table", "table table-sm align-middle mb-0");
-        var head = {paths: ["Source", "Host", "Target", "Method"], groups: ["Source", "Transfer group"],
-            probes: ["Source", "Host", "Target", "Method", "Port", "Mode", "Interval"]}[kind];
+        var head = {paths: ["Source", "Host", "Target", "Method", "Type"], groups: ["Source", "Transfer group"],
+            probes: ["Source", "Host", "Target", "Method", "Type", "Port", "Mode", "Interval"]}[kind];
         var thead = el("thead"), headRow = el("tr");
         head.concat([""]).forEach(function (name) { headRow.appendChild(el("th", "small", name)); });
         thead.appendChild(headRow);
@@ -263,7 +263,7 @@
                     tr.appendChild(td);
                 } else {
                     row.fields.forEach(function (value, column) {
-                        var cell = el("td", "small", column === 6 ? interval(Number(value)) : value);
+                        var cell = el("td", "small", kind === "probes" && column === 7 ? interval(Number(value)) : value);
                         if (column === 1 && kind !== "groups" && choices.hosts && choices.hosts.length &&
                             !hostsById.has(value)) {
                             cell.appendChild(el("span", "badge text-bg-warning ms-1", "not active"));
@@ -316,7 +316,16 @@
             return col;
         }
 
-        var source, host, port, mode, every, suggestion, quick;
+        var source, host, port, mode, every, suggestion, quick, shared, hint;
+        function fillPort(id, target, method) {
+            var chosen = hostsById.get(id);
+            var matches = chosen && (!target || chosen.target === target) && (!method || chosen.method === method);
+            var configured = matches && chosen.port;
+            var suggested = configured || suggestPort(method || (chosen && chosen.method));
+            port.value = suggested || "";
+            hint.textContent = configured ? "From Host configuration; editable." :
+                suggested ? "Usual port only; verify for this Host." : "Port unavailable; enter it manually.";
+        }
         function pathAvailable(path) {
             if (kind === "probes") {
                 if (!port || !mode || !every) return true;
@@ -355,7 +364,7 @@
         } else {
             source = sourcePicker(prefix);
             host = hostPicker(prefix, function (candidate) {
-                var path = [source.current(), candidate.id, candidate.target, candidate.method];
+                var path = [source.current(), candidate.id, candidate.target, candidate.method, candidate.type];
                 return pathAvailable(path);
             });
             source.node.addEventListener("change", host.refresh);
@@ -387,17 +396,18 @@
                 };
                 mode.addEventListener("change", fillIntervals);
                 fillIntervals();
-                var portField = field("Port", port, "col-md-1");
+                var portField = field("Port", port, "col-md-4");
                 portField.appendChild(ports);
-                var hint = el("div", "form-text");
+                hint = el("div", "form-text", "Select a Host or candidate to fill its port; editable.");
                 portField.appendChild(hint);
                 host.select.addEventListener("change", function () {
-                    var chosen = hostsById.get(host.select.value);
-                    var suggested = chosen && suggestPort(chosen.method);
-                    hint.textContent = suggested ? "Usual: " + suggested : "";
-                    if (suggested && !port.value) port.value = suggested;
+                    fillPort(host.select.value);
                 });
-                form.append(portField, field("Mode", mode, "col-md-2"), field("Interval", every, "col-md-2"));
+                shared = el("fieldset", "border rounded p-2 mx-2 mt-2");
+                shared.appendChild(el("legend", "float-none w-auto small fw-semibold px-1 mb-1", "Shared probe settings"));
+                var settingsRow = el("div", "row g-2");
+                settingsRow.append(portField, field("Mode", mode, "col-md-4"), field("Interval", every, "col-md-4"));
+                shared.append(settingsRow, el("div", "form-text", "Used by both Add manually and Add candidate. Selecting another Host or candidate refreshes the port."));
             }
             form.appendChild(addButton(function () {
                 attempt(function () {
@@ -427,7 +437,7 @@
                 quick = el("div", "row g-2 align-items-end mx-0 mt-1 px-2");
                 quick.append(field("Or pick an approved candidate", suggestion, "col-md-7"));
                 if (kind === "probes") {
-                    quick.appendChild(el("div", "col-md-3 form-text", "Uses the port, mode and interval above."));
+                    quick.appendChild(el("div", "col-md-3 form-text", "Uses the shared probe settings."));
                 }
                 candidateButton = addButton(function () {
                     attempt(function () {
@@ -439,6 +449,11 @@
                 candidateButton = candidateColumn.querySelector("button");
                 candidateButton.disabled = !suggestion.value;
                 suggestion.addEventListener("change", function () {
+                    if (kind === "probes" && suggestion.value) {
+                        var path = suggestion.value.split("\u0000");
+                        fillPort(path[1], path[2], path[3]);
+                        refreshProbeChoices();
+                    }
                     candidateButton.disabled = !suggestion.value;
                 });
                 quick.appendChild(candidateColumn);
@@ -459,7 +474,9 @@
         var footer = el("div", "d-flex justify-content-between align-items-center mt-1");
         footer.append(feedback, count);
         tableWrap.appendChild(table);
-        box.append(tableWrap, form);
+        box.appendChild(tableWrap);
+        if (shared) box.appendChild(shared);
+        box.appendChild(form);
         if (quick) box.appendChild(quick);
         box.appendChild(footer);
         textarea.hidden = true;
@@ -494,8 +511,8 @@
                 pageLength: length,
                 dom: 't<"d-flex align-items-start mt-2 px-3 pb-2"i<"ms-auto"p>>',
                 language: {
-                    info: "Showing _START_-_END_ of _TOTAL_",
-                    infoEmpty: "",
+                    info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                    infoEmpty: "Showing 0 to 0 of 0 entries",
                     emptyTable: node.dataset.nwEmpty || "No data",
                     zeroRecords: "No matching entries found."
                 }
@@ -610,7 +627,7 @@
                     all.checked = true;
                     all.setAttribute("aria-label", "Select all filtered Hosts across pages");
                     head.appendChild(el("th")).appendChild(all);
-                    ["Source", "Host", "Target / method", "Transfer group"].forEach(function (label) {
+                    ["Source", "Host", "Target / method / type", "Transfer group"].forEach(function (label) {
                         head.appendChild(el("th", null, label));
                     });
                     table.appendChild(el("thead")).appendChild(head);
@@ -624,7 +641,7 @@
                         filtered = matches.map(function (host, index) { return {host: host, index: index}; })
                             .filter(function (entry) {
                                 var host = entry.host;
-                                return [host.source, host.id, host.nickname, host.target, host.method, host.group]
+                                return [host.source, host.id, host.nickname, host.target, host.method, host.group, host.type]
                                     .join(" ").toLowerCase().includes(term);
                             });
                         page = Math.min(page, Math.max(0, Math.ceil(filtered.length / 50) - 1));
@@ -638,7 +655,7 @@
                             check.setAttribute("aria-label", "Select Host " + host.id);
                             row.appendChild(el("td")).appendChild(check);
                             [host.source, host.id + (host.nickname ? " \u2014 " + host.nickname : ""),
-                                host.target + " / " + host.method, host.group || "No group"].forEach(function (text) {
+                                host.target + " / " + host.method + " / " + host.type, host.group || "No group"].forEach(function (text) {
                                 row.appendChild(el("td", "small", text));
                             });
                             body.appendChild(row);
@@ -675,7 +692,7 @@
                     render();
                     feedback.textContent = matches.length ? matches.length + " matching Hosts. Review before adding."
                         : alreadyApproved ? "All matching paths are already approved."
-                            : "No active dissemination Hosts with a successful transfer in this period.";
+                            : "No active dissemination/acquisition Hosts with a successful delivery/retrieval in this period.";
                     if (alreadyApproved && matches.length)
                         feedback.textContent += " " + alreadyApproved + " already-approved or duplicate paths omitted.";
                 } catch (error) {
@@ -693,7 +710,7 @@
                     var entries = Array.from(selected).map(function (index) {
                         var host = matches[index];
                         return groups ? [checkText(host.source, "a source"), checkText(host.group, "a transfer group")]
-                            : [host.source, host.id, host.target, host.method];
+                            : [host.source, host.id, host.target, host.method, host.type];
                     });
                     if (!entries.length) throw new Error("Select at least one Host");
                     textarea.value = mergeCandidates(groups ? "groups" : "paths", textarea.value, entries,
@@ -723,6 +740,15 @@
         });
         var tabs = document.getElementById("nwTabs");
         if (!tabs) return;
+        document.querySelectorAll("[data-nw-open-tab]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                var target = document.getElementById(button.dataset.nwOpenTab);
+                if (target && tabs.contains(target) && root.bootstrap) {
+                    root.bootstrap.Tab.getOrCreateInstance(target).show();
+                    target.focus();
+                }
+            });
+        });
         tabs.addEventListener("shown.bs.tab", function (event) {
             try { sessionStorage.setItem("nwAdminTab", event.target.id); } catch (error) { /* not remembered */ }
             tables.forEach(function (table) { table.columns.adjust(); });

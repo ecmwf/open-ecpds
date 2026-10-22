@@ -49,7 +49,16 @@ public final class TransferStatistics extends DataBaseObject {
     protected int TST_REQUEUE_HISTORY;
     private String weatherOutcome;
     private String weatherExecutionId;
+    private String weatherLeg;
     private boolean weatherProvenanceUnavailable;
+
+    public String getWeatherLeg() {
+        return weatherLeg;
+    }
+
+    public void setWeatherLeg(String leg) {
+        weatherLeg = leg;
+    }
 
     public boolean getWeatherProvenanceUnavailable() {
         return weatherProvenanceUnavailable;

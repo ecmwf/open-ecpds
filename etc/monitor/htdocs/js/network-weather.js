@@ -53,7 +53,7 @@
                 unavailableMessage = null;
                 paths = enabled ? data.paths : [];
                 display(!enabled ? "Collection disabled or suspended by administrator" : preferred ?
-                    "Recent five-minute delivery evidence; not a diagnosis of network faults" : "Weather overlay off");
+                    "Recent five-minute delivery/retrieval evidence; not a diagnosis of network faults" : "Weather overlay off");
             } catch (error) {
                 if (!closed) {
                     enabled = null;
@@ -73,7 +73,7 @@
             try { options.storage.setItem("globeNetworkWeather", String(preferred)); }
             catch (error) { storageError = true; }
             display(enabled === null ? unavailableMessage : preferred ?
-                "Recent five-minute delivery evidence; not a diagnosis of network faults" :
+                "Recent five-minute delivery/retrieval evidence; not a diagnosis of network faults" :
                 "Weather overlay off");
             refresh();
         });

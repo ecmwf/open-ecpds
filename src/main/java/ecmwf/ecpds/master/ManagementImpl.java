@@ -4024,7 +4024,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                     return new ecmwf.ecpds.master.weather.WeatherViewer.Path(p.source(), p.hostId(), p.protocol(),
                             p.successes(), p.failures(), p.cancellations(), p.unknown(), p.sockets(), p.lastObserved(),
                             p.rttMs(), geo == null ? null : geo.latitude(), geo == null ? null : geo.longitude(),
-                            p.probeMode(), p.probeOutcome(), p.probedAt(), p.probeLatencyMs());
+                            p.probeMode(), p.probeOutcome(), p.probedAt(), p.probeLatencyMs(), p.leg());
                 }).toList());
         weatherViewers.put(key, result);
         return result;
@@ -4121,11 +4121,14 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         final var base = master.getECpdsBase();
         for (final var path : paths) {
             final var host = base.getHost(path.hostId());
-            if (!host.getActive() || !ecmwf.ecpds.master.transfer.HostOption.DISSEMINATION.equals(host.getType())
+            if (!host.getActive()
+                    || !(ecmwf.ecpds.master.transfer.HostOption.DISSEMINATION.equals(host.getType())
+                            || ecmwf.ecpds.master.transfer.HostOption.ACQUISITION.equals(host.getType()))
                     || !java.util.Objects.equals(host.getHost(), path.configuredTarget())
                     || !java.util.Objects.equals(host.getTransferMethodName(), path.protocol())
-                    || !"DISSEMINATION".equals(path.leg())) {
-                throw new IllegalArgumentException("Path does not match an active dissemination host configuration");
+                    || !host.getType().toUpperCase(java.util.Locale.ROOT).equals(path.leg())) {
+                throw new IllegalArgumentException(
+                        "Path does not match an active dissemination or acquisition Host configuration");
             }
         }
     }

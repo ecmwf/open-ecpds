@@ -240,7 +240,7 @@ public final class WeatherAdministration {
         }
         final var selected = selectedSources();
         if (selected.isEmpty()) {
-            return "Save at least one validated dissemination path before activation.";
+            return "Save at least one validated dissemination or acquisition path before activation.";
         }
         if (selected.stream().anyMatch(source -> !sources.registered(source))) {
             return "Every selected source needs a fresh verified identity (including approved Continental routes).";
@@ -272,23 +272,26 @@ public final class WeatherAdministration {
                     .filter(c -> collector.selection().paths().contains(c.job().policy().path())
                             && c.job().policy().path().sourceId().equals(p.source())
                             && c.job().policy().path().hostId().equals(p.hostId())
-                            && c.job().policy().path().protocol().equals(p.protocol()))
+                            && c.job().policy().path().protocol().equals(p.protocol())
+                            && c.job().policy().path().leg().equals(p.leg()))
                     .max(java.util.Comparator.comparingLong(WeatherProbes.Completed::receivedAt)).orElse(null);
             final var unavailable = probeStatus.unavailable().stream()
                     .filter(c -> collector.selection().paths().contains(c.job().policy().path())
                             && c.job().policy().path().sourceId().equals(p.source())
                             && c.job().policy().path().hostId().equals(p.hostId())
-                            && c.job().policy().path().protocol().equals(p.protocol()))
+                            && c.job().policy().path().protocol().equals(p.protocol())
+                            && c.job().policy().path().leg().equals(p.leg()))
                     .max(java.util.Comparator.comparingLong(WeatherProbes.Unavailable::receivedAt)).orElse(null);
             if (unavailable != null && (probe == null || unavailable.receivedAt() > probe.receivedAt()))
                 return new WeatherViewer.Path(p.source(), p.hostId(), p.protocol(), p.successes(), p.failures(),
                         p.cancellations(), p.unknown(), p.sockets(), p.lastObserved(), p.rttMs(), null, null,
-                        unavailable.job().policy().mode().name(), "SOURCE_UNAVAILABLE", unavailable.receivedAt(), null);
+                        unavailable.job().policy().mode().name(), "SOURCE_UNAVAILABLE", unavailable.receivedAt(), null,
+                        p.leg());
             return probe == null ? p
                     : new WeatherViewer.Path(p.source(), p.hostId(), p.protocol(), p.successes(), p.failures(),
                             p.cancellations(), p.unknown(), p.sockets(), p.lastObserved(), p.rttMs(), null, null,
                             probe.job().policy().mode().name(), probe.result().outcome().name(), probe.receivedAt(),
-                            probe.result().latencyMs());
+                            probe.result().latencyMs(), p.leg());
         }).toList());
     }
 
@@ -459,13 +462,14 @@ public final class WeatherAdministration {
                 continue;
             }
             final var fields = line.split("\\|", -1);
-            if (fields.length != 4) {
-                throw new IllegalArgumentException("Line " + lineNumber + ": use source | host ID | target | method");
+            if (fields.length != 5) {
+                throw new IllegalArgumentException(
+                        "Line " + lineNumber + ": use source | host ID | target | method | type");
             }
             final Path path;
             try {
                 path = new Path(fields[0].trim(), fields[1].trim(), fields[2].trim(), fields[3].trim(),
-                        "DISSEMINATION");
+                        fields[4].trim());
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Line " + lineNumber + ", source " + fields[0].trim() + ", Host "
                         + fields[1].trim() + ": " + e.getMessage(), e);
@@ -481,9 +485,8 @@ public final class WeatherAdministration {
     }
 
     public static String formatPaths(List<Path> paths) {
-        return paths.stream().map(
-                path -> String.join(" | ", path.sourceId(), path.hostId(), path.configuredTarget(), path.protocol()))
-                .collect(java.util.stream.Collectors.joining("\n"));
+        return paths.stream().map(path -> String.join(" | ", path.sourceId(), path.hostId(), path.configuredTarget(),
+                path.protocol(), path.leg())).collect(java.util.stream.Collectors.joining("\n"));
     }
 
     private static void checkSize(String document) throws IOException {

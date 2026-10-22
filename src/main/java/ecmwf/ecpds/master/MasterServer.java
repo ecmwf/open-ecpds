@@ -416,7 +416,7 @@ public final class MasterServer extends ECaccessProvider
                     getECpdsBase().setSysConfigValue("NetworkWeather", "automation", document);
                 }
 
-                public Set<ecmwf.ecpds.master.weather.WeatherObservation.Path> candidates(
+                public ecmwf.common.database.WeatherDiscoveryStore.Candidates candidates(
                         ecmwf.ecpds.master.weather.WeatherAutomation.Configuration policy) throws Exception {
                     return new ecmwf.common.database.WeatherDiscoveryStore(getECpdsBase()).candidates(policy.approved(),
                             policy.sourceGroups());

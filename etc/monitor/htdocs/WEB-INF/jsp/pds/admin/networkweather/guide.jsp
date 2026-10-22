@@ -13,8 +13,8 @@
 
     <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-start gap-2">
       <i class="bi bi-info-circle flex-shrink-0 mt-1"></i>
-      <div>Network Weather shows the recent delivery conditions between Data Movers (sources) and
-      dissemination Hosts. Each feature is <strong>off by default</strong> and can be switched on or off at any
+      <div>Network Weather shows the recent delivery and retrieval conditions between Data Movers (sources) and
+      dissemination and acquisition Hosts. Each feature is <strong>off by default</strong> and can be switched on or off at any
       time without restarting services. A path without measurements has <strong>no coverage</strong>; it is
       not reported as healthy.</div>
     </div>
@@ -43,7 +43,7 @@
       </div>
 
       <div class="tab-pane fade" id="nwg-paths" role="tabpanel">
-        <p class="small mb-2">A path is a source, a dissemination Host and its transfer method. Use the builders:
+        <p class="small mb-2">A path is a source, a dissemination or acquisition Host, its transfer method and type. Use the builders:
         select a source and a Host, then press <strong>Add</strong>. The Host target and method are filled in from the
         Host configuration; duplicates are refused.</p>
         <div class="table-responsive mb-3">
@@ -52,13 +52,18 @@
             <tbody>
               <tr><td>Source</td><td>The Data Mover that runs the transfers. For a Continental Mover not listed,
                 choose <em>Other source</em> and enter its name.</td></tr>
-              <tr><td>Host</td><td>An active dissemination Host. Type in the filter box to narrow the list.</td></tr>
+              <tr><td>Host</td><td>An active dissemination or acquisition Host. Type in the filter box to narrow the list.</td></tr>
               <tr><td>Target / method</td><td>Taken from the Host; shown for information.</td></tr>
             </tbody>
           </table>
         </div>
+        <p class="small">Socket measurements for selected acquisition paths come from payload retrievals, not
+        listing or size queries. Capture respects <code>ectrans.socketStatistics="false"</code> and module
+        restrictions; Linux <code>ss</code> must be available on the Mover. Missing socket measurements mean
+        no coverage. Transfer details show retrieval and dissemination socket statistics separately when
+        recorded provenance is available; other rows remain unidentified.</p>
         <p class="small text-muted mb-0">Deployment limits: <c:out value="${nwMaxSelectedPaths}"/> selected paths across <c:out value="${nwMaxSources}"/> sources. A Host marked
-        <span class="badge text-bg-warning">not active</span> is no longer an active dissemination Host and should be
+        <span class="badge text-bg-warning">not active</span> is no longer an active dissemination/acquisition Host and should be
         removed.</p>
       </div>
 
@@ -71,7 +76,7 @@
                 busy paths, then paths with recent errors, then a mix of other destinations.</td></tr>
               <tr><td>Historical discovery</td><td>Uses up to seven days of activity, volume and errors to rank already
                 permitted candidates. It does not populate the candidate lists or require a successful transfer.</td></tr>
-              <tr><td>Source / transfer group</td><td>Every active dissemination Host of the transfer group becomes
+              <tr><td>Source / transfer group</td><td>Every active dissemination or acquisition Host of the transfer group becomes
                 a candidate for the source.</td></tr>
               <tr><td>Approved candidates</td><td>Additional individual paths (up to <c:out value="${nwMaxCandidates}"/>).</td></tr>
               <tr><td>Pinned</td><td>Always selected (up to <c:out value="${nwMaxSelectedPaths}"/>).</td></tr>
@@ -81,9 +86,15 @@
         </div>
         <p class="small">Use <strong>Find candidates from successful transfers</strong> to search the last 1&ndash;30 days.
         Optionally filter by protocol. Choose a source to assign (history does not identify the source for each Host), review the matching active
-        dissemination Hosts and add individual paths or source/group scopes. Group scopes also permit other Hosts in the
+        dissemination/acquisition Hosts and add individual paths or source/group scopes. Acquisition success is based on
+        a retained, successfully downloaded DataFile; dissemination success uses DONE transfer history.
+        Group scopes also permit other Hosts in the
         group; only one group per source is supported. Already-approved paths are omitted from the preview;
         applying results also skips duplicates. Entries are added to the form, not saved automatically.</p>
+        <p class="small">Source/group discovery skips invalid Hosts and continues with valid candidates. A warning
+        shows the distinct rejected Host count; expand <strong>Rejected Host IDs and reasons</strong> to review
+        the latest check. Ordinary transfers and Host settings are unchanged. Database errors, discovery limits
+        and invalid individually approved paths still fail explicitly.</p>
         <p class="small text-muted mb-0">While automatic selection is on, the manual scope cannot be edited. Use
         <strong>Request reassessment</strong> to recompute the selection without waiting for the next day.</p>
       </div>
@@ -101,8 +112,10 @@
             </tbody>
           </table>
         </div>
-        <p class="small text-muted mb-0">Choose the port actually used by the Host's transfer method (suggestions are
-        offered). Probes run only while collection is active and the path is selected. MTR modes require
+        <p class="small text-muted mb-0">Port, Mode and Interval are in a shared block for manual and approved-candidate additions.
+        Selecting a Host or candidate fills its configured service port (or module default); another selection refreshes it.
+        The port remains editable. If only a usual port is suggested, verify it against the actual service.
+        Saved policies keep their explicit port. Probes run only while collection is active and the path is selected. MTR modes require
         <code>mtr</code> on the Data Mover.</p>
       </div>
 

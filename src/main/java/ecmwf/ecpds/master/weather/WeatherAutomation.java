@@ -30,9 +30,6 @@ public final class WeatherAutomation {
                 if (!approved.contains(path))
                     throw new IllegalArgumentException(
                             "Excluded path must first be added to Approved candidates: " + path);
-            for (final var path : approved)
-                if (!"DISSEMINATION".equals(path.leg()))
-                    throw new IllegalArgumentException("Approved candidates support only dissemination paths: " + path);
             for (final var policy : probePolicies)
                 if (!approved.contains(policy.path()))
                     throw new IllegalArgumentException(
@@ -47,7 +44,8 @@ public final class WeatherAutomation {
 
     public record Status(Configuration configuration, long lastAttempt, long lastSuccess, long nextRun, int rows,
             int pages, boolean partial, String error, List<String> changes, boolean loaded, boolean running,
-            int candidates, int added, int removed) implements Serializable {
+            int candidates, int added, int removed, List<WeatherDiscoveryStore.RejectedHost> rejectedHosts)
+            implements Serializable {
     }
 
     public interface Environment {
@@ -55,7 +53,7 @@ public final class WeatherAutomation {
 
         void save(String document) throws Exception;
 
-        Set<Path> candidates(Configuration policy) throws Exception;
+        WeatherDiscoveryStore.Candidates candidates(Configuration policy) throws Exception;
 
         void select(Set<Path> paths) throws Exception;
 
@@ -76,6 +74,7 @@ public final class WeatherAutomation {
     private boolean partial, loaded, running;
     private String error;
     private List<String> changes = List.of();
+    private List<WeatherDiscoveryStore.RejectedHost> rejectedHosts = List.of();
 
     public record Saved(Configuration configuration, WeatherDiscoveryStore.Progress cursor, long lastRebalance) {
     }
@@ -115,17 +114,21 @@ public final class WeatherAutomation {
             running = true;
         }
         try {
+            var rejected = List.<WeatherDiscoveryStore.RejectedHost> of();
             if (next.automatic() || next.probesEnabled()) {
-                final var eligible = environment.candidates(next);
+                final var discovery = environment.candidates(next);
+                final var eligible = discovery.paths();
+                rejected = discovery.rejectedHosts();
                 for (final var path : next.approved())
                     if (!eligible.contains(path))
                         throw new IllegalArgumentException(
-                                "Approved candidate does not match an active dissemination Host; "
+                                "Approved candidate does not match an active dissemination or acquisition Host; "
                                         + "check its target and transfer method: " + path);
             }
             environment.save(encode(new Saved(next, cursor, lastRebalance)));
             synchronized (this) {
                 configuration = next;
+                rejectedHosts = rejected;
                 environment.probes(next.probesEnabled(), effectiveProbes(next));
                 nextRun = 0;
             }
@@ -144,7 +147,7 @@ public final class WeatherAutomation {
 
     public synchronized Status status() {
         return new Status(configuration, lastAttempt, lastSuccess, nextRun, rows, pages, partial, error, changes,
-                loaded, running, candidates, added, removed);
+                loaded, running, candidates, added, removed, rejectedHosts);
     }
 
     public void step(long now) {
@@ -165,7 +168,11 @@ public final class WeatherAutomation {
                     .collect(java.util.stream.Collectors.toUnmodifiableSet());
             if (!permitted.equals(previous))
                 environment.select(permitted);
-            final var eligible = new LinkedHashSet<>(environment.candidates(policy));
+            final var discovery = environment.candidates(policy);
+            synchronized (this) {
+                rejectedHosts = discovery.rejectedHosts();
+            }
+            final var eligible = new LinkedHashSet<>(discovery.paths());
             eligible.removeAll(policy.exclusions());
             final var retained = permitted.stream().filter(eligible::contains)
                     .collect(java.util.stream.Collectors.toUnmodifiableSet());

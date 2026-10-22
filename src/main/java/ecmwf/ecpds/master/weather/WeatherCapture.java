@@ -61,19 +61,24 @@ public final class WeatherCapture {
     }
 
     public Execution start(long transferId, String destinationId, String hostId, String target, String protocol) {
+        return start(transferId, destinationId, hostId, target, protocol, "DISSEMINATION");
+    }
+
+    public Execution start(long transferId, String destinationId, String hostId, String target, String protocol,
+            String leg) {
         final var lease = negotiation.current();
         if (lease == null || !lease.capabilities().observationIngress()
                 || !lease.capabilities().selection().enabled()) {
             return null;
         }
         final var selection = lease.capabilities().selection();
-        final var path = new Path(sourceId, hostId, target, protocol, "DISSEMINATION");
+        final var path = new Path(sourceId, hostId, target, protocol, leg);
         if (!selection.paths().contains(path)) {
             return null;
         }
         final var header = new WeatherObservation(1, UUID.randomUUID(), UUID.randomUUID(), sourceEpoch, sourceId,
-                transferId, destinationId, hostId, target, protocol, "DISSEMINATION", selection.revision(),
-                Kind.SENDING_TERMINAL, Outcome.UNKNOWN, Category.UNCLASSIFIED, System.currentTimeMillis(), List.of());
+                transferId, destinationId, hostId, target, protocol, leg, selection.revision(), Kind.SENDING_TERMINAL,
+                Outcome.UNKNOWN, Category.UNCLASSIFIED, System.currentTimeMillis(), List.of());
         return new Execution(selection.masterEpoch(), header);
     }
 

@@ -265,7 +265,7 @@ public final class WeatherCollector {
             if (count != null && (full || count.visible)) {
                 rows.add(new WeatherViewer.Path(path.sourceId(), path.hostId(), path.protocol(), count.success,
                         count.failure, count.cancelled, count.unknown, count.sockets, count.last,
-                        count.rtts == 0 ? null : count.rtt / count.rtts, null, null));
+                        count.rtts == 0 ? null : count.rtt / count.rtts, null, null, path.leg()));
             }
         }
         return List.copyOf(rows);
