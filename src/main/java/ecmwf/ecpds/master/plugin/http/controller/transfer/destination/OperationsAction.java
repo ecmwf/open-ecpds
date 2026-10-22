@@ -133,6 +133,8 @@ public class OperationsAction extends PDSAction {
     /** The Constant EXTEND_LIFETIME. */
     private static final String EXTEND_LIFETIME = "extendLifetime";
 
+    static final int MAX_EXTEND_DAYS = 365;
+
     /** The Constant SCHEDULE_NOW. */
     private static final String SCHEDULE_NOW = "scheduleNow";
 
@@ -350,6 +352,7 @@ public class OperationsAction extends PDSAction {
         final var processedCount = new AtomicLong(0);
         final var startTime = System.currentTimeMillis();
         final ActionForward forward;
+        Integer extensionDays = null;
         if (VALIDATE.equals(subAction)) {
             // Just changed to the screen without performing an action
             forward = mapping.findForward("validate");
@@ -364,12 +367,19 @@ public class OperationsAction extends PDSAction {
             form.addToSelections(form.getDataTransfers(hasAccess));
             forward = mapping.findForward("validate");
         } else if (EXTEND_LIFETIME.equals(subAction)) {
-            new ExecutorRepository<>(exceptions, processedCount, form.getActionTransfers()) {
-                @Override
-                public void exec(final DataTransfer transfer) throws Exception {
-                    transfer.setExpiryDate(new Date(transfer.getExpiryDate().getTime() + Timer.ONE_DAY), u);
-                }
-            };
+            final var days = extendDays(request.getParameter("extendDays"));
+            extensionDays = days;
+            if (days == null) {
+                exceptions.add(new ECMWFActionFormException(
+                        "Extension days must be a whole number from 1 to " + MAX_EXTEND_DAYS + "."));
+            } else {
+                new ExecutorRepository<>(exceptions, processedCount, form.getActionTransfers()) {
+                    @Override
+                    public void exec(final DataTransfer transfer) throws Exception {
+                        transfer.setExpiryDate(new Date(transfer.getExpiryDate().getTime() + days * Timer.ONE_DAY), u);
+                    }
+                };
+            }
             forward = mapping.findForward("validate.redir");
         } else if (INCREASE_TRANSFER_PRIORITY.equals(subAction)) {
             new ExecutorRepository<>(exceptions, processedCount, form.getActionTransfers()) {
@@ -469,7 +479,8 @@ public class OperationsAction extends PDSAction {
         if (processedCount.get() > 0) {
             form.setMessage(
                     friendlyActionMessage(subAction, processedCount.get(), System.currentTimeMillis() - startTime,
-                            SET_TRANSFER_PRIORITY.equals(subAction) ? form.getNewPriority() : null));
+                            SET_TRANSFER_PRIORITY.equals(subAction) ? form.getNewPriority()
+                                    : EXTEND_LIFETIME.equals(subAction) ? String.valueOf(extensionDays) : null));
         }
         if (!exceptions.isEmpty()) {
             form.setMessagesFromExceptions(exceptions);
@@ -483,7 +494,8 @@ public class OperationsAction extends PDSAction {
         final var dur = formatFriendlyDuration(durationMs);
         switch (action) {
         case "extendLifetime":
-            return "Lifetime extended for " + n + " in " + dur;
+            return "Lifetime extended by " + ("1".equals(extra) ? "1 day" : extra + " days") + " for " + n + " in "
+                    + dur;
         case "increaseTransferPriority":
             return "Transfer priority increased for " + n + " in " + dur;
         case "decreaseTransferPriority":
@@ -498,6 +510,15 @@ public class OperationsAction extends PDSAction {
             return (count == 1 ? "Deleted 1 data transfer" : "Deleted " + n) + " in " + dur;
         default:
             return action + " performed on " + n + " in " + dur;
+        }
+    }
+
+    static Integer extendDays(final String value) {
+        try {
+            final var days = Integer.parseInt(value == null ? "1" : value.strip());
+            return days >= 1 && days <= MAX_EXTEND_DAYS ? days : null;
+        } catch (final NumberFormatException e) {
+            return null;
         }
     }
 

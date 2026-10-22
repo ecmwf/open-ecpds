@@ -144,6 +144,10 @@
 	        });
 	        return;
 	    }
+	    if (operation === 'extendLifetime') {
+	        var days = document.getElementById('extendDaysInput');
+	        if (days && !days.reportValidity()) return;
+	    }
 	    var prefix = (operation === 'delete') ? 'deletions' : 'operations';
 	    if (transfer) {
 	        form.action = '/do/transfer/destination/' + prefix
@@ -319,7 +323,15 @@
             </div>
 
             <div class="vr"></div>
-            <button type="button" class="btn btn-outline-secondary btn-sm batch-action-btn" onclick="transferChange('extendLifetime')" title="Extend lifetime"><i class="bi bi-clock-history me-1"></i>Extend</button>
+            <div class="input-group input-group-sm" style="width:auto">
+                <input type="number" id="extendDaysInput" name="extendDays"
+                       class="form-control form-control-sm text-center"
+                       style="width:4.5rem" min="1" max="365" step="1" value="1" required
+                       aria-label="Days to extend lifetime" title="Days to extend lifetime"
+                       onkeydown="if (event.key === 'Enter') { event.preventDefault(); transferChange('extendLifetime'); }">
+                <span class="input-group-text">days</span>
+                <button type="button" class="btn btn-outline-secondary batch-action-btn" onclick="transferChange('extendLifetime')" title="Extend lifetime of selected by this number of days"><i class="bi bi-clock-history me-1"></i>Extend</button>
+            </div>
             <button type="button" class="btn btn-outline-secondary btn-sm" onclick="transferChange('clean')"          title="Clear selection"><i class="bi bi-eraser me-1"></i>Clean</button>
         </c:if>
 
@@ -344,7 +356,7 @@
                 <li><strong>Delete</strong> &mdash; permanently remove all checked transfers.</li>
                 <li><strong>Priority <i class="bi bi-arrow-up"></i> / <i class="bi bi-arrow-down"></i></strong> &mdash; increase or decrease the scheduling priority of all checked transfers by one step.</li>
                 <li><strong>Set</strong> &mdash; assign the exact priority value entered in the number box to all checked transfers.</li>
-                <li><strong>Extend</strong> &mdash; extend the expiry lifetime of all checked transfers.</li>
+                <li><strong>Extend</strong> &mdash; extend the expiry lifetime of all checked transfers by the number of days entered (1&ndash;365).</li>
                 <li><strong>Clean</strong> &mdash; clear the entire basket and return to an empty selection.</li>
                 <li><strong>Back</strong> &mdash; return to the destination page without changing the basket.</li>
             </ul>
