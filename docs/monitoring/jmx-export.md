@@ -103,6 +103,16 @@ configurations are provided at `etc/master/conf/jmx_exporter.yml`,
 mapping to expose only the metrics needed. Restrict access to the metrics port to
 Prometheus and other trusted clients.
 
+The Master configuration exports per-Destination MBean attributes as one metric per
+attribute, with the Destination name in the `destination` label. For example:
+
+```text
+Destination_TransferCount{destination="HIE"} 5.0
+```
+
+Use queries such as `Destination_TransferCount{destination="HIE"}` or
+`topk(10, Destination_TransferCount)`, and `{{destination}}` as the Grafana legend.
+
 Add each enabled endpoint to Prometheus, using the actual host and port:
 
 ```yaml

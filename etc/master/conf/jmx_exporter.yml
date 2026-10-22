@@ -12,4 +12,10 @@ startDelaySeconds: 0
 lowercaseOutputName: false
 lowercaseOutputLabelNames: false
 rules:
+  # Destination MBeans are created per running Destination; expose its name as a label.
+  - pattern: 'Destination<destination=([^>]+)><>(\w+)'
+    name: Destination_$2
+    labels:
+      destination: "$1"
+    type: GAUGE
   - pattern: ".*"
