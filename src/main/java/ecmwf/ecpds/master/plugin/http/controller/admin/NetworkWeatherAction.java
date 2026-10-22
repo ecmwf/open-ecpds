@@ -253,7 +253,7 @@ public final class NetworkWeatherAction extends PDSAction {
                     !automation.loaded() ? "Not loaded" : automation.running() ? "Running" : "Idle");
             automationInfo.put("Last attempt", time(automation.lastAttempt()));
             automationInfo.put("Last success", time(automation.lastSuccess()));
-            automationInfo.put("Next run", time(automation.nextRun()));
+            automationInfo.put("Next run", nextRun(automation, System.currentTimeMillis()));
             automationInfo.put("Candidates", automation.candidates());
             automationInfo.put("Added / removed", automation.added() + " / " + automation.removed());
             automationInfo.put("History rows read", automation.rows() + (automation.partial() ? " (partial)" : ""));
@@ -500,6 +500,16 @@ public final class NetworkWeatherAction extends PDSAction {
             rows.add(row);
         });
         return rows;
+    }
+
+    static String nextRun(final ecmwf.ecpds.master.weather.WeatherAutomation.Status automation, final long now) {
+        if (!automation.loaded())
+            return "Unavailable";
+        if (!automation.configuration().automatic())
+            return "Disabled";
+        if (automation.running())
+            return "Running now";
+        return automation.nextRun() <= now ? "Due now (within ~1 minute)" : time(automation.nextRun());
     }
 
     private static String time(final long epochMillis) {

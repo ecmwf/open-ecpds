@@ -17,8 +17,14 @@
     <div class="alert alert-danger" role="alert"><c:out value="${nwControlError}"/></div>
 </c:if>
 <c:if test="${not empty nwSuccess}">
-    <div class="alert alert-success alert-dismissible" role="status"><c:out value="${nwSuccess}"/>
+    <div class="alert alert-success alert-dismissible fade show" id="nwSuccessAlert" role="status"><c:out value="${nwSuccess}"/>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+    <script>
+        setTimeout(function() {
+            var el = document.getElementById('nwSuccessAlert');
+            if (el) { bootstrap.Alert.getOrCreateInstance(el).close(); }
+        }, 4000);
+    </script>
 </c:if>
 
 <c:if test="${nwLoaded}">
