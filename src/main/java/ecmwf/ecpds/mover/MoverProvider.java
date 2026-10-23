@@ -88,6 +88,8 @@ public final class MoverProvider extends NativeAuthenticationProvider {
     /** The Constant _cacheTimeout. */
     private static final long _cacheTimeout = Cnf.at("MoverProvider", "cacheTimeout", 15 * Timer.ONE_MINUTE);
 
+    private static final String UPLOAD_PATH_KEY = MoverProvider.class.getName() + ".uploadPath";
+
     /** TTL for HTTPS portal session tokens (default: 1 hour). */
     public static final long _portalSessionTtlMs = Cnf.at("MoverProvider", "portalSessionTtlMs", 60 * Timer.ONE_MINUTE);
 
@@ -1381,6 +1383,8 @@ public final class MoverProvider extends NativeAuthenticationProvider {
                 throws EccmdException, IOException {
             _log.debug("getProxySocketOutput(" + target + "," + offset + "," + umask + ")");
             _profile.checkPermission("put", target);
+            _fileElementCache.remove(target);
+            _fileListElementCache.remove(target);
             final var index = target.lastIndexOf("/");
             if (index > 0) {
                 // Let's check if the path already exists? If it does not then we have to check
@@ -1396,9 +1400,8 @@ public final class MoverProvider extends NativeAuthenticationProvider {
                     _profile.checkPermission("mkdir", dir);
                 }
             }
-            // For uploads the target file may not exist yet (new file). Try to get the
-            // existing element first (preserves DataTransferId for overwrites); if not
-            // found, fall back to a fresh DataFileElement for the new-file case.
+            // The upload is submitted by path even when a previous version already exists.
+            // A new path has no listing yet, so create its element without requiring one.
             FileElement fileElement;
             try {
                 fileElement = _getFileElement(target, true);
@@ -1411,6 +1414,7 @@ public final class MoverProvider extends NativeAuthenticationProvider {
                 }
             }
             final var result = fileElement.getProxySocketOutput(offset, umask);
+            result.addObject(UPLOAD_PATH_KEY, target);
             result.setSocketConfig(new SocketConfig("ECproxyPlugin"));
             return result;
         }
@@ -1569,8 +1573,18 @@ public final class MoverProvider extends NativeAuthenticationProvider {
             _log.debug("check(" + proxy.getTicket() + ")");
             final var key = FileElement.class.getName();
             final var fileElement = (FileElement) proxy.getObject(key);
+            final var uploadPath = (String) proxy.getObject(UPLOAD_PATH_KEY);
             proxy.addObject(key, null);
-            fileElement.check(proxy);
+            proxy.addObject(UPLOAD_PATH_KEY, null);
+            try {
+                fileElement.check(proxy);
+            } finally {
+                if (uploadPath != null) {
+                    // The upload creates a new DataFile; cached transfer IDs may refer to its predecessor.
+                    _fileElementCache.remove(uploadPath);
+                    _fileListElementCache.remove(uploadPath);
+                }
+            }
         }
 
         /**
