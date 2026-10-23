@@ -79,6 +79,12 @@ To open the OpenECPDS project in Eclipse:
   Eclipse will automatically detect the project files.
 - Once the project is detected, click **Finish** to complete the import.
 
+After dependency changes, select the root project and `ecpds-core`, then choose
+**Maven → Update Project...** (++alt+f5++). The root project's automatically
+activated `eclipse-m2e` profile supplies its IDE dependencies; `ecpds-core` uses
+its own dependency list. If unresolved imports remain after the update, use
+**Project → Clean...**. Do not add individual JARs manually to the build path.
+
 To build the application from the source:
 
 - Select the `pom.xml` file in the **Project Explorer** view.

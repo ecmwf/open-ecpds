@@ -27,6 +27,7 @@ package ecmwf.ecpds.master;
  */
 
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_INCOMING;
+import static ecmwf.ecpds.master.OperationalEvents.field;
 import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_SCHEDULER;
 import static ecmwf.common.ectrans.ECtransGroups.Module.USER_PORTAL;
@@ -97,8 +98,8 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     /** The Constant _log. */
     private static final transient Logger _log = LogManager.getLogger(DataFileAccessImpl.class);
 
-    /** The Constant _splunk. */
-    private static final Logger _splunk = LogManager.getLogger("SplunkLogs");
+    /** Operational event outputs. */
+    private static final OperationalEvents _operationalEvents = OperationalEvents.getInstance();
 
     /** The Constant ECPDS_MKDIR_FILE. */
     private static final transient String ECPDS_MKDIR_FILE = "/.ecpds_mkdir";
@@ -1271,32 +1272,35 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                                 _log.debug("IncomingHistory created for DataTransfer {}", transfer.getId());
                                 base.insert(history, true);
                             }
-                            // Create a new Splunk entry?
-                            if (_splunk.isInfoEnabled() && setup != null
+                            // Emit an incoming operational event to the enabled outputs.
+                            if (_operationalEvents.isEnabled() && setup != null
                                     && setup.getBoolean(USER_PORTAL_RECORD_SPLUNK)) {
                                 final var destination = transfer.getDestination();
-                                _splunk.info(
-                                        "INH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                                        "Monitored=" + destination.getMonitor(),
-                                        "TimeStamp=" + Timestamp.from(Instant.now()),
-                                        "DataTransferId=" + history.getDataTransferId(),
-                                        "DestinationName=" + destination.getName(),
-                                        "DestinationType=" + DestinationOption.getLabel(destination.getType()),
-                                        "FileName=" + history.getFileName(), "FileSize=" + history.getFileSize(),
-                                        "ScheduledTime=" + history.getScheduledTime(),
-                                        "StartTime=" + history.getStartTime(),
-                                        "MetaStream=" + nullToNone(history.getMetaStream()),
-                                        "MetaType=" + nullToNone(history.getMetaType()),
-                                        "MetaTime=" + history.getMetaTime(), "TimeBase=" + history.getTimeBase(),
-                                        "TimeStep=" + history.getTimeStep(), "Duration=" + history.getDuration(),
-                                        "UserId=" + incomingUser.getId(), "CountryCode=" + incomingUser.getIso(),
-                                        "UserDescription=" + incomingUser.getComment(),
-                                        "BytesSent=" + history.getSent(), "TransferProtocol=" + history.getProtocol(),
-                                        "TransferServer=" + history.getTransferServer(),
-                                        "HostAddress=" + history.getHostAddress(),
-                                        "Caller=" + nullToNone(file.getCaller()),
-                                        "ExpiryTime=" + transfer.getExpiryTime(), "FileSystem=" + file.getFileSystem(),
-                                        "Action=" + (history.getUpload() ? "upload" : "download"));
+                                _operationalEvents.emit("INH", field("Monitored", destination.getMonitor()),
+                                        field("TimeStamp", Timestamp.from(Instant.now())),
+                                        field("DataTransferId", history.getDataTransferId()),
+                                        field("DestinationName", destination.getName()),
+                                        field("DestinationType", DestinationOption.getLabel(destination.getType())),
+                                        field("FileName", history.getFileName()),
+                                        field("FileSize", history.getFileSize()),
+                                        field("ScheduledTime", history.getScheduledTime()),
+                                        field("StartTime", history.getStartTime()),
+                                        field("MetaStream", nullToNone(history.getMetaStream())),
+                                        field("MetaType", nullToNone(history.getMetaType())),
+                                        field("MetaTime", history.getMetaTime()),
+                                        field("TimeBase", history.getTimeBase()),
+                                        field("TimeStep", history.getTimeStep()),
+                                        field("Duration", history.getDuration()), field("UserId", incomingUser.getId()),
+                                        field("CountryCode", incomingUser.getIso()),
+                                        field("UserDescription", incomingUser.getComment()),
+                                        field("BytesSent", history.getSent()),
+                                        field("TransferProtocol", history.getProtocol()),
+                                        field("TransferServer", history.getTransferServer()),
+                                        field("HostAddress", history.getHostAddress()),
+                                        field("Caller", nullToNone(file.getCaller())),
+                                        field("ExpiryTime", transfer.getExpiryTime()),
+                                        field("FileSystem", file.getFileSystem()),
+                                        field("Action", (history.getUpload() ? "upload" : "download")));
                             }
                         } catch (final Throwable t) {
                             _log.error("Creating IncomingHistory", t);

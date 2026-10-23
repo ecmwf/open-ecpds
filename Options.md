@@ -35,6 +35,9 @@ These options help fine-tune the acquisition process and are accessible via the 
 ### acquisition.action
 This option allows choosing which action to take on the selected files. The "queue" action triggers the queueing of the selected files and the "delete" action triggers the deletion of the selected files on the remote site.
 
+### acquisition.allowSourceSizeMismatchPattern
+Regex matched against the full source filename. Matching files may be downloaded even when the remote size differs from the stored/catalogue size. The remote size query still runs and the download is validated against that size when known. The recorded size is updated after successful retrieval. Does not bypass size-query errors or timeouts.
+
 ### acquisition.datedelta
 When resolving the "$date" and "$dirdate" parameters in "acquisition.metadata" or "acquisition.target", this option allows applying a delta to the date. The delta can be positive, to go forward in time or negative to go backward in time.
 
@@ -138,7 +141,7 @@ When listing remote files, this parameter specifies the time zone identifier use
 When listing remote files, this parameter represents a string containing the short names of the months. It provides an alternative way for the server to indicate month names in abbreviated form.
 
 ### acquisition.skipPostRetrievalSizeCheckPattern
-When retrieving a file, a check is performed on the size of the remote file to ensure it matches the size recorded during discovery. In case of a mismatch, the default behaviour is to fail the data retrieval. However, in some situations, we may know that a remote site could have inconsistencies between the initial and current file sizes. This option allows specifying a regex pattern to select files for which the size check should be skipped and ignored.
+Regex matched against the full source filename. Matching files are downloaded without querying the remote size or validating the downloaded length against an expected size. The actual downloaded length is recorded after successful retrieval. Transport errors still fail retrieval. Takes precedence over allowSourceSizeMismatchPattern.
 
 ### acquisition.standby
 When a new file is discovered and registered as a data transfer, allow specifying if the data transfer should be in standby mode for the dissemination process.
@@ -382,6 +385,9 @@ If the internal retry mechanism is activated (positive "ectrans.retryCount") the
 
 ### ectrans.rmdirTimeOut
 Allow specifying a timeout duration for processing the removal of a directory from the remote site by the underlying transfer module.
+
+### ectrans.sharedConnectionLimit
+For Acquisition and Dissemination Hosts, share Max Connections across all Destinations using this Host record. Disabled by default: Max Connections applies separately to each Destination. Destination Max Connections still applies. Counts scheduled file retrievals/uploads, not directory listings, probes or idle pooled sockets. Negative Max Connections means unlimited; zero prevents new transfers. Lowering a limit does not interrupt running transfers.
 
 ### ectrans.sizeTimeOut
 Allow specifying a timeout duration for getting the size of a file from the remote site by the underlying transfer module.
@@ -1193,7 +1199,7 @@ Allow the configuration of a regular expression (regex) to control whether the "
 If enabled, specify that any upload or download must be added to the data transfer history list. Disabling this option can be useful if this is an anonymous user triggering too many requests.
 
 ### portal.recordSplunk
-If enabled, specify that any upload or download must be logged in Splunk as an INH (INcoming History) entry. Only valid if Splunk is configured.
+If enabled, emit an INH (INcoming History) event for each upload or download to the configured operational event outputs (Splunk file and/or OpenTelemetry). The legacy option name is retained for compatibility.
 
 ### portal.registrationAdminEmail
 Specify the administrator email address to notify when a new self-service registration is submitted or when a subscriber verifies their email and is awaiting approval. Only used when the Portal Service is set to "Self-Service". If left empty, no admin notification is sent.

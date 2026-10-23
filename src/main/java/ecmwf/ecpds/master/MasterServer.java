@@ -28,6 +28,7 @@ package ecmwf.ecpds.master;
 
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_ECTRANS;
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_MQTT;
+import static ecmwf.ecpds.master.OperationalEvents.field;
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_SCHEDULER;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ACQUISITION;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ECTRANS;
@@ -296,8 +297,8 @@ public final class MasterServer extends ECaccessProvider
     /** The Constant host outputs. */
     private static final transient String HOST_OUTPUTS = Cnf.at("Server", "hostoutputs") + File.separator;
 
-    /** The Constant _splunk. */
-    private static final Logger _splunk = LogManager.getLogger("SplunkLogs");
+    /** Operational event outputs. */
+    private static final OperationalEvents _operationalEvents = OperationalEvents.getInstance();
 
     /** The Constant _events. */
     private static final Logger _events = LogManager.getLogger("EventLogs");
@@ -854,6 +855,7 @@ public final class MasterServer extends ECaccessProvider
             MalformedObjectNameException, InstanceNotFoundException, ConnectionException, DataBaseException {
         super(new ECpdsBase(), starter);
         _log.info("MasterServer-version: {}", Version.getFullVersion());
+        OperationalEvents.start(getECpdsBase());
         NativeAuthenticationProvider.setProvider(MasterProvider.class);
         DestinationOption.getList(); // Make sure the list of options is loaded!
         // Live ECPDS Earth (Phase 0): allow forcing the live transfer monitoring feed on regardless of connected
@@ -1364,9 +1366,9 @@ public final class MasterServer extends ECaccessProvider
             final var base = getECpdsBase();
             final var user = base.getIncomingUserObject(incomingUser);
             if (user == null) {
-                if (_splunk.isInfoEnabled())
-                    _splunk.info("DEA;{};UserId={};Message=Not found;Context={}",
-                            "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
+                if (_operationalEvents.isEnabled())
+                    _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
+                            field("UserId", incomingUser), field("Message", "Not found"), field("Context", from));
                 throw new MasterException("Login failed");
             }
             // Let's get the data from the user and the data policies!
@@ -1397,15 +1399,16 @@ public final class MasterServer extends ECaccessProvider
                 }
             }
             if (blocked) {
-                if (_splunk.isInfoEnabled())
-                    _splunk.info("DEA;{};UserId={};Message=Geolocation restriction;Context={}",
-                            "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
+                if (_operationalEvents.isEnabled())
+                    _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
+                            field("UserId", incomingUser), field("Message", "Geolocation restriction"),
+                            field("Context", from));
                 throw new MasterException("Login failed");
             }
             if (!user.getActive()) {
-                if (_splunk.isInfoEnabled())
-                    _splunk.info("DEA;{};UserId={};Message=Disabled;Context={}",
-                            "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
+                if (_operationalEvents.isEnabled())
+                    _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
+                            field("UserId", incomingUser), field("Message", "Disabled"), field("Context", from));
                 throw new MasterException("Login failed");
             }
             if ("open-access".equals(user.getPortalService())) {
@@ -1423,9 +1426,10 @@ public final class MasterServer extends ECaccessProvider
                         authenticated = false;
                     }
                     if (!authenticated) {
-                        if (_splunk.isInfoEnabled())
-                            _splunk.info("DEA;{};UserId={};Message=TOTP authentication failed;Context={}",
-                                    "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
+                        if (_operationalEvents.isEnabled())
+                            _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
+                                    field("UserId", incomingUser), field("Message", "TOTP authentication failed"),
+                                    field("Context", from));
                         throw new MasterException("Login failed");
                     }
                 } else {
@@ -1437,10 +1441,11 @@ public final class MasterServer extends ECaccessProvider
                         // no admin password "back-door" can bypass the subscriber flow.
                         final var subscriber = base.findActiveSubscriberByPassword(incomingUser, incomingPassword);
                         if (subscriber == null) {
-                            if (_splunk.isInfoEnabled())
-                                _splunk.info(
-                                        "DEA;{};UserId={};Message=Subscriber password authentication failed;Context={}",
-                                        "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
+                            if (_operationalEvents.isEnabled())
+                                _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
+                                        field("UserId", incomingUser),
+                                        field("Message", "Subscriber password authentication failed"),
+                                        field("Context", from));
                             throw new MasterException("Login failed");
                         }
                         _log.debug("Subscriber {} authenticated as IncomingUser {}", subscriber.getPsbEmail(),
@@ -1449,17 +1454,19 @@ public final class MasterServer extends ECaccessProvider
                         // Standard login: check the IncomingUser's own password
                         final var localPassword = user.getPassword();
                         if (localPassword == null) {
-                            if (_splunk.isInfoEnabled())
-                                _splunk.info("DEA;{};UserId={};Message=Password not set;Context={}",
-                                        "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
+                            if (_operationalEvents.isEnabled())
+                                _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
+                                        field("UserId", incomingUser), field("Message", "Password not set"),
+                                        field("Context", from));
                             _log.debug("Password not set for IncomingUser {}", incomingUser);
                             throw new MasterException("Login failed");
                         }
                         if (!localPassword.equals(incomingPassword)
                                 && !_getIncomingUserHash(user).equals(incomingPassword)) {
-                            if (_splunk.isInfoEnabled())
-                                _splunk.info("DEA;{};UserId={};Message=Password authentication failed;Context={}",
-                                        "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
+                            if (_operationalEvents.isEnabled())
+                                _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
+                                        field("UserId", incomingUser),
+                                        field("Message", "Password authentication failed"), field("Context", from));
                             throw new MasterException("Login failed");
                         }
                     }
@@ -1477,9 +1484,9 @@ public final class MasterServer extends ECaccessProvider
                 if (count >= maxConnections) {
                     final var message = "Maximum number of connections exceeded (" + count + ") [confirmed=" + confirmed
                             + ",pending=" + pending + "]";
-                    if (_splunk.isInfoEnabled())
-                        _splunk.info("DEA;{};UserId={};Message={};Context={}",
-                                "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, message, from);
+                    if (_operationalEvents.isEnabled())
+                        _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
+                                field("UserId", incomingUser), field("Message", message), field("Context", from));
                     _log.warn("{} for IncomingUser {}", message, incomingUser);
                     throw new MasterException(message);
                 }
@@ -1514,9 +1521,9 @@ public final class MasterServer extends ECaccessProvider
                         if (pending != null)
                             pending.pollLast();
                     }
-                    if (_splunk.isInfoEnabled())
-                        _splunk.info("DEA;{};UserId={};Message={};Context={}",
-                                "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, message, from);
+                    if (_operationalEvents.isEnabled())
+                        _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
+                                field("UserId", incomingUser), field("Message", message), field("Context", from));
                     _log.warn("{} for IncomingUser {}", message, incomingUser);
                     throw new MasterException(message);
                 }
@@ -1536,9 +1543,9 @@ public final class MasterServer extends ECaccessProvider
                         if (pending != null)
                             pending.pollLast();
                     }
-                    if (_splunk.isInfoEnabled())
-                        _splunk.info("DEA;{};UserId={};Message={};Context={}",
-                                "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, message, from);
+                    if (_operationalEvents.isEnabled())
+                        _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
+                                field("UserId", incomingUser), field("Message", message), field("Context", from));
                     _log.warn("{} for IncomingUser {}", message, incomingUser);
                     throw new MasterException(message);
                 }
@@ -1552,17 +1559,19 @@ public final class MasterServer extends ECaccessProvider
                 }
             }
             if (destinations.isEmpty()) {
-                if (_splunk.isInfoEnabled())
-                    _splunk.info("DEA;{};UserId={};Message=No associated Destinations;Context={}",
-                            "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
+                if (_operationalEvents.isEnabled())
+                    _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
+                            field("UserId", incomingUser), field("Message", "No associated Destinations"),
+                            field("Context", from));
                 throw new MasterException("Login failed");
             }
             // Look for the Permissions associated to this user!
             final var permissions = base.getIncomingPermissionsForIncomingUser(incomingUser);
             if (permissions.isEmpty()) {
-                if (_splunk.isInfoEnabled())
-                    _splunk.info("DEA;{};UserId={};Message=No associated Permissions;Context={}",
-                            "TimeStamp=" + Timestamp.from(Instant.now()), incomingUser, from);
+                if (_operationalEvents.isEnabled())
+                    _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
+                            field("UserId", incomingUser), field("Message", "No associated Permissions"),
+                            field("Context", from));
                 throw new MasterException("Login failed");
             }
             // Let's update with the last login informations!
@@ -7359,6 +7368,7 @@ public final class MasterServer extends ECaccessProvider
                 _log.warn("Removing notifications", e);
             }
         }
+        OperationalEvents.shutdown();
         super.shutdown();
     }
 
@@ -7933,40 +7943,41 @@ public final class MasterServer extends ECaccessProvider
                     upload.setHostAddress(host.getHost());
                     base.insert(upload, true);
                     final var socketStatistics = nullToNone(transfer.getStatistics());
-                    if (transfer.getRecordUPH() && _splunk.isInfoEnabled()) {
+                    if (transfer.getRecordUPH() && _operationalEvents.isEnabled()) {
                         // For the accounting!
                         final var destination = transfer.getDestination();
                         final var proxyHost = transfer.getProxyHost();
                         final var retryTime = transfer.getRetryTime();
                         final var startTime = transfer.getStartTime();
-                        _splunk.info(
-                                "UPH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                                "Monitored=" + destination.getMonitor(), "TimeStamp=" + Timestamp.from(Instant.now()),
-                                "DataTransferId=" + upload.getDataTransferId(),
-                                "DestinationName=" + destination.getName(),
-                                "DestinationType=" + DestinationOption.getLabel(destination.getType()),
-                                "FileName=" + upload.getFileName(), "FileSize=" + upload.getFileSize(),
-                                "Identity=" + transfer.getIdentity(),
-                                "MetaStream=" + nullToNone(upload.getMetaStream()),
-                                "MetaType=" + nullToNone(upload.getMetaType()), "MetaTime=" + upload.getMetaTime(),
-                                "Priority=" + upload.getPriority(), "QueueTime=" + upload.getQueueTime(),
-                                "RequeueCount=" + upload.getRequeueCount(),
-                                "ScheduledTime=" + upload.getScheduledTime(),
-                                "StartTime=" + (retryTime != null ? retryTime : startTime),
-                                "PutTime=" + upload.getPutTime(), "Duration=" + upload.getDuration(),
-                                "DurationOnClose=" + transfer.getDurationOnClose(), "BytesSent=" + upload.getSent(),
-                                "StatusCode=" + upload.getStatusCode(),
-                                "RetrievalTime=" + nullToNone(upload.getRetrievalTime()),
-                                "TimeBase=" + upload.getTimeBase(), "TimeStep=" + upload.getTimeStep(),
-                                "FinishTime=" + upload.getFinishTime(),
-                                "TransferProtocol=" + upload.getTransferModule(),
-                                "TransferServer=" + upload.getTransferServer(),
-                                "NetworkCode=" + HostOption.getLabel(upload.getNetworkCode()),
-                                "HostAddress=" + upload.getHostAddress(), "PreSchedule=" + transfer.getAsap(),
-                                "ProxyHost=" + nullToNone(proxyHost != null ? proxyHost.getHost() : null),
-                                "Proxied=" + (transfer.getProxyName() != null), "SocketStatistics=" + socketStatistics,
-                                "Compressed=" + nullToNone(transfer.getCompressed()),
-                                "CompressedOnTheFly=" + transfer.getCompressedOnTheFly());
+                        _operationalEvents.emit("UPH", field("Monitored", destination.getMonitor()),
+                                field("TimeStamp", Timestamp.from(Instant.now())),
+                                field("DataTransferId", upload.getDataTransferId()),
+                                field("DestinationName", destination.getName()),
+                                field("DestinationType", DestinationOption.getLabel(destination.getType())),
+                                field("FileName", upload.getFileName()), field("FileSize", upload.getFileSize()),
+                                field("Identity", transfer.getIdentity()),
+                                field("MetaStream", nullToNone(upload.getMetaStream())),
+                                field("MetaType", nullToNone(upload.getMetaType())),
+                                field("MetaTime", upload.getMetaTime()), field("Priority", upload.getPriority()),
+                                field("QueueTime", upload.getQueueTime()),
+                                field("RequeueCount", upload.getRequeueCount()),
+                                field("ScheduledTime", upload.getScheduledTime()),
+                                field("StartTime", (retryTime != null ? retryTime : startTime)),
+                                field("PutTime", upload.getPutTime()), field("Duration", upload.getDuration()),
+                                field("DurationOnClose", transfer.getDurationOnClose()),
+                                field("BytesSent", upload.getSent()), field("StatusCode", upload.getStatusCode()),
+                                field("RetrievalTime", nullToNone(upload.getRetrievalTime())),
+                                field("TimeBase", upload.getTimeBase()), field("TimeStep", upload.getTimeStep()),
+                                field("FinishTime", upload.getFinishTime()),
+                                field("TransferProtocol", upload.getTransferModule()),
+                                field("TransferServer", upload.getTransferServer()),
+                                field("NetworkCode", HostOption.getLabel(upload.getNetworkCode())),
+                                field("HostAddress", upload.getHostAddress()), field("PreSchedule", transfer.getAsap()),
+                                field("ProxyHost", nullToNone(proxyHost != null ? proxyHost.getHost() : null)),
+                                field("Proxied", (transfer.getProxyName() != null)),
+                                field("SocketStatistics", socketStatistics),
+                                field("Compressed", nullToNone(transfer.getCompressed())),
+                                field("CompressedOnTheFly", transfer.getCompressedOnTheFly()));
                     }
                     _log.debug("UploadHistory created for DataTransfer {} (statistics: {})", transfer.getId(),
                             socketStatistics);
@@ -10156,21 +10167,26 @@ public final class MasterServer extends ECaccessProvider
                     }
                     final var destination = _transfer.getDestination();
                     final var dataFile = _transfer.getDataFile();
-                    if (_splunk.isInfoEnabled() && !(complete && target.isEmpty()))
-                        _splunk.info("CPY;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                                "Monitored=" + destination.getMonitor(), "TimeStamp=" + Timestamp.from(Instant.now()),
-                                "DataTransferId=" + _transfer.getId(), "DestinationName=" + destination.getName(),
-                                "DestinationType=" + DestinationOption.getLabel(destination.getType()),
-                                "FileName=" + _transfer.getTarget(), "FileSize=" + dataFile.getSize(),
-                                "ScheduledTime=" + _transfer.getScheduledTime(), "StartTime=" + new Timestamp(start),
-                                "MetaStream=" + nullToNone(dataFile.getMetaStream()),
-                                "MetaType=" + nullToNone(dataFile.getMetaType()), "MetaTime=" + dataFile.getMetaTime(),
-                                "TimeBase=" + dataFile.getTimeBase(), "TimeStep=" + dataFile.getTimeStep(),
-                                "Duration=" + duration, "CountryCode=" + destination.getCountryIso(),
-                                "Target=" + (isEmpty(target) ? "-" : target.replaceAll("DataMover=", "")),
-                                "TransferServer=" + _sourceMover, "Caller=" + nullToNone(dataFile.getCaller()),
-                                "ExpiryTime=" + _transfer.getExpiryTime(), "FileSystem=" + dataFile.getFileSystem(),
-                                "Status=" + complete, "Message=" + nullToNone(rr.message), "Action=replicate");
+                    if (_operationalEvents.isEnabled() && !(complete && target.isEmpty()))
+                        _operationalEvents.emit("CPY", field("Monitored", destination.getMonitor()),
+                                field("TimeStamp", Timestamp.from(Instant.now())),
+                                field("DataTransferId", _transfer.getId()),
+                                field("DestinationName", destination.getName()),
+                                field("DestinationType", DestinationOption.getLabel(destination.getType())),
+                                field("FileName", _transfer.getTarget()), field("FileSize", dataFile.getSize()),
+                                field("ScheduledTime", _transfer.getScheduledTime()),
+                                field("StartTime", new Timestamp(start)),
+                                field("MetaStream", nullToNone(dataFile.getMetaStream())),
+                                field("MetaType", nullToNone(dataFile.getMetaType())),
+                                field("MetaTime", dataFile.getMetaTime()), field("TimeBase", dataFile.getTimeBase()),
+                                field("TimeStep", dataFile.getTimeStep()), field("Duration", duration),
+                                field("CountryCode", destination.getCountryIso()),
+                                field("Target", (isEmpty(target) ? "-" : target.replaceAll("DataMover=", ""))),
+                                field("TransferServer", _sourceMover),
+                                field("Caller", nullToNone(dataFile.getCaller())),
+                                field("ExpiryTime", _transfer.getExpiryTime()),
+                                field("FileSystem", dataFile.getFileSystem()), field("Status", complete),
+                                field("Message", nullToNone(rr.message)), field("Action", "replicate"));
                 } catch (final Throwable t) {
                     _log.warn("Running ReplicateThread " + key, t);
                 } finally {
@@ -11295,23 +11311,28 @@ public final class MasterServer extends ECaccessProvider
                         addTransferHistory(_transfer, StatusFactory.STOP, rr.message);
                     }
                     final var dataFile = _transfer.getDataFile();
-                    if (_splunk.isInfoEnabled())
-                        _splunk.info("CPY;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                                "Monitored=" + destination.getMonitor(), "TimeStamp=" + Timestamp.from(Instant.now()),
-                                "DataTransferId=" + _transfer.getId(), "DestinationName=" + destination.getName(),
-                                "DestinationType=" + DestinationOption.getLabel(destination.getType()),
-                                "FileName=" + _transfer.getTarget(), "FileSize=" + dataFile.getSize(),
-                                "ScheduledTime=" + _transfer.getScheduledTime(), "StartTime=" + new Timestamp(start),
-                                "MetaStream=" + nullToNone(dataFile.getMetaStream()),
-                                "MetaType=" + nullToNone(dataFile.getMetaType()), "MetaTime=" + dataFile.getMetaTime(),
-                                "TimeBase=" + dataFile.getTimeBase(), "TimeStep=" + dataFile.getTimeStep(),
-                                "Duration=" + duration, "CountryCode=" + destination.getCountryIso(),
-                                "Target=" + (rr.hostForBackup == null ? "-" : rr.hostForBackup.getNickname()),
-                                "TransferServer=" + (isEmpty(rr.transferServer) ? "-"
-                                        : rr.transferServer.replaceAll("DataMover=", "")),
-                                "Caller=" + nullToNone(dataFile.getCaller()), "ExpiryTime=" + _transfer.getExpiryTime(),
-                                "FileSystem=" + dataFile.getFileSystem(), "Status=" + complete,
-                                "Message=" + nullToNone(rr.message), "Action=proxy");
+                    if (_operationalEvents.isEnabled())
+                        _operationalEvents.emit("CPY", field("Monitored", destination.getMonitor()),
+                                field("TimeStamp", Timestamp.from(Instant.now())),
+                                field("DataTransferId", _transfer.getId()),
+                                field("DestinationName", destination.getName()),
+                                field("DestinationType", DestinationOption.getLabel(destination.getType())),
+                                field("FileName", _transfer.getTarget()), field("FileSize", dataFile.getSize()),
+                                field("ScheduledTime", _transfer.getScheduledTime()),
+                                field("StartTime", new Timestamp(start)),
+                                field("MetaStream", nullToNone(dataFile.getMetaStream())),
+                                field("MetaType", nullToNone(dataFile.getMetaType())),
+                                field("MetaTime", dataFile.getMetaTime()), field("TimeBase", dataFile.getTimeBase()),
+                                field("TimeStep", dataFile.getTimeStep()), field("Duration", duration),
+                                field("CountryCode", destination.getCountryIso()),
+                                field("Target", (rr.hostForBackup == null ? "-" : rr.hostForBackup.getNickname())),
+                                field("TransferServer",
+                                        (isEmpty(rr.transferServer) ? "-"
+                                                : rr.transferServer.replaceAll("DataMover=", ""))),
+                                field("Caller", nullToNone(dataFile.getCaller())),
+                                field("ExpiryTime", _transfer.getExpiryTime()),
+                                field("FileSystem", dataFile.getFileSystem()), field("Status", complete),
+                                field("Message", nullToNone(rr.message)), field("Action", "proxy"));
                 } catch (final Throwable t) {
                     _log.warn("Running ProxyThread " + key, t);
                 } finally {
@@ -13984,39 +14005,41 @@ public final class MasterServer extends ECaccessProvider
                                             ? " - Size verification bypassed" : ""));
                             addTransferHistory(transfer, _source, transfer.getStatusCode(), transfer.getComment(),
                                     false);
-                            // Do we have to store it in Splunk?
-                            if (_splunk.isInfoEnabled()) {
+                            // Emit the retrieval outcome to the enabled event outputs.
+                            if (_operationalEvents.isEnabled()) {
                                 final var destination = transfer.getDestination();
                                 final var ecauthHost = dataFile.getEcauthHost();
                                 final var ecauthUser = dataFile.getEcauthUser();
                                 final var login = _source.getLogin();
                                 final var host = _source.getHost();
-                                _splunk.info(
-                                        "RET;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                                        "Monitored=" + destination.getMonitor(),
-                                        "TimeStamp=" + Timestamp.from(Instant.now()),
-                                        "DataTransferId=" + transfer.getId(),
-                                        "DestinationName=" + destination.getName(),
-                                        "DestinationType=" + DestinationOption.getLabel(destination.getType()),
-                                        "FileName=" + dataFile.getOriginal(), "FileSize=" + dataFile.getSize(),
-                                        "Identity=" + transfer.getIdentity(),
-                                        "ScheduledTime=" + transfer.getScheduledTime(),
-                                        "StartTime=" + dataFile.getGetTime(),
-                                        "MetaStream=" + nullToNone(dataFile.getMetaStream()),
-                                        "MetaType=" + nullToNone(dataFile.getMetaType()),
-                                        "MetaTime=" + dataFile.getMetaTime(), "TimeBase=" + dataFile.getTimeBase(),
-                                        "TimeStep=" + dataFile.getTimeStep(),
-                                        "Duration=" + dataFile.getGetCompleteDuration(), "HostId=" + _source.getName(),
-                                        "HostLogin=" + (isNotEmpty(login)
-                                                ? Format.replaceAll(login, "$dataFile[ecauthUser]", ecauthUser) : "-"),
-                                        "HostAddress=" + (isNotEmpty(host)
-                                                ? Format.replaceAll(host, "$dataFile[ecauthHost]", ecauthHost) : "-"),
-                                        "TransferProtocol=" + _source.getTransferMethod().getECtransModuleName(),
-                                        "MoverName=" + server.getName(),
-                                        "UserId=" + (isNotEmpty(ecauthUser) ? ecauthUser : "-"),
-                                        "RequestAddress=" + (isNotEmpty(ecauthHost) ? ecauthHost : "-"),
-                                        "DataOnlyDuration=" + dataFile.getGetDuration(),
-                                        "StandBy=" + dataFile.getStandby(), "RemoteHost=" + nullToNone(remoteHost));
+                                _operationalEvents.emit("RET", field("Monitored", destination.getMonitor()),
+                                        field("TimeStamp", Timestamp.from(Instant.now())),
+                                        field("DataTransferId", transfer.getId()),
+                                        field("DestinationName", destination.getName()),
+                                        field("DestinationType", DestinationOption.getLabel(destination.getType())),
+                                        field("FileName", dataFile.getOriginal()),
+                                        field("FileSize", dataFile.getSize()),
+                                        field("Identity", transfer.getIdentity()),
+                                        field("ScheduledTime", transfer.getScheduledTime()),
+                                        field("StartTime", dataFile.getGetTime()),
+                                        field("MetaStream", nullToNone(dataFile.getMetaStream())),
+                                        field("MetaType", nullToNone(dataFile.getMetaType())),
+                                        field("MetaTime", dataFile.getMetaTime()),
+                                        field("TimeBase", dataFile.getTimeBase()),
+                                        field("TimeStep", dataFile.getTimeStep()),
+                                        field("Duration", dataFile.getGetCompleteDuration()),
+                                        field("HostId", _source.getName()),
+                                        field("HostLogin", (isNotEmpty(login)
+                                                ? Format.replaceAll(login, "$dataFile[ecauthUser]", ecauthUser) : "-")),
+                                        field("HostAddress", (isNotEmpty(host)
+                                                ? Format.replaceAll(host, "$dataFile[ecauthHost]", ecauthHost) : "-")),
+                                        field("TransferProtocol", _source.getTransferMethod().getECtransModuleName()),
+                                        field("MoverName", server.getName()),
+                                        field("UserId", (isNotEmpty(ecauthUser) ? ecauthUser : "-")),
+                                        field("RequestAddress", (isNotEmpty(ecauthHost) ? ecauthHost : "-")),
+                                        field("DataOnlyDuration", dataFile.getGetDuration()),
+                                        field("StandBy", dataFile.getStandby()),
+                                        field("RemoteHost", nullToNone(remoteHost)));
                             }
                             // If this is the acquisition then the Status of the
                             // DataTransfer should be set to WAIT otherwise it

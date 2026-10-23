@@ -39,6 +39,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_ECPDS_MOVER_LIST_FOR_SOUR
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_DEBUG;
 import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.common.text.Util.nullToNone;
+import static ecmwf.ecpds.master.OperationalEvents.field;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -107,6 +108,7 @@ import ecmwf.ecpds.master.LiveTransferRegistry;
 import ecmwf.ecpds.master.LiveTransferSample;
 import ecmwf.ecpds.master.MasterException;
 import ecmwf.ecpds.master.MasterServer;
+import ecmwf.ecpds.master.OperationalEvents;
 import ecmwf.ecpds.master.StatusUpdate;
 import ecmwf.ecpds.master.transfer.TransferServerProvider.TransferServerException;
 import ecmwf.ecpds.mover.MoverInterface;
@@ -125,8 +127,8 @@ public final class TransferScheduler extends MBeanScheduler {
     /** The Constant _metrics. */
     private static final Logger _metrics = LogManager.getLogger("MetricsLogs");
 
-    /** The Constant _splunk. */
-    private static final Logger _splunk = LogManager.getLogger("SplunkLogs");
+    /** Operational event outputs. */
+    private static final OperationalEvents _operationalEvents = OperationalEvents.getInstance();
 
     /** The Constant _dataBase. */
     private static final ECpdsBase BASE = StarterServer.getInstance(ECaccessServer.class).getDataBase(ECpdsBase.class);
@@ -3188,26 +3190,28 @@ public final class TransferScheduler extends MBeanScheduler {
          *            the message
          */
         private void _log(final DataTransfer transfer, final String message) {
-            if ("failed".equals(message) && _splunk.isInfoEnabled()) {
-                // This is an error so if required we record it in Splunk!
+            if ("failed".equals(message) && _operationalEvents.isEnabled()) {
+                // Record the dissemination failure in the enabled event outputs.
                 final var destination = transfer.getDestination();
                 final var dataFile = transfer.getDataFile();
                 final var host = transfer.getHost();
-                _splunk.info("ERR;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                        "Monitored=" + destination.getMonitor(), "TimeStamp=" + Timestamp.from(Instant.now()),
-                        "DataTransferId=" + transfer.getId(), "DestinationName=" + destination.getName(),
-                        "DestinationType=" + DestinationOption.getLabel(destination.getType()),
-                        "FileName=" + transfer.getTarget(), "FileSize=" + dataFile.getSize(),
-                        "ScheduledTime=" + transfer.getScheduledTime(), "StartTime=" + transfer.getStartTime(),
-                        "MetaStream=" + nullToNone(dataFile.getMetaStream()),
-                        "MetaType=" + nullToNone(dataFile.getMetaType()), "MetaTime=" + dataFile.getMetaTime(),
-                        "TimeBase=" + transfer.getTimeBase(), "TimeStep=" + transfer.getTimeStep(),
-                        "Duration=" + transfer.getDuration(), "UserId=" + host.getLogin(),
-                        "CountryCode=" + destination.getCountryIso(), "BytesSent=" + transfer.getSent(),
-                        "TransferProtocol=" + host.getTransferMethod().getECtransModuleName(),
-                        "TransferServer=" + transfer.getTransferServerName(), "HostAddress=" + host.getHost(),
-                        "NetworkCode=" + HostOption.getLabel(host.getNetworkCode()),
-                        "Message=" + transfer.getComment());
+                _operationalEvents.emit("ERR", field("Monitored", destination.getMonitor()),
+                        field("TimeStamp", Timestamp.from(Instant.now())), field("DataTransferId", transfer.getId()),
+                        field("DestinationName", destination.getName()),
+                        field("DestinationType", DestinationOption.getLabel(destination.getType())),
+                        field("FileName", transfer.getTarget()), field("FileSize", dataFile.getSize()),
+                        field("ScheduledTime", transfer.getScheduledTime()),
+                        field("StartTime", transfer.getStartTime()),
+                        field("MetaStream", nullToNone(dataFile.getMetaStream())),
+                        field("MetaType", nullToNone(dataFile.getMetaType())),
+                        field("MetaTime", dataFile.getMetaTime()), field("TimeBase", transfer.getTimeBase()),
+                        field("TimeStep", transfer.getTimeStep()), field("Duration", transfer.getDuration()),
+                        field("UserId", host.getLogin()), field("CountryCode", destination.getCountryIso()),
+                        field("BytesSent", transfer.getSent()),
+                        field("TransferProtocol", host.getTransferMethod().getECtransModuleName()),
+                        field("TransferServer", transfer.getTransferServerName()), field("HostAddress", host.getHost()),
+                        field("NetworkCode", HostOption.getLabel(host.getNetworkCode())),
+                        field("Message", transfer.getComment()));
             }
             final var template = Cnf.at("Operator", "template");
             if (template != null && _ops.isInfoEnabled()) {

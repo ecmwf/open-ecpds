@@ -76,6 +76,13 @@
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
+				<groupId>io.opentelemetry</groupId>
+				<artifactId>opentelemetry-bom</artifactId>
+				<version>1.51.0</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
 				<groupId>org.jetbrains.kotlin</groupId>
 				<artifactId>kotlin-stdlib</artifactId>
 				<version>1.9.22</version>
@@ -236,6 +243,22 @@
 				</repository>
 			</repositories>
 			<dependencies>
+				<dependency>
+					<groupId>io.opentelemetry</groupId>
+					<artifactId>opentelemetry-api</artifactId>
+				</dependency>
+				<dependency>
+					<groupId>io.opentelemetry</groupId>
+					<artifactId>opentelemetry-sdk-logs</artifactId>
+				</dependency>
+				<dependency>
+					<groupId>io.opentelemetry</groupId>
+					<artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
+				</dependency>
+				<dependency>
+					<groupId>io.opentelemetry</groupId>
+					<artifactId>opentelemetry-exporter-otlp</artifactId>
+				</dependency>
 				<dependency>
 					<groupId>com.google.guava</groupId>
 					<artifactId>guava</artifactId>

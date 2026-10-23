@@ -40,6 +40,7 @@ import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_VERSION;
 import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.common.text.Util.nullToNone;
 import static ecmwf.ecpds.master.DataFilePath.getPath;
+import static ecmwf.ecpds.master.OperationalEvents.field;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -93,6 +94,7 @@ import ecmwf.ecpds.master.IncomingProfile;
 import ecmwf.ecpds.master.MasterServer;
 import ecmwf.ecpds.master.MasterServer.DownloadScheduler;
 import ecmwf.ecpds.master.MoverAccessTicket;
+import ecmwf.ecpds.master.OperationalEvents;
 import ecmwf.ecpds.master.ProductStatusEvent;
 import ecmwf.ecpds.master.ProgressInterface;
 import ecmwf.ecpds.master.ResetProductEvent;
@@ -115,8 +117,8 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(ECpdsPlugin.class);
 
-    /** The Constant _splunk. */
-    private static final Logger _splunk = LogManager.getLogger("SplunkLogs");
+    /** Operational event outputs. */
+    private static final OperationalEvents _operationalEvents = OperationalEvents.getInstance();
 
     /** The Constant NAME. */
     private static final String NAME = "ECpdsPlugin";
@@ -1650,12 +1652,12 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                     if (length == 0 && at == -1) {
                         final var notFoundMessage = "Product status not found (-at option required)";
                         if (Cnf.at("ECpdsPlugin", "ignoreMissingScheduleTime", true)) {
-                            if (_splunk.isInfoEnabled()) {
+                            if (_operationalEvents.isEnabled()) {
                                 // For the accounting!
-                                _splunk.info("PRS;{};{};{};{};{};{};{}", "TimeStamp=" + Timestamp.from(Instant.now()),
-                                        "StatusCode=" + status, "DataStream=" + domain + metaStream,
-                                        "TimeStep=" + timeStep, "TimeBase=" + new Timestamp(getProductDate()),
-                                        "Type=" + metaType, "ErrorMessage=" + notFoundMessage);
+                                _operationalEvents.emit("PRS", field("TimeStamp", Timestamp.from(Instant.now())),
+                                        field("StatusCode", status), field("DataStream", "" + domain + metaStream),
+                                        field("TimeStep", timeStep), field("TimeBase", new Timestamp(getProductDate())),
+                                        field("Type", metaType), field("ErrorMessage", notFoundMessage));
                             }
                             send("MESSAGE " + notFoundMessage);
                         } else {
@@ -1672,15 +1674,15 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                         if (product.getScheduleTime().getTime() == at) {
                             final var alreadyExpectedMessage = "Product status already expected (notification ignored)";
                             _log.warn("{}: {}", alreadyExpectedMessage, product);
-                            if (_splunk.isInfoEnabled()) {
+                            if (_operationalEvents.isEnabled()) {
                                 // For the accounting!
-                                _splunk.info("PRS;{};{};{};{};{};{};{};{};{}",
-                                        "TimeStamp=" + Timestamp.from(Instant.now()),
-                                        "StatusCode=" + product.getStatusCode(), "DataStream=" + product.getStream(),
-                                        "TimeStep=" + product.getStep(), "TimeBase=" + product.getTimeBase(),
-                                        "Type=" + product.getType(), "ScheduleTime=" + product.getScheduleTime(),
-                                        "LastUpdate=" + product.getLastUpdate(),
-                                        "ErrorMessage=" + alreadyExpectedMessage);
+                                _operationalEvents.emit("PRS", field("TimeStamp", Timestamp.from(Instant.now())),
+                                        field("StatusCode", product.getStatusCode()),
+                                        field("DataStream", product.getStream()), field("TimeStep", product.getStep()),
+                                        field("TimeBase", product.getTimeBase()), field("Type", product.getType()),
+                                        field("ScheduleTime", product.getScheduleTime()),
+                                        field("LastUpdate", product.getLastUpdate()),
+                                        field("ErrorMessage", alreadyExpectedMessage));
                             }
                             send("MESSAGE " + alreadyExpectedMessage);
                             return;
@@ -1696,14 +1698,15 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                         if (!StatusFactory.INIT.equals(product.getStatusCode())) {
                             final var notExpectedMessage = "Product status not expected (notification ignored)";
                             _log.warn("{}: {}", notExpectedMessage, product);
-                            if (_splunk.isInfoEnabled()) {
+                            if (_operationalEvents.isEnabled()) {
                                 // For the accounting!
-                                _splunk.info("PRS;{};{};{};{};{};{};{};{};{}",
-                                        "TimeStamp=" + Timestamp.from(Instant.now()),
-                                        "StatusCode=" + product.getStatusCode(), "DataStream=" + product.getStream(),
-                                        "TimeStep=" + product.getStep(), "TimeBase=" + product.getTimeBase(),
-                                        "Type=" + product.getType(), "ScheduleTime=" + product.getScheduleTime(),
-                                        "LastUpdate=" + product.getLastUpdate(), "ErrorMessage=" + notExpectedMessage);
+                                _operationalEvents.emit("PRS", field("TimeStamp", Timestamp.from(Instant.now())),
+                                        field("StatusCode", product.getStatusCode()),
+                                        field("DataStream", product.getStream()), field("TimeStep", product.getStep()),
+                                        field("TimeBase", product.getTimeBase()), field("Type", product.getType()),
+                                        field("ScheduleTime", product.getScheduleTime()),
+                                        field("LastUpdate", product.getLastUpdate()),
+                                        field("ErrorMessage", notExpectedMessage));
                             }
                             send("MESSAGE " + notExpectedMessage);
                             return;
@@ -1714,15 +1717,15 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                         if (StatusFactory.DONE.equals(product.getStatusCode())) {
                             final var alreadyCompletedMessage = "Product status already completed (notification ignored)";
                             _log.warn("{}: {}", alreadyCompletedMessage, product);
-                            if (_splunk.isInfoEnabled()) {
+                            if (_operationalEvents.isEnabled()) {
                                 // For the accounting!
-                                _splunk.info("PRS;{};{};{};{};{};{};{};{};{}",
-                                        "TimeStamp=" + Timestamp.from(Instant.now()),
-                                        "StatusCode=" + product.getStatusCode(), "DataStream=" + product.getStream(),
-                                        "TimeStep=" + product.getStep(), "TimeBase=" + product.getTimeBase(),
-                                        "Type=" + product.getType(), "ScheduleTime=" + product.getScheduleTime(),
-                                        "LastUpdate=" + product.getLastUpdate(),
-                                        "ErrorMessage=" + alreadyCompletedMessage);
+                                _operationalEvents.emit("PRS", field("TimeStamp", Timestamp.from(Instant.now())),
+                                        field("StatusCode", product.getStatusCode()),
+                                        field("DataStream", product.getStream()), field("TimeStep", product.getStep()),
+                                        field("TimeBase", product.getTimeBase()), field("Type", product.getType()),
+                                        field("ScheduleTime", product.getScheduleTime()),
+                                        field("LastUpdate", product.getLastUpdate()),
+                                        field("ErrorMessage", alreadyCompletedMessage));
                             }
                             send("MESSAGE " + alreadyCompletedMessage);
                             return;
@@ -1754,13 +1757,13 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                     product.setLastUpdate(new Timestamp(currentUpdate));
                     product.setScheduleTime(at == -1 ? products[0].getScheduleTime() : new Timestamp(at));
                     DATABASE.insert(product, true);
-                    if (_splunk.isInfoEnabled()) {
+                    if (_operationalEvents.isEnabled()) {
                         // For the accounting!
-                        _splunk.info("PRS;{};{};{};{};{};{};{};{}", "TimeStamp=" + Timestamp.from(Instant.now()),
-                                "StatusCode=" + product.getStatusCode(), "DataStream=" + product.getStream(),
-                                "TimeStep=" + product.getStep(), "TimeBase=" + product.getTimeBase(),
-                                "Type=" + product.getType(), "ScheduleTime=" + product.getScheduleTime(),
-                                "LastUpdate=" + product.getLastUpdate());
+                        _operationalEvents.emit("PRS", field("TimeStamp", Timestamp.from(Instant.now())),
+                                field("StatusCode", product.getStatusCode()), field("DataStream", product.getStream()),
+                                field("TimeStep", product.getStep()), field("TimeBase", product.getTimeBase()),
+                                field("Type", product.getType()), field("ScheduleTime", product.getScheduleTime()),
+                                field("LastUpdate", product.getLastUpdate()));
                     }
                     MASTER.handle(new ProductStatusEvent(product));
                     _log.debug("Notification received: {}", product);
@@ -1886,29 +1889,31 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                     history.setUpload(groupBy == null);
                     if (groupBy == null)
                         DATABASE.insert(history, true);
-                    if (_splunk.isInfoEnabled()) {
+                    if (_operationalEvents.isEnabled()) {
                         // For the accounting!
                         final var destination = transfer.getDestination();
                         final var ecuser = DATABASE.getECUserObject(userName);
-                        _splunk.info(
-                                "INH;{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                                "Monitored=" + destination.getMonitor(), "TimeStamp=" + Timestamp.from(Instant.now()),
-                                "DataTransferId=" + history.getDataTransferId(),
-                                "DestinationName=" + destination.getName(),
-                                "DestinationType=" + DestinationOption.getLabel(destination.getType()),
-                                "FileName=" + history.getFileName(), "FileSize=" + history.getFileSize(),
-                                "ScheduledTime=" + history.getScheduledTime(), "StartTime=" + history.getStartTime(),
-                                "MetaStream=" + nullToNone(history.getMetaStream()),
-                                "MetaType=" + nullToNone(history.getMetaType()), "MetaTime=" + history.getMetaTime(),
-                                "TimeBase=" + history.getTimeBase(), "TimeStep=" + history.getTimeStep(),
-                                "Duration=" + history.getDuration(), "UserId=" + userName,
-                                "CountryCode=" + destination.getCountryIso(),
-                                "UserDescription=" + (ecuser != null ? ecuser.getComment() : ""),
-                                "BytesSent=" + history.getSent(), "TransferProtocol=" + history.getProtocol(),
-                                "TransferServer=" + history.getTransferServer(),
-                                "Caller=" + nullToNone(dataFile.getCaller()), "ExpiryTime=" + transfer.getExpiryTime(),
-                                "FileSystem=" + dataFile.getFileSystem(), "HostAddress=" + history.getHostAddress(),
-                                "Action=" + (groupBy == null ? "upload" : "scheduled"));
+                        _operationalEvents.emit("INH", field("Monitored", destination.getMonitor()),
+                                field("TimeStamp", Timestamp.from(Instant.now())),
+                                field("DataTransferId", history.getDataTransferId()),
+                                field("DestinationName", destination.getName()),
+                                field("DestinationType", DestinationOption.getLabel(destination.getType())),
+                                field("FileName", history.getFileName()), field("FileSize", history.getFileSize()),
+                                field("ScheduledTime", history.getScheduledTime()),
+                                field("StartTime", history.getStartTime()),
+                                field("MetaStream", nullToNone(history.getMetaStream())),
+                                field("MetaType", nullToNone(history.getMetaType())),
+                                field("MetaTime", history.getMetaTime()), field("TimeBase", history.getTimeBase()),
+                                field("TimeStep", history.getTimeStep()), field("Duration", history.getDuration()),
+                                field("UserId", userName), field("CountryCode", destination.getCountryIso()),
+                                field("UserDescription", (ecuser != null ? ecuser.getComment() : "")),
+                                field("BytesSent", history.getSent()), field("TransferProtocol", history.getProtocol()),
+                                field("TransferServer", history.getTransferServer()),
+                                field("Caller", nullToNone(dataFile.getCaller())),
+                                field("ExpiryTime", transfer.getExpiryTime()),
+                                field("FileSystem", dataFile.getFileSystem()),
+                                field("HostAddress", history.getHostAddress()),
+                                field("Action", (groupBy == null ? "upload" : "scheduled")));
                     }
                     _log.debug("IncomingHistory created for DataTransfer {}", transfer.getId());
                 } catch (final Throwable t) {

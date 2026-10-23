@@ -1692,6 +1692,24 @@ CREATE TABLE `DELAY_NOTICE` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Pending operational events, deleted only after OTLP export acknowledgement.
+--
+DROP TABLE IF EXISTS `OPERATIONAL_EVENT`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `OPERATIONAL_EVENT` (
+  `OEV_SEQUENCE` bigint NOT NULL AUTO_INCREMENT,
+  `OEV_ID` char(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `OEV_OWNER` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `OEV_CREATED_AT` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `OEV_PAYLOAD` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  PRIMARY KEY (`OEV_SEQUENCE`),
+  UNIQUE KEY `OEV_ID_IDX` (`OEV_ID`),
+  KEY `OEV_OWNER_SEQUENCE_IDX` (`OEV_OWNER`, `OEV_SEQUENCE`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `STORAGE_POLICY`
 --
 

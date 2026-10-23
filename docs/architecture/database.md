@@ -81,6 +81,7 @@ investigating. The table set may also differ where a deployment has site-specifi
 | `ACTIVITY` | User activity context associated with recorded events. |
 | `EVENT` | Operational actions, comments and errors associated with user activity. |
 | `CHANGE_LOG` | Before-and-after records for changes to managed objects. |
+| `OPERATIONAL_EVENT` | Optional durable delivery outbox for native OpenTelemetry events; acknowledged records are deleted. |
 | `SYSTEM_MESSAGE` | Scheduled system messages displayed to users. |
 | `DELAY_NOTICE` | Registered delay notices and their status and content history. |
 | `STORAGE_POLICY` | Storage lifecycle policy definitions and their matching criteria. |

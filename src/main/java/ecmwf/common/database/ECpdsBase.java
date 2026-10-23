@@ -27,6 +27,7 @@ package ecmwf.common.database;
  */
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.AbstractMap;
@@ -35,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -89,6 +91,37 @@ public final class ECpdsBase extends DataBase {
 
     /** The ecpds. */
     private final ECpdsGet ecpds = new ECpdsGet(this);
+
+    /** Persist an operational event independently of the business operation. */
+    public void insertOperationalEvent(final String owner, final String id, final String payload)
+            throws SQLException, IOException {
+        executeUpdate("ECpdsBase", "insertOperationalEvent", new String[] { "owner=" + operationalEventHex(owner),
+                "id=" + operationalEventHex(id), "payload=" + operationalEventHex(payload) });
+    }
+
+    /** Read the oldest unacknowledged events belonging to one Master. */
+    public Map<String, String> getOperationalEvents(final String owner, final int limit)
+            throws SQLException, IOException {
+        final Map<String, String> events = new LinkedHashMap<>();
+        try (var rs = executeSelect("ECpdsBase", "getOperationalEvents",
+                new String[] { "owner=" + operationalEventHex(owner), "limit=" + Math.max(1, limit) })) {
+            while (rs.next()) {
+                events.put(rs.getString("OEV_ID"), rs.getString("OEV_PAYLOAD"));
+            }
+        }
+        return events;
+    }
+
+    /** Delete only records acknowledged by the configured OTLP endpoint. */
+    public void deleteOperationalEvent(final String owner, final String id) throws SQLException, IOException {
+        executeUpdate("ECpdsBase", "deleteOperationalEvent",
+                new String[] { "owner=" + operationalEventHex(owner), "id=" + operationalEventHex(id) });
+    }
+
+    private static String operationalEventHex(final String value) {
+        // Named update scripts split on semicolons, including those inside quoted strings.
+        return HexFormat.of().formatHex(value.getBytes(StandardCharsets.UTF_8));
+    }
 
     /**
      * Allow clearing the cache for an IncomingUser.

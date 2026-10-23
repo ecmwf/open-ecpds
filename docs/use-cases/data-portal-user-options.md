@@ -126,8 +126,8 @@ portal.putPathPermRegex = "(.*):/data/incoming/(.*)"
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `portal.recordHistory` | Boolean | `true` | Record each upload/download in the data transfer history list. Disable for anonymous users that generate high request volumes |
-| `portal.recordSplunk` | Boolean | `false` | Write an INH (Incoming History) log entry to Splunk for each upload/download. Only effective when Splunk is configured |
-| `portal.triggerEvent` | Boolean | `true` | Allow transfer history or Splunk recording to be initiated. When `false`, all recording is suppressed regardless of `portal.recordHistory` or `portal.recordSplunk` |
+| `portal.recordSplunk` | Boolean | `true` | Emit an INH (Incoming History) event for each upload/download to the enabled [operational event outputs](../event-logging/overview.md#choosing-event-outputs): Splunk file and/or OpenTelemetry |
+| `portal.triggerEvent` | Boolean | `true` | Allow transfer history or operational event recording to be initiated. When `false`, this recording is suppressed regardless of `portal.recordHistory` or `portal.recordSplunk` |
 | `portal.triggerLastRangeOnly` | Boolean | `false` | For HTTP `multipart/byteranges` requests, emit a single event only after the final range completes rather than one event per range |
 | `portal.updateLastLoginInformation` | Boolean | `true` | Record the last-login timestamp for this user. Consider disabling for anonymous/high-frequency users to avoid database flooding |
 
