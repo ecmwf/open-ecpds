@@ -63,7 +63,7 @@
     </div>
   </div>
   <div class="collapse" id="apiEventsInfo">
-    <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+    <div class="ecpds-help-panel">
         <strong class="d-block mb-1">API Events Log &mdash; service access audit</strong>
         <p class="mb-1">Records every service access attempt made by API clients on the selected date. Each row represents one authentication and authorisation check.</p>
         <ul class="mb-1 ps-3">

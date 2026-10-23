@@ -110,7 +110,7 @@ style="background:rgba(255,193,7,0.08); color:var(--bs-body-color); border-left:
 </div>
 
 <div class="collapse" id="webUsersInfo">
-    <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+    <div class="ecpds-help-panel">
         <strong class="d-block mb-1">Web Users &mdash; search and filter</strong>
         <p class="mb-1">The <strong>Monitor</strong> column classifies users whose categories are exclusively from the monitor set ({mstate, monitoring, transfers, requirements}, optionally with <em>* operations</em> destination categories):</p>
         <ul class="mb-1 ps-3">

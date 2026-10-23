@@ -87,7 +87,7 @@
 </div>
 
 <div class="collapse mt-1 mb-2" id="dtSelectionHelp">
-  <div class="card card-body py-2 px-3" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd);">
+  <div class="ecpds-help-panel">
     <strong class="d-block mb-1">Target and Delivered</strong>
     <p class="mb-2"><strong>Target</strong> is the requested filename. Enable <strong>Delivered</strong> under <strong>Cols &rarr; Custom</strong> to show the successful delivery filename immediately after Target. Delivered is populated only while the current status is <strong>Done (DONE)</strong>: it uses the module-reported name, or Target when no different name was recorded. Failed, queued, running and other non-DONE transfers leave it empty. The <code>delivered=</code> filter and column sorting use the same rule, including counts and filtered basket selection; use <code>target=</code> to search filenames regardless of status. Historical DONE transfers without a recorded name fall back to Target; this does not recover an unrecorded remote filename.</p>
     <strong class="d-block mb-1">Selecting transfers and applying bulk actions</strong>

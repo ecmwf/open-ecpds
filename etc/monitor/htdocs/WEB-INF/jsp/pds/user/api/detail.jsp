@@ -160,11 +160,10 @@ $(document).ready(function () {
     </button>
     <a href="#" class="btn btn-sm btn-outline-info flex-shrink-0"
        onclick="var el=document.getElementById('permissionGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"
-       title="Open Permission Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Permission </span>Guide</a>
+       title="Open Permission Guide" aria-label="Open Permission Guide"><i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Permission Guide</span></a>
   </div>
   <div class="collapse" id="apiPermInfo">
-    <div class="card-body py-2 px-3 border-bottom"
-         style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+    <div class="ecpds-help-panel">
       <strong class="d-block mb-1">Service Access Control</strong>
       <p class="mb-1">Each API client must have at least one permission that matches the requested service name.
         Permissions are regex patterns matched against the full service name.</p>

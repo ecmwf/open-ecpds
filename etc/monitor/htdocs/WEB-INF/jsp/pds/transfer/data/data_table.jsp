@@ -231,7 +231,7 @@
 </span>
 </div>
 <div class="collapse" id="dtDetailsInfoPanel">
-    <div class="px-3 pt-2 pb-3 border-bottom small" style="background:var(--bs-secondary-bg)">
+    <div class="ecpds-help-panel">
         A data transfer is linked to a unique data file and represents a request to move its content, either
         by disseminating it to a remote destination or by retrieving it from a remote source. It carries
         related information such as schedule, priority, progress, status, transfer rate, errors, and history.
@@ -399,7 +399,7 @@
 
 <%-- Info panel --%>
 <div id="${_nstPrefix}-info" class="collapse">
-<div class="px-3 py-3 border-bottom small text-muted" style="background:var(--bs-tertiary-bg,#f8f9fa);line-height:1.6">
+<div class="ecpds-help-panel">
   <p class="mb-2"><strong class="text-body">How are these statistics collected?</strong><br>
   Each row represents one TCP socket connection opened during the transfer. Statistics are captured
   at the end of every connection using OS-level socket diagnostics (equivalent to <code>tcp_info</code>).

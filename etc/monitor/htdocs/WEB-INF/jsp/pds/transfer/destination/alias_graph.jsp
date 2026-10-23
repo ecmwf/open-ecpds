@@ -46,7 +46,7 @@
   </div>
 
   <div class="collapse" id="agInfoPanel">
-    <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+    <div class="ecpds-help-panel">
       <strong class="d-block mb-1">Alias Relationship Graph &mdash; overview</strong>
       <ul class="mb-0 ps-3">
         <li>Click any destination node to navigate to <strong>its</strong> alias graph, allowing you to explore the graph hop by hop.</li>

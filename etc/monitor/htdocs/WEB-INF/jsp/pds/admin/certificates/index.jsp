@@ -90,7 +90,7 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
 </div>
 
 <div class="collapse" id="certMonitorInfo">
-  <div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">
+  <div class="ecpds-help-panel">
     <strong class="d-block mb-1">Monitor Certificate &mdash; overview</strong>
     <p class="mb-1">Displays the TLS certificate currently used by the Monitor HTTPS server. Actions available in the header allow you to:</p>
     <ul class="mb-1 ps-3">
@@ -249,7 +249,7 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
 </div>
 
 <div class="collapse" id="certMonitorListInfo">
-  <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+  <div class="ecpds-help-panel">
     <strong class="d-block mb-1">Monitor Certificates &mdash; overview</strong>
     <p class="mb-0">Shows the TLS certificate currently active on each connected Monitor daemon. Use <strong>Deploy to All Monitors</strong> to push the current Monitor certificate to every Monitor in one operation. Use <strong>Reload from Disk</strong> to instruct every Monitor to hot-reload its own keystore file from disk (useful after updating keystore files externally).</p>
   </div>
@@ -420,7 +420,7 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
 </div>
 
 <div class="collapse" id="certMoverInfo">
-  <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+  <div class="ecpds-help-panel">
     <strong class="d-block mb-1">Data Mover Certificates &mdash; overview</strong>
     <p class="mb-0">Shows the TLS certificate currently active on each connected Data Mover. Use <strong>Deploy to All Movers</strong> to push the current Monitor certificate to every Data Mover in one operation. Use <strong>Reload from Disk</strong> to instruct every Data Mover to hot-reload its own keystore file from disk (useful after updating keystore files externally). Certificates are reloaded without restarting the service.</p>
   </div>

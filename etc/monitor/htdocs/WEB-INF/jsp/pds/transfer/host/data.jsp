@@ -143,7 +143,7 @@ table.fields > tbody > tr > th {
 </button>
 </div>
 <div class="collapse" id="viewLocationInfoPanel">
-<div class="alert alert-info rounded-0 border-0 border-bottom mb-0 py-2 px-3" style="font-size:0.85em">
+<div class="ecpds-help-panel">
   <strong><i class="bi bi-geo-alt me-1"></i>Host Location</strong><br>
   The location (latitude &amp; longitude) is used to render this host as a pin on the world map, giving a quick visual overview of where your remote servers are geographically situated.<br><br>
   <strong>Automatic mode</strong> &mdash; when enabled, OpenECPDS attempts to resolve the host&rsquo;s coordinates automatically by performing a GeoIP lookup against the host&rsquo;s hostname or IP address. The result is shown as the <em>Estimated Location</em> and the country flag. This lookup is best-effort and may not be available for private/internal IP ranges.<br><br>
@@ -173,7 +173,7 @@ table.fields > tbody > tr > th {
 </button>
 <a href="#" class="btn btn-sm btn-outline-info ms-1 flex-shrink-0"
    onclick="var el=document.getElementById('directoryGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"
-   title="Open Directory Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Directory </span>Guide</a>
+   title="Open Directory Guide" aria-label="Open Directory Guide"><i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Directory Guide</span></a>
 <auth:if basePathKey="host.basepath" paths="/edit/insert_form">
 <auth:then>
 <span class="ms-auto" style="position:relative;display:inline-block">
@@ -183,7 +183,7 @@ table.fields > tbody > tr > th {
 </auth:if>
 </div>
 <div class="collapse" id="viewTestDirInfoPanel">
-  <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;">
+  <div class="ecpds-help-panel">
     <i class="bi bi-info-circle-fill me-1"></i>
     The <strong>Directory</strong> field controls where files are read from or written to on the remote server.
     Its meaning depends on the host type: for <strong>Acquisition</strong> hosts it is a listing specification
@@ -236,7 +236,7 @@ type='radio' id='ispython' name='dirType' />Python
 <c:if test="${not empty moduleGuide}">
 <a href="#" class="btn btn-sm btn-outline-info ms-1 flex-shrink-0"
    onclick="var el=document.getElementById('moduleGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"
-   title="Configuration Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide</a>
+   title="Open Module Guide" aria-label="Open Module Guide"><i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Module Guide</span></a>
 </c:if>
 <c:if test="${host.transferMethod.ecTransModuleName == 's3' || host.transferMethod.ecTransModuleName == 'azure'}">
 <a href="#" class="btn btn-sm btn-outline-warning ms-1 flex-shrink-0" id="memEstimateBtn"
@@ -245,12 +245,12 @@ type='radio' id='ispython' name='dirType' />Python
 </c:if>
 </div>
 <div class="collapse" id="viewOptionsInfoPanel">
-  <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;">
+  <div class="ecpds-help-panel">
     <i class="bi bi-info-circle-fill me-1"></i>
     The <strong>Options</strong> section contains module-specific parameters that control advanced
     transfer behaviour. <strong>Properties</strong> are key=value pairs passed to the ECtrans transfer
     module (e.g. timeouts, retries, encryption). The <strong>JavaScript</strong> panel lets you inject
-    custom logic that runs at transfer time. Use the <em>Configuration Guide</em> button for a full
+    custom logic that runs at transfer time. Use the <em>Module Guide</em> button for a full
     reference of all available options for the selected transfer protocol.
   </div>
 </div>
@@ -318,7 +318,7 @@ JavaScript
 </div>
 </div>
 <div class="collapse" id="acqConsoleInfoPanel">
-  <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;">
+  <div class="ecpds-help-panel">
     <i class="bi bi-info-circle-fill me-1"></i>
     The <strong>Acquisition Console</strong> shows a live preview of the most recent acquisition
     run for this host. It displays the output from the listing script or directory scan as it
@@ -466,7 +466,7 @@ JavaScript
 		</c:if>
 	</c:if>
 
-	<%-- HTTP/MQTT Module Configuration Guide (Acquisition hosts only) --%>
+	<%-- HTTP/MQTT Module Guide (Acquisition hosts only) --%>
 	<c:if test="${not empty moduleGuide}"><jsp:include page="${moduleGuide}"/></c:if>
 
 	<%-- Directory Guide offcanvas --%>

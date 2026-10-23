@@ -80,6 +80,23 @@ of data transfers to different sites with different schedules and/or transfer me
 defined on a destination basis. **Conditional aliasing** is also possible in order to
 alias only a subset of data transfers.
 
+An alias is directional: **A → B** means data queued to A is also routed to B.
+The Destination edit page's **Destination Aliases** card lists outgoing links;
+the detail page's **Aliased From**, **Aliases To** and alias diagram help inspect
+upstream and downstream relationships. The card's **Guide** explains direction,
+fan-out, chains and conditional routing.
+
+Each receiving Destination applies its own scheduling, delivery configuration and
+limits to its transfer requests. These requests can share the same data file;
+aliasing does not imply a separate physical file copy for every Destination.
+Aliases are neither Host failover nor an access-control grant.
+
+Before changing a chain such as **A → B → C**, inspect the complete diagram and
+any conditional-route annotations to avoid cycles or unintended recipients.
+Removing a link does not delete the receiving Destination and should not be
+treated as cancellation of requests already queued. Validate routing changes
+with a representative product and inspect the resulting transfer histories.
+
 ## Dissemination and acquisition hosts
 
 A destination can be associated with a list of **dissemination hosts**, with a primary

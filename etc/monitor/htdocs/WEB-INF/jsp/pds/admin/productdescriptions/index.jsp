@@ -8,7 +8,7 @@
 style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-left:4px solid #6c757d;">
 <i class="bi bi-card-text text-secondary flex-shrink-0"></i>
 <span>Descriptions and tips for products, optionally per type.</span>
-<a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('pdGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Configuration Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide</a>
+<a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('pdGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Product Description Guide" aria-label="Open Product Description Guide"><i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Product Description Guide</span></a>
 </div>
 
 <% if (pdError != null) { %>

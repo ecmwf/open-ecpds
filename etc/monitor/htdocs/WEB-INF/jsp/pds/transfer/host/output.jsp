@@ -184,8 +184,8 @@
 </button>
 <button class="btn btn-sm btn-outline-info ms-1 flex-shrink-0"
 data-bs-toggle="offcanvas" data-bs-target="#acquisitionGuideOffcanvas"
-title="Open Acquisition Guide">
-<i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Acquisition </span>Guide
+title="Open Acquisition Guide" aria-label="Open Acquisition Guide">
+<i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Acquisition Guide</span>
 </button>
 <span id="progressLiveStatus" class="flex-shrink-0"></span>
 <div class="ms-auto d-flex gap-1 flex-shrink-0">
@@ -210,7 +210,7 @@ onclick="progressCopy(this)">
 </div>
 </div>
 <div class="collapse" id="progressInfoLegend">
-	<div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+	<div class="ecpds-help-panel">
 		<p class="mb-1">This panel shows the raw console log produced while the Acquisition host runs: connection attempts, timing, debug messages, and any errors encountered during the listing process. It does not contain the file listing itself &mdash; the resulting file listing is shown in the Directory Listings panel below.</p>
 		<ul class="mb-1 ps-3">
 			<li><strong><i class="bi bi-play-fill"></i> Run Now:</strong> triggers the Acquisition Scheduler to process this host immediately. The button is disabled if no associated destination is active and running. If a listing is already running the button turns into <strong><i class="bi bi-skip-start-fill"></i> Interrupt &amp; Run</strong>.</li>
@@ -270,7 +270,7 @@ onclick="progressCopy(this)">
         </div>
     </div>
     <div class="collapse" id="outputInfoPanel">
-        <div class="px-3 pt-2 pb-3 border-bottom small" style="background:var(--bs-secondary-bg)">
+        <div class="ecpds-help-panel">
             This panel shows the file listing retrieved from the remote site during the last acquisition run.
             This is the result used by the <strong>Acquisition Scheduler</strong> to determine which files to retrieve
             and which to skip, for example because they were already retrieved, do not match the configured pattern,

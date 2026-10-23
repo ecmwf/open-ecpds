@@ -83,7 +83,7 @@ Error retrieving object by key &larr; Destination not found: ${destination.name}
 </div>
 </div>
 <div class="collapse mb-2 mt-2" id="outstandingLegend">
-<div class="px-3 py-2" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-bottom:1px solid var(--bs-border-color);">
+<div class="ecpds-help-panel">
     <p class="text-muted mb-2" style="font-size:0.78rem;">Outstanding transfers are those in an error or retry state that may need attention. Deleted transfers and transfers manually stopped or requeued by a user are excluded.</p>
     <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Error State</div>
     <div class="mb-1"><span class="badge bg-danger me-1">Failed</span> Dissemination to the remote site has failed</div>

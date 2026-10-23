@@ -92,11 +92,11 @@ style="background:rgba(25,135,84,0.06); color:var(--bs-body-color); border-left:
                     <c:when test="${not empty row.moduleGuide}">
                         <button class="btn btn-sm btn-outline-info" type="button"
                                 data-bs-toggle="offcanvas" data-bs-target="#mgoc-${row.id}"
-                                title="Configuration Guide"><i class="bi bi-book"></i></button>
+                                title="Open Module Guide" aria-label="Open Module Guide"><i class="bi bi-book"></i></button>
                     </c:when>
                     <c:otherwise>
                         <button class="btn btn-sm btn-outline-secondary" type="button"
-                                title="No configuration guide available" disabled><i class="bi bi-book"></i></button>
+                                title="No module guide available" aria-label="Module Guide unavailable" disabled><i class="bi bi-book"></i></button>
                     </c:otherwise>
                 </c:choose>
                 <auth:link styleClass="btn btn-sm btn-outline-primary me-1" href="/do/transfer/method/edit/update_form/${row.id}"><i class="bi bi-pencil"></i></auth:link>

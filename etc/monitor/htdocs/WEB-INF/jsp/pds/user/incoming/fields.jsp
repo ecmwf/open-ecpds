@@ -55,10 +55,10 @@
         </button>
         <a href="#" class="btn btn-sm btn-outline-info ms-1"
            onclick="var el=document.getElementById('portalServiceGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"
-           title="Open Portal Service Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Portal Service </span>Guide</a>
+           title="Open Portal Service Guide" aria-label="Open Portal Service Guide"><i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Portal Service Guide</span></a>
       </div>
       <div class="collapse" id="dataUserCardInfo">
-        <div class="px-3 py-2 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+        <div class="ecpds-help-panel">
           <strong class="d-block mb-1">Data User &mdash; overview</strong>
           <p class="mb-1">A <em>Data User</em> is an account that can connect to the <strong>OpenECPDS Data Portal</strong> (HTTPS, SFTP, FTP, WebDAV…) to push or pull data files. Each Data User belongs to one or more <em>Destinations</em> that control what data they can access.</p>
           <ul class="mb-1 ps-3">
@@ -501,7 +501,7 @@
 			</c:if>
 		</div>
 		<div class="collapse" id="sessionsHelpEdit">
-			<div class="px-3 py-2 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+			<div class="ecpds-help-panel">
 				<strong class="d-block mb-1">Current Sessions &mdash; column guide</strong>
 				<dl class="row mb-0" style="font-size:inherit">
 					<dt class="col-sm-3">Session ID</dt>

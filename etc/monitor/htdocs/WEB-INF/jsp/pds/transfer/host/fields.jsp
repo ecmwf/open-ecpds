@@ -89,7 +89,7 @@ PROCEED ONLY IF YOU ARE CERTAIN OF THE IMPACT!!!!</b>
 </button>
 </div>
 <div class="collapse" id="hostTypeInfoPanel">
-<div class="alert alert-info rounded-0 border-0 border-bottom mb-0 py-2 px-3" style="font-size:0.85em">
+<div class="ecpds-help-panel">
   <strong><i class="bi bi-info-circle-fill me-1"></i>Host Types &amp; Destination Relationships</strong>
   <dl class="mt-2 mb-0 row g-0" style="row-gap:0.5rem">
     <dt class="col-sm-3"><span class="badge bg-primary"><i class="bi bi-send-fill me-1"></i>Dissemination</span></dt>
@@ -179,11 +179,11 @@ labelProperty="name" />
 </button>
 </div>
 <div class="collapse" id="connectionInfoPanel">
-  <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;">
+  <div class="ecpds-help-panel">
     <i class="bi bi-info-circle-fill me-1"></i>
     The <strong>Connection</strong> settings define how OpenECPDS connects to the remote server for
     both data transfers and directory operations. The <strong>Transfer Protocol</strong> selects the
-    ECtrans module (e.g. FTP, SFTP, S3) &mdash; use the <em>Configuration Guide</em> button for
+    ECtrans module (e.g. FTP, SFTP, S3) &mdash; use the <em>Module Guide</em> button for
     module-specific options. The <strong>Hostname/IP</strong>, <strong>Login</strong>, and
     <strong>Password</strong> are passed directly to the transfer module when opening a connection.
     The <strong>Nickname</strong> is the human-readable label shown in the monitoring UI.
@@ -262,7 +262,7 @@ oninput="validatePatternInput(this,'nickNameFeedback')" />
 </button>
 </div>
 <div class="collapse" id="throughputInfoPanel">
-  <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;">
+  <div class="ecpds-help-panel">
     <i class="bi bi-info-circle-fill me-1"></i>
     <strong>Max Connections</strong> applies separately per Destination for acquisition and
     dissemination Hosts by default. To share this Host's limit across all Destinations on the
@@ -334,8 +334,8 @@ labelProperty="name" />
 </button>
 <button class="btn btn-sm btn-outline-info ms-1 flex-shrink-0"
   data-bs-toggle="offcanvas" data-bs-target="#directoryGuideOffcanvas"
-  title="Open Directory Guide" type="button">
-  <i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Directory </span>Guide
+  title="Open Directory Guide" aria-label="Open Directory Guide" type="button">
+  <i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Directory Guide</span>
 </button>
 <span class="ms-auto d-flex align-items-center gap-1">
 <span style="position:relative;display:inline-block">
@@ -346,7 +346,7 @@ labelProperty="name" />
 </span>
 </div>
 <div class="collapse" id="testDirInfoPanel">
-  <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3" style="font-size:0.85rem;" id="testDirInfoScriptable">
+  <div class="ecpds-help-panel" id="testDirInfoScriptable">
     <i class="bi bi-info-circle-fill me-1"></i>
     <strong>Test on Server</strong> sends the current Directory script to the host server and runs it
     in the same environment used during real transfers. The result &mdash; the resolved directory path &mdash;
@@ -484,8 +484,8 @@ onclick="formatSource(editorDir); return false">Format</button>
 <span class="fw-semibold">Options</span>
 <button id="formGuideBtn" type="button"
         class="btn btn-sm btn-outline-info ms-1 flex-shrink-0"
-        title="Configuration Guide">
-  <i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide
+        title="Open Module Guide" aria-label="Open Module Guide">
+  <i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Module Guide</span>
 </button>
 <button id="formMemEstimateBtn" type="button"
         class="btn btn-sm btn-outline-warning ms-1 flex-shrink-0 d-none"
@@ -563,7 +563,7 @@ JavaScript
 </button>
 </div>
 <div class="collapse" id="editLocationInfoPanel">
-<div class="alert alert-info rounded-0 border-0 border-bottom mb-0 py-2 px-3" style="font-size:0.85em">
+<div class="ecpds-help-panel">
   <strong><i class="bi bi-geo-alt me-1"></i>Host Location</strong><br>
   The location (latitude &amp; longitude) is used to render this host as a pin on the world map, giving a quick visual overview of where your remote servers are geographically situated.<br><br>
   <strong>Automatic mode</strong> &mdash; when enabled, OpenECPDS attempts to resolve the host&rsquo;s coordinates automatically by performing a GeoIP lookup against the host&rsquo;s hostname or IP address. The result is shown as the <em>Estimated Location</em> in the host view. This lookup is best-effort and may not be available for private/internal IP ranges.<br><br>
@@ -1456,7 +1456,7 @@ oninput="validateMailInput(this); toggleMailRows()" />
     	if (nickInput) validatePatternInput(nickInput, 'nickNameFeedback');
 	};
 
-	// Configuration Guide button — tracks the selected Transfer Method
+	// Module Guide button — tracks the selected Transfer Method
 	var _formGuideMap = ${requestScope[actionFormName].transferMethodGuideMap};
 	function _updateFormGuideBtn(methodName) {
 		var btn = document.getElementById('formGuideBtn');
@@ -1465,14 +1465,16 @@ oninput="validateMailInput(this); toggleMailRows()" />
 		if (key) {
 			btn.setAttribute('data-bs-toggle', 'offcanvas');
 			btn.setAttribute('data-bs-target', '#mgocForm-' + key);
-			btn.setAttribute('title', 'Configuration Guide');
+			btn.setAttribute('title', 'Open Module Guide');
+			btn.setAttribute('aria-label', 'Open Module Guide');
 			btn.classList.remove('btn-outline-secondary', 'disabled');
 			btn.classList.add('btn-outline-info');
 			btn.disabled = false;
 		} else {
 			btn.removeAttribute('data-bs-toggle');
 			btn.removeAttribute('data-bs-target');
-			btn.setAttribute('title', 'No configuration guide available');
+			btn.setAttribute('title', 'No module guide available');
+			btn.setAttribute('aria-label', 'Module Guide unavailable');
 			btn.classList.remove('btn-outline-info');
 			btn.classList.add('btn-outline-secondary', 'disabled');
 			btn.disabled = true;

@@ -43,7 +43,7 @@
 				</button>
 			</div>
 			<div class="collapse" id="webUserCardInfo">
-				<div class="px-3 py-2 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+				<div class="ecpds-help-panel">
 					<strong class="d-block mb-1">Web User &mdash; overview</strong>
 					<p class="mb-1">A <em>Web User</em> is an account that can log in to the <strong>OpenECPDS Monitoring UI</strong>. Access is controlled by the <strong>Web Categories</strong> assigned to the account.</p>
 					<ul class="mb-1 ps-3">

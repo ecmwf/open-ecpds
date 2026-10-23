@@ -149,7 +149,7 @@
 </span>
 </div>
 <div class="collapse" id="fileInfoInfoPanel">
-    <div class="px-3 pt-2 pb-3 border-bottom small" style="background:var(--bs-secondary-bg)">
+    <div class="ecpds-help-panel">
         A data file is a record of a product stored in the <strong><%=System.getProperty("monitor.title")%></strong> with a one-to-one
         mapping between the data file and the product. The data file contains information on the physical specifications
         of the product, such as its size, type, compression and entity tag (ETag) in the

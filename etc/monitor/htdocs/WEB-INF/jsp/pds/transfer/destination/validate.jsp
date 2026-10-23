@@ -346,7 +346,7 @@
     </div>
 
     <div class="collapse mt-1" id="vlActionHelp">
-        <div class="card card-body py-2 px-3" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd);">
+        <div class="ecpds-help-panel">
             <strong class="d-block mb-1">Using bulk actions on the selection basket</strong>
             <p class="mb-1">This page shows the transfers currently in your <em>selection basket</em>. Use the controls above to act on them:</p>
             <ul class="mb-1 ps-3">

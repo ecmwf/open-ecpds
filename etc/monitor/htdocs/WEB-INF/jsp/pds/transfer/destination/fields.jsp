@@ -112,6 +112,14 @@
 			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 				<i class="bi bi-geo-alt text-primary"></i>
 				<span class="fw-semibold">Identity</span>
+				<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" data-bs-toggle="collapse" data-bs-target="#destIdentityInfo" aria-expanded="false" aria-controls="destIdentityInfo" title="About Identity settings"><i class="bi bi-info-circle"></i></button>
+			</div>
+			<div class="collapse" id="destIdentityInfo">
+				<div class="ecpds-help-panel">
+					Identify this Destination and record its type, comment, country and owner.
+					The <strong>Transfer Group</strong> determines where queued files are stored when no dissemination Host is active.
+					When creating a Destination, you can also copy an existing configuration or export it to another Master.
+				</div>
 			</div>
 			<div class="card-body pb-2">
 				<c:if test="${isInsert == 'true'}">
@@ -342,6 +350,15 @@
 			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 				<i class="bi bi-send text-primary"></i>
 				<span class="fw-semibold">Delivery</span>
+				<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" data-bs-toggle="collapse" data-bs-target="#destDeliveryInfo" aria-expanded="false" aria-controls="destDeliveryInfo" title="About Delivery settings"><i class="bi bi-info-circle"></i></button>
+				<button type="button" class="btn btn-sm btn-outline-info ms-auto" data-bs-toggle="offcanvas" data-bs-target="#destLimitsGuide" aria-controls="destLimitsGuide" title="Open Limits &amp; Failover Guide" aria-label="Open Limits &amp; Failover Guide"><i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Limits &amp; Failover Guide</span></button>
+			</div>
+			<div class="collapse" id="destDeliveryInfo">
+				<div class="ecpds-help-panel">
+					Control delivery behaviour: Host failover, handling of existing remote targets, deletion from the local spool and data compression.
+					<strong>Host For Sources</strong> provides a source for on-the-fly recovery when a file is missing from a Data Mover;
+					this is distinct from scheduled acquisition through the Acquisition Hosts card.
+				</div>
 			</div>
 			<div class="card-body pb-2">
 				<div class="row g-2">
@@ -390,11 +407,24 @@
 			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 				<i class="bi bi-sliders text-primary"></i>
 				<span class="fw-semibold">Limits</span>
+				<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" data-bs-toggle="collapse" data-bs-target="#destLimitsInfo" aria-expanded="false" aria-controls="destLimitsInfo" title="About Limits settings"><i class="bi bi-info-circle"></i></button>
+				<button type="button" class="btn btn-sm btn-outline-info ms-auto" data-bs-toggle="offcanvas" data-bs-target="#destLimitsGuide" aria-controls="destLimitsGuide" title="Open Limits &amp; Failover Guide" aria-label="Open Limits &amp; Failover Guide"><i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Limits &amp; Failover Guide</span></button>
+			</div>
+			<div class="collapse" id="destLimitsInfo">
+				<div class="ecpds-help-panel">
+					<p class="mb-2"><strong>Max Connections</strong> independently caps outgoing dissemination transfers and,
+					when acquisition is enabled, Master-scheduled file retrievals across this Destination's respective Hosts.
+					A value of 5 allows up to <strong>5 retrievals and 5 outgoing transfers</strong>, not 5 combined.
+					Host limits and other scheduler limits still apply. Directory listings and Mover-side on-the-fly fallback retrievals are excluded.</p>
+					<p class="mb-0">The remaining settings control failure handling and retry delays, queue capacity, maximum file size,
+					returning from a backup Host and inactivity monitoring. Use each field's <strong>?</strong> for its specific effect:
+					holding a Destination, delaying a transfer and marking a transfer failed are different actions.</p>
+				</div>
 			</div>
 			<div class="card-body pb-2">
 				<div class="row g-2">
 					<div class="col-sm-6">
-						<label class="form-label mb-1">Max Connections <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Maximum number of parallel connections authorized at a time on all the hosts of the Destination" tabindex="0"></i></label>
+						<label class="form-label mb-1">Max Connections <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Caps concurrent outgoing dissemination transfers across this Destination's dissemination Hosts. If acquisition is enabled, the same value separately caps concurrent Master-scheduled file retrievals across its acquisition Hosts. These are independent pools: a value of 5 allows up to 5 retrievals and 5 outgoing transfers, not 5 combined. Host limits and other scheduler limits still apply. Directory listings and Mover-side on-the-fly fallback retrievals are not counted." tabindex="0"></i></label>
 						<div id="maxConnectionsSlider" style="width: 210px; margin: 6px;">
 							<input type="hidden" name="maxConnections" id="maxConnections">
 							<div id="maxConnectionsHandle" class="ui-slider-handle"></div>
@@ -499,6 +529,14 @@
 			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 				<i class="bi bi-folder text-primary"></i>
 				<span class="fw-semibold">Directory</span>
+				<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" data-bs-toggle="collapse" data-bs-target="#destDirectoryInfo" aria-expanded="false" aria-controls="destDirectoryInfo" title="About Directory settings"><i class="bi bi-info-circle"></i></button>
+			</div>
+			<div class="collapse" id="destDirectoryInfo">
+				<div class="ecpds-help-panel">
+					Control the date-directory view presented to incoming FTP/SFTP users.
+					Enable <strong>Group By Date</strong> and choose a Java <code>SimpleDateFormat</code> pattern using the preview.
+					This does not configure remote acquisition directories or dissemination target paths; those belong to the Host configuration.
+				</div>
 			</div>
 			<div class="card-body pb-2">
 				<div class="row g-2">
@@ -533,6 +571,13 @@
 			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 				<i class="bi bi-envelope text-primary"></i>
 				<span class="fw-semibold">Notifications</span>
+				<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" data-bs-toggle="collapse" data-bs-target="#destNotificationsInfo" aria-expanded="false" aria-controls="destNotificationsInfo" title="About Notifications settings"><i class="bi bi-info-circle"></i></button>
+			</div>
+			<div class="collapse" id="destNotificationsInfo">
+				<div class="ecpds-help-panel">
+					Set email recipients and select which events generate mail: configuration updates, transfer starts, successful completions or failures.
+					Separate multiple addresses with semicolons. Enabling start/end mail on a busy Destination can generate many messages.
+				</div>
 			</div>
 			<div class="card-body pb-2">
 				<div class="row g-2">
@@ -567,6 +612,15 @@
 			<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 				<i class="bi bi-toggles text-primary"></i>
 				<span class="fw-semibold">Flags</span>
+				<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" data-bs-toggle="collapse" data-bs-target="#destFlagsInfo" aria-expanded="false" aria-controls="destFlagsInfo" title="About Flags settings"><i class="bi bi-info-circle"></i></button>
+			</div>
+			<div class="collapse" id="destFlagsInfo">
+				<div class="ecpds-help-panel">
+					<strong>Enabled</strong> controls scheduler participation; <strong>Show In Monitor</strong> only controls monitoring visibility.
+					<strong>Acquisition</strong> enables discovery and retrieval and requires at least one Acquisition Host.
+					<strong>Restart on Update</strong> restarts the Destination after Host configuration changes.
+					<strong>Backup</strong> requests backup storage where supported by the file's Transfer Group.
+				</div>
 			</div>
 			<div class="card-body pb-2">
 				<div class="row g-2">
@@ -608,6 +662,7 @@
       <div class="card-header">
         <i class="bi bi-hdd-network text-secondary"></i>
         <strong>Dissemination Hosts</strong>
+        <button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" data-bs-toggle="collapse" data-bs-target="#destDissHostsInfo" aria-expanded="false" aria-controls="destDissHostsInfo" title="About Dissemination Hosts"><i class="bi bi-info-circle"></i></button>
         <div class="btn-group btn-group-sm ms-auto">
           <button type="button" class="btn btn-outline-primary"
                   data-bs-toggle="collapse" data-bs-target="#dissChooser">
@@ -626,6 +681,12 @@
             </li>
           </ul>
           </c:if>
+        </div>
+      </div>
+      <div class="collapse" id="destDissHostsInfo">
+        <div class="ecpds-help-panel">
+          Assign remote delivery endpoints. Lower priority numbers take precedence; failover and retries determine which Host receives new dispatches.
+          Removing an association detaches the Host from this Destination rather than deleting the Host record.
         </div>
       </div>
       <div class="card-body p-2">
@@ -684,6 +745,7 @@
       <div class="card-header">
         <i class="bi bi-hdd-stack text-secondary"></i>
         <strong>Acquisition Hosts</strong>
+        <button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" data-bs-toggle="collapse" data-bs-target="#destAcqHostsInfo" aria-expanded="false" aria-controls="destAcqHostsInfo" title="About Acquisition Hosts"><i class="bi bi-info-circle"></i></button>
         <div class="btn-group btn-group-sm ms-auto">
           <button type="button" class="btn btn-outline-primary"
                   data-bs-toggle="collapse" data-bs-target="#acqChooser">
@@ -705,6 +767,13 @@
         </div>
       </div>
       <div class="card-body p-2">
+        <div class="collapse" id="destAcqHostsInfo">
+          <div class="ecpds-help-panel">
+            Assign Hosts used for scheduled remote discovery and file retrieval, and enable <strong>Acquisition</strong> in Flags.
+            Eligible acquisition Hosts are processed independently, not as a priority-based failover chain.
+            Configure listing paths, selection rules and timing on each Host; its Acquisition and Directory guides explain those settings.
+          </div>
+        </div>
         <c:choose>
           <c:when test="${empty destinationActionForm.acquisitionHostsAndPriorities}">
             <p class="text-muted small mb-2"><em>No acquisition hosts assigned.</em></p>
@@ -760,6 +829,7 @@
       <div class="card-header">
         <i class="bi bi-arrow-left-right text-secondary"></i>
         <strong>Proxy Hosts</strong>
+        <button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" data-bs-toggle="collapse" data-bs-target="#destProxyHostsInfo" aria-expanded="false" aria-controls="destProxyHostsInfo" title="About Proxy Hosts"><i class="bi bi-info-circle"></i></button>
         <div class="btn-group btn-group-sm ms-auto">
           <button type="button" class="btn btn-outline-primary"
                   data-bs-toggle="collapse" data-bs-target="#proxyChooser">
@@ -781,6 +851,12 @@
         </div>
       </div>
       <div class="card-body p-2">
+        <div class="collapse" id="destProxyHostsInfo">
+          <div class="ecpds-help-panel">
+            Associate Proxy Hosts used to replicate queued files to remote storage.
+            Replication to a Proxy Host and onward dissemination are separate operations; a Proxy Host is not a dissemination failover endpoint.
+          </div>
+        </div>
         <c:choose>
           <c:when test="${empty destinationActionForm.proxyHostsAndPriorities}">
             <p class="text-muted small mb-2"><em>No proxy hosts assigned.</em></p>
@@ -836,6 +912,7 @@
       <div class="card-header">
         <i class="bi bi-people text-secondary"></i>
         <strong>Authorized Web Users</strong>
+        <button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" data-bs-toggle="collapse" data-bs-target="#destWebUsersInfo" aria-expanded="false" aria-controls="destWebUsersInfo" title="About Authorized Web Users"><i class="bi bi-info-circle"></i></button>
         <div class="btn-group btn-group-sm ms-auto">
           <button type="button" class="btn btn-outline-primary"
                   data-bs-toggle="collapse" data-bs-target="#userChooser">
@@ -857,6 +934,12 @@
         </div>
       </div>
       <div class="card-body p-2">
+        <div class="collapse" id="destWebUsersInfo">
+          <div class="ecpds-help-panel">
+            Associate web users authorized for this Destination. Their roles and application permissions still determine which operations they may perform.
+            This association is separate from the informational Owner field and from Data Portal user access.
+          </div>
+        </div>
         <c:choose>
           <c:when test="${empty destinationActionForm.associatedEcUsers}">
             <p class="text-muted small mb-2"><em>No authorized web users assigned.</em></p>
@@ -904,6 +987,7 @@
       <div class="card-header">
         <i class="bi bi-shield-check text-secondary"></i>
         <strong>Authorized Data Policies</strong>
+        <button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" data-bs-toggle="collapse" data-bs-target="#destPoliciesInfo" aria-expanded="false" aria-controls="destPoliciesInfo" title="About Authorized Data Policies"><i class="bi bi-info-circle"></i></button>
         <div class="btn-group btn-group-sm ms-auto">
           <button type="button" class="btn btn-outline-primary"
                   data-bs-toggle="collapse" data-bs-target="#policyChooser">
@@ -925,6 +1009,12 @@
         </div>
       </div>
       <div class="card-body p-2">
+        <div class="collapse" id="destPoliciesInfo">
+          <div class="ecpds-help-panel">
+            Associate the incoming data policies authorized for this Destination.
+            Policy rules are configured separately; adding a policy here creates an association, not a new policy or a web-user permission.
+          </div>
+        </div>
         <c:choose>
           <c:when test="${empty destinationActionForm.associatedIncomingPolicies}">
             <p class="text-muted small mb-2"><em>No authorized data policies assigned.</em></p>
@@ -972,6 +1062,8 @@
       <div class="card-header">
         <i class="bi bi-signpost-split text-secondary"></i>
         <strong>Destination Aliases</strong>
+        <button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" data-bs-toggle="collapse" data-bs-target="#destAliasesInfo" aria-expanded="false" aria-controls="destAliasesInfo" title="About Destination Aliases"><i class="bi bi-info-circle"></i></button>
+        <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="offcanvas" data-bs-target="#destAliasesGuide" aria-controls="destAliasesGuide" title="Open Alias Routing Guide" aria-label="Open Alias Routing Guide"><i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Alias Routing Guide</span></button>
         <div class="btn-group btn-group-sm ms-auto">
           <button type="button" class="btn btn-outline-primary"
                   data-bs-toggle="collapse" data-bs-target="#aliasChooser">
@@ -993,6 +1085,13 @@
         </div>
       </div>
       <div class="card-body p-2">
+        <div class="collapse" id="destAliasesInfo">
+          <div class="ecpds-help-panel">
+            Link Destinations so queued data can also be routed to the associated alias Destinations.
+            Aliases can form chains and may be conditional; review the Destination alias diagram before changing a complex routing setup.
+            Removing a link does not delete the linked Destination.
+          </div>
+        </div>
         <c:choose>
           <c:when test="${empty destinationActionForm.aliases}">
             <p class="text-muted small mb-2"><em>No destination aliases assigned.</em></p>
@@ -1040,8 +1139,15 @@
       <div class="card-header">
         <i class="bi bi-file-earmark-text text-secondary"></i>
         <strong>Metadata Files</strong>
+        <button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" data-bs-toggle="collapse" data-bs-target="#destMetadataInfo" aria-expanded="false" aria-controls="destMetadataInfo" title="About Metadata Files"><i class="bi bi-info-circle"></i></button>
       </div>
       <div class="card-body p-2">
+        <div class="collapse" id="destMetadataInfo">
+          <div class="ecpds-help-panel">
+            Review metadata files associated with this Destination. This card lists existing entries and lets you remove them;
+            it is not the queued data-transfer list or an upload editor.
+          </div>
+        </div>
         <c:choose>
           <c:when test="${empty destinationActionForm.metadataFiles}">
             <p class="text-muted small mb-0"><em>No metadata files.</em></p>
@@ -1075,6 +1181,15 @@
 		<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
 			<i class="bi bi-code-square text-primary"></i>
 			<span class="fw-semibold">Options</span>
+			<button type="button" class="btn btn-link btn-sm text-muted p-0 flex-shrink-0" data-bs-toggle="collapse" data-bs-target="#destOptionsInfo" aria-expanded="false" aria-controls="destOptionsInfo" title="About Options settings"><i class="bi bi-info-circle"></i></button>
+		</div>
+		<div class="collapse" id="destOptionsInfo">
+			<div class="ecpds-help-panel">
+				<strong>Properties</strong> contains advanced Destination options; use the reference for supported keys and defaults.
+				<strong>JavaScript</strong> contains custom Destination processing logic. Use the editor's Test action before saving changes.
+				Host-specific transfer-module and acquisition-listing options belong in the Host configuration instead.
+				<button type="button" class="btn btn-link btn-sm p-0 ms-1" onclick="openDestHelp();"><i class="bi bi-book me-1"></i>Properties Reference</button>
+			</div>
 		</div>
 		<div class="card-body p-2">
 			<%-- Quota summary badges --%>
@@ -1143,6 +1258,90 @@
 					</div>
 					</div>
 		</div>
+	</div>
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="destLimitsGuide"
+     aria-labelledby="destLimitsGuideLabel" style="width:760px;max-width:95vw;">
+	<div class="offcanvas-header border-bottom py-2 px-3">
+		<h6 class="offcanvas-title mb-0 fw-semibold" id="destLimitsGuideLabel"><i class="bi bi-book me-2 text-info"></i>Limits &amp; Failover Guide</h6>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body p-3 small">
+		<h6>Concurrency: two independent pools</h6>
+		<p><strong>Destination Max Connections</strong> caps outgoing dissemination across all dissemination Hosts.
+		When acquisition is enabled, the same value separately caps Master-scheduled retrievals across all acquisition Hosts.
+		A value of 5 permits up to <strong>5 retrievals plus 5 outgoing transfers</strong>, subject to other limits.
+		A negative value is unlimited; zero blocks new work in both pools. Lowering a limit does not interrupt work already running.</p>
+		<p><strong>Host Max Connections</strong> applies per Destination by default.
+		Set <code>ectrans.sharedConnectionLimit="true"</code> in the Host's Options &rarr; Properties to share its limit
+		across Destinations using that Host record on the same Master. Separate Host records and independent Masters do not share this accounting.
+		The Destination cap and scheduler pool limits still apply.</p>
+		<div class="alert alert-warning py-2">
+			Counts represent scheduled jobs, not physical sockets. Directory listings, probes and idle connections are excluded.
+			One indexed retrieval counts as one job. Mover-side on-the-fly fallback retrievals bypass the acquisition limits and live retrieval count;
+			an outgoing dissemination using that fallback still occupies its dissemination slots.
+		</div>
+
+		<h6>Dissemination Host selection and retries</h6>
+		<p>Hosts are considered in priority order, with lower numbers first.
+		The selected Host receives new dispatches; transfers already running on another Host may still finish there.
+		Each Host has its own <strong>Retry Count</strong> and <strong>Retry Frequency</strong>.
+		When its retry budget is exhausted, the scheduler moves to the next Host.</p>
+		<p><strong>On Host Failure</strong> controls whether delivery stays with a working fallback Host or returns to the primary.
+		<strong>Reset Frequency</strong> can trigger a restart after sustained use of a backup Host.
+		These dissemination failover rules do not turn acquisition Hosts into a fallback chain: eligible acquisition Hosts are processed independently.</p>
+		<div class="table-responsive">
+			<table class="table table-sm table-bordered">
+				<thead><tr><th scope="col">Destination setting</th><th scope="col">Effect</th></tr></thead>
+				<tbody>
+					<tr><th scope="row">Retry Count / Retry Frequency</th><td>Control repeated unsuccessful cycles through the dissemination Host list. Retry Frequency is the wait before another cycle; reaching the configured retry threshold holds the Destination and requires operator intervention. This is not the Host's own retry budget.</td></tr>
+					<tr><th scope="row">Max Start / Start Frequency</th><td>For an individual transfer, reaching a positive Max Start threshold resets its start counter and advances its requeue counter. Unless Max Requeue is reached, it waits for Start Frequency before retrying.</td></tr>
+					<tr><th scope="row">Max Requeue</th><td>A positive threshold limits those requeue cycles. Reaching it marks that transfer failed; a manual requeue is needed to retry it. It does not hold the whole Destination.</td></tr>
+					<tr><th scope="row">Max Pending / Max File Size</th><td>Admission limits for new queue requests: excessive queue counts or file sizes are rejected rather than merely throttled.</td></tr>
+					<tr><th scope="row">Max Inactivity</th><td>Raises a monitoring problem after the configured period without dissemination activity; it is not a connection timeout.</td></tr>
+				</tbody>
+			</table>
+		</div>
+		<h6>Diagnosing a queue that is not moving</h6>
+		<p class="mb-0">Check Enabled and the Destination's running/held state, active Host associations, Destination and Host capacity,
+		then the transfer's status, next scheduled time and history. A held Destination needs attention at Destination level;
+		a delayed transfer may simply be waiting for its retry time; a failed transfer needs investigation before requeueing.
+		Increasing concurrency does not clear a hold or repair a failed endpoint.</p>
+	</div>
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="destAliasesGuide"
+     aria-labelledby="destAliasesGuideLabel" style="width:760px;max-width:95vw;">
+	<div class="offcanvas-header border-bottom py-2 px-3">
+		<h6 class="offcanvas-title mb-0 fw-semibold" id="destAliasesGuideLabel"><i class="bi bi-book me-2 text-info"></i>Alias Routing Guide</h6>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body p-3 small">
+		<h6>Direction matters</h6>
+		<p>An alias link <strong>A &rarr; B</strong> routes data queued to A into B as well.
+		The <strong>Destination Aliases</strong> card lists this Destination's outgoing alias links.
+		It is not a list of upstream Destinations that send data here.
+		On the Destination detail page, use <strong>Aliased From</strong>, <strong>Aliases To</strong> and the alias diagram to inspect both directions.</p>
+		<h6>Fan-out and chains</h6>
+		<p>For example, an acquisition Destination can retrieve products and alias them to separate customer Destinations:
+		<code>acquisition &rarr; customer_a</code> and <code>acquisition &rarr; customer_b</code>.
+		Each receiving Destination has its own delivery configuration, scheduling, limits and transfer status.
+		Aliases create related transfer requests for shared data; they do not imply a separate physical copy of the file for each Destination.</p>
+		<p>Links can form chains such as <strong>A &rarr; B &rarr; C</strong>.
+		Review the complete diagram, not just the immediate links, before changing routing. Avoid cycles and unintended paths to recipients.</p>
+		<h6>Conditional routing</h6>
+		<p>Conditional aliases route only matching transfers. Inspect the applicable routing conditions and the annotations in the alias diagram;
+		adding an association alone does not explain which subset will match. Validate with a representative product before relying on a new route.</p>
+		<div class="alert alert-warning py-2">
+			Alias routing is not an access-control grant or a Host failover mechanism.
+			Authorized Web Users and Authorized Data Policies are separate associations.
+			Check the receiving Destination's permissions, active state and delivery Hosts independently.
+		</div>
+		<h6>Changing associations safely</h6>
+		<p class="mb-0">Check the link direction and downstream recipients before using Add or Remove.
+		Removing an alias association does not delete the receiving Destination and should not be treated as cancellation of transfers already queued.
+		After a routing change, inspect new transfer requests and their history at both source and receiving Destinations.</p>
 	</div>
 </div>
 

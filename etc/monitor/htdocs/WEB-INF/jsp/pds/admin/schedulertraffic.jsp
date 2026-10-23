@@ -39,7 +39,7 @@
         </div>
     </div>
     <div class="collapse" id="schedulerTrafficInfo">
-        <div class="px-3 py-2 small border-bottom" style="background:var(--bs-tertiary-bg)">
+        <div class="ecpds-help-panel">
             <p class="mb-1"><strong>Proxy</strong> copies files to Proxy Hosts for onward dissemination.
                 <strong>Backup</strong> copies files to Backup Hosts.
                 <strong>Replication</strong> creates copies within the Data Mover group.</p>

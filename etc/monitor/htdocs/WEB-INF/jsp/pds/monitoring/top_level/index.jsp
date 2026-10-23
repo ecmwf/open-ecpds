@@ -542,7 +542,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
             title="Show colour coding legend for this page">
       <i class="bi bi-palette"></i> Legend
     </button>
-    <div id="legendPanel" style="position:absolute; z-index:9999; background:var(--bs-tertiary-bg,#e9ecef); border:1px solid var(--bs-border-color); border-top:3px solid var(--bs-primary,#0d6efd); border-radius:0 0 8px 8px; box-shadow:0 8px 28px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.10); padding:14px 16px 12px; display:none;">
+    <div id="legendPanel" class="ecpds-help-panel" style="position:absolute; z-index:9999; box-shadow:0 8px 28px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.10); display:none;">
       <div class="fw-semibold mb-3" style="font-size:0.82rem; color:var(--bs-body-color); border-bottom:1px solid var(--bs-border-color); padding-bottom:6px;">
         <i class="bi bi-palette me-1 text-muted"></i>Colour Legend
       </div>

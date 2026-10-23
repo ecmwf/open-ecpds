@@ -38,7 +38,7 @@ property="destinationOptions" type="java.util.Collection" />
 </button>
 </div>
 <div class="collapse" id="filterSimInfo">
-<div class="px-3 py-2" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-bottom:1px solid var(--bs-border-color);">
+<div class="ecpds-help-panel">
   <p class="text-muted mb-2">This page lets you select files from a Destination to test a chosen compression algorithm. Once the simulation is complete, a report is sent by e-mail.</p>
   <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Notes</div>
   <div class="mb-1"><i class="bi bi-check-circle text-success me-1"></i>Files that have already been <strong>pre-compressed</strong> will not be re-compressed, but their compressed size is still included in the report.</div>

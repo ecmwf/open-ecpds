@@ -121,12 +121,12 @@
                class="btn btn-sm btn-outline-secondary" title="Network Info"><i class="bi bi-wifi"></i></a>
             <c:choose>
               <c:when test="${not empty moduleGuide}">
-                <a href="#" class="btn btn-sm btn-outline-info" title="Configuration Guide"
+                <a href="#" class="btn btn-sm btn-outline-info" title="Open Module Guide" aria-label="Open Module Guide"
                    onclick="var el=document.getElementById('moduleGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"><i class="bi bi-book"></i></a>
               </c:when>
               <c:otherwise>
-                <a href="#" class="btn btn-sm btn-outline-secondary disabled" title="No configuration guide available for this module"
-                   data-label="Configuration Guide" aria-disabled="true" tabindex="-1" onclick="return false;"><i class="bi bi-book"></i></a>
+                <a href="#" class="btn btn-sm btn-outline-secondary disabled" title="No module guide available for this module" aria-label="Module Guide unavailable"
+                   data-label="Module Guide" aria-disabled="true" tabindex="-1" onclick="return false;"><i class="bi bi-book"></i></a>
               </c:otherwise>
             </c:choose>
             <auth:if basePathKey="transferhistory.basepath" paths="/">

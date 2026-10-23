@@ -262,7 +262,7 @@
 </div>
 
 <div class="collapse mb-3" id="globeInfoCollapse">
-  <div class="px-3 py-2 border-bottom border-top" style="font-size:.82rem;background:var(--bs-tertiary-bg,#e9ecef);border-top-width:3px!important;border-top-color:var(--bs-primary,#0d6efd)!important;border-radius:6px;">
+  <div class="ecpds-help-panel">
     <strong class="d-block mb-1">About the Live Earth page</strong>
     <p class="mb-2">
         This page visualises, in real time over a 3D globe (or a flat 2D map, see below), the traffic flowing between this

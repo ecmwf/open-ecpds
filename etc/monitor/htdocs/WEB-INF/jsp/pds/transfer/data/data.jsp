@@ -196,7 +196,7 @@ _dthApplyMode(_dthColMode);
 </div>
 </div>
 <div class="collapse" id="identityInfoPanel">
-<div class="px-3 pt-2 pb-3 border-bottom small" style="background:var(--bs-secondary-bg)">
+<div class="ecpds-help-panel">
   <p class="mb-2">An <strong>identity</strong> is a string that allows the identification of recurring data transfers.
   It enables the <strong><%=System.getProperty("monitor.title")%></strong> to track the same data transfer that runs periodically and monitor the sending time over multiple days.
   Typically, if the target name includes a date and time, the identity would be the target name without them.

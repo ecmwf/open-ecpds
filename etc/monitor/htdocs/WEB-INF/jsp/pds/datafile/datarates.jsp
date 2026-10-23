@@ -19,7 +19,7 @@
 </div>
 
 <div class="collapse mb-3" id="drInfoLegend">
-  <div class="card-body py-2 px-3 border rounded" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+  <div class="ecpds-help-panel">
     <strong class="d-block mb-1">Aggregated transfer traffic across all active destinations</strong>
     <p class="mb-1">The figures shown here are the <em>sum</em> of the daily traffic recorded for every destination in the system &mdash; equivalent to combining the individual traffic charts visible on each destination's page (e.g. <a href="/do/transfer/destination/wis2_sat?mode=traffic" class="text-decoration-none">Destination &rsaquo; Traffic</a>).</p>
     <ul class="mb-1 ps-3">

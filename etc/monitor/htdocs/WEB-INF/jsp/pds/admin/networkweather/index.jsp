@@ -7,7 +7,7 @@
         <i class="bi bi-cloud-lightning-rain text-info flex-shrink-0 mt-1"></i>
         <span>Follow recent delivery and retrieval conditions between Data Movers and dissemination/acquisition Hosts.
         Collection and optional probes are off by default.</span>
-        <a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('nwGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Configuration Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide</a>
+        <a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('nwGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Network Weather Guide" aria-label="Open Network Weather Guide"><i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Network Weather Guide</span></a>
     </div>
 </div>
 <c:if test="${not empty nwError}">
@@ -106,7 +106,7 @@
 <div class="tab-pane fade show active" id="nw-overview" role="tabpanel" aria-labelledby="nw-tab-overview">
     <form method="post" action="/do/admin/networkweather" class="card shadow-sm mb-3">
         <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-power text-info"></i><span class="fw-semibold">Collection</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-collection" aria-expanded="false" aria-controls="nwInfo-collection" title="About this section"><i class="bi bi-info-circle"></i></button></div>
-        <div class="collapse" id="nwInfo-collection"><div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">Switches the collection of measurements on or off for the selected paths.
+        <div class="collapse" id="nwInfo-collection"><div class="ecpds-help-panel">Switches the collection of measurements on or off for the selected paths.
  <ul class="mb-0"><li><strong>Active</strong>: measurements are collected.</li>
  <li><strong>Suspended</strong>: activation is requested but temporarily not possible (for example storage not ready); it resumes automatically.</li>
  <li><strong>Disabled</strong>: nothing is collected.</li></ul>
@@ -177,7 +177,7 @@
     <div class="row g-3">
         <div class="col-lg-6"><div class="card shadow-sm">
             <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-check2-square text-info"></i><span class="fw-semibold">Capabilities</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-capabilities" aria-expanded="false" aria-controls="nwInfo-capabilities" title="About this section"><i class="bi bi-info-circle"></i></button></div>
-        <div class="collapse" id="nwInfo-capabilities"><div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">Shows the current state of collection, database persistence, automatic selection and
+        <div class="collapse" id="nwInfo-capabilities"><div class="ecpds-help-panel">Shows the current state of collection, database persistence, automatic selection and
  scheduled probes. Disabled means switched off. Socket persistence is unavailable while the background writer
  is starting or cannot currently save measurements. See the Storage card and Master log for details.</div></div>
             <div class="card-body">
@@ -202,7 +202,7 @@
         </div></div>
         <div class="col-lg-6"><div class="card shadow-sm">
             <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-database text-info"></i><span class="fw-semibold">Storage</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-storage" aria-expanded="false" aria-controls="nwInfo-storage" title="About this section"><i class="bi bi-info-circle"></i></button></div>
-        <div class="collapse" id="nwInfo-storage"><div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">State of the background worker saving measurements in the database: whether it is
+        <div class="collapse" id="nwInfo-storage"><div class="ecpds-help-panel">State of the background worker saving measurements in the database: whether it is
  ready, how many measurements are waiting and how many were saved, dropped or expired. Dropped or expired
  measurements leave gaps in the history.</div></div>
             <div class="card-body">
@@ -230,7 +230,7 @@
         </div></div>
         <div class="col-12"><div class="card shadow-sm">
             <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-speedometer2 text-info"></i><span class="fw-semibold">Collector counters</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-counters" aria-expanded="false" aria-controls="nwInfo-counters" title="About this section"><i class="bi bi-info-circle"></i></button></div>
-        <div class="collapse" id="nwInfo-counters"><div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">Counters since the Master started: measurements currently kept in memory,
+        <div class="collapse" id="nwInfo-counters"><div class="ecpds-help-panel">Counters since the Master started: measurements currently kept in memory,
  and measurements refused (invalid, too old, outside the selected paths or over capacity), plus the number of
  accepted and refused batches received from the Data Movers.</div></div>
             <div class="card-body">
@@ -260,7 +260,7 @@
 <div class="tab-pane fade" id="nw-manual" role="tabpanel" aria-labelledby="nw-tab-manual">
     <form method="post" action="/do/admin/networkweather" class="card shadow-sm mb-3">
         <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-signpost-split text-info"></i><span class="fw-semibold">Manual scope</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-manual" aria-expanded="false" aria-controls="nwInfo-manual" title="About this section"><i class="bi bi-info-circle"></i></button></div>
-        <div class="collapse" id="nwInfo-manual"><div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">Fixed list of paths followed when <strong>automatic selection is off</strong>.
+        <div class="collapse" id="nwInfo-manual"><div class="ecpds-help-panel">Fixed list of paths followed when <strong>automatic selection is off</strong>.
  A path is a Data Mover (source), a dissemination or acquisition Host, its transfer method and type.
  <ul class="mb-0"><li>Select a source and a Host, then press <strong>Add</strong>; the target and method come from the Host.</li>
  <li>At most <c:out value="${nwMaxSelectedPaths}"/> paths across <c:out value="${nwMaxSources}"/> sources.</li>
@@ -291,7 +291,7 @@
 <div class="tab-pane fade" id="nw-auto" role="tabpanel" aria-labelledby="nw-tab-auto">
     <div class="card shadow-sm mb-3">
         <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-magic text-info"></i><span class="fw-semibold">Automatic selection</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-auto" aria-expanded="false" aria-controls="nwInfo-auto" title="About this section"><i class="bi bi-info-circle"></i></button></div>
-        <div class="collapse" id="nwInfo-auto"><div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">Lets the Master choose up to <c:out value="${nwMaxSelectedPaths}"/> paths once a day among the candidates.
+        <div class="collapse" id="nwInfo-auto"><div class="ecpds-help-panel">Lets the Master choose up to <c:out value="${nwMaxSelectedPaths}"/> paths once a day among the candidates.
  <ul class="mb-0"><li><strong>Historical discovery</strong>: uses up to seven days of activity, volume and errors to rank already permitted candidates; it does not populate the candidate lists.</li>
  <li><strong>Source / transfer group</strong>: every active dissemination or acquisition Host of the group becomes a candidate.</li>
  <li><strong>Approved candidates</strong>: individual paths that may be selected (up to <c:out value="${nwMaxCandidates}"/>).</li>
@@ -333,7 +333,7 @@
     </div>
     <div class="card shadow-sm mb-3">
         <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-clock-history text-info"></i><span class="fw-semibold">Status</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-autostatus" aria-expanded="false" aria-controls="nwInfo-autostatus" title="About this section"><i class="bi bi-info-circle"></i></button></div>
-        <div class="collapse" id="nwInfo-autostatus"><div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">Result of the latest automatic selection: when it ran, when it runs next, how many
+        <div class="collapse" id="nwInfo-autostatus"><div class="ecpds-help-panel">Result of the latest automatic selection: when it ran, when it runs next, how many
  candidates were considered and how many paths were added or removed. <strong>Request reassessment</strong>
  recomputes the selection without waiting for the next daily run.</div></div>
         <div class="card-body">
@@ -417,7 +417,7 @@
 <div class="tab-pane fade" id="nw-probes" role="tabpanel" aria-labelledby="nw-tab-probes">
     <div class="card shadow-sm mb-3">
         <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-broadcast text-info"></i><span class="fw-semibold">Scheduled probes</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-probes" aria-expanded="false" aria-controls="nwInfo-probes" title="About this section"><i class="bi bi-info-circle"></i></button></div>
-        <div class="collapse" id="nwInfo-probes"><div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">A probe is a light connectivity test run from the Data Mover to the Host,
+        <div class="collapse" id="nwInfo-probes"><div class="ecpds-help-panel">A probe is a light connectivity test run from the Data Mover to the Host,
  without credentials or login.
  <ul class="mb-0"><li><strong>TCP_CONNECT</strong>: opens a TCP connection to the port (every minute at most).</li>
  <li><strong>MTR_ICMP</strong> / <strong>MTR_TCP</strong>: route trace (every 5 minutes at most; requires <code>mtr</code> on the Data Mover).</li>
@@ -438,7 +438,7 @@
     </div>
     <div class="card shadow-sm mb-3">
         <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-list-check text-info"></i><span class="fw-semibold">Status and recent results</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-probestatus" aria-expanded="false" aria-controls="nwInfo-probestatus" title="About this section"><i class="bi bi-info-circle"></i></button><div class="ms-auto d-flex flex-wrap align-items-center gap-2"><div class="input-group input-group-sm" style="width:auto"><span class="input-group-text"><i class="bi bi-search"></i></span><input type="text" id="nwProbeTableSearch" class="form-control" placeholder="Search&hellip;" autocomplete="off" style="min-width:120px" aria-label="Search"></div><div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size"><span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span><select id="nwProbeTablePageLen" class="form-select form-select-sm" style="width:auto" aria-label="Page size"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></div></div></div>
-        <div class="collapse" id="nwInfo-probestatus"><div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">Probes waiting for a result, expired or refused, and the
+        <div class="collapse" id="nwInfo-probestatus"><div class="ecpds-help-panel">Probes waiting for a result, expired or refused, and the
  latest results received. <strong>SOURCE_UNAVAILABLE</strong> means the Data Mover did not answer before the
  probe expired.</div></div>
         <div class="card-body border-bottom py-2">
@@ -485,7 +485,7 @@
 <div class="tab-pane fade" id="nw-sources" role="tabpanel" aria-labelledby="nw-tab-sources">
     <div class="card shadow-sm mb-3">
         <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-hdd-network text-info"></i><span class="fw-semibold">Source registration</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-sources" aria-expanded="false" aria-controls="nwInfo-sources" title="About this section"><i class="bi bi-info-circle"></i></button><div class="ms-auto d-flex flex-wrap align-items-center gap-2"><div class="input-group input-group-sm" style="width:auto"><span class="input-group-text"><i class="bi bi-search"></i></span><input type="text" id="nwSourceTableSearch" class="form-control" placeholder="Search&hellip;" autocomplete="off" style="min-width:120px" aria-label="Search"></div><div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size"><span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span><select id="nwSourceTablePageLen" class="form-select form-select-sm" style="width:auto" aria-label="Page size"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></div></div></div>
-        <div class="collapse" id="nwInfo-sources"><div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">Each Data Mover used as a source must be verified before collection can be
+        <div class="collapse" id="nwInfo-sources"><div class="ecpds-help-panel">Each Data Mover used as a source must be verified before collection can be
  activated. The table shows the verification state, when it was last verified and the response time.
  Continental Data Movers are verified through their approved Proxy Host.</div></div>
         <div class="table-responsive">
@@ -509,7 +509,7 @@
 <div class="tab-pane fade" id="nw-measurements" role="tabpanel" aria-labelledby="nw-tab-measurements">
     <div class="card shadow-sm mb-3">
         <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-activity text-info"></i><span class="fw-semibold">Selected paths &mdash; last five minutes</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-measurements" aria-expanded="false" aria-controls="nwInfo-measurements" title="About this section"><i class="bi bi-info-circle"></i></button><div class="ms-auto d-flex flex-wrap align-items-center gap-2"><div class="input-group input-group-sm" style="width:auto"><span class="input-group-text"><i class="bi bi-search"></i></span><input type="text" id="nwSummaryTableSearch" class="form-control" placeholder="Search&hellip;" autocomplete="off" style="min-width:120px" aria-label="Search"></div><div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size"><span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span><select id="nwSummaryTablePageLen" class="form-select form-select-sm" style="width:auto" aria-label="Page size"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></div></div></div>
-        <div class="collapse" id="nwInfo-measurements"><div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">Transfers observed on each selected path during the
+        <div class="collapse" id="nwInfo-measurements"><div class="ecpds-help-panel">Transfers observed on each selected path during the
  last five minutes: successes, failures, cancellations and unknown outcomes, and how many transfers reported
  network details. A path without observations has <strong>no coverage</strong>; it is not reported as healthy.</div></div>
         <div class="table-responsive">

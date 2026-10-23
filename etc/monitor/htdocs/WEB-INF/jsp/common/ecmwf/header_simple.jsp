@@ -78,8 +78,8 @@
             <% } %>
             <button class="btn btn-sm btn-outline-light p-1 lh-1" type="button"
                     data-bs-toggle="offcanvas" data-bs-target="#uiHelpOffcanvas" aria-controls="uiHelpOffcanvas"
-                    title="Interface help" style="width:28px;height:28px;">
-              <i class="bi bi-question-lg" style="font-size:1rem;"></i>
+                    title="Open Interface Guide" aria-label="Open Interface Guide" style="width:28px;height:28px;">
+              <i class="bi bi-book" style="font-size:1rem;"></i>
             </button>
             </logic:present>
         </div>

@@ -125,7 +125,7 @@ _dt.push({
 </div>
 
 <div class="collapse mb-2" id="tlInfo">
-  <div class="px-3 py-2 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+  <div class="ecpds-help-panel">
     <strong class="d-block mb-1">Transfer Timeline &mdash; overview</strong>
     <p class="mb-1">Shows every Data Transfer scheduled or processed for <strong>${destination.name}</strong> on
     <strong>${selectedDate}</strong>, laid out on a shared time axis (<strong>Chart</strong> view) or as a

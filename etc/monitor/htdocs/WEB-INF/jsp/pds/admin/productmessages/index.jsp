@@ -20,7 +20,7 @@
     <span>
         <strong>Product Messages</strong> &mdash; customize the email templates used for delay/resume notifications
     </span>
-    <a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('pmGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Configuration Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide</a>
+    <a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('pmGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Product Message Guide" aria-label="Open Product Message Guide"><i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Product Message Guide</span></a>
 </div>
 
 <% if (pmError != null) { %>

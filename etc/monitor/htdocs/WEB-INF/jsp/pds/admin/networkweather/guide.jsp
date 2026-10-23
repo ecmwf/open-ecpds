@@ -5,7 +5,7 @@
      aria-labelledby="nwGuideLabel" style="width:760px;max-width:95vw;">
   <div class="offcanvas-header border-bottom py-2 px-3">
     <h6 class="offcanvas-title mb-0 fw-semibold" id="nwGuideLabel">
-      <i class="bi bi-cloud-lightning-rain me-2 text-info"></i>Network Weather &mdash; Configuration Guide
+      <i class="bi bi-book me-2 text-info"></i>Network Weather Guide
     </h6>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>

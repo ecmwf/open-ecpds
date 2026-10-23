@@ -83,8 +83,7 @@ function validate(path, message) {
 
   <%-- Info panel --%>
   <div class="collapse" id="apiClientsInfo">
-    <div class="card-body py-2 px-3 border-bottom"
-         style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+    <div class="ecpds-help-panel">
       <strong class="d-block mb-1">REST API Clients</strong>
       <p class="mb-1">This page manages clients that authenticate to the REST API using <strong>HTTP Basic Auth</strong>
         with their Client ID and Secret (<code>clientId:secret</code>).</p>

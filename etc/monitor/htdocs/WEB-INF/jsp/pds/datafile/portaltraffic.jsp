@@ -23,7 +23,7 @@
 
 <%-- Info panel --%>
 <div class="collapse mb-3" id="ptInfoPanel">
-  <div class="card-body py-2 px-3 border rounded" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+  <div class="ecpds-help-panel">
     <c:choose>
       <c:when test="${not empty portalTrafficUser}">
         <strong class="d-block mb-1">Data Portal Traffic &mdash; user <c:out value="${portalTrafficUser}"/></strong>

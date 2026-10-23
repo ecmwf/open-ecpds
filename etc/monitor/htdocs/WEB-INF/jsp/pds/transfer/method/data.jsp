@@ -34,11 +34,11 @@
 					<c:when test="${not empty moduleGuide}">
 						<button class="btn btn-sm btn-outline-info" type="button"
 						        data-bs-toggle="offcanvas" data-bs-target="#moduleGuideOffcanvas"
-						        title="Configuration Guide"><i class="bi bi-book"></i></button>
+						        title="Open Module Guide" aria-label="Open Module Guide"><i class="bi bi-book"></i></button>
 					</c:when>
 					<c:otherwise>
 						<button class="btn btn-sm btn-outline-secondary disabled" type="button"
-						        title="No configuration guide available" disabled><i class="bi bi-book"></i></button>
+						        title="No module guide available" aria-label="Module Guide unavailable" disabled><i class="bi bi-book"></i></button>
 					</c:otherwise>
 				</c:choose>
 			</div>

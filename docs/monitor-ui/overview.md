@@ -49,6 +49,22 @@ The main navigation bar divides the interface into five sections:
 | **Users** | Data portal users, web users, categories, policies, and resources |
 | **Admin** | System-wide tools: metadata, requeue, upload, and audit |
 
+## Contextual help
+
+Information buttons beside card titles expand explanatory panels with a neutral
+background and a blue top border. This shared appearance is used across detail,
+edit, administration and monitoring pages in both light and dark themes.
+Field-level **?** tips explain individual settings, while **Guide** buttons open
+longer references in side panels. Operational warnings, errors and status notices
+retain their distinct alert colours.
+
+Guide controls use a book icon and a topic-specific name, such as **Module Guide**,
+**Limits & Failover Guide** or **Alias Routing Guide**, with an **Open [Topic] Guide**
+tooltip and accessible label. On small screens, header buttons show only the book
+icon while retaining their full accessible name; dense tables also use icon-only
+controls. **Properties Reference** remains a separate option lookup rather than a
+procedural guide.
+
 ## Session expiry
 
 Across the Monitor UI, an asynchronous request that discovers an expired session

@@ -23,7 +23,7 @@ property="hostOptions" type="java.util.Collection" />
 </button>
 </div>
 <div class="collapse" id="uploadParamInfo">
-<div class="px-3 py-2" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-bottom:1px solid var(--bs-border-color);">
+<div class="ecpds-help-panel">
   <p class="text-muted mb-2">This page lets you upload a test file directly to a Transfer Host, bypassing the normal transfer pipeline. It is useful for verifying a host's connectivity and write access.</p>
   <div class="fw-semibold text-muted mb-1" style="font-size:0.78rem;">Fields</div>
   <div class="mb-1"><i class="bi bi-hdd-network text-secondary me-1"></i><strong>Transfer Host</strong> &mdash; the host to write the file to.</div>

@@ -20,6 +20,10 @@ File retrieval is scheduled separately from directory listing. Concurrent retrie
 respect both the Acquisition Host's and the Destination's **Max Connections**, plus
 the download scheduler's pool limit. The Host limit is per Destination unless
 `ectrans.sharedConnectionLimit="true"` is set in the Host Properties.
+The Destination maximum caps retrievals across its acquisition Hosts independently
+of outgoing dissemination: a value of 5 allows up to 5 scheduled retrievals and
+5 outgoing transfers, not 5 combined. Directory listings and Mover-side on-the-fly
+fallback retrievals are outside the retrieval limits.
 See [File-transfer connection limits](index.md#file-transfer-connection-limits).
 
 ### AcquisitionThread lifecycle

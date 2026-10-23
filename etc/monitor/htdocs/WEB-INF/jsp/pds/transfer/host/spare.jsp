@@ -63,10 +63,10 @@
 
     <c:choose>
         <c:when test="${not empty moduleGuide}">
-            <tr><td><a href="#" onclick="var el=document.getElementById('moduleGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"><i class="bi bi-book sidebar-icon"></i> Configuration Guide</a></td></tr>
+            <tr><td><a href="#" title="Open Module Guide" aria-label="Open Module Guide" onclick="var el=document.getElementById('moduleGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;"><i class="bi bi-book sidebar-icon"></i> Module Guide</a></td></tr>
         </c:when>
         <c:otherwise>
-            <tr><td><span class="sidebar-disabled-item" title="No configuration guide available for this module"><i class="bi bi-book sidebar-icon"></i> Configuration Guide</span></td></tr>
+            <tr><td><span class="sidebar-disabled-item" title="No module guide available for this module" aria-label="Module Guide unavailable"><i class="bi bi-book sidebar-icon"></i> Module Guide</span></td></tr>
         </c:otherwise>
     </c:choose>
     <c:if test="${host.type == 'Dissemination'}">

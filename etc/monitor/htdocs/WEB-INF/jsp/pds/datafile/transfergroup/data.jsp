@@ -199,7 +199,7 @@
 			</div>
 		</div>
 		<div class="collapse" id="tgDiskUsageLegend">
-			<div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+			<div class="ecpds-help-panel">
 				<strong class="d-block mb-1">Two views are available:</strong>
 				<ul class="mb-0 ps-3">
 					<li><strong>Worst-case</strong> &mdash; per volume, shows the highest used bytes across all Data Movers compared to the smallest reported capacity. This is the binding constraint used by the load balancer to select volumes.</li>

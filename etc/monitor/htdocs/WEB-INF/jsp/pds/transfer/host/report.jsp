@@ -251,7 +251,7 @@
         </div>
     </div>
     <div class="collapse" id="reportInfoPanel">
-        <div class="px-3 pt-2 pb-3 border-bottom small" style="background:var(--bs-secondary-bg)">
+        <div class="ecpds-help-panel">
             This report runs an <strong>MTR</strong> (Matt's Traceroute) combined with an <strong>Nmap</strong> port scan against
             the remote host. MTR combines the functionality of <em>traceroute</em> and <em>ping</em>: it traces the network path
             hop by hop, measuring packet loss and round-trip latency at each intermediate router. This makes it easy to pinpoint

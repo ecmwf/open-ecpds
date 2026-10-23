@@ -41,7 +41,7 @@ style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left
 </div>
 
 <div class="collapse" id="dlInfoLegend">
-	<div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+	<div class="ecpds-help-panel">
 		<strong class="d-block mb-1">Live in-flight download counts per Data Mover and volume</strong>
 		<p class="mb-1">A <em>download</em> is the process of fetching the content of a new data file onto a Data Mover. It is triggered either by the discovery of a file through an acquisition host, or by the retrieval of a file following a registration via the <code>ecpds</code> command utility.</p>
 		<ul class="mb-1 ps-3">

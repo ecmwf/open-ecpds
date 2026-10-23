@@ -68,8 +68,8 @@
       </c:if>
       <c:if test="${hasMarkdownField}">
       <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="offcanvas"
-              data-bs-target="#dmfMarkdownGuideOffcanvas" title="Open Markdown Guide">
-        <i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Markdown </span>Guide
+              data-bs-target="#dmfMarkdownGuideOffcanvas" title="Open Markdown Guide" aria-label="Open Markdown Guide">
+        <i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Markdown Guide</span>
       </button>
       </c:if>
       <button type="button" class="btn btn-sm btn-outline-secondary" id="dmfHideEmptyBtn"
@@ -165,7 +165,7 @@
      aria-labelledby="dmfMarkdownGuideLabel" style="width:600px;max-width:95vw;">
   <div class="offcanvas-header border-bottom py-2 px-3">
     <h6 class="offcanvas-title mb-0 fw-semibold" id="dmfMarkdownGuideLabel">
-      <i class="bi bi-markdown me-2 text-info"></i>Markdown &mdash; Guide
+      <i class="bi bi-book me-2 text-info"></i>Markdown Guide
     </h6>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>

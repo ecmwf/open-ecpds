@@ -4,7 +4,7 @@
      aria-labelledby="pdGuideLabel" style="width:760px;max-width:95vw;">
   <div class="offcanvas-header border-bottom py-2 px-3">
     <h6 class="offcanvas-title mb-0 fw-semibold" id="pdGuideLabel">
-      <i class="bi bi-card-list me-2 text-info"></i>Product Descriptions &mdash; Configuration Guide
+      <i class="bi bi-book me-2 text-info"></i>Product Description Guide
     </h6>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>

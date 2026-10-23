@@ -73,7 +73,7 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
 </div>
 
 <div class="collapse" id="mfInfoPanel">
-  <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+  <div class="ecpds-help-panel">
     <strong class="d-block mb-1">Metadata Field Definitions &mdash; overview</strong>
     <p class="mb-1">This page manages the <strong>metadata field definitions</strong> used across all destinations. Each field definition describes a piece of metadata that can be filled in per destination on the destination's Metadata tab.</p>
     <ul class="mb-1 ps-3">

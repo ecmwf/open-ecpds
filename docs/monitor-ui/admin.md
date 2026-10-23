@@ -35,7 +35,7 @@ storage and counters), **Manual scope**, **Automatic selection**, **Probes**,
 The probe results, source registration and measurement tables can be searched, sorted
 and paged in the same way as the Storage Lifecycle Policies table; states and outcomes are
 shown as coloured badges and paths without observations are marked **no coverage**.
-A **Configuration Guide** button opens a short user guide, and the
+A **Network Weather Guide** button opens a short user guide, and the
 <i class="bi bi-info-circle"></i> icon on each card expands a short explanation of its content.
 
 Paths, source/transfer-group scopes, pins, exclusions and probe policies are

@@ -113,7 +113,7 @@ const tDuration = _si.map(i=>_tDuration[i]);
 </div>
 
 <div class="collapse mb-3" id="destTrafficInfo">
-  <div class="card-body py-2 px-3 border rounded" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+  <div class="ecpds-help-panel">
     <strong class="d-block mb-1">Transfer traffic recorded for this destination</strong>
     <p class="mb-1">This page shows daily transfer volume, rate, and file count for files disseminated through this destination. The same data is aggregated across all destinations in the <auth:if basePathKey="datarates.basepath" paths=""><auth:then><a href="/do/datafile/datarates" class="text-decoration-none">Data Rates</a> page</auth:then><auth:else>Data Rates page</auth:else></auth:if>.</p>
     <ul class="mb-1 ps-3">

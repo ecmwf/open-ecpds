@@ -505,25 +505,35 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
         final var shared = setup.getBoolean(ECtransOptions.HOST_ECTRANS_SHARED_CONNECTION_LIMIT);
         final var effective = maximum < 0 ? destinationMaximum
                 : destinationMaximum < 0 ? maximum : Math.min(maximum, destinationMaximum);
+        final var type = host.getType();
+        final var acquisition = HostOption.ACQUISITION.equals(type);
+        final var transfers = acquisition ? "concurrent scheduled file retrieval(s)" : "concurrent file transfer(s)";
+        final var hostLabel = acquisition ? "This acquisition Host " : "This Host ";
         final var description = new StringBuilder();
         if (maximum < 0) {
-            description.append("This Host has no connection limit. ");
+            description.append(hostLabel).append("has no connection limit. ");
         } else {
-            description.append("This Host allows up to ").append(maximum).append(" concurrent file transfer(s) ")
+            description.append(hostLabel).append("allows up to ").append(maximum).append(' ').append(transfers)
+                    .append(' ')
                     .append(shared ? "shared across all Destinations using this Host record on the same Master. "
                             : "separately for each Destination. ");
         }
-        description.append(
-                destinationMaximum < 0 ? "This Destination has no connection limit. " : "This Destination allows up to "
-                        + destinationMaximum + " concurrent file transfer(s) across its Hosts. ");
-        description.append(effective < 0 ? "Neither setting caps concurrency."
-                : effective == 0 ? "New file transfers through this Host are blocked."
-                        : "The upper bound for this Destination through this Host is " + effective + ".");
+        description.append(destinationMaximum < 0 ? "This Destination has no connection limit. "
+                : "This Destination allows up to " + destinationMaximum + " " + transfers + " across its Hosts. ");
+        description.append(effective < 0 ? "Neither setting caps concurrency." : effective == 0
+                ? (acquisition ? "New scheduled file retrievals from this Host are blocked."
+                        : "New file transfers through this Host are blocked.")
+                : "The upper bound for this Destination "
+                        + (acquisition ? "when scheduling file retrievals from this Host is " : "through this Host is ")
+                        + effective + ".");
         if (shared && maximum >= 0 && effective != 0) {
             description.append(" Capacity used by other Destinations reduces the available slots.");
         }
-        return description.append(" Other scheduler limits still apply. Directory listings and probes are not counted.")
-                .toString();
+        return description.append((acquisition
+                ? " These limits apply only to Master-scheduled acquisition. Mover-side on-the-fly fallback retrievals"
+                        + " are not counted or limited by these settings. Other acquisition scheduler limits still apply."
+                        + " Directory listings and probes are not counted."
+                : " Other scheduler limits still apply.")).toString();
     }
 
     /**

@@ -500,7 +500,7 @@ window.addEventListener('pageshow', function(event) {
 <!-- UI Help offcanvas -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="uiHelpOffcanvas" aria-labelledby="uiHelpOffcanvasLabel" style="width:360px;max-width:95vw;">
   <div class="offcanvas-header border-bottom py-2 px-3">
-    <span class="fw-semibold small" id="uiHelpOffcanvasLabel"><i class="bi bi-question-circle me-2 text-primary"></i>Interface Guide</span>
+    <span class="fw-semibold small" id="uiHelpOffcanvasLabel"><i class="bi bi-book me-2 text-primary"></i>Interface Guide</span>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body px-3 py-2" style="font-size:0.83rem; overflow-y:auto;">

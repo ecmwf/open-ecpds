@@ -28,7 +28,7 @@
         <i class="bi bi-hdd-stack-fill text-success flex-shrink-0 mt-1"></i>
         <span>Manage replica retention on Data Movers while preserving originals until normal expiry.
         Enforcement is off by default.</span>
-        <a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('spGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Configuration Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide</a>
+        <a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('spGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Storage Policy Guide" aria-label="Open Storage Policy Guide"><i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Storage Policy Guide</span></a>
     </div>
 </div>
 
@@ -153,7 +153,7 @@
         </div>
     </div>
     <div class="collapse" id="spPoliciesInfo">
-        <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+        <div class="ecpds-help-panel">
             <strong class="d-block mb-1">Storage Lifecycle Policies</strong>
             <p class="mb-1">Each policy sets how long the data files of the matching transfers stay on the Data Movers.</p>
             <ul class="mb-1 ps-3">
@@ -409,7 +409,7 @@
         </button>
     </div>
     <div class="collapse" id="spTestInfo">
-        <div class="card-body py-2 px-3 border-bottom" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+        <div class="ecpds-help-panel">
             <strong class="d-block mb-1">Which policy applies?</strong>
             <p class="mb-1">Checks which policy would be selected for a destination, and optionally a file name.</p>
             <ul class="mb-1 ps-3">

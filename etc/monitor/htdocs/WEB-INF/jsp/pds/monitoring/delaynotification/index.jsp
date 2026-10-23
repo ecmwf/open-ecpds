@@ -57,7 +57,7 @@
  style="background:rgba(108,117,125,0.06); border-left:4px solid #6c757d;">
  <i class="bi bi-bell text-secondary flex-shrink-0"></i>
  <span>Send one consistent notice for all the products and cycles affected by a delay, then inform of the resolution.</span>
- <a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('dnGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Configuration Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide</a>
+ <a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('dnGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Delay Notification Guide" aria-label="Open Delay Notification Guide"><i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">Delay Notification Guide</span></a>
 </div>
 
 <div id="dnAlert"></div>

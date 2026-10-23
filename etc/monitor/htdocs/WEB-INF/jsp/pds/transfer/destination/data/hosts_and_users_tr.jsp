@@ -9,6 +9,20 @@
 	</auth:then>
 </auth:if>
 
+<style>
+.host-pills { display:flex; flex-wrap:wrap; gap:0.25rem; margin-top:0.2rem; }
+.host-pills:empty { display:none; }
+.host-cell { line-height:1.25; }
+.host-cell .host-line { display:flex; align-items:center; gap:0.35rem; }
+.host-cell .host-dot { flex:0 0 1rem; width:1rem; text-align:center; font-size:0.7rem; }
+.host-cell .host-dot.host-busy { animation:_hostBusyPulse 1.2s ease-in-out infinite; }
+.host-cell .host-addr { margin-left:1.35rem; font-size:0.75rem; color:var(--bs-secondary-color); }
+.host-cell .host-pills { margin-left:1.35rem; }
+.host-cell .host-action-slot { display:inline-flex; align-items:center; justify-content:center; width:1.2rem; }
+@keyframes _hostBusyPulse { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
+.host-pills .badge { font-weight:500; font-size:0.7rem; }
+</style>
+
 <div class="row g-3 mt-1">
 
 	<%-- Dissemination Hosts column --%>
@@ -18,13 +32,33 @@
 			<button class="btn btn-link btn-sm p-0 ms-1 text-muted" type="button"
 				data-bs-toggle="collapse" data-bs-target="#disseminationHostsInfo"
 				aria-expanded="false" aria-controls="disseminationHostsInfo"
-				title="How host selection works">
+				title="About dissemination selection, transfers and limits">
 				<i class="bi bi-info-circle"></i>
 			</button>
 		</p>
 		<div class="collapse mb-2" id="disseminationHostsInfo">
-			<div class="card-body py-2 px-3 border rounded mb-2" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
-				<i class="bi bi-shuffle me-1"></i><strong>Failover host selection</strong> &mdash; When a transfer is dispatched, hosts are evaluated in ascending priority order (the lower the number, the higher the precedence). The system always starts with the highest-priority active host. If that host fails or becomes unavailable, it automatically falls back to the next host in the priority sequence. This ensures continuous delivery even when individual hosts experience issues.
+			<div class="ecpds-help-panel">
+				<p class="mb-2"><i class="bi bi-shuffle me-1"></i><strong>Failover host selection</strong> &mdash;
+				Dissemination Hosts are considered in priority order, with lower numbers first.
+				The <strong>selected</strong> pill identifies the Host currently selected for new dispatches.
+				The scheduler can remain on a working fallback Host according to the Destination's failover settings;
+				it does not necessarily return to the highest-priority Host for every transfer.</p>
+				<p class="mb-2"><strong>Transfer activity</strong> &mdash; The <strong>N active</strong> pill shows this Destination's
+				active outgoing transfers on that Host, not the combined count across Destinations or physical socket connections.
+				The pulsing green dot indicates counted transfer activity; a steady green dot only means the Host is enabled,
+				not that it is reachable or healthy. Transfers already running on a previously selected Host may still finish there.</p>
+				<p class="mb-2"><strong>Connection limits</strong> &mdash; The Host maximum applies per Destination by default,
+				or across Destinations using that Host record on the same Master when configured as shared.
+				The Destination's Max Connections also caps outgoing transfers across its dissemination Hosts,
+				independently of its scheduled acquisition retrievals. Other scheduler limits still apply.
+				Use the limit icon beside the Host name for details; probes and idle connections are not counted.</p>
+				<p class="mb-2"><strong>Retries and returning to primary</strong> &mdash; Each Host has its own retry budget and delay.
+				The selected pill shows that Host's retry usage. Destination settings control further retry cycles,
+				holding the Destination and returning from a fallback Host.
+				See the <strong>Limits &amp; Failover Guide</strong> in the Destination edit page's Delivery or Limits card.</p>
+				<p class="mb-0"><strong>On-the-fly fallback</strong> &mdash; If a missing source file is retrieved during delivery,
+				the outgoing transfer still occupies its normal dissemination slots.
+				The extra Mover-side source retrieval is not counted against acquisition limits or included in the acquisition retrieval pill.</p>
 			</div>
 		</div>
 		<table id="disseminationHostsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
@@ -44,20 +78,24 @@
 					<c:set var="disseminationHostname" value="" scope="page" />
 				</c:if>
 				<tr data-host-name="${disseminationHost.name.name}">
-					<td>
-						<c:if test="${disseminationHost.name.active}">
-							<a title="This Host is Activated (id=${disseminationHost.name.name})"
-								href="/do/transfer/host/${disseminationHost.name.name}">${disseminationHost.name.nickName}</a>${disseminationHostname}
-						</c:if>
-						<c:if test="${!disseminationHost.name.active}">
-							<i class="bi bi-slash-circle-fill text-danger me-1" title="Host is disabled" style="font-size:0.85rem;"></i><a
-								title="This Host is NOT Activated (id=${disseminationHost.name.name})"
-								href="/do/transfer/host/${disseminationHost.name.name}"
-								style="text-decoration:line-through;color:var(--bs-secondary-color)">${disseminationHost.name.nickName}</a>${disseminationHostname}
-						</c:if>
-						<c:set var="connectionLimitHost" value="${disseminationHost.name}" />
-						<%@ include file="host_connection_limit.jsp" %>
-						<span class="host-live-status"></span>
+					<td class="host-cell">
+						<div class="host-line">
+							<c:if test="${disseminationHost.name.active}">
+								<i class="host-dot bi bi-circle-fill text-success" title="Host is activated"></i>
+								<a title="This Host is Activated (id=${disseminationHost.name.name})"
+									href="/do/transfer/host/${disseminationHost.name.name}">${disseminationHost.name.nickName}</a>
+							</c:if>
+							<c:if test="${!disseminationHost.name.active}">
+								<i class="host-dot bi bi-slash-circle-fill text-danger" title="Host is disabled"></i>
+								<a title="This Host is NOT Activated (id=${disseminationHost.name.name})"
+									href="/do/transfer/host/${disseminationHost.name.name}"
+									style="text-decoration:line-through;color:var(--bs-secondary-color)">${disseminationHost.name.nickName}</a>
+							</c:if>
+							<c:set var="connectionLimitHost" value="${disseminationHost.name}" />
+							<%@ include file="host_connection_limit.jsp" %>
+						</div>
+						<c:if test="${not empty disseminationHost.name.host}"><div class="host-addr">${disseminationHost.name.host}</div></c:if>
+						<div class="host-pills host-live-status"></div>
 					</td>
 					<td>${disseminationHost.value}</td>
 					<c:if test="${not empty ecpdsCanHandleHosts}">
@@ -125,6 +163,9 @@
 							var acqRow = $(table.rows().nodes()).filter(function() {
 								return this.getAttribute('data-acq-host-id') === String(status.hostName);
 							}).find('.acq-retrieval-status');
+							acqRow.empty();
+							$(acqRow).closest('td').find('.host-dot.bi-circle-fill').toggleClass('host-busy', Number(status.activeConnections) > 0);
+							if (!(Number(status.activeConnections) > 0)) return;
 							var count = Number(status.activeConnections);
 							var tooltip = 'This Destination: ' + count + ' active file retrieval(s) through this Host. ';
 							if (status.sharedConnectionLimit) {
@@ -133,22 +174,24 @@
 							} else {
 								tooltip += 'The Host maximum applies separately per Destination.';
 							}
-							tooltip += ' Directory discovery is shown separately by the acquisition spinner.';
-							acqRow.attr('class', 'acq-retrieval-status badge rounded-pill ms-1 ' + (count > 0 ? 'text-bg-success' : 'text-bg-secondary'))
-								.attr('title', tooltip).text(count + ' retrieving');
+							tooltip += ' Directory listing and file discovery are shown separately by the discovery indicator; Network Weather probes are separate.';
+							acqRow.append($('<span class="badge rounded-pill text-bg-success"></span>')
+								.attr('title', tooltip).text(count + ' retrieving'));
 							return;
 						}
 						var row = document.querySelector('#disseminationHostsTable tr[data-host-name="' + status.hostName + '"] .host-live-status');
 						if (!row) { return; }
 						row.innerHTML = '';
+						var dissDot = row.closest('td').querySelector('.host-dot.bi-circle-fill');
+						if (dissDot) { dissDot.classList.toggle('host-busy', Number(status.activeConnections) > 0); }
 						var connBadge = document.createElement('span');
-						connBadge.className = 'badge rounded-pill text-bg-secondary ms-1';
+						connBadge.className = 'badge rounded-pill text-bg-secondary';
 						connBadge.title = 'Active uploads for this Destination on this Host, not the combined count across Destinations. The Host connection limit may be shared; see the limit information icon.';
 						connBadge.textContent = status.activeConnections + ' active';
-						row.appendChild(connBadge);
+						if (Number(status.activeConnections) > 0) { row.appendChild(connBadge); }
 						if (status.selected) {
 							var selBadge = document.createElement('span');
-							selBadge.className = 'badge rounded-pill text-bg-primary ms-1';
+							selBadge.className = 'badge rounded-pill text-bg-primary';
 							selBadge.title = 'This is the host currently selected for new dispatches. It will fail over to the next host in priority order after '
 								+ (status.retriesTotal - status.retriesUsed) + ' more failed attempt(s) ('
 								+ status.retriesUsed + '/' + status.retriesTotal + ' retries used).';
@@ -158,11 +201,17 @@
 					});
 				})
 				.catch(function (error) {
+					var disseminationRows = $($('#disseminationHostsTable').DataTable().rows().nodes());
+					disseminationRows.find('.host-dot').removeClass('host-busy');
+					disseminationRows.find('.host-live-status').empty()
+						.append($('<span class="badge rounded-pill text-bg-warning"></span>')
+							.attr('title', 'Live dissemination Host status is unavailable.').text('status unavailable'));
 					var pills = document.getElementById('acquisitionHostsTable')
 						? $($('#acquisitionHostsTable').DataTable().rows().nodes()).find('.acq-retrieval-status')
 						: $('.acq-retrieval-status');
-					pills.attr('class', 'acq-retrieval-status badge rounded-pill text-bg-warning ms-1')
-						.attr('title', 'Live retrieval counts are unavailable.').text('retrievals unavailable');
+					pills.closest('td').find('.host-dot').removeClass('host-busy');
+					pills.empty().append($('<span class="badge rounded-pill text-bg-warning"></span>')
+						.attr('title', 'Live retrieval counts are unavailable.').text('retrievals unavailable'));
 					console.warn('Could not refresh Destination Host status', error);
 				});
 		}
@@ -177,13 +226,26 @@
 				<button class="btn btn-link btn-sm p-0 ms-1 text-muted" type="button"
 					data-bs-toggle="collapse" data-bs-target="#acquisitionHostsInfo"
 					aria-expanded="false" aria-controls="acquisitionHostsInfo"
-					title="How host selection works">
+					title="About acquisition discovery and file retrieval">
 					<i class="bi bi-info-circle"></i>
 				</button>
 			</p>
 			<div class="collapse mb-2" id="acquisitionHostsInfo">
-				<div class="card-body py-2 px-3 border rounded mb-2" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
-					<i class="bi bi-diagram-3 me-1"></i><strong>Parallel host processing</strong> &mdash; All active acquisition hosts are contacted <strong>simultaneously</strong>, regardless of their priority value. There is no failover or sequencing &mdash; every host participates in each acquisition cycle at the same time. The priority column is shown for reference only and has no effect on acquisition scheduling.
+				<div class="ecpds-help-panel">
+					<p class="mb-2"><i class="bi bi-diagram-3 me-1"></i><strong>Parallel host processing</strong> &mdash;
+					Eligible acquisition Hosts are processed independently and can run in parallel, subject to each Host's acquisition timing and scheduler capacity.
+					Unlike dissemination, there is no priority-based failover chain; the Priority column does not determine acquisition scheduling.</p>
+					<p class="mb-2"><strong>Discovery</strong> lists remote directories and evaluates files against each Host's acquisition rules.
+					The running indicator and stop button refer to this discovery cycle, not file downloads.
+					Stopping discovery does not cancel file retrievals already scheduled or running. Network Weather probes are separate.</p>
+					<p class="mb-2"><strong>File retrieval</strong> is scheduled separately for files selected for queueing.
+					The <strong>N retrieving</strong> pill shows this Destination's active Master-scheduled retrieval jobs through that Host;
+					the pulsing green dot indicates counted retrieval activity. These are jobs, not physical socket counts.
+					The Host limit applies per Destination unless configured as shared on the same Master.
+					The Destination's Max Connections caps retrievals across its acquisition Hosts independently of outgoing dissemination;
+					the download scheduler's pool limit also applies. Use the limit icon beside the Host name for details.</p>
+					<p class="mb-0"><strong>On-the-fly fallback</strong> &mdash; Mover-side recovery of a missing file bypasses these acquisition limits
+					and is not included in the retrieval pill. Directory listings, probes and idle connections are not counted either.</p>
 				</div>
 			</div>
 			<table id="acquisitionHostsTable" class="table table-sm table-hover table-striped align-middle" style="width:100%">
@@ -203,41 +265,38 @@
 						<c:set var="acquisitionHostname" value="" scope="page" />
 					</c:if>
 					<tr data-acq-host-id="${acquisitionHost.name.id}">
-						<td>
-							<c:if test="${acquisitionHost.name.active}">
-								<span class="d-inline-flex align-items-center gap-1">
+						<td class="host-cell">
+							<div class="host-line">
+								<c:if test="${acquisitionHost.name.active}">
+									<i class="host-dot bi bi-circle-fill text-success" title="Host is activated"></i>
 									<a title="This Host is Activated (id=${acquisitionHost.name.name})"
 										href="/do/transfer/host/${acquisitionHost.name.name}">${acquisitionHost.name.nickName}</a>
-									<span class="acq-state-indicator" style="display:inline-flex;align-items:center;width:1.2rem;justify-content:center;">
-										<span class="acq-running-indicator" style="display:none;" title="Acquisition is currently running">
-										<c:choose>
-											<c:when test="${not empty ecpdsCanHandleHosts}">
-												<button class="acq-interrupt-btn btn btn-link btn-sm p-0 border-0 text-warning" style="line-height:1;font-size:0.95rem;animation:_acqRunPulse 1.2s ease-in-out infinite;" title="Acquisition is running &mdash; click to interrupt" data-interrupt-host-id="${acquisitionHost.name.id}" onclick="_acqInterrupt(this)"><i class="bi bi-stop-fill"></i></button>
-											</c:when>
-											<c:otherwise>
-												<span class="spinner-grow text-success" style="width:0.75rem;height:0.75rem;vertical-align:middle;" title="Acquisition is currently running"></span>
-											</c:otherwise>
-										</c:choose>
+									<span class="host-action-slot acq-state-indicator">
+										<span class="acq-running-indicator" style="display:none;" title="Directory listing and file discovery are running, not the file retrievals counted below. This is not a Network Weather probe.">
+											<c:choose>
+												<c:when test="${not empty ecpdsCanHandleHosts}">
+													<button class="acq-interrupt-btn btn btn-link btn-sm p-0 border-0 text-warning" style="line-height:1;font-size:0.95rem;animation:_acqRunPulse 1.2s ease-in-out infinite;" title="Directory listing and file discovery are running &mdash; click to interrupt this discovery cycle. This does not cancel file retrievals already scheduled or running." aria-label="Interrupt directory listing and file discovery" data-interrupt-host-id="${acquisitionHost.name.id}" onclick="_acqInterrupt(this)"><i class="bi bi-stop-fill"></i></button>
+												</c:when>
+												<c:otherwise>
+													<span class="spinner-grow text-success" style="width:0.75rem;height:0.75rem;vertical-align:middle;" title="Directory listing and file discovery are running, not the file retrievals counted below. This is not a Network Weather probe."></span>
+												</c:otherwise>
+											</c:choose>
+										</span>
+										<c:if test="${not empty ecpdsCanHandleHosts}"><button class="acq-run-btn btn btn-link btn-sm p-0 border-0 text-success" style="display:none;line-height:1;font-size:0.95rem;" title="Request directory listing and file discovery now. Matching files are handled according to this Host's acquisition rules; retrievals are scheduled separately." aria-label="Request directory listing and file discovery now" data-run-host-id="${acquisitionHost.name.id}" onclick="_acqTrigger(this)"><i class="bi bi-play-fill"></i></button></c:if>
 									</span>
-										<c:if test="${not empty ecpdsCanHandleHosts}"><button class="acq-run-btn btn btn-link btn-sm p-0 border-0 text-success" style="display:none;line-height:1;font-size:0.95rem;" title="Trigger acquisition now" data-run-host-id="${acquisitionHost.name.id}" onclick="_acqTrigger(this)"><i class="bi bi-play-fill"></i></button></c:if>
-									</span>
-								</span>${acquisitionHostname}
-							</c:if>
-							<c:if test="${!acquisitionHost.name.active}">
-								<span class="d-inline-flex align-items-center gap-1">
-									<i class="bi bi-slash-circle-fill text-danger me-1" title="Host is disabled" style="font-size:0.85rem;"></i><a
-										title="This Host is NOT Activated (id=${acquisitionHost.name.name})"
+								</c:if>
+								<c:if test="${!acquisitionHost.name.active}">
+									<i class="host-dot bi bi-slash-circle-fill text-danger" title="Host is disabled"></i>
+									<a title="This Host is NOT Activated (id=${acquisitionHost.name.name})"
 										href="/do/transfer/host/${acquisitionHost.name.name}"
 										style="text-decoration:line-through;color:var(--bs-secondary-color)">${acquisitionHost.name.nickName}</a>
-									<span style="display:inline-flex;align-items:center;width:1.2rem;justify-content:center;">
-										<i class="bi bi-play-fill" style="font-size:0.95rem;opacity:0.25;color:var(--bs-secondary-color);" title="Host is disabled"></i>
-									</span>
-								</span>${acquisitionHostname}
-							</c:if>
-							<c:set var="connectionLimitHost" value="${acquisitionHost.name}" />
-							<%@ include file="host_connection_limit.jsp" %>
-							<span class="acq-retrieval-status badge rounded-pill text-bg-secondary ms-1"
-								title="Loading active file retrieval count">retrievals &hellip;</span>
+									<span class="host-action-slot"><i class="bi bi-play-fill" style="font-size:0.95rem;opacity:0.25;color:var(--bs-secondary-color);" title="Host is disabled"></i></span>
+								</c:if>
+								<c:set var="connectionLimitHost" value="${acquisitionHost.name}" />
+								<%@ include file="host_connection_limit.jsp" %>
+							</div>
+							<c:if test="${not empty acquisitionHost.name.host}"><div class="host-addr">${acquisitionHost.name.host}</div></c:if>
+							<div class="host-pills acq-retrieval-status"></div>
 						</td>
 						<td>${acquisitionHost.value}</td>
 						<c:if test="${not empty ecpdsCanHandleHosts}">

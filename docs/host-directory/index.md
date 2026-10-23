@@ -21,6 +21,15 @@ The **Directory** field is interpreted differently depending on the host type. I
 For **Acquisition** and **Dissemination** Hosts, **Max Connections** limits concurrent
 file retrievals/uploads separately for each Destination by default. Each Destination's
 own **Limits → Max Connections** also applies.
+
+The Destination maximum is enforced independently for outgoing dissemination
+transfers across its dissemination Hosts and, when acquisition is enabled,
+Master-scheduled file retrievals across its acquisition Hosts. These are separate
+pools, not a combined total: a Destination maximum of 5 permits up to 5 retrievals
+and 5 outgoing transfers at the same time, subject to Host and other scheduler
+limits. A negative Destination maximum is unlimited; zero prevents new scheduled
+retrievals and outgoing transfers.
+
 On the Destination page, the information/warning icon beside each acquisition or
 dissemination Host explains its limit scope and the upper bound for that Destination.
 Acquisition Hosts also show a live `N retrieving` pill for this Destination,
@@ -47,6 +56,11 @@ until capacity is available. Counts refer to scheduled file transfers, not physi
 TCP sockets, directory listings, Network Weather probes or idle pooled connections.
 One indexed retrieval counts as one scheduled retrieval even if it fetches multiple
 files internally.
+
+Mover-side on-the-fly fallback retrievals, such as recovering a file missing from
+a Data Mover, bypass the acquisition Host and Destination retrieval limits. They
+are not included in the live acquisition retrieval count. An outgoing dissemination
+served by such a fallback still occupies its normal dissemination slots.
 
 Acquisition also respects the download scheduler's **`[Scheduler] maxDownloadThreads`**
 pool limit in the Master configuration. The shipped configuration takes this from

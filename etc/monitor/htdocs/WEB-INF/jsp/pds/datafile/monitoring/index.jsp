@@ -55,7 +55,7 @@ style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left
 </div>
 
 <div class="collapse mb-3" id="drMonitorInfoPanel">
-  <div class="card-body py-2 px-3 border rounded" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd)!important;">
+  <div class="ecpds-help-panel">
     <strong class="d-block mb-1">Data Retrieval Monitoring</strong>
     <p class="mb-1">This form analyses the transfer rates of the Data Retrieval Mechanism over a custom date and time range. Results are broken down by Transfer Group or, optionally, by individual Data Mover.</p>
     <ul class="mb-1 ps-3">

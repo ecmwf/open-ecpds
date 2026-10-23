@@ -12,7 +12,7 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
 <i class="bi bi-megaphone-fill text-secondary flex-shrink-0"></i>
 <span>Announce maintenance and service-wide notices on the Monitor and Data Portal.
 Banners appear when saved and disappear automatically at their end time.</span>
-<a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('smGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open Configuration Guide"><i class="bi bi-book me-1"></i><span class="d-none d-sm-inline">Configuration </span>Guide</a>
+<a href="#" class="btn btn-sm btn-outline-info ms-auto flex-shrink-0" onclick="var el=document.getElementById('smGuideOffcanvas');if(el)bootstrap.Offcanvas.getOrCreateInstance(el).show();return false;" title="Open System Message Guide" aria-label="Open System Message Guide"><i class="bi bi-book"></i><span class="d-none d-sm-inline ms-1">System Message Guide</span></a>
 </div>
 
 <% if (smError != null) { %>

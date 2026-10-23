@@ -2,12 +2,12 @@
 <%@ page  %>
 <c:set var="_guideId" value="${not empty param.guideId ? param.guideId : 'moduleGuideOffcanvas'}"/>
 
-<%-- WebDAV Module Configuration Guide - offcanvas panel --%>
+<%-- WebDAV Module Guide - offcanvas panel --%>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="${_guideId}"
      aria-labelledby="moduleGuideLabel" style="width:720px;max-width:95vw;">
   <div class="offcanvas-header border-bottom py-2 px-3">
     <h6 class="offcanvas-title mb-0 fw-semibold" id="moduleGuideLabel">
-      <i class="bi bi-book me-2 text-info"></i>WebDAV Module &mdash; Configuration Guide
+      <i class="bi bi-book me-2 text-info"></i>WebDAV Module Guide
     </h6>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>

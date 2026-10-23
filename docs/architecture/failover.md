@@ -33,6 +33,29 @@ temporarily unavailable.
 
 ![The OpenECPDS Failover Mechanism in Host Selection](../img/Figure05.svg){ width="400" }
 
+## Destination retry controls
+
+The Destination edit page provides a **Limits & Failover Guide** from
+the Delivery and Limits cards. Host retry settings and Destination retry settings
+operate at different levels:
+
+| Setting | Scope and effect |
+|---|---|
+| Host Retry Count / Retry Frequency | Retry budget and wait for the selected dissemination Host before moving to the next Host. |
+| Destination Retry Count / Retry Frequency | Repeated unsuccessful cycles through the Host list. The frequency delays another cycle; reaching the configured retry threshold holds the Destination and requires operator intervention. |
+| Max Start / Start Frequency | Per-transfer start threshold. Reaching a positive threshold resets the start counter and increments the requeue counter; unless Max Requeue is reached, the transfer waits for Start Frequency. |
+| Max Requeue | A positive threshold on those per-transfer requeue cycles. Reaching it marks the transfer failed rather than holding the entire Destination. |
+| Reset Frequency | Can restart the Destination after sustained use of a backup Host. |
+
+Host selection affects new dispatches; transfers already running on a previous
+Host can still finish there. Acquisition Hosts are processed independently, not
+as this dissemination failover chain.
+
+Concurrency is separate from retries: the Destination maximum caps scheduled
+retrievals and outgoing transfers as **two independent pools**, with Host limits
+also applying. See [File-transfer connection limits](../host-directory/index.md#file-transfer-connection-limits).
+Increasing concurrency does not clear a held Destination or repair a failing Host.
+
 ## Related
 
 - [Components](components.md)

@@ -4,7 +4,7 @@
 
 This is the recommended way to announce planned outages, maintenance windows, or other service-wide notices (e.g. *"The service will be unavailable for maintenance from 20:00 to 22:00 UTC"*) without having to manually add and remove a banner before and after the event.
 
-The page's **Configuration Guide** explains the fields, timing, visibility and list actions in a side panel.
+The page's **System Message Guide** explains the fields, timing, visibility and list actions in a side panel.
 
 ---
 

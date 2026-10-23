@@ -139,7 +139,7 @@
 </div>
 
 <div class="collapse mb-3" id="topoInfoCollapse">
-    <div class="card card-body" style="border-top:3px solid var(--bs-primary,#0d6efd);">
+    <div class="ecpds-help-panel">
         <p>
             <strong>System Topology</strong> is a live diagram of every OpenECPDS component this Monitor knows
             about: the <strong>Master Server</strong> (the central coordinator), every <strong>Data Mover</strong>

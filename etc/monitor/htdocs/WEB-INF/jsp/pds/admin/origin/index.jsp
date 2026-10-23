@@ -52,7 +52,7 @@
         </button>
     </div>
     <div class="collapse" id="olInfo">
-      <div class="px-3 py-2 border-bottom border-top" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top-width:3px!important; border-top-color:var(--bs-primary,#0d6efd)!important;">
+      <div class="ecpds-help-panel">
         <strong class="d-block mb-1">About the Origin Location</strong>
         <ul class="mb-0 ps-3">
             <li><strong>Automatic mode</strong> &mdash; resolves the coordinates via a GeoIP lookup against this

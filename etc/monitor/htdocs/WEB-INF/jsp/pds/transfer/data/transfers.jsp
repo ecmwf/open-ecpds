@@ -66,7 +66,7 @@
 </div>
 
 <div class="collapse mb-3" id="transferStatusLegend">
-    <div class="px-3 py-2 mt-1" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-radius:var(--bs-border-radius); border:1px solid var(--bs-border-color);">
+    <div class="ecpds-help-panel">
         <div class="row g-3">
             <div class="col-12">
                 <strong class="d-block mb-1">Target and Delivered</strong>
@@ -206,7 +206,7 @@
                         </div>
                     </div>
                     <div class="collapse mt-1" id="tfrQBHelp">
-                        <div class="card card-body py-2 px-3" style="font-size:0.82rem; background:var(--bs-tertiary-bg,#e9ecef); border-top:3px solid var(--bs-primary,#0d6efd);">
+                        <div class="ecpds-help-panel">
                             <strong class="d-block mb-1">Search &amp; Filter syntax</strong>
                             <p class="mb-1">Type directly in the search box or click <i class="bi bi-sliders2"></i> <strong>Filter</strong> to open the visual query builder. Terms can be combined freely in any order.</p>
                             <ul class="mb-1 ps-3">
