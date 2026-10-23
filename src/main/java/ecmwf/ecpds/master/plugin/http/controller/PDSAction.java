@@ -85,15 +85,24 @@ public abstract class PDSAction extends ECMWFAction {
         ActionForward forward = null;
         final var user = getUser(request);
         final var currentPath = request.getContextPath() + request.getServletPath() + mapping.getPath();
+        final var fetchMode = request.getHeader("Sec-Fetch-Mode");
+        final var backgroundRequest = "XMLHttpRequest".equalsIgnoreCase(request.getHeader("X-Requested-With"))
+                || fetchMode != null && !"navigate".equals(fetchMode);
         if (user == null || Cnf.at("Server", "anonymousUser", "anonymous").equals(user.getUid())) {
             // Access Denied. No User.
             response.setHeader("X-ECPDS-Session-Expired", "true");
             response.setHeader("Cache-Control", "no-store");
+            if (backgroundRequest) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return null;
+            }
             request.getSession().setAttribute(RETURN_AFTER_LOGIN_KEY, currentPath);
             forward = mapping.findForward("login");
         } else if (!isAuthorized(user, currentPath, request)) {
             // Access Denied to THIS user!!
-            request.getSession().setAttribute(RETURN_AFTER_LOGIN_KEY, currentPath);
+            if (!backgroundRequest) {
+                request.getSession().setAttribute(RETURN_AFTER_LOGIN_KEY, currentPath);
+            }
             if (user.getCategories().isEmpty()) {
                 request.setAttribute(Globals.ERROR_KEY, ECMWFActionForm.newErrors("errors.noAccess", user.getUid()));
             } else {

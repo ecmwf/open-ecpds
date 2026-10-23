@@ -16,8 +16,15 @@
     }
     if (window.fetch) {
         var originalFetch = window.fetch;
-        window.fetch = function() {
-            return originalFetch.apply(this, arguments).then(function(response) {
+        window.fetch = function(input, init) {
+            var url = input instanceof Request ? input.url : input;
+            if (new URL(url, window.location.href).origin === window.location.origin) {
+                init = Object.assign({}, init);
+                var headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
+                headers.set('X-Requested-With', 'XMLHttpRequest');
+                init.headers = headers;
+            }
+            return originalFetch.call(this, input, init).then(function(response) {
                 if (!sessionExpired(response)) return response;
                 reloadForLogin();
                 // Keep callers from parsing the login page or reporting a network error.
@@ -28,6 +35,24 @@
     var OriginalXMLHttpRequest = window.XMLHttpRequest;
     window.XMLHttpRequest = function() {
         var xhr = new OriginalXMLHttpRequest();
+        var originalOpen = xhr.open;
+        var sameOrigin = false;
+        var requestedWith = false;
+        xhr.open = function(method, url) {
+            sameOrigin = new URL(url, window.location.href).origin === window.location.origin;
+            requestedWith = false;
+            return originalOpen.apply(this, arguments);
+        };
+        var originalSetRequestHeader = xhr.setRequestHeader;
+        xhr.setRequestHeader = function(name, value) {
+            if (name.toLowerCase() === 'x-requested-with') requestedWith = true;
+            return originalSetRequestHeader.apply(this, arguments);
+        };
+        var originalSend = xhr.send;
+        xhr.send = function() {
+            if (sameOrigin && !requestedWith) this.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            return originalSend.apply(this, arguments);
+        };
         function checkSession(event) {
             if (xhr.readyState !== 4 || !sessionExpired(xhr)) return;
             event.stopImmediatePropagation();
