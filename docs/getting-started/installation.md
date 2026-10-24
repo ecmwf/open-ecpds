@@ -145,6 +145,12 @@ provide a better understanding of its function and how it impacts the system's
 behaviour. By reviewing the Compose file, you can tailor the setup to your environment's
 specific requirements.
 
+For application-level settings, see the dedicated `ecmwf.properties` references
+for the [Master](../configuration/master.md),
+[Monitor](../configuration/monitor.md) and [Data Mover](../configuration/mover.md).
+They distinguish shipped assignments from the implementation defaults used when
+an option is omitted.
+
 ## Next steps
 
 Continue to [First Run](first-run.md) to start the services and access the interfaces.
