@@ -22,6 +22,10 @@ this page explains where it overlaps,
 where it differentiates,
 and why those differences matter.
 
+The advantages go beyond moving bytes: operators can **diagnose delivery problems**,
+**control storage growth**, **coordinate incident communications**, and **connect
+transfer activity to their observability tools** from the same platform.
+
 !!! tip "Try it now"
     Want to evaluate the platform before planning a full deployment?
     Start with the [standalone container](getting-started/standalone.md),
@@ -176,10 +180,12 @@ operators can inspect transfer state,
 manage queues,
 review event histories,
 and work with concepts that map directly to how a distributed transfer estate is run.
-A real-time 3D globe view, **Live Earth**, visualises every transfer currently in progress —
-aggregated per destination Host, colour-coded by status, and broken down by Acquisition versus
-Dissemination — giving operators an immediate, at-a-glance picture of global activity that a
-table-only dashboard cannot provide.
+A live **2D/3D Earth view** shows transfer activity aggregated by Host, with
+status colours and filters for acquisition, dissemination, replication, source,
+backup and proxy traffic. Continental Mover markers, cloud-region locations and
+24-hour traffic totals help operators understand where data is flowing, not just
+how many jobs are queued. Scheduler Traffic views complement that picture with
+current replication, backup and proxy work.
 
 The documentation also reflects this operational focus,
 with dedicated sections for transfer statistics,
@@ -192,6 +198,97 @@ See [Monitoring](monitoring/transfer-statistics.md),
 [Live Earth](monitor-ui/monitoring.md#live-earth),
 [Event Logging](event-logging/overview.md),
 and [Global Reach](global-reach.md).
+### Logs, traces and metrics that fit your observability stack
+
+OpenECPDS supports structured operational logs, optional distributed transfer traces,
+and Prometheus/JMX metrics. Teams can keep the Splunk-format file output, export
+native OpenTelemetry Logs, or use both. Sampled traces connect Master scheduling
+and completion to Mover execution, with links from dissemination logs to the
+corresponding attempt.
+
+Only the Master needs access to the telemetry backend: Movers, including Continental
+Movers, forward trace data through their existing control connections. This keeps
+backend credentials and external connectivity out of remote transfer sites.
+An optional database journal retains successfully persisted operational events
+through Collector outages and Master restarts, with backlog and persistence-health
+indicators in the Monitor.
+
+The advantage is a choice of diagnostic depth without committing to one monitoring
+vendor. Traces remain best effort, and the log journal is a delivery safeguard,
+not a transactional audit trail.
+See [Event Logging](event-logging/overview.md)
+and [Hawtio, Prometheus and Grafana](monitoring/jmx-export.md).
+### Network evidence alongside transfer outcomes
+
+A slow or failed transfer does not, by itself, explain whether the problem is the
+application, an endpoint or the network path. **Network Weather** brings bounded
+passive delivery and retrieval observations together with optional TCP-connect and
+MTR probes for administrator-approved paths. Operators can inspect the evidence in
+administration tables and a Live Earth overlay, including for Continental Movers.
+
+Transfer-level socket statistics provide additional evidence where supported,
+with acquisition and dissemination kept distinct. Together, these tools help teams
+focus investigations and share concrete observations with network operators rather
+than relying only on a failed-job count.
+Collection and probes are opt-in; missing measurements are shown as unavailable
+coverage, not as a healthy network.
+See [Network Weather](monitor-ui/admin.md#network-weather)
+and [Transfer Network Statistics](monitoring/transfer-statistics.md).
+### Storage efficiency with explicit retention safeguards
+
+Distributed delivery needs redundancy, but keeping every replica until file expiry
+can consume substantial capacity. **Storage Lifecycle Policies** let administrators
+evaluate and selectively reduce redundant copies by destination, group or file
+pattern, using dry-run estimates and savings counters before enabling enforcement.
+
+Configured requeue windows, active-work protection, verified originals and per-file
+holds constrain removal. Originals remain until normal expiry; policies do not
+silently discard the last verified original to meet a storage target.
+Optional pressure handling and lazy replication provide further control, with
+explicit redundancy trade-offs.
+
+This gives operators a way to balance disk use and recovery requirements within
+the transfer platform rather than relying on separate cleanup scripts.
+Enforcement is off by default.
+See [Storage Lifecycle Policies](administration/storage-lifecycle-policies.md).
+### Operational knowledge and incident communication in context
+
+Knowing that delivery is delayed is only part of the operator's job. OpenECPDS
+also keeps destination contacts, ownership information and runbooks next to the
+data flows they describe. Structured metadata can supply contact lists and export
+selected procedures to Opsview notes, helping operators find the right response
+and escalation path without searching a separate document store.
+
+**Delay Notification** groups affected products and cycles into a consistent
+notice, derives recipients from the relevant destinations, and tracks updates
+and resolutions. System Messages publish time-bounded maintenance or warning
+banners across the Monitor and Data Portal.
+These features help reduce inconsistent messages and repeated manual recipient
+selection during an incident; they do not replace operator judgement or confirm
+that recipients have read a notice.
+See [Destination Metadata](administration/destination-metadata.md),
+[Delay Notification](monitoring/delay-notification.md)
+and [System Messages](administration/system-messages.md).
+### Safer configuration and central certificate management
+
+Acquisition and dissemination settings can be tested against real server-side
+behaviour before they are saved. Directory previews, sample-content inspection
+and acquisition parsing previews help validate paths, listing metadata and size
+extraction without scheduling a full production flow.
+This is particularly useful for heterogeneous HTTP, cloud and scientific data
+sources whose listings do not all follow the same conventions.
+
+Administrators can also inspect certificate health, generate certificate-signing
+requests, import CA-signed certificates, and deploy or reload certificates across
+connected Monitors and Movers from the UI. Expiry warnings make certificate
+maintenance visible alongside other operational tasks, while hot reload avoids
+a service restart for supported certificate changes.
+
+Together, these capabilities reduce repetitive per-server administration and
+make configuration problems easier to catch before they interrupt delivery.
+See [Acquisition testing](host-directory/acquisition.md#test-on-server),
+[Dissemination testing](host-directory/dissemination.md#test-on-server)
+and [TLS Certificate Management](administration/certificates.md).
 ### Data Portal: incoming and outgoing in one platform
 
 Many organisations end up combining separate products for scheduled outbound delivery and
@@ -357,6 +454,11 @@ Common reasons include:
   scheduling,
   monitoring,
   and lifecycle policy
+- investigating delivery problems with linked logs and traces, transfer statistics,
+  and network-path evidence
+- managing redundant storage with dry-run estimates, retention safeguards and holds
+- keeping contacts, runbooks and delay communications connected to the affected data flows
+- centralising certificate administration and telemetry backend access across a distributed fleet
 - supporting scientific or mission-critical workflows that do not map neatly to generic
   business-file patterns
 - preferring an open,
@@ -383,6 +485,10 @@ Recommended path:
 4. Explore [Architecture Overview](architecture/overview.md)
 5. Compare [Additional Features](concepts/additional-features.md) and the
    [Transfer Modules](transfer-modules/index.md) with your current MFT requirements
+6. Assess [observability](event-logging/overview.md),
+   [Network Weather](monitor-ui/admin.md#network-weather) and
+   [Storage Lifecycle Policies](administration/storage-lifecycle-policies.md)
+   against your operational needs; enable optional collection and enforcement deliberately
 
 !!! note "Evaluation mindset"
     When comparing OpenECPDS with another MFT product,
