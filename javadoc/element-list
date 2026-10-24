@@ -26,6 +26,7 @@ ecmwf.common.security
 ecmwf.common.ssh
 ecmwf.common.starter
 ecmwf.common.technical
+ecmwf.common.telemetry
 ecmwf.common.telnet
 ecmwf.common.text
 ecmwf.common.transport.ptcp.psocket

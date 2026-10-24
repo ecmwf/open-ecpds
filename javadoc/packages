@@ -84,6 +84,7 @@ ecmwf.common.version
 ecmwf.common.starter
 ecmwf.common.ai
 ecmwf.common.ecauth
+ecmwf.common.telemetry
 ecmwf.common.text
 ecmwf.common.callback
 ecmwf.common.checksum
