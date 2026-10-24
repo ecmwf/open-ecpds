@@ -64,6 +64,7 @@ import ecmwf.common.database.HostLocation;
 import ecmwf.common.ecaccess.ECauthToken;
 import ecmwf.common.security.SSLSocketFactory;
 import ecmwf.common.technical.Cnf;
+import ecmwf.common.telemetry.MoverTracing;
 import ecmwf.ecpds.master.LiveTransferSample;
 import ecmwf.ecpds.mover.RESTInterface;
 
@@ -315,6 +316,21 @@ public final class RESTClient implements RESTInterface {
                 return;
             } catch (final Exception e) {
                 failure = new RestException("Sending traffic accounting to " + dataMover, e);
+            }
+        }
+        throw failure != null ? failure : new RestException("No MasterServer available");
+    }
+
+    @Override
+    public void exportTransferSpans(java.util.List<ecmwf.common.telemetry.TransferSpan> spans) throws RestException {
+        RestException failure = null;
+        for (final String dataMover : getDataMover()) {
+            try (final var response = send(httpProxy, dataMover + "/ecpds/master/exportTransferSpans", connectTimeout,
+                    "PUT", spans, Map.of())) {
+                parse(response);
+                return;
+            } catch (final Exception e) {
+                failure = new RestException("Sending transfer traces to " + dataMover, e);
             }
         }
         throw failure != null ? failure : new RestException("No MasterServer available");
@@ -595,6 +611,8 @@ public final class RESTClient implements RESTInterface {
         t.setDataFileId(f.getId());
         t.setDataFile(f);
         t.setStartCount(transfer.getStartCount());
+        t.setRequeueHistory(transfer.getRequeueHistory());
+        MoverTracing.copy(transfer, t);
         t.setStatusCode(transfer.getStatusCode());
         t.setDestinationName(transfer.getDestinationName());
         t.setFirstFinishTime(transfer.getFirstFinishTime());

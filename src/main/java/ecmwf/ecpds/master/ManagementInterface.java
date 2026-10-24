@@ -1888,6 +1888,9 @@ public interface ManagementInterface extends Remote {
     /** Read current Proxy, Backup or Replication workers without database or Mover calls. */
     SchedulerTrafficSnapshot getSchedulerTraffic(String type) throws RemoteException;
 
+    OperationalEventJournalStatus getOperationalEventJournalStatus(ECpdsSession session, boolean includeQueue)
+            throws Exception;
+
     /**
      * Gets the MasterServer's own geolocation, used to centre the "Live ECPDS Earth" globe. Resolved via the same GeoIP
      * mechanism (including any {@code [GeoIP]} {@code forced.*} overrides) used elsewhere (e.g. the Host traceroute

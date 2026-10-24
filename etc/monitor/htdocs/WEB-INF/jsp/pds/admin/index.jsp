@@ -1,4 +1,5 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
+<%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%
     final String certStatus = (String) request.getAttribute("certStatus");
     final boolean certError   = "ERROR".equals(certStatus);
@@ -29,6 +30,7 @@
 </div>
 
 <jsp:include page="/WEB-INF/jsp/pds/common/system_messages_banner.jsp" />
+<jsp:include page="/WEB-INF/jsp/pds/admin/eventjournal/banner.jsp" />
 
 <% if (capNotSet) { %>
 <div class="alert alert-warning d-flex align-items-start gap-3 mb-4" role="alert">
@@ -122,6 +124,25 @@
     </div>
     </div>
     </auth:link>
+
+    <auth:if basePathKey="admin.basepath" paths="/eventjournal"><auth:then>
+    <div class="col">
+        <c:if test="${journalEnabled or journalUnavailable}"><a href="/do/admin/eventjournal" class="d-block h-100 text-decoration-none text-reset"></c:if>
+        <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3 ${journalDanger ? 'border border-danger-subtle bg-danger-subtle' : journalAttention or journalUnavailable ? 'border border-warning-subtle bg-warning-subtle' : ''} ${not journalEnabled and not journalUnavailable ? 'opacity-50' : ''}"
+             <c:if test="${not journalEnabled and not journalUnavailable}">aria-disabled="true" title="OpenTelemetry database journaling is disabled on the Master. Pending rows may still exist."</c:if>>
+            <i class="bi bi-database-check ${journalDanger ? 'text-danger' : journalAttention or journalUnavailable ? 'text-warning' : 'text-secondary'} flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+            <div>
+                <span class="tool-title">Operational Event Journal
+                    <c:choose><c:when test="${journalAttention or journalUnavailable}"><span class="badge ${journalDanger ? 'bg-danger' : 'bg-warning text-dark'} ms-1">Attention</span></c:when>
+                    <c:when test="${not journalEnabled}"><span class="badge bg-secondary ms-1">Disabled</span></c:when></c:choose>
+                </span>
+                <p class="tool-desc">Monitor pending OpenTelemetry events, oldest admission time and export health.
+                    Persistence failures are highlighted even after recovery; this page is read-only.</p>
+            </div>
+        </div>
+        <c:if test="${journalEnabled or journalUnavailable}"></a></c:if>
+    </div>
+    </auth:then></auth:if>
 
     <auth:link basePathKey="admin.basepath" href="/upload">
     <div class="col">

@@ -29,6 +29,8 @@ package ecmwf.common.database;
 import java.math.BigDecimal;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * The Class DataTransfer.
  */
@@ -213,6 +215,36 @@ public class DataTransfer extends DataBaseObject {
     /** The statistics. */
     protected String statistics;
     private String weatherExecutionId;
+    private String traceParent;
+    private String traceState;
+    private String traceAttemptId;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getTraceParent() {
+        return traceParent;
+    }
+
+    public void setTraceParent(final String value) {
+        traceParent = value;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getTraceState() {
+        return traceState;
+    }
+
+    public void setTraceState(final String value) {
+        traceState = value;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getTraceAttemptId() {
+        return traceAttemptId;
+    }
+
+    public void setTraceAttemptId(final String value) {
+        traceAttemptId = value;
+    }
 
     /** The compressed. */
     protected String compressed = null;

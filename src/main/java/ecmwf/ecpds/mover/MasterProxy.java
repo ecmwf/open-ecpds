@@ -81,6 +81,8 @@ public interface MasterProxy {
 
     void updateTrafficAccounting(String mover, java.util.Map<String, String> snapshot) throws Exception;
 
+    void exportTransferSpans(java.util.List<ecmwf.common.telemetry.TransferSpan> spans) throws Exception;
+
     ecmwf.ecpds.master.weather.WeatherCapabilities getWeatherCapabilities(String sourceId) throws Exception;
 
     ecmwf.ecpds.master.weather.WeatherAcknowledgement deliverWeatherObservations(

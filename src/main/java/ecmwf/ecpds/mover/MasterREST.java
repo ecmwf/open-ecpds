@@ -136,6 +136,11 @@ final class MasterREST implements MasterProxy {
     }
 
     @Override
+    public void exportTransferSpans(java.util.List<ecmwf.common.telemetry.TransferSpan> spans) throws Exception {
+        _rest.exportTransferSpans(spans);
+    }
+
+    @Override
     public ecmwf.ecpds.master.weather.WeatherCapabilities getWeatherCapabilities(String sourceId) throws Exception {
         return _rest.getWeatherCapabilities(sourceId);
     }

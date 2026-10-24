@@ -101,6 +101,7 @@ import ecmwf.common.technical.ScriptManager;
 import ecmwf.common.technical.ThreadService.ConfigurableLoopRunnable;
 import ecmwf.common.technical.ThreadService.ConfigurableRunnable;
 import ecmwf.common.technical.WakeupThread;
+import ecmwf.common.telemetry.TransferTracing;
 import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.ChangeHostEvent;
 import ecmwf.ecpds.master.DestinationStep;
@@ -934,27 +935,32 @@ public final class TransferScheduler extends MBeanScheduler {
      */
     private static boolean put(final DataTransfer transfer, final Host hostForSource) {
         Throwable throwable = null;
-        try {
-            // Get the list of hosts for source
-            final var hostsForSource = _getHostsForSource(transfer, hostForSource);
-            // The Data Mover might have been changed when getting the hosts for source
-            final var moverName = transfer.getTransferServerName();
-            // Get the data mover interface!
-            final var mover = MASTER.getDataMoverInterface(moverName);
-            if (mover == null) {
-                throw new MasterException("DataMover " + moverName + " not available");
+        try (final var trace = TransferTracing.dispatch(transfer); final var scope = trace.makeCurrent()) {
+            try {
+                // Get the list of hosts for source
+                final var hostsForSource = _getHostsForSource(transfer, hostForSource);
+                // The Data Mover might have been changed when getting the hosts for source
+                final var moverName = transfer.getTransferServerName();
+                // Get the data mover interface!
+                final var mover = MASTER.getDataMoverInterface(moverName);
+                if (mover == null) {
+                    throw new MasterException("DataMover " + moverName + " not available");
+                }
+                // Execute the put on the data mover!
+                final var result = TransferManagement.put(moverName, mover, hostsForSource, transfer);
+                // Update the MoverName on the local DataTransfer!
+                transfer.setMoverName(result.getMoverName());
+            } catch (SourceNotAvailableException | MasterException | ECtransException | DirectoryException
+                    | DataBaseException | IOException e) {
+                _log.warn("Transfering DataTransfer {}: {}", transfer.getId(), e.getMessage());
+                throwable = e;
+            } catch (final Throwable t) {
+                _log.warn("Transfering DataTransfer {}", transfer.getId(), t);
+                throwable = t;
             }
-            // Execute the put on the data mover!
-            final var result = TransferManagement.put(moverName, mover, hostsForSource, transfer);
-            // Update the MoverName on the local DataTransfer!
-            transfer.setMoverName(result.getMoverName());
-        } catch (SourceNotAvailableException | MasterException | ECtransException | DirectoryException
-                | DataBaseException | IOException e) {
-            _log.warn("Transfering DataTransfer {}: {}", transfer.getId(), e.getMessage());
-            throwable = e;
-        } catch (final Throwable t) {
-            _log.warn("Transfering DataTransfer {}", transfer.getId(), t);
-            throwable = t;
+            if (throwable != null) {
+                trace.failed();
+            }
         }
         if (throwable != null) {
             transfer.setComment(Format.getMessage(throwable));
@@ -3195,7 +3201,7 @@ public final class TransferScheduler extends MBeanScheduler {
                 final var destination = transfer.getDestination();
                 final var dataFile = transfer.getDataFile();
                 final var host = transfer.getHost();
-                _operationalEvents.emit("ERR", field("Monitored", destination.getMonitor()),
+                _operationalEvents.emit(transfer, "ERR", field("Monitored", destination.getMonitor()),
                         field("TimeStamp", Timestamp.from(Instant.now())), field("DataTransferId", transfer.getId()),
                         field("DestinationName", destination.getName()),
                         field("DestinationType", DestinationOption.getLabel(destination.getType())),

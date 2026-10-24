@@ -42,6 +42,8 @@ import ecmwf.ecpds.mover.service.RESTClient.UpdateDataRequest;
  */
 public interface RESTInterface {
 
+    void exportTransferSpans(java.util.List<ecmwf.common.telemetry.TransferSpan> spans) throws Exception;
+
     ecmwf.ecpds.master.weather.WeatherSourceIdentity getWeatherSourceIdentity(java.util.UUID challenge)
             throws Exception;
 

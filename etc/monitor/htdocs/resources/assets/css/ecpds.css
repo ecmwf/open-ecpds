@@ -1770,9 +1770,9 @@ a.dest-type-link:hover .bi-globe {
 .home-menu         { list-style: none; margin: 0; padding: 0; }
 .home-menu li      { border-bottom: 1px solid #f0f0f0; }
 .home-menu li:last-child { border-bottom: none; }
-.home-menu li a    { display: flex; align-items: center; gap: 0.55rem; padding: 0.45rem 1rem; font-size: 0.83rem; color: #343a40; text-decoration: none; transition: background 0.12s, color 0.12s; }
+.home-menu li a, .home-menu li > span[aria-disabled="true"] { display: flex; align-items: center; gap: 0.55rem; padding: 0.45rem 1rem; font-size: 0.83rem; color: #343a40; text-decoration: none; transition: background 0.12s, color 0.12s; }
 .home-menu li a:hover { background: rgba(13,110,253,0.06); color: #0d6efd; }
-.home-menu li a i  { color: #6c757d; font-size: 0.9rem; flex-shrink: 0; }
+.home-menu li a i, .home-menu li > span[aria-disabled="true"] i { color: #6c757d; font-size: 0.9rem; flex-shrink: 0; }
 .home-menu li a:hover i { color: #0d6efd; }
 /* Admin tool cards */
 .admin-tool { border: 1px solid #dee2e6; border-radius: 8px; background: #fafafa; transition: box-shadow 0.15s; }
@@ -2062,7 +2062,7 @@ a.dest-type-link:hover .bi-globe {
 [data-bs-theme=dark] .home-section-card { border-color: var(--bs-border-color); }
 [data-bs-theme=dark] .home-section-hdr { border-bottom-color: var(--bs-border-color); }
 [data-bs-theme=dark] .home-menu li { border-bottom-color: var(--bs-border-color); }
-[data-bs-theme=dark] .home-menu li a { color: var(--bs-body-color); }
+[data-bs-theme=dark] .home-menu li a, [data-bs-theme=dark] .home-menu li > span[aria-disabled="true"] { color: var(--bs-body-color); }
 [data-bs-theme=dark] .admin-tool { background: var(--bs-tertiary-bg); border-color: var(--bs-border-color); }
 [data-bs-theme=dark] .admin-tool .tool-title { color: var(--bs-body-color); }
 [data-bs-theme=dark] .admin-tool .tool-desc { color: var(--bs-secondary-color); }
@@ -2077,7 +2077,7 @@ a.dest-type-link:hover .bi-globe {
     background: var(--bs-body-bg);
     border-color: var(--bs-border-color);
 }
-[data-bs-theme=dark] .home-menu li a i { color: var(--bs-secondary-color); }
+[data-bs-theme=dark] .home-menu li a i, [data-bs-theme=dark] .home-menu li > span[aria-disabled="true"] i { color: var(--bs-secondary-color); }
 
 /* In dark mode, borderless cards are nearly invisible — restore a subtle border */
 [data-bs-theme=dark] .card.border-0 {

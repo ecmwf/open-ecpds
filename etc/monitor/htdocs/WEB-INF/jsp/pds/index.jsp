@@ -81,6 +81,7 @@
 </div>
 
 <jsp:include page="/WEB-INF/jsp/pds/common/system_messages_banner.jsp" />
+<jsp:include page="/WEB-INF/jsp/pds/admin/eventjournal/banner.jsp" />
 
 <% if (_capNotSet) { %>
 <div class="alert alert-warning d-flex align-items-start gap-3 mb-4" role="alert">
@@ -193,6 +194,7 @@
                 <auth:link basePathKey="admin.basepath" href="/filter" wrappingTags="li"><i class="bi bi-file-zip"></i>Compress Files</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/requeue" wrappingTags="li"><i class="bi <%=_badIconClass%>"></i>Outstanding Transfers</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/schedulertraffic" wrappingTags="li"><i class="bi bi-arrow-left-right"></i>Scheduler Traffic</auth:link>
+                <jsp:include page="/WEB-INF/jsp/pds/admin/eventjournal/menu.jsp" />
                 <auth:link basePathKey="admin.basepath" href="/upload" wrappingTags="li"><i class="bi bi-upload"></i>Upload Files</auth:link>
                 <auth:link basePathKey="admin.feedback.basepath" href="" wrappingTags="li"><i class="bi <%=_feedbackIconClass%>"></i>User Feedback</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/metafields" wrappingTags="li"><i class="bi bi-list-check"></i>Metadata Fields</auth:link>

@@ -109,6 +109,11 @@ final class MasterRMI implements MasterProxy {
     }
 
     @Override
+    public void exportTransferSpans(java.util.List<ecmwf.common.telemetry.TransferSpan> spans) throws Exception {
+        _mover.getMasterInterface().exportTransferSpans(spans);
+    }
+
+    @Override
     public ecmwf.ecpds.master.weather.WeatherCapabilities getWeatherCapabilities(String sourceId) throws Exception {
         try {
             return _mover.getMasterInterface().getWeatherCapabilities(sourceId);

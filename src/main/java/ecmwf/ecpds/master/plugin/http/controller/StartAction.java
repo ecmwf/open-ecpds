@@ -86,6 +86,7 @@ public class StartAction extends PDSAction {
 
         final boolean hasAdmin = Boolean.TRUE.equals(request.getAttribute("hasAdmin"));
         if (hasAdmin) {
+            ecmwf.ecpds.master.plugin.http.controller.admin.OperationalEventJournalAction.populateStatus(request, user);
             try {
                 request.setAttribute("certStatus", MasterManager.getMI().getOverallCertStatus());
             } catch (final Exception e) {

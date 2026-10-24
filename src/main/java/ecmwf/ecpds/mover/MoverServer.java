@@ -164,6 +164,7 @@ import ecmwf.common.technical.Synchronized;
 import ecmwf.common.technical.ThreadService;
 import ecmwf.common.technical.ThreadService.ConfigurableLoopRunnable;
 import ecmwf.common.technical.ThreadService.ConfigurableRunnable;
+import ecmwf.common.telemetry.MoverTracing;
 import ecmwf.common.text.Format;
 import ecmwf.common.text.Format.DuplicatedChooseScore;
 import ecmwf.common.text.Options;
@@ -1101,6 +1102,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             throws IOException, InstanceAlreadyExistsException, MBeanRegistrationException, NotCompliantMBeanException,
             MalformedObjectNameException, InstanceNotFoundException, ConnectionException {
         super(starter);
+        MoverTracing.start(spans -> getMasterProxy().exportTransferSpans(spans), getRoot());
         trafficAccounting.load(trafficAccountingPath);
         _log.info("MoverServer-version: {}", (Supplier<Object>) Version::getFullVersion);
         if (!OPERATIONAL) {
@@ -2869,6 +2871,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final long localPosn, final long remotePosn) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(transfer, "put"));
         MoverCallback callBack = null;
+        final var trace = MoverTracing.execution(transfer);
+        var submitted = false;
         try {
             _checkInProgress(transfer);
             final var proxyHost = transfer.getProxyHost();
@@ -2925,7 +2929,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             GenericFile file = dataFile.getFileSystem() == null ? null
                     : new FileChecker(GenericFile.getGenericFile(getRepository(), getPath(dataFile)));
             var size = dataFile.getSize();
-            callBack = new MoverCallback(transfer, targetName);
+            callBack = new MoverCallback(transfer, targetName, trace);
             final var setup = HOST_ECTRANS.getECtransSetup(host.getData());
             // Do we have to compress the file?
             final String filter;
@@ -3020,6 +3024,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 transfer.setComment("Trying from " + (masterManager != null ? "DataMover=" + getRoot() : "Proxy Host="
                         + transfer.getProxyHostName() + " (" + transfer.getProxyHost().getNickname() + ")"));
                 successful = true;
+                submitted = true;
                 return transfer;
             } finally {
                 if (!successful) {
@@ -3028,11 +3033,15 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 }
             }
         } catch (final Throwable t) {
+            trace.failed();
             if (callBack != null) {
                 callBack.captureWeather(null, false);
             }
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         } finally {
+            if (!submitted) {
+                trace.close();
+            }
             if (cookieSet) {
                 ThreadService.removeCookie();
             }
@@ -3724,6 +3733,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         if (masterProxy != null) {
             masterProxy.shutdown();
         }
+        MoverTracing.shutdown();
         super.shutdown();
     }
 
@@ -4518,6 +4528,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      * The Class MoverCallback.
      */
     private final class MoverCallback implements ProgressHandler, ECtransCallback {
+        private final MoverTracing.Attempt trace;
         private final String _liveAttemptId = java.util.UUID.randomUUID().toString();
         private final ecmwf.ecpds.master.weather.WeatherCapture.Execution weather;
         /** The _name. */
@@ -4577,7 +4588,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
          * @param fileName
          *            the file name
          */
-        private MoverCallback(final DataTransfer transfer, final String fileName) {
+        private MoverCallback(final DataTransfer transfer, final String fileName, final MoverTracing.Attempt trace) {
+            this.trace = trace;
             _name = Format.formatLong(transfer.getId(), 10, true);
             _fileName = fileName;
             _transfer = transfer;
@@ -4608,7 +4620,11 @@ public final class MoverServer extends StarterServer implements MoverInterface {
 
         @Override
         public void executionFinished(final TransferModule module, final boolean successful) {
-            captureWeather(module, successful);
+            try {
+                captureWeather(module, successful);
+            } finally {
+                trace.finish(_transfer, successful && !_closed.get());
+            }
         }
 
         private void captureWeather(final TransferModule module, final boolean successful) {
@@ -4953,6 +4969,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     }
                 }
             } finally {
+                trace.finish(_transfer, StatusFactory.DONE.equals(_transfer.getStatusCode()));
                 if (_descriptor != null) {
                     _descriptor.releaseStorageReader();
                 }
@@ -5005,6 +5022,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                         comment, statisticsString != null ? statisticsString : "none");
                 _offerLiveSample(LiveTransferSample.STATUS_FAILED);
             } finally {
+                trace.finish(_transfer, false);
                 if (_descriptor != null) {
                     _descriptor.releaseStorageReader();
                 }

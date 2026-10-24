@@ -50,6 +50,19 @@
 									</requires>
 									<mappings>
 										<mapping>
+											<directory>/usr/local/ecpds/lib</directory>
+											<directoryIncluded>false</directoryIncluded>
+											<filemode>0644</filemode>
+											<sources>
+												<source>
+													<location>${project.basedir}/../lib</location>
+													<includes>
+														<include>opentelemetry-*.jar</include>
+													</includes>
+												</source>
+											</sources>
+										</mapping>
+										<mapping>
 											<directory>/usr/local/ecpds/master/conf</directory>
 											<directoryIncluded>true</directoryIncluded>
 											<filemode>0644</filemode>

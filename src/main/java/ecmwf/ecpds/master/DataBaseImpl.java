@@ -3344,6 +3344,9 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         }
         try {
             final var response = GeoIP2Helper.getCityResponse(hostName);
+            if (response == null) {
+                return new GeoIpResult(null, null, "No geolocation available", null, null, null);
+            }
             final var continent = response.getContinent() != null ? response.getContinent().getName() : null;
             final var country = response.getCountry() != null ? response.getCountry().getIsoCode() : null;
             final var city = response.getCity() != null ? response.getCity().getName() : null;

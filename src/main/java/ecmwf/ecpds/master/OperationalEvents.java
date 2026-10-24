@@ -31,12 +31,16 @@ import java.util.function.Consumer;
 
 import org.apache.logging.log4j.LogManager;
 
+import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.ECpdsBase;
 import ecmwf.common.technical.Cnf;
+import ecmwf.common.telemetry.TransferTracing;
 import ecmwf.common.version.Version;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.logs.Logger;
 import io.opentelemetry.api.logs.Severity;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
 import io.opentelemetry.sdk.common.CompletableResultCode;
@@ -57,6 +61,8 @@ public final class OperationalEvents {
     private volatile boolean splunkEnabled = true;
     private volatile Logger telemetry;
     private OpenTelemetrySdk sdk;
+    private volatile OperationalEventJournal journal;
+    private String journalOwner;
 
     OperationalEvents(final BooleanSupplier legacyEnabled, final Consumer<String> legacyOutput,
             final Logger telemetry) {
@@ -80,6 +86,7 @@ public final class OperationalEvents {
             return;
         }
         final var journalEnabled = Cnf.at("OperationalEvents", "journalEnabled", false);
+        INSTANCE.journal = null;
         if (journalEnabled && database == null) {
             throw new IllegalArgumentException("Operational event journaling requires the Master database");
         }
@@ -88,10 +95,14 @@ public final class OperationalEvents {
         if (journalEnabled && (owner.isBlank() || owner.length() > 255)) {
             throw new IllegalArgumentException("Operational event journalOwner must contain 1 to 255 characters");
         }
+        INSTANCE.journalOwner = owner;
         final var exporterReference = new AtomicReference<LogRecordExporter>();
         INSTANCE.sdk = AutoConfiguredOpenTelemetrySdk.builder()
                 .addPropertiesSupplier(() -> Map.of("otel.service.name", "open-ecpds-master",
-                        "otel.exporter.otlp.protocol", "http/protobuf", "otel.logs.exporter", "otlp"))
+                        "otel.exporter.otlp.protocol", "http/protobuf", "otel.logs.exporter", "otlp",
+                        "otel.blrp.max.queue.size", Cnf.at("OpenTelemetry", "logsMaxQueueSize", "2048"),
+                        "otel.blrp.max.export.batch.size", Cnf.at("OpenTelemetry", "logsMaxExportBatchSize", "512"),
+                        "otel.blrp.schedule.delay", Cnf.at("OpenTelemetry", "logsScheduleDelayMillis", "1000")))
                 // This private SDK exports operational logs only, not application metrics or traces.
                 .addPropertiesCustomizer(properties -> {
                     if (journalEnabled && properties.getBoolean("otel.sdk.disabled", false)) {
@@ -113,16 +124,37 @@ public final class OperationalEvents {
                 .addLogRecordExporterCustomizer((exporter, _) -> {
                     exporterReference.set(exporter);
                     return journalEnabled ? exporter : new ReportingExporter(exporter);
-                })
-                .addLogRecordProcessorCustomizer((processor, _) -> journalEnabled
-                        ? new OperationalEventJournal(OperationalEventJournal.database(database, owner),
-                                exporterReference.get(), processor, true)
-                        : processor)
-                .disableShutdownHook().build().getOpenTelemetrySdk();
+                }).addLogRecordProcessorCustomizer((processor, _) -> {
+                    if (!journalEnabled) {
+                        return processor;
+                    }
+                    final var journal = new OperationalEventJournal(OperationalEventJournal.database(database, owner),
+                            exporterReference.get(), processor, true);
+                    INSTANCE.journal = journal;
+                    return journal;
+                }).disableShutdownHook().build().getOpenTelemetrySdk();
         INSTANCE.telemetry = INSTANCE.sdk.getLogsBridge().get("ecmwf.ecpds.operational-events");
         LOG.info("Native OpenTelemetry operational event export enabled");
         if (journalEnabled) {
             LOG.info("Database operational event journal enabled; unacknowledged events will be retried");
+        }
+    }
+
+    public static OperationalEventJournalStatus journalStatus(final ECpdsBase database, final boolean includeQueue) {
+        final var journal = INSTANCE.journal;
+        if (journal == null) {
+            return OperationalEventJournalStatus.disabled();
+        }
+        final var status = journal.status(INSTANCE.journalOwner);
+        if (!includeQueue) {
+            return status;
+        }
+        try {
+            final var statistics = database.getOperationalEventStatistics(status.owner());
+            return status.withQueue(statistics.pendingCount(), statistics.oldestAdmissionAt(), null);
+        } catch (final java.sql.SQLException | java.io.IOException e) {
+            LOG.warn("Cannot retrieve operational event journal queue statistics", e);
+            return status.withQueue(null, null, "Unable to read queue statistics from the Master database.");
         }
     }
 
@@ -150,6 +182,16 @@ public final class OperationalEvents {
     }
 
     public void emit(final String category, final Field... fields) {
+        emit(Context.current(), null, category, fields);
+    }
+
+    public void emit(final DataTransfer transfer, final String category, final Field... fields) {
+        final var context = TransferTracing.context(transfer);
+        emit(context, Span.fromContext(context).getSpanContext().isValid() ? transfer.getTraceAttemptId() : null,
+                category, fields);
+    }
+
+    private void emit(final Context context, final String attemptId, final String category, final Field... fields) {
         if (splunkEnabled && legacyEnabled.getAsBoolean()) {
             final var line = new StringBuilder(category);
             for (final var field : fields) {
@@ -164,6 +206,9 @@ public final class OperationalEvents {
         try {
             final var attributes = Attributes.builder().put("ecpds.event.id", UUID.randomUUID().toString())
                     .put("ecpds.event.category", category);
+            if (attemptId != null) {
+                attributes.put("ecpds.transfer.attempt.id", attemptId);
+            }
             var timestamp = Instant.now();
             for (final var field : fields) {
                 final var name = field.name();
@@ -182,7 +227,7 @@ public final class OperationalEvents {
                     timestamp = value.toInstant();
                 }
             }
-            logger.logRecordBuilder().setTimestamp(timestamp).setSeverity(Severity.INFO)
+            logger.logRecordBuilder().setContext(context).setTimestamp(timestamp).setSeverity(Severity.INFO)
                     .setEventName("ecpds." + category).setBody(category).setAllAttributes(attributes.build()).emit();
         } catch (final RuntimeException e) {
             LOG.error("Failed to emit OpenTelemetry operational event {}", category, e);

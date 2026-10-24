@@ -194,6 +194,11 @@ By default, the globe is centred on the Master Server's own location, auto-detec
 forced.<master-hostname-or-ip>=51.505,-0.09,Europe,GB,Reading
 ```
 
+Local-only addresses (including loopback, private, link-local, IPv6 unique-local
+and carrier-grade NAT ranges) are not queried in the GeoIP database.
+Hostnames resolving to these addresses also have no automatic geolocation;
+use a manual location or a `[GeoIP] forced.*` override where needed.
+
 Because the globe's origin is resolved once by the Master Server itself (not by the Monitor plugin), it stays consistent even when several Monitor plugins are connected to the same Master Server.
 
 The base map imagery is the low-resolution "Natural Earth II" imagery bundled with CesiumJS — sharp for a whole-Earth view, but it blurs once zoomed into a country/region, since no extra detail is bundled. Optionally, the Monitor plugin can transparently build and serve a sharper, higher-resolution layer (Natural Earth's 50m-resolution hypsometric/relief/water raster) instead: on the first "Live Earth" page opened after the Monitor starts, it downloads the (public-domain) source raster and tiles it locally — in pure Java, no GDAL or other native dependency required — into a small (a few MB) tile pyramid cached on disk. This happens entirely in the background and never blocks the page: it simply keeps using the bundled low-resolution imagery until the higher-resolution one finishes building, and silently falls back to it again if it can never be built (e.g. no internet access). If it fails (typically because the Monitor server has no internet access at the time), it keeps retrying every 15 minutes indefinitely, so connectivity becoming available only later is still picked up automatically without needing a restart. The cache location defaults to a subdirectory of the JVM's temp directory, and can be pointed at a persistent location (so it survives restarts and isn't rebuilt every time) with a `globeImageryCacheDir` entry in the `[Server]` section of the **Monitor's** `ecmwf.properties`:

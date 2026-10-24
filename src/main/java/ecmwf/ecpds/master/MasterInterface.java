@@ -110,6 +110,8 @@ public interface MasterInterface extends ProviderInterface {
 
     void updateTrafficAccounting(String mover, java.util.Map<String, String> snapshot) throws RemoteException;
 
+    void exportTransferSpans(java.util.List<ecmwf.common.telemetry.TransferSpan> spans) throws RemoteException;
+
     ecmwf.ecpds.master.weather.WeatherCapabilities getWeatherCapabilities(String sourceId) throws RemoteException;
 
     ecmwf.ecpds.master.weather.WeatherAcknowledgement deliverWeatherObservations(

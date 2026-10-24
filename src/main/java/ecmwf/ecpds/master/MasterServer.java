@@ -260,6 +260,7 @@ import ecmwf.common.technical.Synchronized;
 import ecmwf.common.rmi.SocketStatisticsParser;
 import ecmwf.common.technical.ThreadService.ConfigurableRunnable;
 import ecmwf.common.technical.TimeRange;
+import ecmwf.common.telemetry.TransferTracing;
 import ecmwf.common.text.Format;
 import ecmwf.common.text.Options;
 import ecmwf.common.version.Version;
@@ -661,6 +662,15 @@ public final class MasterServer extends ECaccessProvider
         }
     }
 
+    @Override
+    public void exportTransferSpans(java.util.List<ecmwf.common.telemetry.TransferSpan> spans) throws RemoteException {
+        try {
+            TransferTracing.accept(spans);
+        } catch (final RuntimeException e) {
+            throw Format.getRemoteException("Transfer trace admission failed", e);
+        }
+    }
+
     public Map<String, Long> getActualTrafficTotals() throws RemoteException {
         if (!actualTrafficReady)
             throw new RemoteException("Actual traffic history could not be restored");
@@ -856,6 +866,7 @@ public final class MasterServer extends ECaccessProvider
         super(new ECpdsBase(), starter);
         _log.info("MasterServer-version: {}", Version.getFullVersion());
         OperationalEvents.start(getECpdsBase());
+        TransferTracing.start("master");
         NativeAuthenticationProvider.setProvider(MasterProvider.class);
         DestinationOption.getList(); // Make sure the list of options is loaded!
         // Live ECPDS Earth (Phase 0): allow forcing the live transfer monitoring feed on regardless of connected
@@ -5054,6 +5065,11 @@ public final class MasterServer extends ECaccessProvider
         try {
             for (DataTransfer transfer : transfers) {
                 final var id = transfer.getId();
+                if (TransferTracing.isStale(getDataTransferFromCache(id), transfer)) {
+                    _log.warn("Ignoring outdated transfer {} update from trace attempt {}", id,
+                            transfer.getTraceAttemptId());
+                    continue;
+                }
                 if (transfer.getDestination() == null && getDataTransferFromCache(id) != null) {
                     // This update comes from a ProxyHost and it is being processed
                     // on the Master, so we only take the relevant information (the
@@ -5080,6 +5096,7 @@ public final class MasterServer extends ECaccessProvider
                             local.setCompressedOnTheFly(transfer.getCompressedOnTheFly());
                             local.setStatistics(transfer.getStatistics());
                             local.setWeatherExecutionId(transfer.getWeatherExecutionId());
+                            TransferTracing.copy(transfer, local);
                             local.setProxyName(transfer.getProxyHostName());
                             final var hostName = transfer.getHostName();
                             if (hostName != null) {
@@ -5264,6 +5281,24 @@ public final class MasterServer extends ECaccessProvider
      *            the transfer
      */
     public void updateDataTransfer(final DataTransfer transfer) {
+        final var code = transfer.getStatusCode();
+        if (StatusFactory.DONE.equals(code) || StatusFactory.STOP.equals(code) || StatusFactory.FAIL.equals(code)
+                || StatusFactory.RETR.equals(code) || StatusFactory.INTR.equals(code)) {
+            try (final var trace = TransferTracing.completion(transfer); final var scope = trace.makeCurrent()) {
+                try {
+                    updateDataTransferState(transfer);
+                    trace.finish(transfer, StatusFactory.DONE.equals(code));
+                } catch (final RuntimeException | Error e) {
+                    trace.failed();
+                    throw e;
+                }
+            }
+        } else {
+            updateDataTransferState(transfer);
+        }
+    }
+
+    private void updateDataTransferState(final DataTransfer transfer) {
         final var id = transfer.getId();
         if (getDataTransferFromCache(id) == null) {
             _log.debug("DataTransfer-" + id + " not in cache (ignored): " + transfer);
@@ -7369,6 +7404,7 @@ public final class MasterServer extends ECaccessProvider
             }
         }
         OperationalEvents.shutdown();
+        TransferTracing.shutdown();
         super.shutdown();
     }
 
@@ -7949,7 +7985,7 @@ public final class MasterServer extends ECaccessProvider
                         final var proxyHost = transfer.getProxyHost();
                         final var retryTime = transfer.getRetryTime();
                         final var startTime = transfer.getStartTime();
-                        _operationalEvents.emit("UPH", field("Monitored", destination.getMonitor()),
+                        _operationalEvents.emit(transfer, "UPH", field("Monitored", destination.getMonitor()),
                                 field("TimeStamp", Timestamp.from(Instant.now())),
                                 field("DataTransferId", upload.getDataTransferId()),
                                 field("DestinationName", destination.getName()),

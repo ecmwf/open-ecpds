@@ -49,7 +49,7 @@
 										<require>java >= ${maven.compiler.target}</require>
 									</requires>
 									<mappings>
-										<!-- Runtime dependency JARs (excludes the ecmwf JAR itself). -->
+										<!-- Shared dependencies; the Master supplies the telemetry SDK. -->
 										<mapping>
 											<directory>/usr/local/ecpds/lib</directory>
 											<directoryIncluded>true</directoryIncluded>
@@ -58,6 +58,9 @@
 											<sources>
 												<source>
 													<location>${project.basedir}/../lib</location>
+													<excludes>
+														<exclude>opentelemetry-*.jar</exclude>
+													</excludes>
 												</source>
 											</sources>
 										</mapping>

@@ -56,43 +56,134 @@ of the output platform.
 ### OpenTelemetry connection
 
 Enable `openTelemetryEnabled` and supply standard OpenTelemetry environment
-variables to the **Master process**, for example:
+variables to the **Master process**. For a service installation, put connection
+settings in `/etc/ecpds/master.cnf`, which the Master launcher sources:
 
 ```sh
-OTEL_SERVICE_NAME=open-ecpds-master
-OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
-OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://collector.example.org:4318/v1/logs
-OTEL_EXPORTER_OTLP_LOGS_TIMEOUT=10000
-OTEL_BLRP_MAX_QUEUE_SIZE=2048
-OTEL_BLRP_MAX_EXPORT_BATCH_SIZE=512
-OTEL_BLRP_SCHEDULE_DELAY=1000
+export OTEL_EXPORTER_OTLP_ENDPOINT="https://collector.example.org:4318"
+export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
+export OTEL_EXPORTER_OTLP_TIMEOUT="10000"
+# Optional private Collector CA:
+# export OTEL_EXPORTER_OTLP_CERTIFICATE="/etc/ecpds/master/collector-ca.pem"
 ```
 
-Export these variables in the service environment or pass them into the Master
-container. JVM system properties such as
-`-Dotel.exporter.otlp.logs.endpoint=...` are also supported through `JAVA_OPTS`.
+Use `export` for each environment setting in `master.cnf` so Java inherits it.
+Any supported `OTEL_*` setting can be supplied this way without editing the
+launcher. Headers stay in the environment rather than the launcher's generated
+JVM argument file.
+
+The Master's `ecmwf.properties` contains output switches and the journal owner
+in `[OperationalEvents]`, and batching defaults in:
+
+```ini
+[OpenTelemetry]
+logsMaxQueueSize=2048
+logsMaxExportBatchSize=512
+logsScheduleDelayMillis=1000
+```
+
+Precedence for these batching settings is **JVM system properties → environment
+variables → `ecmwf.properties` → built-in defaults**. Their standard overrides are
+`otel.blrp.max.queue.size` / `OTEL_BLRP_MAX_QUEUE_SIZE`,
+`otel.blrp.max.export.batch.size` / `OTEL_BLRP_MAX_EXPORT_BATCH_SIZE`, and
+`otel.blrp.schedule.delay` / `OTEL_BLRP_SCHEDULE_DELAY`. Delay is in milliseconds.
+These settings are optional; the values shown above are the defaults.
+With journaling enabled, the database is the normal pending queue.
+These settings tune only
+the bounded, in-memory fallback queue used when persistence fails; they do
+not limit the database backlog. With journaling disabled, they tune the normal
+in-memory log queue. Restart the Master after changes.
+The SDK does not read arbitrary `OTEL_*` keys from `ecmwf.properties`.
+
+For containers, pass these variables through the container environment, or mount
+`master.cnf` at the path above. JVM system properties such as
+`-Dotel.exporter.otlp.endpoint=...` are also supported through `JAVA_OPTS`.
 Merely setting variables in the host shell does not pass them into an existing
 container or systemd service.
 
 The default protocol is `http/protobuf`; without an endpoint override its SDK
 default is the local Collector at `http://localhost:4318/v1/logs`. Set
-`OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=grpc` to use a gRPC receiver with an appropriate
+`OTEL_EXPORTER_OTLP_PROTOCOL=grpc` to use a gRPC receiver with an appropriate
 endpoint, normally port 4317 and no `/v1/logs` suffix. A logs-specific HTTP
 endpoint must include the full path; the generic `OTEL_EXPORTER_OTLP_ENDPOINT`
-instead supplies a base URL.
+instead supplies a base URL. For HTTP/protobuf, the SDK appends `/v1/logs` to
+that base URL. Logs-specific settings override their generic counterparts when
+both are configured. The Master service name defaults to `open-ecpds-master`;
+`OTEL_SERVICE_NAME` is an optional override.
 
-For authentication, inject `OTEL_EXPORTER_OTLP_LOGS_HEADERS` through your secret
+For authentication, inject `OTEL_EXPORTER_OTLP_HEADERS` through your secret
 management system. For a private Collector CA, use the SDK's
-`OTEL_EXPORTER_OTLP_LOGS_CERTIFICATE` setting. Use HTTPS for non-local traffic;
+`OTEL_EXPORTER_OTLP_CERTIFICATE` setting. Use HTTPS for non-local traffic;
 do not disable certificate validation. Never commit credentials to configuration
 or include authorization headers in diagnostic output.
 
-The SDK is private to this event publisher and is not registered as the global
-OpenTelemetry SDK. It exports logs only; it does not enable tracing, instrument
-application methods, or replace Prometheus/JMX metrics. Standard
+Transfer tracing is enabled independently as described below;
+neither output replaces Prometheus/JMX metrics. Standard
 `OTEL_LOGS_EXPORTER` settings apply, with `otlp` as the default. Invalid SDK
 configuration prevents startup rather than silently falling back to another
 output. When OpenTelemetry is disabled, its exporters are not initialized.
+
+### Transfer traces and log correlation
+
+Optional distributed traces follow **one scheduled dissemination attempt**, not the
+lifetime of a file or its complete retry history. Enable them in `[OpenTelemetry]`
+in the **Master's** `ecmwf.properties`:
+
+```ini
+[OpenTelemetry]
+tracesEnabled=yes
+tracesSampleRatio=0.01
+tracesMaxQueueSize=2048
+tracesMaxExportBatchSize=512
+tracesScheduleDelayMillis=1000
+```
+
+Restart the Master after changes. Tracing is off by default and is independent of
+`[OperationalEvents] openTelemetryEnabled`: traces can be exported without native
+logs, and logs can be exported without traces. To use both, enable both switches
+on the Master. Movers automatically follow the tracing decision supplied with
+each transfer. No OpenTelemetry settings, Collector credentials or direct
+Collector connections are required on Movers or Continental relays.
+
+Use the generic OTLP connection settings above in `master.cnf`.
+Only the Master exports logs and traces to the Collector. With HTTP/protobuf the base endpoint supplies
+`/v1/traces` for spans and `/v1/logs` for logs. If a platform has separate ingest
+URLs, set `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` and
+`OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` to the full signal-specific URLs.
+Service names default to `open-ecpds-master` and `open-ecpds-mover`; Mover spans
+retain their originating service and instance identity.
+
+Movers send completed spans asynchronously in batches through their existing
+Master connection. Continental Movers use the existing REST relay path.
+Forwarding queues are bounded and held in memory; connection failures are
+retried while the process is running, but full queues and shutdown can discard
+spans. Check Mover, relay and Master service logs for forwarding/export errors.
+Trace forwarding does not block transfers.
+
+Traces cover dispatch, transfer execution and completion for dissemination
+attempts. Retries have separate traces. UPH and dissemination ERR native logs
+include OTLP `trace_id` and `span_id` fields linking to the relevant span;
+`ecpds.transfer.attempt.id` also identifies
+the attempt. These IDs are preserved during journal replay. Parsing, acquisition
+and portal access are not covered by transfer tracing.
+Apply access controls and retention to tracing data as well as logs.
+
+The default sampler is **parent-based trace-ID ratio sampling**: the Master
+samples approximately 1% of attempts and Movers honour that decision. Set
+`tracesSampleRatio=1.0` for all attempts, or `0.0` for none. Standard
+`OTEL_TRACES_SAMPLER` / `OTEL_TRACES_SAMPLER_ARG` override these defaults; retain
+a parent-based sampler.
+`OTEL_BSP_MAX_QUEUE_SIZE`, `OTEL_BSP_MAX_EXPORT_BATCH_SIZE` and
+`OTEL_BSP_SCHEDULE_DELAY` override the corresponding trace batching defaults,
+with JVM `-Dotel.*` properties taking precedence over environment values.
+The delays are in milliseconds. `OTEL_TRACES_EXPORTER` defaults to `otlp`;
+`OTEL_SDK_DISABLED` also applies.
+
+**Trace delivery is best effort and is not database-journalled.** Bounded
+queues, Collector outages, crashes or abrupt shutdown can lose spans.
+Export failures are reported in service logs. A linked log may have no
+corresponding stored trace because of sampling, export failure or trace retention.
+Log delivery and transfer success do not depend on trace delivery.
 
 ### Native record schema
 
@@ -121,16 +212,10 @@ snapshot or password/token field is included in these records.
 
 ### Delivery and failure handling
 
-Without database journaling, OpenTelemetry uses the SDK's asynchronous batch processor, bounded in-memory
-queue and exporter retry behaviour. Event producers do not wait for a remote
-Collector. Completed export failures are reported in the Master service log
-with rate-limited lost-record counts; SDK diagnostics provide further details.
-Master shutdown attempts to drain pending records, with a bounded wait.
-
-Delivery is **best effort**, not transactional or exactly-once. A full queue,
-an exhausted export attempt, a process crash or an abrupt shutdown can lose
-records; retries may also create duplicates. SDK queue drops are not included in
-the publisher's export-failure count. For stronger durability, enable the
+Without database journaling, delivery uses a bounded in-memory queue and is
+**best effort**. A full queue, export failure or process shutdown can lose
+records; retries may also create duplicates. Check the Master service log and
+Collector diagnostics for delivery errors. For stronger durability, enable the
 [database journal](#durable-database-journal), enable the Splunk file and/or use
 a local Collector with persistent queues, and monitor the pipeline's health.
 The outputs are independent, not automatic failover:
@@ -143,10 +228,9 @@ database journal. It stores each native event **before** attempting delivery,
 not only after an export has already failed. The `splunk.log` output remains
 independent and is not replayed by this feature.
 
-Journaling requires the `OPERATIONAL_EVENT` table in the Master's database.
-The supplied installation schema includes this table. The Master's `conf/sql`
-directory must contain `insertOperationalEvent.sql`, `getOperationalEvents.sql`
-and `deleteOperationalEvent.sql`. The running service does not create tables.
+Journaling requires the `OPERATIONAL_EVENT` table in the Master's database,
+included in the supplied installation schema. The running service does not
+create tables. Deploy the supplied Master SQL files and Monitor pages.
 
 Then configure and restart the Master:
 
@@ -170,15 +254,9 @@ records are replayed. A failover instance must use the same owner and database,
 with the previous instance stopped; run only one active Master per owner.
 Changing the owner leaves the previous owner's pending rows untouched.
 
-The journal preserves the original event timestamp, native attribute types and
-resource identity. Each journalled record includes a stable `ecpds.event.id`
-attribute for downstream deduplication. A background worker reads up to 256
-oldest pending records at a time, normally polling once per second. It exports
-outside the business-operation thread and deletes rows only when the OTLP
-exporter reports success. Failed batches are retained and retried after a
-five-second pause, in addition to the exporter's own transient-failure retries.
-An acknowledged batch whose database deletion fails is retained until deletion
-can succeed; restarting in that interval may deliver duplicates.
+Persisted events are retained until export is acknowledged and are retried
+after failures or Master restarts. Retries can produce duplicates; use
+`ecpds.event.id` for downstream deduplication.
 
 In journal mode, the database is the pending queue: `OTEL_BLRP_*` settings apply
 only to the best-effort fallback path, not to normal journal delivery.
@@ -198,42 +276,45 @@ rows. Re-enabling it with the same owner resumes replay.
   Those events are **not guaranteed durable** and are not automatically
   backfilled later. An ambiguous database acknowledgement can also result in a
   persisted record and a best-effort delivery of the same event.
-- **Duplicates and acknowledgements:** delivery is at-least-once for persisted
-  events while the endpoint rejects failed requests and eventually accepts
-  them. Deduplicate using `ecpds.event.id` where needed. An OTLP acknowledgement
-  is not proof of indexing or durable storage in the final platform. In
-  particular, the SDK can report success for an OTLP partial-success response;
-  individually rejected records cannot be identified and replayed by this
-  journal. Avoid rejecting/filtering required records downstream and monitor
-  Collector/backend rejection diagnostics.
-- **Business transactions:** journal insertion is a separate synchronous
-  database operation, not part of the transfer's transaction. A crash before
-  insertion can still leave a completed operation without an event. This is a
-  durable delivery outbox, not a transactional audit trail.
-- **Capacity and latency:** admission adds one database write to the producer's
-  path. Journal SQL statements have a five-second timeout; connection-pool
-  waiting and driver/network limits still apply. Backlog growth is intentionally
-  not capped or silently purged. Size database storage and recovery throughput
-  for expected event rates and outage duration, and monitor database load.
+- **Acknowledgements:** an OTLP acknowledgement is not proof of indexing or
+  durable storage in the final platform. Partially rejected batches are not
+  automatically replayed. Monitor Collector/backend rejection diagnostics.
+- **Coverage:** the journal protects successfully persisted events; it is not
+  a transactional audit trail and cannot guarantee an event for every operation.
+- **Capacity and latency:** persistence adds database load and latency.
+  The backlog is not capped or automatically purged. Size database storage and
+  recovery throughput for expected event rates and outage duration.
 - **Storage protection:** database durability, replication and backups remain
   essential. Protect journal payloads using the same access and retention
   controls as operational logs. Successfully acknowledged events are deleted;
   this table is not a permanent history archive.
 
-Monitor pending count and oldest admission time for the configured owner, for
-example through the site's database monitoring:
-
-```sql
-SELECT COUNT(*) AS pending, MIN(OEV_CREATED_AT) AS oldest_pending
-FROM OPERATIONAL_EVENT
-WHERE OEV_OWNER = 'production-master';
-```
+Monitor pending count and oldest admission time through
+**Admin Tasks → Operational Event Journal**.
 
 Alert on growing backlog age/count, journal/export error messages, database disk
 space and rejected records downstream. Do not routinely delete unacknowledged
 rows: doing so intentionally discards events. A local Collector with persistent
 queues remains useful to protect the next hop after the journal receives an
 OTLP acknowledgement.
+
+The Monitor page shows pending count, oldest admission timestamp and age,
+in-flight records, last successful persistence, last endpoint acknowledgement,
+and persistence/delivery failure history. It refreshes every 30 seconds by
+default, with manual refresh and an option to disable automatic refresh.
+
+Persistence failures highlight the Admin Tasks card, home-page and administration
+menu entries, with a banner on the home and Admin Tasks pages. Red means persistence
+has failed without a successful admission confirming recovery, or the worker is
+stopped. After persistence recovers, a yellow warning retains the failure count
+for the rest of the Master process. Runtime counters reset on Master restart;
+persisted pending rows do not. Export failures also produce an attention indicator.
+Detailed exceptions remain in service logs; payloads and credentials are not shown.
+
+The task is greyed out when journaling is disabled on the Master.
+Disabled journaling can still leave pending rows in the database.
+A Master connection failure is shown as unavailable. The page is read-only
+and cannot purge events or force retries.
 
 The publisher exports the seven categories listed below. Operational events
 and the Monitor's database change log are separate records.

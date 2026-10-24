@@ -118,6 +118,22 @@ public final class ECpdsBase extends DataBase {
                 new String[] { "owner=" + operationalEventHex(owner), "id=" + operationalEventHex(id) });
     }
 
+    public record OperationalEventStatistics(long pendingCount, Long oldestAdmissionAt) {
+    }
+
+    public OperationalEventStatistics getOperationalEventStatistics(final String owner)
+            throws SQLException, IOException {
+        try (var rs = executeSelect("ECpdsBase", "getOperationalEventStatistics",
+                new String[] { "owner=" + operationalEventHex(owner) })) {
+            if (!rs.next()) {
+                throw new SQLException("Operational event statistics query returned no result");
+            }
+            final var oldest = rs.getTimestamp("OLDEST_ADMISSION");
+            return new OperationalEventStatistics(rs.getLong("PENDING_COUNT"),
+                    oldest == null ? null : oldest.getTime());
+        }
+    }
+
     private static String operationalEventHex(final String value) {
         // Named update scripts split on semicolons, including those inside quoted strings.
         return HexFormat.of().formatHex(value.getBytes(StandardCharsets.UTF_8));

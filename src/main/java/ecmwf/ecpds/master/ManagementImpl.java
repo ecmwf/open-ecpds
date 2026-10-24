@@ -4062,6 +4062,13 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     @Override
+    public OperationalEventJournalStatus getOperationalEventJournalStatus(final ECpdsSession session,
+            final boolean includeQueue) throws Exception {
+        requireWeatherAdministrator(session);
+        return OperationalEvents.journalStatus(base, includeQueue);
+    }
+
+    @Override
     public Map<String, String> getStorageLifecycleState(final long fileId) throws Exception {
         return master.getStorageLifecycle().describe(fileId);
     }

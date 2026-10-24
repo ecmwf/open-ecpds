@@ -383,5 +383,30 @@ these blocking operations do not expose reliable live percentage or throughput.
 
 Refreshing the page does not start transfers or change scheduler behaviour.
 Access follows the normal administration
-URL permissions (`/do/admin/schedulertraffic`); deploy the updated Master and
-Monitor together.
+URL permissions (`/do/admin/schedulertraffic`).
+
+## Operational Event Journal
+
+**Operational Event Journal** (`/do/admin/eventjournal`) is a read-only Admin Task
+for the Master's OpenTelemetry database queue. It shows pending count, oldest
+admission timestamp and age, in-flight records, persistence failures since startup,
+and the last persistence, acknowledgement and delivery failure times. The page
+uses the administration card layout, selectable auto-refresh (30 seconds by
+default), manual refresh, contextual help and an **Event Journal Guide**.
+
+The task is greyed out when journaling is disabled on the Master. Master
+connection failures appear as unavailable rather than disabled. Pending rows can
+remain while journaling is disabled. Queue values are scoped to the active owner;
+unavailable measurements are not shown as zero.
+
+Persistence failures produce red attention indicators on the task card and menu
+entries, with banners on the home and Admin Tasks pages. A successful admission
+confirms recovery and changes the indicator to yellow: the failure count remains
+visible until Master restart, because those events used best-effort delivery.
+Export or replay failures also require attention; unacknowledged records remain
+pending for automatic retry. Runtime counters reset on restart, but database rows
+survive. The page exposes no payloads, credentials, purge or force-retry controls.
+
+Access requires administration permissions on the Monitor and Master. See
+[Event logging](../event-logging/overview.md#durable-database-journal) for
+configuration, delivery guarantees and operational limits.

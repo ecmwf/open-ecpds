@@ -1436,6 +1436,10 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.SchedulerTrafficAction">
 			<forward name="success" path=".pds.admin.schedulertraffic" />
 		</action>
+		<action path="/admin/eventjournal"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.OperationalEventJournalAction">
+			<forward name="success" path=".pds.admin.eventjournal" />
+		</action>
 		<action path="/admin/requeue/*"
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.RequeueDestinationBadTransfersAction">
 		</action>

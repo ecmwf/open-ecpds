@@ -1632,6 +1632,12 @@ final class ManagementProxy implements ManagementInterface {
         return managementInterface.getSchedulerTraffic(type);
     }
 
+    @Override
+    public OperationalEventJournalStatus getOperationalEventJournalStatus(final ECpdsSession session,
+            final boolean includeQueue) throws Exception {
+        return managementInterface.getOperationalEventJournalStatus(session, includeQueue);
+    }
+
     /** {@inheritDoc} */
     @Override
     public double[] getLiveTransferOrigin() throws RemoteException {

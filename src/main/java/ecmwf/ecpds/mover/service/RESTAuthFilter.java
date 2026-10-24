@@ -91,21 +91,22 @@ public final class RESTAuthFilter implements ContainerRequestFilter {
             return;
         }
         final byte[] body;
-        if (path.startsWith("master/weatherObservations")) {
+        if (path.startsWith("master/weatherObservations") || path.startsWith("master/exportTransferSpans")) {
             try {
+                final var limit = path.startsWith("master/exportTransferSpans")
+                        ? ecmwf.common.telemetry.TransferSpan.MAX_BATCH_BYTES
+                        : ecmwf.ecpds.master.weather.WeatherBatch.MAX_BYTES;
                 final var input = requestContext.getEntityStream();
-                body = input == null ? new byte[0]
-                        : input.readNBytes(ecmwf.ecpds.master.weather.WeatherBatch.MAX_BYTES + 1);
-                if (body.length > ecmwf.ecpds.master.weather.WeatherBatch.MAX_BYTES) {
-                    _log.warn("Rejecting oversized Network Weather observation batch");
-                    requestContext
-                            .abortWith(Response.status(413).entity("Network Weather batch exceeds 256 KiB").build());
+                body = input == null ? new byte[0] : input.readNBytes(limit + 1);
+                if (body.length > limit) {
+                    _log.warn("Rejecting oversized telemetry control-channel batch");
+                    requestContext.abortWith(Response.status(413).entity("Telemetry batch exceeds size limit").build());
                     return;
                 }
                 requestContext.setEntityStream(new ByteArrayInputStream(body));
             } catch (final java.io.IOException e) {
-                _log.warn("Cannot read Network Weather batch for signature verification", e);
-                reject(requestContext, "Cannot read Network Weather batch");
+                _log.warn("Cannot read telemetry batch for signature verification", e);
+                reject(requestContext, "Cannot read telemetry batch");
                 return;
             }
         } else {

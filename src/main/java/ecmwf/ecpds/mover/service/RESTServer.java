@@ -549,6 +549,31 @@ public final class RESTServer {
         }
     }
 
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("master/exportTransferSpans")
+    public Response exportTransferSpans(@Context UriInfo ui, java.io.InputStream body) {
+        checkIsControlChannel(ui);
+        try {
+            final var bytes = body.readNBytes(ecmwf.common.telemetry.TransferSpan.MAX_BATCH_BYTES + 1);
+            if (bytes.length > ecmwf.common.telemetry.TransferSpan.MAX_BATCH_BYTES) {
+                _log.warn("Rejecting oversized transfer trace batch");
+                return Response.status(413).build();
+            }
+            final var mapper = RESTProvider.getJacksonProvider().locateMapper(ecmwf.common.telemetry.TransferSpan.class,
+                    MediaType.APPLICATION_JSON_TYPE);
+            final java.util.List<ecmwf.common.telemetry.TransferSpan> spans = mapper.readValue(bytes,
+                    mapper.getTypeFactory().constructCollectionType(java.util.List.class,
+                            ecmwf.common.telemetry.TransferSpan.class));
+            ecmwf.common.telemetry.MoverTracing.accept(spans);
+            return RESTMessage.getSuccessMessage().getResponse();
+        } catch (final Exception e) {
+            _log.warn("Transfer trace relay admission failed", e);
+            return RESTMessage.getErrorMessage(e).getResponse();
+        }
+    }
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("master/weatherCapabilities")

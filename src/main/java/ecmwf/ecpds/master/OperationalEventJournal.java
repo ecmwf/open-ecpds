@@ -101,6 +101,26 @@ final class OperationalEventJournal implements LogRecordProcessor {
     private List<String> inFlightIds;
     private CompletableResultCode inFlight;
     private long retryAfter;
+    private final Object healthLock = new Object();
+    private long totalPersistenceFailures;
+    private long lastPersistenceFailureAt;
+    private long lastPersistedAt;
+    private boolean persistenceDegraded;
+    private boolean deliveryDegraded;
+    private String deliveryFailureStage = "";
+    private long lastDeliveryFailureAt;
+    private long lastExportAt;
+    private long inFlightCount;
+    private boolean exportAcknowledged;
+
+    OperationalEventJournalStatus status(final String owner) {
+        synchronized (healthLock) {
+            return new OperationalEventJournalStatus(true, owner, stopped.get(), persistenceDegraded,
+                    totalPersistenceFailures, lastPersistenceFailureAt, lastPersistedAt, deliveryDegraded,
+                    deliveryFailureStage, lastDeliveryFailureAt, lastExportAt, inFlightCount, null, null,
+                    System.currentTimeMillis(), null);
+        }
+    }
 
     OperationalEventJournal(final Store store, final LogRecordExporter exporter, final LogRecordProcessor fallback,
             final boolean startWorker) {
@@ -129,7 +149,16 @@ final class OperationalEventJournal implements LogRecordProcessor {
         }
         try {
             store.append(id, encode(record.toLogRecordData()));
+            synchronized (healthLock) {
+                lastPersistedAt = System.currentTimeMillis();
+                persistenceDegraded = false;
+            }
         } catch (final SQLException | IOException | RuntimeException e) {
+            synchronized (healthLock) {
+                totalPersistenceFailures++;
+                lastPersistenceFailureAt = System.currentTimeMillis();
+                persistenceDegraded = true;
+            }
             persistenceFailures.incrementAndGet();
             if (shouldReport(lastPersistenceError)) {
                 LOG.error(
@@ -149,16 +178,25 @@ final class OperationalEventJournal implements LogRecordProcessor {
         if (retryAfter != 0 && System.nanoTime() - retryAfter < 0) {
             return;
         }
+        var stage = "Database read";
         try {
             if (inFlight != null) {
                 if (!inFlight.isDone()) {
                     return;
                 }
                 if (inFlight.isSuccess()) {
+                    synchronized (healthLock) {
+                        if (!exportAcknowledged) {
+                            lastExportAt = System.currentTimeMillis();
+                            exportAcknowledged = true;
+                        }
+                    }
+                    stage = "Database deletion";
                     for (final var id : inFlightIds) {
                         store.acknowledge(id);
                     }
                 } else {
+                    deliveryFailed("OTLP export");
                     if (shouldReport(lastExportError)) {
                         LOG.warn(
                                 "OpenTelemetry journal export failed: {} records retained for retry; "
@@ -167,17 +205,28 @@ final class OperationalEventJournal implements LogRecordProcessor {
                     }
                     inFlight = null;
                     inFlightIds = null;
+                    synchronized (healthLock) {
+                        inFlightCount = 0;
+                    }
                     retryAfter = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
                     return;
                 }
                 inFlight = null;
                 inFlightIds = null;
+                synchronized (healthLock) {
+                    inFlightCount = 0;
+                }
             }
+            stage = "Database read";
             final var pending = store.pending(256);
+            synchronized (healthLock) {
+                deliveryDegraded = false;
+            }
             if (pending.isEmpty()) {
                 return;
             }
             final var records = new ArrayList<LogRecordData>(pending.size());
+            stage = "Record decoding";
             for (final var entry : pending.entrySet()) {
                 try {
                     records.add(decode(entry.getValue()));
@@ -191,12 +240,31 @@ final class OperationalEventJournal implements LogRecordProcessor {
             if (stopped.get()) {
                 return;
             }
+            stage = "OTLP export";
+            synchronized (healthLock) {
+                inFlightCount = inFlightIds.size();
+                exportAcknowledged = false;
+            }
             inFlight = exporter.export(records);
         } catch (final SQLException | IOException | RuntimeException e) {
+            deliveryFailed(stage);
+            if (inFlight == null) {
+                synchronized (healthLock) {
+                    inFlightCount = 0;
+                }
+            }
             retryAfter = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
             if (shouldReport(lastExportError)) {
                 LOG.error("Operational event journal delivery failed; unacknowledged records retained", e);
             }
+        }
+    }
+
+    private void deliveryFailed(final String stage) {
+        synchronized (healthLock) {
+            deliveryDegraded = true;
+            deliveryFailureStage = stage;
+            lastDeliveryFailureAt = System.currentTimeMillis();
         }
     }
 

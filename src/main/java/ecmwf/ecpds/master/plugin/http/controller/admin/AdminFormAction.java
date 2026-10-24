@@ -52,6 +52,7 @@ public class AdminFormAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
+        OperationalEventJournalAction.populateStatus(request, user);
         try {
             request.setAttribute("certStatus", MasterManager.getMI().getOverallCertStatus());
         } catch (final Exception e) {

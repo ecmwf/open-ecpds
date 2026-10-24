@@ -1,7 +1,11 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ page import="ecmwf.ecpds.master.MasterManager" %>
 <%
-    // Resolve cert status — use pre-set request attribute if available (set by AdminFormAction / StartAction),
+    ecmwf.ecpds.master.plugin.http.controller.admin.OperationalEventJournalAction.populateStatus(request,
+        (ecmwf.web.model.users.User) session.getAttribute(ecmwf.web.model.users.User.SESSION_KEY));
+%>
+<%
+    // Resolve cert status - use pre-set request attribute if available (set by AdminFormAction / StartAction),
     // otherwise fetch directly so the decorators show on every admin page regardless of which action handled it.
     String _sm_certStatus = (String) request.getAttribute("certStatus");
     if (_sm_certStatus == null) {
@@ -34,7 +38,7 @@
     }
     final String _sm_feedbackIconClass = "bi-chat-left-text" + (_sm_hasFeedback ? " text-warning" : "");
 
-    // Resolve outstanding (bad) transfers status — reads in-memory cache, zero DB cost.
+    // Resolve outstanding (bad) transfers status - reads in-memory cache, zero DB cost.
     Boolean _sm_badAttr = (Boolean) request.getAttribute("hasBadTransfers");
     boolean _sm_hasBad;
     if (_sm_badAttr != null) {
@@ -70,6 +74,9 @@
 		wrappingTags="tr,td"><i class="bi <%=_sm_badIconClass%>"></i> Outstanding Transfers</auth:link>
 	<auth:link basePathKey="admin.basepath" href="/schedulertraffic"
 		wrappingTags="tr,td"><i class="bi bi-arrow-left-right"></i> Scheduler Traffic</auth:link>
+	<jsp:include page="/WEB-INF/jsp/pds/admin/eventjournal/menu.jsp">
+		<jsp:param name="journalPlacement" value="submenu" />
+	</jsp:include>
 	<auth:link basePathKey="admin.basepath" href="/upload"
 		wrappingTags="tr,td"><i class="bi bi-upload"></i> Upload Files</auth:link>
 	<auth:link basePathKey="admin.feedback.basepath" href=""

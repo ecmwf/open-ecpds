@@ -49,7 +49,7 @@ public final class GeoIP2Helper {
      * @param hostName
      *            the host name
      *
-     * @return the city response
+     * @return the city response, or null for local-only addresses without a geographic location
      *
      * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
@@ -57,7 +57,15 @@ public final class GeoIP2Helper {
      *             Signals that a GeoIP2 exception has occurred.
      */
     public static CityResponse getCityResponse(final String hostName) throws IOException, GeoIp2Exception {
-        return _getDataBaseReader().city(InetAddress.getByName(hostName));
+        final var address = InetAddress.getByName(hostName);
+        final var bytes = address.getAddress();
+        if (address.isAnyLocalAddress() || address.isLoopbackAddress() || address.isSiteLocalAddress()
+                || address.isLinkLocalAddress() || address.isMulticastAddress()
+                || bytes.length == 16 && (bytes[0] & 0xfe) == 0xfc || bytes.length == 4
+                        && ((bytes[0] & 0xff) == 0 || (bytes[0] & 0xff) == 100 && (bytes[1] & 0xc0) == 64)) {
+            return null;
+        }
+        return _getDataBaseReader().city(address);
     }
 
     /**
