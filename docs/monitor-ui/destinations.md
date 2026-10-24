@@ -103,6 +103,30 @@ Options provides a separate **Properties Reference** for supported option keys
 and defaults. Guide buttons retain their full accessible names when displayed
 as book-only controls on small screens.
 
+### Change Log
+
+The **Change Log** records Destination settings and Host changes made through
+authenticated Master session actions, with the user and time of each successful
+change. Host entries distinguish allocation, removal, priority changes, global
+enable/disable and global deletion. Copying a Host into a Destination or copying a
+Destination also records the resulting Host allocations. Backup imports through
+the API record allocations with an `API/<client ID>` actor, never the API secret.
+
+An enable/disable or deletion of a shared Host appears in every Destination
+associated with it at the time of the action, not only the Destination from which
+the action was requested. Entries retain the Host ID, nickname, address and
+Destination-specific priority, so removing or deleting the Host does not erase
+that identity. These snapshots do not include Host credentials.
+
+Host events show **vs Previous** only: comparing an association or a global Host
+state with the current Destination settings would be misleading. Ordinary
+Destination settings retain both comparison tabs. Unchanged priorities/states and
+failed actions do not create Host-change entries. History starts when this
+version is deployed; previously unrecorded changes cannot be reconstructed.
+The existing anonymous-user and `dontRecordActions` exclusions still apply.
+As with existing settings history, database recording failures are logged but do
+not roll back a completed configuration change.
+
 ### Transfer tries
 
 Choose **Cols → Custom → Tries** to show the number of attempts to reach each

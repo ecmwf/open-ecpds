@@ -442,6 +442,9 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         final DataBaseObject argument;
         switch (object) {
         case final Destination destination -> argument = ecpds.getDestinationObject(destination.getName());
+        case final Host host -> argument = ecpds.getHost(host.getName());
+        case final Association association -> argument = ecpds.getAssociation(association.getDestinationName(),
+                association.getHostName());
         case final TransferServer transferServer -> {
             argument = ecpds.getTransferServerObject(transferServer.getName());
             ecpds.clearTransferServerCache(transferServer.getTransferGroupName());
@@ -4585,6 +4588,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             if (ecpds.getDestinationObject(destinationName) == null) {
                 master.importDestination(list.getDestination(), list.getAssociations().toArray(new Association[0]),
                         copySharedHost);
+                master.logDestinationHostAllocations("API/" + user.substring(0, user.indexOf(':')), "import",
+                        destination);
                 destinationCount++;
             }
         }

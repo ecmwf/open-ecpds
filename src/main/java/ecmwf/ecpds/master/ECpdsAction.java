@@ -41,6 +41,8 @@ final class ECpdsAction {
     /** The _argument. */
     private final DataBaseObject _argument;
 
+    private final DestinationHostAudit destinationHostAudit;
+
     /**
      * Instantiates a new ecpds action.
      *
@@ -50,11 +52,19 @@ final class ECpdsAction {
      *            the action
      * @param argument
      *            the argument
+     * @param destinationHostAudit
+     *            the pre-action Destination Host snapshots
      */
-    ECpdsAction(final ECpdsSession session, final String action, final DataBaseObject argument) {
+    ECpdsAction(final ECpdsSession session, final String action, final DataBaseObject argument,
+            final DestinationHostAudit destinationHostAudit) {
         _action = action;
         _session = session;
         _argument = argument;
+        this.destinationHostAudit = destinationHostAudit;
+    }
+
+    DestinationHostAudit getDestinationHostAudit() {
+        return destinationHostAudit;
     }
 
     /**

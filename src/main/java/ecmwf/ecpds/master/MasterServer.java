@@ -6986,7 +6986,15 @@ public final class MasterServer extends ECaccessProvider
         if (ecpds == null) {
             throw new MasterException("ECpdsSession required");
         }
-        return new ECpdsAction(ecpds, action, argument);
+        try {
+            final var audit = shouldRecordECpdsAction(ecpds.getWebUser().getId(), action)
+                    ? DestinationHostAudit.capture(getECpdsBase(), action, argument)
+                    : new DestinationHostAudit(action, List.of(), null);
+            return new ECpdsAction(ecpds, action, argument, audit);
+        } catch (final DataBaseException e) {
+            _log.warn("Cannot capture Destination Host history before {}", action, e);
+            throw new MasterException("Cannot capture Destination Host history: " + e.getMessage());
+        }
     }
 
     /**
@@ -7040,6 +7048,15 @@ public final class MasterServer extends ECaccessProvider
             if (Cnf.at("Server", "anonymousUser", "anonymous").equals(action.getWebUserId())) {
                 // We don't want to log any anonymous activity. This is internal to ECPDS only.
                 return;
+            }
+            if (shouldRecordECpdsAction(action.getWebUserId(), action.getAction())) {
+                for (final ChangeLog change : action.getDestinationHostAudit().complete(object, action.getWebUserId(),
+                        exception == null)) {
+                    getDataBase().tryInsert(change, true);
+                }
+                if (exception == null && "duplicate".equals(action.getAction())) {
+                    logDestinationHostAllocations(action.getWebUserId(), "duplicate", object);
+                }
             }
             final var argument = action.getArgument();
             final var operation = new StringBuilder(action.getAction());
@@ -7109,9 +7126,8 @@ public final class MasterServer extends ECaccessProvider
                             + (!success ? " <- " + Format.getMessage(exception) : ""),
                     !success);
             // Should we record the change?
-            if (!(Cnf.at("Server", "dontRecordTransferActions", true) && isDataTransfer
-                    || Arrays.stream(Cnf.stringListAt("Server", "dontRecordActions", "output", "report"))
-                            .anyMatch(action.getAction()::equals))) {
+            if (shouldRecordECpdsAction(action.getWebUserId(), action.getAction())
+                    && !(Cnf.at("Server", "dontRecordTransferActions", true) && isDataTransfer)) {
                 final var content = new StringBuilder("Message concerning ECpds action: ").append(operation);
                 if (isNotEmpty(comment)) {
                     content.append("\nAction comment: ").append(comment);
@@ -7179,6 +7195,33 @@ public final class MasterServer extends ECaccessProvider
             }
         } catch (final Exception e) {
             _log.warn("Failed to log ECpdsAction", e);
+        }
+    }
+
+    private static boolean shouldRecordECpdsAction(final String user, final String action) {
+        return !Cnf.at("Server", "anonymousUser", "anonymous").equals(user) && Arrays
+                .stream(Cnf.stringListAt("Server", "dontRecordActions", "output", "report")).noneMatch(action::equals);
+    }
+
+    void logDestinationHostAllocations(final String user, final String action, final DataBaseObject object) {
+        if (!shouldRecordECpdsAction(user, action)) {
+            return;
+        }
+        try {
+            if (object instanceof final Host host) {
+                for (final var state : DestinationHostAudit.allocations(getECpdsBase(), host)) {
+                    getDataBase().tryInsert(DestinationHostAudit.allocation(state, user), true);
+                }
+            } else if (object instanceof final Destination destination) {
+                for (final Host host : getECpdsBase().getHostsByDestinationId(destination.getName())) {
+                    final var association = getECpdsBase().getAssociation(destination.getName(), host.getName());
+                    getDataBase().tryInsert(
+                            DestinationHostAudit.allocation(DestinationHostAudit.State.of(association, host), user),
+                            true);
+                }
+            }
+        } catch (final DataBaseException e) {
+            _log.warn("Failed to log Destination Host allocations for {}", user, e);
         }
     }
 

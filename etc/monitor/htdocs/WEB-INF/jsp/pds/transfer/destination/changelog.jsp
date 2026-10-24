@@ -89,7 +89,7 @@
 	<thead class="table-light">
 		<tr>
 			<th title="Date &amp; Time (UTC)">Date &amp; Time</th>
-			<th style="white-space:nowrap" class="text-center">Web User</th>
+			<th style="white-space:nowrap" class="text-center">Actor</th>
 			<th>Differences</th>
 		</tr>
 	</thead>
@@ -100,8 +100,14 @@
 				<content:content name="changelog.date" dateFormatKey="date.format.iso" ignoreNull="true"/><br>
 				<small class="text-muted"><content:content name="changelog.date" dateFormatKey="date.format.time" ignoreNull="true"/></small>
 			</td>
-			<td class="text-center">${changelog.webUserId}</td>
+			<td class="text-center"><c:out value="${changelog.webUserId}"/></td>
 			<td>
+				<div class="small mb-1">
+					<strong><c:out value="${changelog.changeType}"/></strong>
+					<c:if test="${changelog.hostEvent}">
+						<span class="text-muted ms-1"><c:out value="${changelog.hostIdentity}"/></span>
+					</c:if>
+				</div>
 				<div class="cl-tabs">
 					<ul class="nav nav-tabs" role="tablist">
 						<li class="nav-item" role="presentation">
@@ -112,6 +118,7 @@
 								<i class="bi bi-clock-history me-1"></i>vs Previous
 							</button>
 						</li>
+						<c:if test="${!changelog.hostEvent}">
 						<li class="nav-item" role="presentation">
 							<button class="nav-link<c:if test="${empty changelog.differencesFromCurrent}"> disabled</c:if>"
 								data-bs-toggle="tab"
@@ -121,14 +128,17 @@
 								<i class="bi bi-arrow-repeat me-1"></i>vs Current
 							</button>
 						</li>
+						</c:if>
 					</ul>
 					<div class="tab-content">
 						<div class="tab-pane show active" id="cl-prev-${changelog.changeLogId}" role="tabpanel">
 							<pre class="diff-pre">${changelog.differences}</pre>
 						</div>
+						<c:if test="${!changelog.hostEvent}">
 						<div class="tab-pane" id="cl-curr-${changelog.changeLogId}" role="tabpanel">
 							<pre class="diff-pre">${changelog.differencesFromCurrent}</pre>
 						</div>
+						</c:if>
 					</div>
 				</div>
 			</td>

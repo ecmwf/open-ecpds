@@ -125,6 +125,9 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
         translationMap.put("HST_ID", "Stats Identifier");
         translationMap.put("HOS_FILTER_NAME", "Filter Name");
         translationMap.put("HOS_AUTOMATIC_LOCATION", "Automatic Location");
+        translationMap.put("ASO_ALLOCATED", "Allocated to destination");
+        translationMap.put("ASO_PRIORITY", "Host priority");
+        translationMap.put("HOS_EXISTS", "Host exists");
     }
 
     /**
@@ -253,7 +256,30 @@ public class ChangeLogBean extends ModelBeanBase implements ChangeLog {
      * @return the differences from current
      */
     public String getDifferencesFromCurrent() {
+        if (isHostEvent()) {
+            return "";
+        }
         return process(getDifferences(getNewObject(), currentObject));
+    }
+
+    public boolean isHostEvent() {
+        return getNewObject() != null && getNewObject().startsWith("[AUDIT_HOST_EVENT]");
+    }
+
+    public String getChangeType() {
+        return isHostEvent() ? snapshotValue("AUDIT_HOST_EVENT")
+                : "HOS_NAME".equals(getKeyName()) ? "Host settings" : "Destination settings";
+    }
+
+    public String getHostIdentity() {
+        return isHostEvent() ? snapshotValue("HOS_NICKNAME") + " (ID " + snapshotValue("HOS_NAME") + ", "
+                + snapshotValue("HOS_HOST") + ")" : "";
+    }
+
+    private String snapshotValue(final String name) {
+        final var prefix = "[" + name + "]";
+        return getNewObject().lines().filter(line -> line.startsWith(prefix))
+                .map(line -> line.substring(prefix.length()).strip()).findFirst().orElse("");
     }
 
     /**
