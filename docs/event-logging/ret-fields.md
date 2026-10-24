@@ -7,9 +7,64 @@ event is recorded to reflect the retrieval outcome.
 
 ## Example
 
-```text
-RET;Monitored=true;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile-260225.bin;FileSize=9426076326;Identity=/my/home/datafile.bin;ScheduledTime=2025-02-12 13:04:00.0;StartTime=2025-02-12 12:29:43.98;MetaStream=GENFO;MetaType=EF;MetaTime=06;TimeBase=2025-02-12 06:00:00.0;TimeStep=144;Duration=40781;HostId=123456;HostLogin=login;HostAddress=my.host.it;TransferProtocol=sftp;MoverName=my.mover.name.it;UserId=uid;RequestAddress=X.X.X.X;DataOnlyDuration=40189;StandBy=false;RemoteHost=my.remote.host.it
-```
+=== "Splunk (splunk.log)"
+
+    ```text
+    RET;Monitored=true;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile-260225.bin;FileSize=9426076326;Identity=/my/home/datafile.bin;ScheduledTime=2025-02-12 13:04:00.0;StartTime=2025-02-12 12:29:43.98;MetaStream=GENFO;MetaType=EF;MetaTime=06;TimeBase=2025-02-12 06:00:00.0;TimeStep=144;Duration=40781;HostId=123456;HostLogin=login;HostAddress=my.host.it;TransferProtocol=sftp;MoverName=my.mover.name.it;UserId=uid;RequestAddress=X.X.X.X;DataOnlyDuration=40189;StandBy=false;RemoteHost=my.remote.host.it
+    ```
+
+=== "OpenTelemetry"
+
+    Simplified Collector/backend representation, not the raw OTLP payload.
+    See [Reading the examples](overview.md#reading-the-examples).
+
+    ```json
+    {
+      "resource": {
+        "service.name": "open-ecpds-master",
+        "service.instance.id": "master.example.org"
+      },
+      "scope": {
+        "name": "ecmwf.ecpds.operational-events"
+      },
+      "timestamp": "2025-02-12T11:00:00Z",
+      "severityText": "INFO",
+      "eventName": "ecpds.RET",
+      "body": "RET",
+      "attributes": {
+        "ecpds.event.id": "c589192c-9247-48bf-aeb3-08ae2032e106",
+        "ecpds.event.category": "RET",
+        "Monitored": true,
+        "TimeStamp": "2025-02-12 11:00:00.0",
+        "DataTransferId": 123456789,
+        "DestinationName": "MyDestination",
+        "DestinationType": "Gold",
+        "FileName": "/my/home/datafile-260225.bin",
+        "FileSize": 9426076326,
+        "Identity": "/my/home/datafile.bin",
+        "ScheduledTime": "2025-02-12 13:04:00.0",
+        "StartTime": "2025-02-12 12:29:43.98",
+        "MetaStream": "GENFO",
+        "MetaType": "EF",
+        "MetaTime": "06",
+        "TimeBase": "2025-02-12 06:00:00.0",
+        "TimeStep": 144,
+        "Duration": 40781,
+        "HostId": "123456",
+        "HostLogin": "login",
+        "HostAddress": "my.host.it",
+        "TransferProtocol": "sftp",
+        "MoverName": "my.mover.name.it",
+        "UserId": "uid",
+        "RequestAddress": "X.X.X.X",
+        "DataOnlyDuration": 40189,
+        "StandBy": false,
+        "RemoteHost": "my.remote.host.it"
+      }
+    }
+    ```
+
+    `HostId` remains a string even when the Host name contains only digits.
 
 ## Fields
 

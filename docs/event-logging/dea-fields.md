@@ -7,9 +7,40 @@ such as TOTP (Time-Based One-Time Password).
 
 ## Example
 
-```text
-DEA;TimeStamp=2025-02-12 11:00:00.0;UserId=uid;Message=Maximum number of connections exceeded (20);Context=Using https on DataMover=my.mover.name.it from uid@my.host.it
-```
+=== "Splunk (splunk.log)"
+
+    ```text
+    DEA;TimeStamp=2025-02-12 11:00:00.0;UserId=uid;Message=Maximum number of connections exceeded (20);Context=Using https on DataMover=my.mover.name.it from uid@my.host.it
+    ```
+
+=== "OpenTelemetry"
+
+    Simplified Collector/backend representation, not the raw OTLP payload.
+    See [Reading the examples](overview.md#reading-the-examples).
+
+    ```json
+    {
+      "resource": {
+        "service.name": "open-ecpds-master",
+        "service.instance.id": "master.example.org"
+      },
+      "scope": {
+        "name": "ecmwf.ecpds.operational-events"
+      },
+      "timestamp": "2025-02-12T11:00:00Z",
+      "severityText": "INFO",
+      "eventName": "ecpds.DEA",
+      "body": "DEA",
+      "attributes": {
+        "ecpds.event.id": "c589192c-9247-48bf-aeb3-08ae2032e102",
+        "ecpds.event.category": "DEA",
+        "TimeStamp": "2025-02-12 11:00:00.0",
+        "UserId": "uid",
+        "Message": "Maximum number of connections exceeded (20)",
+        "Context": "Using https on DataMover=my.mover.name.it from uid@my.host.it"
+      }
+    }
+    ```
 
 ## Fields
 

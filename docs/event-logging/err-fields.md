@@ -8,9 +8,63 @@ helps diagnose and troubleshoot dissemination failures within OpenECPDS.
 
 ## Example
 
-```text
-ERR;Monitored=false;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=35850;ScheduledTime=2025-02-11 06:04:20.0;StartTime=2025-02-11 09:46:35.586;MetaStream=GOPER;MetaType=FC;MetaTime=00;TimeBase=2025-02-11 00:00:00.0;TimeStep=64;Duration=0;UserId=uid;CountryCode=fr;BytesSent=0;TransferProtocol=sftp;TransferServer=my.mover.name.it;HostAddress=my.host.it;NetworkCode=Internet;Message=Module sftp error <- Failed to connect to X.X.X.X:22 (SSH_MSG_DISCONNECT: 11 Too many bad authentication attempts!) (Trying from DataMover=my.mover.name.it)
-```
+=== "Splunk (splunk.log)"
+
+    ```text
+    ERR;Monitored=false;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=35850;ScheduledTime=2025-02-11 06:04:20.0;StartTime=2025-02-11 09:46:35.586;MetaStream=GOPER;MetaType=FC;MetaTime=00;TimeBase=2025-02-11 00:00:00.0;TimeStep=64;Duration=0;UserId=uid;CountryCode=fr;BytesSent=0;TransferProtocol=sftp;TransferServer=my.mover.name.it;HostAddress=my.host.it;NetworkCode=Internet;Message=Module sftp error <- Failed to connect to X.X.X.X:22 (SSH_MSG_DISCONNECT: 11 Too many bad authentication attempts!) (Trying from DataMover=my.mover.name.it)
+    ```
+
+=== "OpenTelemetry"
+
+    Simplified Collector/backend representation, not the raw OTLP payload.
+    See [Reading the examples](overview.md#reading-the-examples).
+
+    ```json
+    {
+      "resource": {
+        "service.name": "open-ecpds-master",
+        "service.instance.id": "master.example.org"
+      },
+      "scope": {
+        "name": "ecmwf.ecpds.operational-events"
+      },
+      "timestamp": "2025-02-12T11:00:00Z",
+      "severityText": "INFO",
+      "eventName": "ecpds.ERR",
+      "body": "ERR",
+      "attributes": {
+        "ecpds.event.id": "c589192c-9247-48bf-aeb3-08ae2032e103",
+        "ecpds.event.category": "ERR",
+        "Monitored": false,
+        "TimeStamp": "2025-02-12 11:00:00.0",
+        "DataTransferId": 123456789,
+        "DestinationName": "MyDestination",
+        "DestinationType": "Gold",
+        "FileName": "/my/home/datafile.bin",
+        "FileSize": 35850,
+        "ScheduledTime": "2025-02-11 06:04:20.0",
+        "StartTime": "2025-02-11 09:46:35.586",
+        "MetaStream": "GOPER",
+        "MetaType": "FC",
+        "MetaTime": "00",
+        "TimeBase": "2025-02-11 00:00:00.0",
+        "TimeStep": 64,
+        "Duration": 0,
+        "UserId": "uid",
+        "CountryCode": "fr",
+        "BytesSent": 0,
+        "TransferProtocol": "sftp",
+        "TransferServer": "my.mover.name.it",
+        "HostAddress": "my.host.it",
+        "NetworkCode": "Internet",
+        "Message": "Module sftp error <- Failed to connect to X.X.X.X:22 (SSH_MSG_DISCONNECT: 11 Too many bad authentication attempts!) (Trying from DataMover=my.mover.name.it)"
+      }
+    }
+    ```
+
+    When an attempt context is available, ERR can also carry a transfer-attempt
+    ID and trace correlation; see the overview. The operational log severity
+    remains `INFO`: the `ERR` category describes the failed transfer.
 
 ## Fields
 

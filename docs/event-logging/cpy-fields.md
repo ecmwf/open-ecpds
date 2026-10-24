@@ -8,9 +8,60 @@ replication, ensuring traceability and monitoring of data movement across the sy
 
 ## Example
 
-```text
-CPY;Monitored=true;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=196445574;ScheduledTime=2025-02-13 08:07:46.13;StartTime=2025-02-13 08:07:51.022;MetaStream=-;MetaType=-;MetaTime=00;TimeBase=2025-02-13 00:00:00.0;TimeStep=-1;Duration=1040;CountryCode=ec;Target=my.target.mover.name.it;TransferServer=my.source.mover.name.it;Caller=/my/home/datafile.output;ExpiryTime=2025-02-15 08:07:46.13;FileSystem=18;Status=true;Message=-;Action=replicate
-```
+=== "Splunk (splunk.log)"
+
+    ```text
+    CPY;Monitored=true;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=196445574;ScheduledTime=2025-02-13 08:07:46.13;StartTime=2025-02-13 08:07:51.022;MetaStream=-;MetaType=-;MetaTime=00;TimeBase=2025-02-13 00:00:00.0;TimeStep=-1;Duration=1040;CountryCode=ec;Target=my.target.mover.name.it;TransferServer=my.source.mover.name.it;Caller=/my/home/datafile.output;ExpiryTime=2025-02-15 08:07:46.13;FileSystem=18;Status=true;Message=-;Action=replicate
+    ```
+
+=== "OpenTelemetry"
+
+    Simplified Collector/backend representation, not the raw OTLP payload.
+    See [Reading the examples](overview.md#reading-the-examples).
+
+    ```json
+    {
+      "resource": {
+        "service.name": "open-ecpds-master",
+        "service.instance.id": "master.example.org"
+      },
+      "scope": {
+        "name": "ecmwf.ecpds.operational-events"
+      },
+      "timestamp": "2025-02-12T11:00:00Z",
+      "severityText": "INFO",
+      "eventName": "ecpds.CPY",
+      "body": "CPY",
+      "attributes": {
+        "ecpds.event.id": "c589192c-9247-48bf-aeb3-08ae2032e104",
+        "ecpds.event.category": "CPY",
+        "Monitored": true,
+        "TimeStamp": "2025-02-12 11:00:00.0",
+        "DataTransferId": 123456789,
+        "DestinationName": "MyDestination",
+        "DestinationType": "Gold",
+        "FileName": "/my/home/datafile.bin",
+        "FileSize": 196445574,
+        "ScheduledTime": "2025-02-13 08:07:46.13",
+        "StartTime": "2025-02-13 08:07:51.022",
+        "MetaStream": "-",
+        "MetaType": "-",
+        "MetaTime": "00",
+        "TimeBase": "2025-02-13 00:00:00.0",
+        "TimeStep": -1,
+        "Duration": 1040,
+        "CountryCode": "ec",
+        "Target": "my.target.mover.name.it",
+        "TransferServer": "my.source.mover.name.it",
+        "Caller": "/my/home/datafile.output",
+        "ExpiryTime": "2025-02-15 08:07:46.13",
+        "FileSystem": 18,
+        "Status": true,
+        "Message": "-",
+        "Action": "replicate"
+      }
+    }
+    ```
 
 ## Fields
 

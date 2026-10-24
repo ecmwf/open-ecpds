@@ -15,6 +15,48 @@ monitoring and analytics ecosystems.
 The logs can be found in the directories mounted to the containers — see
 [Checking the Containers and Logs](../getting-started/first-run.md#checking-the-containers-and-logs).
 
+## Reading the examples
+
+Each event-category page has **Splunk (`splunk.log`)** and **OpenTelemetry**
+tabs showing the same event and sample field values. The shared Fields table
+describes both outputs. The examples are illustrative, not captured production
+records; existing sample timestamps are retained and do not necessarily describe
+a chronological transfer lifecycle.
+
+The OpenTelemetry tab is a **simplified Collector/backend representation, not
+the raw OTLP payload**. Actual export uses OTLP and batches records with resource
+and instrumentation-scope metadata. OTLP JSON, when used for inspection, has
+additional wrappers such as `stringValue`, `intValue` and `boolValue`; backend
+field layout can differ. Resource attributes such as `service.version` and SDK
+metadata are omitted from the examples for readability.
+
+Unlike the semicolon-separated file output, telemetry attributes retain their
+application types: counts and sizes are numbers, flags are booleans, and textual
+identifiers remain strings even if they contain only digits. Timestamp-valued
+event attributes retain their string representation; the log's top-level
+timestamp is taken from `TimeStamp` and is displayed as UTC in these examples.
+Durations remain milliseconds where specified by the Fields table. These
+records all use log severity `INFO`, including the `ERR` and `DEA` categories:
+the category and event fields describe the operational outcome.
+
+| Telemetry metadata | Meaning |
+|--------------------|---------|
+| `resource.service.name` | Exporting service; defaults to `open-ecpds-master`. |
+| `resource.service.instance.id` | Master identity, normally derived from `[Login] root` or `hostName`. |
+| `scope.name` | `ecmwf.ecpds.operational-events`, the instrumentation scope. |
+| `eventName` / `body` | `ecpds.<category>` / `<category>`, for example `ecpds.PRS` / `PRS`. |
+| `attributes.ecpds.event.id` | Generated UUID identifying the telemetry event; useful for deduplicating journal retries. |
+| `attributes.ecpds.event.category` | The category code, matching the file output's first field. |
+| `attributes.ecpds.transfer.attempt.id` | Present on attempt-aware UPH/ERR events when a valid transfer context is available; distinguishes attempts of the same transfer. |
+| `traceId`, `spanId` | Optional valid trace context linking a log to a span; a corresponding trace is not guaranteed to be sampled or retained. |
+
+The UPH example illustrates optional correlation. Product-status (PRS),
+retrieval (RET), incoming-history (INH), copy (CPY) and denied-access (DEA)
+events are not automatically assigned a dissemination-attempt context simply
+because they describe a file or contain a transfer ID.
+See [Transfer traces and log correlation](#transfer-traces-and-log-correlation)
+for tracing scope and configuration.
+
 ## Choosing event outputs
 
 The Master publishes the same operational events through two independent outputs:

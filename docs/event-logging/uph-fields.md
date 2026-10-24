@@ -6,9 +6,78 @@ execution, and completion status.
 
 ## Example
 
-```text
-UPH;Monitored=false;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile-260225.bin;FileSize=131259312;Identity=/my/home/datafile.bin;MetaStream=GENFO;MetaType=EF;MetaTime=00;Priority=69;QueueTime=2025-02-13 06:53:10.0;RequeueCount=0;ScheduledTime=2025-02-13 06:53:10.0;StartTime=2025-02-13 09:00:53.139;PutTime=2025-02-13 09:00:56.015;Duration=16471;DurationOnClose=18534;BytesSent=131259312;StatusCode=DONE;RetrievalTime=2025-02-13 05:42:01.694;TimeBase=2025-02-13 00:00:00.0;TimeStep=79;FinishTime=2025-02-13 09:01:14.584;TransferProtocol=sftp;TransferServer=my.mover.name.it;NetworkCode=Internet;HostAddress=my.host.it;PreSchedule=false;ProxyHost=X.X.X.X;Proxied=true;SocketStatistics=...;Compressed=-;CompressedOnTheFly=false
-```
+=== "Splunk (splunk.log)"
+
+    ```text
+    UPH;Monitored=false;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile-260225.bin;FileSize=131259312;Identity=/my/home/datafile.bin;MetaStream=GENFO;MetaType=EF;MetaTime=00;Priority=69;QueueTime=2025-02-13 06:53:10.0;RequeueCount=0;ScheduledTime=2025-02-13 06:53:10.0;StartTime=2025-02-13 09:00:53.139;PutTime=2025-02-13 09:00:56.015;Duration=16471;DurationOnClose=18534;BytesSent=131259312;StatusCode=DONE;RetrievalTime=2025-02-13 05:42:01.694;TimeBase=2025-02-13 00:00:00.0;TimeStep=79;FinishTime=2025-02-13 09:01:14.584;TransferProtocol=sftp;TransferServer=my.mover.name.it;NetworkCode=Internet;HostAddress=my.host.it;PreSchedule=false;ProxyHost=X.X.X.X;Proxied=true;SocketStatistics=...;Compressed=-;CompressedOnTheFly=false
+    ```
+
+=== "OpenTelemetry"
+
+    Simplified Collector/backend representation, not the raw OTLP payload.
+    See [Reading the examples](overview.md#reading-the-examples).
+
+    ```json
+    {
+      "resource": {
+        "service.name": "open-ecpds-master",
+        "service.instance.id": "master.example.org"
+      },
+      "scope": {
+        "name": "ecmwf.ecpds.operational-events"
+      },
+      "timestamp": "2025-02-12T11:00:00Z",
+      "severityText": "INFO",
+      "eventName": "ecpds.UPH",
+      "body": "UPH",
+      "traceId": "7e9169d24581494ab6170df5028290aa1",
+      "spanId": "b67c02d491e84a35",
+      "attributes": {
+        "ecpds.event.id": "c589192c-9247-48bf-aeb3-08ae2032e107",
+        "ecpds.event.category": "UPH",
+        "ecpds.transfer.attempt.id": "28d24631-f151-49a3-98af-bcd74c2c72a0",
+        "Monitored": false,
+        "TimeStamp": "2025-02-12 11:00:00.0",
+        "DataTransferId": 123456789,
+        "DestinationName": "MyDestination",
+        "DestinationType": "Gold",
+        "FileName": "/my/home/datafile-260225.bin",
+        "FileSize": 131259312,
+        "Identity": "/my/home/datafile.bin",
+        "MetaStream": "GENFO",
+        "MetaType": "EF",
+        "MetaTime": "00",
+        "Priority": 69,
+        "QueueTime": "2025-02-13 06:53:10.0",
+        "RequeueCount": 0,
+        "ScheduledTime": "2025-02-13 06:53:10.0",
+        "StartTime": "2025-02-13 09:00:53.139",
+        "PutTime": "2025-02-13 09:00:56.015",
+        "Duration": 16471,
+        "DurationOnClose": 18534,
+        "BytesSent": 131259312,
+        "StatusCode": "DONE",
+        "RetrievalTime": "2025-02-13 05:42:01.694",
+        "TimeBase": "2025-02-13 00:00:00.0",
+        "TimeStep": 79,
+        "FinishTime": "2025-02-13 09:01:14.584",
+        "TransferProtocol": "sftp",
+        "TransferServer": "my.mover.name.it",
+        "NetworkCode": "Internet",
+        "HostAddress": "my.host.it",
+        "PreSchedule": false,
+        "ProxyHost": "X.X.X.X",
+        "Proxied": true,
+        "SocketStatistics": "...",
+        "Compressed": "-",
+        "CompressedOnTheFly": false
+      }
+    }
+    ```
+
+    This example includes optional attempt/trace correlation. Without a valid
+    attempt context those identifiers are absent; tracing and event output
+    can be enabled independently.
 
 !!! note
     The `SocketStatistics` value above is abbreviated. When enabled, it contains the full

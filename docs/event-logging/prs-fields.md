@@ -11,9 +11,47 @@ information about the product's status and related attributes.
 
 ## Example
 
-```text
-PRS;TimeStamp=2025-02-12 11:00:00.0;StatusCode=EXEC;DataStream=GWAEF;TimeStep=144;TimeBase=2025-02-12 06:00:00.0;Type=EF;ScheduleTime=2025-02-12 13:04:00.0;LastUpdate=2025-02-12 12:28:44.353
-```
+=== "Splunk (splunk.log)"
+
+    ```text
+    PRS;TimeStamp=2025-02-12 11:00:00.0;StatusCode=EXEC;DataStream=GWAEF;TimeStep=144;TimeBase=2025-02-12 06:00:00.0;Type=EF;ScheduleTime=2025-02-12 13:04:00.0;LastUpdate=2025-02-12 12:28:44.353
+    ```
+
+=== "OpenTelemetry"
+
+    Simplified Collector/backend representation, not the raw OTLP payload.
+    See [Reading the examples](overview.md#reading-the-examples).
+
+    ```json
+    {
+      "resource": {
+        "service.name": "open-ecpds-master",
+        "service.instance.id": "master.example.org"
+      },
+      "scope": {
+        "name": "ecmwf.ecpds.operational-events"
+      },
+      "timestamp": "2025-02-12T11:00:00Z",
+      "severityText": "INFO",
+      "eventName": "ecpds.PRS",
+      "body": "PRS",
+      "attributes": {
+        "ecpds.event.id": "c589192c-9247-48bf-aeb3-08ae2032e101",
+        "ecpds.event.category": "PRS",
+        "TimeStamp": "2025-02-12 11:00:00.0",
+        "StatusCode": "EXEC",
+        "DataStream": "GWAEF",
+        "TimeStep": 144,
+        "TimeBase": "2025-02-12 06:00:00.0",
+        "Type": "EF",
+        "ScheduleTime": "2025-02-12 13:04:00.0",
+        "LastUpdate": "2025-02-12 12:28:44.353"
+      }
+    }
+    ```
+
+    PRS describes product status, not a scheduled dissemination attempt.
+    It does not automatically carry a transfer-attempt ID or transfer trace.
 
 ## Fields
 

@@ -7,9 +7,62 @@ data transfer, including metadata, user details, and network parameters.
 
 ## Example
 
-```text
-INH;Monitored=true;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=162392;ScheduledTime=2025-02-13 07:41:00.0;StartTime=2025-02-13 09:05:32.616;MetaStream=GENFO-GTS;MetaType=EP;MetaTime=00;TimeBase=2025-02-13 00:00:00.0;TimeStep=240;Duration=1;UserId=uid;CountryCode=uk;UserDescription=User description;BytesSent=162392;TransferProtocol=ftp;TransferServer=my.mover.name.it;HostAddress=my.host.it;Caller=/my/home/datafile.output;ExpiryTime=2025-03-15 07:41:00.0;FileSystem=20;Action=download
-```
+=== "Splunk (splunk.log)"
+
+    ```text
+    INH;Monitored=true;TimeStamp=2025-02-12 11:00:00.0;DataTransferId=123456789;DestinationName=MyDestination;DestinationType=Gold;FileName=/my/home/datafile.bin;FileSize=162392;ScheduledTime=2025-02-13 07:41:00.0;StartTime=2025-02-13 09:05:32.616;MetaStream=GENFO-GTS;MetaType=EP;MetaTime=00;TimeBase=2025-02-13 00:00:00.0;TimeStep=240;Duration=1;UserId=uid;CountryCode=uk;UserDescription=User description;BytesSent=162392;TransferProtocol=ftp;TransferServer=my.mover.name.it;HostAddress=my.host.it;Caller=/my/home/datafile.output;ExpiryTime=2025-03-15 07:41:00.0;FileSystem=20;Action=download
+    ```
+
+=== "OpenTelemetry"
+
+    Simplified Collector/backend representation, not the raw OTLP payload.
+    See [Reading the examples](overview.md#reading-the-examples).
+
+    ```json
+    {
+      "resource": {
+        "service.name": "open-ecpds-master",
+        "service.instance.id": "master.example.org"
+      },
+      "scope": {
+        "name": "ecmwf.ecpds.operational-events"
+      },
+      "timestamp": "2025-02-12T11:00:00Z",
+      "severityText": "INFO",
+      "eventName": "ecpds.INH",
+      "body": "INH",
+      "attributes": {
+        "ecpds.event.id": "c589192c-9247-48bf-aeb3-08ae2032e105",
+        "ecpds.event.category": "INH",
+        "Monitored": true,
+        "TimeStamp": "2025-02-12 11:00:00.0",
+        "DataTransferId": 123456789,
+        "DestinationName": "MyDestination",
+        "DestinationType": "Gold",
+        "FileName": "/my/home/datafile.bin",
+        "FileSize": 162392,
+        "ScheduledTime": "2025-02-13 07:41:00.0",
+        "StartTime": "2025-02-13 09:05:32.616",
+        "MetaStream": "GENFO-GTS",
+        "MetaType": "EP",
+        "MetaTime": "00",
+        "TimeBase": "2025-02-13 00:00:00.0",
+        "TimeStep": 240,
+        "Duration": 1,
+        "UserId": "uid",
+        "CountryCode": "uk",
+        "UserDescription": "User description",
+        "BytesSent": 162392,
+        "TransferProtocol": "ftp",
+        "TransferServer": "my.mover.name.it",
+        "HostAddress": "my.host.it",
+        "Caller": "/my/home/datafile.output",
+        "ExpiryTime": "2025-03-15 07:41:00.0",
+        "FileSystem": 20,
+        "Action": "download"
+      }
+    }
+    ```
 
 ## Fields
 
