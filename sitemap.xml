@@ -153,6 +153,18 @@
          <lastmod>2026-10-24</lastmod>
     </url>
     <url>
+         <loc>https://ecmwf.github.io/open-ecpds/configuration/master/</loc>
+         <lastmod>2026-10-24</lastmod>
+    </url>
+    <url>
+         <loc>https://ecmwf.github.io/open-ecpds/configuration/monitor/</loc>
+         <lastmod>2026-10-24</lastmod>
+    </url>
+    <url>
+         <loc>https://ecmwf.github.io/open-ecpds/configuration/mover/</loc>
+         <lastmod>2026-10-24</lastmod>
+    </url>
+    <url>
          <loc>https://ecmwf.github.io/open-ecpds/deployment/infrastructure/</loc>
          <lastmod>2026-10-24</lastmod>
     </url>
