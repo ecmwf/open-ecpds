@@ -81,6 +81,7 @@ import ecmwf.common.technical.ProxySocket;
 import ecmwf.common.technical.ByteSize;
 import ecmwf.common.text.Format;
 import ecmwf.common.ecaccess.FileListElement;
+import ecmwf.common.telemetry.TransferTracing;
 import ecmwf.ecpds.master.plugin.ecpds.ECpdsClient;
 import ecmwf.ecpds.master.transfer.AliasesParser;
 import ecmwf.ecpds.master.transfer.DestinationOption;
@@ -1193,6 +1194,8 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                     setup = null;
                 }
                 if (incomingUser != null) {
+                    final var portalContext = transfers.isEmpty() ? null
+                            : TransferTracing.portalTransfer(transfers.get(0), event, success);
                     final var transferRate = Format.getMBitsPerSeconds(event.getSent(), event.getDuration());
                     final var mover = master.getDataBase(ECpdsBase.class).getTransferServerObject(event.getLocalHost());
                     final var message = event.getSent() + " byte(s) " + (event.getUpload() ? "uploaded" : "downloaded")
@@ -1276,7 +1279,8 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                             if (_operationalEvents.isEnabled() && setup != null
                                     && setup.getBoolean(USER_PORTAL_RECORD_SPLUNK)) {
                                 final var destination = transfer.getDestination();
-                                _operationalEvents.emit("INH", field("Monitored", destination.getMonitor()),
+                                _operationalEvents.emit(portalContext, null, "INH",
+                                        field("Monitored", destination.getMonitor()),
                                         field("TimeStamp", Timestamp.from(Instant.now())),
                                         field("DataTransferId", history.getDataTransferId()),
                                         field("DestinationName", destination.getName()),

@@ -2357,8 +2357,15 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     @Override
     public DataFile download(final DataFile dataFile, final Host hostForSource) throws RemoteException {
         dataFile.setRetrievalSizeVerificationBypassed(false);
-        try (final var _ = ecmwf.ecpds.master.storage.StorageFileLocks.read(dataFile.getId())) {
-            return downloadWithStorageLease(dataFile, hostForSource);
+        try (final var trace = MoverTracing.retrieval(dataFile, hostForSource)) {
+            try (final var _ = ecmwf.ecpds.master.storage.StorageFileLocks.read(dataFile.getId())) {
+                final var result = downloadWithStorageLease(dataFile, hostForSource);
+                trace.finish(result, true);
+                return result;
+            } catch (final RemoteException | RuntimeException | Error e) {
+                trace.failed();
+                throw e;
+            }
         }
     }
 

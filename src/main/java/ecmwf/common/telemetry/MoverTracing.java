@@ -34,10 +34,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.database.DataFile;
 import ecmwf.common.database.DataTransfer;
+import ecmwf.common.database.Host;
 import ecmwf.common.version.Version;
 
-/** SDK-free capture and bounded, retrying transport of sampled mover executions. */
+/** SDK-free capture and bounded, retrying transport of sampled Mover spans. */
 public final class MoverTracing {
     private static final Logger LOG = LogManager.getLogger(MoverTracing.class);
     private static final AtomicLong INVALID_CARRIERS = new AtomicLong();
@@ -97,6 +99,7 @@ public final class MoverTracing {
             if (parent == null || current == null || instanceId == null) {
                 return new Attempt(null, current);
             }
+
             if (parent.length() != 55 || !parent.matches("[0-9a-f]{2}-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}")
                     || parent.startsWith("ff-")) {
                 throw new IllegalArgumentException("Invalid traceparent");
@@ -148,7 +151,69 @@ public final class MoverTracing {
             final var previous = LAST_CARRIER_WARNING.get();
             if ((previous == 0 || now - previous >= TimeUnit.MINUTES.toNanos(1))
                     && LAST_CARRIER_WARNING.compareAndSet(previous, now)) {
-                LOG.warn("Ignoring invalid transfer trace context; {} invalid carriers since last report",
+                LOG.warn("Ignoring invalid trace context; {} invalid carriers since last report",
+                        INVALID_CARRIERS.getAndSet(0));
+            }
+            return new Attempt(null, current);
+        }
+    }
+
+    public static Attempt retrieval(final DataFile file, final Host source) {
+        final var current = delivery;
+        final var parent = file.getRetrievalTraceParent();
+        try {
+            if (parent == null || current == null || instanceId == null || file.getRetrievalTraceId() == null) {
+                return new Attempt(null, current);
+            }
+            if (parent.length() != 55 || !parent.matches("[0-9a-f]{2}-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}")
+                    || parent.startsWith("ff-")) {
+                throw new IllegalArgumentException("Invalid traceparent");
+            }
+            TransferSpan.id(parent.substring(3, 35), 32);
+            TransferSpan.id(parent.substring(36, 52), 16);
+            TransferSpan.text(file.getRetrievalTraceId(), 64);
+            TransferSpan.validateTraceState(file.getRetrievalTraceState());
+            final var flags = Integer.parseInt(parent.substring(53), 16);
+            if ((flags & 1) == 0) {
+                return new Attempt(null, current);
+            }
+            final var span = new TransferSpan();
+            span.setName("ecpds.retrieval.execute");
+            span.setKind("SERVER");
+            span.setTraceId(parent.substring(3, 35));
+            span.setParentSpanId(parent.substring(36, 52));
+            final var bytes = new byte[8];
+            String id;
+            do {
+                RANDOM.nextBytes(bytes);
+                id = HexFormat.of().formatHex(bytes);
+            } while ("0000000000000000".equals(id));
+            span.setSpanId(id);
+            span.setTraceFlags(flags);
+            span.setTraceState(file.getRetrievalTraceState());
+            final var now = Instant.now();
+            span.setStartEpochNanos(
+                    Math.addExact(Math.multiplyExact(now.getEpochSecond(), 1_000_000_000L), now.getNano()));
+            span.setEndEpochNanos(span.getStartEpochNanos());
+            final var attributes = new LinkedHashMap<String, Object>();
+            attributes.put("ecpds.retrieval.id", file.getRetrievalTraceId());
+            attributes.put("ecpds.file.id", file.getId());
+            attributes.put("ecpds.retrieval.attempt", file.getRetrievalAttempt());
+            if (source != null && source.getName() != null) {
+                attributes.put("ecpds.host.id", source.getName());
+            }
+            span.setAttributes(attributes);
+            span.setResource(Map.of("service.name", "open-ecpds-mover", "service.instance.id",
+                    instanceId == null ? "unknown" : instanceId, "service.version", Version.getFullVersion()));
+            file.setRetrievalTraceParent(parent.substring(0, 36) + id + parent.substring(52));
+            return new Attempt(span, current);
+        } catch (final IllegalArgumentException invalid) {
+            INVALID_CARRIERS.incrementAndGet();
+            final var now = System.nanoTime();
+            final var previous = LAST_CARRIER_WARNING.get();
+            if ((previous == 0 || now - previous >= TimeUnit.MINUTES.toNanos(1))
+                    && LAST_CARRIER_WARNING.compareAndSet(previous, now)) {
+                LOG.warn("Ignoring invalid retrieval trace context; {} invalid carriers since last report",
                         INVALID_CARRIERS.getAndSet(0));
             }
             return new Attempt(null, current);
@@ -172,15 +237,19 @@ public final class MoverTracing {
         }
 
         public void finish(final DataTransfer transfer, final boolean successful) {
-            end(transfer, !successful);
+            end(transfer, null, !successful);
+        }
+
+        public void finish(final DataFile file, final boolean successful) {
+            end(null, file, !successful);
         }
 
         @Override
         public void close() {
-            end(null, false);
+            end(null, null, false);
         }
 
-        private void end(final DataTransfer transfer, final boolean unsuccessful) {
+        private void end(final DataTransfer transfer, final DataFile file, final boolean unsuccessful) {
             if (!ended.compareAndSet(false, true) || span == null) {
                 return;
             }
@@ -189,6 +258,10 @@ public final class MoverTracing {
             if (transfer != null) {
                 final var attributes = new LinkedHashMap<>(span.getAttributes());
                 attributes.put("ecpds.transfer.bytes_sent", transfer.getSent());
+                span.setAttributes(attributes);
+            } else if (file != null && file.getSize() >= 0) {
+                final var attributes = new LinkedHashMap<>(span.getAttributes());
+                attributes.put("ecpds.retrieval.bytes", file.getSize());
                 span.setAttributes(attributes);
             }
             if (target != null) {

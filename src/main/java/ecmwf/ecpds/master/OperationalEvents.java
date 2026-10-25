@@ -182,16 +182,21 @@ public final class OperationalEvents {
     }
 
     public void emit(final String category, final Field... fields) {
-        emit(Context.current(), null, category, fields);
+        emit(Context.current(), null, null, category, fields);
     }
 
     public void emit(final DataTransfer transfer, final String category, final Field... fields) {
         final var context = TransferTracing.context(transfer);
-        emit(context, Span.fromContext(context).getSpanContext().isValid() ? transfer.getTraceAttemptId() : null,
+        emit(context, Span.fromContext(context).getSpanContext().isValid() ? transfer.getTraceAttemptId() : null, null,
                 category, fields);
     }
 
-    private void emit(final Context context, final String attemptId, final String category, final Field... fields) {
+    public void emit(final Context context, final String retrievalId, final String category, final Field... fields) {
+        emit(context, null, retrievalId, category, fields);
+    }
+
+    private void emit(final Context context, final String attemptId, final String retrievalId, final String category,
+            final Field... fields) {
         if (splunkEnabled && legacyEnabled.getAsBoolean()) {
             final var line = new StringBuilder(category);
             for (final var field : fields) {
@@ -208,6 +213,9 @@ public final class OperationalEvents {
                     .put("ecpds.event.category", category);
             if (attemptId != null) {
                 attributes.put("ecpds.transfer.attempt.id", attemptId);
+            }
+            if (retrievalId != null) {
+                attributes.put("ecpds.retrieval.id", retrievalId);
             }
             var timestamp = Instant.now();
             for (final var field : fields) {

@@ -1,9 +1,11 @@
 # RET (Retrieval) Fields
 
-The **RET** category corresponds to the retrieval process. Once a file is registered in
-OpenECPDS, it is handled by the [Retrieval Scheduler](../use-cases/acquisition.md#retrieval),
-which attempts to retrieve the data. Upon completion — whether successful or not — a RET
-event is recorded to reflect the retrieval outcome.
+The **RET** category records a successful file retrieval by the
+[Retrieval Scheduler](../use-cases/acquisition.md#retrieval). A failed retrieval
+does not emit a RET event. When distributed tracing is enabled, a retrieval trace
+also records failed attempts, including retries across Movers. One retrieval may
+serve multiple related DataTransfers; their RET events share the same trace and
+`ecpds.retrieval.id`.
 
 ## Example
 
@@ -27,6 +29,8 @@ event is recorded to reflect the retrieval outcome.
       "scope": {
         "name": "ecmwf.ecpds.operational-events"
       },
+      "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "spanId": "00f067aa0ba902b7",
       "timestamp": "2025-02-12T11:00:00Z",
       "severityText": "INFO",
       "eventName": "ecpds.RET",
@@ -34,6 +38,7 @@ event is recorded to reflect the retrieval outcome.
       "attributes": {
         "ecpds.event.id": "c589192c-9247-48bf-aeb3-08ae2032e106",
         "ecpds.event.category": "RET",
+        "ecpds.retrieval.id": "a40f9970-2efc-4cc0-9e0d-e99e6e45bded",
         "Monitored": true,
         "TimeStamp": "2025-02-12 11:00:00.0",
         "DataTransferId": 123456789,
@@ -65,6 +70,8 @@ event is recorded to reflect the retrieval outcome.
     ```
 
     `HostId` remains a string even when the Host name contains only digits.
+    Retrieval ID and trace context are optional and appear when the Master
+    generates a valid retrieval trace context.
 
 ## Fields
 
@@ -96,15 +103,8 @@ event is recorded to reflect the retrieval outcome.
 | **StandBy** | A flag indicating whether the transfer request is in **standby** mode after retrieval has completed. If set, the file remains inactive until further processing instructions; otherwise it is in **queued** mode, awaiting dissemination. |
 | **RemoteHost** | Can be the same as the HostAddress or different, particularly in scenarios where the host entity is configured for load balancing across a cluster. In such cases, RemoteHost specifies the actual host used to process the retrieval. |
 
-## Error fields
-
-In the case of a problem during retrieval, the following additional fields are set to
-provide error details:
-
-| Field | Description |
-|-------|-------------|
-| **Status** | Set to `false` if the transfer was unsuccessful, indicating an error in the retrieval process. |
-| **Message** | A description of the error or problem that occurred during the transfer, providing information for troubleshooting. |
+Retrieval failures are handled in transfer history and, when tracing is enabled,
+as error spans for the Master and attempted Movers. They are not RET log records.
 
 ## Related
 

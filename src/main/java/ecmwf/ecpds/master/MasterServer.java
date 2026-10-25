@@ -14051,7 +14051,12 @@ public final class MasterServer extends ECaccessProvider
                     }
                     // Shall we generate a checksum?
                     dataFile.setChecksum(_processChecksum ? null : "none");
-                    final var dr = TransferScheduler.download(_transfer, _source, relatedTransfers);
+                    final var retrievalTrace = TransferTracing.retrieval(dataFile, _transfer, _source);
+                    final TransferScheduler.DownloadResult dr;
+                    try (retrievalTrace) {
+                        dr = TransferScheduler.download(_transfer, _source, relatedTransfers, retrievalTrace);
+                        retrievalTrace.finish(dr.complete);
+                    }
                     final var completed = System.currentTimeMillis();
                     _transfer = base.getDataTransfer(_transfer.getId());
                     final var server = dr.server;
@@ -14091,7 +14096,8 @@ public final class MasterServer extends ECaccessProvider
                                 final var ecauthUser = dataFile.getEcauthUser();
                                 final var login = _source.getLogin();
                                 final var host = _source.getHost();
-                                _operationalEvents.emit("RET", field("Monitored", destination.getMonitor()),
+                                _operationalEvents.emit(retrievalTrace.context(), retrievalTrace.id(), "RET",
+                                        field("Monitored", destination.getMonitor()),
                                         field("TimeStamp", Timestamp.from(Instant.now())),
                                         field("DataTransferId", transfer.getId()),
                                         field("DestinationName", destination.getName()),

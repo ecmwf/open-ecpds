@@ -86,6 +86,7 @@ import ecmwf.common.technical.Synchronized;
 import ecmwf.common.technical.ThreadService;
 import ecmwf.common.technical.ThreadService.ConfigurableLoopRunnable;
 import ecmwf.common.technical.ThreadService.ConfigurableRunnable;
+import ecmwf.common.telemetry.TransferTracing;
 import ecmwf.common.text.Format;
 import ecmwf.common.version.Version;
 import ecmwf.ecpds.master.AttachmentAccessTicket;
@@ -1862,6 +1863,8 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
             final var uploadMessage = (groupBy == null ? "Uploaded" : "Scheduled") + " by " + userName + " from "
                     + getRemoteHost() + " using " + command + " command " + version + " ("
                     + Format.getMBitsPerSeconds(currentSize, duration) + " Mbits/s)";
+            final var portalContext = groupBy == null && transfersList.length > 0 ? TransferTracing.portalTransfer(
+                    transfersList[0], true, command, MASTER.getRoot(), start, duration, currentSize, true) : null;
             for (final DataTransfer transfer : transfersList) {
                 if (groupBy == null)
                     MASTER.addTransferHistory(transfer, null, currentStatus, uploadMessage, false);
@@ -1893,7 +1896,7 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                         // For the accounting!
                         final var destination = transfer.getDestination();
                         final var ecuser = DATABASE.getECUserObject(userName);
-                        _operationalEvents.emit("INH", field("Monitored", destination.getMonitor()),
+                        final var fields = new OperationalEvents.Field[] { field("Monitored", destination.getMonitor()),
                                 field("TimeStamp", Timestamp.from(Instant.now())),
                                 field("DataTransferId", history.getDataTransferId()),
                                 field("DestinationName", destination.getName()),
@@ -1913,7 +1916,12 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                                 field("ExpiryTime", transfer.getExpiryTime()),
                                 field("FileSystem", dataFile.getFileSystem()),
                                 field("HostAddress", history.getHostAddress()),
-                                field("Action", (groupBy == null ? "upload" : "scheduled")));
+                                field("Action", (groupBy == null ? "upload" : "scheduled")) };
+                        if (groupBy == null) {
+                            _operationalEvents.emit(portalContext, null, "INH", fields);
+                        } else {
+                            _operationalEvents.emit("INH", fields);
+                        }
                     }
                     _log.debug("IncomingHistory created for DataTransfer {}", transfer.getId());
                 } catch (final Throwable t) {

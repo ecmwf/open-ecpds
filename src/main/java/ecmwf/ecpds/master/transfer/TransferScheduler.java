@@ -2292,7 +2292,8 @@ public final class TransferScheduler extends MBeanScheduler {
      *             the data base exception
      */
     public static DownloadResult download(final DataTransfer transfer, final Host hostForSource,
-            final List<DataTransfer> relatedTransfers) throws TransferServerException, DataBaseException {
+            final List<DataTransfer> relatedTransfers, final TransferTracing.Retrieval retrievalTrace)
+            throws TransferServerException, DataBaseException {
         final var dr = new DownloadResult();
         dr.dataFile = transfer.getDataFile();
         final var expiry = transfer.getExpiryTime();
@@ -2307,6 +2308,7 @@ public final class TransferScheduler extends MBeanScheduler {
                 dr.dataFile.setTransferGroup(group);
                 dr.dataFile.setTransferGroupName(group.getName());
                 dr.dataFile.setFileSystem(provider.getFileSystem());
+                var retrievalAttempt = 0;
                 for (final TransferServer server : provider.getTransferServersByMostFreeSpace()) {
                     final var moverName = server.getName();
                     final var groupName = server.getTransferGroupName();
@@ -2353,7 +2355,11 @@ public final class TransferScheduler extends MBeanScheduler {
                         }
                         dr.dataFile.setRetrievalWeatherContext(
                                 new DataFile.RetrievalWeatherContext(transfer.getId(), transfer.getDestinationName()));
-                        dr.dataFile = mover.download(dr.dataFile, hostForSource);
+                        try (final var attempt = retrievalTrace.moverAttempt(dr.dataFile, hostForSource, moverName,
+                                ++retrievalAttempt)) {
+                            dr.dataFile = mover.download(dr.dataFile, hostForSource);
+                            attempt.finish(true);
+                        }
                         dr.complete = true;
                         break;
                     } catch (final Throwable t) {

@@ -4,6 +4,13 @@ The **INH** event records details whenever a new file is pushed to or retrieved 
 OpenECPDS via the [data portal](../use-cases/data-portal.md), or pushed using the
 [`ecpds` command-line tool](../use-cases/ecpds-cli.md). It captures information about the
 data transfer, including metadata, user details, and network parameters.
+When tracing is enabled, OpenTelemetry INH records for portal upload/download
+callbacks and immediate `ecpds` uploads are correlated with a Master-side
+`ecpds.portal.transfer` span. The span records the transfer interval, byte
+count, protocol and server from the protocol event; failed portal operations
+are marked as errors. If one operation generates multiple INH records, they
+share its span. An INH event with `Action=scheduled` describes a request for
+later retrieval, so it does not have a portal-transfer span.
 
 ## Example
 
@@ -31,6 +38,8 @@ data transfer, including metadata, user details, and network parameters.
       "severityText": "INFO",
       "eventName": "ecpds.INH",
       "body": "INH",
+      "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "spanId": "00f067aa0ba902b7",
       "attributes": {
         "ecpds.event.id": "c589192c-9247-48bf-aeb3-08ae2032e105",
         "ecpds.event.category": "INH",
@@ -92,7 +101,7 @@ data transfer, including metadata, user details, and network parameters.
 | **Caller** | If the request comes from the `ecpds` command-line, this field can be set using the `-caller` flag. If the flag is not provided, `ecpds` attempts to retrieve the value from the system variable `EC_job_stdout`. If not found, or if the request originates from the data portal, this field remains empty. |
 | **ExpiryTime** | Expiry time associated with the data transfer request. |
 | **FileSystem** | Identifier of the file system allocated for storing the data file. |
-| **Action** | Specifies whether the transfer request was related to an **upload** or a **download**. |
+| **Action** | Specifies whether the event describes an **upload**, **download**, or **scheduled** transfer. Scheduled events are created when the `ecpds` command registers a transfer for later retrieval rather than uploading the file immediately. |
 
 ## Related
 

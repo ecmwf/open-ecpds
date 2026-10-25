@@ -144,6 +144,15 @@ public class DataFile extends DataBaseObject {
     /** The hos name for acquisition. */
     protected Integer HOS_NAME_FOR_ACQUISITION;
 
+    /** Retrieval tracing carrier; intentionally not persisted by the database mapping. */
+    private String retrievalTraceParent;
+
+    private String retrievalTraceState;
+
+    private String retrievalTraceId;
+
+    private int retrievalAttempt;
+
     /** The transfer group. */
     protected TransferGroup transferGroup;
 
@@ -1082,5 +1091,37 @@ public class DataFile extends DataBaseObject {
         }
         final var other = (DataFile) obj;
         return DAF_ID == other.DAF_ID;
+    }
+
+    public String getRetrievalTraceParent() {
+        return retrievalTraceParent;
+    }
+
+    public void setRetrievalTraceParent(final String value) {
+        retrievalTraceParent = value;
+    }
+
+    public String getRetrievalTraceState() {
+        return retrievalTraceState;
+    }
+
+    public void setRetrievalTraceState(final String value) {
+        retrievalTraceState = value;
+    }
+
+    public String getRetrievalTraceId() {
+        return retrievalTraceId;
+    }
+
+    public void setRetrievalTraceId(final String value) {
+        retrievalTraceId = value;
+    }
+
+    public int getRetrievalAttempt() {
+        return retrievalAttempt;
+    }
+
+    public void setRetrievalAttempt(final int value) {
+        retrievalAttempt = value;
     }
 }

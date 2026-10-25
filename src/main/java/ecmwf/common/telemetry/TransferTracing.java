@@ -29,7 +29,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ecmwf.common.database.DataFile;
 import ecmwf.common.database.DataTransfer;
+import ecmwf.common.database.Host;
+import ecmwf.common.technical.ProxyEvent;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.version.Version;
 import io.opentelemetry.api.common.Attributes;
@@ -56,7 +59,7 @@ import io.opentelemetry.sdk.trace.data.LinkData;
 import io.opentelemetry.sdk.trace.data.StatusData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 
-/** Optional, attempt-scoped tracing using only existing transfer messages. */
+/** Optional, sampled traces for dissemination, retrieval and incoming portal transfers. */
 public final class TransferTracing {
     private static final Logger LOG = LogManager.getLogger(TransferTracing.class);
     private static final W3CTraceContextPropagator PROPAGATOR = W3CTraceContextPropagator.getInstance();
@@ -203,6 +206,161 @@ public final class TransferTracing {
         return start(transfer, "ecpds.transfer.complete", context(transfer), SpanKind.CONSUMER);
     }
 
+    public static Retrieval retrieval(final DataFile file, final DataTransfer transfer, final Host source) {
+        file.setRetrievalTraceParent(null);
+        file.setRetrievalTraceState(null);
+        file.setRetrievalTraceId(null);
+        file.setRetrievalAttempt(0);
+        final var currentTracer = tracer;
+        if (currentTracer == null) {
+            return new Retrieval(Span.getInvalid(), Context.root(), null);
+        }
+        final var id = UUID.randomUUID().toString();
+        final var builder = currentTracer.spanBuilder("ecpds.retrieval").setSpanKind(SpanKind.INTERNAL)
+                .setAttribute("ecpds.retrieval.id", id).setAttribute("ecpds.file.id", file.getId())
+                .setAttribute("ecpds.transfer.id", transfer.getId());
+        if (transfer.getDestinationName() != null) {
+            builder.setAttribute("ecpds.destination.name", transfer.getDestinationName());
+        }
+        if (source != null && source.getName() != null) {
+            builder.setAttribute("ecpds.host.id", source.getName());
+        }
+        final var span = builder.startSpan();
+        if (!span.getSpanContext().isValid()) {
+            return new Retrieval(span, Context.root(), null);
+        }
+        final var context = Context.root().with(span);
+        inject(context, file);
+        file.setRetrievalTraceId(id);
+        return new Retrieval(span, context, id);
+    }
+
+    /** Records the protocol-reported duration of a completed incoming transfer and returns its log context. */
+    public static Context portalTransfer(final DataTransfer transfer, final ProxyEvent event,
+            final boolean successful) {
+        return portalTransfer(transfer, event.getUpload(), event.getProtocol(), event.getLocalHost(),
+                event.getStartTime(), event.getDuration(), event.getSent(), successful);
+    }
+
+    public static Context portalTransfer(final DataTransfer transfer, final boolean upload, final String protocol,
+            final String server, final long startTime, final long durationMillis, final long bytes,
+            final boolean successful) {
+        final var currentTracer = tracer;
+        if (currentTracer == null) {
+            return Context.root();
+        }
+        final var start = startTime > 0 ? startTime : System.currentTimeMillis();
+        final var duration = Math.max(0, durationMillis);
+        final var end = duration > Long.MAX_VALUE - start ? Long.MAX_VALUE : start + duration;
+        final var builder = currentTracer.spanBuilder("ecpds.portal.transfer").setSpanKind(SpanKind.INTERNAL)
+                .setStartTimestamp(start, TimeUnit.MILLISECONDS).setAttribute("ecpds.file.id", transfer.getDataFileId())
+                .setAttribute("ecpds.portal.action", upload ? "upload" : "download")
+                .setAttribute("ecpds.portal.bytes", bytes).setAttribute("ecpds.portal.duration_ms", duration);
+        if (protocol != null) {
+            builder.setAttribute("ecpds.portal.protocol", protocol);
+        }
+        if (server != null) {
+            builder.setAttribute("ecpds.portal.server", server);
+        }
+        final var span = builder.startSpan();
+        if (!successful) {
+            span.setStatus(StatusCode.ERROR);
+        }
+        final var context = Context.root().with(span);
+        span.end(end, TimeUnit.MILLISECONDS);
+        return context;
+    }
+
+    private static void inject(final Context context, final DataFile file) {
+        PROPAGATOR.inject(context, file, (carrier, key, value) -> {
+            if ("traceparent".equals(key)) {
+                carrier.setRetrievalTraceParent(value);
+            } else if ("tracestate".equals(key)) {
+                carrier.setRetrievalTraceState(value);
+            }
+        });
+    }
+
+    public static final class Retrieval implements AutoCloseable {
+        private final Span span;
+        private final Context context;
+        private final String id;
+        private final AtomicBoolean ended = new AtomicBoolean();
+
+        private Retrieval(final Span span, final Context context, final String id) {
+            this.span = span;
+            this.context = context;
+            this.id = id;
+        }
+
+        public Context context() {
+            return context;
+        }
+
+        public String id() {
+            return id;
+        }
+
+        public RetrievalAttempt moverAttempt(final DataFile file, final Host source, final String mover,
+                final int number) {
+            final var currentTracer = tracer;
+            if (currentTracer == null || !span.getSpanContext().isValid()) {
+                return new RetrievalAttempt(Span.getInvalid());
+            }
+            final var builder = currentTracer.spanBuilder("ecpds.retrieval.mover").setParent(context)
+                    .setSpanKind(SpanKind.CLIENT).setAttribute("ecpds.retrieval.id", id)
+                    .setAttribute("ecpds.file.id", file.getId()).setAttribute("ecpds.retrieval.attempt", number)
+                    .setAttribute("ecpds.mover.name", mover);
+            if (source != null && source.getName() != null) {
+                builder.setAttribute("ecpds.host.id", source.getName());
+            }
+            final var attempt = builder.startSpan();
+            if (attempt.getSpanContext().isValid()) {
+                inject(Context.root().with(attempt), file);
+                file.setRetrievalTraceId(id);
+                file.setRetrievalAttempt(number);
+            }
+            return new RetrievalAttempt(attempt);
+        }
+
+        public void finish(final boolean successful) {
+            if (ended.compareAndSet(false, true)) {
+                if (!successful) {
+                    span.setStatus(StatusCode.ERROR);
+                }
+                span.end();
+            }
+        }
+
+        @Override
+        public void close() {
+            finish(false);
+        }
+    }
+
+    public static final class RetrievalAttempt implements AutoCloseable {
+        private final Span span;
+        private final AtomicBoolean ended = new AtomicBoolean();
+
+        private RetrievalAttempt(final Span span) {
+            this.span = span;
+        }
+
+        public void finish(final boolean successful) {
+            if (ended.compareAndSet(false, true)) {
+                if (!successful) {
+                    span.setStatus(StatusCode.ERROR);
+                }
+                span.end();
+            }
+        }
+
+        @Override
+        public void close() {
+            finish(false);
+        }
+    }
+
     private static Attempt start(final DataTransfer transfer, final String name, final Context parent,
             final SpanKind kind) {
         final var currentTracer = tracer;
@@ -308,7 +466,7 @@ public final class TransferTracing {
 
         @Override
         public SpanKind getKind() {
-            return SpanKind.CONSUMER;
+            return "SERVER".equals(span.getKind()) ? SpanKind.SERVER : SpanKind.CONSUMER;
         }
 
         @Override

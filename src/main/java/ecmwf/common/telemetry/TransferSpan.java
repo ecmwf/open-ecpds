@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Bounded, SDK-independent wire representation of a completed mover execution. Receivers must call {@link #snapshot()}
+ * Bounded, SDK-independent wire representation of a completed Mover span. Receivers must call {@link #snapshot()}
  * before admitting a deserialized bean. Only operational identifiers and counters are permitted, never URLs or errors.
  */
 public final class TransferSpan implements Serializable {
@@ -32,9 +32,10 @@ public final class TransferSpan implements Serializable {
     public static final int MAX_BATCH = 256;
     public static final int MAX_BATCH_BYTES = 4 * 1024 * 1024;
     private static final Set<String> NUMBERS = Set.of("ecpds.transfer.id", "ecpds.file.id",
-            "ecpds.transfer.start_count", "ecpds.transfer.requeue_count", "ecpds.transfer.bytes_sent");
+            "ecpds.transfer.start_count", "ecpds.transfer.requeue_count", "ecpds.transfer.bytes_sent",
+            "ecpds.retrieval.attempt", "ecpds.retrieval.bytes");
     private static final Set<String> STRINGS = Set.of("ecpds.transfer.attempt.id", "ecpds.destination.name",
-            "ecpds.host.id");
+            "ecpds.host.id", "ecpds.retrieval.id", "ecpds.mover.name");
     private static final Set<String> RESOURCES = Set.of("service.name", "service.version", "service.instance.id");
     private String traceId;
     private String spanId;
@@ -42,6 +43,7 @@ public final class TransferSpan implements Serializable {
     private String traceState;
     private int traceFlags = 1;
     private String name = "ecpds.transfer.execute";
+    private String kind = "CONSUMER";
     private long startEpochNanos;
     private long endEpochNanos;
     private boolean failed;
@@ -61,19 +63,24 @@ public final class TransferSpan implements Serializable {
         copy.setTraceState(traceState);
         copy.setTraceFlags(traceFlags);
         copy.setName(name);
+        copy.setKind(kind);
         if (startEpochNanos <= 0 || endEpochNanos < startEpochNanos) {
-            throw new IllegalArgumentException("Invalid transfer span timing");
+            throw new IllegalArgumentException("Invalid span timing");
         }
         copy.startEpochNanos = startEpochNanos;
         copy.endEpochNanos = endEpochNanos;
         copy.failed = failed;
         copy.setAttributes(attributes);
         copy.setResource(resource);
-        if (!copy.attributes.containsKey("ecpds.transfer.id")
-                || !copy.attributes.containsKey("ecpds.transfer.attempt.id")
-                || !"open-ecpds-mover".equals(copy.resource.get("service.name"))
+        final var transferSpan = "ecpds.transfer.execute".equals(copy.name) && "CONSUMER".equals(copy.kind)
+                && copy.attributes.containsKey("ecpds.transfer.id")
+                && copy.attributes.containsKey("ecpds.transfer.attempt.id");
+        final var retrievalSpan = "ecpds.retrieval.execute".equals(copy.name) && "SERVER".equals(copy.kind)
+                && copy.attributes.containsKey("ecpds.retrieval.id") && copy.attributes.containsKey("ecpds.file.id")
+                && copy.attributes.containsKey("ecpds.retrieval.attempt");
+        if (!transferSpan && !retrievalSpan || !"open-ecpds-mover".equals(copy.resource.get("service.name"))
                 || !copy.resource.containsKey("service.instance.id")) {
-            throw new IllegalArgumentException("Missing transfer span identifiers or mover resource");
+            throw new IllegalArgumentException("Missing span identifiers or mover resource");
         }
         copy.frozen = true;
         return copy;
@@ -191,10 +198,22 @@ public final class TransferSpan implements Serializable {
 
     public void setName(final String value) {
         mutable();
-        if (!"ecpds.transfer.execute".equals(value)) {
-            throw new IllegalArgumentException("Unexpected transfer span name");
+        if (!"ecpds.transfer.execute".equals(value) && !"ecpds.retrieval.execute".equals(value)) {
+            throw new IllegalArgumentException("Unexpected span name");
         }
         name = value;
+    }
+
+    public String getKind() {
+        return kind;
+    }
+
+    public void setKind(final String value) {
+        mutable();
+        if (!"CONSUMER".equals(value) && !"SERVER".equals(value)) {
+            throw new IllegalArgumentException("Unsupported span kind");
+        }
+        kind = value;
     }
 
     public long getStartEpochNanos() {

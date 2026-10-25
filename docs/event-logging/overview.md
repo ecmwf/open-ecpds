@@ -48,12 +48,14 @@ the category and event fields describe the operational outcome.
 | `attributes.ecpds.event.id` | Generated UUID identifying the telemetry event; useful for deduplicating journal retries. |
 | `attributes.ecpds.event.category` | The category code, matching the file output's first field. |
 | `attributes.ecpds.transfer.attempt.id` | Present on attempt-aware UPH/ERR events when a valid transfer context is available; distinguishes attempts of the same transfer. |
+| `attributes.ecpds.retrieval.id` | Present on RET events when retrieval tracing supplies a valid retrieval context; links all related transfer records for the same DataFile retrieval. |
 | `traceId`, `spanId` | Optional valid trace context linking a log to a span; a corresponding trace is not guaranteed to be sampled or retained. |
 
 The UPH example illustrates optional correlation. Product-status (PRS),
 retrieval (RET), incoming-history (INH), copy (CPY) and denied-access (DEA)
 events are not automatically assigned a dissemination-attempt context simply
-because they describe a file or contain a transfer ID.
+because they describe a file or contain a transfer ID. INH logs for actual
+portal uploads/downloads can instead link to a portal-transfer span.
 See [Transfer traces and log correlation](#transfer-traces-and-log-correlation)
 for tracing scope and configuration.
 
@@ -200,14 +202,28 @@ Master connection. Continental Movers use the existing REST relay path.
 Forwarding queues are bounded and held in memory; connection failures are
 retried while the process is running, but full queues and shutdown can discard
 spans. Check Mover, relay and Master service logs for forwarding/export errors.
-Trace forwarding does not block transfers.
+Trace forwarding does not block transfers. Deploy the Master, Movers and
+Continental relays together when enabling retrieval traces so all components
+recognize the retrieval-span wire format.
 
 Traces cover dispatch, transfer execution and completion for dissemination
 attempts. Retries have separate traces. UPH and dissemination ERR native logs
 include OTLP `trace_id` and `span_id` fields linking to the relevant span;
 `ecpds.transfer.attempt.id` also identifies
-the attempt. These IDs are preserved during journal replay. Parsing, acquisition
-and portal access are not covered by transfer tracing.
+the attempt. Retrieval tracing is also optional and independent of
+`[OperationalEvents] openTelemetryEnabled`: when enabled, one trace follows a
+Master retrieval of a DataFile, including each remote Mover attempt and the
+Mover-side download span. Retries across Movers appear in that same retrieval
+trace. Each successful RET log for transfers related to the DataFile shares the
+trace context and `ecpds.retrieval.id`; unsuccessful retrievals have error spans
+but do not emit RET logs. Acquisition directory discovery is not covered by
+retrieval traces. Actual portal uploads and downloads have a separate
+Master-side `ecpds.portal.transfer` span; its recorded interval, byte count,
+protocol and server come from the completed transfer's protocol event. The
+associated OpenTelemetry INH log carries that span's trace context; multiple
+INH records for one portal operation share its span. The `scheduled` INH action
+records an `ecpds` scheduling request, not a file transfer, and is not traced.
+These portal spans use the same Master tracing configuration and sampling.
 Apply access controls and retention to tracing data as well as logs.
 
 The default sampler is **parent-based trace-ID ratio sampling**: the Master
@@ -369,7 +385,7 @@ operation being recorded:
 | Code | Category | Description | Fields |
 |------|----------|-------------|--------|
 | **PRS** | PRoduct Status | Tracks the status of products as they progress through OpenECPDS. The system maintains a top-level monitoring display, which can be updated using the `ecpds` command. Events are logged at key stages, including when a set of files is scheduled, when files start being registered, and when they are fully recorded. | [PRS fields](prs-fields.md) |
-| **RET** | RETrieval | Corresponds to the retrieval process. Once a file is registered, it is handled by the Retrieval Scheduler. Upon completion (successful or not), a RET event records the outcome. | [RET fields](ret-fields.md) |
+| **RET** | RETrieval | Records a successful retrieval by the Retrieval Scheduler. Failed retrievals do not emit RET events; when tracing is enabled, their failed Mover attempts are visible in retrieval traces. | [RET fields](ret-fields.md) |
 | **UPH** | UPload History | Records events whenever a file is successfully disseminated from OpenECPDS to a remote site. Tracks outbound file transfers. | [UPH fields](uph-fields.md) |
 | **INH** | INcoming History | Logs incoming data transfers — files pushed to OpenECPDS or retrieved by users via the data portal. | [INH fields](inh-fields.md) |
 | **ERR** | ERRor | Captures error events, specifically when a file fails to be disseminated successfully. | [ERR fields](err-fields.md) |
