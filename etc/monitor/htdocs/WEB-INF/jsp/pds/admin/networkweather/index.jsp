@@ -58,14 +58,45 @@
     border-color: var(--bs-primary);
     font-weight: 600;
 }
-.nw-admin-content .card-body > :last-child,
-.nw-admin-content dl.row,
-.nw-admin-content dl.row > dt,
-.nw-admin-content dl.row > dd {
+.nw-admin-content .card-body > :last-child {
     margin-bottom: 0;
 }
-.nw-admin-content dl.row {
-    row-gap: 0.375rem;
+.nw-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+.nw-status-grid > div {
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    background: var(--bs-tertiary-bg);
+}
+.nw-status-grid dt {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--bs-secondary-color);
+    margin-bottom: 0.5rem;
+}
+.nw-status-grid dd {
+    margin-bottom: 0;
+    overflow-wrap: anywhere;
+}
+.nw-status-pill {
+    max-width: 100%;
+    padding: 0.5rem 0.75rem;
+    font-weight: 500;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: left;
+    line-height: 1.5;
+}
+.nw-counter-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
 }
 .nw-admin-content .card,
 .nw-admin-content .card-body,
@@ -115,14 +146,20 @@
         <div class="card-body">
             <input type="hidden" name="csrf" value="<c:out value="${nwCsrf}"/>">
             <input type="hidden" name="revision" value="<c:out value="${nwRevision}"/>">
-            <dl class="row mb-2">
-                <dt class="col-sm-3">State</dt>
-                <dd class="col-sm-9"><c:choose><c:when test="${nwEnabled}">Active</c:when>
-                    <c:when test="${nwRequestedEnabled}">Suspended</c:when><c:otherwise>Disabled</c:otherwise></c:choose></dd>
-                <dt class="col-sm-3">Selection mode</dt>
-                <dd class="col-sm-9"><c:choose><c:when test="${nwAutomatic}">Automatic</c:when><c:otherwise>Manual</c:otherwise></c:choose></dd>
-                <dt class="col-sm-3">Selected paths</dt><dd class="col-sm-9"><c:out value="${nwCount}"/> / <c:out value="${nwMaxSelectedPaths}"/></dd>
-                <dt class="col-sm-3">Last saved</dt><dd class="col-sm-9"><c:out value="${nwUpdatedAt}"/><c:if test="${not empty nwUpdatedBy}"> by <c:out value="${nwUpdatedBy}"/></c:if></dd>
+            <dl class="nw-status-grid">
+                <div><dt><i class="bi bi-power me-1" aria-hidden="true"></i>State</dt>
+                    <dd><c:choose>
+                        <c:when test="${nwEnabled}"><span class="badge rounded-pill text-bg-success nw-status-pill">Active</span></c:when>
+                        <c:when test="${nwRequestedEnabled}"><span class="badge rounded-pill text-bg-warning nw-status-pill">Suspended</span></c:when>
+                        <c:otherwise><span class="badge rounded-pill text-bg-secondary nw-status-pill">Disabled</span></c:otherwise>
+                    </c:choose></dd></div>
+                <div><dt><i class="bi bi-signpost-split me-1" aria-hidden="true"></i>Selection mode</dt>
+                    <dd><span class="badge rounded-pill bg-info-subtle text-info-emphasis border border-info-subtle nw-status-pill"><c:choose><c:when test="${nwAutomatic}">Automatic</c:when><c:otherwise>Manual</c:otherwise></c:choose></span></dd></div>
+                <div><dt><i class="bi bi-diagram-3 me-1" aria-hidden="true"></i>Selected paths</dt>
+                    <dd><span class="nw-counter-value"><c:out value="${nwCount}"/></span><span class="small text-body-secondary"> / <c:out value="${nwMaxSelectedPaths}"/></span></dd></div>
+                <div><dt><i class="bi bi-clock-history me-1" aria-hidden="true"></i>Last saved</dt>
+                    <dd><span class="badge rounded-pill bg-body text-body border nw-status-pill"><c:out value="${nwUpdatedAt}"/></span>
+                        <c:if test="${not empty nwUpdatedBy}"><div class="small text-body-secondary mt-2">by <c:out value="${nwUpdatedBy}"/></div></c:if></dd></div>
             </dl>
             <c:if test="${not empty nwActivationBlocker}">
                 <div class="alert alert-warning mb-2" id="nwActivationBlocker" role="status">
@@ -175,7 +212,7 @@
         </div>
     </form>
     <div class="row g-3">
-        <div class="col-lg-6"><div class="card shadow-sm">
+        <div class="col-lg-6"><div class="card shadow-sm h-100">
             <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-check2-square text-info"></i><span class="fw-semibold">Capabilities</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-capabilities" aria-expanded="false" aria-controls="nwInfo-capabilities" title="About this section"><i class="bi bi-info-circle"></i></button></div>
         <div class="collapse" id="nwInfo-capabilities"><div class="ecpds-help-panel">Shows the current state of collection, database persistence, automatic selection and
  scheduled probes. Disabled means switched off. Socket persistence is unavailable while the background writer
@@ -191,16 +228,16 @@
                     </div>
                 </c:if>
                 <c:if test="${not empty nwCapabilities}">
-                <dl class="row mb-0">
+                <dl class="nw-status-grid mb-0">
                 <c:forEach var="entry" items="${nwCapabilities}">
-                    <dt class="col-sm-5"><c:out value="${entry.key}"/></dt>
-                    <dd class="col-sm-7"><c:out value="${entry.value}"/></dd>
+                    <div><dt><c:out value="${entry.key}"/></dt>
+                        <dd><span class="badge rounded-pill bg-body text-body border nw-status-pill"><c:out value="${entry.value}"/></span></dd></div>
                 </c:forEach>
                 </dl>
                 </c:if>
             </div>
         </div></div>
-        <div class="col-lg-6"><div class="card shadow-sm">
+        <div class="col-lg-6"><div class="card shadow-sm h-100">
             <div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)"><i class="bi bi-database text-info"></i><span class="fw-semibold">Storage</span><button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#nwInfo-storage" aria-expanded="false" aria-controls="nwInfo-storage" title="About this section"><i class="bi bi-info-circle"></i></button></div>
         <div class="collapse" id="nwInfo-storage"><div class="ecpds-help-panel">State of the background worker saving measurements in the database: whether it is
  ready, how many measurements are waiting and how many were saved, dropped or expired. Dropped or expired
@@ -219,10 +256,18 @@
                     </div>
                 </c:if>
                 <c:if test="${not empty nwWriter}">
-                <dl class="row mb-0">
+                <dl class="nw-status-grid mb-0">
                     <c:forEach var="entry" items="${nwWriter}">
-                        <dt class="col-sm-6"><c:out value="${entry.key}"/></dt>
-                        <dd class="col-sm-6"><c:out value="${entry.value}"/></dd>
+                        <div><dt><c:out value="${entry.key}"/></dt>
+                            <dd><c:choose>
+                                <c:when test="${entry.key eq 'Ready'}">
+                                    <c:choose>
+                                        <c:when test="${entry.value}"><span class="badge rounded-pill text-bg-success nw-status-pill">Ready</span></c:when>
+                                        <c:otherwise><span class="badge rounded-pill text-bg-warning nw-status-pill">Not ready</span></c:otherwise>
+                                    </c:choose>
+                                </c:when>
+                                <c:otherwise><span class="nw-counter-value"><c:out value="${entry.value}"/></span></c:otherwise>
+                            </c:choose></dd></div>
                     </c:forEach>
                 </dl>
                 </c:if>
@@ -244,10 +289,10 @@
                     </div>
                 </c:if>
                 <c:if test="${not empty nwHealth}">
-                <dl class="row mb-0">
+                <dl class="nw-status-grid mb-0">
                 <c:forEach var="entry" items="${nwHealth}">
-                    <dt class="col-sm-4 col-lg-3"><c:out value="${entry.key}"/></dt>
-                    <dd class="col-sm-2 col-lg-3"><c:out value="${entry.value}"/></dd>
+                    <div><dt><c:out value="${entry.key}"/></dt>
+                        <dd class="nw-counter-value"><c:out value="${entry.value}"/></dd></div>
                 </c:forEach>
                 </dl>
                 </c:if>
@@ -349,10 +394,10 @@
                 </div>
             </c:if>
             <c:if test="${not empty nwAutomationInfo}">
-            <dl class="row mb-2">
+            <dl class="nw-status-grid">
                 <c:forEach var="entry" items="${nwAutomationInfo}">
-                    <dt class="col-sm-3"><c:out value="${entry.key}"/></dt>
-                    <dd class="col-sm-9"><c:out value="${entry.value}"/></dd>
+                    <div><dt><c:out value="${entry.key}"/></dt>
+                        <dd><span class="badge rounded-pill bg-body text-body border nw-status-pill"><c:out value="${entry.value}"/></span></dd></div>
                 </c:forEach>
             </dl>
             </c:if>
@@ -360,7 +405,7 @@
                 <h3 class="h6">Latest changes</h3>
                 <div class="overflow-auto border rounded p-2 mb-2" style="height:12rem; overflow-wrap:anywhere"
                     role="region" aria-label="Latest changes" tabindex="0">
-                    <ul class="small mb-0"><c:forEach var="reason" items="${nwSelectionReasons}"><li><c:out value="${reason}"/></li></c:forEach></ul>
+                    <ul class="list-unstyled small mb-0 d-flex flex-column gap-2"><c:forEach var="reason" items="${nwSelectionReasons}"><li class="d-flex align-items-start gap-2 bg-body-tertiary rounded p-2"><i class="bi bi-arrow-repeat text-info flex-shrink-0" aria-hidden="true"></i><span><c:out value="${reason}"/></span></li></c:forEach></ul>
                 </div>
             </c:if>
             <form method="post" action="/do/admin/networkweather">
@@ -453,10 +498,13 @@
                 </div>
             </c:if>
             <c:if test="${not empty nwProbeInfo}">
-            <dl class="row mb-0">
+            <dl class="nw-status-grid mb-0">
                 <c:forEach var="entry" items="${nwProbeInfo}">
-                    <dt class="col-sm-3"><c:out value="${entry.key}"/></dt>
-                    <dd class="col-sm-9"><c:out value="${entry.value}"/></dd>
+                    <div><dt><c:out value="${entry.key}"/></dt>
+                        <dd><c:choose>
+                            <c:when test="${entry.key eq 'Scheduled probes'}"><span class="badge rounded-pill ${entry.value eq 'Enabled' ? 'text-bg-info' : 'text-bg-secondary'} nw-status-pill"><c:out value="${entry.value}"/></span></c:when>
+                            <c:otherwise><span class="nw-counter-value"><c:out value="${entry.value}"/></span></c:otherwise>
+                        </c:choose></dd></div>
                 </c:forEach>
             </dl>
             </c:if>

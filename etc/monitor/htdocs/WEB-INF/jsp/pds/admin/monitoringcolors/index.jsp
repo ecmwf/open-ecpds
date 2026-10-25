@@ -20,9 +20,15 @@
 </div>
 <% } %>
 <% if (mcSuccess != null) { %>
-<div class="alert alert-success d-flex align-items-start gap-2" role="status">
+<div id="monitoringColorsSuccess" class="alert alert-success fade show d-flex align-items-start gap-2" role="status">
     <i class="bi bi-check-circle-fill mt-1"></i><span><c:out value="<%=mcSuccess%>" /></span>
 </div>
+<script>
+    setTimeout(function() {
+        var el = document.getElementById('monitoringColorsSuccess');
+        if (el) bootstrap.Alert.getOrCreateInstance(el).close();
+    }, 5000);
+</script>
 <% } %>
 
 <form method="post" action="/do/admin/monitoringcolors">

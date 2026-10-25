@@ -33,8 +33,15 @@ metadata are omitted from the examples for readability.
 Unlike the semicolon-separated file output, telemetry attributes retain their
 application types: counts and sizes are numbers, flags are booleans, and textual
 identifiers remain strings even if they contain only digits. Timestamp-valued
-event attributes retain their string representation; the log's top-level
-timestamp is taken from `TimeStamp` and is displayed as UTC in these examples.
+event attributes retain their formatted string representation. The `TimeStamp`
+value represents an absolute instant. In OpenTelemetry, the log record's
+top-level timestamp is set from that instant and is timezone-independent;
+backends commonly display it in UTC. The `TimeStamp` attribute itself, like
+the legacy Splunk field, is formatted without a UTC offset using the Master
+JVM's default timezone. The examples assume that timezone is UTC, so their
+attribute value and top-level timestamp show the same wall-clock time. Prefer
+the top-level OpenTelemetry timestamp for cross-service correlation; a
+timezone-less `TimeStamp` string cannot identify its timezone by itself.
 Durations remain milliseconds where specified by the Fields table. These
 records all use log severity `INFO`, including the `ERR` and `DEA` categories:
 the category and event fields describe the operational outcome.
@@ -291,7 +298,9 @@ Each record has:
   textual fields remain strings. The `none`, `-` and `null` placeholders
   retain their textual meaning.
 - The original `TimeStamp` as the log timestamp and as a textual attribute.
-  Other date/time fields use their category's textual formatting.
+  The top-level timestamp represents the absolute instant; the attribute uses
+  the Master JVM's default timezone and has no zone suffix. Other date/time
+  fields use their category's textual formatting and may likewise omit a zone.
 - Resource fields `service.name` (default `open-ecpds-master`),
   `service.version`, and `service.instance.id` identifying the Master.
   Explicit `OTEL_RESOURCE_ATTRIBUTES` values can override the version and
@@ -385,6 +394,10 @@ rows. Re-enabling it with the same owner resumes replay.
 
 Monitor pending count and oldest admission time through
 **Admin Tasks → Operational Event Journal**.
+For a local Docker Collector that prints received records, use
+`make start-otel` and `make logs-otel`; an optional Eclipse launch group starts
+it before debugging the Master. See
+[Local OpenTelemetry and journal testing](../getting-started/ide-setup.md#local-opentelemetry-and-journal-testing).
 
 Alert on growing backlog age/count, journal/export error messages, database disk
 space and rejected records downstream. Do not routinely delete unacknowledged
@@ -395,7 +408,20 @@ OTLP acknowledgement.
 The Monitor page shows pending count, oldest admission timestamp and age,
 in-flight records, last successful persistence, last endpoint acknowledgement,
 and persistence/delivery failure history. It refreshes every 30 seconds by
-default, with manual refresh and an option to disable automatic refresh.
+default, with manual refresh and an option to disable automatic refresh. Warning
+and critical thresholds are configurable with `journalWarningPendingCount`,
+`journalCriticalPendingCount`, `journalWarningOldestAgeMillis` and
+`journalCriticalOldestAgeMillis` in `[OperationalEvents]`; changes require a
+Master restart. Both count and oldest-age thresholds can trigger an alert.
+
+Administrators can pause or resume native event collection independently from
+delivery. Pausing collection does not change the `splunk.log` output and does
+not stop delivery of already-journalled events. Pausing delivery continues
+database admission, so the backlog can grow; a batch already in flight may
+complete. The runtime controls are audited and reset when the Master restarts.
+The page displays a browser-local backlog trend. It estimates drain time only
+after at least four queue samples spanning two minutes show a healthy decrease
+of at least two events; treat the estimate as an extrapolation, not a guarantee.
 
 Persistence failures highlight the Admin Tasks card, home-page and administration
 menu entries, with a banner on the home and Admin Tasks pages. Red means persistence
@@ -408,7 +434,7 @@ Detailed exceptions remain in service logs; payloads and credentials are not sho
 The task is greyed out when journaling is disabled on the Master.
 Disabled journaling can still leave pending rows in the database.
 A Master connection failure is shown as unavailable. The page is read-only
-and cannot purge events or force retries.
+for event data: it does not expose payloads, purge records or force retries.
 
 The publisher exports the seven categories listed below. Operational events
 and the Monitor's database change log are separate records.
@@ -436,11 +462,14 @@ category, capturing relevant attributes such as timestamps, file identifiers, pr
 statuses, and transfer details.
 
 !!! note
-    All duration values are measured in **milliseconds**. All timestamps are formatted as
+    All duration values are measured in **milliseconds**. Timestamps in the legacy Splunk
+    output and timestamp-valued attributes are formatted in the Master JVM's default
+    timezone, without an explicit offset. All timestamps are formatted as
     `yyyy-MM-dd HH:mm:ss.fffffffff`, where `yyyy` is the 4-digit year, `MM` is the
     2-digit month, `dd` is the 2-digit day, `HH` is the 2-digit hour (24-hour clock),
     `mm` is minutes, `ss` is seconds, and `fffffffff` represents fractional seconds in
-    nanoseconds.
+    nanoseconds. OpenTelemetry's top-level log timestamp is an absolute instant; use it
+    for timezone-independent correlation. The examples assume the Master JVM uses UTC.
 
 !!! note
     A `TimeStamp` field is included in all Splunk log entries to ensure log rotation is

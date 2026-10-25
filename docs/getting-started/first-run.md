@@ -5,13 +5,25 @@ interfaces, and check the containers and logs.
 
 ## Starting OpenECPDS
 
-To start the application:
+From the repository root, start the application using the Compose Makefile:
 
 ```bash
-make up
+make -C run/bin/ecpds up
 ```
 
-This starts the OpenECPDS **master**, **monitor**, **mover**, and **database** services.
+By default, this starts the OpenECPDS **master**, **monitor**, **mover**,
+**database** and **Hawtio** services. The **AI** service and **OpenTelemetry
+test Collector** are behind opt-in Compose profiles and are not started unless
+their profiles are enabled or their services are explicitly selected.
+Start the Collector separately with
+`make start-otel` from the repository root when needed. See
+[local telemetry testing](ide-setup.md#local-opentelemetry-and-journal-testing).
+
+The remaining `make` commands on this page run from `run/bin/ecpds`:
+
+```bash
+cd run/bin/ecpds
+```
 
 It might take a few seconds for all the services to start. Once they are up, you can
 access the following URLs (update them if you changed the configuration in the compose

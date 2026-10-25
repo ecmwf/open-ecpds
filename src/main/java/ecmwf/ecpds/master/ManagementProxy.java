@@ -1638,6 +1638,16 @@ final class ManagementProxy implements ManagementInterface {
         return managementInterface.getOperationalEventJournalStatus(session, includeQueue);
     }
 
+    @Override
+    public void setOperationalEventCollectionPaused(final ECpdsSession session, final boolean paused) throws Exception {
+        managementInterface.setOperationalEventCollectionPaused(session, paused);
+    }
+
+    @Override
+    public void setOperationalEventDeliveryPaused(final ECpdsSession session, final boolean paused) throws Exception {
+        managementInterface.setOperationalEventDeliveryPaused(session, paused);
+    }
+
     /** {@inheritDoc} */
     @Override
     public double[] getLiveTransferOrigin() throws RemoteException {

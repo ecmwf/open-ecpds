@@ -18,6 +18,19 @@ networks:
     name: ecpds-backbone
 
 services:
+  # Local development sink only; decoded telemetry is printed, not durably archived.
+  otel:
+    profiles: ["otel"]
+    container_name: ecpds-otel
+    image: otel/opentelemetry-collector:0.163.2
+    command: ["--config=/etc/otelcol/config.yaml"]
+    ports:
+      - "127.0.0.1:4318:4318"
+    volumes:
+      - "${ECPDS_ROOT_PATH:-}/etc/ecpds/otel/config.yaml:/etc/otelcol/config.yaml:ro"
+    networks:
+      - backbone
+
   # The OpenECPDS Database (MariaDB) enables persistent storage for configurations, metadata and history
   database:
     container_name: database

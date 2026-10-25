@@ -531,10 +531,19 @@ Independent Splunk-file and native OpenTelemetry event outputs. Journaling persi
 
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
+| `journalCriticalOldestAgeMillis` | `1800000` | `1800000` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
+| `journalCriticalPendingCount` | `10000` | `10000` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
 | `journalEnabled` | `false` | `no` | [OperationalEvents:88](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java#L88) |
 | `journalOwner` | `Cnf.at("Login", "root", Cnf.at("Login", "hostName", "master"))` | - | [OperationalEvents:93](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java#L93) |
+| `journalWarningOldestAgeMillis` | `300000` | `300000` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
+| `journalWarningPendingCount` | `1000` | `1000` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
 | `openTelemetryEnabled` | `false` | `no` | [OperationalEvents:85](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java#L85) |
 | `splunkEnabled` | `true` | `yes` | [OperationalEvents:84](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java#L84) |
+
+The warning and critical thresholds are positive values, and each warning value
+must be lower than its corresponding critical value. They are loaded at Master
+startup. Reaching either the pending-count or oldest-admission-age threshold
+raises the corresponding alert on the journal page.
 
 ### [Operator]
 

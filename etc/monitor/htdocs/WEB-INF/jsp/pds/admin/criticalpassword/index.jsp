@@ -24,10 +24,16 @@
 <% } %>
 
 <% if (capSuccess != null) { %>
-<div class="alert alert-success d-flex gap-2 mb-4" role="alert">
+<div id="criticalPasswordSuccess" class="alert alert-success fade show d-flex gap-2 mb-4" role="status">
     <i class="bi bi-check-circle-fill flex-shrink-0 mt-1"></i>
     <span><%=capSuccess%></span>
 </div>
+<script>
+    setTimeout(function() {
+        var el = document.getElementById('criticalPasswordSuccess');
+        if (el) bootstrap.Alert.getOrCreateInstance(el).close();
+    }, 5000);
+</script>
 <% } %>
 
 <div class="card shadow-sm mb-4" style="max-width:540px;">
@@ -94,4 +100,3 @@
         </form>
     </div>
 </div>
-

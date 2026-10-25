@@ -2,9 +2,15 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
 <c:if test="${not empty message}">
-    <div class="alert alert-success mt-2">
+    <div id="destinationMetadataSuccess" class="alert alert-success fade show mt-2" role="status">
         <strong>${message}</strong>
     </div>
+    <script>
+        setTimeout(function() {
+            var el = document.getElementById('destinationMetadataSuccess');
+            if (el) bootstrap.Alert.getOrCreateInstance(el).close();
+        }, 5000);
+    </script>
 </c:if>
 
 <c:if test="${not empty requirements}">

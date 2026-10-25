@@ -387,12 +387,14 @@ URL permissions (`/do/admin/schedulertraffic`).
 
 ## Operational Event Journal
 
-**Operational Event Journal** (`/do/admin/eventjournal`) is a read-only Admin Task
-for the Master's OpenTelemetry database queue. It shows pending count, oldest
-admission timestamp and age, in-flight records, persistence failures since startup,
-and the last persistence, acknowledgement and delivery failure times. The page
-uses the administration card layout, selectable auto-refresh (30 seconds by
-default), manual refresh, contextual help and an **Event Journal Guide**.
+**Operational Event Journal** (`/do/admin/eventjournal`) monitors and controls
+the Master's OpenTelemetry database queue. Its Health, Collecting new events and
+Delivering queued events tabs show pending count, oldest admission timestamp and
+age, runtime failures, collection/delivery state, queue trend and configured
+warning/critical thresholds. A drain estimate appears only after enough healthy
+browser-collected samples show a measurable decrease. The page uses the
+administration card layout, selectable auto-refresh (30 seconds by default),
+manual refresh, contextual help and an **Event Journal Guide**.
 
 The task is greyed out when journaling is disabled on the Master. Master
 connection failures appear as unavailable rather than disabled. Pending rows can
@@ -404,8 +406,13 @@ entries, with banners on the home and Admin Tasks pages. A successful admission
 confirms recovery and changes the indicator to yellow: the failure count remains
 visible until Master restart, because those events used best-effort delivery.
 Export or replay failures also require attention; unacknowledged records remain
-pending for automatic retry. Runtime counters reset on restart, but database rows
-survive. The page exposes no payloads, credentials, purge or force-retry controls.
+pending for automatic retry. Administrators can pause/resume native OpenTelemetry
+collection and queue delivery at runtime. Collection pause does not affect
+Splunk/file output. Delivery pause keeps persistence active, so the queue can
+grow; an already in-flight export may complete. Both controls reset on Master
+restart and are recorded in the Master session audit log. Runtime counters reset
+on restart, but database rows survive. The page exposes no payloads, credentials,
+purge or force-retry controls.
 
 Access requires administration permissions on the Monitor and Master. See
 [Event logging](../event-logging/overview.md#durable-database-journal) for

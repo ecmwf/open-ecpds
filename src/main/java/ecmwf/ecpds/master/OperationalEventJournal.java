@@ -107,19 +107,34 @@ final class OperationalEventJournal implements LogRecordProcessor {
     private long lastPersistedAt;
     private boolean persistenceDegraded;
     private boolean deliveryDegraded;
+    private volatile boolean deliveryPaused;
     private String deliveryFailureStage = "";
     private long lastDeliveryFailureAt;
     private long lastExportAt;
     private long inFlightCount;
     private boolean exportAcknowledged;
 
-    OperationalEventJournalStatus status(final String owner) {
+    OperationalEventJournalStatus status(final String owner, final boolean collectionPaused,
+            final long warningPendingCount, final long criticalPendingCount, final long warningOldestAgeMillis,
+            final long criticalOldestAgeMillis) {
         synchronized (healthLock) {
             return new OperationalEventJournalStatus(true, owner, stopped.get(), persistenceDegraded,
                     totalPersistenceFailures, lastPersistenceFailureAt, lastPersistedAt, deliveryDegraded,
                     deliveryFailureStage, lastDeliveryFailureAt, lastExportAt, inFlightCount, null, null,
-                    System.currentTimeMillis(), null);
+                    System.currentTimeMillis(), null, collectionPaused, deliveryPaused, warningPendingCount,
+                    criticalPendingCount, warningOldestAgeMillis, criticalOldestAgeMillis);
         }
+    }
+
+    synchronized void setDeliveryPaused(final boolean paused) {
+        if (stopped.get()) {
+            throw new IllegalStateException("Operational event journal worker is stopped");
+        }
+        deliveryPaused = paused;
+    }
+
+    boolean isStopped() {
+        return stopped.get();
     }
 
     OperationalEventJournal(final Store store, final LogRecordExporter exporter, final LogRecordProcessor fallback,
@@ -172,7 +187,7 @@ final class OperationalEventJournal implements LogRecordProcessor {
 
     /** Package-private for deterministic recovery tests; production uses one scheduled worker. */
     synchronized void deliver() {
-        if (stopped.get()) {
+        if (stopped.get() || deliveryPaused) {
             return;
         }
         if (retryAfter != 0 && System.nanoTime() - retryAfter < 0) {

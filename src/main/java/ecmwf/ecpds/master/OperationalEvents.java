@@ -59,10 +59,15 @@ public final class OperationalEvents {
     private final BooleanSupplier legacyEnabled;
     private final Consumer<String> legacyOutput;
     private volatile boolean splunkEnabled = true;
+    private volatile boolean collectionPaused;
     private volatile Logger telemetry;
     private OpenTelemetrySdk sdk;
     private volatile OperationalEventJournal journal;
     private String journalOwner;
+    private static volatile long warningPendingCount = 1000;
+    private static volatile long criticalPendingCount = 10000;
+    private static volatile long warningOldestAgeMillis = 300000;
+    private static volatile long criticalOldestAgeMillis = 1800000;
 
     OperationalEvents(final BooleanSupplier legacyEnabled, final Consumer<String> legacyOutput,
             final Logger telemetry) {
@@ -86,6 +91,16 @@ public final class OperationalEvents {
             return;
         }
         final var journalEnabled = Cnf.at("OperationalEvents", "journalEnabled", false);
+        if (journalEnabled) {
+            warningPendingCount = positiveThreshold("journalWarningPendingCount", 1000);
+            criticalPendingCount = positiveThreshold("journalCriticalPendingCount", 10000);
+            warningOldestAgeMillis = positiveThreshold("journalWarningOldestAgeMillis", 300000);
+            criticalOldestAgeMillis = positiveThreshold("journalCriticalOldestAgeMillis", 1800000);
+            if (warningPendingCount >= criticalPendingCount || warningOldestAgeMillis >= criticalOldestAgeMillis) {
+                throw new IllegalArgumentException(
+                        "Operational event journal warning thresholds must be below critical thresholds");
+            }
+        }
         INSTANCE.journal = null;
         if (journalEnabled && database == null) {
             throw new IllegalArgumentException("Operational event journaling requires the Master database");
@@ -96,6 +111,7 @@ public final class OperationalEvents {
             throw new IllegalArgumentException("Operational event journalOwner must contain 1 to 255 characters");
         }
         INSTANCE.journalOwner = owner;
+        INSTANCE.collectionPaused = false;
         final var exporterReference = new AtomicReference<LogRecordExporter>();
         INSTANCE.sdk = AutoConfiguredOpenTelemetrySdk.builder()
                 .addPropertiesSupplier(() -> Map.of("otel.service.name", "open-ecpds-master",
@@ -145,10 +161,12 @@ public final class OperationalEvents {
         if (journal == null) {
             return OperationalEventJournalStatus.disabled();
         }
-        final var status = journal.status(INSTANCE.journalOwner);
+        final var status = journal.status(INSTANCE.journalOwner, INSTANCE.collectionPaused, warningPendingCount,
+                criticalPendingCount, warningOldestAgeMillis, criticalOldestAgeMillis);
         if (!includeQueue) {
             return status;
         }
+
         try {
             final var statistics = database.getOperationalEventStatistics(status.owner());
             return status.withQueue(statistics.pendingCount(), statistics.oldestAdmissionAt(), null);
@@ -156,6 +174,30 @@ public final class OperationalEvents {
             LOG.warn("Cannot retrieve operational event journal queue statistics", e);
             return status.withQueue(null, null, "Unable to read queue statistics from the Master database.");
         }
+    }
+
+    public static synchronized void setCollectionPaused(final boolean paused) {
+        final var journal = INSTANCE.journal;
+        if (journal == null || journal.isStopped()) {
+            throw new IllegalStateException("Operational event journal is not enabled");
+        }
+        INSTANCE.collectionPaused = paused;
+    }
+
+    public static void setDeliveryPaused(final boolean paused) {
+        final var journal = INSTANCE.journal;
+        if (journal == null) {
+            throw new IllegalStateException("Operational event journal is not enabled");
+        }
+        journal.setDeliveryPaused(paused);
+    }
+
+    private static long positiveThreshold(final String name, final long fallback) {
+        final var value = Long.parseLong(Cnf.at("OperationalEvents", name, Long.toString(fallback)));
+        if (value <= 0) {
+            throw new IllegalArgumentException("Operational event journal threshold " + name + " must be positive");
+        }
+        return value;
     }
 
     public static synchronized void shutdown() {
@@ -168,10 +210,12 @@ public final class OperationalEvents {
             }
             INSTANCE.sdk = null;
         }
+        INSTANCE.journal = null;
+        INSTANCE.collectionPaused = false;
     }
 
     public boolean isEnabled() {
-        return splunkEnabled && legacyEnabled.getAsBoolean() || telemetry != null;
+        return splunkEnabled && legacyEnabled.getAsBoolean() || telemetry != null && !collectionPaused;
     }
 
     public static Field field(final String name, final Object value) {
@@ -205,7 +249,7 @@ public final class OperationalEvents {
             legacyOutput.accept(line.toString());
         }
         final var logger = telemetry;
-        if (logger == null) {
+        if (logger == null || collectionPaused) {
             return;
         }
         try {

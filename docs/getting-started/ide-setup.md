@@ -20,6 +20,12 @@ This command creates the Docker network for OpenECPDS and starts only the databa
 service, while the Master, Monitor, and Mover services can be launched directly from the
 IDE.
 
+To reset a disposable development database, stop all IDE-launched Masters first,
+then run `make start-db` and confirm reinitialization. The target stops the
+database container before deleting its data, and also detects an incomplete
+previous initialization. Merely restarting a container does not rerun the
+initialization SQL. Resetting deletes all development database data.
+
 ## Visual Studio Code
 
 When working with OpenECPDS in Visual Studio Code, the **Dev Containers extension** is
@@ -102,3 +108,66 @@ Eclipse does not natively support development containers, and this is not requir
 simply running and debugging OpenECPDS within Eclipse. To build the OpenECPDS Docker
 images, the development container can be manually created as outlined in
 [Installation](installation.md).
+
+### Local OpenTelemetry and journal testing
+
+An optional test Collector accepts OTLP HTTP/protobuf on
+`http://127.0.0.1:4318` and prints every decoded log record, trace and metric to
+its container logs. It requires Docker/Compose or Podman/Compose, but no local
+Collector installation or image build:
+
+```sh
+make start-otel
+make logs-otel      # Follow captured telemetry; Ctrl-C stops following only.
+make stop-otel      # Stop/remove the container and discard its captured logs.
+```
+
+The pinned Collector image and service are defined in the development Compose
+files; its configuration is `run/etc/ecpds/otel/config.yaml`. It is opt-in and
+is not started by `start-db`, `start-backend` or an ordinary Compose `up`.
+The published port is bound to the Docker host's loopback interface. A process
+inside another container cannot use its own `127.0.0.1` to reach it; on the
+macOS development `ecpds-backbone` network, use `http://otel:4318` instead.
+
+For Eclipse, start the Collector manually in a terminal, then use the ordinary
+**OpenECPDS Master Server** Run/Debug configuration. This also avoids requiring
+Docker on Eclipse's own `PATH`. The launch uses
+`run/etc/ecpds/master/argfile`, which supplies the local endpoint:
+
+```text
+-Dotel.exporter.otlp.endpoint=http://127.0.0.1:4318
+-Dotel.exporter.otlp.protocol=http/protobuf
+```
+
+All three signals inherit these settings and append their HTTP paths
+(`/v1/logs`, `/v1/traces`, `/v1/metrics`). Remove or override any signal-specific
+OTLP endpoint, protocol or authentication settings in your environment if they
+would otherwise redirect telemetry or send unwanted credentials to the test
+Collector.
+
+The development overrides in `run/etc/ecpds/master/ecmwf.properties` enable
+`openTelemetryEnabled=yes` and `journalEnabled=yes` in `[OperationalEvents]`.
+Production configuration defaults remain unchanged. Traces and metrics remain
+separately controlled by the normal Master settings.
+
+Start the development database first and ensure it has the
+`OPERATIONAL_EVENT` journal table. Start only one Master for the development
+configuration; start the Monitor separately to inspect
+**Admin Tasks → Operational Event Journal**.
+
+Stopping the IDE session does not stop the Collector. Use `make stop-otel`
+when finished; Ctrl-C in the log terminal only stops following its logs.
+
+!!! warning
+    This is a non-production diagnostic sink, not durable telemetry storage.
+    It acknowledges records after printing them, allowing the Master to delete
+    journal rows. Captured output contains operational data. Do not point a
+    production Master or a production journal database at this test sink.
+
+To exercise recovery, stop the Collector with `make stop-otel`, generate
+normal operational events, and watch the journal's pending count grow.
+Run `make start-otel` again and confirm that queued events appear in
+`make logs-otel` and the queue drains. Collection and delivery can also be
+paused independently in the Monitor. See
+[Durable database journal](../event-logging/overview.md#durable-database-journal)
+for event-generation gates and delivery limits.

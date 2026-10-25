@@ -1891,6 +1891,10 @@ public interface ManagementInterface extends Remote {
     OperationalEventJournalStatus getOperationalEventJournalStatus(ECpdsSession session, boolean includeQueue)
             throws Exception;
 
+    void setOperationalEventCollectionPaused(ECpdsSession session, boolean paused) throws Exception;
+
+    void setOperationalEventDeliveryPaused(ECpdsSession session, boolean paused) throws Exception;
+
     /**
      * Gets the MasterServer's own geolocation, used to centre the "Live ECPDS Earth" globe. Resolved via the same GeoIP
      * mechanism (including any {@code [GeoIP]} {@code forced.*} overrides) used elsewhere (e.g. the Host traceroute

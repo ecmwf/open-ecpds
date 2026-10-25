@@ -151,6 +151,29 @@ for the [Master](../configuration/master.md),
 They distinguish shipped assignments from the implementation defaults used when
 an option is omitted.
 
+## Optional local OpenTelemetry Collector
+
+The development Compose files also provide an opt-in `otel` service for testing
+operational events, traces and metrics. From the repository root, on the host
+or inside the development container with access to Docker/Podman:
+
+```bash
+make start-otel
+make logs-otel
+make stop-otel
+```
+
+No OpenECPDS image build is needed. The Collector accepts OTLP HTTP/protobuf
+on the Docker host at `http://127.0.0.1:4318` and prints decoded telemetry to
+container logs. It is not started by ordinary `make up`, `make start-db` or
+`make start-backend`; existing application startup remains unchanged.
+
+This is a diagnostic sink, not durable storage: acknowledgements allow the
+Master to remove delivered journal rows, and removing the container discards
+its logs. Never connect a production journal to it.
+See [Local OpenTelemetry and journal testing](ide-setup.md#local-opentelemetry-and-journal-testing)
+for application settings, IDE startup and container endpoint selection.
+
 ## Next steps
 
 Continue to [First Run](first-run.md) to start the services and access the interfaces.

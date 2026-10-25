@@ -150,7 +150,7 @@ build-dev-image = cd .devcontainer && $(DOCKER) build --platform linux/$(ARCH) -
 # Conditional targets based on the environment
 .PHONY: help dev dev-pull .dev-cntnr .run login rm-dev \
         get-geodb get-licenses build build-sa build-cli cr-login push push-dev push-sa push-cli push-native push-sa-native push-cli-native manifest sa-manifest cli-manifest release-tools \
-        start-db stop-db start-ai stop-ai start-hawtio stop-hawtio start-backend stop-backend \
+        start-db stop-db start-ai stop-ai start-hawtio stop-hawtio start-otel stop-otel logs-otel start-backend stop-backend \
         docs docs-embed docs-screenshots docs-preview docs-publish \
         clean info
 
@@ -331,11 +331,12 @@ cli-manifest: ## Combine arch CLI images into a multi-arch manifest on CR (~)
 # ─── Local services (database + AI) ───────────────────────────────────────────
 start-db: ## Build and start the database service (~)
 	@$(call check-docker)
-	@if [ -d "$(DB_DATA_DIR)/mysql" ] && [ -d "$(DB_DATA_DIR)/ecpds" ]; then \
+	@if [ -d "$(DB_DATA_DIR)/mysql" ] || [ -d "$(DB_DATA_DIR)/ecpds" ]; then \
 		echo "WARNING: A database already exists in '$(DB_DATA_DIR)'."; \
 		echo "If you keep it, the SQL initial script will NOT be executed."; \
 		read -p "Delete existing database data and reinitialize? (y/N) " answer; \
 		if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
+			$(MAKE) stop-db || exit $$?; \
 			echo "Deleting existing database data..."; \
 			rm -rf $(DB_DATA_DIR)/*; \
 	else \
@@ -348,6 +349,30 @@ start-db: ## Build and start the database service (~)
 stop-db: ## Stop the database service (~)
 	@$(call check-docker)
 	@cd run/bin/ecpds && $(MAKE) down svc=database
+
+start-otel: ## Start the local OpenTelemetry test Collector (OTLP HTTP on localhost:4318) (~)
+	@$(call check-docker)
+	@cd run/bin/ecpds && $(MAKE) up svc=otel
+	@for attempt in {1..30}; do \
+		if [ "$$($(DOCKER) inspect --format '{{.State.Running}}' ecpds-otel)" != "true" ]; then \
+			$(DOCKER) logs ecpds-otel; exit 1; \
+		fi; \
+		if $(DOCKER) logs ecpds-otel 2>&1 | grep -q 'Everything is ready'; then \
+			printf "$(GREEN)Test Collector ready:$(RESET) http://127.0.0.1:4318 (use make logs-otel)\n"; \
+			exit 0; \
+		fi; \
+		sleep 1; \
+	done; \
+	$(DOCKER) logs ecpds-otel; \
+	echo "Error: Test Collector did not become ready within 30 seconds." >&2; exit 1
+
+stop-otel: ## Stop and remove the test Collector (its captured logs are discarded) (~)
+	@$(call check-docker)
+	@cd run/bin/ecpds && $(MAKE) down svc=otel
+
+logs-otel: ## Follow decoded logs, traces and metrics received by the test Collector (~)
+	@$(call check-docker)
+	@$(DOCKER) logs --follow ecpds-otel
 
 start-ai: ## Build and start the AI service (~)
 	@$(call check-docker)

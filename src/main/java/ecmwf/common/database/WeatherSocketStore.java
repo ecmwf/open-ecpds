@@ -22,6 +22,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Locale;
 import java.util.Objects;
 
 import ecmwf.ecpds.master.weather.WeatherObservation;
@@ -64,10 +65,12 @@ public final class WeatherSocketStore {
     }
 
     static void checkConfigurationCapacity(Connection connection, int bytes) throws SQLException {
-        try (final var statement = prepare(connection, """
-                SELECT CHARACTER_OCTET_LENGTH FROM information_schema.COLUMNS
-                WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='SYS_CONFIG' AND COLUMN_NAME='SCF_PARAM_VALUE'
-                """); final var result = statement.executeQuery()) {
+        try (final var statement = prepare(connection,
+                """
+                        SELECT CHARACTER_OCTET_LENGTH FROM information_schema.COLUMNS
+                        WHERE TABLE_SCHEMA=DATABASE() AND UPPER(TABLE_NAME)='SYS_CONFIG' AND UPPER(COLUMN_NAME)='SCF_PARAM_VALUE'
+                        """);
+                final var result = statement.executeQuery()) {
             if (!result.next() || result.getLong(1) < bytes)
                 throw new SQLException("Network Weather policy exceeds SYS_CONFIG capacity; apply "
                         + "network-weather-policy-capacity.sql before saving larger policies");
@@ -121,11 +124,13 @@ public final class WeatherSocketStore {
 
     /** Read-only capability probe; never creates or alters production schema. */
     public static void checkSchema(Connection connection) throws SQLException {
-        try (final var statement = prepare(connection, """
-                SELECT TABLE_NAME,ENGINE FROM information_schema.TABLES
-                WHERE TABLE_SCHEMA=DATABASE()
-                  AND TABLE_NAME IN ('DATA_TRANSFER','TRANSFER_STATISTICS','WEATHER_SENDING','WEATHER_CONNECTION')
-                """); final var result = statement.executeQuery()) {
+        try (final var statement = prepare(connection,
+                """
+                        SELECT TABLE_NAME,ENGINE FROM information_schema.TABLES
+                        WHERE TABLE_SCHEMA=DATABASE()
+                          AND UPPER(TABLE_NAME) IN ('DATA_TRANSFER','TRANSFER_STATISTICS','WEATHER_SENDING','WEATHER_CONNECTION')
+                        """);
+                final var result = statement.executeQuery()) {
             int count = 0;
             while (result.next()) {
                 if (!"InnoDB".equalsIgnoreCase(result.getString(2))) {
@@ -148,7 +153,7 @@ public final class WeatherSocketStore {
                     final var column = indexes.getString("COLUMN_NAME");
                     if (name != null && column != null) {
                         unique.computeIfAbsent(name, _ -> new java.util.TreeMap<>())
-                                .put(indexes.getInt("ORDINAL_POSITION"), column);
+                                .put(indexes.getInt("ORDINAL_POSITION"), column.toUpperCase(Locale.ROOT));
                     }
                 }
             }
@@ -171,8 +176,8 @@ public final class WeatherSocketStore {
             try (final var keys = metadata.getImportedKeys(catalog, null, table)) {
                 while (keys.next()) {
                     if (keys.getInt("DELETE_RULE") == java.sql.DatabaseMetaData.importedKeyCascade) {
-                        references.add(keys.getString("FKCOLUMN_NAME") + ":" + keys.getString("PKTABLE_NAME") + ":"
-                                + keys.getString("PKCOLUMN_NAME"));
+                        references.add((keys.getString("FKCOLUMN_NAME") + ":" + keys.getString("PKTABLE_NAME") + ":"
+                                + keys.getString("PKCOLUMN_NAME")).toUpperCase(Locale.ROOT));
                     }
                 }
             }

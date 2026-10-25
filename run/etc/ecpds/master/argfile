@@ -51,6 +51,8 @@
 -Dstarter.addShutdownHook=no
 -Dstarter.debug=no
 -Dstarter.urlClassLoader=no
+-Dotel.exporter.otlp.endpoint=http://127.0.0.1:4318
+-Dotel.exporter.otlp.protocol=http/protobuf
 -Dsun.net.inetaddr.ttl=120
 -Dsun.net.inetaddr.negative.ttl=10
 -Djava.rmi.server.randomIDs=true

@@ -35,10 +35,16 @@
 <% } %>
 
 <% if (olSuccess != null) { %>
-<div class="alert alert-success d-flex gap-2 mb-4" role="alert">
+<div id="originSuccess" class="alert alert-success fade show d-flex gap-2 mb-4" role="status">
     <i class="bi bi-check-circle-fill flex-shrink-0 mt-1"></i>
     <span><%=olSuccess%></span>
 </div>
+<script>
+    setTimeout(function() {
+        var el = document.getElementById('originSuccess');
+        if (el) bootstrap.Alert.getOrCreateInstance(el).close();
+    }, 5000);
+</script>
 <% } %>
 
 <div class="card shadow-sm mb-4" style="max-width:640px;">

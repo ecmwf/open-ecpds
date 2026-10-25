@@ -4069,6 +4069,36 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     @Override
+    public void setOperationalEventCollectionPaused(final ECpdsSession session, final boolean paused) throws Exception {
+        requireWeatherAdministrator(session);
+        final var action = master.startECpdsAction(session, "update");
+        Exception failure = null;
+        try {
+            OperationalEvents.setCollectionPaused(paused);
+        } catch (final Exception e) {
+            failure = e;
+            throw e;
+        } finally {
+            master.logECpdsAction(action, "Operational event collection " + (paused ? "paused" : "resumed"), failure);
+        }
+    }
+
+    @Override
+    public void setOperationalEventDeliveryPaused(final ECpdsSession session, final boolean paused) throws Exception {
+        requireWeatherAdministrator(session);
+        final var action = master.startECpdsAction(session, "update");
+        Exception failure = null;
+        try {
+            OperationalEvents.setDeliveryPaused(paused);
+        } catch (final Exception e) {
+            failure = e;
+            throw e;
+        } finally {
+            master.logECpdsAction(action, "Operational event delivery " + (paused ? "paused" : "resumed"), failure);
+        }
+    }
+
+    @Override
     public Map<String, String> getStorageLifecycleState(final long fileId) throws Exception {
         return master.getStorageLifecycle().describe(fileId);
     }

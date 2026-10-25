@@ -287,6 +287,13 @@ Local images use the `open-ecpds/*` namespace. Containers use short names such a
 Use service keys in Makefile commands, for example `make logs svc=master`.
 Registry images are published under `ghcr.io/ecmwf/open-ecpds/*`.
 
+For optional local OpenTelemetry testing, run `make start-otel` from the
+repository root, then `make logs-otel` to inspect decoded logs, traces and
+metrics. Use `make stop-otel` when finished. This diagnostic Collector is not
+started by the commands above and is not durable telemetry storage.
+See [local telemetry setup](https://ecmwf.github.io/open-ecpds/getting-started/ide-setup/#local-opentelemetry-and-journal-testing)
+for JVM configuration and container networking.
+
 See [Getting Started](https://ecmwf.github.io/open-ecpds/getting-started/requirements/) for the full walkthrough, including log inspection, stopping services, IDE setup, and Kubernetes deployment.
 
 ### Building the standalone image locally

@@ -38,9 +38,15 @@
 </div>
 <% } %>
 <% if (spSuccess != null) { %>
-<div class="alert alert-success d-flex align-items-start gap-2" role="status">
+<div id="storagePolicySuccess" class="alert alert-success fade show d-flex align-items-start gap-2" role="status">
     <i class="bi bi-check-circle-fill mt-1"></i><span><c:out value="<%=spSuccess%>" /></span>
 </div>
+<script>
+    setTimeout(function() {
+        var el = document.getElementById('storagePolicySuccess');
+        if (el) bootstrap.Alert.getOrCreateInstance(el).close();
+    }, 5000);
+</script>
 <% } %>
 
 <div class="card border-0 shadow-sm mb-4">

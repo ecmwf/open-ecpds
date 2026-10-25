@@ -19,35 +19,56 @@ package ecmwf.ecpds.master;
 
 import java.io.Serializable;
 
-/** Read-only journal health; nullable queue values mean that no database measurement is available. */
+/** Journal health and runtime controls; nullable queue values mean no database measurement is available. */
 public record OperationalEventJournalStatus(boolean enabled, String owner, boolean stopped, boolean persistenceDegraded,
         long persistenceFailures, long lastPersistenceFailureAt, long lastPersistedAt, boolean deliveryDegraded,
         String deliveryFailureStage, long lastDeliveryFailureAt, long lastExportAt, long inFlightCount,
-        Long pendingCount, Long oldestAdmissionAt, long observedAt, String queueError) implements Serializable {
+        Long pendingCount, Long oldestAdmissionAt, long observedAt, String queueError, boolean collectionPaused,
+        boolean deliveryPaused, long warningPendingCount, long criticalPendingCount, long warningOldestAgeMillis,
+        long criticalOldestAgeMillis) implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     public static OperationalEventJournalStatus disabled() {
         return new OperationalEventJournalStatus(false, "", false, false, 0, 0, 0, false, "", 0, 0, 0, null, null,
-                System.currentTimeMillis(), null);
+                System.currentTimeMillis(), null, false, false, 1000, 10000, 300000, 1800000);
     }
 
     public OperationalEventJournalStatus withQueue(final Long count, final Long oldest, final String error) {
         return new OperationalEventJournalStatus(enabled, owner, stopped, persistenceDegraded, persistenceFailures,
                 lastPersistenceFailureAt, lastPersistedAt, deliveryDegraded, deliveryFailureStage,
-                lastDeliveryFailureAt, lastExportAt, inFlightCount, count, oldest, System.currentTimeMillis(), error);
+                lastDeliveryFailureAt, lastExportAt, inFlightCount, count, oldest, System.currentTimeMillis(), error,
+                collectionPaused, deliveryPaused, warningPendingCount, criticalPendingCount, warningOldestAgeMillis,
+                criticalOldestAgeMillis);
     }
 
     public boolean danger() {
-        return enabled && (persistenceDegraded || stopped);
+        return enabled && (persistenceDegraded || stopped || criticalBacklog());
     }
 
     public boolean attention() {
-        return enabled && (danger() || deliveryDegraded || persistenceFailures > 0 || queueError != null);
+        return enabled && (danger() || deliveryDegraded || collectionPaused || deliveryPaused || persistenceFailures > 0
+                || queueError != null || warningBacklog());
+    }
+
+    public boolean criticalBacklog() {
+        return pendingCount != null
+                && (pendingCount >= criticalPendingCount || oldestAgeMillis() >= criticalOldestAgeMillis);
+    }
+
+    public boolean warningBacklog() {
+        return pendingCount != null
+                && (pendingCount >= warningPendingCount || oldestAgeMillis() >= warningOldestAgeMillis);
+    }
+
+    private long oldestAgeMillis() {
+        return oldestAdmissionAt == null ? 0 : Math.max(0, observedAt - oldestAdmissionAt);
     }
 
     public String state() {
-        return !enabled ? "Disabled" : stopped ? "Stopped" : persistenceDegraded ? "Degraded"
-                : queueError != null ? "Statistics unavailable" : deliveryDegraded ? "Retrying" : "Running";
+        return !enabled ? "Disabled"
+                : stopped ? "Stopped" : persistenceDegraded ? "Degraded" : criticalBacklog() ? "Critical backlog"
+                        : deliveryPaused || collectionPaused ? "Paused" : queueError != null ? "Statistics unavailable"
+                                : deliveryDegraded ? "Retrying" : warningBacklog() ? "Backlog warning" : "Running";
     }
 }

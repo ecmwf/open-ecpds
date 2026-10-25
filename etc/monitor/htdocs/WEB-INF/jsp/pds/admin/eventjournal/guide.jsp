@@ -10,7 +10,10 @@
         <h6>Reading the queue</h6>
         <p><strong>Pending events</strong> includes records awaiting export, endpoint acknowledgement or database deletion.
             <strong>Oldest admission</strong> is when the oldest pending row entered the database, not its event timestamp.
-            A growing age or count indicates delivery is falling behind; no fixed alert threshold is assumed.</p>
+            Configured warning and critical thresholds use either pending count or oldest age.</p>
+        <p>The backlog chart uses samples collected by this browser and resets when the page is reloaded.
+            A drain estimate appears only after four or more samples across at least two minutes show a healthy decrease
+            of at least two events. It is an extrapolation from recent throughput, not a delivery guarantee.</p>
         <p>Only the active Master's <strong>journal owner</strong> is measured. Keep that owner stable and run only one
             active Master per owner. Disabled journaling does not delete pending rows, and changing the owner leaves
             the other owner's rows untouched. Runtime counters reset on Master restart; pending rows survive.</p>
@@ -33,8 +36,15 @@
             <code>[OperationalEvents]</code> configuration and restart the Master. Queue monitoring requires
             <code>getOperationalEventStatistics.sql</code> in its <code>conf/sql</code> directory.
             Missing or unreadable statistics appear as unavailable, never as an empty queue.</p>
+        <p>Administrators can pause/resume native OpenTelemetry collection and delivery separately. Collection pause
+            does not affect Splunk/file logging. Delivery pause leaves collection and persistence active, so the queue
+            can grow; a batch already in flight may finish. These runtime settings are audited and reset on Master
+            restart. Configure <code>journalWarningPendingCount</code>, <code>journalCriticalPendingCount</code>,
+            <code>journalWarningOldestAgeMillis</code> and <code>journalCriticalOldestAgeMillis</code> in
+            <code>[OperationalEvents]</code>; restart the Master to change thresholds.</p>
         <p>Refresh reads an owner-scoped database aggregate; the default interval is 30 seconds.
             Home and menu indicators use runtime health without scanning the queue.
-            This page cannot delete events, change configuration or force retries.</p>
+            Control changes require Monitor and Master administration permissions and are recorded in the Master
+            session audit log. This page cannot delete events, change configuration or force retries.</p>
     </div>
 </div>
