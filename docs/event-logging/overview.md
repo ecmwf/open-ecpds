@@ -2,17 +2,22 @@
 
 OpenECPDS generates structured event logs that capture key activities and transitions
 within the system, including data retrieval, replication, and dissemination processes.
-These logs are designed to provide insight into system operations and facilitate
-troubleshooting by recording events at different stages of the workflow.
+These events are available through both structured file logging and native
+**OpenTelemetry** export, providing insight into operations and supporting
+troubleshooting at different stages of the workflow.
 
-At ECMWF, **Splunk** is used to collect, index, and analyse these event logs, enabling
-efficient monitoring and alerting. However, OpenECPDS does not rely on Splunk specifically
-— these logs follow a format that can be parsed by any log management or analysis tool,
-such as ELK (Elasticsearch, Logstash, Kibana), Graylog, or Fluentd. This flexibility
-allows different users and organisations to integrate OpenECPDS logs into their own
-monitoring and analytics ecosystems.
+At ECMWF, different platforms use **Splunk** and **Fluent Bit** pipelines.
+The structured file output supports existing Splunk collection and analysis,
+while native OpenTelemetry exports events over OTLP to compatible collectors,
+including Fluent Bit with an OTLP input configured. Both outputs can be enabled
+independently or used together. OpenTelemetry also supports correlation with
+application traces and metrics.
 
-The logs can be found in the directories mounted to the containers — see
+OpenECPDS is not tied to a particular backend: file collectors and OTLP-compatible
+pipelines can route events into each organisation's monitoring and analytics
+ecosystem.
+
+File logs can be found in the directories mounted to the containers — see
 [Checking the Containers and Logs](../getting-started/first-run.md#checking-the-containers-and-logs).
 
 ## Reading the examples
