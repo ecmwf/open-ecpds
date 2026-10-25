@@ -102,6 +102,7 @@ import ecmwf.common.technical.ThreadService.ConfigurableLoopRunnable;
 import ecmwf.common.technical.ThreadService.ConfigurableRunnable;
 import ecmwf.common.technical.WakeupThread;
 import ecmwf.common.telemetry.TransferTracing;
+import io.opentelemetry.context.Context;
 import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.ChangeHostEvent;
 import ecmwf.ecpds.master.DestinationStep;
@@ -111,6 +112,7 @@ import ecmwf.ecpds.master.MasterException;
 import ecmwf.ecpds.master.MasterServer;
 import ecmwf.ecpds.master.OperationalEvents;
 import ecmwf.ecpds.master.StatusUpdate;
+import ecmwf.ecpds.master.TransferMetrics;
 import ecmwf.ecpds.master.transfer.TransferServerProvider.TransferServerException;
 import ecmwf.ecpds.mover.MoverInterface;
 import ecmwf.ecpds.mover.SourceNotAvailableException;
@@ -936,6 +938,7 @@ public final class TransferScheduler extends MBeanScheduler {
     private static boolean put(final DataTransfer transfer, final Host hostForSource) {
         Throwable throwable = null;
         try (final var trace = TransferTracing.dispatch(transfer); final var scope = trace.makeCurrent()) {
+            TransferMetrics.transferAttempt(Context.current());
             try {
                 // Get the list of hosts for source
                 final var hostsForSource = _getHostsForSource(transfer, hostForSource);
@@ -2357,7 +2360,13 @@ public final class TransferScheduler extends MBeanScheduler {
                                 new DataFile.RetrievalWeatherContext(transfer.getId(), transfer.getDestinationName()));
                         try (final var attempt = retrievalTrace.moverAttempt(dr.dataFile, hostForSource, moverName,
                                 ++retrievalAttempt)) {
-                            dr.dataFile = mover.download(dr.dataFile, hostForSource);
+                            try {
+                                dr.dataFile = mover.download(dr.dataFile, hostForSource);
+                            } catch (final Throwable t) {
+                                TransferMetrics.retrievalAttempt(false, attempt.context());
+                                throw t;
+                            }
+                            TransferMetrics.retrievalAttempt(true, attempt.context());
                             attempt.finish(true);
                         }
                         dr.complete = true;

@@ -99,6 +99,7 @@ import ecmwf.ecpds.master.OperationalEvents;
 import ecmwf.ecpds.master.ProductStatusEvent;
 import ecmwf.ecpds.master.ProgressInterface;
 import ecmwf.ecpds.master.ResetProductEvent;
+import ecmwf.ecpds.master.TransferMetrics;
 import ecmwf.ecpds.master.plugin.ecpds.request.ECpdsCompleted;
 import ecmwf.ecpds.master.plugin.ecpds.request.ECpdsExpected;
 import ecmwf.ecpds.master.plugin.ecpds.request.ECpdsPut;
@@ -1865,6 +1866,9 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                     + Format.getMBitsPerSeconds(currentSize, duration) + " Mbits/s)";
             final var portalContext = groupBy == null && transfersList.length > 0 ? TransferTracing.portalTransfer(
                     transfersList[0], true, command, MASTER.getRoot(), start, duration, currentSize, true) : null;
+            if (groupBy == null) {
+                TransferMetrics.portalTransfer(true, true, duration, currentSize, portalContext);
+            }
             for (final DataTransfer transfer : transfersList) {
                 if (groupBy == null)
                     MASTER.addTransferHistory(transfer, null, currentStatus, uploadMessage, false);

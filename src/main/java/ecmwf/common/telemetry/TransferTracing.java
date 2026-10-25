@@ -346,6 +346,10 @@ public final class TransferTracing {
             this.span = span;
         }
 
+        public Context context() {
+            return span.getSpanContext().isValid() ? Context.root().with(span) : Context.root();
+        }
+
         public void finish(final boolean successful) {
             if (ended.compareAndSet(false, true)) {
                 if (!successful) {

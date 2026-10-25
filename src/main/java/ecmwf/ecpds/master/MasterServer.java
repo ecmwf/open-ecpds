@@ -867,6 +867,7 @@ public final class MasterServer extends ECaccessProvider
         _log.info("MasterServer-version: {}", Version.getFullVersion());
         OperationalEvents.start(getECpdsBase());
         TransferTracing.start("master");
+        TransferMetrics.start(this);
         NativeAuthenticationProvider.setProvider(MasterProvider.class);
         DestinationOption.getList(); // Make sure the list of options is loaded!
         // Live ECPDS Earth (Phase 0): allow forcing the live transfer monitoring feed on regardless of connected
@@ -5288,6 +5289,10 @@ public final class MasterServer extends ECaccessProvider
                 try {
                     updateDataTransferState(transfer);
                     trace.finish(transfer, StatusFactory.DONE.equals(code));
+                    final var outcome = StatusFactory.DONE.equals(code) ? "success"
+                            : StatusFactory.RETR.equals(code) || StatusFactory.INTR.equals(code) ? "retry" : "failure";
+                    TransferMetrics.transferCompleted(outcome, transfer.getDuration(), transfer.getSent(),
+                            io.opentelemetry.context.Context.current());
                 } catch (final RuntimeException | Error e) {
                     trace.failed();
                     throw e;
@@ -7448,6 +7453,7 @@ public final class MasterServer extends ECaccessProvider
         }
         OperationalEvents.shutdown();
         TransferTracing.shutdown();
+        TransferMetrics.shutdown();
         super.shutdown();
     }
 
@@ -14058,6 +14064,8 @@ public final class MasterServer extends ECaccessProvider
                         retrievalTrace.finish(dr.complete);
                     }
                     final var completed = System.currentTimeMillis();
+                    TransferMetrics.retrievalCompleted(dr.complete, completed - start,
+                            dr.complete ? dr.dataFile.getSize() : -1, retrievalTrace.context());
                     _transfer = base.getDataTransfer(_transfer.getId());
                     final var server = dr.server;
                     if (server != null && dr.complete) {

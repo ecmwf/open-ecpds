@@ -243,6 +243,42 @@ Export failures are reported in service logs. A linked log may have no
 corresponding stored trace because of sampling, export failure or trace retention.
 Log delivery and transfer success do not depend on trace delivery.
 
+### OpenTelemetry metrics
+
+Master application metrics are optional and independent of native logs and
+traces. Enable them in `[OpenTelemetry]`:
+
+```ini
+[OpenTelemetry]
+metricsEnabled=yes
+metricsExportIntervalMillis=60000
+metricsExportTimeoutMillis=30000
+```
+
+They use the same OTLP connection settings as logs and traces, but a separate
+SDK/provider. Metrics do not replace the existing Prometheus/JMX JVM and MBean
+export. The first application instruments cover transfer dispatch/completion,
+retrieval attempts/completion, and actual portal transfers, with counters and
+duration/byte histograms. Transfer outcomes and portal direction use bounded
+attributes; transfer, file, user, destination and host IDs are never metric
+labels. The SDK can attach trace-based exemplars to recorded measurements when
+the associated operation has a sampled trace. Counts and histograms are
+recorded independently of trace sampling.
+
+Observable gauges reuse Master-side sources behind the Live ECPDS Earth KPIs:
+rolling 24-hour transferred bytes by Host Type, open Data Portal sessions and
+rolling portal upload/download rates, and cached DataMover storage used and
+capacity. The storage aggregation uses the same per-Mover cache snapshot as the
+globe. Active transfer count, distinct-host and throughput gauges are emitted
+only while live transfer sampling is enabled by an interested globe client;
+absence of these gauge points means the feed is not currently sampling, not
+that there are no active transfers.
+
+The SDK exports OTLP metrics by default when enabled. Standard
+`OTEL_METRIC_EXPORT_INTERVAL` and `OTEL_METRIC_EXPORT_TIMEOUT` (or corresponding
+`otel.metric.export.*` JVM properties) override the interval and timeout in
+`ecmwf.properties`. Metrics export is best effort and is not journalled.
+
 ### Native record schema
 
 Each record has:

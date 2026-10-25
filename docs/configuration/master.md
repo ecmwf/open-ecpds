@@ -509,13 +509,16 @@ Network Weather admission/control limits. Values are counts except `maxConfigura
 
 ### [OpenTelemetry]
 
-Master-only log and trace SDK defaults. Queue/batch limits count records or spans, schedule delays are milliseconds, and sample ratio is 0-1. Standard JVM/environment SDK settings override the batching/sampler defaults. With log journaling enabled, log queue/batch values govern only in-memory fail-open delivery, not the database backlog.
+Master-only log, metric and trace SDK defaults. Metric intervals/timeouts and log/trace schedule delays are milliseconds; queue/batch limits count records or spans, and sample ratio is 0-1. Standard JVM/environment SDK settings override these defaults. With log journaling enabled, log queue/batch values govern only in-memory fail-open delivery, not the database backlog.
 
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
 | `logsMaxExportBatchSize` | `512` | `512` | [OperationalEvents:104](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java#L104) |
 | `logsMaxQueueSize` | `2048` | `2048` | [OperationalEvents:103](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java#L103) |
 | `logsScheduleDelayMillis` | `1000` | `1000` | [OperationalEvents:105](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java#L105) |
+| `metricsEnabled` | `false` | `no` | [TransferMetrics:67](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/TransferMetrics.java#L67) |
+| `metricsExportIntervalMillis` | `60000` | `60000` | [TransferMetrics:74](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/TransferMetrics.java#L74) |
+| `metricsExportTimeoutMillis` | `30000` | `30000` | [TransferMetrics:75](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/TransferMetrics.java#L75) |
 | `tracesEnabled` | `false` | `no` | [TransferTracing:84](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/telemetry/TransferTracing.java#L84) |
 | `tracesMaxExportBatchSize` | `512` | `512` | [TransferTracing:95](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/telemetry/TransferTracing.java#L95) |
 | `tracesMaxQueueSize` | `2048` | `2048` | [TransferTracing:94](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/telemetry/TransferTracing.java#L94) |

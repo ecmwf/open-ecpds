@@ -1196,6 +1196,8 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                 if (incomingUser != null) {
                     final var portalContext = transfers.isEmpty() ? null
                             : TransferTracing.portalTransfer(transfers.get(0), event, success);
+                    TransferMetrics.portalTransfer(event.getUpload(), success, event.getDuration(), event.getSent(),
+                            portalContext);
                     final var transferRate = Format.getMBitsPerSeconds(event.getSent(), event.getDuration());
                     final var mover = master.getDataBase(ECpdsBase.class).getTransferServerObject(event.getLocalHost());
                     final var message = event.getSent() + " byte(s) " + (event.getUpload() ? "uploaded" : "downloaded")
