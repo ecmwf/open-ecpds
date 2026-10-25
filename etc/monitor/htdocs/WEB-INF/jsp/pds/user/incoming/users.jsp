@@ -95,6 +95,19 @@ style="background:rgba(255,193,7,0.08); color:var(--bs-body-color); border-left:
             <label class="form-label mb-0 fw-semibold"><i class="bi bi-shield-check me-1 text-muted"></i>Policy</label>
             <jsp:include page="/WEB-INF/jsp/pds/common/policy_select.jsp" />
         </div>
+        <div class="col-12">
+            <label for="iqb_protocol" class="form-label mb-0 fw-semibold"><i class="bi bi-plug me-1 text-muted"></i>Live session protocol</label>
+            <select class="form-select form-select-sm" id="iqb_protocol" aria-describedby="iqb_protocol_help">
+                <option value="">Any</option>
+                <option value="ftp"<c:if test="${param.protocol == 'ftp'}"> selected</c:if>>FTP</option>
+                <option value="sftp"<c:if test="${param.protocol == 'sftp'}"> selected</c:if>>SFTP</option>
+                <option value="https"<c:if test="${param.protocol == 'https'}"> selected</c:if>>HTTPS / Data Portal</option>
+                <option value="mqtt"<c:if test="${param.protocol == 'mqtt'}"> selected</c:if>>MQTT / MQTTS</option>
+                <option value="webdav"<c:if test="${param.protocol == 'webdav'}"> selected</c:if>>WebDAV</option>
+                <option value="s3"<c:if test="${param.protocol == 's3'}"> selected</c:if>>S3</option>
+            </select>
+            <div id="iqb_protocol_help" class="form-text mt-1">Requires at least one current session using this protocol.</div>
+        </div>
         <div class="col-6">
             <label class="form-label mb-0 fw-semibold"><i class="bi bi-chat-left-text me-1 text-muted"></i>Comment <span class="text-muted fw-normal" style="font-size:0.8em">wildcards * ?</span></label>
             <input type="text" class="form-control form-control-sm" id="iqb_comment" placeholder="e.g. *test*">
@@ -160,7 +173,7 @@ style="background:rgba(255,193,7,0.08); color:var(--bs-body-color); border-left:
         <p class="mb-1">This page lists all Data Portal users (incoming users). Use the controls in the header to narrow the list:</p>
         <ul class="mb-1 ps-3">
             <li><strong>Unassigned only</strong> &mdash; shows only users with no reachable destinations (neither direct nor via a Data Policy).</li>
-            <li><strong>Filter</strong> &mdash; query builder with Destination, Policy, Comment, Country, Enabled, Portal Service, TOTP, and Properties editor filters. A <span style="color:#dc3545">&#9888;</span> icon in the Data Login column marks users with properties errors.</li>
+            <li><strong>Filter</strong> &mdash; query builder with Destination, Policy, Live session protocol, Comment, Country, Enabled, Portal Service, TOTP, and Properties editor filters. The protocol filter requires at least one current session, not a historical connection or a configured permission; MQTT includes MQTTS. A <span style="color:#dc3545">&#9888;</span> icon in the Data Login column marks users with properties errors.</li>
             <li><strong>Search data login</strong> &mdash; client-side text filter on the login name, applied on top of the other filters.</li>
         </ul>
         <strong class="d-block mb-1 mt-2">Portal Service modes</strong>
@@ -237,6 +250,7 @@ function _buildAjaxUrl() {
     var pe = iqbVal('iqb_propErrors'); if (pe) params.push('propErrors=' + encodeURIComponent(pe));
     var co = iqbVal('iqb_country');    if (co) params.push('country='    + encodeURIComponent(co));
     var cm = iqbVal('iqb_comment');    if (cm) params.push('comment='    + encodeURIComponent(cm));
+    var pr = iqbVal('iqb_protocol');   if (pr) params.push('protocol='   + encodeURIComponent(pr));
     return '/do/user/incoming/list' + (params.length ? '?' + params.join('&') : '');
 }
 function iqbCountActive() {
@@ -249,6 +263,7 @@ function iqbCountActive() {
     if (iqbVal('iqb_propErrors')) n++;
     if (iqbVal('iqb_country'))    n++;
     if (iqbVal('iqb_comment'))    n++;
+    if (iqbVal('iqb_protocol'))   n++;
     return n;
 }
 function iqbUpdateBadge() {
@@ -260,7 +275,7 @@ function iqbUpdateBadge() {
 }
 function _syncUrl() {
     var url = new URL(window.location.href);
-    ['destinationNameForSearch','policyNameForSearch','enabled','service','totp','propErrors','country','comment'].forEach(function(k) {
+    ['destinationNameForSearch','policyNameForSearch','enabled','service','totp','propErrors','country','comment','protocol'].forEach(function(k) {
         url.searchParams.delete(k);
     });
     if (_destFilter)   url.searchParams.set('destinationNameForSearch', _destFilter);
@@ -271,6 +286,7 @@ function _syncUrl() {
     var pe = iqbVal('iqb_propErrors'); if (pe) url.searchParams.set('propErrors', pe);
     var co = iqbVal('iqb_country');    if (co) url.searchParams.set('country', co);
     var cm = iqbVal('iqb_comment');    if (cm) url.searchParams.set('comment', cm);
+    var pr = iqbVal('iqb_protocol');   if (pr) url.searchParams.set('protocol', pr);
     history.replaceState(null, '', url.toString());
 }
 function iqbApply() {
@@ -284,7 +300,7 @@ function iqbClear() {
     _destFilter = ''; _policyFilter = '';
     var di = document.getElementById('destPickerInput');   if (di) di.value = '';
     var pi = document.getElementById('policyPickerInput'); if (pi) pi.value = '';
-    ['iqb_enabled','iqb_service','iqb_totp','iqb_propErrors','iqb_country','iqb_comment'].forEach(function(id) {
+    ['iqb_enabled','iqb_service','iqb_totp','iqb_propErrors','iqb_country','iqb_comment','iqb_protocol'].forEach(function(id) {
         var el = document.getElementById(id); if (el) el.value = '';
     });
     // Clear country flag
@@ -333,6 +349,7 @@ $(document).ready(function() {
                 var pe = iqbVal('iqb_propErrors'); if (pe) d.propErrors = pe;
                 var co = iqbVal('iqb_country');    if (co) d.country = co;
                 var cm = iqbVal('iqb_comment');    if (cm) d.comment = cm;
+                var pr = iqbVal('iqb_protocol');   if (pr) d.protocol = pr;
             },
             dataSrc: function(json) {
                 _canDelete = !!json.canDelete;
@@ -545,4 +562,3 @@ $(document).ready(function() {
         });
 });
 </script>
-

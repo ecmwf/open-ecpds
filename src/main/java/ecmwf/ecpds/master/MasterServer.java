@@ -629,10 +629,9 @@ public final class MasterServer extends ECaccessProvider
 
     @Override
     public void updateTrafficAccounting(String mover, Map<String, String> snapshot) throws RemoteException {
-        if (!actualTrafficReady)
-            throw new RemoteException("Actual traffic history could not be restored");
         if (mover == null || mover.isBlank() || mover.length() > 1024)
             throw new RemoteException("Invalid accounting mover identity");
+        ensureActualTrafficReady();
         final var key = trafficSourceKey(mover);
         try {
             actualTraffic.compute(key, (_, existing) -> {
@@ -672,8 +671,7 @@ public final class MasterServer extends ECaccessProvider
     }
 
     public Map<String, Long> getActualTrafficTotals() throws RemoteException {
-        if (!actualTrafficReady)
-            throw new RemoteException("Actual traffic history could not be restored");
+        ensureActualTrafficReady();
         final Map<String, Long> result = new java.util.LinkedHashMap<>();
         for (final var type : TrafficAccounting.TYPES)
             result.put(type, 0L);
@@ -865,6 +863,7 @@ public final class MasterServer extends ECaccessProvider
             MalformedObjectNameException, InstanceNotFoundException, ConnectionException, DataBaseException {
         super(new ECpdsBase(), starter);
         _log.info("MasterServer-version: {}", Version.getFullVersion());
+        _loadActualTrafficFromDb();
         OperationalEvents.start(getECpdsBase());
         TransferTracing.start("master");
         TransferMetrics.start(this);
@@ -1054,7 +1053,6 @@ public final class MasterServer extends ECaccessProvider
         } else {
             theMoverAvailabilityScheduler = null;
         }
-        _loadActualTrafficFromDb();
         try {
             weatherAdministration.load();
         } catch (final Exception e) {
@@ -3709,23 +3707,35 @@ public final class MasterServer extends ECaccessProvider
     /**
      * Restores authoritative per-producer stream counters before accepting accounting updates.
      */
-    private void _loadActualTrafficFromDb() {
+    private void ensureActualTrafficReady() throws RemoteException {
+        if (!actualTrafficReady) {
+            _loadActualTrafficFromDb();
+            if (!actualTrafficReady)
+                throw new RemoteException("Actual traffic history is unavailable; restoration will be retried");
+        }
+    }
+
+    private synchronized void _loadActualTrafficFromDb() {
+        if (actualTrafficReady)
+            return;
         final var base = getECpdsBase();
         if (base == null) {
             _log.warn("Cannot restore actual traffic because ECpdsBase is not available");
             return;
         }
         try {
+            final Map<String, TrafficAccounting> restored = new java.util.HashMap<>();
             for (final var entry : base.getSysConfigValuesByGroup("ActualTraffic").entrySet()) {
                 final var separator = entry.getKey().lastIndexOf('.');
                 if (separator <= 0)
                     throw new IllegalArgumentException("Invalid traffic accounting key: " + entry.getKey());
-                actualTraffic.computeIfAbsent(entry.getKey().substring(0, separator), _ -> new TrafficAccounting())
+                restored.computeIfAbsent(entry.getKey().substring(0, separator), _ -> new TrafficAccounting())
                         .merge(Map.of(entry.getKey().substring(separator + 1), entry.getValue()));
             }
+            actualTraffic.putAll(restored);
             actualTrafficReady = true;
-        } catch (final DataBaseException e) {
-            _log.warn("Failed to restore actual traffic; accounting updates and totals are unavailable", e);
+        } catch (final DataBaseException | RuntimeException e) {
+            _log.warn("Failed to restore actual traffic; accounting updates and totals will retry restoration", e);
         }
     }
 

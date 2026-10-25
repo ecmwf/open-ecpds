@@ -117,6 +117,10 @@ Local checkpointing continues while disconnected. Direct Movers defer delivery
 until their Master connection is established; REST-connected Movers defer it until
 their REST provider and proxy configuration are available. Failed deliveries remain
 unacknowledged and are retried.
+The Master restores persisted accounting early in startup. Accounting requests
+arriving during restoration wait for it to finish; if restoration fails,
+subsequent accounting updates or total queries retry it. Updates are not
+accepted and totals are not reported until the complete history is restored.
 The Master merges maxima per producer/minute/type and persists the changed totals
 before acknowledging. Duplicate deliveries,
 lost acknowledgements and out-of-order updates do not add bytes twice.

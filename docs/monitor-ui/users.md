@@ -12,6 +12,13 @@ Access is further controlled by **Categories**, **Policies**, and **Resources**.
 
 Lists all Data Portal users. Each user has a login, associated destinations (their accessible data), a portal service mode (Standard Login, Open Access, or Self-Service Registration), and optional quotas and geo-blocking rules. Click a user to edit their properties and destination associations.
 
+The **Filter → Live session protocol** selector shows only users with at least one
+current FTP, SFTP, HTTPS/Data Portal, MQTT/MQTTS, WebDAV or S3 session matching
+the selection. It combines with the other filters and is preserved in the page
+URL. It checks current connections, not connection history, subscriptions or
+protocol permissions. **Any** imposes no session requirement. Session counts
+still include all protocols; reload the list to refresh the session snapshot.
+
 
 ![Data Users](img/incoming-users.png)
 
@@ -99,4 +106,3 @@ OpenECPDS supports **Time-based One-time Password (TOTP)** authentication for bo
 OpenECPDS auto-detects whether the supplied credential is a **one-time passcode** (exactly 6 or 8 digits) or a **password** and routes to the appropriate TOTP client.
 
 For full configuration details and a behaviour reference table, see the [TOTP Authentication](../administration/totp.md) administration page.
-

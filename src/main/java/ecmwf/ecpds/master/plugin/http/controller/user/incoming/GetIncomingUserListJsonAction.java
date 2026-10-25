@@ -147,6 +147,11 @@ public class GetIncomingUserListJsonAction extends PDSAction {
             users = filterUnassigned(users);
         }
 
+        final var protocolFilter = request.getParameter("protocol");
+        if (protocolFilter != null && !protocolFilter.isBlank()) {
+            users = filterByProtocol(users, protocolFilter);
+        }
+
         // QB filters
         final var enabledFilter = request.getParameter("enabled"); // "yes" | "no"
         final var anonymousFilter = request.getParameter("anonymous"); // "yes" | "no" (legacy, maps to open-access)
@@ -206,6 +211,14 @@ public class GetIncomingUserListJsonAction extends PDSAction {
             writeError(response, draw, "Error building data users list: " + e.getMessage());
         }
         return null;
+    }
+
+    static Collection<IncomingUser> filterByProtocol(final Collection<IncomingUser> users, final String protocol) {
+        return users.stream()
+                .filter(u -> u.getIncomingConnections().stream()
+                        .anyMatch(c -> protocol.equalsIgnoreCase(c.getProtocol())
+                                || "mqtt".equalsIgnoreCase(protocol) && "mqtts".equalsIgnoreCase(c.getProtocol())))
+                .toList();
     }
 
     private static String buildIdLink(final String id, final boolean propErrors) {
