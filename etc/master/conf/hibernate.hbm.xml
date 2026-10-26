@@ -1717,6 +1717,9 @@
 		<property name="PTR_CONNECTIONS" type="int">
 			<column name="PTR_CONNECTIONS" />
 		</property>
+		<property name="PTR_DENIALS" type="java.lang.Long">
+			<column name="PTR_DENIALS" />
+		</property>
 		<property name="PTR_BYTES_IN" type="java.lang.Long">
 			<column name="PTR_BYTES_IN" />
 		</property>

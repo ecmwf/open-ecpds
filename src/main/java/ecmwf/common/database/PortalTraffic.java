@@ -31,6 +31,7 @@ public final class PortalTraffic extends DataBaseObject {
     protected String PTR_USER = "";
     protected Timestamp PTR_TIME;
     protected int PTR_CONNECTIONS = 0;
+    protected long PTR_DENIALS = 0;
     protected long PTR_BYTES_IN = 0;
     protected long PTR_BYTES_OUT = 0;
     protected long PTR_DURATION_IN = 0;
@@ -58,6 +59,14 @@ public final class PortalTraffic extends DataBaseObject {
 
     public void setConnections(final int v) {
         PTR_CONNECTIONS = v;
+    }
+
+    public long getDenials() {
+        return PTR_DENIALS;
+    }
+
+    public void setDenials(final long v) {
+        PTR_DENIALS = v;
     }
 
     public long getBytesIn() {
@@ -93,9 +102,10 @@ public final class PortalTraffic extends DataBaseObject {
     }
 
     /** Thread-safe in-place accumulation used by the in-memory buffer. */
-    public synchronized void accumulate(final int connections, final long bytesIn, final long bytesOut,
-            final long durationIn, final long durationOut) {
+    public synchronized void accumulate(final int connections, final long denials, final long bytesIn,
+            final long bytesOut, final long durationIn, final long durationOut) {
         PTR_CONNECTIONS += connections;
+        PTR_DENIALS += denials;
         PTR_BYTES_IN += bytesIn;
         PTR_BYTES_OUT += bytesOut;
         PTR_DURATION_IN += durationIn;

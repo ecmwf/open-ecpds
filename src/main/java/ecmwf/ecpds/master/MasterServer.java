@@ -1376,9 +1376,7 @@ public final class MasterServer extends ECaccessProvider
             final var base = getECpdsBase();
             final var user = base.getIncomingUserObject(incomingUser);
             if (user == null) {
-                if (_operationalEvents.isEnabled())
-                    _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
-                            field("UserId", incomingUser), field("Message", "Not found"), field("Context", from));
+                recordPortalAccessDenial(incomingUser, "Not found", from);
                 throw new MasterException("Login failed");
             }
             // Let's get the data from the user and the data policies!
@@ -1409,16 +1407,11 @@ public final class MasterServer extends ECaccessProvider
                 }
             }
             if (blocked) {
-                if (_operationalEvents.isEnabled())
-                    _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
-                            field("UserId", incomingUser), field("Message", "Geolocation restriction"),
-                            field("Context", from));
+                recordPortalAccessDenial(incomingUser, "Geolocation restriction", from);
                 throw new MasterException("Login failed");
             }
             if (!user.getActive()) {
-                if (_operationalEvents.isEnabled())
-                    _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
-                            field("UserId", incomingUser), field("Message", "Disabled"), field("Context", from));
+                recordPortalAccessDenial(incomingUser, "Disabled", from);
                 throw new MasterException("Login failed");
             }
             if ("open-access".equals(user.getPortalService())) {
@@ -1436,10 +1429,7 @@ public final class MasterServer extends ECaccessProvider
                         authenticated = false;
                     }
                     if (!authenticated) {
-                        if (_operationalEvents.isEnabled())
-                            _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
-                                    field("UserId", incomingUser), field("Message", "TOTP authentication failed"),
-                                    field("Context", from));
+                        recordPortalAccessDenial(incomingUser, "TOTP authentication failed", from);
                         throw new MasterException("Login failed");
                     }
                 } else {
@@ -1451,11 +1441,7 @@ public final class MasterServer extends ECaccessProvider
                         // no admin password "back-door" can bypass the subscriber flow.
                         final var subscriber = base.findActiveSubscriberByPassword(incomingUser, incomingPassword);
                         if (subscriber == null) {
-                            if (_operationalEvents.isEnabled())
-                                _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
-                                        field("UserId", incomingUser),
-                                        field("Message", "Subscriber password authentication failed"),
-                                        field("Context", from));
+                            recordPortalAccessDenial(incomingUser, "Subscriber password authentication failed", from);
                             throw new MasterException("Login failed");
                         }
                         _log.debug("Subscriber {} authenticated as IncomingUser {}", subscriber.getPsbEmail(),
@@ -1464,19 +1450,13 @@ public final class MasterServer extends ECaccessProvider
                         // Standard login: check the IncomingUser's own password
                         final var localPassword = user.getPassword();
                         if (localPassword == null) {
-                            if (_operationalEvents.isEnabled())
-                                _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
-                                        field("UserId", incomingUser), field("Message", "Password not set"),
-                                        field("Context", from));
+                            recordPortalAccessDenial(incomingUser, "Password not set", from);
                             _log.debug("Password not set for IncomingUser {}", incomingUser);
                             throw new MasterException("Login failed");
                         }
                         if (!localPassword.equals(incomingPassword)
                                 && !_getIncomingUserHash(user).equals(incomingPassword)) {
-                            if (_operationalEvents.isEnabled())
-                                _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
-                                        field("UserId", incomingUser),
-                                        field("Message", "Password authentication failed"), field("Context", from));
+                            recordPortalAccessDenial(incomingUser, "Password authentication failed", from);
                             throw new MasterException("Login failed");
                         }
                     }
@@ -1494,9 +1474,7 @@ public final class MasterServer extends ECaccessProvider
                 if (count >= maxConnections) {
                     final var message = "Maximum number of connections exceeded (" + count + ") [confirmed=" + confirmed
                             + ",pending=" + pending + "]";
-                    if (_operationalEvents.isEnabled())
-                        _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
-                                field("UserId", incomingUser), field("Message", message), field("Context", from));
+                    recordPortalAccessDenial(incomingUser, message, from);
                     _log.warn("{} for IncomingUser {}", message, incomingUser);
                     throw new MasterException(message);
                 }
@@ -1514,7 +1492,7 @@ public final class MasterServer extends ECaccessProvider
                     pt.setUser(incomingUser);
                     pt.setTime(new java.sql.Timestamp((System.currentTimeMillis() / 60000L) * 60000L));
                     return pt;
-                }).accumulate(1, 0, 0, 0, 0);
+                }).accumulate(1, 0, 0, 0, 0, 0);
             }
             // Check upload byte quota
             final var maxUploadBytes = setup.getByteSize(USER_PORTAL_MAX_UPLOAD_BYTES).size();
@@ -1531,9 +1509,7 @@ public final class MasterServer extends ECaccessProvider
                         if (pending != null)
                             pending.pollLast();
                     }
-                    if (_operationalEvents.isEnabled())
-                        _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
-                                field("UserId", incomingUser), field("Message", message), field("Context", from));
+                    recordPortalAccessDenial(incomingUser, message, from);
                     _log.warn("{} for IncomingUser {}", message, incomingUser);
                     throw new MasterException(message);
                 }
@@ -1553,9 +1529,7 @@ public final class MasterServer extends ECaccessProvider
                         if (pending != null)
                             pending.pollLast();
                     }
-                    if (_operationalEvents.isEnabled())
-                        _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
-                                field("UserId", incomingUser), field("Message", message), field("Context", from));
+                    recordPortalAccessDenial(incomingUser, message, from);
                     _log.warn("{} for IncomingUser {}", message, incomingUser);
                     throw new MasterException(message);
                 }
@@ -1569,19 +1543,13 @@ public final class MasterServer extends ECaccessProvider
                 }
             }
             if (destinations.isEmpty()) {
-                if (_operationalEvents.isEnabled())
-                    _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
-                            field("UserId", incomingUser), field("Message", "No associated Destinations"),
-                            field("Context", from));
+                recordPortalAccessDenial(incomingUser, "No associated Destinations", from);
                 throw new MasterException("Login failed");
             }
             // Look for the Permissions associated to this user!
             final var permissions = base.getIncomingPermissionsForIncomingUser(incomingUser);
             if (permissions.isEmpty()) {
-                if (_operationalEvents.isEnabled())
-                    _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
-                            field("UserId", incomingUser), field("Message", "No associated Permissions"),
-                            field("Context", from));
+                recordPortalAccessDenial(incomingUser, "No associated Permissions", from);
                 throw new MasterException("Login failed");
             }
             // Let's update with the last login informations!
@@ -1600,6 +1568,13 @@ public final class MasterServer extends ECaccessProvider
         } catch (final Throwable t) {
             throw Format.getRemoteException("MasterServer=" + getRoot(), t);
         }
+    }
+
+    private void recordPortalAccessDenial(final String userId, final String message, final String context) {
+        DataFileAccessImpl.recordPortalAccessDenial(userId);
+        if (_operationalEvents.isEnabled())
+            _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
+                    field("UserId", userId), field("Message", message), field("Context", context));
     }
 
     /**

@@ -1324,10 +1324,10 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                             return pt;
                         });
                         if (event.getUpload()) {
-                            entry.accumulate(0, event.getSent(), 0, event.getDuration(), 0);
+                            entry.accumulate(0, 0, event.getSent(), 0, event.getDuration(), 0);
                             MasterServer.recordPortalBytes(event.getUserName(), true, event.getSent());
                         } else {
-                            entry.accumulate(0, 0, event.getSent(), 0, event.getDuration());
+                            entry.accumulate(0, 0, 0, event.getSent(), 0, event.getDuration());
                             MasterServer.recordPortalBytes(event.getUserName(), false, event.getSent());
                         }
                         final var recordedDestinations = new java.util.HashSet<String>();
@@ -1343,5 +1343,18 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
             }
         }
         monitor.done();
+    }
+
+    static void recordPortalAccessDenial(final String userId) {
+        final var now = System.currentTimeMillis();
+        final var user = userId == null ? "" : userId;
+        final var minuteKey = user + "|"
+                + new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(new java.util.Date(now));
+        PORTAL_TRAFFIC_BUFFER.computeIfAbsent(minuteKey, _ -> {
+            final var pt = new PortalTraffic();
+            pt.setUser(user);
+            pt.setTime(new Timestamp((now / 60000L) * 60000L));
+            return pt;
+        }).accumulate(0, 1, 0, 0, 0, 0);
     }
 }

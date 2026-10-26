@@ -29,7 +29,7 @@
         <strong class="d-block mb-1">Data Portal Traffic &mdash; user <c:out value="${portalTrafficUser}"/></strong>
         <p class="mb-1">Daily Data Portal activity for user <strong><c:out value="${portalTrafficUser}"/></strong>. Periods with fewer connections and lower transfer rates indicate lower contention on the portal.</p>
         <ul class="mb-1 ps-3">
-          <li><strong>Connections</strong> &mdash; number of sessions authenticated by this user each day.</li>
+          <li><strong>Connections</strong> &mdash; number of sessions authenticated by this user each day; the graph also shows denied access attempts (DEA).</li>
           <li><strong>Uploaded / Downloaded</strong> &mdash; total bytes transferred in each direction.</li>
           <li><strong>Upload / Download Rate</strong> &mdash; average Mbps (bytes &divide; cumulated transfer duration) for this user's sessions.</li>
           <li><strong>Granularity</strong> &mdash; today's activity appears immediately from live minute-buckets; past days are aggregated nightly and kept indefinitely.</li>
@@ -39,7 +39,7 @@
         <strong class="d-block mb-1">Data Portal Traffic &mdash; all users</strong>
         <p class="mb-1">Aggregated daily Data Portal traffic across all incoming users.</p>
         <ul class="mb-1 ps-3">
-          <li><strong>Connections</strong> &mdash; total sessions authenticated across all users each day.</li>
+          <li><strong>Connections</strong> &mdash; total sessions authenticated across all users each day; the graph also shows denied access attempts (DEA).</li>
           <li><strong>Uploaded / Downloaded</strong> &mdash; total bytes transferred in each direction.</li>
           <li><strong>Upload / Download Rate</strong> &mdash; average Mbps computed from total bytes and cumulated transfer duration across all sessions.</li>
           <li><strong>Granularity</strong> &mdash; today's data is shown from live minute-buckets; historical data is aggregated nightly and kept indefinitely.</li>
@@ -66,10 +66,11 @@
 <c:if test="${not empty portalTrafficList}">
 <script src="/assets/js/chart.umd.min.js"></script>
 <script>
-const ptTimes = [], ptConnections = [], ptBytesIn = [], ptBytesOut = [], ptDurationIn = [], ptDurationOut = [];
+const ptTimes = [], ptConnections = [], ptDenials = [], ptBytesIn = [], ptBytesOut = [], ptDurationIn = [], ptDurationOut = [];
 <c:forEach var="pt" items="${portalTrafficList}">
 ptTimes.push(('<c:out value="${pt.time}"/>').substring(0,10));
 ptConnections.push(${pt.connections});
+ptDenials.push(${pt.denials});
 ptBytesIn.push(${pt.bytesIn});
 ptBytesOut.push(${pt.bytesOut});
 ptDurationIn.push(${pt.durationIn});
@@ -172,6 +173,7 @@ function ptBuildCharts() {
   if (_ptReversed) idx = idx.slice().reverse();
   var labels = idx.map(function(i) { return ptTimes[i]; });
   var conn   = idx.map(function(i) { return ptConnections[i]; });
+  var denials = idx.map(function(i) { return ptDenials[i]; });
   var rIn    = idx.map(function(i) { return ptRateIn[i]; });
   var rOut   = idx.map(function(i) { return ptRateOut[i]; });
   var vIn    = idx.map(function(i) { return ptBytesIn[i]; });
@@ -179,11 +181,13 @@ function ptBuildCharts() {
   var theme = ptGetThemeColors();
   _ptChartConn = new Chart(document.getElementById('ptConnChart'), {
     type: 'bar',
-    data: { labels: labels, datasets: [{
-      label: 'Connections', data: conn,
-      backgroundColor: 'rgba(13,110,253,0.55)', borderColor: '#0d6efd', borderWidth: 1
-    }]},
-    options: { responsive:true, maintainAspectRatio:false,
+    data: { labels: labels, datasets: [
+      { type:'bar', label:'Connections', data:conn,
+        backgroundColor:'rgba(13,110,253,0.55)', borderColor:'#0d6efd', borderWidth:1 },
+      { type:'line', label:'Denied Access (DEA)', data:denials,
+        borderColor:'#dc3545', backgroundColor:'rgba(220,53,69,0.12)', pointRadius:2, tension:0.2 }
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
       plugins:{ legend:{labels:{color:theme.bodyColor}} },
       scales:{ x:{ticks:{color:theme.bodyColor},grid:{color:theme.borderColor}},
                y:{beginAtZero:true,ticks:{precision:0,color:theme.bodyColor},grid:{color:theme.borderColor}} }}

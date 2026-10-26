@@ -4575,6 +4575,7 @@ public final class ECpdsBase extends DataBase {
                 final var pt = new PortalTraffic();
                 pt.setTime(rs.getTimestamp("TIME"));
                 pt.setConnections(rs.getInt("CONNECTIONS"));
+                pt.setDenials(rs.getLong("DENIALS"));
                 pt.setBytesIn(rs.getLong("BYTES_IN"));
                 pt.setBytesOut(rs.getLong("BYTES_OUT"));
                 pt.setDurationIn(rs.getLong("DURATION_IN"));
@@ -4597,6 +4598,7 @@ public final class ECpdsBase extends DataBase {
                 pt.setUser(userId);
                 pt.setTime(rs.getTimestamp("TIME"));
                 pt.setConnections(rs.getInt("CONNECTIONS"));
+                pt.setDenials(rs.getLong("DENIALS"));
                 pt.setBytesIn(rs.getLong("BYTES_IN"));
                 pt.setBytesOut(rs.getLong("BYTES_OUT"));
                 pt.setDurationIn(rs.getLong("DURATION_IN"));
@@ -4620,6 +4622,7 @@ public final class ECpdsBase extends DataBase {
                 pt.setUser(userId);
                 pt.setTime(rs.getTimestamp("TIME"));
                 pt.setConnections(rs.getInt("CONNECTIONS"));
+                pt.setDenials(rs.getLong("DENIALS"));
                 pt.setBytesIn(rs.getLong("BYTES_IN"));
                 pt.setBytesOut(rs.getLong("BYTES_OUT"));
                 pt.setDurationIn(rs.getLong("DURATION_IN"));
@@ -4636,7 +4639,7 @@ public final class ECpdsBase extends DataBase {
 
     public void upsertPortalTraffic(final PortalTraffic pt) throws DataBaseException {
         try {
-            ecpds.upsertPortalTraffic(pt.getTime(), pt.getUser(), pt.getConnections(), pt.getBytesIn(),
+            ecpds.upsertPortalTraffic(pt.getTime(), pt.getUser(), pt.getConnections(), pt.getDenials(), pt.getBytesIn(),
                     pt.getBytesOut(), pt.getDurationIn(), pt.getDurationOut());
         } catch (final Exception e) {
             _log.warn("upsertPortalTraffic", e);
