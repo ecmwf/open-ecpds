@@ -49,6 +49,10 @@
          <lastmod>2026-10-26</lastmod>
     </url>
     <url>
+         <loc>https://ecmwf.github.io/open-ecpds/administration/ecaccess-identity/</loc>
+         <lastmod>2026-10-26</lastmod>
+    </url>
+    <url>
          <loc>https://ecmwf.github.io/open-ecpds/administration/mover-control-channel-security/</loc>
          <lastmod>2026-10-26</lastmod>
     </url>
@@ -326,6 +330,10 @@
     </url>
     <url>
          <loc>https://ecmwf.github.io/open-ecpds/transfer-modules/azure/</loc>
+         <lastmod>2026-10-26</lastmod>
+    </url>
+    <url>
+         <loc>https://ecmwf.github.io/open-ecpds/transfer-modules/ecaccess/</loc>
          <lastmod>2026-10-26</lastmod>
     </url>
     <url>
