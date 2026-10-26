@@ -3,12 +3,13 @@
 OpenECPDS supports complementary extension points for identity and data exchange:
 
 - **Identity Extensions** — alternative Master WebUser authentication and external user lookup
+- **Remote Service Extensions** — optional Master-provided services for trusted RMI peers
 - **Transfer Modules** — extend *outgoing* connections (acquisition and dissemination)
 - **Server Plugins** — extend *incoming* connections (Data Portal)
 
 Implement the relevant interface and explicitly register its implementation.
 Transfer modules and server plugins retain their existing loaders; identity
-extensions use the startup-only SPI described below.
+and remote-service extensions use explicit startup-only registration.
 
 ## Identity extensions
 
@@ -134,9 +135,50 @@ lookup without copying `MasterServer`. It is built only with the
 `ecaccess-extension` Maven profile and a separately extracted client-contract jar.
 See [ECaccess identity](../administration/ecaccess-identity.md) for build,
 configuration and passcode semantics.
-Gateway transfers still require an additional cross-service integration boundary:
-the existing ECaccess-specific Mover/Master remote-access plumbing is not supplied
-by the identity SPI. This SPI does not enable arbitrary remote extension calls.
+The same optional jar supplies [ECaccess gateway transfers](../transfer-modules/ecaccess.md)
+through the independent remote-service SPI below. Gateway operations and legacy
+wire types remain entirely in that jar; the identity SPI does not dispatch them.
+
+## Remote service extensions
+
+`RemoteServiceProvider` supplies Master-side services needed by trusted Movers.
+It extends the same versioned `Extension` lifecycle and returns `java.rmi.Remote`
+from `open(target)`. The provider defines and validates the target, and owns its
+remote interface and exported objects. Core has no knowledge of the service's
+operations, protocol or implementation-specific data types.
+
+Register stable service IDs and their configuration section names explicitly:
+
+```ini
+[RemoteServiceExtensions]
+company=CompanyService
+
+[CompanyService]
+class=org.example.ecpds.CompanyRemoteService
+endpoint=...
+```
+
+The provider must be public with a public no-argument constructor. Each
+registration creates an independent instance with its section's immutable
+options and the Master root. IDs match `[A-Za-z][A-Za-z0-9_.-]{0,63}`.
+Providers start in service-ID order before Master schedulers start and close in
+reverse order, including when startup fails. Missing configuration, an invalid
+class or an incompatible API fails startup; remove a registration to disable it.
+With no registrations, no provider is loaded.
+
+Movers call `MasterProxy.getExtensionService(serviceId, target)` over Master RMI
+and cast the result to the extension's remote interface. Install the trusted
+interface jar on both peers' application classpaths; runtime class download is
+not required. A provider returns an exported object/stub or `null` for
+unavailability; errors fail the request without core retries. Remote operations
+are declared on the extension interface, **not** dispatched through reflective
+method names or arbitrary class names supplied by callers.
+
+This is a trusted in-process SPI using the existing Master RMI trust boundary,
+not a public REST API or an authorization sandbox. The REST Master proxy rejects
+this lookup explicitly. Providers must bound waits, support concurrent calls,
+and release exports on close and when clients abandon them. The extension
+defines its peer-interface compatibility; deploy matching jars on both sides.
 
 ## Interactive login extensions
 

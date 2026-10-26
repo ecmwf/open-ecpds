@@ -26,6 +26,9 @@ package ecmwf.ecpds.mover;
  * @since 2024-07-01
  */
 
+import java.io.IOException;
+import java.rmi.Remote;
+
 import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.Destination;
 import ecmwf.common.database.Host;
@@ -39,6 +42,11 @@ import ecmwf.ecpds.master.LiveTransferSample;
  * The Interface MasterProxy.
  */
 public interface MasterProxy {
+    /** Optional remote extension services require Master RMI connectivity. */
+    default Remote getExtensionService(final String service, final String target) throws Exception {
+        throw new IOException("Remote extension services require Master RMI connectivity");
+    }
+
     /**
      * Shutdown.
      */

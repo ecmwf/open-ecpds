@@ -9,7 +9,7 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<artifactId>ecpds-ecaccess</artifactId>
-	<name>OpenECPDS ECaccess Identity Extension</name>
+	<name>OpenECPDS ECaccess Extension</name>
 	<dependencies>
 		<dependency>
 			<groupId>ecmwf</groupId>

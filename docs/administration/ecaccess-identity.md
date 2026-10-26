@@ -6,8 +6,9 @@ ECCMD daemon; it does not deploy a gateway, ECCMD server, JBoss or an EJB server
 
 It supplies both `AuthenticationProvider` and `UserDirectoryProvider`. The core
 remains responsible for local account activation, WebUser permissions and
-database persistence. This extension does not implement `ECaccessModule` gateway
-transfers; that integration is separate.
+database persistence. The same optional jar also provides
+[ECaccess gateway transfers](../transfer-modules/ecaccess.md), enabled separately
+through the generic remote-service SPI.
 
 ## Build the client contracts and extension
 

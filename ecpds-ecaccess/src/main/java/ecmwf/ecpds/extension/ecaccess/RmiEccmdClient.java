@@ -23,11 +23,15 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.util.List;
+import java.util.Arrays;
 
 import ecmwf.common.database.ECUser;
 import ecmwf.common.rmi.RMIClientSocketFactory;
+import ecmwf.common.technical.Cnf;
+import ecmwf.ecbatch.eis.rmi.client.DataAccess;
 import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 import ecmwf.ecbatch.eis.rmi.client.EccmdInterface;
+import ecmwf.ecpds.extension.ExtensionContext;
 
 /**
  * On-demand connection to the existing ECCMD registry binding. Never replay a credential RPC after failure.
@@ -41,6 +45,40 @@ final class RmiEccmdClient implements EccmdClient {
     RmiEccmdClient(final List<String> hosts, final int port) {
         this.hosts = List.copyOf(hosts);
         this.port = port;
+    }
+
+    static RmiEccmdClient configured(final ExtensionContext context) throws IOException {
+        final var configured = context.option("host");
+        if (configured == null || configured.isBlank()) {
+            throw new IOException("Missing ECaccess host");
+        }
+        final var hosts = Arrays.stream(configured.split("[,;|]", -1)).map(String::trim).toList();
+        if (hosts.stream().anyMatch(String::isBlank) || hosts.size() > 8) {
+            throw new IOException("Invalid ECaccess hosts");
+        }
+        final int port;
+        try {
+            port = Integer.parseInt(context.option("port") == null ? "640" : context.option("port"));
+        } catch (NumberFormatException e) {
+            throw new IOException("Invalid ECaccess port");
+        }
+        if (port < 1 || port > 65535) {
+            throw new IOException("Invalid ECaccess port");
+        }
+        final var readTimeout = Cnf.at("RMIClientSocketFactory", "soTimeOut", 0);
+        final var connectTimeout = Cnf.at("RMIClientSocketFactory", "connectTimeOut", 0);
+        if (readTimeout < 1 || readTimeout > 60000 || connectTimeout < 1 || connectTimeout > 60000) {
+            throw new IOException("Set RMIClientSocketFactory soTimeOut and connectTimeOut between 1 and 60000 ms");
+        }
+        return new RmiEccmdClient(hosts, port);
+    }
+
+    DataAccess gateway(final String target) throws IOException {
+        try {
+            return call(remote -> remote.getDataAccess(target));
+        } catch (EccmdException e) {
+            throw new IOException("ECCMD gateway discovery failed");
+        }
     }
 
     private synchronized EccmdInterface connection() throws RemoteException {

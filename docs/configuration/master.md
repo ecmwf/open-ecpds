@@ -21,6 +21,11 @@ The optional [ECaccess identity extension](../administration/ecaccess-identity.m
 uses `host` and `port` in each identity-provider section and requires explicit
 bounded `[RMIClientSocketFactory]` connection/read timeouts.
 
+`[RemoteServiceExtensions]` explicitly maps service IDs to provider configuration
+sections. It defaults to no registrations. See
+[Remote service extensions](../concepts/plugin-infrastructure.md#remote-service-extensions)
+and the optional [ECaccess transfer module](../transfer-modules/ecaccess.md).
+
 `[InteractiveLoginExtension] class` independently enables browser-based Monitor
 login. It defaults to blank. `[InteractiveLoginMapping]` maps local WebUser IDs
 to JSON objects containing the verified external `issuer` and `subject`.

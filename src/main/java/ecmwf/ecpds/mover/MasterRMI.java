@@ -26,6 +26,8 @@ package ecmwf.ecpds.mover;
  * @since 2024-07-01
  */
 
+import java.rmi.Remote;
+
 import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.Destination;
 import ecmwf.common.database.Host;
@@ -40,6 +42,11 @@ import ecmwf.ecpds.master.LiveTransferSample;
  * The Class MasterRMI.
  */
 final class MasterRMI implements MasterProxy {
+    @Override
+    public Remote getExtensionService(final String service, final String target) throws Exception {
+        return _mover.getMasterInterface().getExtensionService(service, target);
+    }
+
     /** The _mover. */
     private final MoverServer _mover;
 

@@ -158,6 +158,7 @@ nav:
       - Google Cloud Storage: transfer-modules/gcs.md
       - Azure Blob Storage: transfer-modules/azure.md
       - ECauth (SSH/Telnet): transfer-modules/ecauth.md
+      - ECaccess Gateways (optional): transfer-modules/ecaccess.md
       - Portal: transfer-modules/portal.md
       - Test: transfer-modules/test.md
   - Host Directory:

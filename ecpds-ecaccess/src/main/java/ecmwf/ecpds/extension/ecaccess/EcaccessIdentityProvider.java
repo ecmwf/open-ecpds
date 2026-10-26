@@ -20,11 +20,9 @@ package ecmwf.ecpds.extension.ecaccess;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
-import java.util.Arrays;
 
 import ecmwf.common.database.ECUser;
 import ecmwf.common.security.LoginManagement;
-import ecmwf.common.technical.Cnf;
 import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 import ecmwf.ecpds.extension.AuthenticationProvider;
 import ecmwf.ecpds.extension.ExtensionContext;
@@ -52,30 +50,8 @@ public final class EcaccessIdentityProvider implements AuthenticationProvider, U
 
     @Override
     public void start(final ExtensionContext context) throws IOException {
-        final var configured = context.option("host");
-        if (configured == null || configured.isBlank()) {
-            throw new IOException("Missing ECaccess identity host");
-        }
-        final var hosts = Arrays.stream(configured.split("[,;|]", -1)).map(String::trim).toList();
-        if (hosts.stream().anyMatch(String::isBlank) || hosts.size() > 8) {
-            throw new IOException("Invalid ECaccess identity hosts");
-        }
-        final int port;
-        try {
-            port = Integer.parseInt(context.option("port") == null ? "640" : context.option("port"));
-        } catch (NumberFormatException e) {
-            throw new IOException("Invalid ECaccess identity port");
-        }
-        if (port < 1 || port > 65535) {
-            throw new IOException("Invalid ECaccess identity port");
-        }
-        final var readTimeout = Cnf.at("RMIClientSocketFactory", "soTimeOut", 0);
-        final var connectTimeout = Cnf.at("RMIClientSocketFactory", "connectTimeOut", 0);
-        if (readTimeout < 1 || readTimeout > 60000 || connectTimeout < 1 || connectTimeout > 60000) {
-            throw new IOException("Set RMIClientSocketFactory soTimeOut and connectTimeOut between 1 and 60000 ms");
-        }
         root = context.root();
-        client = new RmiEccmdClient(hosts, port);
+        client = RmiEccmdClient.configured(context);
     }
 
     @Override

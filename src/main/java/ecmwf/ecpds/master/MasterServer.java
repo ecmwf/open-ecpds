@@ -129,6 +129,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
+import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
@@ -266,6 +267,7 @@ import ecmwf.common.text.Options;
 import ecmwf.common.version.Version;
 import ecmwf.ecpds.extension.AuthenticationProvider;
 import ecmwf.ecpds.extension.IdentityExtensions;
+import ecmwf.ecpds.extension.RemoteServices;
 import ecmwf.ecpds.master.plugin.ecpds.ECpdsClient;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 import ecmwf.ecpds.master.transfer.HostOption;
@@ -295,6 +297,7 @@ public final class MasterServer extends ECaccessProvider
     private static final transient Logger _log = LogManager.getLogger(MasterServer.class);
 
     private final IdentityExtensions identityExtensions;
+    private RemoteServices remoteServices;
 
     /** JSON mapper used by {@link #resolveManualValues(String, String)} to parse the supplied values map. */
     private static final ObjectMapper _JSON_MAPPER = new ObjectMapper();
@@ -870,6 +873,8 @@ public final class MasterServer extends ECaccessProvider
                 Cnf.at("UserDirectoryExtension", Map.of()), Cnf.at("InteractiveLoginExtension", Map.of()),
                 Cnf.at("InteractiveLoginMapping", Map.of()));
         try {
+            remoteServices = RemoteServices.load(getRoot(), Cnf.at("RemoteServiceExtensions", Map.of()),
+                    section -> Cnf.at(section, Map.of()));
             _log.info("MasterServer-version: {}", Version.getFullVersion());
             _loadActualTrafficFromDb();
             OperationalEvents.start(getECpdsBase());
@@ -1094,6 +1099,9 @@ public final class MasterServer extends ECaccessProvider
             startupThread.setDaemon(true);
             startupThread.start();
         } catch (Exception | LinkageError e) {
+            if (remoteServices != null) {
+                remoteServices.close();
+            }
             identityExtensions.close();
             throw e;
         }
@@ -6209,6 +6217,15 @@ public final class MasterServer extends ECaccessProvider
         return update;
     }
 
+    @Override
+    public Remote getExtensionService(final String service, final String target) throws RemoteException {
+        try {
+            return remoteServices.open(service, target);
+        } catch (IOException | RuntimeException e) {
+            throw new RemoteException("Remote extension service is unavailable");
+        }
+    }
+
     /**
      * Gets the ecauth token.
      *
@@ -7508,6 +7525,7 @@ public final class MasterServer extends ECaccessProvider
         OperationalEvents.shutdown();
         TransferTracing.shutdown();
         TransferMetrics.shutdown();
+        remoteServices.close();
         identityExtensions.close();
         super.shutdown();
     }

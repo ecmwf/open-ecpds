@@ -28,6 +28,7 @@ A module is responsible for the low-level operations of a transfer:
 | GCS | Google Cloud Storage | Dissemination & Acquisition | [Google Cloud Storage](gcs.md) |
 | Azure | Azure Blob Storage | Dissemination & Acquisition | [Azure Blob Storage](azure.md) |
 | ECauth | SSH/Telnet authentication transport | Dissemination & Acquisition | [ECauth](ecauth.md) |
+| ECaccess (optional extension) | External ECaccess gateway through ECCMD | Dissemination & Acquisition | [ECaccess](ecaccess.md) |
 | Portal | No-op local staging for Data Portal pull | Dissemination | [Portal](portal.md) |
 | Test | Simulation / benchmarking | Dissemination | [Test](test.md) |
 

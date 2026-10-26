@@ -26,6 +26,7 @@ package ecmwf.ecpds.master;
  * @since 2024-07-01
  */
 
+import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.List;
 
@@ -42,6 +43,9 @@ import ecmwf.common.ecaccess.ProviderInterface;
  * The Interface MasterInterface.
  */
 public interface MasterInterface extends ProviderInterface {
+
+    /** Open an explicitly registered extension service. Its remote interface belongs to the extension jar. */
+    Remote getExtensionService(String service, String target) throws RemoteException;
 
     /**
      * Update incoming connection ids.

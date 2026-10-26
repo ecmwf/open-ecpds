@@ -7,6 +7,10 @@ absent from the supplied template.
 
 See also the [Master](master.md) and [Monitor](monitor.md) references.
 
+The optional [ECaccess transfer module](../transfer-modules/ecaccess.md) requires
+Master RMI connectivity and the existing `ECproxyPlugin` callback listener.
+Its gateway properties belong to Hosts, not a new Mover provider section.
+
 ## File location and overrides
 
 The source template is
