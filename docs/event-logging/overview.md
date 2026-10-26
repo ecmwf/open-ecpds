@@ -20,6 +20,41 @@ ecosystem.
 File logs can be found in the directories mounted to the containers — see
 [Checking the Containers and Logs](../getting-started/first-run.md#checking-the-containers-and-logs).
 
+!!! note "Structure, format and standards"
+    **The `splunk.log` events are structured logs in an application-specific
+    encoding.** A custom encoding is not the same as an absence of structure.
+    The following distinctions apply to both the file output and native
+    OpenTelemetry:
+
+    | Criterion | What it means | How `splunk.log` meets it |
+    |-----------|---------------|--------------------------|
+    | Identifiable fields | Consumers can distinguish the event category and individual named fields. | Each record starts with a category code, followed by ordered `Name=value` fields separated by `;`. |
+    | Consistent semantics | A field has a defined meaning within its event category. | Category-specific field definitions describe identifiers, outcomes, timestamps, sizes and other event attributes. |
+    | Documented schema | Consumers know which fields to expect and how to interpret them. | Each event-category page provides a Fields table with names, types and meanings, alongside example records. |
+    | Defined value types | Values can be interpreted as timestamps, booleans, integers or strings according to the schema. | The file represents values as text; consumers apply the documented types. Native OpenTelemetry preserves supported numeric and boolean attribute types directly. |
+    | Unambiguous field boundaries | Data cannot be mistaken for separators or extra records. | File records containing `;`, CR or LF in a category, field name or value are rejected with a WARN rather than written ambiguously. Field names cannot contain `=`; parsers split each `Name=value` field at its first `=`, preserving equals signs within values. |
+    | Defined record boundaries | Consumers can identify where one event ends and the next begins. | Each accepted event occupies one line. Embedded CR/LF is rejected for the file output. |
+    | Machine processing | Fields can be extracted consistently without interpreting free-form prose. | A parser reads the category, splits fields on `;`, then splits each field at its first `=` and applies the category schema. File collection supports existing Splunk forwarder pipelines. |
+    | Standardisation | The encoding and schema may be application-specific or defined by an external specification. | The semicolon-delimited encoding and ECPDS event schema are application-specific, not a claim of JSON, syslog or OTLP conformance. Native OpenTelemetry provides the alternative standard telemetry data model and OTLP export; ECPDS-specific event attributes remain application-defined. |
+
+    A flat, single-line representation does not remove event structure, and
+    nesting is not required for structured logging. Likewise, using familiar
+    value types does not make an application-specific encoding an external
+    standard. Structure, encoding, schema and standardisation are related but
+    separate properties.
+
+    The practical trade-off is interoperability: existing Splunk pipelines can
+    continue using their established file parser, whereas other consumers must
+    implement that parser or use native OpenTelemetry. A Splunk forwarder can
+    collect other file encodings too; the current format is an integration choice,
+    not a requirement imposed by Splunk.
+
+    Delimiter validation protects the file representation without modifying
+    values or changing its established encoding. A rejected file record is absent
+    from `splunk.log`; its native OpenTelemetry event can still be emitted when
+    that output is enabled. This is an encoding safeguard, not a guarantee of
+    delivery or a substitute for monitoring collection failures.
+
 ## Reading the examples
 
 Each event-category page has **Splunk (`splunk.log`)** and **OpenTelemetry**
@@ -77,7 +112,12 @@ The Master publishes the same operational events through two independent outputs
 
 - **Splunk file**: the `SplunkLogs` Log4j2 logger writes `splunk.log`.
   Records use category codes and ordered text fields; Log4j2 controls file
-  rotation.
+  rotation. A category, field name or value containing a semicolon, carriage
+  return or newline causes the entire file record to be rejected with a WARN
+  in the Master service log. Field names containing `=` are also rejected;
+  values may contain `=` (split each field at its first equals sign).
+  Warnings do not include offending content. This validation does not reject
+  the independent native OpenTelemetry event or interrupt application operations.
 - **Native OpenTelemetry**: the application supplies named, typed attributes
   directly to an OpenTelemetry Logs SDK. It does not tail or parse `splunk.log`.
   Records are exported over OTLP to a Collector or compatible platform.

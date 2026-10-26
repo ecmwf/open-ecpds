@@ -242,11 +242,7 @@ public final class OperationalEvents {
     private void emit(final Context context, final String attemptId, final String retrievalId, final String category,
             final Field... fields) {
         if (splunkEnabled && legacyEnabled.getAsBoolean()) {
-            final var line = new StringBuilder(category);
-            for (final var field : fields) {
-                line.append(';').append(field.name()).append('=').append(field.value());
-            }
-            legacyOutput.accept(line.toString());
+            emitLegacy(category, fields);
         }
         final var logger = telemetry;
         if (logger == null || collectionPaused) {
@@ -284,6 +280,29 @@ public final class OperationalEvents {
         } catch (final RuntimeException e) {
             LOG.error("Failed to emit OpenTelemetry operational event {}", category, e);
         }
+    }
+
+    private void emitLegacy(final String category, final Field... fields) {
+        if (hasRecordSeparator(category)) {
+            LOG.warn(
+                    "Rejected Splunk event: category contains a semicolon or CR/LF; native OpenTelemetry is unaffected");
+            return;
+        }
+        final var line = new StringBuilder(category);
+        for (final var field : fields) {
+            final var value = String.valueOf(field.value());
+            if (hasRecordSeparator(field.name()) || field.name().indexOf('=') >= 0 || hasRecordSeparator(value)) {
+                LOG.warn(
+                        "Rejected Splunk event: field contains a semicolon or CR/LF, or field name contains '='; native OpenTelemetry is unaffected");
+                return;
+            }
+            line.append(';').append(field.name()).append('=').append(value);
+        }
+        legacyOutput.accept(line.toString());
+    }
+
+    private static boolean hasRecordSeparator(final String value) {
+        return value.indexOf(';') >= 0 || value.indexOf('\r') >= 0 || value.indexOf('\n') >= 0;
     }
 
     private static final class ReportingExporter implements LogRecordExporter {
