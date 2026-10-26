@@ -45,9 +45,7 @@ Shows throughput charts per Data Mover and per destination over a configurable t
 
 Displays upload and download activity through the Data Portal, broken down by Data User and destination. Helps identify heavy users and quota candidates.
 
-The Connections chart shows daily authenticated connections alongside denied access attempts (DEA) from portal authentication and access checks. Other charts show upload/download rates in Mbps and upload/download volumes for the selected period. The same charts are available for an individual Data User's Portal Traffic page. DEA counts are collected from deployment of the updated Master onward; they are not reconstructed for older history.
-
-Before deploying this feature to an existing database, apply `docker/ecpds/database/portal-traffic-denials.sql` from the source checkout.
+The Connections chart shows daily authenticated connections alongside denied access attempts (DEA) from portal authentication and access checks. Other charts show upload/download rates in Mbps and upload/download volumes for the selected period. The same charts are available for an individual Data User's Portal Traffic page.
 
 
 ![Portal Traffic](img/portal-traffic.png)
