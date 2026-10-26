@@ -59,6 +59,8 @@ public class LogoutAction extends ECMWFAction {
         request.setAttribute("title", System.getProperty("monitor.title"));
         request.setAttribute("loginAnimatedBackground", Cnf.at("MonitorPlugin", "loginAnimatedBackground", true));
         LoginAction.setAuthModeAttributes(request);
+        InteractiveLoginAction.clear(request);
+        InteractiveLoginAction.attributes(request, response);
         // Wipe the user out from the session
         request.getSession().setAttribute(User.SESSION_KEY, null);
         // Delete the RETURN_AFTER_LOGIN, to avoid returning to a place you

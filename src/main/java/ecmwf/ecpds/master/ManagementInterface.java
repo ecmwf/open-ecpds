@@ -345,6 +345,14 @@ public interface ManagementInterface extends Remote {
     ECpdsSession getECpdsSession(String user, String password, String host, String agent, String comment)
             throws MasterException, DataBaseException, RemoteException;
 
+    String getInteractiveLoginName() throws RemoteException;
+
+    ecmwf.ecpds.extension.InteractiveLogins.Challenge beginInteractiveLogin(String binding)
+            throws MasterException, RemoteException;
+
+    ECpdsSession completeInteractiveLogin(String state, String binding, String code, String host, String agent)
+            throws MasterException, DataBaseException, RemoteException;
+
     /**
      * Creates the web user.
      *

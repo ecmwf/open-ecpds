@@ -80,6 +80,11 @@
 
 		<!-- Login -->
 
+		<action path="/interactiveLogin"
+			type="ecmwf.ecpds.master.plugin.http.controller.login.InteractiveLoginAction" />
+		<action path="/interactiveCallback"
+			type="ecmwf.ecpds.master.plugin.http.controller.login.InteractiveLoginAction" />
+
 		<action path="/login"
 			type="ecmwf.ecpds.master.plugin.http.controller.login.LoginAction">
 			<forward name="success" path="./start" redirect="true" />

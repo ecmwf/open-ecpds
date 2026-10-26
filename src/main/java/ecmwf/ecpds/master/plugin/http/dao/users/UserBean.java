@@ -68,6 +68,15 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
     /** The credentials. */
     private Object credentials = "";
 
+    private String authenticationMethod = "PASSWORD";
+
+    public static UserBean fromInteractiveSession(final ecmwf.ecpds.master.ECpdsSession session) {
+        final var bean = new UserBean(session.getWebUser());
+        bean.setCredentials(session);
+        bean.authenticationMethod = "INTERACTIVE";
+        return bean;
+    }
+
     /** The added categories. */
     private final Collection<Category> addedCategories = new ArrayList<>();
 
@@ -191,7 +200,7 @@ public class UserBean extends ModelBeanBase implements WebUser, OjbImplementedBe
      */
     @Override
     public String getAuthenticationMethod() {
-        return "PASSWORD";
+        return authenticationMethod;
     }
 
     /**

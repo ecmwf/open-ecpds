@@ -264,6 +264,8 @@ import ecmwf.common.telemetry.TransferTracing;
 import ecmwf.common.text.Format;
 import ecmwf.common.text.Options;
 import ecmwf.common.version.Version;
+import ecmwf.ecpds.extension.AuthenticationProvider;
+import ecmwf.ecpds.extension.IdentityExtensions;
 import ecmwf.ecpds.master.plugin.ecpds.ECpdsClient;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 import ecmwf.ecpds.master.transfer.HostOption;
@@ -291,6 +293,8 @@ public final class MasterServer extends ECaccessProvider
 
     /** The Constant _log. */
     private static final transient Logger _log = LogManager.getLogger(MasterServer.class);
+
+    private final IdentityExtensions identityExtensions;
 
     /** JSON mapper used by {@link #resolveManualValues(String, String)} to parse the supplied values map. */
     private static final ObjectMapper _JSON_MAPPER = new ObjectMapper();
@@ -862,228 +866,237 @@ public final class MasterServer extends ECaccessProvider
             InstanceAlreadyExistsException, MBeanRegistrationException, NotCompliantMBeanException,
             MalformedObjectNameException, InstanceNotFoundException, ConnectionException, DataBaseException {
         super(new ECpdsBase(), starter);
-        _log.info("MasterServer-version: {}", Version.getFullVersion());
-        _loadActualTrafficFromDb();
-        OperationalEvents.start(getECpdsBase());
-        TransferTracing.start("master");
-        TransferMetrics.start(this);
-        NativeAuthenticationProvider.setProvider(MasterProvider.class);
-        DestinationOption.getList(); // Make sure the list of options is loaded!
-        // Live ECPDS Earth (Phase 0): allow forcing the live transfer monitoring feed on regardless of connected
-        // WebSocket listeners (useful for backend testing before the frontend/websocket exists).
-        LiveTransferRegistry.getInstance().setEnabled(Cnf.at("Server", "liveTransferMonitoringForceEnabled", false));
-        if (Cnf.at("Server", "transferScheduler", true)) {
-            _log.debug("Starting TransferScheduler");
-            theTransferScheduler = new TransferScheduler("TransferScheduler");
-            theTransferScheduler.start();
-        } else {
-            theTransferScheduler = null;
-        }
-        if (Cnf.at("Server", "ticketRepository", true)) {
-            _log.debug("Starting TicketRepository");
-            theTicketRepository = new TicketRepository("TicketRepository");
-            theTicketRepository.start();
-        } else {
-            theTicketRepository = null;
-        }
-        if (Cnf.at("Server", "transferRepository", true)) {
-            _log.debug("Starting TransferRepository");
-            theTransferRepository = new TransferRepository("TransferRepository");
-            theTransferRepository.start();
-        } else {
-            theTransferRepository = null;
-        }
-        if (Cnf.at("Server", "proxyHostRepository", true)) {
-            _log.debug("Starting ProxyHostRepository");
-            theProxyHostRepository = new ProxyHostRepository("ProxyHostRepository");
-            theProxyHostRepository.start();
-        } else {
-            theProxyHostRepository = null;
-        }
-        if (Cnf.at("Server", "historyRepository", true)) {
-            _log.debug("Starting HistoryRepository");
-            theHistoryRepository = new HistoryRepository("HistoryRepository");
-            theHistoryRepository.start();
-        } else {
-            theHistoryRepository = null;
-        }
-        if (Cnf.at("Server", "eventRepository", true)) {
-            _log.debug("Starting EventRepository");
-            theEventRepository = new EventRepository("EventRepository");
-            theEventRepository.start();
-            if (!eventScriptContent.isEmpty() && Cnf.at("Server", "eventScheduler", true)) {
-                _log.debug("Starting EventScheduler");
-                theEventScheduler = new EventScheduler("EventScheduler");
-                theEventScheduler.start();
+        identityExtensions = IdentityExtensions.load(getRoot(), Cnf.at("AuthenticationExtension", Map.of()),
+                Cnf.at("UserDirectoryExtension", Map.of()), Cnf.at("InteractiveLoginExtension", Map.of()),
+                Cnf.at("InteractiveLoginMapping", Map.of()));
+        try {
+            _log.info("MasterServer-version: {}", Version.getFullVersion());
+            _loadActualTrafficFromDb();
+            OperationalEvents.start(getECpdsBase());
+            TransferTracing.start("master");
+            TransferMetrics.start(this);
+            NativeAuthenticationProvider.setProvider(MasterProvider.class);
+            DestinationOption.getList(); // Make sure the list of options is loaded!
+            // Live ECPDS Earth (Phase 0): allow forcing the live transfer monitoring feed on regardless of connected
+            // WebSocket listeners (useful for backend testing before the frontend/websocket exists).
+            LiveTransferRegistry.getInstance()
+                    .setEnabled(Cnf.at("Server", "liveTransferMonitoringForceEnabled", false));
+            if (Cnf.at("Server", "transferScheduler", true)) {
+                _log.debug("Starting TransferScheduler");
+                theTransferScheduler = new TransferScheduler("TransferScheduler");
+                theTransferScheduler.start();
             } else {
+                theTransferScheduler = null;
+            }
+            if (Cnf.at("Server", "ticketRepository", true)) {
+                _log.debug("Starting TicketRepository");
+                theTicketRepository = new TicketRepository("TicketRepository");
+                theTicketRepository.start();
+            } else {
+                theTicketRepository = null;
+            }
+            if (Cnf.at("Server", "transferRepository", true)) {
+                _log.debug("Starting TransferRepository");
+                theTransferRepository = new TransferRepository("TransferRepository");
+                theTransferRepository.start();
+            } else {
+                theTransferRepository = null;
+            }
+            if (Cnf.at("Server", "proxyHostRepository", true)) {
+                _log.debug("Starting ProxyHostRepository");
+                theProxyHostRepository = new ProxyHostRepository("ProxyHostRepository");
+                theProxyHostRepository.start();
+            } else {
+                theProxyHostRepository = null;
+            }
+            if (Cnf.at("Server", "historyRepository", true)) {
+                _log.debug("Starting HistoryRepository");
+                theHistoryRepository = new HistoryRepository("HistoryRepository");
+                theHistoryRepository.start();
+            } else {
+                theHistoryRepository = null;
+            }
+            if (Cnf.at("Server", "eventRepository", true)) {
+                _log.debug("Starting EventRepository");
+                theEventRepository = new EventRepository("EventRepository");
+                theEventRepository.start();
+                if (!eventScriptContent.isEmpty() && Cnf.at("Server", "eventScheduler", true)) {
+                    _log.debug("Starting EventScheduler");
+                    theEventScheduler = new EventScheduler("EventScheduler");
+                    theEventScheduler.start();
+                } else {
+                    theEventScheduler = null;
+                }
+            } else {
+                theEventRepository = null;
                 theEventScheduler = null;
             }
-        } else {
-            theEventRepository = null;
-            theEventScheduler = null;
-        }
-        if (Cnf.at("Server", "mailRepository", true)) {
-            _log.debug("Starting MailRepository");
-            theMailRepository = new MailMBean("MailRepository");
-            theMailRepository.setPriority(Thread.MIN_PRIORITY);
-            theMailRepository.start();
-        } else {
-            theMailRepository = null;
-        }
-        if (Cnf.at("Server", "notificationRepository", true)) {
-            _log.debug("Starting NotificationRepository");
-            theNotificationRepository = new NotificationRepository("NotificationRepository");
-            theNotificationRepository.start();
-        } else {
-            theNotificationRepository = null;
-        }
-        if (Cnf.at("Server", "hostCheckScheduler", true)) {
-            _log.debug("Starting HostCheckScheduler");
-            theHostCheckScheduler = new HostCheckScheduler("HostCheckScheduler");
-            theHostCheckScheduler.setPriority(Thread.MIN_PRIORITY);
-            theHostCheckScheduler.start();
-        } else {
-            theHostCheckScheduler = null;
-        }
-        if (Cnf.at("Server", "dataTransferCheck", true)) {
-            _log.debug("Starting DataTransferCheck");
-            theDataTransferCheck = new DataTransferCheck("DataTransferCheck");
-            theDataTransferCheck.start();
-        } else {
-            theDataTransferCheck = null;
-        }
-        management = new ManagementImpl(this);
-        databaseAccess = new DataBaseImpl(this, getECpdsBase());
-        attachmentAccess = new AttachmentAccessImpl(this);
-        dataAccess = new DataFileAccessImpl(this);
-        localContainer = getPluginContainer();
-        localContainer.loadPlugins();
-        try {
-            new MBeanManager("ECaccess:service=ECUser", new ECUserMBean());
-        } catch (final Exception e) {
-            _log.warn("Starting MBeanManager", e);
-        }
-        if (theTransferScheduler != null) {
-            while (!theTransferScheduler.isInitialized()) {
-                _log.info("Wait for TransferScheduler to initialize");
-                try {
-                    Thread.sleep(4 * Timer.ONE_SECOND);
-                } catch (final InterruptedException e) {
+            if (Cnf.at("Server", "mailRepository", true)) {
+                _log.debug("Starting MailRepository");
+                theMailRepository = new MailMBean("MailRepository");
+                theMailRepository.setPriority(Thread.MIN_PRIORITY);
+                theMailRepository.start();
+            } else {
+                theMailRepository = null;
+            }
+            if (Cnf.at("Server", "notificationRepository", true)) {
+                _log.debug("Starting NotificationRepository");
+                theNotificationRepository = new NotificationRepository("NotificationRepository");
+                theNotificationRepository.start();
+            } else {
+                theNotificationRepository = null;
+            }
+            if (Cnf.at("Server", "hostCheckScheduler", true)) {
+                _log.debug("Starting HostCheckScheduler");
+                theHostCheckScheduler = new HostCheckScheduler("HostCheckScheduler");
+                theHostCheckScheduler.setPriority(Thread.MIN_PRIORITY);
+                theHostCheckScheduler.start();
+            } else {
+                theHostCheckScheduler = null;
+            }
+            if (Cnf.at("Server", "dataTransferCheck", true)) {
+                _log.debug("Starting DataTransferCheck");
+                theDataTransferCheck = new DataTransferCheck("DataTransferCheck");
+                theDataTransferCheck.start();
+            } else {
+                theDataTransferCheck = null;
+            }
+            management = new ManagementImpl(this);
+            databaseAccess = new DataBaseImpl(this, getECpdsBase());
+            attachmentAccess = new AttachmentAccessImpl(this);
+            dataAccess = new DataFileAccessImpl(this);
+            localContainer = getPluginContainer();
+            localContainer.loadPlugins();
+            try {
+                new MBeanManager("ECaccess:service=ECUser", new ECUserMBean());
+            } catch (final Exception e) {
+                _log.warn("Starting MBeanManager", e);
+            }
+            if (theTransferScheduler != null) {
+                while (!theTransferScheduler.isInitialized()) {
+                    _log.info("Wait for TransferScheduler to initialize");
+                    try {
+                        Thread.sleep(4 * Timer.ONE_SECOND);
+                    } catch (final InterruptedException e) {
+                    }
                 }
             }
+            if (Cnf.at("Server", "replicateScheduler", true)) {
+                _log.debug("Starting ReplicateScheduler");
+                theReplicateScheduler = new ReplicateScheduler("ReplicateScheduler");
+                theReplicateScheduler.start();
+            } else {
+                theReplicateScheduler = null;
+            }
+            if (Cnf.at("Server", "backupScheduler", true)) {
+                _log.debug("Starting BackupScheduler");
+                theBackupScheduler = new BackupScheduler("BackupScheduler");
+                theBackupScheduler.start();
+            } else {
+                theBackupScheduler = null;
+            }
+            if (Cnf.at("Server", "proxyScheduler", true)) {
+                _log.debug("Starting ProxyScheduler");
+                theProxyScheduler = new ProxyScheduler("ProxyScheduler");
+                theProxyScheduler.start();
+            } else {
+                theProxyScheduler = null;
+            }
+            if (Cnf.at("Server", "acquisitionScheduler", true)) {
+                _log.debug("Starting AcquisitionScheduler");
+                theAcquisitionScheduler = new AcquisitionScheduler("AcquisitionScheduler");
+                theAcquisitionScheduler.start();
+            } else {
+                theAcquisitionScheduler = null;
+            }
+            if (Cnf.at("Server", "purgeScheduler", true)) {
+                _log.debug("Starting PurgeScheduler");
+                thePurgeScheduler = new PurgeScheduler("PurgeScheduler");
+                thePurgeScheduler.start();
+            } else {
+                thePurgeScheduler = null;
+            }
+            if (Cnf.at("Server", "acqDownloadScheduler", true)) {
+                _log.debug("Starting AcqDownloadScheduler");
+                theAcqDownloadScheduler = new AcqDownloadScheduler("AcqDownloadScheduler");
+                theAcqDownloadScheduler.start();
+            } else {
+                theAcqDownloadScheduler = null;
+            }
+            if (Cnf.at("Server", "dissDownloadScheduler", true)) {
+                _log.debug("Starting DissDownloadScheduler");
+                theDissDownloadScheduler = new DissDownloadScheduler("DissDownloadScheduler");
+                theDissDownloadScheduler.start();
+            } else {
+                theDissDownloadScheduler = null;
+            }
+            if (Cnf.at("Server", "filterScheduler", true)) {
+                _log.debug("Starting FilterScheduler");
+                theFilterScheduler = new FilterScheduler("FilterScheduler");
+                theFilterScheduler.start();
+            } else {
+                theFilterScheduler = null;
+            }
+            if (Cnf.at("Server", "portalTrafficScheduler", true)) {
+                _log.debug("Starting PortalTrafficScheduler");
+                thePortalTrafficScheduler = new PortalTrafficScheduler("PortalTrafficScheduler");
+                thePortalTrafficScheduler.start();
+            } else {
+                thePortalTrafficScheduler = null;
+            }
+            if (Cnf.at("Server", "portalBytesScheduler", true)) {
+                _log.debug("Loading portal bytes snapshot from DB");
+                _loadPortalBytesFromDb();
+                _log.debug("Loading destination bytes snapshot from DB");
+                _loadDestinationBytesFromDb();
+                _log.debug("Starting PortalBytesScheduler");
+                thePortalBytesScheduler = new PortalBytesScheduler("PortalBytesScheduler");
+                thePortalBytesScheduler.start();
+            } else {
+                thePortalBytesScheduler = null;
+            }
+            if (Cnf.at("Server", "moverAvailabilityScheduler", true)) {
+                _log.debug("Starting MoverAvailabilityScheduler");
+                theMoverAvailabilityScheduler = new MoverAvailabilityScheduler("MoverAvailabilityScheduler");
+                theMoverAvailabilityScheduler.start();
+            } else {
+                theMoverAvailabilityScheduler = null;
+            }
+            try {
+                weatherAdministration.load();
+            } catch (final Exception e) {
+                _log.error("Network Weather control state unavailable; ordinary delivery is unaffected", e);
+            }
+            trafficAccountingMaintenance = new TrafficAccountingMaintenance();
+            trafficAccountingMaintenance.start();
+            weatherSourceScheduler = new WeatherSourceScheduler();
+            weatherSourceScheduler.start();
+            weatherPersistenceScheduler = new WeatherPersistenceScheduler();
+            weatherPersistenceScheduler.start();
+            try {
+                weatherAutomation.load();
+            } catch (Exception e) {
+                _log.error("Weather automation configuration unavailable; discovery/probes remain disabled", e);
+            }
+            weatherAutomationScheduler = new WeatherAutomationScheduler();
+            weatherAutomationScheduler.start();
+            storageLifecycle.start();
+            _log.debug("Monitors to notify: {}", containersToNotify);
+            _log.debug("Passwords allowed from: {}", allowedPasswordOn);
+            localContainer.startPlugins();
+            // Trigger an initial forced host-location update in the background so that
+            // forced GeoIP entries from the [GeoIP] config section are applied at startup.
+            final var startupThread = new Thread(() -> {
+                _log.info("Starting initial host location update");
+                final var count = updateHostLocations();
+                _log.info("Initial host location update completed ({} host(s) processed)", count);
+            }, "startup-host-location-update");
+            startupThread.setDaemon(true);
+            startupThread.start();
+        } catch (Exception | LinkageError e) {
+            identityExtensions.close();
+            throw e;
         }
-        if (Cnf.at("Server", "replicateScheduler", true)) {
-            _log.debug("Starting ReplicateScheduler");
-            theReplicateScheduler = new ReplicateScheduler("ReplicateScheduler");
-            theReplicateScheduler.start();
-        } else {
-            theReplicateScheduler = null;
-        }
-        if (Cnf.at("Server", "backupScheduler", true)) {
-            _log.debug("Starting BackupScheduler");
-            theBackupScheduler = new BackupScheduler("BackupScheduler");
-            theBackupScheduler.start();
-        } else {
-            theBackupScheduler = null;
-        }
-        if (Cnf.at("Server", "proxyScheduler", true)) {
-            _log.debug("Starting ProxyScheduler");
-            theProxyScheduler = new ProxyScheduler("ProxyScheduler");
-            theProxyScheduler.start();
-        } else {
-            theProxyScheduler = null;
-        }
-        if (Cnf.at("Server", "acquisitionScheduler", true)) {
-            _log.debug("Starting AcquisitionScheduler");
-            theAcquisitionScheduler = new AcquisitionScheduler("AcquisitionScheduler");
-            theAcquisitionScheduler.start();
-        } else {
-            theAcquisitionScheduler = null;
-        }
-        if (Cnf.at("Server", "purgeScheduler", true)) {
-            _log.debug("Starting PurgeScheduler");
-            thePurgeScheduler = new PurgeScheduler("PurgeScheduler");
-            thePurgeScheduler.start();
-        } else {
-            thePurgeScheduler = null;
-        }
-        if (Cnf.at("Server", "acqDownloadScheduler", true)) {
-            _log.debug("Starting AcqDownloadScheduler");
-            theAcqDownloadScheduler = new AcqDownloadScheduler("AcqDownloadScheduler");
-            theAcqDownloadScheduler.start();
-        } else {
-            theAcqDownloadScheduler = null;
-        }
-        if (Cnf.at("Server", "dissDownloadScheduler", true)) {
-            _log.debug("Starting DissDownloadScheduler");
-            theDissDownloadScheduler = new DissDownloadScheduler("DissDownloadScheduler");
-            theDissDownloadScheduler.start();
-        } else {
-            theDissDownloadScheduler = null;
-        }
-        if (Cnf.at("Server", "filterScheduler", true)) {
-            _log.debug("Starting FilterScheduler");
-            theFilterScheduler = new FilterScheduler("FilterScheduler");
-            theFilterScheduler.start();
-        } else {
-            theFilterScheduler = null;
-        }
-        if (Cnf.at("Server", "portalTrafficScheduler", true)) {
-            _log.debug("Starting PortalTrafficScheduler");
-            thePortalTrafficScheduler = new PortalTrafficScheduler("PortalTrafficScheduler");
-            thePortalTrafficScheduler.start();
-        } else {
-            thePortalTrafficScheduler = null;
-        }
-        if (Cnf.at("Server", "portalBytesScheduler", true)) {
-            _log.debug("Loading portal bytes snapshot from DB");
-            _loadPortalBytesFromDb();
-            _log.debug("Loading destination bytes snapshot from DB");
-            _loadDestinationBytesFromDb();
-            _log.debug("Starting PortalBytesScheduler");
-            thePortalBytesScheduler = new PortalBytesScheduler("PortalBytesScheduler");
-            thePortalBytesScheduler.start();
-        } else {
-            thePortalBytesScheduler = null;
-        }
-        if (Cnf.at("Server", "moverAvailabilityScheduler", true)) {
-            _log.debug("Starting MoverAvailabilityScheduler");
-            theMoverAvailabilityScheduler = new MoverAvailabilityScheduler("MoverAvailabilityScheduler");
-            theMoverAvailabilityScheduler.start();
-        } else {
-            theMoverAvailabilityScheduler = null;
-        }
-        try {
-            weatherAdministration.load();
-        } catch (final Exception e) {
-            _log.error("Network Weather control state unavailable; ordinary delivery is unaffected", e);
-        }
-        trafficAccountingMaintenance = new TrafficAccountingMaintenance();
-        trafficAccountingMaintenance.start();
-        weatherSourceScheduler = new WeatherSourceScheduler();
-        weatherSourceScheduler.start();
-        weatherPersistenceScheduler = new WeatherPersistenceScheduler();
-        weatherPersistenceScheduler.start();
-        try {
-            weatherAutomation.load();
-        } catch (Exception e) {
-            _log.error("Weather automation configuration unavailable; discovery/probes remain disabled", e);
-        }
-        weatherAutomationScheduler = new WeatherAutomationScheduler();
-        weatherAutomationScheduler.start();
-        storageLifecycle.start();
-        _log.debug("Monitors to notify: {}", containersToNotify);
-        _log.debug("Passwords allowed from: {}", allowedPasswordOn);
-        localContainer.startPlugins();
-        // Trigger an initial forced host-location update in the background so that
-        // forced GeoIP entries from the [GeoIP] config section are applied at startup.
-        final var startupThread = new Thread(() -> {
-            _log.info("Starting initial host location update");
-            final var count = updateHostLocations();
-            _log.info("Initial host location update completed ({} host(s) processed)", count);
-        }, "startup-host-location-update");
-        startupThread.setDaemon(true);
-        startupThread.start();
     }
 
     /**
@@ -1573,8 +1586,8 @@ public final class MasterServer extends ECaccessProvider
     private void recordPortalAccessDenial(final String userId, final String message, final String context) {
         DataFileAccessImpl.recordPortalAccessDenial(userId);
         if (_operationalEvents.isEnabled())
-            _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())),
-                    field("UserId", userId), field("Message", message), field("Context", context));
+            _operationalEvents.emit("DEA", field("TimeStamp", Timestamp.from(Instant.now())), field("UserId", userId),
+                    field("Message", message), field("Context", context));
     }
 
     /**
@@ -4660,7 +4673,11 @@ public final class MasterServer extends ECaccessProvider
      */
     @Override
     public ECUser importECUser(final String uid) throws EccmdException, RemoteException {
-        return null;
+        try {
+            return identityExtensions.lookup(uid);
+        } catch (IOException | RuntimeException e) {
+            throw new EccmdException("External user directory lookup failed");
+        }
     }
 
     /**
@@ -6259,6 +6276,11 @@ public final class MasterServer extends ECaccessProvider
      */
     ECpdsSession getECpdsSession(final String user, final String password, final String root, final String host,
             final String agent, final String comment) throws MasterException, DataBaseException, RemoteException {
+        checkLoginOrigin(user, root);
+        return createWebSession(getWebUser(user, password, root), root, host, agent, comment);
+    }
+
+    private void checkLoginOrigin(final String user, final String root) throws MasterException {
         final var restricted = Cnf.stringListAt("Restricted", user);
         if (restricted.length > 0) {
             var allowed = false;
@@ -6271,15 +6293,49 @@ public final class MasterServer extends ECaccessProvider
                 throw new MasterException("User " + user + " not allowed to connect from " + dns);
             }
         }
+    }
+
+    private ECpdsSession createWebSession(final WebUser webUser, final String root, final String host,
+            final String agent, final String comment) throws DataBaseException {
         final var base = getDataBase();
-        final var webUser = getWebUser(user, password, root);
-        final var ecuser = base.getECUser(user);
-        final var activity = Cnf.at("Server", "anonymousUser", "anonymous").equals(user) ? null
+        final var ecuser = base.getECUser(webUser.getId());
+        final var activity = Cnf.at("Server", "anonymousUser", "anonymous").equals(webUser.getId()) ? null
                 : newActivity(ecuser, "MonitorPlugin", host, agent, "login", comment, false);
         webUser.setLastLogin(new Timestamp(System.currentTimeMillis()));
         webUser.setLastLoginHost(host);
         base.update(webUser);
         return new ECpdsSession(webUser, root, activity);
+    }
+
+    String getInteractiveLoginName() {
+        return identityExtensions.interactive().displayName();
+    }
+
+    ecmwf.ecpds.extension.InteractiveLogins.Challenge beginInteractiveLogin(final String binding, final String origin)
+            throws MasterException {
+        try {
+            return identityExtensions.interactive().begin(binding, origin);
+        } catch (IOException | RuntimeException e) {
+            throw new MasterException("Cannot start interactive login");
+        }
+    }
+
+    ECpdsSession completeInteractiveLogin(final String state, final String binding, final String code,
+            final String origin, final String host, final String agent) throws MasterException, DataBaseException {
+        final String user;
+        try {
+            user = identityExtensions.interactive().complete(state, binding, origin, code);
+        } catch (IOException | RuntimeException e) {
+            _log.warn("Interactive login validation failed");
+            throw new MasterException("Interactive login failed");
+        }
+        checkLoginOrigin(user, origin);
+        final var webUser = getDataBase().getWebUserObject(user);
+        if (getDataBase().getECUserObject(user) == null || webUser == null || !webUser.getActive()
+                || Cnf.at("Server", "anonymousUser", "anonymous").equals(user)) {
+            throw new MasterException("Interactive login requires an existing active local account");
+        }
+        return createWebSession(webUser, origin, host, agent, "Interactive login");
     }
 
     /**
@@ -7298,8 +7354,18 @@ public final class MasterServer extends ECaccessProvider
                 throw new MasterException("Authentication failed");
             }
         }
-        // Let's do a TOTP or local authentication!
-        if (TOTP.ACTIVE) {
+        // Existing TOTP, static and certificate paths retain precedence.
+        if (!TOTP.ACTIVE && identityExtensions.hasAuthenticationProvider()) {
+            try {
+                if (identityExtensions.authenticate(user, credentials,
+                        root) != AuthenticationProvider.Result.ACCEPTED) {
+                    throw new MasterException("Authentication failed");
+                }
+            } catch (IOException | RuntimeException e) {
+                _log.warn("External authentication unavailable");
+                throw new MasterException("Authentication failed");
+            }
+        } else if (TOTP.ACTIVE) {
             boolean authenticated;
             try {
                 authenticated = TOTP.authenticate(user, credentials, isPasscode);
@@ -7439,6 +7505,7 @@ public final class MasterServer extends ECaccessProvider
         OperationalEvents.shutdown();
         TransferTracing.shutdown();
         TransferMetrics.shutdown();
+        identityExtensions.close();
         super.shutdown();
     }
 

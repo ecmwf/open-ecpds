@@ -237,8 +237,7 @@ final class ECpdsGet {
     }
 
     void upsertPortalTraffic(final java.sql.Timestamp time, final String user, final int connections,
-            final long denials, final long bytesIn, final long bytesOut, final long durationIn,
-            final long durationOut)
+            final long denials, final long bytesIn, final long bytesOut, final long durationIn, final long durationOut)
             throws SQLException, IOException {
         _database.executeUpdate("ECpdsBase", "upsertPortalTraffic",
                 new String[] { "user=" + user, "time=" + time, "connections=" + connections, "denials=" + denials,

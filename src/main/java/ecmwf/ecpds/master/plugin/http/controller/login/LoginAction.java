@@ -68,6 +68,7 @@ public class LoginAction extends ECMWFAction {
         request.setAttribute("title", System.getProperty("monitor.title"));
         request.setAttribute("loginAnimatedBackground", Cnf.at("MonitorPlugin", "loginAnimatedBackground", true));
         setAuthModeAttributes(request);
+        InteractiveLoginAction.attributes(request, response);
         final UserAuthStrategy strategy = new EcPdsUserAuthStrategy();
         try {
             final var auto = request.getParameter("auto");
@@ -75,6 +76,7 @@ public class LoginAction extends ECMWFAction {
                 return mapping.findForward("failure");
             }
             final var user = strategy.getUser(request);
+            InteractiveLoginAction.clear(request);
             request.getSession().setAttribute(User.SESSION_KEY, user);
             log.debug("Login success for user '" + user.getUid() + "'");
             final var after = request.getSession().getAttribute(PDSAction.RETURN_AFTER_LOGIN_KEY);

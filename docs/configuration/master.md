@@ -8,6 +8,21 @@ file.
 Other services have separate references: [Monitor](monitor.md) and
 [Data Mover](mover.md).
 
+## Identity extensions
+
+`[AuthenticationExtension] class` and `[UserDirectoryExtension] class` select
+optional, trusted Master identity providers. Both default to blank (disabled).
+Provider-specific options belong in the same section. Configuration is read at
+startup and requires a restart; a configured provider that cannot start fails
+Master startup. See [Identity extensions](../concepts/plugin-infrastructure.md#identity-extensions)
+for installation, lifecycle and authentication precedence.
+
+`[InteractiveLoginExtension] class` independently enables browser-based Monitor
+login. It defaults to blank. `[InteractiveLoginMapping]` maps local WebUser IDs
+to JSON objects containing the verified external `issuer` and `subject`.
+See [OpenID Connect login](../administration/openid-connect.md) for the bundled
+provider, full configuration and account requirements.
+
 ## File location and configuration layers
 
 The source template is

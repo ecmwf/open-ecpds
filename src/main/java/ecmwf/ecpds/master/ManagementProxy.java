@@ -436,6 +436,23 @@ final class ManagementProxy implements ManagementInterface {
         return monitor.done(session);
     }
 
+    @Override
+    public String getInteractiveLoginName() throws RemoteException {
+        return managementInterface.getInteractiveLoginName();
+    }
+
+    @Override
+    public ecmwf.ecpds.extension.InteractiveLogins.Challenge beginInteractiveLogin(final String binding)
+            throws MasterException, RemoteException {
+        return managementInterface.beginInteractiveLogin(binding);
+    }
+
+    @Override
+    public ECpdsSession completeInteractiveLogin(final String state, final String binding, final String code,
+            final String host, final String agent) throws MasterException, DataBaseException, RemoteException {
+        return managementInterface.completeInteractiveLogin(state, binding, code, host, agent);
+    }
+
     /**
      * Sets the anonymous session. Set the anonymous session if not already set!
      *

@@ -249,6 +249,15 @@
       <p id="login-subtitle">Monitoring</p>
     </div>
 
+    <c:if test="${not empty interactiveLoginName}">
+      <form action="<c:url value='/do/interactiveLogin'/>" method="post">
+        <input type="hidden" name="loginToken" value="<c:out value='${interactiveLoginToken}'/>">
+        <button type="submit" class="btn btn-primary w-100 mb-3">
+          <i class="bi bi-box-arrow-in-right"></i> <c:out value="${interactiveLoginName}"/>
+        </button>
+      </form>
+    </c:if>
+
     <form name="login-form" action="/do/login" method="post" autocomplete="off" id="login-form">
 
       <%-- Error banner inside card --%>

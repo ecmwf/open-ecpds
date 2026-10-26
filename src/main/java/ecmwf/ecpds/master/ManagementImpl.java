@@ -506,6 +506,31 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         return monitor.done(master.getECpdsSession(user, password, root, host, agent, comment));
     }
 
+    @Override
+    public String getInteractiveLoginName() {
+        return master.getInteractiveLoginName();
+    }
+
+    private static String interactiveOrigin() throws MasterException {
+        try {
+            return getClientHost();
+        } catch (ServerNotActiveException e) {
+            throw new MasterException("Interactive login requires a remote Monitor connection");
+        }
+    }
+
+    @Override
+    public ecmwf.ecpds.extension.InteractiveLogins.Challenge beginInteractiveLogin(final String binding)
+            throws MasterException {
+        return master.beginInteractiveLogin(binding, interactiveOrigin());
+    }
+
+    @Override
+    public ECpdsSession completeInteractiveLogin(final String state, final String binding, final String code,
+            final String host, final String agent) throws MasterException, DataBaseException {
+        return master.completeInteractiveLogin(state, binding, code, interactiveOrigin(), host, agent);
+    }
+
     /**
      * Save web user.
      *
