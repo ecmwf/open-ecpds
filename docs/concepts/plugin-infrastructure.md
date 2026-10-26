@@ -86,7 +86,10 @@ reported to clients as a generic authentication failure.
 During login, directory lookup runs only when the ECUser is missing locally. Return an ECUser
 with exactly the requested name, or `null` when absent; throw `IOException` for
 an outage. Imported users do not automatically receive a WebUser or permissions.
-The SPI does not refresh existing directory users after authentication. Existing
+Providers can override `authenticateIdentity` to return an accepted result with
+fresh ECUser data. The core verifies the exact requested name and persists the
+update before accepting login; failed persistence fails authentication. Providers
+that implement only `authenticate` retain their original behavior. Existing
 scheduled ECUser refreshes, when configured, also use the directory lookup hook.
 
 ### Minimal authentication implementation
@@ -126,9 +129,11 @@ credentials out of logs and exception messages.
 
 ### ECaccess integration boundary
 
-The identity SPI is a first step toward an optional ECaccess integration.
-An extracted ECCMD client can implement authentication and directory lookup
-without copying `MasterServer`. An ECaccess provider is not yet bundled.
+The optional `ecpds-ecaccess` module implements ECCMD authentication and directory
+lookup without copying `MasterServer`. It is built only with the
+`ecaccess-extension` Maven profile and a separately extracted client-contract jar.
+See [ECaccess identity](../administration/ecaccess-identity.md) for build,
+configuration and passcode semantics.
 Gateway transfers still require an additional cross-service integration boundary:
 the existing ECaccess-specific Mover/Master remote-access plumbing is not supplied
 by the identity SPI. This SPI does not enable arbitrary remote extension calls.

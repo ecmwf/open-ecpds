@@ -7357,11 +7357,14 @@ public final class MasterServer extends ECaccessProvider
         // Existing TOTP, static and certificate paths retain precedence.
         if (!TOTP.ACTIVE && identityExtensions.hasAuthenticationProvider()) {
             try {
-                if (identityExtensions.authenticate(user, credentials,
-                        root) != AuthenticationProvider.Result.ACCEPTED) {
+                final var authentication = identityExtensions.authenticateIdentity(user, credentials, root);
+                if (authentication.result() != AuthenticationProvider.Result.ACCEPTED) {
                     throw new MasterException("Authentication failed");
                 }
-            } catch (IOException | RuntimeException e) {
+                if (authentication.user() != null) {
+                    getDataBase().update(authentication.user());
+                }
+            } catch (IOException | DataBaseException | RuntimeException e) {
                 _log.warn("External authentication unavailable");
                 throw new MasterException("Authentication failed");
             }

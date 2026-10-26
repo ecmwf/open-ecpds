@@ -230,6 +230,12 @@
 	     This profile has NO effect on regular Maven command-line builds. -->
 	<profiles>
 		<profile>
+			<id>ecaccess-extension</id>
+			<modules>
+				<module>ecpds-ecaccess</module>
+			</modules>
+		</profile>
+		<profile>
 			<id>eclipse-m2e</id>
 			<activation>
 				<property>

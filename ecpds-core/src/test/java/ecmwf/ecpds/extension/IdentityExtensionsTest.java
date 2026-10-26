@@ -44,6 +44,13 @@ public final class IdentityExtensionsTest {
         check(EVENTS.equals(List.of("auth.close")), "Incompatible providers must not start");
         expectFailure(() -> IdentityExtensions.load("master", options(String.class), Map.of()));
         expectFailure(() -> IdentityExtensions.load("master", Map.of("class", "missing.IdentityProvider"), Map.of()));
+        try (final var extensions = IdentityExtensions.load("master", options(RefreshingAuthentication.class),
+                Map.of())) {
+            final var authentication = extensions.authenticateIdentity("alice", "valid", "monitor");
+            check("Updated directory entry".equals(authentication.user().getComment()),
+                    "Successful authentication must preserve fresh directory data");
+            expectFailure(() -> extensions.authenticateIdentity("bob", "valid", "monitor"));
+        }
         System.out.println("PASS: explicit loading, identity results, directory validation and lifecycle cleanup");
     }
 
@@ -145,6 +152,15 @@ public final class IdentityExtensionsTest {
         @Override
         public int apiVersion() {
             return API_VERSION + 1;
+        }
+    }
+
+    public static final class RefreshingAuthentication extends TestAuthentication {
+        @Override
+        public Authentication authenticateIdentity(final String user, final String credentials, final String origin) {
+            final var identity = new ECUser("alice");
+            identity.setComment("Updated directory entry");
+            return new Authentication(Result.ACCEPTED, identity);
         }
     }
 }

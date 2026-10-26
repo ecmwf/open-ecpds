@@ -96,12 +96,20 @@ public final class IdentityExtensions implements AutoCloseable {
 
     public AuthenticationProvider.Result authenticate(final String user, final String credentials, final String origin)
             throws IOException {
+        return authenticateIdentity(user, credentials, origin).result();
+    }
+
+    public AuthenticationProvider.Authentication authenticateIdentity(final String user, final String credentials,
+            final String origin) throws IOException {
         if (authentication == null) {
-            return AuthenticationProvider.Result.UNSUPPORTED;
+            return new AuthenticationProvider.Authentication(AuthenticationProvider.Result.UNSUPPORTED, null);
         }
-        final var result = authentication.authenticate(user, credentials, origin);
+        final var result = authentication.authenticateIdentity(user, credentials, origin);
         if (result == null) {
             throw new IOException("Authentication extension returned no result");
+        }
+        if (result.user() != null && !user.equals(result.user().getName())) {
+            throw new IOException("Authentication extension returned a different user");
         }
         return result;
     }

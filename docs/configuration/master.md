@@ -17,6 +17,10 @@ startup and requires a restart; a configured provider that cannot start fails
 Master startup. See [Identity extensions](../concepts/plugin-infrastructure.md#identity-extensions)
 for installation, lifecycle and authentication precedence.
 
+The optional [ECaccess identity extension](../administration/ecaccess-identity.md)
+uses `host` and `port` in each identity-provider section and requires explicit
+bounded `[RMIClientSocketFactory]` connection/read timeouts.
+
 `[InteractiveLoginExtension] class` independently enables browser-based Monitor
 login. It defaults to blank. `[InteractiveLoginMapping]` maps local WebUser IDs
 to JSON objects containing the verified external `issuer` and `subject`.
