@@ -33,6 +33,8 @@ ecmwf.common.transport.ptcp.psocket
 ecmwf.common.transport.ptcp.psocket.threads
 ecmwf.common.transport.ptcp.psocket.tools
 ecmwf.common.version
+ecmwf.ecpds.extension
+ecmwf.ecpds.extension.oidc
 ecmwf.ecpds.master
 ecmwf.ecpds.master.plugin.ecpds
 ecmwf.ecpds.master.plugin.ecpds.request
