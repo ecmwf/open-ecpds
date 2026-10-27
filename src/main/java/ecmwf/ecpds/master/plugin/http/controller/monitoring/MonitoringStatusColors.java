@@ -197,7 +197,7 @@ public final class MonitoringStatusColors {
     private static List<ColorSetting> createSettings() {
         final var result = new ArrayList<ColorSetting>();
         final String[] generationLabels = { "No data / pending", "Received >30 minutes ahead",
-                "Received 15-30 minutes ahead", "Received 0-15 minutes ahead", "On schedule / slightly late",
+                "Received 15-30 minutes ahead", "Received 0-15 minutes ahead", "Slightly late (up to 60 minutes)",
                 "Not received / overdue", "Transitional / other", "Other status" };
         final String[] generationColors = { "#adb5bd", "#20c997", "#28a745", "#fd7e14", "#ffc107", "#dc3545", "#6f42c1",
                 "#6f42c1" };

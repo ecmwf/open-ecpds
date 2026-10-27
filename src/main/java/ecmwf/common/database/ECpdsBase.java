@@ -5899,7 +5899,8 @@ public final class ECpdsBase extends DataBase {
         try (var rs = executeSelect("ECpdsBase", "getAllProductMetadata")) {
             while (rs.next()) {
                 result.add(new ProductMetadata(rs.getString("PRM_PRODUCT"), rs.getString("PRM_TYPE"),
-                        rs.getString("PRM_DESCRIPTION"), rs.getString("PRM_TIPS"), rs.getBoolean("PRM_GROUP_TIMES")));
+                        rs.getString("PRM_DESCRIPTION"), rs.getString("PRM_TIPS"), rs.getBoolean("PRM_GROUP_TIMES"),
+                        rs.getBoolean("PRM_DELAY_NOTIFICATION")));
             }
         } catch (final Exception e) {
             _log.warn("getAllProductMetadata()", e);
@@ -5926,7 +5927,8 @@ public final class ECpdsBase extends DataBase {
                 new String[] { "product=" + product })) {
             while (rs.next()) {
                 result.add(new ProductMetadata(rs.getString("PRM_PRODUCT"), rs.getString("PRM_TYPE"),
-                        rs.getString("PRM_DESCRIPTION"), rs.getString("PRM_TIPS"), rs.getBoolean("PRM_GROUP_TIMES")));
+                        rs.getString("PRM_DESCRIPTION"), rs.getString("PRM_TIPS"), rs.getBoolean("PRM_GROUP_TIMES"),
+                        rs.getBoolean("PRM_DELAY_NOTIFICATION")));
             }
         } catch (final Exception e) {
             _log.warn("getProductMetadataByProduct({})", product, e);
@@ -5936,8 +5938,8 @@ public final class ECpdsBase extends DataBase {
     }
 
     /**
-     * Inserts or updates (UPSERT) the description, tips and "group times" flag for a (product, type) pair. The
-     * {@code PRM_UPDATED_AT} timestamp is set to the current database time.
+     * Inserts or updates (UPSERT) the description, tips, "group times" and "delay notification" flags for a (product,
+     * type) pair. The {@code PRM_UPDATED_AT} timestamp is set to the current database time.
      *
      * @param product
      *            the product name
@@ -5950,15 +5952,20 @@ public final class ECpdsBase extends DataBase {
      * @param groupTimes
      *            whether all cycles/times of this product should be grouped into a single monitoring page (only
      *            meaningful on the generic, all-types entry)
+     * @param delayNotification
+     *            whether this product is listed in the Delay Notification matrix (only meaningful on the generic,
+     *            all-types entry)
      *
      * @throws DataBaseException
      *             the data base exception
      */
     public void setProductMetadata(final String product, final String type, final String description, final String tips,
-            final boolean groupTimes) throws DataBaseException {
+            final boolean groupTimes, final boolean delayNotification) throws DataBaseException {
         try {
-            executeUpdate("ECpdsBase", "setProductMetadata", new String[] { "product=" + product, "type=" + type,
-                    "description=" + description, "tips=" + tips, "groupTimes=" + (groupTimes ? "1" : "0") });
+            executeUpdate("ECpdsBase", "setProductMetadata",
+                    new String[] { "product=" + product, "type=" + type, "description=" + description, "tips=" + tips,
+                            "groupTimes=" + (groupTimes ? "1" : "0"),
+                            "delayNotification=" + (delayNotification ? "1" : "0") });
         } catch (final Exception e) {
             _log.warn("setProductMetadata({},{})", product, type, e);
             throw new DataBaseException("setProductMetadata", e);

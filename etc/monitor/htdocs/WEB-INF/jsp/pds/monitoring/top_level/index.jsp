@@ -639,7 +639,7 @@ function createAndSubmitDynamicForm(action,bcc,subject,body) {
             </tr>
             <tr>
               <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-4"></span></td>
-              <td>On schedule / slightly late, still generating</td>
+              <td>Slightly late (&le;60 min) or still generating</td>
             </tr>
             <tr>
               <td style="padding:2px 8px 2px 0;"><span class="mon-dot mon-dot-5"></span></td>

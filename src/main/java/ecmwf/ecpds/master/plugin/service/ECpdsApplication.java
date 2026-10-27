@@ -940,8 +940,8 @@ public final class ECpdsApplication extends Application {
 
         /**
          * Gets the numeric generation status level used to colour the status dot in the web interface (see
-         * {@code GenerationMonitoringStatus.STATUS_*} constants: -1 none, 1..4 on schedule/ahead by decreasing margin,
-         * 5 not received).
+         * {@code GenerationMonitoringStatus.STATUS_*} constants: -1 none, 1..3 received ahead by decreasing margin, 4
+         * slightly late, 5 not received).
          *
          * @return the status level
          */

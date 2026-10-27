@@ -325,10 +325,14 @@ public class DelayNotificationAction extends PDSAction {
             // Default limit.
         }
         out.put("cycles", DelayRecipients.cyclesPerProduct());
-        out.put("minutesBeforeSchedule", DelayRecipients.minutesBeforeSchedulePerProduct());
-        out.put("minutesBeforeSchedulePerCycle", DelayRecipients.minutesBeforeSchedulePerCycle());
-        out.put("generationStatusPerProduct", DelayRecipients.generationStatusPerProduct());
-        out.put("generationStatusPerCycle", DelayRecipients.generationStatusPerCycle());
+        out.put("typesPerCycle", DelayRecipients.typesPerCycle());
+        final var minutesPerCycle = DelayRecipients.minutesBeforeSchedulePerCycle();
+        final var statusPerCycle = DelayRecipients.generationStatusPerCycle();
+        out.put("minutesBeforeSchedule", DelayRecipients.minutesBeforeSchedulePerProduct(minutesPerCycle));
+        out.put("minutesBeforeSchedulePerCycle", minutesPerCycle);
+        out.put("generationStatusPerProduct",
+                DelayRecipients.generationStatusPerProduct(minutesPerCycle, statusPerCycle));
+        out.put("generationStatusPerCycle", statusPerCycle);
         out.put("models", ProductModels.productsPerModel());
         out.put("defaultCc", DelayNotices.defaultCc());
         out.put("defaultBcc", DelayNotices.defaultBcc());

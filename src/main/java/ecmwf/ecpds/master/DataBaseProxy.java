@@ -3012,10 +3012,10 @@ final class DataBaseProxy implements DataBaseInterface {
      */
     @Override
     public void setProductMetadata(final String product, final String type, final String description, final String tips,
-            final boolean groupTimes) throws DataBaseException, RemoteException {
+            final boolean groupTimes, final boolean delayNotification) throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("setProductMetadata(" + product + "," + type + ")");
         try {
-            dataBaseInterface.setProductMetadata(product, type, description, tips, groupTimes);
+            dataBaseInterface.setProductMetadata(product, type, description, tips, groupTimes, delayNotification);
             monitor.done();
         } catch (final RemoteException e) {
             throw new DataBaseException("setProductMetadata", e);

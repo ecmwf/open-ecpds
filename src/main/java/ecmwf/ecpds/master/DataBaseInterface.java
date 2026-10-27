@@ -3241,14 +3241,17 @@ public interface DataBaseInterface extends Remote {
      * @param groupTimes
      *            whether all cycles/times of this product should be grouped into a single monitoring page (only
      *            meaningful on the generic, all-types entry)
+     * @param delayNotification
+     *            whether this product is listed in the Delay Notification matrix (only meaningful on the generic,
+     *            all-types entry)
      *
      * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
      * @throws java.rmi.RemoteException
      *             the remote exception
      */
-    void setProductMetadata(String product, String type, String description, String tips, boolean groupTimes)
-            throws DataBaseException, RemoteException;
+    void setProductMetadata(String product, String type, String description, String tips, boolean groupTimes,
+            boolean delayNotification) throws DataBaseException, RemoteException;
 
     /**
      * Removes the product metadata configured for a (product, type) pair.

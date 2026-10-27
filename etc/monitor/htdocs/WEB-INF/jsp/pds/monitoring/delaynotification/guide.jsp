@@ -87,8 +87,9 @@
         <p class="small fw-semibold mb-1"><i class="bi bi-list-check text-primary me-1"></i>Affected block</p>
         <p class="small mb-2">Inserted at the <code>{{AFFECTED}}</code> placeholder, or after the first paragraph when it is absent:</p>
         <ul class="small mb-3 ps-3">
-          <li><em>Products and cycles affected</em>: one line per product with its <strong>Definite</strong> cycles, e.g. <code>- GENFO (cycles: 00-03, 12)</code>.</li>
-          <li><em>Products and cycles that might be affected</em>: the same for the <strong>Possible</strong> cells.</li>
+          <li><em>Products and cycles affected</em>: one line per product with its <strong>Definite</strong> cycles, e.g. <code>- GWAVE (cycles: 00[EF,PPROC], 06[FC])</code>. Brackets list only <strong>slightly late or overdue</strong> types, in alphabetical order, using the same rule as <em>Mark late/overdue D</em>.</li>
+          <li><em>Products and cycles that might be affected</em>: the same for the <strong>Possible</strong> cells, listing only types <strong>0-15 minutes ahead</strong>, using the same rule as <em>Mark 0-15m ahead P</em>.</li>
+          <li>These type rules apply even with <em>All timings</em> selected and when cells are marked manually. Each type uses its worst step status; fully completed types count as received ahead and are excluded from both lists. Cycles with types are not compacted into ranges; brackets are omitted when no types are known or qualify. This does not change the selected cells or recipients.</li>
           <li>Then the reason, expected delay, ETA (UTC) and the note, when filled in.</li>
         </ul>
         <p class="small fw-semibold mb-1"><i class="bi bi-braces text-primary me-1"></i>Placeholders</p>

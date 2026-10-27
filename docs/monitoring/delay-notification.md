@@ -7,20 +7,24 @@ links and bookmarks.
 
 ## Send a notice
 
+Products whose generic [Product Description](../administration/product-descriptions.md#fields) has **Show in Delay
+Notification** disabled are never listed.
+
 1. Filter products by name (same syntax as the monitoring page: comma-separated, `*`/`?` wildcards, `!` or `-` to
    exclude), by [model](../administration/product-descriptions.md#product-models), by **Cycle**, and/or by generation timing. Choose **All cycles** to show every available cycle. The
    timing filter is multi-select: *No data / pending*, *Received >30m ahead*, *Received 15-30m ahead*,
-   *Received 0-15m ahead*, *On schedule / slightly late*, *Not received / overdue*, and *Transitional / other*.
+   *Received 0-15m ahead*, *Slightly late (≤60m)*, *Not received / overdue*, and *Transitional / other*.
    A product remains visible when any of its visible cycles matches the selected timing categories; **All timings** disables
-   this filter. Where a schedule offset is available, the timing category is based on that offset (including for
-   completed products), so it agrees with the cell tint and hover text. Otherwise the generation status is used.
-2. The **Before** column shows a colored dot for the nearest cycle status; hover it to see the exact time before
-   schedule or how long it is overdue. Cycle cells use a soft tint matching the **Product Generation** legend; hover
+   this filter. The timing category is the product generation status shown on the product summary page: it is
+   computed from each product step against its own schedule and buffer, and completed products count as received
+   ahead. A cycle is therefore not late merely because its first step's schedule has passed.
+2. The **Before** column shows a colored dot for the nearest cycle status; hover it to see the minutes before
+   schedule of the most urgent step (as listed on the summary page), or how long it is past schedule. Cycle cells use a soft tint matching the **Product Generation** legend; hover
    a cell to see that cycle's exact timing. Click a cell to set a cycle to **Definite**, **Possible** or cleared.
-   Clicking a product name cycles its whole row. Cycles come from the monitoring data. **Uniform cells** gives each
-   cycle cell the same fixed size. **Mark late/overdue D** automatically marks cells on schedule/slightly late or
-   overdue as Definite; **Mark 0-15m ahead P** marks cells received 0-15 minutes ahead as Possible. These buttons
-   follow the same schedule-adjusted categories as the cell colors and apply only to the cells shown by the current
+   Clicking a product name cycles its whole row; clicking a cycle header cycles that cycle for all products shown. Cycles come from the monitoring data. **Uniform cells** gives each
+   cycle cell the same fixed size. **Mark late/overdue D** automatically marks cells slightly late (1-60 minutes past schedule) or
+   overdue (more than 60 minutes) as Definite; **Mark 0-15m ahead P** marks cells received 0-15 minutes ahead as Possible. These buttons
+   follow the same categories as the cell colors and apply only to the cells shown by the current
    filters. **Clear all** also only removes the selections of the filtered cells. Cells marked earlier but hidden by a
    filter are kept, but are not counted, used for the recipients or included in the message until shown again.
    When filters leave no visible products, the matrix shows *No matching records found.* and the marking buttons
@@ -36,7 +40,15 @@ links and bookmarks.
    grouped *Products Delay* message managed in **Product Messages** (`/do/admin/productmessages`); `{{PRODUCTS}}` (or
    `{{PRODUCT}}`) becomes the list of selected products, `{{CYCLES}}` the selected cycles and `{{DESCRIPTION}}` the
    product descriptions. The Definite/Possible lists, reason, expected delay, ETA and note are inserted at
-   `{{AFFECTED}}` (or after the first paragraph when that placeholder is absent). In **Product Messages**, the grouped
+   `{{AFFECTED}}` (or after the first paragraph when that placeholder is absent). Each selected cycle lists its distinct
+   types from the summary page's **Type** column in alphabetical order, for example
+   `GWAVE (cycles: 00[EF,PPROC], 06[FC], 12[EF,EP,WP], 18[EF])`. This applies to both Definite and Possible
+   lists, using the same rules as the marking buttons: **Definite** lists only slightly late or overdue types;
+   **Possible** lists only types 0-15 minutes ahead. These rules apply regardless of the matrix timing filter
+   (including **All timings**) and also to manually marked cells. Each type uses its worst step status, with fully
+   completed types counted as received ahead and excluded from both lists. Cycles with types are listed individually
+   rather than compacted into ranges; no brackets are added when no types are known or qualify.
+   This filters the type annotations only, not the selected cells or their recipients. In **Product Messages**, the grouped
    templates can instead place `{{REASON}}`, `{{ETA}}`, `{{EXPECTED_DELAY}}` and `{{NOTE}}` individually; each value
    placed this way is omitted from the affected block. Resolution messages use the grouped *Products Resumed* message
    and the original notice's saved values for those placeholders. When allowed by the flags in **Product Messages**,

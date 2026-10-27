@@ -185,7 +185,8 @@ function pmDelete(btn) {
         data-pd-description="<c:out value="${entry.description}" />"
         data-pd-tips="<c:out value="${entry.tips}" />"
         data-pd-known="${entry.known ? 1 : 0}"
-        data-pd-group-times="${entry.groupTimes ? 1 : 0}">
+        data-pd-group-times="${entry.groupTimes ? 1 : 0}"
+        data-pd-delay-notification="${entry.delayNotification ? 1 : 0}">
       <td>
         <code><c:out value="${entry.product}" /></code>
         <c:if test="${!entry.known}">
@@ -193,8 +194,12 @@ function pmDelete(btn) {
            title="This product does not currently exist in the monitoring interface (/do/monitoring)."></i>
         </c:if>
         <c:if test="${entry.generic && entry.groupTimes}">
-        <i class="bi bi-layers-fill text-primary ms-1"
+        <i class="bi bi-layers-fill text-primary ms-1 pd-group-times-icon"
            title="All cycles/times of this product are grouped into a single monitoring page (/do/monitoring/summary/${entry.product})."></i>
+        </c:if>
+        <c:if test="${entry.generic && !entry.delayNotification}">
+        <i class="bi bi-bell-slash-fill text-secondary ms-1 pd-delay-notification-icon"
+           title="This product is never listed on the Delay Notification page (/do/monitoring/delaynotification)."></i>
         </c:if>
       </td>
       <td>
@@ -272,6 +277,14 @@ function pmDelete(btn) {
                         Only applies when Type is blank. When enabled, the pill for this product on
                         <code>/do/monitoring</code> shows all cycles/times together and links to
                         <code>/do/monitoring/summary/PRODUCT</code> instead of one page per cycle/time.
+                    </div>
+                </div>
+                <div class="form-check mb-3" id="pdDelayNotificationWrapper">
+                    <input type="checkbox" class="form-check-input" id="pdDelayNotification" checked>
+                    <label class="form-check-label" for="pdDelayNotification">Show in Delay Notification</label>
+                    <div class="form-text text-muted">
+                        Only applies when Type is blank. When disabled, this product is never listed in the matrix of
+                        <code>/do/monitoring/delaynotification</code>.
                     </div>
                 </div>
                 <div class="mb-3">
@@ -376,7 +389,8 @@ function _pdRefreshRows() {
     _pdData[_pdKey(tr.dataset.pdProduct, tr.dataset.pdType)] = {
       description: tr.dataset.pdDescription || '',
       tips: tr.dataset.pdTips || '',
-      groupTimes: tr.dataset.pdGroupTimes === '1'
+      groupTimes: tr.dataset.pdGroupTimes === '1',
+      delayNotification: tr.dataset.pdDelayNotification !== '0'
     };
   });
 }
@@ -518,6 +532,12 @@ function _pdUpdateGroupTimesState() {
     chk.checked = false;
   }
   wrapper.classList.toggle('text-muted', !applies);
+  var delayChk = document.getElementById('pdDelayNotification');
+  delayChk.disabled = !applies;
+  if (!applies) {
+    delayChk.checked = true;
+  }
+  document.getElementById('pdDelayNotificationWrapper').classList.toggle('text-muted', !applies);
 }
 
 function pdOpenAdd() {
@@ -530,6 +550,7 @@ function pdOpenAdd() {
   document.getElementById('pdDescription').value = '';
   document.getElementById('pdTips').value = '';
   document.getElementById('pdGroupTimes').checked = false;
+  document.getElementById('pdDelayNotification').checked = true;
   _pdUpdateGroupTimesState();
   document.getElementById('pdSaveError').classList.add('d-none');
   _pdModal.show();
@@ -546,6 +567,7 @@ function pdOpenEdit(product, type) {
   document.getElementById('pdDescription').value = entry.description || '';
   document.getElementById('pdTips').value = entry.tips || '';
   document.getElementById('pdGroupTimes').checked = !!entry.groupTimes;
+  document.getElementById('pdDelayNotification').checked = entry.delayNotification !== false;
   _pdUpdateGroupTimesState();
   document.getElementById('pdSaveError').classList.add('d-none');
   _pdModal.show();
@@ -563,6 +585,7 @@ function pdSave() {
   var description = document.getElementById('pdDescription').value;
   var tips = document.getElementById('pdTips').value;
   var groupTimes = !type && document.getElementById('pdGroupTimes').checked;
+  var delayNotification = !!type || document.getElementById('pdDelayNotification').checked;
 
   if (!product) {
     errEl.textContent = 'Product name is required.';
@@ -584,14 +607,14 @@ function pdSave() {
   fetch('<c:url value="/do/admin/productdescriptions/save"/>', {
     method: 'POST',
     headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-    body: JSON.stringify({ product: product, type: type, description: description, tips: tips, groupTimes: groupTimes })
+    body: JSON.stringify({ product: product, type: type, description: description, tips: tips, groupTimes: groupTimes, delayNotification: delayNotification })
   }).then(function(r){ return r.json(); })
     .then(function(data) {
       btn.disabled = false;
       if (data.success) {
         _pdModal.hide();
-        _pdData[_pdKey(product, type)] = { description: description, tips: tips, groupTimes: groupTimes };
-        pdRenderRow(product, type, description, tips, groupTimes);
+        _pdData[_pdKey(product, type)] = { description: description, tips: tips, groupTimes: groupTimes, delayNotification: delayNotification };
+        pdRenderRow(product, type, description, tips, groupTimes, delayNotification);
         pdUpdateEmptyMessage();
         pdShowSuccess('Product description saved successfully.');
       } else {
@@ -609,7 +632,8 @@ function _pdFindRow(product, type) {
   return document.querySelector('#pdTableBody tr[data-pd-product="' + CSS.escape(product) + '"][data-pd-type="' + CSS.escape(type || '') + '"]');
 }
 
-function pdRenderRow(product, type, description, tips, groupTimes) {
+function pdRenderRow(product, type, description, tips, groupTimes, delayNotification) {
+  delayNotification = delayNotification !== false;
   var existing = _pdFindRow(product, type);
   if (existing) {
     var cells = existing.querySelectorAll('.pd-desc-cell');
@@ -618,7 +642,9 @@ function pdRenderRow(product, type, description, tips, groupTimes) {
     existing.dataset.pdDescription = description;
     existing.dataset.pdTips = tips;
     existing.dataset.pdGroupTimes = groupTimes ? '1' : '0';
+    existing.dataset.pdDelayNotification = delayNotification ? '1' : '0';
     _pdUpdateGroupTimesIcon(existing, !type, groupTimes);
+    _pdUpdateDelayNotificationIcon(existing, !type, delayNotification);
     return;
   }
   var row = document.createElement('tr');
@@ -628,6 +654,7 @@ function pdRenderRow(product, type, description, tips, groupTimes) {
   row.dataset.pdTips = tips;
   row.dataset.pdKnown = '1'; // newly-added rows are assumed known until the page is reloaded
   row.dataset.pdGroupTimes = groupTimes ? '1' : '0';
+  row.dataset.pdDelayNotification = delayNotification ? '1' : '0';
   row.innerHTML =
     '<td><code></code></td>' +
     '<td class="pd-type-cell"></td>' +
@@ -652,6 +679,7 @@ function pdRenderRow(product, type, description, tips, groupTimes) {
     typeCell.appendChild(span);
   }
   _pdUpdateGroupTimesIcon(row, !type, groupTimes);
+  _pdUpdateDelayNotificationIcon(row, !type, delayNotification);
   var cells = row.querySelectorAll('.pd-desc-cell');
   cells[0].textContent = description; cells[0].title = description;
   cells[1].textContent = tips; cells[1].title = tips;
@@ -668,6 +696,17 @@ function _pdUpdateGroupTimesIcon(row, generic, groupTimes) {
     icon.className = 'bi bi-layers-fill text-primary ms-1 pd-group-times-icon';
     icon.title = 'All cycles/times of this product are grouped into a single monitoring page (/do/monitoring/summary/' + row.dataset.pdProduct + ').';
     row.querySelector('td code').after(icon);
+  }
+}
+
+function _pdUpdateDelayNotificationIcon(row, generic, delayNotification) {
+  var existingIcon = row.querySelector('.pd-delay-notification-icon');
+  if (existingIcon) { existingIcon.remove(); }
+  if (generic && !delayNotification) {
+    var icon = document.createElement('i');
+    icon.className = 'bi bi-bell-slash-fill text-secondary ms-1 pd-delay-notification-icon';
+    icon.title = 'This product is never listed on the Delay Notification page (/do/monitoring/delaynotification).';
+    row.querySelector('td').appendChild(icon);
   }
 }
 

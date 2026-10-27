@@ -5,6 +5,15 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.2.1-201020
 
 ---
 
+## open-ecpds 8.2.2-27102026
+
+- **Delay Notification cycle selection**: Clicking a cycle header now cycles all available cells in that column across the products currently shown through Definite, Possible and cleared, just as clicking a product name does for its row.
+- **Delay Notification affected types**: Generated lists now show each selected cycle's affected types, e.g. `GWAVE (cycles: 00[EF,PPROC], 06[FC])`, using the marking-button rules: Definite includes slightly late/overdue types; Possible includes types 0-15 minutes ahead, independently of matrix timing filters (including **All timings**) or manual selection. Each type uses its worst step generation status; fully completed types are excluded. Types are sorted and deduplicated; cycles with types remain explicit instead of being compacted into ranges.
+- **Delay Notification product flag**: The generic (all types) entry in Product Descriptions has a new **Show in Delay Notification** option, enabled by default. When disabled, the product is never listed in the Delay Notification matrix. Existing databases need the new column: `ALTER TABLE PRODUCT_METADATA ADD COLUMN PRM_DELAY_NOTIFICATION tinyint(1) NOT NULL DEFAULT 1 AFTER PRM_GROUP_TIMES;`. See [Product Descriptions](administration/product-descriptions.md#fields).
+- **Product generation timing label**: The misleading *On schedule / slightly late* category is renamed *Slightly late (≤60m)*; products exactly on schedule were already counted as *Received 0-15m ahead*. Delay Notification now uses the same step-based generation status as the product summary page for its matrix colors, timing filter and marking buttons, instead of the offset from the earliest step schedule; a cycle whose remaining steps are on time is no longer shown as overdue. Hover text shows the most urgent step's offset and says "overdue" only for overdue cycles.
+
+---
+
 ## open-ecpds 8.2.1-20102026
 
 - **Optional ECaccess gateway transfers**: Extracts `ECaccessModule` into `ecpds-ecaccess` with ECCMD discovery, gateway failover/load balancing, resumed uploads/downloads and file operations. A generic, explicitly registered remote-service SPI provides the Master–Mover RMI lookup; gateway interfaces, relay and legacy wire types stay outside core. Uses the existing proxy-ticket data channel, releases relays on close and does not replay failed mutations within an attempt. No REST-only or EJB/JNDI backend. See [ECaccess gateway transfers](transfer-modules/ecaccess.md).

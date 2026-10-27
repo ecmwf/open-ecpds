@@ -110,6 +110,12 @@ public class ProductDescriptionsAction extends PDSAction {
         private final boolean groupTimes;
 
         /**
+         * Whether this product is listed in the Delay Notification matrix. Only meaningful on the generic (all-types)
+         * entry.
+         */
+        private final boolean delayNotification;
+
+        /**
          * Instantiates a new product metadata entry.
          *
          * @param product
@@ -124,15 +130,18 @@ public class ProductDescriptionsAction extends PDSAction {
          *            whether the product currently exists in the monitoring interface
          * @param groupTimes
          *            whether all cycles/times of this product are grouped into a single monitoring page
+         * @param delayNotification
+         *            whether this product is listed in the Delay Notification matrix
          */
         public ProductMetadataEntry(final String product, final String type, final String description,
-                final String tips, final boolean known, final boolean groupTimes) {
+                final String tips, final boolean known, final boolean groupTimes, final boolean delayNotification) {
             this.product = product;
             this.type = type;
             this.description = description;
             this.tips = tips;
             this.known = known;
             this.groupTimes = groupTimes;
+            this.delayNotification = delayNotification;
         }
 
         /**
@@ -197,6 +206,15 @@ public class ProductDescriptionsAction extends PDSAction {
         public boolean isGroupTimes() {
             return groupTimes;
         }
+
+        /**
+         * Checks whether this product is listed in the Delay Notification matrix.
+         *
+         * @return true, if the product is listed in the Delay Notification matrix
+         */
+        public boolean isDelayNotification() {
+            return delayNotification;
+        }
     }
 
     /**
@@ -254,7 +272,7 @@ public class ProductDescriptionsAction extends PDSAction {
             final var entries = new ArrayList<ProductMetadataEntry>(sorted.size());
             for (final var m : sorted) {
                 entries.add(new ProductMetadataEntry(m.getProduct(), m.getType(), m.getDescription(), m.getTips(),
-                        knownProducts.contains(m.getProduct()), m.isGroupTimes()));
+                        knownProducts.contains(m.getProduct()), m.isGroupTimes(), m.isDelayNotification()));
             }
             request.setAttribute("productDescriptions", entries);
         } catch (final Exception e) {
@@ -378,8 +396,10 @@ public class ProductDescriptionsAction extends PDSAction {
 
             // Only meaningful on the generic (all-types) entry; ignored (stored as false) on type-specific rows.
             final var groupTimes = type.isEmpty() && Boolean.TRUE.equals(body.get("groupTimes"));
+            // Same for the Delay Notification flag; type-specific rows and missing values keep the default (listed).
+            final var delayNotification = !type.isEmpty() || !Boolean.FALSE.equals(body.get("delayNotification"));
 
-            MasterManager.getDB().setProductMetadata(product, type, description, tips, groupTimes);
+            MasterManager.getDB().setProductMetadata(product, type, description, tips, groupTimes, delayNotification);
 
             response.getWriter().write("{\"success\":true}");
         } catch (final Exception e) {
@@ -501,7 +521,7 @@ public class ProductDescriptionsAction extends PDSAction {
                 if (!seen.add(key) || existing.contains(key)) {
                     continue;
                 }
-                db.setProductMetadata(product, type, "", "", false);
+                db.setProductMetadata(product, type, "", "", false, true);
                 final var entry = new java.util.LinkedHashMap<String, String>();
                 entry.put("product", product);
                 entry.put("type", type);

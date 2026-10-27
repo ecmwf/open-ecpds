@@ -103,7 +103,7 @@
        <label class="form-check small mb-1"><input class="form-check-input dn-status-option" type="checkbox" value="1"><span class="form-check-label">Received &gt;30m ahead</span></label>
        <label class="form-check small mb-1"><input class="form-check-input dn-status-option" type="checkbox" value="2"><span class="form-check-label">Received 15-30m ahead</span></label>
        <label class="form-check small mb-1"><input class="form-check-input dn-status-option" type="checkbox" value="3"><span class="form-check-label">Received 0-15m ahead</span></label>
-       <label class="form-check small mb-1"><input class="form-check-input dn-status-option" type="checkbox" value="4"><span class="form-check-label">On schedule / slightly late</span></label>
+       <label class="form-check small mb-1"><input class="form-check-input dn-status-option" type="checkbox" value="4"><span class="form-check-label">Slightly late (&le;60m)</span></label>
        <label class="form-check small mb-1"><input class="form-check-input dn-status-option" type="checkbox" value="5"><span class="form-check-label">Not received / overdue</span></label>
        <label class="form-check small"><input class="form-check-input dn-status-option" type="checkbox" value="other"><span class="form-check-label">Transitional / other</span></label>
       </div>
@@ -116,13 +116,13 @@
       <label class="form-check-label" for="dnUniformCells">Uniform cells</label>
      </div>
     </div>
-    <div class="small text-muted mb-2">Click a cell to switch between <span class="badge text-bg-danger">D = Definite</span>, <span class="badge text-bg-warning">P = Possible</span> and cleared. Click a product name to cycle its whole row.</div>
+    <div class="small text-muted mb-2">Click a cell to switch between <span class="badge text-bg-danger">D = Definite</span>, <span class="badge text-bg-warning">P = Possible</span> and cleared. Click a product name to cycle its whole row, or a cycle header to cycle its whole column.</div>
     <div class="d-flex flex-wrap gap-2 small mb-2" aria-label="Generation timing legend">
      <span><i class="mon-dot mon-dot-0 me-1"></i>No data / pending</span>
      <span><i class="mon-dot mon-dot-1 me-1"></i>&gt;30m ahead</span>
      <span><i class="mon-dot mon-dot-2 me-1"></i>15-30m ahead</span>
      <span><i class="mon-dot mon-dot-3 me-1"></i>0-15m ahead</span>
-     <span><i class="mon-dot mon-dot-4 me-1"></i>On schedule / slightly late</span>
+     <span><i class="mon-dot mon-dot-4 me-1"></i>Slightly late (&le;60m)</span>
      <span><i class="mon-dot mon-dot-5 me-1"></i>Overdue (&gt;60m)</span>
      <span><i class="mon-dot mon-dot-6 me-1"></i>Transitional</span>
     </div>
@@ -130,7 +130,7 @@
     <div id="dnMatrixActions" class="mt-2 d-flex flex-wrap align-items-start gap-2">
      <span class="small text-muted"><span id="dnSelCount">0</span> cell(s) selected</span>
      <div class="btn-group btn-group-sm ms-auto" role="group" aria-label="Select affected cells by generation timing">
-      <button class="btn btn-outline-danger" id="dnMarkLateBtn" type="button" onclick="dnMarkByTiming('definite')" title="Mark all filtered on-schedule/slightly-late and overdue product/cycle cells as Definite">Mark late/overdue D</button>
+      <button class="btn btn-outline-danger" id="dnMarkLateBtn" type="button" onclick="dnMarkByTiming('definite')" title="Mark all filtered slightly late and overdue product/cycle cells as Definite">Mark late/overdue D</button>
       <button class="btn btn-outline-warning" id="dnMarkAheadBtn" type="button" onclick="dnMarkByTiming('possible')" title="Mark all filtered product/cycle cells received 0-15 minutes ahead as Possible">Mark 0-15m ahead P</button>
       <button class="btn btn-outline-secondary" id="dnClearBtn" type="button" onclick="dnClear()" title="Clear the selection of all filtered cells">Clear all</button>
      </div>
@@ -289,7 +289,7 @@
 <script>
 (function() {
 var BASE = '/do/monitoring/delaynotification/';
-var S = { cycles: {}, minutesBeforeSchedule: {}, minutesBeforeSchedulePerCycle: {}, generationStatusPerProduct: {}, generationStatusPerCycle: {}, models: {}, notices: [], sel: {}, emails: [], dests: {}, bodyEdited: false, update: null, defaultCc: '', defaultBcc: '', allowNoticeCc: true, allowNoticeBcc: true, markdown: true, previewData: null, previewPlain: false, limit: 100, more: false, sentTable: null, reportBusy: false, reportData: null };
+var S = { cycles: {}, typesPerCycle: {}, minutesBeforeSchedule: {}, minutesBeforeSchedulePerCycle: {}, generationStatusPerProduct: {}, generationStatusPerCycle: {}, models: {}, notices: [], sel: {}, emails: [], dests: {}, bodyEdited: false, update: null, defaultCc: '', defaultBcc: '', allowNoticeCc: true, allowNoticeBcc: true, markdown: true, previewData: null, previewPlain: false, limit: 100, more: false, sentTable: null, reportBusy: false, reportData: null };
 // A manually edited message is no longer regenerated automatically: flag it with a subtle red line.
 (function() {
   var edited = false;
@@ -319,13 +319,15 @@ function generationStatusNumber(status) {
   var number = Number(status);
   return Number.isInteger(number) && number >= 0 && number <= 7 ? number : 0;
 }
-function beforeScheduleStatus(status, minutes) {
-  var current = generationStatusNumber(status);
-  if (minutes == null || current >= 6) { return current; }
-  if (minutes >= 30) { return 1; }
-  if (minutes >= 15) { return 2; }
-  if (minutes >= 0) { return 3; }
-  return minutes > -60 ? 4 : 5;
+// The timing category is the generation status computed from the product steps, as on the summary page; the minutes
+// (most urgent step) are only shown in the hover text.
+function beforeScheduleStatus(status) {
+  return generationStatusNumber(status);
+}
+function timingTitle(status, minutes) {
+  if (minutes == null) { return 'No schedule available'; }
+  if (minutes >= 0) { return minutes + 'm before schedule'; }
+  return Math.abs(minutes) + (generationStatusNumber(status) === 5 ? 'm overdue' : 'm past schedule');
 }
 function savePreferences() {
   try { localStorage.setItem(PREF_KEY, JSON.stringify(preferences)); } catch (e) {}
@@ -522,7 +524,7 @@ function visibleProducts() {
   return Object.keys(S.cycles).filter(function(p) {
     var hasMatchingCycle = visibleCycles(p).some(function(cycle) {
       var key = p + '@' + cycle;
-      var status = beforeScheduleStatus(S.generationStatusPerCycle[key], S.minutesBeforeSchedulePerCycle[key]);
+      var status = beforeScheduleStatus(S.generationStatusPerCycle[key]);
       return statusMatchesFilter(status);
     });
     return matches($('dnFilter').value, p) && (!any || activeModels[modelOf(p)]) && hasMatchingCycle;
@@ -552,28 +554,26 @@ window.dnSetCompactEmptyLines = function(compact) {
 };
 window.dnRenderMatrix = function() {
   var products = visibleProducts(), cycles = allCycles(products);
-  var h = '<thead><tr><th>Product</th><th class="dn-before" title="Before: shortest time remaining across all cycles" aria-label="Before: shortest time remaining across all cycles"><i class="bi bi-clock-history"></i></th>' + cycles.map(function(c) { return '<th class="text-center">' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
+  var h = '<thead><tr><th>Product</th><th class="dn-before" title="Before: shortest time remaining across all cycles" aria-label="Before: shortest time remaining across all cycles"><i class="bi bi-clock-history"></i></th>' + cycles.map(function(c) { return '<th class="text-center" style="cursor:pointer" data-col="' + esc(c) + '" title="Click to cycle this column">' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
   products.forEach(function(p) {
     var description = S.descriptions[p] || '';
     h += '<tr><td class="fw-semibold" style="cursor:pointer" data-row="' + esc(p) + '"'
       + (description ? ' title="' + esc(description) + '"' : '') + '>' + esc(p) + '</td>';
     var before = S.minutesBeforeSchedule[p];
     var productStatus = S.generationStatusPerProduct[p];
-    var beforeTitle = before == null ? 'No schedule available'
-      : before < 0 ? Math.abs(before) + 'm overdue' : before + 'm before schedule';
+    var beforeTitle = timingTitle(productStatus, before);
     h += '<td class="dn-before"><span class="dn-before-dot mon-dot mon-dot-'
-      + beforeScheduleStatus(productStatus, before) + '" title="' + esc(beforeTitle)
+      + beforeScheduleStatus(productStatus) + '" title="' + esc(beforeTitle)
       + '" aria-label="' + esc(beforeTitle) + '"></span></td>';
     cycles.forEach(function(c) {
       if (S.cycles[p].indexOf(c) < 0) { h += '<td class="dn-cell na">&middot;</td>'; return; }
       var l = S.sel[p + '@' + c] || '';
       var cycleBefore = S.minutesBeforeSchedulePerCycle[p + '@' + c];
       var cycleStatus = S.generationStatusPerCycle[p + '@' + c];
-      var cycleTitle = cycleBefore == null ? 'No schedule available'
-        : cycleBefore < 0 ? Math.abs(cycleBefore) + 'm overdue' : cycleBefore + 'm before schedule';
+      var cycleTitle = timingTitle(cycleStatus, cycleBefore);
       var marker = l === 'definite' ? '<span class="dn-marker definite" title="Definite" aria-label="Definite">D</span>'
         : l === 'possible' ? '<span class="dn-marker possible" title="Possible" aria-label="Possible">P</span>' : '';
-      h += '<td class="dn-cell dn-status-' + beforeScheduleStatus(cycleStatus, cycleBefore)
+      h += '<td class="dn-cell dn-status-' + beforeScheduleStatus(cycleStatus)
         + '" data-p="' + esc(p) + '" data-t="' + esc(c) + '" title="' + esc(cycleTitle) + '">' + marker + '</td>';
     });
     h += '</tr>';
@@ -596,6 +596,16 @@ window.dnRenderMatrix = function() {
       afterSelection();
     };
   });
+  Array.prototype.forEach.call($('dnMatrix').querySelectorAll('th[data-col]'), function(th) {
+    th.onclick = function() {
+      var t = th.dataset.col;
+      var rows = products.filter(function(p) { return S.cycles[p].indexOf(t) >= 0; });
+      if (!rows.length) { return; }
+      var n = next(S.sel[rows[0] + '@' + t]);
+      rows.forEach(function(p) { setCell(p, t, n, true); });
+      afterSelection();
+    };
+  });
   $('dnSelCount').textContent = cellList().length;
 };
 function next(l) { return !l ? 'definite' : l === 'definite' ? 'possible' : ''; }
@@ -614,14 +624,17 @@ window.dnFilterChanged = function() {
   clearTimeout(filterTimer);
   filterTimer = setTimeout(function() { dnRecipients(); dnAuto(); }, 250);
 };
+function matchesMarkingLevel(status, level) {
+  return (level === 'definite' && (status === 4 || status === 5))
+    || (level === 'possible' && status === 3);
+}
 window.dnMarkByTiming = function(level) {
   if (level !== 'definite' && level !== 'possible') { return; }
   visibleProducts().forEach(function(product) {
     visibleCycles(product).forEach(function(cycle) {
       var key = product + '@' + cycle;
-      var status = beforeScheduleStatus(S.generationStatusPerCycle[key], S.minutesBeforeSchedulePerCycle[key]);
-      if ((level === 'definite' && (status === 4 || status === 5))
-          || (level === 'possible' && status === 3)) {
+      var status = beforeScheduleStatus(S.generationStatusPerCycle[key]);
+      if (matchesMarkingLevel(status, level)) {
         S.sel[key] = level;
       }
     });
@@ -657,7 +670,16 @@ function compactTimes(times, sep) {
 function group(cells, level) {
   var per = {};
   cells.filter(function(c) { return c.level === level; }).forEach(function(c) { (per[c.product] = per[c.product] || []).push(c.time); });
-  return Object.keys(per).sort().map(function(p) { return '  - ' + p + ' (cycles: ' + compactTimes(per[p].sort()) + ')'; });
+  return Object.keys(per).sort().map(function(p) {
+    var cycles = per[p].sort().map(function(t) {
+      var statuses = S.typesPerCycle[p + '@' + t] || {};
+      var types = Object.keys(statuses).filter(function(type) {
+        return matchesMarkingLevel(beforeScheduleStatus(statuses[type]), level);
+      }).sort();
+      return t + (types.length ? '[' + types.join(',') + ']' : '');
+    });
+    return '  - ' + p + ' (cycles: ' + compactTimes(cycles) + ')';
+  });
 }
 function describeProducts(cells) {
   var names = {}; cells.forEach(function(c) { names[c.product] = 1; });
@@ -1360,6 +1382,7 @@ function load() {
   return post('data', {limit: S.limit}).then(function(d) {
     S.more = d.more;
     S.cycles = d.cycles; S.minutesBeforeSchedule = d.minutesBeforeSchedule || {};
+    S.typesPerCycle = d.typesPerCycle || {};
     var selectedCycle = $('dnCycleFilter').value;
     var cycles = {};
     Object.keys(S.cycles).forEach(function(product) {

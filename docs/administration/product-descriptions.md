@@ -26,6 +26,7 @@ In other words, the generic entry is the **default/fallback**: it is only used f
 | **Description** | Used to build the `{{DESCRIPTION}}` placeholder in [Product Status Messages](product-status-messages.md). When the types shown resolve to different descriptions, it renders one `- TYPE: description` bullet per type; if they all resolve to the same text (e.g. only a generic entry is configured), it appears once as plain text. |
 | **Tips** | Same default/override and bullet-list-or-plain-text behaviour as Description, but shown as an expandable **ⓘ** info card on the product's monitoring page (e.g. `/do/monitoring/summary/GOPER/06/0/AN`) instead of in an email message. |
 | **Group all cycles/times into one page** | Only meaningful — and only editable — on the **generic** (blank Type) entry of a product. See [Grouped Monitoring Pages](#grouped-monitoring-pages) below. |
+| **Show in Delay Notification** | Only meaningful — and only editable — on the **generic** (blank Type) entry of a product. Enabled by default. When disabled, the product is never listed in the [Delay Notification](../monitoring/delay-notification.md) matrix nor included in its *all products* emails; the row shows a <i class="bi bi-bell-slash-fill"></i> icon. Products without a generic entry are always listed. |
 
 ---
 
