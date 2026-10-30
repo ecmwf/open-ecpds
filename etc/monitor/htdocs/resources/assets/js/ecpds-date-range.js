@@ -119,7 +119,7 @@
             var value = iso(new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth(), day)));
             var button = document.createElement('button');
             button.type = 'button';
-            button.className = 'ecpds-range-day';
+            button.className = 'btn ecpds-range-day';
             button.textContent = day;
             button.dataset.date = value;
             button.disabled = value < first || value > last;
