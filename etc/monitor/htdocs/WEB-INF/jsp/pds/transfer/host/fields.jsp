@@ -697,7 +697,7 @@ value='<c:out value="${requestScope[actionFormName].acquisitionFrequency}"/>'>
 <label for="owner" class="form-label mb-1">Owner <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="For the record" tabindex="0"></i></label>
 <bean:define id="users" name="hostActionForm"
 property="ownerOptions" type="java.util.Collection" />
-<html:select property="owner" styleId="owner" styleClass="form-select form-select-sm">
+<html:select property="owner" styleId="owner" styleClass="form-select form-select-sm w-100">
 <html:options collection="users" property="name"
 labelProperty="comment" />
 </html:select>

@@ -530,7 +530,7 @@
 <div id="${_grpId}" class="nst-panel" style="${fn:length(transferStatisticsGroups) == 1 || grpStatus.last ? '' : 'display:none;'}">
 
 <%-- Sending provenance applies to single-group panels too. --%>
-<div class="d-flex align-items-center gap-2 mb-2">
+<div class="d-flex flex-wrap align-items-center gap-2 mb-2">
   <span class="badge bg-primary rounded-pill fs-6">Attempt ${grp[0].requeueHistory + 1}</span>
   <c:choose>
     <c:when test="${grp[0].weatherProvenanceUnavailable}">
