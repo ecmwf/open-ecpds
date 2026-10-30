@@ -877,6 +877,7 @@ public final class MasterServer extends ECaccessProvider
                     section -> Cnf.at(section, Map.of()));
             _log.info("MasterServer-version: {}", Version.getFullVersion());
             _loadActualTrafficFromDb();
+            OpenTelemetryLogging.install();
             OperationalEvents.start(getECpdsBase());
             TransferTracing.start("master");
             TransferMetrics.start(this);

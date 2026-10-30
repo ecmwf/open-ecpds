@@ -93,10 +93,11 @@ const tDuration = _si.map(i=>_tDuration[i]);
     <button class="btn btn-outline-secondary" data-days="365" onclick="setChartPeriod(365)">1y</button>
     <button class="btn btn-outline-secondary active" data-days="0" onclick="setChartPeriod(0)">All</button>
   </div>
+  <jsp:include page="/WEB-INF/jsp/common/date-range.jsp"/>
   <span id="chartPeriodLabel" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis border" style="display:none;font-size:0.75rem;font-weight:500;"></span>
-  <div class="form-check form-switch small mb-0" title="Start the transfer-rate Y-axis at zero">
+  <div class="form-check form-switch small mb-0" title="When disabled, the axis scales automatically and may still start at zero.">
     <input class="form-check-input" type="checkbox" role="switch" id="rateAxisZero" onchange="setRateAxisZero(this.checked)">
-    <label class="form-check-label" for="rateAxisZero">Rate axis starts at zero</label>
+    <label class="form-check-label" for="rateAxisZero">Always start rate axis at zero</label>
   </div>
   <div class="ms-auto d-flex align-items-center gap-1">
     <button type="button" class="btn btn-sm btn-outline-secondary" id="btnTable" onclick="setView('table')">
@@ -125,6 +126,7 @@ const tDuration = _si.map(i=>_tDuration[i]);
     <strong class="d-block mb-1 mt-2">Controls</strong>
     <ul class="mb-0 ps-3">
       <li><strong>Period</strong> &mdash; use the <kbd>30d</kbd> / <kbd>90d</kbd> / <kbd>180d</kbd> / <kbd>1y</kbd> / <kbd>All</kbd> buttons to restrict the visible data. The filter applies to the summary stat cards, the chart, and the table simultaneously.</li>
+      <li><strong>Custom range</strong> &mdash; beside Period, select start/end dates in the two calendars and Apply. Both dates are included; click the same day twice for one day. Reset restores the full period; changing Period clears the range.</li>
       <li><strong>Table / Chart</strong> &mdash; switch between the bar/line chart view and a sortable, paginated table of daily figures.</li>
       <li><strong>Sort order</strong> (&uarr;&darr; button) &mdash; toggle between earliest-first and latest-first. Applies to both the chart and the table.</li>
     </ul>
@@ -162,11 +164,6 @@ const tDuration = _si.map(i=>_tDuration[i]);
       <i class="bi bi-table text-primary"></i>
       <span class="fw-semibold">Daily Traffic</span>
       <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
-        <div class="input-group input-group-sm" style="width:auto">
-          <span class="input-group-text"><i class="bi bi-search"></i></span>
-          <input type="search" id="trafficSearch" class="form-control"
-                 placeholder="Filter by date..." oninput="setSearchTerm(this.value)" style="min-width:160px">
-        </div>
         <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
           <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
           <select id="pageSizeSelect" class="form-select form-select-sm" style="width:auto"
@@ -219,6 +216,7 @@ const tDuration = _si.map(i=>_tDuration[i]);
 
 <%-- CHART VIEW --%>
 <div id="chartView" style="display:none;">
+  <div id="trafficNoMatches" class="alert alert-info d-none" role="status">No data in the selected date range. Reset the custom range to show the full period.</div>
   <div class="mb-4 p-2 border rounded" style="position:relative; height:320px;">
     <canvas id="chartBytesRate"></canvas>
   </div>
@@ -245,7 +243,7 @@ function fmtBytes(b) {
 }
 
 // -- Table: state -------------------------------------------------------------
-var _sortedIdx = null, _page = 0, _pageSize = 25, _searchTerm = '', _reversed = false;
+var _sortedIdx = null, _page = 0, _pageSize = 25, dateRange = null, _reversed = false;
 
 function getBaseOrder() {
   var base = tLabels.map(function(_,i){return i;});
@@ -255,10 +253,9 @@ function getBaseOrder() {
 function getFilteredTableRows() {
   var allIdx = _sortedIdx || getBaseOrder();
   // Restrict to the selected period
-  var base = allIdx.filter(function(i) { return i >= _tableStart; });
-  if (!_searchTerm) return base;
-  var term = _searchTerm.toLowerCase();
-  return base.filter(function(i) { return tLabels[i].toLowerCase().indexOf(term) !== -1; });
+  return allIdx.filter(function(i) {
+    return i >= _tableStart && (!dateRange || dateRange.matches(tLabels[i]));
+  });
 }
 
 function buildTable() {
@@ -330,9 +327,10 @@ function setPageSize(v) {
   buildTable();
 }
 
-function setSearchTerm(v) {
-  _searchTerm = v.trim();
+function refreshDateRange() {
   _page = 0;
+  computeStats();
+  if (_chartBR || _chartF) buildCharts();
   buildTable();
 }
 
@@ -379,12 +377,15 @@ var _chartPeriod = 0, _chartBR = null, _chartF = null, _tableStart = 0;
 function getChartData(days) {
   var start = (days > 0 && tLabels.length > days) ? tLabels.length - days : 0;
   _tableStart = start;
-  var labels   = tLabels.slice(start);
-  var bytes    = tBytes.slice(start);
-  var rates    = tRates.slice(start);
-  var files    = tFiles.slice(start);
-  var fmtBytes = tFmtBytes.slice(start);
-  var fmtRates = tFmtRates.slice(start);
+  var indices = tLabels.map(function(_, i) { return i; }).filter(function(i) {
+    return i >= start && (!dateRange || dateRange.matches(tLabels[i]));
+  });
+  var labels   = indices.map(function(i) { return tLabels[i]; });
+  var bytes    = indices.map(function(i) { return tBytes[i]; });
+  var rates    = indices.map(function(i) { return tRates[i]; });
+  var files    = indices.map(function(i) { return tFiles[i]; });
+  var fmtBytes = indices.map(function(i) { return tFmtBytes[i]; });
+  var fmtRates = indices.map(function(i) { return tFmtRates[i]; });
   if (_reversed) {
     labels   = labels.slice().reverse();
     bytes    = bytes.slice().reverse();
@@ -400,6 +401,7 @@ function getChartData(days) {
 
 function setChartPeriod(days) {
   _chartPeriod = days;
+  if (dateRange) dateRange.reset(false);
   document.querySelectorAll('#chartPeriodSelector .btn').forEach(function(b) {
     b.classList.toggle('active', parseInt(b.getAttribute('data-days'), 10) === days);
   });
@@ -429,6 +431,7 @@ function buildCharts() {
 
   var d  = getChartData(_chartPeriod);
   var n  = d.labels.length;
+  document.getElementById('trafficNoMatches').classList.toggle('d-none', n > 0);
   var pt = n > 180 ? 0 : n > 60 ? 1.5 : 3;
 
   var label = document.getElementById('chartPeriodLabel');
@@ -591,6 +594,10 @@ function computeStats() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  dateRange = new EcpdsDateRange(document.getElementById('dateRangeControl'), {
+    getDates: function() { return tLabels.slice(_tableStart); },
+    onChange: refreshDateRange
+  });
   try { if (localStorage.getItem('trafficReversed') === '1') _reversed = true; } catch(e) {}
   try { document.getElementById('rateAxisZero').checked = localStorage.getItem('transferRateAxisStartsAtZero') === 'true'; } catch(e) {}
   computeStats();

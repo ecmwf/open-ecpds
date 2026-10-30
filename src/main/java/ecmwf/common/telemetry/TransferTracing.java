@@ -108,6 +108,7 @@ public final class TransferTracing {
                                                 Cnf.at("Login", "root", Cnf.at("Login", "hostName", role)))
                                         .build())
                                 .merge(resource))
+                .addSpanExporterCustomizer((exporter, properties) -> TelemetryTls.configure(exporter, properties))
                 .addSpanExporterCustomizer((exporter, _) -> {
                     final var monitored = new SpanExporter() {
                         @Override

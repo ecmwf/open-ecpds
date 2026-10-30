@@ -133,20 +133,21 @@ function tableColumnCount() {
   return _mode === 'ratesPerTransferServer' ? 7 : 6;
 }
 
-var _reversed = false, _sortedIdx = null, _page = 0, _pageSize = 25, _searchTerm = '';
+var _reversed = false, _sortedIdx = null, _page = 0, _pageSize = 25, _searchTerm = '', dateRange = null;
 
 function getFilteredTableRows() {
   var allIdx = _sortedIdx || getBaseRows();
   if (_reversed && !_sortedIdx) allIdx = allIdx.slice().reverse();
   // Restrict to the selected period
-  var base = _periodCutoffDate
-    ? allIdx.filter(function(i) { return rawDates[i] >= _periodCutoffDate; })
-    : allIdx;
+  var base = allIdx.filter(function(i) {
+    return (!_periodCutoffDate || rawDates[i] >= _periodCutoffDate)
+      && (!dateRange || dateRange.matches(rawDates[i]));
+  });
   if (!_searchTerm) return base;
   var term = _searchTerm.toLowerCase();
   return base.filter(function(i) {
     return [
-      rawDates[i], rawGroup[i], rawMover[i], String(rawCount[i]),
+      rawGroup[i], rawMover[i], String(rawCount[i]),
       rawFmtBytes[i], rawFmtDur[i], rawFmtRate[i]
     ].join(' ').toLowerCase().indexOf(term) !== -1;
   });
@@ -176,6 +177,10 @@ function buildTable() {
   });
   document.getElementById('ratesTbody').innerHTML = html || '<tr><td colspan="' + tableColumnCount() + '" class="text-center text-muted fst-italic">No matching rows.</td></tr>';
   buildPaginator(total);
+  var periodRows = rawDates.filter(function(date) {
+    return (!_periodCutoffDate || date >= _periodCutoffDate) && (!dateRange || dateRange.matches(date));
+  }).length;
+  document.getElementById('ratesSearchCount').textContent = total + ' of ' + periodRows + ' rows';
 }
 
 function buildPaginator(total) {
@@ -235,7 +240,15 @@ function setRateAxisZero(enabled) {
 function setSearchTerm(v) {
   _searchTerm = v.trim();
   _page = 0;
+  computeStats();
+  if (_chartBR || _chartF) buildCharts();
   buildTable();
+}
+
+function clearSearch() {
+  document.getElementById('ratesSearch').value = '';
+  setSearchTerm('');
+  document.getElementById('ratesSearch').focus();
 }
 
 function compareString(a, b, asc) {
@@ -291,25 +304,37 @@ var _chartPeriod = 0, _chartBR = null, _chartF = null, _periodCutoffDate = '';
 function getChartData(days) {
   var start = (days > 0 && tLabels.length > days) ? tLabels.length - days : 0;
   _periodCutoffDate = start > 0 ? tLabels[start] : '';
-  var labels   = tLabels.slice(start);
-  var bytes    = tBytes.slice(start);
-  var rates    = tRates.slice(start);
-  var files    = tFiles.slice(start);
-  var fmtBytes = tFmtBytes.slice(start);
-  var fmtRates = tFmtRates.slice(start);
+  var matching = {};
+  getFilteredTableRows().forEach(function(i) {
+    var date = rawDates[i];
+    if (!matching[date]) matching[date] = { bytes: 0, duration: 0, files: 0 };
+    matching[date].bytes += rawBytes[i];
+    matching[date].duration += rawDuration[i];
+    matching[date].files += rawCount[i];
+  });
+  var labels = Object.keys(matching).sort();
+  var bytes = labels.map(function(date) { return matching[date].bytes; });
+  var files = labels.map(function(date) { return matching[date].files; });
+  var rates = labels.map(function(date) {
+    var row = matching[date];
+    return row.duration > 0 ? (row.bytes * 8 / 1e6) / (row.duration / 1000) : 0;
+  });
+  var formattedBytes = bytes.map(function(value) { return fmtBytes(value); });
+  var fmtRates = rates.map(function(value) { return value.toFixed(2) + ' Mbit/s'; });
   if (_reversed) {
     labels   = labels.slice().reverse();
     bytes    = bytes.slice().reverse();
     rates    = rates.slice().reverse();
     files    = files.slice().reverse();
-    fmtBytes = fmtBytes.slice().reverse();
+    formattedBytes = formattedBytes.slice().reverse();
     fmtRates = fmtRates.slice().reverse();
   }
-  return { labels: labels, bytes: bytes, rates: rates, files: files, fmtBytes: fmtBytes, fmtRates: fmtRates };
+  return { labels: labels, bytes: bytes, rates: rates, files: files, fmtBytes: formattedBytes, fmtRates: fmtRates };
 }
 
 function setChartPeriod(days) {
   _chartPeriod = days;
+  if (dateRange) dateRange.reset(false);
   document.querySelectorAll('#chartPeriodSelector .btn').forEach(function(b) {
     b.classList.toggle('active', parseInt(b.getAttribute('data-days'), 10) === days);
   });
@@ -335,6 +360,7 @@ function buildCharts() {
 
   var d = getChartData(_chartPeriod);
   var n = d.labels.length;
+  document.getElementById('ratesNoMatches').classList.toggle('d-none', n > 0);
   var pt = n > 180 ? 0 : n > 60 ? 1.5 : 3;
 
   document.getElementById('chartPeriodLabel').textContent =
@@ -497,6 +523,10 @@ function computeStats() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  dateRange = new EcpdsDateRange(document.getElementById('dateRangeControl'), {
+    getDates: function() { return tLabels.filter(function(date) { return !_periodCutoffDate || date >= _periodCutoffDate; }); },
+    onChange: function() { setSearchTerm(_searchTerm); }
+  });
   try { if (localStorage.getItem('ratesReversed') === '1') _reversed = true; } catch(e) {}
   try { document.getElementById('rateAxisZero').checked = localStorage.getItem('transferRateAxisStartsAtZero') === 'true'; } catch (e) {}
   computeStats();
@@ -546,10 +576,11 @@ new MutationObserver(function() {
     <button class="btn btn-outline-secondary" data-days="365" onclick="setChartPeriod(365)">1y</button>
     <button class="btn btn-outline-secondary active" data-days="0" onclick="setChartPeriod(0)">All</button>
   </div>
+  <jsp:include page="/WEB-INF/jsp/common/date-range.jsp"/>
   <span id="chartPeriodLabel" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis border" style="display:none;font-size:0.75rem;font-weight:500;"></span>
-  <div class="form-check form-switch small mb-0" title="Start the transfer-rate Y-axis at zero">
+  <div class="form-check form-switch small mb-0" title="When disabled, the axis scales automatically and may still start at zero.">
     <input class="form-check-input" type="checkbox" role="switch" id="rateAxisZero" onchange="setRateAxisZero(this.checked)">
-    <label class="form-check-label" for="rateAxisZero">Rate axis starts at zero</label>
+    <label class="form-check-label" for="rateAxisZero">Always start rate axis at zero</label>
   </div>
   <div class="ms-auto d-flex align-items-center gap-1">
     <button type="button" class="btn btn-sm btn-outline-secondary active" id="btnTable" onclick="setView('table')">
@@ -576,6 +607,7 @@ new MutationObserver(function() {
     <strong class="d-block mb-1 mt-2">Controls</strong>
     <ul class="mb-0 ps-3">
       <li><strong>Period</strong> &mdash; use <kbd>30d</kbd> / <kbd>90d</kbd> / <kbd>180d</kbd> / <kbd>1y</kbd> / <kbd>All</kbd> to restrict the visible data. The filter applies to the summary stat cards, the chart, and the table simultaneously.</li>
+      <li><strong>Custom range</strong> &mdash; beside Period, select start/end dates in the two calendars and Apply. Both dates are included; click the same day twice for one day. Reset restores the full period; changing Period clears the range. The separate search below filters only non-date fields.</li>
       <li><strong>Table / Chart</strong> &mdash; switch between a bar/line chart and a sortable, paginated table of daily figures.</li>
       <li><strong>Sort order</strong> (&uarr;&darr; button) &mdash; toggle between earliest-first and latest-first. Applies to both the chart and the table.</li>
     </ul>
@@ -605,13 +637,31 @@ new MutationObserver(function() {
   </div>
 </div>
 
+<div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+  <label for="ratesSearch" class="visually-hidden">Search transfer rates</label>
+  <div class="input-group input-group-sm" style="max-width:380px;">
+    <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
+    <input type="search" id="ratesSearch" class="form-control" placeholder="Group, filesystem, mover or metric..."
+           aria-describedby="ratesSearchHint" oninput="setSearchTerm(this.value)">
+    <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()" aria-label="Clear rates search" title="Clear search"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#ratesSearchHelp"
+            aria-controls="ratesSearchHelp" aria-expanded="false" aria-label="How to search transfer rates" title="How to search transfer rates"><i class="bi bi-info-circle" aria-hidden="true"></i></button>
+  </div>
+  <span id="ratesSearchCount" class="small text-muted" role="status" aria-live="polite"></span>
+</div>
+<div id="ratesSearchHint" class="visually-hidden">Search groups, filesystems, movers or metrics within the selected date range; dates are selected above.</div>
+<div class="collapse mb-3" id="ratesSearchHelp"><div class="ecpds-help-panel">
+  Select dates using <strong>Custom range</strong> beside the Period buttons above.
+  Enter one word or phrase here to match part of a group/filesystem, mover (when available),
+  transfer count or formatted volume, duration or rate, for example a transfer group name.
+  Dates are not searched in this box. The search ignores case and treats text literally: no wildcards,
+  regular expressions, numeric comparisons or comma-separated lists.
+  Charts and summary cards aggregate only matching rows, not other groups or movers on the same day.
+  Switching views keeps both filters. Clear the box or use <strong>&times;</strong> to restore all rows in the selected date range.
+</div></div>
+
 <div id="tableView">
   <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-    <div class="input-group input-group-sm" style="max-width:260px;">
-      <span class="input-group-text"><i class="bi bi-search"></i></span>
-      <input type="search" id="ratesSearch" class="form-control"
-             placeholder="Search rows..." oninput="setSearchTerm(this.value)">
-    </div>
     <div class="d-flex align-items-center gap-2">
       <label class="text-muted mb-0" style="font-size:0.82rem;">Rows:</label>
       <select id="pageSizeSelect" class="form-select form-select-sm" style="width:auto;"
@@ -704,6 +754,7 @@ new MutationObserver(function() {
 </div>
 
 <div id="chartView" style="display:none;">
+  <div id="ratesNoMatches" class="alert alert-info d-none" role="status">No rows match the selected date range and search. Clear the search or reset the custom range.</div>
   <div class="mb-4 p-2 border rounded" style="position:relative; height:320px;">
     <canvas id="chartBytesRate"></canvas>
   </div>

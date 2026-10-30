@@ -127,6 +127,20 @@ The existing anonymous-user and `dontRecordActions` exclusions still apply.
 As with existing settings history, database recording failures are logged but do
 not roll back a completed configuration change.
 
+### Transfer Timeline search
+
+The destination's **Timeline** has a shared **Search transfers** box for Chart and
+Table views. It filters as you type, ignoring case, by target filename/path,
+label (`cycle-product-type`), status code or host name. Enter one word or phrase,
+for example `GENFO`, `.grib`, a host name, or `RETR` for retrying transfers.
+Other status codes include `DONE`, `EXEC` and `STOP`.
+
+The **i** button beside the box explains the search with examples. Matching is
+literal: wildcards, regular expressions and comma-separated lists are not
+supported. Clear the box or use **×** to restore all transfers. The matching count
+is shown in both views; switching views keeps the search, and CSV exports only
+matching transfers. Changing the search resets chart zoom.
+
 ### Transfer tries
 
 Choose **Cols → Custom → Tries** to show the number of attempts to reach each

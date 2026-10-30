@@ -101,6 +101,34 @@ _tr.push({id:'${transfer.id}',target:'${tcTarget}',status:${tcStatus},fmtStatus:
   </div>
 </div>
 
+<div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+  <label for="tcFilter" class="visually-hidden">Search transfers</label>
+  <div class="input-group input-group-sm" style="max-width:380px;">
+    <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
+    <input type="search" id="tcFilter" class="form-control" placeholder="e.g. .grib or done (one at a time)"
+           aria-describedby="tcFilterHint" oninput="tcFilterTransfers()">
+    <button class="btn btn-outline-secondary" type="button" onclick="tcClearFilter()" title="Clear search"
+            aria-label="Clear transfer search"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#tcFilterHelp"
+            aria-expanded="false" aria-controls="tcFilterHelp" aria-label="How to search transfers"
+            title="How to search transfers"><i class="bi bi-info-circle" aria-hidden="true"></i></button>
+  </div>
+  <span id="tcFilterCount" class="small text-muted" role="status" aria-live="polite"></span>
+</div>
+<div id="tcFilterHint" class="visually-hidden">Filters Chart and Table as you type. Enter part of a target filename/path or displayed transfer status.</div>
+<div class="collapse mb-2" id="tcFilterHelp">
+  <div class="ecpds-help-panel">
+    <strong class="d-block mb-1">Search transfers in both views</strong>
+    <p class="mb-1">Enter one word or phrase. The search ignores case and finds that exact text anywhere in the
+    target filename/path (shown as Original) or displayed transfer status. For example, enter <code>.grib</code>
+    for a filename extension, or <code>done</code> to match a displayed status containing that text.
+    The text can match either field; it is not restricted to status.</p>
+    <p class="mb-0">No wildcards, regular expressions or comma-separated lists: <code>*.grib</code> searches
+    for a literal asterisk. Clear the box or use the <strong>&times;</strong> button to show all transfers.
+    Switching views keeps the search, and CSV exports only matching transfers. Changing the search resets chart zoom.</p>
+  </div>
+</div>
+
 <%-- -- Legend --------------------------------------------------------------- --%>
 <div id="tcLegend" class="mb-2 d-flex flex-wrap align-items-center">
   <span class="tc-legend-item"><span class="tc-legend-tick" style="background:#6c757d;"></span>S &mdash; Scheduled</span>
@@ -114,6 +142,7 @@ _tr.push({id:'${transfer.id}',target:'${tcTarget}',status:${tcStatus},fmtStatus:
 
 <%-- -- Chart container ------------------------------------------------------ --%>
 <div id="tcChartView">
+  <div id="tcNoMatches" class="alert alert-info d-none" role="status">No transfers match your search. Clear the search to show all transfers.</div>
   <div id="tcChart" style="width:100%; border:1px solid var(--bs-border-color); border-radius:6px;"></div>
 </div>
 <div id="tcZoomHint" class="text-muted mt-1 d-none" style="font-size:0.72rem;">
@@ -123,10 +152,6 @@ _tr.push({id:'${transfer.id}',target:'${tcTarget}',status:${tcStatus},fmtStatus:
 
 <%-- -- Table container ------------------------------------------------------ --%>
 <div id="tcTableView" class="d-none">
-  <div class="mb-2">
-    <input type="text" id="tcFilter" class="form-control form-control-sm"
-           placeholder="Filter by filename, status..." oninput="tcFilterTable()" style="max-width:360px;">
-  </div>
   <div style="max-height:75vh; overflow-y:auto; border:1px solid var(--bs-border-color); border-radius:6px;">
     <table class="table table-sm table-hover table-bordered mb-0" style="font-size:0.8rem;">
       <thead class="table-dark sticky-top">
@@ -184,6 +209,7 @@ function _markers(t) {
 // -- State ---------------------------------------------------------------------
 var _tcView    = localStorage.getItem('tcView') || 'chart';
 var _tcChart   = null;
+var _tcData    = _tr.slice();
 var _tcOrigMin = null, _tcOrigMax = null;
 var _xMin = 0, _xMax = 0;
 
@@ -200,7 +226,7 @@ function tcSetView(v) {
   document.getElementById('tcBtnTable').classList.toggle('active',  !isChart);
   var zg = document.getElementById('tcZoomGroup');
   var zh = document.getElementById('tcZoomHint');
-  if (zg) zg.classList.toggle('d-none', !isChart);
+  if (zg) zg.classList.toggle('d-none', !isChart || !_tcChart);
   if (zh) zh.classList.toggle('d-none', !isChart || !_tcChart);
   if (isChart) setTimeout(function() { _tcEnsureChart(); if (_tcChart) _tcChart.resize(); }, 0);
 }
@@ -235,7 +261,7 @@ function _tcResetZoom() { _tcApplyXZoom(_tcOrigMin, _tcOrigMax); }
 // -- renderItem: draw S/E/L/T/P/A tick marks + E->L bar for each row ---------
 function _tcRenderItem(params, api) {
   var rowIdx = api.value(0);
-  var t      = _tr[rowIdx];
+  var t      = _tcData[rowIdx];
   if (!t) return;
   var cs     = params.coordSys;
   var ms     = _markers(t);
@@ -286,16 +312,17 @@ function _tcRenderItem(params, api) {
 var _tcInited = false;
 function _tcEnsureChart() {
   if (_tcInited) return;
-  _tcInited = true;
-  var n = _tr.length;
+  var n = _tcData.length;
   if (n === 0 || typeof echarts === 'undefined') return;
+  _tcInited = true;
 
   // Compute time range across all markers
   var minT = Infinity, maxT = -Infinity;
-  _tr.forEach(function(t) {
+  _tcData.forEach(function(t) {
     _markers(t).forEach(function(v) {
       if (v > 0) { if (v < minT) minT = v; if (v > maxT) maxT = v; }
     });
+    if (!isFinite(minT)) { minT = Date.now(); maxT = minT; }
   });
   var pad = Math.max((maxT - minT) * 0.05, 300000); // 5 min min padding
   _tcOrigMin = minT - pad;
@@ -317,7 +344,7 @@ function _tcEnsureChart() {
       confine: true,
       formatter: function(p) {
         if (!p.value) return '';
-        var t  = _tr[p.value[0]];
+        var t  = _tcData[p.value[0]];
         if (!t) return '';
         var ms = _markers(t);
         var sIdx = Math.max(0, Math.min(t.status, 6));
@@ -353,7 +380,7 @@ function _tcEnsureChart() {
     },
     yAxis: {
       type: 'category',
-      data: _tr.map(function(t) {
+      data: _tcData.map(function(t) {
         var s = t.target; return s.length > 32 ? s.slice(0,29)+'...' : s;
       }),
       inverse: true,
@@ -370,7 +397,7 @@ function _tcEnsureChart() {
       type: 'custom',
       renderItem: _tcRenderItem,
       encode: { x: [1,2,3,4,5,6], y: 0 },
-      data: _tr.map(function(t, i) {
+      data: _tcData.map(function(t, i) {
         var m = _markers(t);
         return [i, m[0], m[1], m[2], m[3], m[4], m[5]];
       }),
@@ -380,7 +407,7 @@ function _tcEnsureChart() {
 
   _tcChart.on('click', function(p) {
     if (p.componentType === 'series' && p.value) {
-      var t = _tr[p.value[0]];
+      var t = _tcData[p.value[0]];
       if (t) window.location.href = '/do/transfer/data/' + t.id;
     }
   });
@@ -389,7 +416,6 @@ function _tcEnsureChart() {
     var rb = document.getElementById('tcBtnResetZoom');
     if (rb) rb.disabled = (Math.abs(_xMin - _tcOrigMin) < 1 && Math.abs(_xMax - _tcOrigMax) < 1);
   });
-  window.addEventListener('resize', function() { if (_tcChart) _tcChart.resize(); });
 
   document.getElementById('tcZoomGroup').classList.remove('d-none');
   document.getElementById('tcZoomHint').classList.remove('d-none');
@@ -398,7 +424,7 @@ function _tcEnsureChart() {
 // -- Table ---------------------------------------------------------------------
 function tcBuildTable() {
   var rows = [];
-  _tr.forEach(function(t, i) {
+  _tcData.forEach(function(t, i) {
     var m    = _markers(t);
     var sIdx = Math.max(0, Math.min(t.status, 6));
     var badge = '<span style="display:inline-block;padding:1px 7px;border-radius:4px;font-size:0.72rem;font-weight:600;background:' +
@@ -410,7 +436,7 @@ function tcBuildTable() {
              _fmtMs(m[k]) + '</td>';
     }
     rows.push(
-      '<tr data-search="' + (t.target + ' ' + t.fmtStatus).toLowerCase() + '">' +
+      '<tr>' +
       '<td class="text-muted">' + (i+1) + '</td>' +
       '<td>' + link + '</td>' +
       '<td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + t.target + '">' + t.target + '</td>' +
@@ -423,27 +449,39 @@ function tcBuildTable() {
   document.getElementById('tcTableBody').innerHTML = rows.join('');
   _tcUpdateCount();
 }
-function tcFilterTable() {
+function tcFilterTransfers() {
   var q = document.getElementById('tcFilter').value.toLowerCase();
-  var vis = 0;
-  document.getElementById('tcTableBody').querySelectorAll('tr').forEach(function(r) {
-    var show = !q || r.dataset.search.indexOf(q) >= 0;
-    r.style.display = show ? '' : 'none';
-    if (show) vis++;
+  _tcData = _tr.filter(function(t) {
+    return !q || [t.target, t.fmtStatus].some(function(value) {
+      return String(value || '').toLowerCase().indexOf(q) >= 0;
+    });
   });
-  _tcUpdateCount(vis);
+  tcBuildTable();
+  if (_tcChart) { _tcChart.dispose(); _tcChart = null; }
+  _tcInited = false;
+  document.getElementById('tcBtnResetZoom').disabled = true;
+  document.getElementById('tcNoMatches').classList.toggle('d-none', _tcData.length > 0);
+  document.getElementById('tcChart').classList.toggle('d-none', _tcData.length === 0);
+  tcSetView(_tcView);
 }
-function _tcUpdateCount(vis) {
+function tcClearFilter() {
+  document.getElementById('tcFilter').value = '';
+  tcFilterTransfers();
+  document.getElementById('tcFilter').focus();
+}
+function _tcUpdateCount() {
   var total = _tr.length;
-  if (vis === undefined) vis = total;
-  document.getElementById('tcTableCount').textContent =
+  var vis = _tcData.length;
+  var text =
     vis < total ? ('Showing ' + vis + ' of ' + total + ' transfers') : (total + ' transfers');
+  document.getElementById('tcFilterCount').textContent = text;
+  document.getElementById('tcTableCount').textContent = text;
 }
 
 // -- CSV export ----------------------------------------------------------------
 function tcExportCsv() {
   var lines = ['#,ID,Target,TS,S (Scheduled),E (Earliest),L (Latest),T (Target),P (Predicted),A (Actual),Status'];
-  _tr.forEach(function(t, i) {
+  _tcData.forEach(function(t, i) {
     function q(v) { return '"' + String(v||'').replace(/"/g,'""') + '"'; }
     var m = _markers(t);
     lines.push([i+1, t.id, q(t.target), t.ts||'',
@@ -457,6 +495,7 @@ function tcExportCsv() {
 }
 
 // -- Boot ----------------------------------------------------------------------
+window.addEventListener('resize', function() { if (_tcChart) _tcChart.resize(); });
 document.addEventListener('DOMContentLoaded', _tcInit);
 if (document.readyState !== 'loading') { _tcInit(); }
 function _tcInit() {
@@ -480,7 +519,7 @@ new MutationObserver(function() {
   if (!_tcChart) return;
   _tcChart.dispose(); _tcChart = null;
   _tcInited = false;
-  _tcEnsureChart();
+  tcSetView(_tcView);
 }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 </script>
 

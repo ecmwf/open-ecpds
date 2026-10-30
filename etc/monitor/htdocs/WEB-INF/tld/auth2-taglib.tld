@@ -16,7 +16,7 @@
 
    <tag>
     <name>if</name>
-    <tagclass>ecmwf.web.view.taglibs.auth2.conditional.IfTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.SessionAwareIfTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>
 	Test if the user has access to ALL of the paths required, or if he has ONE of the profiles.

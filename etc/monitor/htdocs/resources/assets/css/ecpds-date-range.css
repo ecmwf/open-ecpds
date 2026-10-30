@@ -1,0 +1,41 @@
+.ecpds-range-menu {
+  width: min(660px, calc(100vw - 1.5rem));
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+.ecpds-range-selection {
+  background: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
+}
+.ecpds-range-calendars {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  min-width: 0;
+}
+.ecpds-range-calendar {
+  min-width: 0;
+  max-width: 100%;
+}
+.ecpds-range-calendar table {
+  table-layout: fixed;
+}
+.ecpds-range-calendars td { padding: 1px 0; }
+.ecpds-range-day {
+  width: 100%;
+  min-height: 2rem;
+  border: 0;
+  border-radius: .3rem;
+  background: transparent;
+  color: var(--bs-body-color);
+  font-size: .82rem;
+}
+.ecpds-range-day:disabled { color: var(--bs-secondary-color); opacity: .35; }
+.ecpds-range-day:not(:disabled):hover { background: var(--bs-secondary-bg); }
+.ecpds-range-day.ecpds-range-between { background: rgba(13, 110, 253, .13); border-radius: 0; }
+.ecpds-range-day.ecpds-range-edge,
+.ecpds-range-day.ecpds-range-edge:hover { background: #0d6efd; color: #fff; }
+.ecpds-range-day:focus-visible { outline: 2px solid #0d6efd; outline-offset: 1px; }
+@media (max-width: 575px) {
+  .ecpds-range-calendars { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+}

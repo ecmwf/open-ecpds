@@ -76,6 +76,35 @@ _ar.push({id:'${transfer.dataFileId}',target:'${acTarget}',status:${acStatus},ea
   </div>
 </div>
 
+<div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+  <label for="acFilter" class="visually-hidden">Search arrivals</label>
+  <div class="input-group input-group-sm" style="max-width:380px;">
+    <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
+    <input type="search" id="acFilter" class="form-control" placeholder="e.g. .grib or done (one at a time)"
+           aria-describedby="acFilterHint" oninput="acFilterTransfers()">
+    <button class="btn btn-outline-secondary" type="button" onclick="acClearFilter()" title="Clear search"
+            aria-label="Clear arrival search"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#acFilterHelp"
+            aria-expanded="false" aria-controls="acFilterHelp" aria-label="How to search arrivals"
+            title="How to search arrivals"><i class="bi bi-info-circle" aria-hidden="true"></i></button>
+  </div>
+  <span id="acFilterCount" class="small text-muted" role="status" aria-live="polite"></span>
+</div>
+<div id="acFilterHint" class="visually-hidden">Filters Chart and Table as you type. Enter part of a target filename/path or arrival status label.</div>
+<div class="collapse mb-2" id="acFilterHelp">
+  <div class="ecpds-help-panel">
+    <strong class="d-block mb-1">Search arrivals in both views</strong>
+    <p class="mb-1">Enter one word or phrase. The search ignores case and finds that exact text anywhere in the
+    target filename/path (shown as Original) or arrival status label. For example, enter <code>.grib</code>
+    for a filename extension, or <code>done</code> for a status. Status labels are <code>unknown</code>,
+    <code>scheduled</code>, <code>done</code>, <code>executing</code>, <code>warning</code>,
+    <code>retrying</code> and <code>failed</code>. The text can match either field; it is not restricted to status.</p>
+    <p class="mb-0">No wildcards, regular expressions or comma-separated lists: <code>*.grib</code> searches
+    for a literal asterisk. Clear the box or use the <strong>&times;</strong> button to show all transfers.
+    Switching views keeps the search, and CSV exports only matching transfers. Changing the search resets chart zoom.</p>
+  </div>
+</div>
+
 <%-- -- Legend --------------------------------------------------------------- --%>
 <div id="acLegend" class="mb-2 d-flex flex-wrap align-items-center">
   <span class="ac-legend-item"><span class="ac-legend-tick" style="background:#6c757d;"></span>S &mdash; Scheduled</span>
@@ -89,6 +118,7 @@ _ar.push({id:'${transfer.dataFileId}',target:'${acTarget}',status:${acStatus},ea
 
 <%-- -- Chart container ------------------------------------------------------ --%>
 <div id="acChartView">
+  <div id="acNoMatches" class="alert alert-info d-none" role="status">No arrivals match your search. Clear the search to show all transfers.</div>
   <div id="acChart" style="width:100%; border:1px solid var(--bs-border-color); border-radius:6px;"></div>
 </div>
 <div id="acZoomHint" class="text-muted mt-1 d-none" style="font-size:0.72rem;">
@@ -98,10 +128,6 @@ _ar.push({id:'${transfer.dataFileId}',target:'${acTarget}',status:${acStatus},ea
 
 <%-- -- Table container ------------------------------------------------------ --%>
 <div id="acTableView" class="d-none">
-  <div class="mb-2">
-    <input type="text" id="acFilter" class="form-control form-control-sm"
-           placeholder="Filter by filename..." oninput="acFilterTable()" style="max-width:360px;">
-  </div>
   <div style="max-height:75vh; overflow-y:auto; border:1px solid var(--bs-border-color); border-radius:6px;">
     <table class="table table-sm table-hover table-bordered mb-0" style="font-size:0.8rem;">
       <thead class="table-dark sticky-top">
@@ -150,6 +176,7 @@ function _acMarkers(r) {
 // -- State ---------------------------------------------------------------------
 var _acView    = localStorage.getItem('acView') || 'chart';
 var _acChart   = null;
+var _acData    = _ar.slice();
 var _acOrigMin = null, _acOrigMax = null;
 var _axMin = 0, _axMax = 0;
 
@@ -166,7 +193,7 @@ function acSetView(v) {
   document.getElementById('acBtnTable').classList.toggle('active',  !isChart);
   var zg = document.getElementById('acZoomGroup');
   var zh = document.getElementById('acZoomHint');
-  if (zg) zg.classList.toggle('d-none', !isChart);
+  if (zg) zg.classList.toggle('d-none', !isChart || !_acChart);
   if (zh) zh.classList.toggle('d-none', !isChart || !_acChart);
   if (isChart) setTimeout(function() { _acEnsureChart(); if (_acChart) _acChart.resize(); }, 0);
 }
@@ -201,7 +228,7 @@ function _acResetZoom() { _acApplyXZoom(_acOrigMin, _acOrigMax); }
 // -- renderItem: draw S/E/L/T/P/A tick marks + E->L bar for each row ---------
 function _acRenderItem(params, api) {
   var rowIdx = api.value(0);
-  var r      = _ar[rowIdx];
+  var r      = _acData[rowIdx];
   if (!r) return;
   var cs     = params.coordSys;
   var ms     = _acMarkers(r);
@@ -252,15 +279,16 @@ function _acRenderItem(params, api) {
 var _acInited = false;
 function _acEnsureChart() {
   if (_acInited) return;
-  _acInited = true;
-  var n = _ar.length;
+  var n = _acData.length;
   if (n === 0 || typeof echarts === 'undefined') return;
+  _acInited = true;
 
   var minT = Infinity, maxT = -Infinity;
-  _ar.forEach(function(r) {
+  _acData.forEach(function(r) {
     _acMarkers(r).forEach(function(v) {
       if (v > 0) { if (v < minT) minT = v; if (v > maxT) maxT = v; }
     });
+    if (!isFinite(minT)) { minT = Date.now(); maxT = minT; }
   });
   var pad = Math.max((maxT - minT) * 0.05, 300000);
   _acOrigMin = minT - pad;
@@ -281,7 +309,7 @@ function _acEnsureChart() {
       confine: true,
       formatter: function(p) {
         if (!p.value) return '';
-        var r  = _ar[p.value[0]];
+        var r  = _acData[p.value[0]];
         if (!r) return '';
         var ms = _acMarkers(r);
         var sIdx = Math.max(0, Math.min(r.status, 6));
@@ -317,7 +345,7 @@ function _acEnsureChart() {
     },
     yAxis: {
       type: 'category',
-      data: _ar.map(function(r) {
+      data: _acData.map(function(r) {
         var s = r.target; return s.length > 32 ? s.slice(0,29)+'...' : s;
       }),
       inverse: true,
@@ -334,7 +362,7 @@ function _acEnsureChart() {
       type: 'custom',
       renderItem: _acRenderItem,
       encode: { x: [1,2,3,4,5,6], y: 0 },
-      data: _ar.map(function(r, i) {
+      data: _acData.map(function(r, i) {
         var m = _acMarkers(r);
         return [i, m[0], m[1], m[2], m[3], m[4], m[5]];
       }),
@@ -344,7 +372,7 @@ function _acEnsureChart() {
 
   _acChart.on('click', function(p) {
     if (p.componentType === 'series' && p.value) {
-      var r = _ar[p.value[0]];
+      var r = _acData[p.value[0]];
       if (r) window.location.href = '/do/datafile/datafile/' + r.id;
     }
   });
@@ -353,7 +381,6 @@ function _acEnsureChart() {
     var rb = document.getElementById('acBtnResetZoom');
     if (rb) rb.disabled = (Math.abs(_axMin - _acOrigMin) < 1 && Math.abs(_axMax - _acOrigMax) < 1);
   });
-  window.addEventListener('resize', function() { if (_acChart) _acChart.resize(); });
 
   document.getElementById('acZoomGroup').classList.remove('d-none');
   document.getElementById('acZoomHint').classList.remove('d-none');
@@ -362,7 +389,7 @@ function _acEnsureChart() {
 // -- Table ---------------------------------------------------------------------
 function acBuildTable() {
   var rows = [];
-  _ar.forEach(function(r, i) {
+  _acData.forEach(function(r, i) {
     var m    = _acMarkers(r);
     var sIdx = Math.max(0, Math.min(r.status, 6));
     var badge = '<span style="display:inline-block;padding:1px 7px;border-radius:4px;font-size:0.72rem;font-weight:600;background:' +
@@ -374,7 +401,7 @@ function acBuildTable() {
              _fmtAc(m[k]) + '</td>';
     }
     rows.push(
-      '<tr data-search="' + r.target.toLowerCase() + '">' +
+      '<tr>' +
       '<td class="text-muted">' + (i+1) + '</td>' +
       '<td>' + link + '</td>' +
       '<td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + r.target + '">' + r.target + '</td>' +
@@ -387,27 +414,40 @@ function acBuildTable() {
   document.getElementById('acTableBody').innerHTML = rows.join('');
   _acUpdateCount();
 }
-function acFilterTable() {
+function acFilterTransfers() {
   var q = document.getElementById('acFilter').value.toLowerCase();
-  var vis = 0;
-  document.getElementById('acTableBody').querySelectorAll('tr').forEach(function(row) {
-    var show = !q || row.dataset.search.indexOf(q) >= 0;
-    row.style.display = show ? '' : 'none';
-    if (show) vis++;
+  _acData = _ar.filter(function(r) {
+    var status = _ACSLBL[Math.max(0, Math.min(r.status, 6))];
+    return !q || [r.target, status].some(function(value) {
+      return String(value || '').toLowerCase().indexOf(q) >= 0;
+    });
   });
-  _acUpdateCount(vis);
+  acBuildTable();
+  if (_acChart) { _acChart.dispose(); _acChart = null; }
+  _acInited = false;
+  document.getElementById('acBtnResetZoom').disabled = true;
+  document.getElementById('acNoMatches').classList.toggle('d-none', _acData.length > 0);
+  document.getElementById('acChart').classList.toggle('d-none', _acData.length === 0);
+  acSetView(_acView);
 }
-function _acUpdateCount(vis) {
+function acClearFilter() {
+  document.getElementById('acFilter').value = '';
+  acFilterTransfers();
+  document.getElementById('acFilter').focus();
+}
+function _acUpdateCount() {
   var total = _ar.length;
-  if (vis === undefined) vis = total;
-  document.getElementById('acTableCount').textContent =
+  var vis = _acData.length;
+  var text =
     vis < total ? ('Showing ' + vis + ' of ' + total + ' transfers') : (total + ' transfers');
+  document.getElementById('acFilterCount').textContent = text;
+  document.getElementById('acTableCount').textContent = text;
 }
 
 // -- CSV export ----------------------------------------------------------------
 function acExportCsv() {
   var lines = ['#,File ID,Target,TS,S (Scheduled),E (Earliest),L (Latest),T (Target),P (Predicted),A (Actual),Status'];
-  _ar.forEach(function(r, i) {
+  _acData.forEach(function(r, i) {
     function q(v) { return '"' + String(v||'').replace(/"/g,'""') + '"'; }
     var m = _acMarkers(r);
     var sIdx = Math.max(0, Math.min(r.status, 6));
@@ -422,6 +462,7 @@ function acExportCsv() {
 }
 
 // -- Boot ----------------------------------------------------------------------
+window.addEventListener('resize', function() { if (_acChart) _acChart.resize(); });
 document.addEventListener('DOMContentLoaded', _acInit);
 if (document.readyState !== 'loading') { _acInit(); }
 function _acInit() {
@@ -445,7 +486,7 @@ new MutationObserver(function() {
   if (!_acChart) return;
   _acChart.dispose(); _acChart = null;
   _acInited = false;
-  _acEnsureChart();
+  acSetView(_acView);
 }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 </script>
 

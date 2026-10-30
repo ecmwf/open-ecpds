@@ -360,6 +360,26 @@ snapshot or password/token field is included in these records.
 
 ### Delivery and failure handling
 
+**TLS certificate validation:** `[OpenTelemetry] tlsVerify=yes` is the secure
+default. `tlsVerify=no` is an explicit, exporter-local opt-out for temporary testing,
+covering OTLP logs, traces and metrics over HTTP/protobuf or gRPC.
+It disables certificate trust/validity validation, emits a warning and leaves HTTPS
+encryption and the Java sender's hostname verification in place. Like Fluent Bit,
+certificate verification is distinct from hostname verification; this option does
+not copy Fluent Bit's default of disabling the latter. It never changes JVM-wide
+HTTPS defaults. Disabling checks permits server impersonation and exposure of
+Bearer tokens and telemetry; prefer `OTEL_EXPORTER_OTLP_CERTIFICATE` with an approved CA.
+Restart the service after changes. Invalid values, non-OTLP exporters with the
+opt-out, and combining the opt-out with OTLP client TLS credentials fail startup.
+
+The Master routes OpenTelemetry SDK diagnostics for logs, traces and metrics to
+**`master.log`**, including HTTP status (such as 401), TLS and connection errors.
+These JUL diagnostics no longer propagate to the stderr/systemd console handler.
+The dedicated `OpenTelemetrySdk` Log4j logger is file-only, even when general
+console logging is enabled; its default threshold is WARN (`log.otel.level`).
+SDK throttling still applies. Restart the Master with the updated code and
+`log4j2.properties`. Other libraries' stderr output is not redirected by this change.
+
 Without database journaling, delivery uses a bounded in-memory queue and is
 **best effort**. A full queue, export failure or process shutdown can lose
 records; retries may also create duplicates. Check the Master service log and

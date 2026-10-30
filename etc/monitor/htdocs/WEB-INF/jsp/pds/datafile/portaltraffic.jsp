@@ -49,6 +49,7 @@
     <strong class="d-block mb-1 mt-2">Controls</strong>
     <ul class="mb-0 ps-3">
       <li><strong>Period</strong> &mdash; use the <kbd>30d</kbd> / <kbd>90d</kbd> / <kbd>180d</kbd> / <kbd>1y</kbd> / <kbd>All</kbd> buttons to restrict the visible data. The filter applies to the summary stat cards, the chart, and the table simultaneously.</li>
+      <li><strong>Custom range</strong> &mdash; beside Period, select start/end dates in the two calendars and Apply. Both dates are included; click the same day twice for one day. Reset restores the full period; changing Period clears the range.</li>
       <li><strong>Table / Chart</strong> &mdash; switch between the bar/line chart view and a sortable, paginated table of daily figures.</li>
       <li><strong>Sort order</strong> (&uarr;&darr; button) &mdash; toggle between latest-first and earliest-first. Applies to both the chart and the table.</li>
     </ul>
@@ -105,7 +106,7 @@ const ptTotalConn = ptConnections.reduce((a,b)=>a+b,0);
 const ptPeakIn   = Math.max(...ptRateIn);
 const ptPeakOut  = Math.max(...ptRateOut);
 
-var _ptChartConn = null, _ptChartBw = null, _ptChartVol = null, _ptObsTheme = null, _ptPeriod = 0;
+var _ptChartConn = null, _ptChartBw = null, _ptChartVol = null, _ptObsTheme = null, _ptPeriod = 0, dateRange = null;
 
 function ptGetThemeColors() {
   var s = getComputedStyle(document.documentElement);
@@ -125,15 +126,22 @@ function ptGetPeriodIndices() {
   return out;
 }
 
+function ptGetMatchingIndices() {
+  return ptGetPeriodIndices().filter(function(i) {
+    return !dateRange || dateRange.matches(ptTimes[i]);
+  });
+}
+
 function ptSetPeriod(days) {
   _ptPeriod = days;
+  if (dateRange) dateRange.reset(false);
   document.querySelectorAll('#ptPeriodSelector .btn').forEach(function(b) {
     b.classList.toggle('active', parseInt(b.getAttribute('data-days'), 10) === days);
   });
   ptUpdatePeriodLabel();
   ptUpdateStats();
   _ptPage = 0;
-  if (document.getElementById('ptTableView').style.display !== 'none') ptBuildTable();
+  ptBuildTable();
   if (document.getElementById('ptChartView').style.display !== 'none') ptBuildCharts();
   try { localStorage.setItem('ptPeriod', days); } catch(e) {}
 }
@@ -141,7 +149,7 @@ function ptSetPeriod(days) {
 function ptUpdatePeriodLabel() {
   var label = document.getElementById('ptPeriodLabel');
   if (!label) return;
-  var idx = ptGetPeriodIndices();
+  var idx = ptGetMatchingIndices();
   if (!idx.length) { label.textContent = ''; label.style.display = 'none'; return; }
   label.textContent = idx.length + ' day' + (idx.length === 1 ? '' : 's') +
     (_ptPeriod > 0 ? ' (' + ptTimes[idx[0]] + ' \u2013 ' + ptTimes[idx[idx.length-1]] + ')' : '');
@@ -149,7 +157,7 @@ function ptUpdatePeriodLabel() {
 }
 
 function ptUpdateStats() {
-  var idx = ptGetPeriodIndices();
+  var idx = ptGetMatchingIndices();
   var totalConn = 0, totalIn = 0, totalOut = 0, peakIn = 0, peakOut = 0;
   idx.forEach(function(i) {
     totalConn += ptConnections[i]; totalIn += ptBytesIn[i]; totalOut += ptBytesOut[i];
@@ -169,9 +177,10 @@ function ptBuildCharts() {
   if (_ptChartConn) { _ptChartConn.destroy(); _ptChartConn = null; }
   if (_ptChartBw)   { _ptChartBw.destroy();   _ptChartBw   = null; }
   if (_ptChartVol)  { _ptChartVol.destroy();  _ptChartVol  = null; }
-  var idx = ptGetPeriodIndices();
+  var idx = ptGetMatchingIndices();
   if (_ptReversed) idx = idx.slice().reverse();
   var labels = idx.map(function(i) { return ptTimes[i]; });
+  document.getElementById('ptNoMatches').classList.toggle('d-none', labels.length > 0);
   var conn   = idx.map(function(i) { return ptConnections[i]; });
   var denials = idx.map(function(i) { return ptDenials[i]; });
   var rIn    = idx.map(function(i) { return ptRateIn[i]; });
@@ -234,6 +243,10 @@ function ptSetRateAxisZero(enabled) {
 }
 
   document.addEventListener('DOMContentLoaded', function() {
+  dateRange = new EcpdsDateRange(document.getElementById('dateRangeControl'), {
+    getDates: function() { return ptGetPeriodIndices().map(function(i) { return ptTimes[i]; }); },
+    onChange: ptRefreshDateRange
+  });
   // Restore reversed preference (default: true = latest first)
   try { var r = localStorage.getItem('ptReversed'); if (r !== null) _ptReversed = (r === '1'); } catch(e) {}
   try {
@@ -257,6 +270,7 @@ function ptSetRateAxisZero(enabled) {
   // Restore saved view preference (default: chart)
   var saved = 'chart';
   try { saved = (localStorage.getItem('ptView')||'').replace('portalTraffic_','')||'chart'; } catch(e){}
+  ptBuildTable();
   ptSetView(saved);
   ptApplyReverseBtn();
 
@@ -280,10 +294,11 @@ function ptSetRateAxisZero(enabled) {
     <button class="btn btn-outline-secondary" data-days="365" onclick="ptSetPeriod(365)">1y</button>
     <button class="btn btn-outline-secondary active" data-days="0" onclick="ptSetPeriod(0)">All</button>
   </div>
+  <jsp:include page="/WEB-INF/jsp/common/date-range.jsp"/>
   <span id="ptPeriodLabel" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis border" style="display:none;font-size:0.75rem;font-weight:500;"></span>
-  <div class="form-check form-switch small mb-0" title="Start the transfer-rate Y-axis at zero">
+  <div class="form-check form-switch small mb-0" title="When disabled, the axis scales automatically and may still start at zero.">
     <input class="form-check-input" type="checkbox" role="switch" id="ptRateAxisZero" checked onchange="ptSetRateAxisZero(this.checked)">
-    <label class="form-check-label" for="ptRateAxisZero">Rate axis starts at zero</label>
+    <label class="form-check-label" for="ptRateAxisZero">Always start rate axis at zero</label>
   </div>
   <div class="ms-auto d-flex align-items-center gap-1">
     <button type="button" class="btn btn-sm btn-outline-secondary" id="ptBtnTable" onclick="ptSetView('table')">
@@ -325,6 +340,7 @@ function ptSetRateAxisZero(enabled) {
 
 <%-- CHART VIEW --%>
 <div id="ptChartView">
+  <div id="ptNoMatches" class="alert alert-info d-none" role="status">No data in the selected date range. Reset the custom range to show the full period.</div>
   <div class="row g-3 mb-4">
     <div class="col-12">
       <div class="p-2 border rounded" style="position:relative; height:240px;">
@@ -351,11 +367,6 @@ function ptSetRateAxisZero(enabled) {
       <i class="bi bi-table text-primary"></i>
       <span class="fw-semibold">Daily Portal Traffic</span>
       <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
-        <div class="input-group input-group-sm" style="width:auto">
-          <span class="input-group-text"><i class="bi bi-search"></i></span>
-          <input type="search" id="ptSearch" class="form-control"
-                 placeholder="Filter by date..." oninput="ptSetSearch(this.value)" style="min-width:160px">
-        </div>
         <div class="input-group input-group-sm flex-nowrap" style="width:auto" title="Page size">
           <span class="input-group-text px-2"><i class="bi bi-list-ol"></i></span>
           <select id="ptPageSizeSelect" class="form-select form-select-sm" style="width:auto"
@@ -398,10 +409,10 @@ function ptSetRateAxisZero(enabled) {
 </div>
 
 <script>
-var _ptSortedIdx = null, _ptPage = 0, _ptPageSize = 25, _ptSearch = '', _ptReversed = true;
+var _ptSortedIdx = null, _ptPage = 0, _ptPageSize = 25, _ptReversed = true;
 
 function ptGetFiltered() {
-  var periodIdx = ptGetPeriodIndices();
+  var periodIdx = ptGetMatchingIndices();
   var base;
   if (_ptSortedIdx) {
     var periodSet = new Set(periodIdx);
@@ -410,9 +421,7 @@ function ptGetFiltered() {
     base = periodIdx.slice();
     if (_ptReversed) base = base.slice().reverse();
   }
-  if (!_ptSearch) return base;
-  var t = _ptSearch.toLowerCase();
-  return base.filter(function(i){ return ptTimes[i].indexOf(t) !== -1; });
+  return base;
 }
 
 function ptBuildTable() {
@@ -482,7 +491,13 @@ function ptSetPageSize(v) {
   try { localStorage.setItem('ptPageSize', v); } catch(e){}
 }
 
-function ptSetSearch(v) { _ptSearch = v.trim().toLowerCase(); _ptPage = 0; ptBuildTable(); }
+function ptRefreshDateRange() {
+  _ptPage = 0;
+  ptUpdatePeriodLabel();
+  ptUpdateStats();
+  ptBuildTable();
+  if (document.getElementById('ptChartView').style.display !== 'none') ptBuildCharts();
+}
 
 function ptToggleOrder() {
   _ptReversed = !_ptReversed;

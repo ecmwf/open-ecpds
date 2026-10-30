@@ -26,6 +26,41 @@ The dashboard shows all destinations and their current transfer status. Each row
 ![Dashboard (admin view)](img/dashboard.png)
 
 
+## Chart and table filters
+
+**Arrival Chart**, **Transfer Chart** and **Transfer Rates** results have a search box, marked with
+a magnifying glass, that filters both Chart and Table views as you type. Switching
+views keeps the search. Use **i** for examples and **×** to clear it; a matching
+count remains visible in both views.
+
+Searches match literal text, ignoring case. They do not support wildcards,
+regular expressions or comma-separated lists.
+
+| Page | Searchable fields / example |
+|---|---|
+| Arrival Chart | Original filename or arrival status label, e.g. `.grib` or `done` |
+| Transfer Chart | Original filename or displayed status, e.g. `done` |
+| Transfer Rates results | Group/filesystem, mover when available, transfer count or formatted volume/duration/rate (not dates) |
+
+Arrival/Transfer CSV exports use the matching rows. Changing their search resets
+chart zoom. When no rows match, an explanation is shown; clear the search to
+restore the chart.
+
+**Destination Traffic**, **Global Data Rates**, **Portal Traffic** and **Transfer Rates**
+have a **Custom range** button beside the **Period** presets at the top.
+It opens two calendars (stacked on narrow screens). Choose the start and end dates,
+then **Apply**; both endpoints are included. Click the same day twice for a single day.
+Use the month selector or arrows to navigate; dates outside the loaded data's
+selected Period are disabled. The button displays the applied dates.
+**Reset to full period** removes the custom range; changing Period also resets it.
+Closing the popup without applying leaves the previous range unchanged.
+
+The range filters Chart, Table and summary cards together, and survives switching views,
+sorting and pagination. The three date-only traffic pages no longer have a text search.
+On Transfer Rates the separate text search intersects the date range. Charts aggregate only matching rows:
+searching for one group or mover does not include other groups or movers on the
+same day. Table sorting and pagination remain available; charts retain date order.
+
 ## Live Earth
 
 Cloud hosts have provider-coloured outlines: AWS orange, GCS green and Azure (AZ)

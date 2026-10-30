@@ -134,8 +134,10 @@ _dt.push({
       <li><strong>Chart</strong> &mdash; one horizontal bar per transfer, coloured by status (see the legend below).
       Drag to pan, scroll to browse rows, use the +/- buttons (or your scroll wheel) to zoom the time axis, and
       click a bar to open that transfer.</li>
-      <li><strong>Table</strong> &mdash; the same transfers as rows; the text box above it filters by target, label,
-      status or host. The <strong>CSV</strong> button exports exactly what is currently listed.</li>
+      <li><strong>Search transfers</strong> &mdash; filters both views by target, label, status code or host,
+      ignoring case. Use the <strong>i</strong> beside the search box for examples.</li>
+      <li><strong>Table</strong> &mdash; the same matching transfers as rows.
+      The <strong>CSV</strong> button exports exactly what is currently listed.</li>
     </ul>
     <p class="mb-1">Key columns/fields, beyond the obvious ones (Label, Target, Start/End, Duration, Size, Host,
     Priority):</p>
@@ -145,6 +147,36 @@ _dt.push({
       it got there with no requeue. Shown per-row (table/tooltip) and summarised at the top (e.g. "needed a
       retry") when more than one transfer required a retry.</li>
     </ul>
+  </div>
+</div>
+
+<div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+  <label for="tlFilter" class="visually-hidden">Search transfers</label>
+  <div class="input-group input-group-sm" style="max-width:380px;">
+    <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
+    <input type="search" id="tlFilter" class="form-control" placeholder="e.g. GENFO, .grib or RETR (one at a time)"
+           aria-describedby="tlFilterHint" oninput="tlFilterTransfers()">
+    <button class="btn btn-outline-secondary" type="button" onclick="tlClearFilter()" title="Clear search"
+            aria-label="Clear transfer search"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#tlFilterHelp"
+            aria-expanded="false" aria-controls="tlFilterHelp" aria-label="How to search transfers"
+            title="How to search transfers"><i class="bi bi-info-circle" aria-hidden="true"></i></button>
+  </div>
+  <span id="tlFilterCount" class="small text-muted" role="status" aria-live="polite"></span>
+</div>
+<div id="tlFilterHint" class="visually-hidden">Filters Chart and Table as you type. Enter part of a target, label, status code or host.</div>
+<div class="collapse mb-2" id="tlFilterHelp">
+  <div class="ecpds-help-panel">
+    <strong class="d-block mb-1">Search transfers in both views</strong>
+    <p class="mb-1">Enter one word or phrase. The search ignores case and finds that exact text anywhere in the
+    target filename/path, label (cycle-product-type), status code or host name. For example, enter
+    <code>GENFO</code> for a product label, <code>.grib</code> for a filename extension, or a host name.</p>
+    <p class="mb-1">For status, use <code>DONE</code> (done), <code>EXEC</code> (executing),
+    <code>STOP</code> (stopped) or <code>RETR</code> (retrying). The text can match any of the searchable fields;
+    it is not restricted to status.</p>
+    <p class="mb-0">No wildcards, regular expressions or comma-separated lists: <code>*.grib</code> searches
+    for a literal asterisk. Clear the box or use the <strong>&times;</strong> button to show all transfers.
+    Switching views keeps the search, and CSV exports only matching transfers. Changing the search resets chart zoom.</p>
   </div>
 </div>
 
@@ -159,6 +191,7 @@ _dt.push({
 
 <%-- ECharts container --%>
 <div id="tlChartView" class="d-none">
+  <div id="tlNoMatches" class="alert alert-info d-none" role="status">No transfers match your search. Clear the search to show all transfers.</div>
   <div id="tlChart" style="width:100%; border:1px solid var(--bs-border-color); border-radius:6px;"></div>
 </div>
 
@@ -170,9 +203,6 @@ _dt.push({
 
 <%-- Table container --%>
 <div id="tlTableView" class="d-none">
-  <div class="mb-2">
-    <input type="text" id="tlFilter" class="form-control form-control-sm" placeholder="Filter by target, label, status, host..." oninput="tlFilterTable()" style="max-width:380px;">
-  </div>
   <div style="max-height:75vh; overflow-y:auto; border:1px solid var(--bs-border-color); border-radius:6px;">
     <table class="table table-sm table-hover table-bordered mb-0" style="font-size:0.8rem;">
       <thead class="table-dark sticky-top">
@@ -232,6 +262,7 @@ function _fmtDur(ms) {
 
 // ---- State ----------------------------------------------------------------
 var _tlView    = localStorage.getItem('tlView') || 'chart';
+var _tlData    = _dt;
 var _tlEChart  = null;  // ECharts instance
 var _tlOrigMin = null;
 var _tlOrigMax = null;
@@ -299,7 +330,7 @@ function tlBuildTable() {
   var now = Date.now();
   var tb  = document.getElementById('tlTableBody');
   var rows = [];
-  _dt.forEach(function(t, i) {
+  _tlData.forEach(function(t, i) {
     var end  = t.end >= 0 ? t.end : (t.inProg ? now : -1);
     var dur  = (end > 0 && t.start > 0) ? end - t.start : -1;
     var badge = '<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:0.72rem;font-weight:600;background:'+_scbg(t.status)+';color:'+_sctxt(t.status)+';">'+t.status+'</span>';
@@ -311,7 +342,7 @@ function tlBuildTable() {
       ? '<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:0.72rem;font-weight:600;background:'+_scbg('RETR')+';color:'+_sctxt('RETR')+';">'+t.tries+'</span>'
       : '<span class="text-muted">1</span>';
     rows.push(
-      '<tr data-search="'+(t.label+' '+t.target+' '+t.status+' '+(t.host||'')).toLowerCase()+'">' +
+      '<tr>' +
       '<td class="text-muted">'+(i+1)+'</td>' +
       '<td>'+link+'</td>' +
       '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+t.label+'">'+t.label+'</td>' +
@@ -331,30 +362,40 @@ function tlBuildTable() {
   tlUpdateCount();
 }
 
-function tlFilterTable() {
-  var q    = document.getElementById('tlFilter').value.toLowerCase();
-  var rows = document.getElementById('tlTableBody').querySelectorAll('tr');
-  var vis  = 0;
-  rows.forEach(function(r) {
-    var match = !q || r.dataset.search.indexOf(q) >= 0;
-    r.style.display = match ? '' : 'none';
-    if (match) vis++;
+function tlFilterTransfers() {
+  var q = document.getElementById('tlFilter').value.toLowerCase();
+  _tlData = _dt.filter(function(t) {
+    return !q || (t.label+' '+t.target+' '+t.status+' '+(t.host||'')).toLowerCase().indexOf(q) >= 0;
   });
-  tlUpdateCount(vis);
+  tlBuildTable();
+  if (_tlEChart) { _tlEChart.dispose(); _tlEChart = null; }
+  _tlInited = false;
+  document.getElementById('tlBtnResetZoom').disabled = true;
+  document.getElementById('tlNoMatches').classList.toggle('d-none', _tlData.length > 0);
+  document.getElementById('tlChart').classList.toggle('d-none', _tlData.length === 0);
+  tlSetView(_tlView);
 }
 
-function tlUpdateCount(vis) {
+function tlClearFilter() {
+  document.getElementById('tlFilter').value = '';
+  tlFilterTransfers();
+  document.getElementById('tlFilter').focus();
+}
+
+function tlUpdateCount() {
   var total = _dt.length;
-  if (vis === undefined) vis = total;
-  document.getElementById('tlTableCount').textContent =
+  var vis = _tlData.length;
+  var text =
     vis < total ? ('Showing '+vis+' of '+total+' transfers') : (total+' transfers');
+  document.getElementById('tlFilterCount').textContent = text;
+  document.getElementById('tlTableCount').textContent = text;
 }
 
 // ---- CSV export -----------------------------------------------------------
 function tlExportCsv() {
   var now   = Date.now();
   var lines = ['#,ID,Label,Target,Status,Tries,Start,End,Duration (s),Size (bytes),Host,Priority'];
-  _dt.forEach(function(t, i) {
+  _tlData.forEach(function(t, i) {
     var end    = t.end >= 0 ? t.end : (t.inProg ? now : -1);
     var dur    = (end > 0 && t.start > 0) ? ((end - t.start)/1000).toFixed(1) : '';
     var endStr = t.end >= 0 ? _fmtMs(t.end) : (t.inProg ? 'running' : '');
@@ -373,7 +414,7 @@ function tlExportCsv() {
 // Each data item: [startMs, endMs, rowIndex]
 function _tlRenderItem(params, api) {
   var rowIdx  = api.value(2);
-  var t       = _dt[rowIdx];
+  var t       = _tlData[rowIdx];
   if (!t) return;
 
   var s  = api.coord([api.value(0), rowIdx]);
@@ -425,15 +466,14 @@ var _tlInited = false;
 
 function _tlEnsureChart() {
   if (_tlInited) return;
-  _tlInited = true;
-
   var now = Date.now();
-  var n   = _dt.length;
+  var n   = _tlData.length;
   if (n === 0 || typeof echarts === 'undefined') return;
+  _tlInited = true;
 
   // Time bounds
   var minT = Infinity, maxT = -Infinity;
-  _dt.forEach(function(t) {
+  _tlData.forEach(function(t) {
     if (t.start < minT) minT = t.start;
     var e = t.end >= 0 ? t.end : now;
     if (e > maxT) maxT = e;
@@ -462,7 +502,7 @@ function _tlEnsureChart() {
       confine: true,
       formatter: function(params) {
         if (!params.value) return '';
-        var t   = _dt[params.value[2]];
+        var t   = _tlData[params.value[2]];
         if (!t) return '';
         var end = t.end >= 0 ? t.end : Date.now();
         var dur = end - t.start;
@@ -506,7 +546,7 @@ function _tlEnsureChart() {
     },
     yAxis: {
       type: 'category',
-      data: _dt.map(function(t) { return t.label; }),
+      data: _tlData.map(function(t) { return t.label; }),
       inverse: true,
       axisLabel: {
         fontSize: 10,
@@ -560,7 +600,7 @@ function _tlEnsureChart() {
       type: 'custom',
       renderItem: _tlRenderItem,
       encode: { x: [0, 1], y: 2 },
-      data: _dt.map(function(t, i) {
+      data: _tlData.map(function(t, i) {
         return [t.start, t.end >= 0 ? t.end : now, i];
       }),
       clip: true
@@ -570,7 +610,7 @@ function _tlEnsureChart() {
   // Click bar to open transfer page
   _tlEChart.on('click', function(params) {
     if (params.componentType === 'series' && params.value) {
-      var t = _dt[params.value[2]];
+      var t = _tlData[params.value[2]];
       if (t) window.location.href = _dtBase + '/' + t.id;
     }
   });
@@ -584,13 +624,12 @@ function _tlEnsureChart() {
     if (rb) rb.disabled = (Math.abs(_xMin - _tlOrigMin) < 1 && Math.abs(_xMax - _tlOrigMax) < 1);
   });
 
-  // Resize on window resize
-  window.addEventListener('resize', function() { if (_tlEChart) _tlEChart.resize(); });
-
   // Reveal controls
   document.getElementById('tlZoomGroup').classList.remove('d-none');
   document.getElementById('tlZoomHint').classList.remove('d-none');
 }
+
+window.addEventListener('resize', function() { if (_tlEChart) _tlEChart.resize(); });
 
 // ---- Boot -----------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', _tlInit);

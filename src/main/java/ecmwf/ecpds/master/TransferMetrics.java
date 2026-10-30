@@ -78,6 +78,8 @@ public final class TransferMetrics {
                     disabled.set(properties.getBoolean("otel.sdk.disabled", false));
                     return Map.of("otel.logs.exporter", "none", "otel.traces.exporter", "none");
                 })
+                .addMetricExporterCustomizer((exporter, properties) -> ecmwf.common.telemetry.TelemetryTls
+                        .configure(exporter, properties))
                 .addResourceCustomizer((resource, _) -> Resource
                         .create(io.opentelemetry.api.common.Attributes.builder()
                                 .put("service.version", Version.getFullVersion())

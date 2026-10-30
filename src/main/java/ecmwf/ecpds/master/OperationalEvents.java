@@ -137,6 +137,8 @@ public final class OperationalEvents {
                                         Cnf.at("Login", "root", Cnf.at("Login", "hostName", "master")))
                                 .build())
                         .merge(resource))
+                .addLogRecordExporterCustomizer(
+                        (exporter, properties) -> ecmwf.common.telemetry.TelemetryTls.configure(exporter, properties))
                 .addLogRecordExporterCustomizer((exporter, _) -> {
                     exporterReference.set(exporter);
                     return journalEnabled ? exporter : new ReportingExporter(exporter);
