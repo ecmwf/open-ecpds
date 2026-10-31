@@ -84,6 +84,7 @@ ecmwf.ecpds.master.plugin.http.model.datafile
 ecmwf.ecpds.master.plugin.http.model.ecuser
 ecmwf.ecpds.master.plugin.http.model.monitoring
 ecmwf.ecpds.master.plugin.http.model.transfer
+ecmwf.ecpds.master.plugin.http.view
 ecmwf.ecpds.master.plugin.service
 ecmwf.ecpds.master.storage
 ecmwf.ecpds.master.transfer
