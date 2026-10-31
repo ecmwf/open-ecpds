@@ -5,6 +5,30 @@
 
 ## Connection
 
+### Diagnosing stalled uploads
+
+Enable `ectrans.debug = "yes"` on an affected Host and allow DEBUG logging for
+`ecmwf.common.ftp.FtpClient` on its Mover. FTP diagnostics include command reply
+codes and elapsed times, passive negotiation, control/data connection endpoints,
+active-mode fallback, and stream readiness. Command timing records contain the
+command verb, not credentials; the existing full dialogue can still contain
+sensitive paths or server replies.
+
+The `Ftp timeout on STOR` message remains unchanged, but its exception cause now
+preserves the original socket timeout stack, distinguishing passive negotiation,
+data connection establishment, and command-reply waits.
+
+The no-progress watchdog logs idle time, module status, progress bytes and
+available input/output byte counters before cancellation. FTP connection tuples
+are also logged without invoking external socket tools. Byte counters represent
+application stream progress, not remote TCP acknowledgement.
+
+Failure reporting uses the connected module and preserves statistics already
+available before close. It does **not** wait for external diagnostics or guarantee
+that late asynchronous close statistics reach the database. Use the passive
+Mover-side collector for periodic TCP evidence and correlate by tuple and UTC
+time. FTP diagnostics do not change commands, timeouts, retry or close policy.
+
 ### Basic connection
 
 The host name / IP and port are taken from the host record. Use the options below to override.

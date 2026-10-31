@@ -16,6 +16,10 @@ OpenECPDS is a mature, production-grade data management platform originally deve
 
 Built on container technologies, it scales from a laptop to hundreds of systems managing petabytes of data. It supports a wide range of protocols (FTP, SFTP, HTTP/S, WebDAV, S3, GCS, Azure Blob, MQTT/WIS2, …) and integrates with object storage, MQTT brokers, and Kubernetes.
 
+### Live Earth — see OpenECPDS in action
+
+https://github.com/user-attachments/assets/ebc582f1-c86e-4416-996f-1cec4e1a9059
+
 ---
 
 ## 🚀 Try It Now — No Build Required

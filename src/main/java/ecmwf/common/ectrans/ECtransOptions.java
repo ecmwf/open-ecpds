@@ -64,7 +64,7 @@ import ecmwf.common.technical.TimeRange;
 /**
  * The Enum ECtransOptions.
  */
-public enum ECtransOptions {
+public enum ECtransOptions implements ECtransOptionDefinition {
 
     /**
      * The destination alias pattern. This is the default value shown for the auto-generated per-alias completion
@@ -1715,19 +1715,6 @@ public enum ECtransOptions {
     /** The host ecauth compression. */
     HOST_ECAUTH_COMPRESSION("compression", String.class, "none"),
 
-    /** The host ecaccess lastused. */
-    HOST_ECACCESS_LASTUSED("lastused", String.class, STRING_NONE),
-
-    /** The host ecaccess loadbalancing. */
-    HOST_ECACCESS_LOADBALANCING("loadbalancing", Boolean.class, false),
-
-    /** The host ecaccess gateway. */
-    HOST_ECACCESS_GATEWAY("gateway", String.class, "mover"),
-
-    /** The host ecaccess destination. */
-    HOST_ECACCESS_DESTINATION("destination", String.class, "genericFtp",
-            Arrays.asList("genericFtp", "genericSftp", "genericExec", "genericFile")),
-
     /** The host master home dir. */
     HOST_MASTER_HOME_DIR("homeDir", String.class, STRING_NONE),
 
@@ -1924,6 +1911,11 @@ public enum ECtransOptions {
     /** The option. */
     private final ECtransOption<?> option;
 
+    @Override
+    public ECtransOption<?> getOption() {
+        return option;
+    }
+
     /**
      * Instantiates a new ectrans options.
      *
@@ -2095,60 +2087,8 @@ public enum ECtransOptions {
      *
      * @return the default value
      */
-    @SuppressWarnings("unchecked")
     private <T> T getDefaultValue(final Class<T> clazz, final Object object) {
-        if (object == null) {
-            return null; // Null object so no conversion
-        }
-        if (clazz.isInstance(object)) {
-            return clazz.cast(object); // No conversion required
-        } else {
-            // We are required to make a conversion as the classes don't match!
-            final var objectClassName = object.getClass().getName();
-            if (!clazz.equals(String.class)) { // This is a normal toString()!
-                _log.debug("Class mismatch requires conversion: {} ({} -> {})", option.getParameter(), objectClassName,
-                        clazz.getName());
-            }
-            if (clazz.equals(Integer.class) && object instanceof final ByteSize value) {
-                return (T) Integer.valueOf((int) value.size()); // ByteSize to Integer
-            } else if (clazz.equals(Long.class) && object instanceof final ByteSize value) {
-                return (T) Long.valueOf(value.size()); // ByteSize to Long
-            } else if (clazz.equals(Double.class) && object instanceof final ByteSize value) {
-                return (T) Double.valueOf(value.size()); // ByteSize to Double
-            } else if (clazz.equals(Integer.class) && object instanceof final Long value) {
-                return (T) Integer.valueOf(value.intValue()); // Long to Integer
-            } else if (clazz.equals(Long.class) && object instanceof final Integer value) {
-                return (T) Long.valueOf(value); // Integer to Long
-            } else if (clazz.equals(Boolean.class) && object instanceof final String value) {
-                return (T) Boolean.valueOf("true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase(value));
-            } else if (clazz.equals(Boolean.class) && object instanceof final Double value) {
-                return (T) Boolean.valueOf(value.doubleValue() != 0); // Double Boolean
-            } else if (clazz.equals(Boolean.class) && object instanceof final Long value) {
-                return (T) Boolean.valueOf(value.longValue() != 0); // Long to Boolean
-            } else if (clazz.equals(Boolean.class) && object instanceof final Integer value) {
-                return (T) Boolean.valueOf(value.intValue() != 0); // Integer to Boolean
-            } else if (clazz.equals(String.class) && object instanceof final Boolean value) {
-                return (T) (Boolean.TRUE.equals(value) ? "yes" : "no"); // Boolean to String
-            } else if (clazz.equals(ByteSize.class) && object instanceof final String value) {
-                return (T) ("max-size".equals(value) ? ByteSize.MAX_VALUE : ByteSize.parse(value));
-            } else if (clazz.equals(Double.class) && object instanceof final String value) {
-                final Double maxValue = Double.MAX_VALUE;
-                return (T) ("max-double".equals(value) ? maxValue : Double.valueOf(value));
-            } else if (clazz.equals(Long.class) && object instanceof final String value) {
-                final Long maxValue = Long.MAX_VALUE;
-                return (T) ("max-long".equals(value) ? maxValue : Long.valueOf(value));
-            } else if (clazz.equals(Integer.class) && object instanceof final String value) {
-                final Integer maxValue = Integer.MAX_VALUE;
-                return (T) ("max-integer".equals(value) ? maxValue : Integer.valueOf(value));
-            } else if (clazz.equals(String.class) // All other objects available to String
-                    && (object instanceof Period || object instanceof Duration || object instanceof TimeRange
-                            || object instanceof ByteSize || object instanceof Integer || object instanceof Long
-                            || object instanceof Double)) {
-                return (T) object.toString();
-            } else {
-                throw new ClassCastException("Cannot convert " + clazz.getName() + " to " + objectClassName);
-            }
-        }
+        return ECtransOption.convertDefault(clazz, object);
     }
 
     /**
@@ -2161,7 +2101,7 @@ public enum ECtransOptions {
      *
      * @return the default value
      */
-    protected <T> T getDefaultValue(final Class<T> clazz) {
+    public <T> T getDefaultValue(final Class<T> clazz) {
         return getDefaultValue(clazz, option.getDefaultValue());
     }
 
@@ -2175,7 +2115,7 @@ public enum ECtransOptions {
      *
      * @return the default values
      */
-    protected <T> List<T> getDefaultValues(final Class<T> clazz) {
+    public <T> List<T> getDefaultValues(final Class<T> clazz) {
         return option.getDefaultValues().stream().map(object -> getDefaultValue(clazz, object)).toList();
     }
 
@@ -2564,7 +2504,8 @@ public enum ECtransOptions {
      * @return the string
      */
     public static String toString(final ECtransGroups group) {
-        return toString(get(group));
+        return ECtransOptionRegistry.get(group).stream().filter(ECtransOptionDefinition::isVisible)
+                .map(entry -> toString(entry.getOption(), entry.getParameter())).collect(Collectors.joining(",\n"));
     }
 
     /**
@@ -2606,12 +2547,12 @@ public enum ECtransOptions {
      * @return the string
      */
     private static String toString(final ECtransOption<?> option, final String parameter) {
-        return "{ caption: '" + parameter + "', meta: '" + option.getComment(false) + "', type: '"
-                + option.getClazz().getSimpleName() + "', choices: ["
-                + option.getChoices().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(","))
+        return "{ caption: " + quote(parameter) + ", meta: " + quote(option.getComment(false)) + ", type: "
+                + quote(option.getClazz().getSimpleName()) + ", choices: ["
+                + option.getChoices().stream().map(s -> quote(s.toString())).collect(Collectors.joining(","))
                 + "], subOptions: ["
                 + option.getSubOptions().stream().map(ECtransOptions::toString).collect(Collectors.joining(","))
-                + "], freeForm: " + option.hasFreeFormSubOptions() + ", tips: '" + option.getTips() + "' }";
+                + "], freeForm: " + option.hasFreeFormSubOptions() + ", tips: " + quote(option.getTips()) + " }";
     }
 
     /**
@@ -2624,8 +2565,14 @@ public enum ECtransOptions {
      * @return the string
      */
     private static String toString(final SubOption subOption) {
-        return "{ name: '" + subOption.name() + "', type: '" + subOption.clazz().getSimpleName() + "', choices: ["
-                + subOption.choices().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(",")) + "] }";
+        return "{ name: " + quote(subOption.name()) + ", type: " + quote(subOption.clazz().getSimpleName())
+                + ", choices: ["
+                + subOption.choices().stream().map(ECtransOptions::quote).collect(Collectors.joining(",")) + "] }";
+    }
+
+    private static String quote(final String value) {
+        return "'" + value.replace("\\", "\\\\").replace("'", "\\'").replace("\r", "\\r").replace("\n", "\\n")
+                .replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029") + "'";
     }
 
     /**

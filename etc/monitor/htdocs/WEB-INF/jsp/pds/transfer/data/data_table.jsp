@@ -379,7 +379,7 @@
 <c:if test="${_globalSpan le 0}"><c:set var="_globalSpan" value="1"/></c:if>
 
 <div class="card border-0 shadow-sm mb-3">
-<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<div class="card-header d-flex flex-wrap align-items-center gap-2" style="background:var(--bs-secondary-bg)">
   <i class="bi bi-diagram-3 text-primary"></i>
   <span class="fw-semibold"><c:out value="${socketSection.title}"/></span>
   <span class="badge rounded-pill bg-secondary ms-1">${fn:length(transferStatistics)}</span>
@@ -471,6 +471,23 @@
 
 <%-- Badge navigation row --%>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-3 pt-1">
+<c:choose>
+<c:when test="${fn:length(transferStatisticsGroups) > 12}">
+  <label for="${_nstPrefix}-attempt-select" class="small text-muted fw-semibold mb-0">Attempt:</label>
+  <select id="${_nstPrefix}-attempt-select" class="form-select form-select-sm nst-attempt-select"
+          style="width:100%;max-width:20rem;" aria-label="Select socket statistics attempt">
+    <c:forEach var="grp" items="${transferStatisticsGroups}" varStatus="grpStatus">
+      <option value="${grpStatus.index}" ${grpStatus.last ? 'selected' : ''}>Attempt ${grp[0].requeueHistory + 1} (${fn:length(grp)} connections)</option>
+    </c:forEach>
+  </select>
+  <div class="d-flex flex-wrap gap-2">
+    <button type="button" class="btn btn-sm btn-outline-secondary nst-attempt-prev">Previous</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary nst-attempt-next">Next</button>
+    <button type="button" class="btn btn-sm btn-outline-primary nst-attempt-latest">Latest</button>
+  </div>
+  <span class="small text-muted nst-attempt-position" aria-live="polite"></span>
+</c:when>
+<c:otherwise>
   <span class="small text-muted fw-semibold me-1"><i class="bi bi-layers me-1"></i>Attempts:</span>
   <c:forEach var="grp" items="${transferStatisticsGroups}" varStatus="grpStatus">
     <button class="btn btn-sm nst-attempt-btn ${grpStatus.last ? 'btn-primary' : 'btn-outline-secondary'}"
@@ -480,8 +497,17 @@
       <span class="badge ${grpStatus.last ? 'bg-light text-dark' : 'bg-secondary'} ms-1" style="font-size:0.7em">${fn:length(grp)}</span>
     </button>
   </c:forEach>
+</c:otherwise>
+</c:choose>
 </div>
 
+<c:if test="${fn:length(transferStatisticsGroups) > 12}">
+<div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+  <span class="small text-muted nst-timeline-range"></span>
+  <button type="button" class="btn btn-sm btn-outline-secondary nst-timeline-prev" aria-label="Previous timeline window">Earlier attempts</button>
+  <button type="button" class="btn btn-sm btn-outline-secondary nst-timeline-next" aria-label="Next timeline window">Later attempts</button>
+</div>
+</c:if>
 <%-- Cross-attempt timeline bar (rendered by JS) --%>
 <div id="${_nstPrefix}-global-timeline" class="mb-1" style="position:relative;min-height:52px;"></div>
 
@@ -698,9 +724,16 @@
 
     var globalMin = timings.min, globalMax = timings.max;
     var globalSpan = Math.max(globalMax - globalMin, 1);
+    var attemptSelect = card.querySelector('.nst-attempt-select');
+    var compact = !!attemptSelect;
+    var selectedIdx = groups[groups.length - 1].idx;
+    var pageStart = -1;
+    var pageSize = 12;
+    var tlContainer = document.getElementById(prefix + '-global-timeline');
 
     // Panel switcher
     function showAttempt(idx) {
+        selectedIdx = idx;
         card.querySelectorAll('.nst-panel').forEach(function(p) { p.style.display = 'none'; });
         var panel = document.getElementById(prefix + '-grp-' + idx);
         if (panel) panel.style.display = '';
@@ -715,6 +748,18 @@
                 if (active && badge.className.indexOf('text-dark') === -1) badge.className += ' text-dark';
             }
         });
+        if (compact) {
+            attemptSelect.value = String(idx);
+            card.querySelector('.nst-attempt-prev').disabled = idx === 0;
+            card.querySelector('.nst-attempt-next').disabled = idx === groups.length - 1;
+            card.querySelector('.nst-attempt-latest').disabled = idx === groups.length - 1;
+            card.querySelector('.nst-attempt-position').textContent = (idx + 1) + ' of ' + groups.length;
+            var start = Math.floor(idx / pageSize) * pageSize;
+            if (start !== pageStart) {
+                pageStart = start;
+                renderTimeline();
+            }
+        }
         // Highlight selected band in timeline
         card.querySelectorAll('.nst-tl-band').forEach(function(band) {
             var active = parseInt(band.dataset.grp) === idx;
@@ -727,19 +772,43 @@
     card.querySelectorAll('.nst-attempt-btn').forEach(function(btn) {
         btn.addEventListener('click', function() { showAttempt(parseInt(this.dataset.grp)); });
     });
+    if (compact) {
+        attemptSelect.addEventListener('change', function() { showAttempt(Number(this.value)); });
+        card.querySelector('.nst-attempt-prev').addEventListener('click', function() { showAttempt(selectedIdx - 1); });
+        card.querySelector('.nst-attempt-next').addEventListener('click', function() { showAttempt(selectedIdx + 1); });
+        card.querySelector('.nst-attempt-latest').addEventListener('click', function() { showAttempt(groups.length - 1); });
+        card.querySelector('.nst-timeline-prev').addEventListener('click', function() { showAttempt(Math.max(0, pageStart - pageSize)); });
+        card.querySelector('.nst-timeline-next').addEventListener('click', function() { showAttempt(pageStart + pageSize); });
+    }
 
     // Build cross-attempt timeline
-    var tlContainer = document.getElementById(prefix + '-global-timeline');
     if (!tlContainer) return;
 
+    function renderTimeline() {
+    var visibleGroups = compact ? groups.slice(pageStart, pageStart + pageSize) : groups;
+    var timelineMin = globalMin, timelineMax = globalMax;
+    if (compact) {
+        timelineMin = Math.min.apply(null, visibleGroups.map(function(g) { return g.start; }));
+        timelineMax = Math.max.apply(null, visibleGroups.map(function(g) { return g.end; }));
+        card.querySelector('.nst-timeline-range').textContent = 'Timeline: attempts '
+            + (pageStart + 1) + '\u2013' + (pageStart + visibleGroups.length) + ' of ' + groups.length
+            + ' (window scale)';
+        card.querySelector('.nst-timeline-prev').disabled = pageStart === 0;
+        card.querySelector('.nst-timeline-next').disabled = pageStart + pageSize >= groups.length;
+    }
+    var timelineSpan = compact ? Math.max(timelineMax - timelineMin, 1) : globalSpan;
     var trackH = 32, labelH = 14, totalH = trackH + labelH + 6;
-    var html = '<div style="position:relative;height:' + totalH + 'px;background:var(--bs-tertiary-bg);border-radius:6px;overflow:visible;">';
+    var html = '<div style="position:relative;height:' + totalH + 'px;background:var(--bs-tertiary-bg);border-radius:6px;overflow:' + (compact ? 'hidden' : 'visible') + ';">';
     // Background track
     html += '<div style="position:absolute;top:0;left:0;right:0;height:' + trackH + 'px;background:var(--bs-tertiary-bg);border-radius:6px;border:1px solid var(--bs-border-color);"></div>';
 
-    groups.forEach(function(g) {
-        var leftPct  = (g.start - globalMin) / globalSpan * 100;
-        var widthPct = Math.max((g.end - g.start) / globalSpan * 100, 0.5);
+    visibleGroups.forEach(function(g) {
+        var leftPct  = (g.start - timelineMin) / timelineSpan * 100;
+        var widthPct = Math.max((g.end - g.start) / timelineSpan * 100, 0.5);
+        if (compact) {
+            leftPct = Math.min(99.5, Math.max(0, leftPct));
+            widthPct = Math.min(widthPct, 100 - leftPct);
+        }
         var color = ATTEMPT_COLORS[(g.idx) % ATTEMPT_COLORS.length];
         var tip = g.label + ' | ' + g.conns + ' conn' + (g.conns !== 1 ? 's' : '') +
                   ' | ' + fmtTime(g.start) + ' \u2013 ' + fmtTime(g.end) +
@@ -754,16 +823,26 @@
                 '<span style="position:absolute;left:4px;right:4px;top:50%;transform:translateY(-50%);' +
                 'font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
                 g.label + '</span></div>';
-        // Tick label below
+        // Dense timelines use only boundary labels to avoid overlapping ticks.
+        if (!compact) {
         html += '<span style="position:absolute;top:' + (trackH + 2) + 'px;left:' + leftPct.toFixed(2) + '%;' +
                 'font-size:9px;color:var(--bs-secondary-color);white-space:nowrap;transform:translateX(-0%);">' +
                 fmtTime(g.start) + '</span>';
+        }
     });
+    if (compact) {
+        html += '<span style="position:absolute;top:' + (trackH + 2) + 'px;left:0;max-width:48%;overflow:hidden;white-space:nowrap;font-size:9px;color:var(--bs-secondary-color);" title="' + new Date(timelineMin).toISOString() + '">' +
+                new Date(timelineMin).toLocaleString() + '</span>';
+    }
     // End-time label
-    html += '<span style="position:absolute;top:' + (trackH + 2) + 'px;right:0;font-size:9px;color:var(--bs-secondary-color);">' +
-            fmtTime(globalMax) + '</span>';
+    html += '<span style="position:absolute;top:' + (trackH + 2) + 'px;right:0;' + (compact ? 'max-width:48%;overflow:hidden;white-space:nowrap;text-align:right;' : '') + 'font-size:9px;color:var(--bs-secondary-color);">' +
+            (compact ? new Date(timelineMax).toLocaleString() : fmtTime(globalMax)) + '</span>';
     html += '</div>';
     tlContainer.innerHTML = html;
+    }
+
+    if (compact) showAttempt(selectedIdx);
+    else renderTimeline();
 
     tlContainer.addEventListener('click', function(event) {
         var band = event.target.closest('.nst-tl-band');

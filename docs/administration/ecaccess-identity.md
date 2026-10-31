@@ -17,28 +17,33 @@ client-contract jar built from ECaccess-J's original RMI interfaces and data
 types. Those original package names are necessary to deserialize ECCMD stubs;
 they are not duplicates of the equivalent types under OpenECPDS's new packages.
 
-Build OpenECPDS's core first and use its matching runtime dependencies:
+Build the client contracts independently in ECaccess-J, using its local sources
+and dependencies (inside its development container):
+
+```sh
+cd /path/to/ECaccess-J
+make ecpds-client
+```
+
+The standard output is
+`ECaccess-J/build/ecpds-client/ecaccess-eccmd-client-1.0.0.jar`.
+ECaccess-J does not need access to the OpenECPDS checkout. Copy the JAR to the
+OpenECPDS build environment, then install it and build the extension:
 
 ```sh
 cd /path/to/open-ecpds
-mvn -pl ecpds-core -am package -DskipTests
-
-ant -f /path/to/ECaccess-J/ant/ecpds-client.xml \
-  -Dopenecpds.core=/path/to/open-ecpds/ecpds-core/target/ecmwf-8.2.1-20102026.jar \
-  -Dopenecpds.lib=/path/to/open-ecpds/lib
 
 mvn install:install-file \
-  -Dfile=/path/to/ECaccess-J/build/ecpds-client/ecaccess-eccmd-client-1.0.0.jar \
+  -Dfile=/path/to/ecaccess-eccmd-client-1.0.0.jar \
   -DgroupId=ecmwf -DartifactId=ecaccess-eccmd-client \
   -Dversion=1.0.0 -Dpackaging=jar -DgeneratePom=true
 
 mvn -Pecaccess-extension -pl ecpds-ecaccess -am package -DskipTests
 ```
 
-Adjust the core jar filename to the version/build being deployed. The Ant target
-can also compile against `ecpds-core/target/classes` during development. It
-compiles a selected client-contract source set against upstream classes, without
-building the ECaccess applications. `1.0.0` identifies this initial extracted
+The Ant target first compiles ECaccess-J's local classes, then builds a JAR
+containing only the selected client contracts, not the ECaccess applications or
+shared implementation classes. `1.0.0` identifies this initial extracted
 contract artifact, not the ECCMD daemon version. Publish that artifact to your
 internal Maven repository for reproducible builds beyond a local checkout.
 

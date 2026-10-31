@@ -64,6 +64,7 @@ import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.ecpds.master.transfer.StatusFactory;
 import ecmwf.common.ectrans.ECtransGroups;
 import ecmwf.common.ectrans.ECtransOptions;
+import ecmwf.common.ectrans.ECtransOptionRegistry;
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.SubOption;
 import ecmwf.common.technical.ByteSize;
@@ -109,7 +110,7 @@ public class GetDestinationListJsonAction extends PDSAction {
 
     private static Map<String, OptionMeta> buildOptionMap() {
         final var map = new HashMap<String, OptionMeta>();
-        for (final var opt : ECtransOptions.get(ECtransGroups.DESTINATION)) {
+        for (final var opt : ECtransOptionRegistry.get(ECtransGroups.DESTINATION)) {
             if (opt.isVisible()) {
                 map.put(opt.getParameter().toLowerCase(), new OptionMeta(opt.getClazz(), opt.getChoicesAsStrings(),
                         opt.getSubOptions(), opt.hasFreeFormSubOptions()));

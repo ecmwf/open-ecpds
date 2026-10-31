@@ -5,7 +5,6 @@
 - [Acquisition Options](#acquisition-options)
 - [Alias Options](#alias-options)
 - [Azure Options](#azure-options)
-- [Ecaccess Options](#ecaccess-options)
 - [Ecauth Options](#ecauth-options)
 - [Ecpds Options](#ecpds-options)
 - [Ectrans Options](#ectrans-options)
@@ -234,19 +233,6 @@ Enable the request for processing the MD5 checksum during data transmission. If 
 
 ### azure.userAssignedClientId
 This is the client ID of the user-assigned managed identity.
-
-## Ecaccess Options
-
-These options help fine-tune the ecaccess transfer module and are accessible via the host editor.
-
-### ecaccess.destination
-Allow specifying which protocol to use from the ECaccess Gateway when connecting to the target host.
-
-### ecaccess.gateway
-Allow selecting the ECaccess Gateway for transfer requests. If the "ecaccess.loadbalancing" option is enabled, multiple Gateways can be specified, separated by commas.
-
-### ecaccess.loadbalancing
-Enable round-robin load balancing for transfer requests among the specified list of Gateways defined in the "ecaccess.gateway" option.
 
 ## Ecauth Options
 

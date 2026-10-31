@@ -37,7 +37,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ecmwf.common.ectrans.ECtransGroups;
-import ecmwf.common.ectrans.ECtransOptions;
+import ecmwf.common.ectrans.ECtransOptionRegistry;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebUser;
 import ecmwf.web.ECMWFException;
@@ -76,7 +76,7 @@ public class GetWebUserListJsonAction extends PDSAction {
     private static final Map<String, OptionMeta> OPTION_MAP;
     static {
         final var map = new HashMap<String, OptionMeta>();
-        for (final var opt : ECtransOptions.get(ECtransGroups.WEB)) {
+        for (final var opt : ECtransOptionRegistry.get(ECtransGroups.WEB)) {
             if (opt.isVisible()) {
                 map.put(opt.getParameter().toLowerCase(), new OptionMeta(opt.getClazz(), opt.getChoicesAsStrings()));
             }

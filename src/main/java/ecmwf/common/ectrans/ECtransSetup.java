@@ -289,7 +289,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the string
      */
-    public String remove(final ECtransOptions option) {
+    public String remove(final ECtransOptionDefinition option) {
         return remove(option.getModule(), option.getName());
     }
 
@@ -454,7 +454,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return true, if successful
      */
-    public boolean matches(final ECtransOptions options, final String value) {
+    public boolean matches(final ECtransOptionDefinition options, final String value) {
         return matches(options, value, options.getDefaultString());
     }
 
@@ -470,7 +470,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return true, if successful
      */
-    public boolean matches(final ECtransOptions option, final String value, final String defaultRegex) {
+    public boolean matches(final ECtransOptionDefinition option, final String value, final String defaultRegex) {
         final var regex = get(option.getModule(), option.getName(), defaultRegex);
         try {
             final var result = regex != null && value != null && value.matches(regex);
@@ -508,7 +508,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the string
      */
-    public String get(final ECtransOptions option, final String defaultValue) {
+    public String get(final ECtransOptionDefinition option, final String defaultValue) {
         return get(option.getModule(), option.getName(), defaultValue);
     }
 
@@ -520,7 +520,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the duration
      */
-    public Duration getDuration(final ECtransOptions option) {
+    public Duration getDuration(final ECtransOptionDefinition option) {
         return getDuration(option.getModule(), option.getName(), option.getDefaultValue(Duration.class));
     }
 
@@ -534,7 +534,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the duration
      */
-    public Duration get(final ECtransOptions option, final Duration defaultValue) {
+    public Duration get(final ECtransOptionDefinition option, final Duration defaultValue) {
         return getDuration(option.getModule(), option.getName(), defaultValue);
     }
 
@@ -546,7 +546,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the period
      */
-    public Period getPeriod(final ECtransOptions option) {
+    public Period getPeriod(final ECtransOptionDefinition option) {
         return getPeriod(option.getModule(), option.getName(), option.getDefaultValue(Period.class));
     }
 
@@ -560,7 +560,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the period
      */
-    public Period get(final ECtransOptions option, final Period defaultValue) {
+    public Period get(final ECtransOptionDefinition option, final Period defaultValue) {
         return getPeriod(option.getModule(), option.getName(), defaultValue);
     }
 
@@ -574,7 +574,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the byte size
      */
-    public ByteSize get(final ECtransOptions option, final ByteSize defaultValue) {
+    public ByteSize get(final ECtransOptionDefinition option, final ByteSize defaultValue) {
         return getByteSize(option.getModule(), option.getName(), defaultValue);
     }
 
@@ -604,7 +604,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the options
      */
-    public Options getOptions(final ECtransOptions option) {
+    public Options getOptions(final ECtransOptionDefinition option) {
         return getOptions(option, null);
     }
 
@@ -618,7 +618,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the options
      */
-    public Options getOptions(final ECtransOptions option, final String delimiters) {
+    public Options getOptions(final ECtransOptionDefinition option, final String delimiters) {
         return new Options(get(option.getModule(), option.getName(), null), delimiters);
     }
 
@@ -634,7 +634,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the options
      */
-    public Options getOptions(final ECtransOptions option, final String key, final String delimiters) {
+    public Options getOptions(final ECtransOptionDefinition option, final String key, final String delimiters) {
         final var options = get(option.getModule(), option.getName(), null);
         if (isNotEmpty(options)) {
             try {
@@ -865,7 +865,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the list of booleans
      */
-    public List<Boolean> getBooleanList(final ECtransOptions option) {
+    public List<Boolean> getBooleanList(final ECtransOptionDefinition option) {
         return list(option, Boolean.class);
     }
 
@@ -877,7 +877,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public boolean getBoolean(final ECtransOptions option) {
+    public boolean getBoolean(final ECtransOptionDefinition option) {
         return Boolean.TRUE.equals(get(option, Boolean.class));
     }
 
@@ -891,7 +891,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public boolean getBoolean(final ECtransOptions option, final Value bindings) {
+    public boolean getBoolean(final ECtransOptionDefinition option, final Value bindings) {
         return Boolean.TRUE.equals(get(option, Boolean.class, bindings));
     }
 
@@ -903,7 +903,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Boolean getBooleanObject(final ECtransOptions option) {
+    public Boolean getBooleanObject(final ECtransOptionDefinition option) {
         return get(option, Boolean.class);
     }
 
@@ -917,7 +917,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Boolean getBooleanObject(final ECtransOptions option, final Value bindings) {
+    public Boolean getBooleanObject(final ECtransOptionDefinition option, final Value bindings) {
         return get(option, Boolean.class, bindings);
     }
 
@@ -929,7 +929,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Optional<Boolean> getOptionalBoolean(final ECtransOptions option) {
+    public Optional<Boolean> getOptionalBoolean(final ECtransOptionDefinition option) {
         return getOptional(option, Boolean.class);
     }
 
@@ -941,7 +941,7 @@ public final class ECtransSetup implements Serializable {
      * @param action
      *            the action
      */
-    public void setBooleanIfPresent(final ECtransOptions option, final Consumer<? super Boolean> action) {
+    public void setBooleanIfPresent(final ECtransOptionDefinition option, final Consumer<? super Boolean> action) {
         getOptionalBoolean(option).ifPresent(action);
     }
 
@@ -953,7 +953,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the list of strings
      */
-    public List<String> getStringList(final ECtransOptions option) {
+    public List<String> getStringList(final ECtransOptionDefinition option) {
         return list(option, String.class);
     }
 
@@ -965,7 +965,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public String getString(final ECtransOptions option) {
+    public String getString(final ECtransOptionDefinition option) {
         return get(option, String.class);
     }
 
@@ -994,7 +994,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the checksum extension
      */
-    public String getChecksumExtension(final ECtransOptions legacyMd5ExtOption) {
+    public String getChecksumExtension(final ECtransOptionDefinition legacyMd5ExtOption) {
         final var checksumExt = getString(HOST_ECTRANS_CHECKSUM_EXT);
         if (isNotEmpty(checksumExt)) {
             return checksumExt;
@@ -1019,7 +1019,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public String getString(final ECtransOptions option, final Value bindings) {
+    public String getString(final ECtransOptionDefinition option, final Value bindings) {
         return get(option, String.class, bindings);
     }
 
@@ -1031,7 +1031,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Optional<String> getOptionalString(final ECtransOptions option) {
+    public Optional<String> getOptionalString(final ECtransOptionDefinition option) {
         return getOptional(option, String.class);
     }
 
@@ -1045,7 +1045,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Optional<String> getOptionalString(final ECtransOptions option, final Value bindings) {
+    public Optional<String> getOptionalString(final ECtransOptionDefinition option, final Value bindings) {
         return getOptional(option, String.class, bindings);
     }
 
@@ -1057,7 +1057,7 @@ public final class ECtransSetup implements Serializable {
      * @param action
      *            the action
      */
-    public void setStringIfPresent(final ECtransOptions option, final Consumer<? super String> action) {
+    public void setStringIfPresent(final ECtransOptionDefinition option, final Consumer<? super String> action) {
         getOptionalString(option).ifPresent(action);
     }
 
@@ -1069,7 +1069,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the list of integers
      */
-    public List<Integer> getIntegerList(final ECtransOptions option) {
+    public List<Integer> getIntegerList(final ECtransOptionDefinition option) {
         return list(option, Integer.class);
     }
 
@@ -1081,7 +1081,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Integer getInteger(final ECtransOptions option) {
+    public Integer getInteger(final ECtransOptionDefinition option) {
         return get(option, Integer.class);
     }
 
@@ -1095,7 +1095,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Integer getInteger(final ECtransOptions option, final Value bindings) {
+    public Integer getInteger(final ECtransOptionDefinition option, final Value bindings) {
         return get(option, Integer.class, bindings);
     }
 
@@ -1107,7 +1107,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Optional<Integer> getOptionalInteger(final ECtransOptions option) {
+    public Optional<Integer> getOptionalInteger(final ECtransOptionDefinition option) {
         return getOptional(option, Integer.class);
     }
 
@@ -1119,7 +1119,7 @@ public final class ECtransSetup implements Serializable {
      * @param action
      *            the action
      */
-    public void setIntegerIfPresent(final ECtransOptions option, final Consumer<? super Integer> action) {
+    public void setIntegerIfPresent(final ECtransOptionDefinition option, final Consumer<? super Integer> action) {
         getOptionalInteger(option).ifPresent(action);
     }
 
@@ -1131,7 +1131,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the list of longs
      */
-    public List<Long> getLongList(final ECtransOptions option) {
+    public List<Long> getLongList(final ECtransOptionDefinition option) {
         return list(option, Long.class);
     }
 
@@ -1143,7 +1143,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Long getLong(final ECtransOptions option) {
+    public Long getLong(final ECtransOptionDefinition option) {
         return get(option, Long.class);
     }
 
@@ -1157,7 +1157,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Long getLong(final ECtransOptions option, final Value bindings) {
+    public Long getLong(final ECtransOptionDefinition option, final Value bindings) {
         return get(option, Long.class, bindings);
     }
 
@@ -1169,7 +1169,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Optional<Long> getOptionalLong(final ECtransOptions option) {
+    public Optional<Long> getOptionalLong(final ECtransOptionDefinition option) {
         return getOptional(option, Long.class);
     }
 
@@ -1181,7 +1181,7 @@ public final class ECtransSetup implements Serializable {
      * @param action
      *            the action
      */
-    public void setLongIfPresent(final ECtransOptions option, final Consumer<? super Long> action) {
+    public void setLongIfPresent(final ECtransOptionDefinition option, final Consumer<? super Long> action) {
         getOptionalLong(option).ifPresent(action);
     }
 
@@ -1193,7 +1193,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the list of doubles
      */
-    public List<Double> getDoubleList(final ECtransOptions option) {
+    public List<Double> getDoubleList(final ECtransOptionDefinition option) {
         return list(option, Double.class);
     }
 
@@ -1205,7 +1205,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Double getDouble(final ECtransOptions option) {
+    public Double getDouble(final ECtransOptionDefinition option) {
         return get(option, Double.class);
     }
 
@@ -1219,7 +1219,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Double getDouble(final ECtransOptions option, final Value bindings) {
+    public Double getDouble(final ECtransOptionDefinition option, final Value bindings) {
         return get(option, Double.class, bindings);
     }
 
@@ -1231,7 +1231,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Optional<Double> getOptionalDouble(final ECtransOptions option) {
+    public Optional<Double> getOptionalDouble(final ECtransOptionDefinition option) {
         return getOptional(option, Double.class);
     }
 
@@ -1243,7 +1243,7 @@ public final class ECtransSetup implements Serializable {
      * @param action
      *            the action
      */
-    public void setDoubleIfPresent(final ECtransOptions option, final Consumer<? super Double> action) {
+    public void setDoubleIfPresent(final ECtransOptionDefinition option, final Consumer<? super Double> action) {
         getOptionalDouble(option).ifPresent(action);
     }
 
@@ -1255,7 +1255,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the list of byte sizes
      */
-    public List<ByteSize> getByteSizeList(final ECtransOptions option) {
+    public List<ByteSize> getByteSizeList(final ECtransOptionDefinition option) {
         return list(option, ByteSize.class);
     }
 
@@ -1267,7 +1267,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public ByteSize getByteSize(final ECtransOptions option) {
+    public ByteSize getByteSize(final ECtransOptionDefinition option) {
         return get(option, ByteSize.class);
     }
 
@@ -1281,7 +1281,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public ByteSize getByteSize(final ECtransOptions option, final Value bindings) {
+    public ByteSize getByteSize(final ECtransOptionDefinition option, final Value bindings) {
         return get(option, ByteSize.class, bindings);
     }
 
@@ -1293,7 +1293,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Optional<ByteSize> getOptionalByteSize(final ECtransOptions option) {
+    public Optional<ByteSize> getOptionalByteSize(final ECtransOptionDefinition option) {
         return getOptional(option, ByteSize.class);
     }
 
@@ -1305,7 +1305,7 @@ public final class ECtransSetup implements Serializable {
      * @param action
      *            the action
      */
-    public void setByteSizeIfPresent(final ECtransOptions option, final Consumer<? super ByteSize> action) {
+    public void setByteSizeIfPresent(final ECtransOptionDefinition option, final Consumer<? super ByteSize> action) {
         getOptionalByteSize(option).ifPresent(action);
     }
 
@@ -1317,7 +1317,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Optional<Duration> getOptionalDuration(final ECtransOptions option) {
+    public Optional<Duration> getOptionalDuration(final ECtransOptionDefinition option) {
         return getOptional(option, Duration.class);
     }
 
@@ -1329,7 +1329,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Optional<Duration> getOptionalDuration(final ECtransOptions option, final Value bindings) {
+    public Optional<Duration> getOptionalDuration(final ECtransOptionDefinition option, final Value bindings) {
         return getOptional(option, Duration.class, bindings);
     }
 
@@ -1341,7 +1341,7 @@ public final class ECtransSetup implements Serializable {
      * @param action
      *            the action
      */
-    public void setDurationIfPresent(final ECtransOptions option, final Consumer<? super Duration> action) {
+    public void setDurationIfPresent(final ECtransOptionDefinition option, final Consumer<? super Duration> action) {
         getOptionalDuration(option).ifPresent(action);
     }
 
@@ -1353,7 +1353,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Optional<Period> getOptionalPeriod(final ECtransOptions option) {
+    public Optional<Period> getOptionalPeriod(final ECtransOptionDefinition option) {
         return getOptional(option, Period.class);
     }
 
@@ -1365,7 +1365,7 @@ public final class ECtransSetup implements Serializable {
      * @param action
      *            the action
      */
-    public void setPeriodIfPresent(final ECtransOptions option, final Consumer<? super Period> action) {
+    public void setPeriodIfPresent(final ECtransOptionDefinition option, final Consumer<? super Period> action) {
         getOptionalPeriod(option).ifPresent(action);
     }
 
@@ -1377,7 +1377,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the list of time ranges
      */
-    public List<TimeRange> getTimeRangeList(final ECtransOptions option) {
+    public List<TimeRange> getTimeRangeList(final ECtransOptionDefinition option) {
         return list(option, TimeRange.class);
     }
 
@@ -1389,7 +1389,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the time range
      */
-    public TimeRange getTimeRange(final ECtransOptions option) {
+    public TimeRange getTimeRange(final ECtransOptionDefinition option) {
         return get(option, TimeRange.class);
     }
 
@@ -1403,7 +1403,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the time range
      */
-    public TimeRange getTimeRange(final ECtransOptions option, final Value bindings) {
+    public TimeRange getTimeRange(final ECtransOptionDefinition option, final Value bindings) {
         return get(option, TimeRange.class, bindings);
     }
 
@@ -1415,7 +1415,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    public Optional<TimeRange> getOptionalTimeRange(final ECtransOptions option) {
+    public Optional<TimeRange> getOptionalTimeRange(final ECtransOptionDefinition option) {
         return getOptional(option, TimeRange.class);
     }
 
@@ -1427,7 +1427,7 @@ public final class ECtransSetup implements Serializable {
      * @param action
      *            the action
      */
-    public void setTimeRangeIfPresent(final ECtransOptions option, final Consumer<? super TimeRange> action) {
+    public void setTimeRangeIfPresent(final ECtransOptionDefinition option, final Consumer<? super TimeRange> action) {
         getOptionalTimeRange(option).ifPresent(action);
     }
 
@@ -1445,7 +1445,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    private <T> T get(final ECtransOptions option, final Class<T> clazz) {
+    private <T> T get(final ECtransOptionDefinition option, final Class<T> clazz) {
         return get(option, clazz, null);
     }
 
@@ -1465,7 +1465,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    private <T> T get(final ECtransOptions option, final Class<T> clazz, final Value bindings) {
+    private <T> T get(final ECtransOptionDefinition option, final Class<T> clazz, final Value bindings) {
         if (bindings != null && !bindings.isNull()) {
             final var parameter = option.getModule() + "." + option.getName();
             try {
@@ -1518,7 +1518,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return true, if successful
      */
-    public static boolean isOptionDefined(final ECtransOptions option, final String content) {
+    public static boolean isOptionDefined(final ECtransOptionDefinition option, final String content) {
         final var pattern = "\\b" + Pattern.quote(option.getModule()) + "\\s*:\\s*\\{[^}]*\\b"
                 + Pattern.quote(option.getName()) + "\\b\\s*:";
         final var regex = Pattern.compile(pattern, Pattern.DOTALL);
@@ -1538,7 +1538,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    private <T> T getFromProperties(final ECtransOptions option, final Class<T> clazz) {
+    private <T> T getFromProperties(final ECtransOptionDefinition option, final Class<T> clazz) {
         final var found = get(option.getModule(), option.getName(), null);
         if (found == null || found.isBlank() && clazz != String.class) {
             // Nothing in the configuration or empty value, let's use the default!
@@ -1599,7 +1599,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the list of object of type class
      */
-    private <T> List<T> list(final ECtransOptions option, final Class<T> clazz) {
+    private <T> List<T> list(final ECtransOptionDefinition option, final Class<T> clazz) {
         final var found = get(option.getModule(), option.getName(), null);
         if (found == null || found.isBlank() && clazz != String.class) {
             // Nothing in the configuration or empty value, let's use the default!
@@ -1662,7 +1662,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    private <T> Optional<T> getOptional(final ECtransOptions option, final Class<T> clazz) {
+    private <T> Optional<T> getOptional(final ECtransOptionDefinition option, final Class<T> clazz) {
         return Optional.ofNullable(get(option, clazz));
     }
 
@@ -1680,7 +1680,8 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the object of type class
      */
-    private <T> Optional<T> getOptional(final ECtransOptions option, final Class<T> clazz, final Value bindings) {
+    private <T> Optional<T> getOptional(final ECtransOptionDefinition option, final Class<T> clazz,
+            final Value bindings) {
         return Optional.ofNullable(get(option, clazz, bindings));
     }
 
@@ -1716,7 +1717,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the true, if successful
      */
-    public boolean get(final ECtransOptions option, final boolean defaultValue) {
+    public boolean get(final ECtransOptionDefinition option, final boolean defaultValue) {
         return get(option.getModule(), option.getName(), defaultValue);
     }
 
@@ -1730,7 +1731,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the result
      */
-    public long get(final ECtransOptions option, final long defaultValue) {
+    public long get(final ECtransOptionDefinition option, final long defaultValue) {
         return get(option.getModule(), option.getName(), defaultValue);
     }
 
@@ -1744,7 +1745,7 @@ public final class ECtransSetup implements Serializable {
      *
      * @return the result
      */
-    public int get(final ECtransOptions option, final int defaultValue) {
+    public int get(final ECtransOptionDefinition option, final int defaultValue) {
         return get(option.getModule(), option.getName(), defaultValue);
     }
 
@@ -1784,7 +1785,7 @@ public final class ECtransSetup implements Serializable {
      * @param value
      *            the value
      */
-    public void set(final ECtransOptions option, final String value) {
+    public void set(final ECtransOptionDefinition option, final String value) {
         set(option.getModule(), option.getName(), value);
     }
 
@@ -1796,7 +1797,7 @@ public final class ECtransSetup implements Serializable {
      * @param value
      *            the value
      */
-    public void set(final ECtransOptions option, final ByteSize value) {
+    public void set(final ECtransOptionDefinition option, final ByteSize value) {
         set(option.getModule(), option.getName(), value.toString());
     }
 
@@ -1808,7 +1809,7 @@ public final class ECtransSetup implements Serializable {
      * @param value
      *            the value
      */
-    public void set(final ECtransOptions option, final boolean value) {
+    public void set(final ECtransOptionDefinition option, final boolean value) {
         set(option.getModule(), option.getName(), value ? "yes" : "no");
     }
 
@@ -1820,7 +1821,7 @@ public final class ECtransSetup implements Serializable {
      * @param value
      *            the value
      */
-    public void set(final ECtransOptions option, final long value) {
+    public void set(final ECtransOptionDefinition option, final long value) {
         set(option.getModule(), option.getName(), value);
     }
 
@@ -1832,7 +1833,7 @@ public final class ECtransSetup implements Serializable {
      * @param value
      *            the value
      */
-    public void set(final ECtransOptions option, final int value) {
+    public void set(final ECtransOptionDefinition option, final int value) {
         set(option.getModule(), option.getName(), value);
     }
 
@@ -1844,7 +1845,7 @@ public final class ECtransSetup implements Serializable {
      * @param value
      *            the value
      */
-    public void set(final ECtransOptions option, final double value) {
+    public void set(final ECtransOptionDefinition option, final double value) {
         set(option.getModule(), option.getName(), value);
     }
 
@@ -1948,7 +1949,7 @@ public final class ECtransSetup implements Serializable {
      * @param removeIfSameAsDefault
      *            remove if same as default value
      */
-    public void standardize(final ECtransOptions option, final boolean removeIfSameAsDefault) {
+    public void standardize(final ECtransOptionDefinition option, final boolean removeIfSameAsDefault) {
         if (!exists(option.getModule(), option.getName())) {
             return; // Nothing to do!
         }
@@ -1995,7 +1996,8 @@ public final class ECtransSetup implements Serializable {
     public String getProperties(final boolean secured) {
         return secured
                 ? Cnf.valuesOf(dataContent, _ -> "********",
-                        ECtransOptions.getAll(true).stream().map(ECtransOptions::getParameter).toArray(String[]::new))
+                        ECtransOptionRegistry.all().stream().filter(ECtransOptionDefinition::isSecured)
+                                .map(ECtransOptionDefinition::getParameter).toArray(String[]::new))
                 : Cnf.valuesOf(dataContent);
     }
 
@@ -2038,5 +2040,274 @@ public final class ECtransSetup implements Serializable {
      */
     public String getModuleName() {
         return currentModuleName;
+    }
+
+    // Preserve the enum-based API for already compiled transfer modules.
+    public String remove(final ECtransOptions option) {
+        return remove((ECtransOptionDefinition) option);
+    }
+
+    public boolean matches(final ECtransOptions options, final String value) {
+        return matches((ECtransOptionDefinition) options, value);
+    }
+
+    public boolean matches(final ECtransOptions option, final String value, final String defaultRegex) {
+        return matches((ECtransOptionDefinition) option, value, defaultRegex);
+    }
+
+    public String get(final ECtransOptions option, final String defaultValue) {
+        return get((ECtransOptionDefinition) option, defaultValue);
+    }
+
+    public Duration getDuration(final ECtransOptions option) {
+        return getDuration((ECtransOptionDefinition) option);
+    }
+
+    public Duration get(final ECtransOptions option, final Duration defaultValue) {
+        return get((ECtransOptionDefinition) option, defaultValue);
+    }
+
+    public Period getPeriod(final ECtransOptions option) {
+        return getPeriod((ECtransOptionDefinition) option);
+    }
+
+    public Period get(final ECtransOptions option, final Period defaultValue) {
+        return get((ECtransOptionDefinition) option, defaultValue);
+    }
+
+    public ByteSize get(final ECtransOptions option, final ByteSize defaultValue) {
+        return get((ECtransOptionDefinition) option, defaultValue);
+    }
+
+    public Options getOptions(final ECtransOptions option) {
+        return getOptions((ECtransOptionDefinition) option);
+    }
+
+    public Options getOptions(final ECtransOptions option, final String delimiters) {
+        return getOptions((ECtransOptionDefinition) option, delimiters);
+    }
+
+    public Options getOptions(final ECtransOptions option, final String key, final String delimiters) {
+        return getOptions((ECtransOptionDefinition) option, key, delimiters);
+    }
+
+    public List<Boolean> getBooleanList(final ECtransOptions option) {
+        return getBooleanList((ECtransOptionDefinition) option);
+    }
+
+    public boolean getBoolean(final ECtransOptions option) {
+        return getBoolean((ECtransOptionDefinition) option);
+    }
+
+    public boolean getBoolean(final ECtransOptions option, final Value bindings) {
+        return getBoolean((ECtransOptionDefinition) option, bindings);
+    }
+
+    public Boolean getBooleanObject(final ECtransOptions option) {
+        return getBooleanObject((ECtransOptionDefinition) option);
+    }
+
+    public Boolean getBooleanObject(final ECtransOptions option, final Value bindings) {
+        return getBooleanObject((ECtransOptionDefinition) option, bindings);
+    }
+
+    public Optional<Boolean> getOptionalBoolean(final ECtransOptions option) {
+        return getOptionalBoolean((ECtransOptionDefinition) option);
+    }
+
+    public void setBooleanIfPresent(final ECtransOptions option, final Consumer<? super Boolean> action) {
+        setBooleanIfPresent((ECtransOptionDefinition) option, action);
+    }
+
+    public List<String> getStringList(final ECtransOptions option) {
+        return getStringList((ECtransOptionDefinition) option);
+    }
+
+    public String getString(final ECtransOptions option) {
+        return getString((ECtransOptionDefinition) option);
+    }
+
+    public String getChecksumExtension(final ECtransOptions legacyMd5ExtOption) {
+        return getChecksumExtension((ECtransOptionDefinition) legacyMd5ExtOption);
+    }
+
+    public String getString(final ECtransOptions option, final Value bindings) {
+        return getString((ECtransOptionDefinition) option, bindings);
+    }
+
+    public Optional<String> getOptionalString(final ECtransOptions option) {
+        return getOptionalString((ECtransOptionDefinition) option);
+    }
+
+    public Optional<String> getOptionalString(final ECtransOptions option, final Value bindings) {
+        return getOptionalString((ECtransOptionDefinition) option, bindings);
+    }
+
+    public void setStringIfPresent(final ECtransOptions option, final Consumer<? super String> action) {
+        setStringIfPresent((ECtransOptionDefinition) option, action);
+    }
+
+    public List<Integer> getIntegerList(final ECtransOptions option) {
+        return getIntegerList((ECtransOptionDefinition) option);
+    }
+
+    public Integer getInteger(final ECtransOptions option) {
+        return getInteger((ECtransOptionDefinition) option);
+    }
+
+    public Integer getInteger(final ECtransOptions option, final Value bindings) {
+        return getInteger((ECtransOptionDefinition) option, bindings);
+    }
+
+    public Optional<Integer> getOptionalInteger(final ECtransOptions option) {
+        return getOptionalInteger((ECtransOptionDefinition) option);
+    }
+
+    public void setIntegerIfPresent(final ECtransOptions option, final Consumer<? super Integer> action) {
+        setIntegerIfPresent((ECtransOptionDefinition) option, action);
+    }
+
+    public List<Long> getLongList(final ECtransOptions option) {
+        return getLongList((ECtransOptionDefinition) option);
+    }
+
+    public Long getLong(final ECtransOptions option) {
+        return getLong((ECtransOptionDefinition) option);
+    }
+
+    public Long getLong(final ECtransOptions option, final Value bindings) {
+        return getLong((ECtransOptionDefinition) option, bindings);
+    }
+
+    public Optional<Long> getOptionalLong(final ECtransOptions option) {
+        return getOptionalLong((ECtransOptionDefinition) option);
+    }
+
+    public void setLongIfPresent(final ECtransOptions option, final Consumer<? super Long> action) {
+        setLongIfPresent((ECtransOptionDefinition) option, action);
+    }
+
+    public List<Double> getDoubleList(final ECtransOptions option) {
+        return getDoubleList((ECtransOptionDefinition) option);
+    }
+
+    public Double getDouble(final ECtransOptions option) {
+        return getDouble((ECtransOptionDefinition) option);
+    }
+
+    public Double getDouble(final ECtransOptions option, final Value bindings) {
+        return getDouble((ECtransOptionDefinition) option, bindings);
+    }
+
+    public Optional<Double> getOptionalDouble(final ECtransOptions option) {
+        return getOptionalDouble((ECtransOptionDefinition) option);
+    }
+
+    public void setDoubleIfPresent(final ECtransOptions option, final Consumer<? super Double> action) {
+        setDoubleIfPresent((ECtransOptionDefinition) option, action);
+    }
+
+    public List<ByteSize> getByteSizeList(final ECtransOptions option) {
+        return getByteSizeList((ECtransOptionDefinition) option);
+    }
+
+    public ByteSize getByteSize(final ECtransOptions option) {
+        return getByteSize((ECtransOptionDefinition) option);
+    }
+
+    public ByteSize getByteSize(final ECtransOptions option, final Value bindings) {
+        return getByteSize((ECtransOptionDefinition) option, bindings);
+    }
+
+    public Optional<ByteSize> getOptionalByteSize(final ECtransOptions option) {
+        return getOptionalByteSize((ECtransOptionDefinition) option);
+    }
+
+    public void setByteSizeIfPresent(final ECtransOptions option, final Consumer<? super ByteSize> action) {
+        setByteSizeIfPresent((ECtransOptionDefinition) option, action);
+    }
+
+    public Optional<Duration> getOptionalDuration(final ECtransOptions option) {
+        return getOptionalDuration((ECtransOptionDefinition) option);
+    }
+
+    public Optional<Duration> getOptionalDuration(final ECtransOptions option, final Value bindings) {
+        return getOptionalDuration((ECtransOptionDefinition) option, bindings);
+    }
+
+    public void setDurationIfPresent(final ECtransOptions option, final Consumer<? super Duration> action) {
+        setDurationIfPresent((ECtransOptionDefinition) option, action);
+    }
+
+    public Optional<Period> getOptionalPeriod(final ECtransOptions option) {
+        return getOptionalPeriod((ECtransOptionDefinition) option);
+    }
+
+    public void setPeriodIfPresent(final ECtransOptions option, final Consumer<? super Period> action) {
+        setPeriodIfPresent((ECtransOptionDefinition) option, action);
+    }
+
+    public List<TimeRange> getTimeRangeList(final ECtransOptions option) {
+        return getTimeRangeList((ECtransOptionDefinition) option);
+    }
+
+    public TimeRange getTimeRange(final ECtransOptions option) {
+        return getTimeRange((ECtransOptionDefinition) option);
+    }
+
+    public TimeRange getTimeRange(final ECtransOptions option, final Value bindings) {
+        return getTimeRange((ECtransOptionDefinition) option, bindings);
+    }
+
+    public Optional<TimeRange> getOptionalTimeRange(final ECtransOptions option) {
+        return getOptionalTimeRange((ECtransOptionDefinition) option);
+    }
+
+    public void setTimeRangeIfPresent(final ECtransOptions option, final Consumer<? super TimeRange> action) {
+        setTimeRangeIfPresent((ECtransOptionDefinition) option, action);
+    }
+
+    public static boolean isOptionDefined(final ECtransOptions option, final String content) {
+        return isOptionDefined((ECtransOptionDefinition) option, content);
+    }
+
+    public boolean get(final ECtransOptions option, final boolean defaultValue) {
+        return get((ECtransOptionDefinition) option, defaultValue);
+    }
+
+    public long get(final ECtransOptions option, final long defaultValue) {
+        return get((ECtransOptionDefinition) option, defaultValue);
+    }
+
+    public int get(final ECtransOptions option, final int defaultValue) {
+        return get((ECtransOptionDefinition) option, defaultValue);
+    }
+
+    public void set(final ECtransOptions option, final String value) {
+        set((ECtransOptionDefinition) option, value);
+    }
+
+    public void set(final ECtransOptions option, final ByteSize value) {
+        set((ECtransOptionDefinition) option, value);
+    }
+
+    public void set(final ECtransOptions option, final boolean value) {
+        set((ECtransOptionDefinition) option, value);
+    }
+
+    public void set(final ECtransOptions option, final long value) {
+        set((ECtransOptionDefinition) option, value);
+    }
+
+    public void set(final ECtransOptions option, final int value) {
+        set((ECtransOptionDefinition) option, value);
+    }
+
+    public void set(final ECtransOptions option, final double value) {
+        set((ECtransOptionDefinition) option, value);
+    }
+
+    public void standardize(final ECtransOptions option, final boolean removeIfSameAsDefault) {
+        standardize((ECtransOptionDefinition) option, removeIfSameAsDefault);
     }
 }

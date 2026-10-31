@@ -18,10 +18,10 @@
 
 package ecmwf.ecpds.mover;
 
-import static ecmwf.common.ectrans.ECtransOptions.HOST_ECACCESS_DESTINATION;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_ECACCESS_GATEWAY;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_ECACCESS_LASTUSED;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_ECACCESS_LOADBALANCING;
+import static ecmwf.ecpds.extension.ecaccess.EcaccessOptions.HOST_ECACCESS_DESTINATION;
+import static ecmwf.ecpds.extension.ecaccess.EcaccessOptions.HOST_ECACCESS_GATEWAY;
+import static ecmwf.ecpds.extension.ecaccess.EcaccessOptions.HOST_ECACCESS_LASTUSED;
+import static ecmwf.ecpds.extension.ecaccess.EcaccessOptions.HOST_ECACCESS_LOADBALANCING;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_INITIAL_INPUT_FILTER;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_INITIAL_INPUT_MD5;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_INITIAL_INPUT_SIZE;

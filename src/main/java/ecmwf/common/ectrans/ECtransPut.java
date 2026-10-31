@@ -278,6 +278,7 @@ public final class ECtransPut extends ECtransAction {
                 }
                 final var mIn = new MonitoredInputStream(in,
                         setup.get(HOST_ECTRANS_PUT_MONITORED_INPUT_DELTA, Duration.ofMillis(0)).toMillis(), handler);
+                module.setAttribute("diagnostics.inputBytes", (java.util.function.LongSupplier) mIn::getByteSent);
                 final var bufferedInputSize = setup.getByteSize(HOST_ECTRANS_BUFF_INPUT_SIZE);
                 in = StreamManagerImp.getBuffered(mIn, bufferedInputSize != null ? (int) bufferedInputSize.size() : 0);
                 String message = null;
@@ -306,6 +307,8 @@ public final class ECtransPut extends ECtransAction {
                         if (!decrompressedOnTheFly) {
                             // We have to know the size of the compressed file when we will do the checking!
                             mOut = new MonitoredOutputStream(out);
+                            module.setAttribute("diagnostics.outputBytes",
+                                    (java.util.function.LongSupplier) mOut::getByteSent);
                         }
                         final var bufferedSize = setup.getByteSize(HOST_ECTRANS_BUFF_OUTPUT_SIZE);
                         out = StreamManagerImp.getFilters(mOut != null ? mOut : out,

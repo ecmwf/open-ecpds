@@ -31,14 +31,13 @@ import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ECACCESS;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_PROXY;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_RETRIEVAL;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_UPLOAD;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_ECACCESS_DESTINATION;
 
 import ecmwf.common.database.DataBaseException;
 import ecmwf.common.database.ECpdsBase;
 import ecmwf.common.database.Host;
 import ecmwf.common.database.TransferMethod;
 import ecmwf.common.ectrans.ECtransGroups;
-import ecmwf.common.ectrans.ECtransOptions;
+import ecmwf.common.ectrans.ECtransOptionRegistry;
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.ecpds.master.transfer.HostOption;
 
@@ -117,7 +116,7 @@ final class HostCleaning {
         // If this is the ecaccess module then we have to get the transfer
         // module to use on the remote Gateway!
         if (ectransModuleName.equals(HOST_ECACCESS.getName())) {
-            final var transferMethodName = setup.getString(HOST_ECACCESS_DESTINATION);
+            final var transferMethodName = setup.get("destination", "genericFtp");
             final var transferMethod = base.getTransferMethodObject(transferMethodName);
             if (transferMethod == null) {
                 if ("genericExec".equals(transferMethodName)) {
@@ -159,7 +158,7 @@ final class HostCleaning {
         }
         // Normalize the representation of the data and remove option with same value as
         // default value!
-        ECtransOptions.get(ECtransGroups.HOST).stream().forEach(option -> setup.standardize(option, true));
+        ECtransOptionRegistry.get(ECtransGroups.HOST).stream().forEach(option -> setup.standardize(option, true));
         // Save the modified Host!
         host.setData(setup.getData());
         base.update(host);

@@ -347,6 +347,10 @@ public final class FtpModule extends TransferModule {
             client.setClientSocketStatistics(statistics);
         }
         setupSession(client);
+        setAttribute("diagnostics.connections", (java.util.function.Supplier<String>) () -> {
+            final var current = ftp;
+            return current == null ? "unavailable" : current.getConnectionDiagnostics();
+        });
         setAttribute("remote.hostName", host);
         try {
             key = SessionCache.getKey(host, port, user, dir, "hash=" + client.toString().hashCode());
@@ -1238,10 +1242,12 @@ public final class FtpModule extends TransferModule {
             ftp.getResponseString();
             ftpOutput = ftp.put(fileName, posn, size, useAppend, parallelStreams);
             return ftp.getResponseString();
-        } catch (final SocketTimeoutException _) {
-            throw new SocketTimeoutException("Ftp timeout on STOR");
+        } catch (final SocketTimeoutException e) {
+            final var timeout = new SocketTimeoutException("Ftp timeout on STOR");
+            timeout.initCause(e);
+            throw timeout;
         } catch (final IOException e) {
-            throw new IOException(getExceptionMessage(e));
+            throw new IOException(getExceptionMessage(e), e);
         }
     }
 

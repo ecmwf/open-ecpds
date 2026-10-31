@@ -38,6 +38,7 @@ import ecmwf.common.callback.RemoteInputStream;
 import ecmwf.common.database.DataBaseObject;
 import ecmwf.common.ectrans.ECtransGroups;
 import ecmwf.common.ectrans.ECtransOptions;
+import ecmwf.common.ectrans.ECtransOptionRegistry;
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.text.Format;
@@ -108,7 +109,8 @@ public class HostBean extends ModelBeanBase implements Host, OjbImplementedBean 
         this.host = host;
         this.setup = HOST_ECTRANS.getECtransSetup(host.getData());
         // Remove all options which are not visible
-        ECtransOptions.get(ECtransGroups.HOST).stream().filter(option -> !option.isVisible()).forEach(setup::remove);
+        ECtransOptionRegistry.get(ECtransGroups.HOST).stream().filter(option -> !option.isVisible())
+                .forEach(setup::remove);
     }
 
     /**

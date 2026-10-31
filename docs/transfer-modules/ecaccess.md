@@ -16,7 +16,7 @@ Build the adapter and extracted client-contract jar using the
 The ordinary OpenECPDS build does not include them.
 
 Install the matching `ecpds-ecaccess-8.2.1.jar` on the application classpaths of
-the Master and every Mover/Proxy executing this transfer method. Install
+the Master, Monitor and every Mover/Proxy executing this transfer method. Install
 `ecaccess-eccmd-client-1.0.0.jar` on the Master classpath as well. The legacy
 ECCMD wire contracts are confined to the Master-side adapter; Movers use the
 extension's own `EcaccessGatewayAccess` remote interface. Do not add old
@@ -92,6 +92,12 @@ explicitly; there is no REST endpoint or EJB/JNDI fallback.
 ## Host properties
 
 For a Host whose Transfer Method selects this module:
+
+These option definitions and editor help are supplied by the extension's
+[option provider](../concepts/plugin-infrastructure.md#extension-owned-transfer-options),
+not the core enum. Install the matching extension on the Monitor as well to
+enable editor completion and validation. Existing property names and defaults
+are unchanged.
 
 ```properties
 ecaccess.gateway = "gateway-one,gateway-two"

@@ -42,7 +42,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ecmwf.common.ectrans.ECtransGroups;
-import ecmwf.common.ectrans.ECtransOptions;
+import ecmwf.common.ectrans.ECtransOptionRegistry;
 import ecmwf.common.ectrans.SubOption;
 import ecmwf.common.technical.ByteSize;
 import ecmwf.common.technical.TimeRange;
@@ -88,7 +88,7 @@ public class GetIncomingUserListJsonAction extends PDSAction {
 
     private static Map<String, OptionMeta> buildOptionMap() {
         final var map = new HashMap<String, OptionMeta>();
-        for (final var opt : ECtransOptions.get(ECtransGroups.USER)) {
+        for (final var opt : ECtransOptionRegistry.get(ECtransGroups.USER)) {
             if (opt.isVisible()) {
                 map.put(opt.getParameter().toLowerCase(), new OptionMeta(opt.getClazz(), opt.getChoicesAsStrings(),
                         opt.getSubOptions(), opt.hasFreeFormSubOptions()));

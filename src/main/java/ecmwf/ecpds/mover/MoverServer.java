@@ -4849,7 +4849,22 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     _offerLiveSample(LiveTransferSample.STATUS_ACTIVE);
                 }
             } else if (!_closed.get() && _timeout > 0 && System.currentTimeMillis() - _update > _timeout) {
-                failed(null, "stream timeout after " + Format.formatDuration(_timeout));
+                final var module = _module;
+                _log.warn("Transfer {} no progress: idle={}ms progressBytes={} moduleStatus={}", _transfer.getId(),
+                        System.currentTimeMillis() - _update, _monitor == null ? 0 : _monitor.getByteSent(),
+                        module == null ? "unavailable" : module.getStatus());
+                if (module != null) {
+                    if (module.getAttribute(
+                            "diagnostics.connections") instanceof final java.util.function.Supplier<?> connections) {
+                        _log.warn("Transfer {} connection diagnostics: {}", _transfer.getId(), connections.get());
+                    }
+                    for (final var name : new String[] { "diagnostics.inputBytes", "diagnostics.outputBytes" }) {
+                        if (module.getAttribute(name) instanceof final java.util.function.LongSupplier counter) {
+                            _log.warn("Transfer {} {}={}", _transfer.getId(), name, counter.getAsLong());
+                        }
+                    }
+                }
+                failed(module, "stream timeout after " + Format.formatDuration(_timeout));
             }
         }
 
@@ -4994,6 +5009,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         @Override
         public void failed(final TransferModule module, String comment) {
             captureWeather(module, false);
+            final var availableStatistics = module == null ? null : module.getAttribute(ClientSocketStatistics.class);
+            final var beforeCloseStatistics = availableStatistics == null || availableStatistics.isEmpty() ? null
+                    : availableStatistics.toString();
             if (!closeTransferAndMonitor()) { // If it is closed then no need to process the transfer history again!
                 return;
             }
@@ -5013,7 +5031,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 final String statisticsString;
                 if (module != null) {
                     final var statistics = module.getAttribute(ClientSocketStatistics.class);
-                    statisticsString = statistics != null && !statistics.isEmpty() ? statistics.toString() : null;
+                    statisticsString = statistics != null && !statistics.isEmpty() ? statistics.toString()
+                            : beforeCloseStatistics;
                 } else {
                     statisticsString = null;
                 }

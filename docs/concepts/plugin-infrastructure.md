@@ -243,6 +243,85 @@ referencing the class from a host configuration. No changes to the core platform
 required. The module receives connection parameters, handles the protocol lifecycle, and
 returns results to the transfer engine.
 
+### Extension-owned transfer options
+
+Optional modules can define their own typed options without adding constants to
+the core `ECtransOptions` enum. Built-ins and extensions share the
+`ECtransOptionDefinition` contract, accepted by `ECtransSetup` getters, setters,
+script lookup and normalization. Existing enum-based methods remain available
+for already compiled modules.
+
+Implement `ecmwf.common.ectrans.ECtransOptionProvider` in the extension:
+
+```java
+package example.transfer;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.Properties;
+import ecmwf.common.ectrans.*;
+
+public final class ExampleOptions implements ECtransOptionProvider {
+    private static final Properties HELP = new Properties();
+    static {
+        HELP.setProperty("example.timeout.tips", "Maximum time to wait for the remote service.");
+        HELP.setProperty("example.token.secured", "true");
+    }
+
+    public static final ECtransOption<Duration> TIMEOUT = new ECtransOption<>(
+        ECtransGroups.HOST, "example", "timeout", Duration.class,
+        List.of(Duration.ofSeconds(30)), List.of(), List.of(), false, HELP);
+    public static final ECtransOption<String> TOKEN = new ECtransOption<>(
+        ECtransGroups.HOST, "example", "token", String.class,
+        List.of(), List.of(), List.of(), false, HELP);
+
+    @Override
+    public List<ECtransOptionDefinition> options() {
+        return List.of(TIMEOUT, TOKEN);
+    }
+}
+```
+
+In the extension JAR, include
+`META-INF/services/ecmwf.common.ectrans.ECtransOptionProvider` containing:
+
+```text
+example.transfer.ExampleOptions
+```
+
+The module can then use `setup.getDuration(ExampleOptions.TIMEOUT)` and
+`setup.getString(ExampleOptions.TOKEN)`. Host Properties remain ordinary
+`example.timeout = "PT1M"` and `example.token = "..."` entries.
+An empty default list means no default. Choices and `SubOption` definitions
+describe validation; the boolean constructor argument enables free-form nested
+options. Metadata can instead be loaded from an extension-owned properties
+resource using `<module>.<name>.tips`, `.visible` and `.secured` keys.
+Mark credentials `.secured=true` so redacted setup output masks them; visibility
+alone does not protect a secret.
+
+Install the extension on the **application classpath** of the Master, Monitor
+and participating Movers/Proxies, then restart those services. Discovery is
+metadata-only and does not activate a transfer module or start external
+connections. Providers should therefore have a public no-argument constructor
+and avoid operational work or optional server dependencies during initialization.
+Archive-only transfer-module loading does not register application-wide options.
+
+`ECtransOptionRegistry.get(group)` supplies the combined, immutable catalogue
+for editor completion/help, property validation, hidden-option handling and
+normalization; secret redaction also includes registered definitions.
+`ECtransOptions.get(group)` retains its built-in-enum-only API.
+Discovery uses the core application classloader at first catalogue access and
+is cached for the process lifetime, not the request/thread context classloader.
+Malformed service providers, invalid names and duplicate group/parameter names
+(including attempts to override built-ins) fail discovery.
+Use a unique lowercase alphanumeric module name starting with a letter, and
+alphanumeric option names starting with a letter.
+
+The ECaccess extension uses this mechanism for its four `ecaccess.*` options.
+Their property names and defaults are unchanged, but their definitions and help
+are absent from the catalogue when the extension is not installed. Existing
+stored properties are not migrated or deleted by discovery.
+
 ## Server Plugins (incoming)
 
 Server plugins extend the Data Portal with new *incoming* protocols. Each plugin runs

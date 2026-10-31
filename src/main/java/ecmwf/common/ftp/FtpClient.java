@@ -70,6 +70,19 @@ import ecmwf.common.transport.ptcp.psocket.PTCPSocket;
  * The Class FtpClient.
  */
 public final class FtpClient {
+    private volatile Socket diagnosticDataSocket;
+
+    public String getConnectionDiagnostics() {
+        final var control = _serverSocket;
+        final var data = diagnosticDataSocket;
+        return "control="
+                + (control == null ? "unavailable"
+                        : control.getLocalSocketAddress() + " -> " + control.getRemoteSocketAddress())
+                + ", data=" + (data == null ? "unavailable" : data.getLocalSocketAddress() + " -> "
+                        + data.getRemoteSocketAddress() + ", closed=" + data.isClosed())
+                + ", reply=" + _lastReplyCode;
+    }
+
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(FtpClient.class);
 
@@ -967,6 +980,7 @@ public final class FtpClient {
      *             Signals that an I/O exception has occurred.
      */
     private int _issueCommand(final String cmd) throws IOException {
+        final var started = System.nanoTime();
         if (!commandIsOpen()) {
             throw new FtpLoginException("Not connected to host for '" + cmd + "'");
         }
@@ -991,6 +1005,12 @@ public final class FtpClient {
             _serverOutput.print(cmd + "\r\n");
             _serverOutput.flush();
             reply = _readReply();
+            if (_debug) {
+                _log.debug("FTP command {} reply={} elapsed={}ms control={} -> {}",
+                        cmd == null ? "" : cmd.split(" ", 2)[0], _lastReplyCode,
+                        (System.nanoTime() - started) / 1_000_000, _serverSocket.getLocalSocketAddress(),
+                        _serverSocket.getRemoteSocketAddress());
+            }
         } while (reply == FTP_TRY_AGAIN);
         return reply;
     }
@@ -1158,6 +1178,8 @@ public final class FtpClient {
      */
     @SuppressWarnings("resource")
     private DataSocket _openDataSocket(final String cmd, final int streamsCount) throws IOException {
+        final var started = System.nanoTime();
+        diagnosticDataSocket = null;
         if (!commandIsOpen()) {
             throw new IOException("Control channel is closed");
         }
@@ -1213,6 +1235,10 @@ public final class FtpClient {
                 _log.warn("Invalid PortNumber for {}: {}", passiveCmd, port);
                 throw new FtpProtocolException(passiveCmd);
             }
+            if (_debug) {
+                _log.debug("FTP passive negotiation elapsed={}ms local={} target={}:{}",
+                        (System.nanoTime() - started) / 1_000_000, localAddress.getHostAddress(), ipaddress, port);
+            }
             if (ptcp) {
                 if (_debug) {
                     _log.debug("Use PTCPSocket data socket (passive)");
@@ -1239,6 +1265,12 @@ public final class FtpClient {
                 }
                 dataSocket = socketConfig.getSocket(ipaddress, port);
             }
+            diagnosticDataSocket = dataSocket;
+            if (_debug) {
+                _log.debug("FTP passive data connected elapsed={}ms data={} -> {}",
+                        (System.nanoTime() - started) / 1_000_000, dataSocket.getLocalSocketAddress(),
+                        dataSocket.getRemoteSocketAddress());
+            }
             if (_sharedPassive) {
                 if (_debug) {
                     _log.debug("Use shared passive data socket");
@@ -1254,6 +1286,10 @@ public final class FtpClient {
             }
             issueCommandCheck(cmd, true);
         } catch (final FtpProtocolException fpe) {
+            if (_debug) {
+                _log.debug("FTP falling back to active mode elapsed={}ms: {}",
+                        (System.nanoTime() - started) / 1_000_000, fpe.getMessage());
+            }
             // PASV/EPSV was not supported. Resort to PORT/EPRT!
             if (ptcp) {
                 if (_debug) {
@@ -1309,6 +1345,12 @@ public final class FtpClient {
             }
         }
         dataSocket.setSoTimeout(_dataTimeOut);
+        diagnosticDataSocket = dataSocket;
+        if (_debug) {
+            _log.debug("FTP data stream ready elapsed={}ms reply={} data={} -> {} readTimeout={}ms controlTimeout={}ms",
+                    (System.nanoTime() - started) / 1_000_000, _lastReplyCode, dataSocket.getLocalSocketAddress(),
+                    dataSocket.getRemoteSocketAddress(), _dataTimeOut, _commTimeOut);
+        }
         return new DataSocket(dataSocket, _dataAlive);
     }
 

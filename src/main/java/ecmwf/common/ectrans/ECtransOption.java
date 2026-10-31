@@ -21,7 +21,6 @@ package ecmwf.common.ectrans;
 import java.time.Duration;
 import java.time.Period;
 import java.util.List;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -39,7 +38,7 @@ import ecmwf.common.technical.TimeRange;
  *
  * @author root
  */
-public class ECtransOption<T> {
+public class ECtransOption<T> implements ECtransOptionDefinition {
 
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(ECtransOption.class);
@@ -111,7 +110,7 @@ public class ECtransOption<T> {
      * @param choices
      *            the choices
      */
-    protected ECtransOption(final ECtransGroups group, final String module, final String name, final Class<T> clazz,
+    public ECtransOption(final ECtransGroups group, final String module, final String name, final Class<T> clazz,
             final List<T> defaultValues, final List<T> choices) {
         this(group, module, name, clazz, defaultValues, choices, List.of(), false);
     }
@@ -138,35 +137,36 @@ public class ECtransOption<T> {
      *            true if the value holds arbitrary/free-form nested key=value entries (e.g. HTTP headers) rather than a
      *            fixed/known set
      */
-    protected ECtransOption(final ECtransGroups group, final String module, final String name, final Class<T> clazz,
+    public ECtransOption(final ECtransGroups group, final String module, final String name, final Class<T> clazz,
             final List<T> defaultValues, final List<T> choices, final List<SubOption> subOptions,
             final boolean freeFormSubOptions) {
+        this(group, module, name, clazz, defaultValues, choices, subOptions, freeFormSubOptions, properties);
+    }
+
+    /**
+     * Builds an option using extension-owned help, visibility and redaction metadata. Metadata keys use the same
+     * parameter.tips/visible/secured format as built-in options.
+     */
+    public ECtransOption(final ECtransGroups group, final String module, final String name, final Class<T> clazz,
+            final List<T> defaultValues, final List<T> choices, final List<SubOption> subOptions,
+            final boolean freeFormSubOptions, final Properties metadata) {
         this.group = group;
         this.module = module;
         this.name = name;
         this.clazz = clazz;
-        this.defaultValues = defaultValues;
-        this.choices = choices;
-        this.subOptions = subOptions;
+        this.defaultValues = java.util.Collections.unmodifiableList(new java.util.ArrayList<>(defaultValues));
+        this.choices = List.copyOf(choices);
+        this.subOptions = List.copyOf(subOptions);
         this.freeFormSubOptions = freeFormSubOptions;
         this.tips = wrapWords(new StringBuilder(getComment(true)).append(". ")
-                .append(get(getParameter(), "tips").orElse("").replace("'", "\"")).toString().trim(), 80);
-        this.visible = Boolean.parseBoolean(get(getParameter(), "visible").orElse("true"));
-        this.secured = Boolean.parseBoolean(get(getParameter(), "secured").orElse("false"));
+                .append(metadata.getProperty(getParameter() + ".tips", "").replace("'", "\"")).toString().trim(), 80);
+        this.visible = Boolean.parseBoolean(metadata.getProperty(getParameter() + ".visible", "true"));
+        this.secured = Boolean.parseBoolean(metadata.getProperty(getParameter() + ".secured", "false"));
     }
 
-    /**
-     * Gets the.
-     *
-     * @param parameter
-     *            the parameter
-     * @param entry
-     *            the entry
-     *
-     * @return the optional
-     */
-    private static Optional<String> get(final String parameter, final String entry) {
-        return Optional.ofNullable(properties.getProperty(parameter + "." + entry));
+    @Override
+    public ECtransOption<?> getOption() {
+        return this;
     }
 
     /**
@@ -174,7 +174,7 @@ public class ECtransOption<T> {
      *
      * @return the parameter
      */
-    protected String getParameter() {
+    public String getParameter() {
         return module + "." + name;
     }
 
@@ -183,7 +183,7 @@ public class ECtransOption<T> {
      *
      * @return the group
      */
-    protected ECtransGroups getGroup() {
+    public ECtransGroups getGroup() {
         return group;
     }
 
@@ -192,7 +192,7 @@ public class ECtransOption<T> {
      *
      * @return the module
      */
-    protected String getModule() {
+    public String getModule() {
         return module;
     }
 
@@ -201,7 +201,7 @@ public class ECtransOption<T> {
      *
      * @return the name
      */
-    protected String getName() {
+    public String getName() {
         return name;
     }
 
@@ -219,7 +219,7 @@ public class ECtransOption<T> {
      *
      * @return the clazz
      */
-    protected Class<T> getClazz() {
+    public Class<T> getClazz() {
         return clazz;
     }
 
@@ -309,7 +309,7 @@ public class ECtransOption<T> {
      *
      * @return the sub options, or an empty list if not applicable
      */
-    protected List<SubOption> getSubOptions() {
+    public List<SubOption> getSubOptions() {
         return subOptions;
     }
 
@@ -319,7 +319,7 @@ public class ECtransOption<T> {
      *
      * @return true, if the nested entries are free-form
      */
-    protected boolean hasFreeFormSubOptions() {
+    public boolean hasFreeFormSubOptions() {
         return freeFormSubOptions;
     }
 
@@ -328,7 +328,7 @@ public class ECtransOption<T> {
      *
      * @return true, if is visible
      */
-    protected boolean isVisible() {
+    public boolean isVisible() {
         return visible;
     }
 
@@ -337,7 +337,7 @@ public class ECtransOption<T> {
      *
      * @return true, if is secured
      */
-    protected boolean isSecured() {
+    public boolean isSecured() {
         return secured;
     }
 
@@ -407,6 +407,58 @@ public class ECtransOption<T> {
         return "none";
     }
 
+    @SuppressWarnings("unchecked")
+    static <T> T convertDefault(final Class<T> clazz, final Object object) {
+        if (object == null) {
+            return null; // Null object so no conversion
+        }
+        if (clazz.isInstance(object)) {
+            return clazz.cast(object); // No conversion required
+        } else {
+            // We are required to make a conversion as the classes don't match!
+            final var objectClassName = object.getClass().getName();
+            if (clazz.equals(Integer.class) && object instanceof final ByteSize value) {
+                return (T) Integer.valueOf((int) value.size()); // ByteSize to Integer
+            } else if (clazz.equals(Long.class) && object instanceof final ByteSize value) {
+                return (T) Long.valueOf(value.size()); // ByteSize to Long
+            } else if (clazz.equals(Double.class) && object instanceof final ByteSize value) {
+                return (T) Double.valueOf(value.size()); // ByteSize to Double
+            } else if (clazz.equals(Integer.class) && object instanceof final Long value) {
+                return (T) Integer.valueOf(value.intValue()); // Long to Integer
+            } else if (clazz.equals(Long.class) && object instanceof final Integer value) {
+                return (T) Long.valueOf(value); // Integer to Long
+            } else if (clazz.equals(Boolean.class) && object instanceof final String value) {
+                return (T) Boolean.valueOf("true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase(value));
+            } else if (clazz.equals(Boolean.class) && object instanceof final Double value) {
+                return (T) Boolean.valueOf(value.doubleValue() != 0); // Double Boolean
+            } else if (clazz.equals(Boolean.class) && object instanceof final Long value) {
+                return (T) Boolean.valueOf(value.longValue() != 0); // Long to Boolean
+            } else if (clazz.equals(Boolean.class) && object instanceof final Integer value) {
+                return (T) Boolean.valueOf(value.intValue() != 0); // Integer to Boolean
+            } else if (clazz.equals(String.class) && object instanceof final Boolean value) {
+                return (T) (Boolean.TRUE.equals(value) ? "yes" : "no"); // Boolean to String
+            } else if (clazz.equals(ByteSize.class) && object instanceof final String value) {
+                return (T) ("max-size".equals(value) ? ByteSize.MAX_VALUE : ByteSize.parse(value));
+            } else if (clazz.equals(Double.class) && object instanceof final String value) {
+                final Double maxValue = Double.MAX_VALUE;
+                return (T) ("max-double".equals(value) ? maxValue : Double.valueOf(value));
+            } else if (clazz.equals(Long.class) && object instanceof final String value) {
+                final Long maxValue = Long.MAX_VALUE;
+                return (T) ("max-long".equals(value) ? maxValue : Long.valueOf(value));
+            } else if (clazz.equals(Integer.class) && object instanceof final String value) {
+                final Integer maxValue = Integer.MAX_VALUE;
+                return (T) ("max-integer".equals(value) ? maxValue : Integer.valueOf(value));
+            } else if (clazz.equals(String.class) // All other objects available to String
+                    && (object instanceof Period || object instanceof Duration || object instanceof TimeRange
+                            || object instanceof ByteSize || object instanceof Integer || object instanceof Long
+                            || object instanceof Double)) {
+                return (T) object.toString();
+            } else {
+                throw new ClassCastException("Cannot convert " + clazz.getName() + " to " + objectClassName);
+            }
+        }
+    }
+
     /**
      * Wrap words.
      *
@@ -427,7 +479,7 @@ public class ECtransOption<T> {
                     currentLine.append(" ");
                 }
             } else {
-                lines.append(currentLine.toString() + "\\n");
+                lines.append(currentLine.toString() + "\n");
                 currentLine.setLength(0);
             }
             currentLine.append(word);
