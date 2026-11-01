@@ -325,6 +325,18 @@
     </div>
     </auth:link>
 
+    <auth:link basePathKey="admin.basepath" href="/logincontent">
+    <div class="col">
+    <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
+        <i class="bi bi-chat-quote text-secondary flex-shrink-0" style="font-size:1.6rem;"></i>
+        <div>
+            <span class="tool-title">Login Page Content</span>
+            <div class="text-muted small">Manage public phrases and documentation links for both login pages.</div>
+        </div>
+    </div>
+    </div>
+    </auth:link>
+
     <auth:link basePathKey="admin.basepath" href="/systemmessages">
     <div class="col">
     <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">

@@ -1789,6 +1789,7 @@ DROP TABLE IF EXISTS `SYSTEM_MESSAGE`;
 CREATE TABLE `SYSTEM_MESSAGE` (
   `SYM_ID` bigint(20) NOT NULL AUTO_INCREMENT,
   `SYM_MESSAGE` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `SYM_MARKDOWN` tinyint(1) NOT NULL DEFAULT 0,
   `SYM_LEVEL` varchar(16) NOT NULL DEFAULT 'warning',
   `SYM_START_TIME` decimal(20,0) NOT NULL,
   `SYM_END_TIME` decimal(20,0) NOT NULL,
@@ -1876,6 +1877,30 @@ CREATE TABLE `SYS_CONFIG` (
   PRIMARY KEY (`SCF_GROUP`,`SCF_PARAM_NAME`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Default public login content (editable from Administration -> Login Page Content).
+-- Article paths resolve under https://ecmwf.github.io/open-ecpds/.
+--
+
+INSERT INTO `SYS_CONFIG` (`SCF_GROUP`, `SCF_PARAM_NAME`, `SCF_PARAM_VALUE`, `SCF_UPDATED_AT`) VALUES
+('LoginPageContent', 'configuration', '{
+  "enabled": true,
+  "messages": [
+    {"text":"Your data. Your protocol. Your choice.","article":"concepts/protocols/","label":"Explore supported protocols","audience":"both","enabled":true},
+    {"text":"Built at ECMWF. Built for data across domains.","article":"why-openecpds/","label":"Why OpenECPDS?","audience":"both","enabled":true},
+    {"text":"Acquire, distribute and share from one platform.","article":"use-cases/acquisition/","label":"Discover automated acquisition","audience":"both","enabled":true},
+    {"text":"Many protocols. One welcoming Data Portal.","article":"use-cases/data-portal/","label":"Explore self-service data access","audience":"both","enabled":true},
+    {"text":"Open source. No proprietary platform lock-in.","article":"concepts/plugin-infrastructure/","label":"Explore extensions and integrations","audience":"both","enabled":true},
+    {"text":"Connect on-premises systems and cloud storage.","article":"transfer-modules/","label":"Find your transfer module","audience":"both","enabled":true},
+    {"text":"Bring data closer to the people who need it.","article":"architecture/continental-data-movers/","label":"Discover distributed Data Movers","audience":"both","enabled":true},
+    {"text":"See where your data is moving.","article":"monitor-ui/monitoring/","label":"Explore monitoring and Live Earth","audience":"both","enabled":true},
+    {"text":"Turn transfer activity into actionable insight.","article":"event-logging/overview/","label":"Discover logs, traces and metrics","audience":"both","enabled":true},
+    {"text":"Publish once. Notify your data consumers.","article":"notifications/mqtt-overview/","label":"Explore MQTT notifications","audience":"both","enabled":true},
+    {"text":"Make room for new data, with retention safeguards.","article":"administration/storage-lifecycle-policies/","label":"Explore optional storage lifecycle policies","audience":"both","enabled":true},
+    {"text":"Start small. Build your own data exchange.","article":"getting-started/standalone/","label":"Try the standalone container","audience":"both","enabled":true}
+  ]
+}', NOW());
 
 --
 -- Default Product Status Messages

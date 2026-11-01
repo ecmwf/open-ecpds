@@ -292,6 +292,16 @@ public interface MasterInterface extends ProviderInterface {
     List<ecmwf.common.database.SystemMessage> getActiveSystemMessages() throws RemoteException;
 
     /**
+     * Public login phrases and documentation links; null selects the built-in defaults.
+     *
+     * @return the shared JSON configuration
+     *
+     * @throws RemoteException
+     *             if the configuration cannot be loaded
+     */
+    String getLoginPageContent() throws RemoteException;
+
+    /**
      * Return a hash of the specified incoming user (the string is in the form userid:password).
      *
      * @param incomingUser

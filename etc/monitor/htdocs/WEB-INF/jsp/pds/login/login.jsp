@@ -9,9 +9,23 @@
       request.setAttribute(org.apache.struts.Globals.ERROR_KEY, _err);
       session.removeAttribute(org.apache.struts.Globals.ERROR_KEY);
   }
+  String loginPageMessages = "";
+  try {
+      var loginPageConfig = ecmwf.ecpds.master.MasterManager.getDB()
+              .getMonitorConfigGroup(ecmwf.common.text.LoginPageContent.GROUP)
+              .get(ecmwf.common.text.LoginPageContent.KEY);
+      loginPageMessages = ecmwf.common.text.LoginPageContent.render(
+              ecmwf.common.text.LoginPageContent.parse(loginPageConfig), "monitor");
+  } catch (Exception ignored) {
+      // Optional public content must not prevent authentication.
+  }
 %>
 
-<link href="/assets/css/login.css?v=2026072401" rel="stylesheet" type="text/css"/>
+<link href="/assets/css/login.css?v=2026110101" rel="stylesheet" type="text/css"/>
+<style>
+#login-card #login-form.login-form-with-messages { padding-bottom: 0; margin-bottom: 0; }
+#login-card #login-form.login-form-with-messages + .ecpds-login-content { padding-top: .25rem; margin-top: 0; }
+</style>
 
 <c:choose>
 <c:when test="${loginAnimatedBackground}">
@@ -244,7 +258,7 @@
   <div id="login-card">
 
     <div id="login-header">
-      <div id="login-logo"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+      <div id="login-logo"><i class="bi bi-speedometer2" aria-hidden="true"></i></div>
       <h1 id="login-title"><%=System.getProperty("monitor.nickName")%></h1>
       <p id="login-subtitle">Monitoring</p>
     </div>
@@ -258,7 +272,8 @@
       </form>
     </c:if>
 
-    <form name="login-form" action="/do/login" method="post" autocomplete="off" id="login-form">
+    <form name="login-form" action="/do/login" method="post" autocomplete="off" id="login-form"
+          class="<%=loginPageMessages.isEmpty() ? "" : "login-form-with-messages"%>">
 
       <%-- Error banner inside card --%>
       <c:if test="${not empty requestScope['org.apache.struts.action.ERROR']}">
@@ -368,6 +383,8 @@
       </button>
 
     </form>
+
+    <%=loginPageMessages%>
 
     <%-- Card footer strip — shown whenever OTP or password mode is active --%>
     <c:if test="${showOtp or showPassword}">
@@ -702,7 +719,7 @@ document.getElementById('login-pass').addEventListener('input', function() {
     if (passInp) { passInp.value = ''; passInp.dispatchEvent(new Event('input')); }
     if (userInp) { userInp.value = ''; userInp.dispatchEvent(new Event('input')); }
     updateClearBtn();
-    if (passInp) passInp.focus();
+    if (userInp) userInp.focus();
   });
   updateClearBtn();
 })();
@@ -717,12 +734,14 @@ document.getElementById('login-pass').addEventListener('input', function() {
 
   function fixLoginLayout() {
     var header = document.getElementById('topheader');
+    var footer = document.getElementById('bottomfooter');
     var content = document.getElementById('contentDiv') || document.querySelector('.content');
     var wrap = document.getElementById('login-wrap');
     if (!header || !content || !wrap) return;
     var h = Math.round(header.getBoundingClientRect().height);
+    var f = footer ? Math.round(footer.getBoundingClientRect().height) : 44;
     content.style.setProperty('padding-top', h + 'px', 'important');
-    wrap.style.minHeight = 'calc(100svh - ' + h + 'px - 44px)';
+    wrap.style.minHeight = 'calc(100svh - ' + h + 'px - ' + f + 'px)';
   }
   fixLoginLayout();
   window.addEventListener('resize', fixLoginLayout);

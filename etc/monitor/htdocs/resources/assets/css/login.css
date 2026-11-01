@@ -30,13 +30,14 @@ body:has(#login-wrap) .content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1.25rem 1rem calc(1.25rem + 44px);
+    padding: 1.25rem 1rem;
     box-sizing: border-box;
     z-index: 10;
 }
 
 /* Card */
 #login-card {
+    font-family: var(--bs-font-sans-serif);
     background: #ffffff;
     border-radius: 16px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
@@ -57,6 +58,10 @@ body:has(#login-wrap) .content {
 }
 
 #login-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 1em;
     font-size: 2rem;
     line-height: 1;
     margin-bottom: 0.4rem;
@@ -348,7 +353,7 @@ body:has(#login-wrap) .content {
 }
 
 /* Toggle link (bottom of card, OTP mode only) */
-.numpad-switch-btn {
+#otp-mode-footer .numpad-switch-btn {
     background: none;
     border: none;
     color: #adb5bd;
@@ -361,14 +366,14 @@ body:has(#login-wrap) .content {
     justify-content: center;
     flex-shrink: 0;
 }
-.numpad-switch-btn svg {
+#otp-mode-footer .numpad-switch-btn svg {
     display: block;
 }
-.numpad-switch-btn:hover {
+#otp-mode-footer .numpad-switch-btn:not(:disabled):hover {
     color: #0d6efd;
     background: rgba(13,110,253,0.08);
 }
-.numpad-switch-btn:disabled {
+#otp-mode-footer .numpad-switch-btn:disabled {
     opacity: 0.35;
     cursor: not-allowed;
 }
@@ -554,10 +559,10 @@ body:has(#login-wrap) .content {
 [data-bs-theme=dark] .numpad-go.numpad-go-ready:hover {
     background: #1d6cf0;
 }
-[data-bs-theme=dark] .numpad-switch-btn {
-    color: #4a6272;
+[data-bs-theme=dark] #otp-mode-footer .numpad-switch-btn {
+    color: #6a8aaa;
 }
-[data-bs-theme=dark] .numpad-switch-btn:hover {
+[data-bs-theme=dark] #otp-mode-footer .numpad-switch-btn:not(:disabled):hover {
     color: #6ea8fe;
     background: rgba(110,168,254,0.1);
 }

@@ -1306,6 +1306,16 @@ public final class MasterServer extends ECaccessProvider
         return getECpdsBase().getActiveSystemMessageList();
     }
 
+    @Override
+    public String getLoginPageContent() throws RemoteException {
+        try {
+            return getECpdsBase().getSysConfigValue(ecmwf.common.text.LoginPageContent.GROUP,
+                    ecmwf.common.text.LoginPageContent.KEY);
+        } catch (final Exception e) {
+            throw new RemoteException("Unable to load login content", e);
+        }
+    }
+
     /**
      * Return a hash of the incoming user in the form user:password.
      *

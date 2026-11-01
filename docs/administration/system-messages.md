@@ -14,12 +14,25 @@ Each message has:
 
 | Field | Purpose |
 |---|---|
-| **Message** | The banner text, shown as-is (plain text, line breaks preserved). Focus this on the *reason* for the notice (e.g. "Service unavailable due to a software upgrade") — the Start/End window is shown automatically alongside it, so there is no need to also repeat the schedule in the message itself. |
+| **Message** | The banner text, up to 2,000 characters. Plain text preserves line breaks. Focus this on the *reason* for the notice — the Start/End window is shown automatically alongside it. |
+| **Format** | Plain text (default) or restricted Markdown: emphasis, lists and safe HTTP/HTTPS/email links. No headings, tables, images or embedded HTML. |
 | **Level** | `info` (blue), `warning` (orange, default) or `danger` (red) — controls the banner's colour and icon. |
 | **Start** / **End** | The announced outage/maintenance window. The Start is when the service may become unavailable, so the message is shown **as soon as it is created** — warning users in advance — and remains visible until the End, after which it **disappears automatically**; there is nothing to clean up for it to stop being displayed. |
 
 The **Create**/**Edit** form lets you pick Start and End directly, or use the **Quick duration** shortcuts (`+1h`, `+6h`, `+1d`, `+1 week`) to set the End relative to the Start.
 Form times use your browser's local timezone; the list displays Start and End in UTC.
+
+The dialog's live **Preview** uses the same safe text renderer as the Monitor and
+Data Portal. It follows the active theme and shows severity and the UTC service
+window. Preview never saves or publishes a notice. Raw HTML is displayed as text;
+unsupported formatting is flattened and unsafe links are removed.
+
+!!! warning "Database upgrade"
+    Before deploying the updated Master, Monitor and Movers, apply
+    [`system-message-markdown.sql`](https://github.com/ecmwf/open-ecpds/blob/main/docker/ecpds/database/system-message-markdown.sql)
+    to the existing MariaDB database. It adds `SYSTEM_MESSAGE.SYM_MARKDOWN` and
+    leaves existing notices in plain-text mode. Back up the database first.
+    New database installations already include this column.
 
 A **Status** column in the list shows, for each message, whether it is currently:
 

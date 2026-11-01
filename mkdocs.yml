@@ -136,6 +136,7 @@ nav:
       - Product Descriptions: administration/product-descriptions.md
       - Product Status Messages: administration/product-status-messages.md
       - System Messages: administration/system-messages.md
+      - Login Page Content: administration/login-page-content.md
       - Destination Metadata: administration/destination-metadata.md
   - Use Cases:
       - ECPDS Command-line Tool: use-cases/ecpds-cli.md

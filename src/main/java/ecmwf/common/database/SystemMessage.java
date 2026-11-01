@@ -56,8 +56,10 @@ public class SystemMessage extends DataBaseObject {
     /** Auto-increment primary key. */
     protected Long SYM_ID;
 
-    /** The message text, shown as-is (plain text) in the banner. */
+    /** The message source, plain text unless Markdown is explicitly enabled. */
     protected String SYM_MESSAGE;
+
+    protected Boolean SYM_MARKDOWN = false;
 
     /** The severity level: "info", "warning" or "danger". */
     protected String SYM_LEVEL;
@@ -92,6 +94,22 @@ public class SystemMessage extends DataBaseObject {
 
     public void setMessage(final String message) {
         SYM_MESSAGE = message;
+    }
+
+    public boolean isMarkdown() {
+        return Boolean.TRUE.equals(SYM_MARKDOWN);
+    }
+
+    public void setMarkdown(final boolean markdown) {
+        SYM_MARKDOWN = markdown;
+    }
+
+    public String getRenderedMessage() {
+        if (isMarkdown()) {
+            return ecmwf.common.text.MarkdownUtil.toNoticeHtml(SYM_MESSAGE);
+        }
+        return "<div style=\"white-space:pre-wrap;\">"
+                + org.jsoup.nodes.Entities.escape(SYM_MESSAGE == null ? "" : SYM_MESSAGE) + "</div>";
     }
 
     public String getLevel() {

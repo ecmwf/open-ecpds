@@ -23,6 +23,8 @@
         <tbody>
           <tr><td>Message</td><td>Plain text, with line breaks preserved. Explain the reason and service impact;
           the announced window is displayed alongside the text, so repeating it is unnecessary.</td></tr>
+          <tr><td>Format</td><td>Plain text (default) or restricted Markdown: emphasis, lists and safe
+          HTTP/HTTPS/email links. No headings, tables, images or embedded HTML.</td></tr>
           <tr><td>Level</td><td><strong>Info</strong> (blue), <strong>Warning</strong> (orange, default)
           or <strong>Danger</strong> (red). Controls the banner's colour and icon.</td></tr>
           <tr><td>Start / End</td><td>The announced service-impact window, not a delayed publication time.
@@ -33,6 +35,8 @@
       </table>
     </div>
     <p class="small text-muted">The form uses your browser's local timezone. The list shows Start and End in UTC.</p>
+    <p>The live <strong>Preview</strong> follows the active theme and shows the selected severity and UTC
+    service window. It uses the same safe rendering as the Monitor and Portal and never saves or publishes a notice.</p>
     <h6 class="fw-semibold">Status and visibility</h6>
     <ul class="ps-3">
       <li><strong>Upcoming</strong>: Start is in the future; the banner is already visible as an advance warning.</li>

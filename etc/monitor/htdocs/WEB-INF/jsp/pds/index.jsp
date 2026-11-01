@@ -207,6 +207,7 @@
                 <auth:link basePathKey="admin.basepath" href="/networkweather" wrappingTags="li"><i class="bi bi-cloud-sun"></i>Network Weather</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/productdescriptions" wrappingTags="li"><i class="bi bi-card-list"></i>Product Descriptions</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/systemmessages" wrappingTags="li"><i class="bi bi-megaphone-fill"></i>System Messages</auth:link>
+                <auth:link basePathKey="admin.basepath" href="/logincontent" wrappingTags="li"><i class="bi bi-chat-quote"></i>Login Page Content</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/purge" wrappingTags="li"><i class="bi bi-trash3-fill"></i> Purge All Data</auth:link>
             </ul>
         </div>

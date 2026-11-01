@@ -1376,6 +1376,11 @@
 		<put name="content" value="/WEB-INF/jsp/pds/admin/systemmessages/index.jsp" />
 	</definition>
 
+	<definition name=".pds.admin.logincontent" extends=".pds.admin">
+		<put name="title" value="Login Page Content" />
+		<put name="content" value="/WEB-INF/jsp/pds/admin/logincontent.jsp" />
+	</definition>
+
 	<definition name=".pds.admin.schedulertraffic" extends=".pds.admin">
 		<put name="title" value="Scheduler Traffic" />
 		<put name="content" value="/WEB-INF/jsp/pds/admin/schedulertraffic.jsp" />

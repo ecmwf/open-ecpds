@@ -88,7 +88,7 @@ Banners appear when saved and disappear automatically at their end time.</span>
       pageContext.setAttribute("smStartFmt", _sdf.format(new java.util.Date(_m.getStartTime())));
       pageContext.setAttribute("smEndFmt", _sdf.format(new java.util.Date(_m.getEndTime())));
   %>
-  <tr data-sm-id="${m.id}" data-sm-message="<c:out value="${m.message}"/>" data-sm-level="${m.level}"
+  <tr data-sm-id="${m.id}" data-sm-message="<c:out value="${m.message}"/>" data-sm-markdown="${m.markdown}" data-sm-level="${m.level}"
       data-sm-start="${m.startTime}" data-sm-end="${m.endTime}">
       <td><span class="badge badge-status-${smStatus == 'In progress' ? 'active' : smStatus == 'Upcoming' ? 'scheduled' : 'expired'}"><c:out value="${smStatus}"/></span></td>
       <td><span class="badge badge-level-${m.level}"><c:out value="${m.level}"/></span></td>
@@ -125,7 +125,15 @@ Banners appear when saved and disappear automatically at their end time.</span>
                 <div class="mb-3">
                     <label for="smMessage" class="form-label fw-semibold">Message</label>
                     <textarea class="form-control" id="smMessage" rows="3"
+                              maxlength="2000"
                               placeholder="e.g. The service will be unavailable for maintenance from 20:00 to 22:00 UTC."></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="smMarkdown">Format</label>
+                    <select class="form-select" id="smMarkdown">
+                        <option value="false">Plain text</option><option value="true">Restricted Markdown</option>
+                    </select>
+                    <div class="form-text">Emphasis, lists and safe web/email links. No headings, tables, images or embedded HTML.</div>
                 </div>
                 <div class="mb-3">
                     <label for="smLevel" class="form-label fw-semibold">Level</label>
@@ -154,6 +162,16 @@ Banners appear when saved and disappear automatically at their end time.</span>
                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="smQuickDuration(24)">+1d</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="smQuickDuration(24*7)">+1 week</button>
                 </div>
+                <div class="mt-3">
+                    <div class="small fw-semibold mb-2">Preview <span class="fw-normal text-muted">(not saved)</span></div>
+                    <div id="smPreview" class="alert alert-warning d-flex align-items-start gap-3 mb-0">
+                        <i id="smPreviewIcon" class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1" style="font-size:1.2rem;"></i>
+                        <div class="w-100" style="min-width:0;overflow-wrap:anywhere;">
+                            <div id="smPreviewMessage"></div>
+                            <div class="small mt-1" style="opacity:0.85;"><i class="bi bi-clock-history"></i> <span id="smPreviewTimeframe"></span></div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -169,9 +187,44 @@ Banners appear when saved and disappear automatically at their end time.</span>
 var _smModal = null;
 var _smEditingId = null; // null = adding a new message; otherwise the id of the message being edited
 var _smDeleteId = null;
+var _smPreviewTimer = null, _smPreviewVersion = 0;
+
+function smUpdatePreview() {
+  clearTimeout(_smPreviewTimer);
+  var version=++_smPreviewVersion;
+  var level=document.getElementById('smLevel').value;
+  var validLevel=['info','warning','danger'].indexOf(level)>=0?level:'warning';
+  document.getElementById('smPreview').className='alert alert-'+validLevel+' d-flex align-items-start gap-3 mb-0';
+  document.getElementById('smPreviewIcon').className='bi '+(validLevel==='danger'?'bi-exclamation-octagon-fill':validLevel==='info'?'bi-info-circle-fill':'bi-exclamation-triangle-fill')+' flex-shrink-0 mt-1';
+  var content=document.getElementById('smPreviewMessage');
+  content.textContent='Updating preview...';
+  document.getElementById('smPreviewTimeframe').textContent='';
+  _smPreviewTimer=setTimeout(function(){
+    var start=new Date(document.getElementById('smStart').value).getTime();
+    var end=new Date(document.getElementById('smEnd').value).getTime();
+    fetch('<bean:message key="admin.basepath"/>/systemmessages/preview',{
+      method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
+      body:JSON.stringify({message:document.getElementById('smMessage').value,
+        markdown:document.getElementById('smMarkdown').value==='true',
+        startTime:Number.isFinite(start)?start:null,endTime:Number.isFinite(end)?end:null})
+    }).then(function(response){if(!response.ok)throw new Error('Preview unavailable');return response.json();})
+      .then(function(data){
+        if(version!==_smPreviewVersion)return;
+        if(!data.success)throw new Error(data.error||'Preview unavailable');
+        content.innerHTML=data.html;
+        document.getElementById('smPreviewTimeframe').textContent=data.timeframe;
+      }).catch(function(){
+        if(version!==_smPreviewVersion)return;
+        content.textContent='Preview unavailable. Your message has not been saved.';
+      });
+  },250);
+}
 
 document.addEventListener('DOMContentLoaded', function() {
   _smModal = new bootstrap.Modal(document.getElementById('smModal'));
+  ['smMessage','smMarkdown','smLevel','smStart','smEnd'].forEach(function(id){
+    document.getElementById(id).addEventListener('input',smUpdatePreview);
+  });
 
   var _len = (function() { try { var v = parseInt(localStorage.getItem('smPageLen'), 10); return [10,25,50,100].indexOf(v) >= 0 ? v : 25; } catch(e) { return 25; } })();
   $('#smPageLen').val(_len);
@@ -215,18 +268,21 @@ function smQuickDuration(hours) {
   var start = startEl.value ? new Date(startEl.value) : new Date();
   if (!startEl.value) startEl.value = _smToLocalInputValue(start.getTime());
   document.getElementById('smEnd').value = _smToLocalInputValue(start.getTime() + hours * 3600000);
+  smUpdatePreview();
 }
 
 function smOpenAdd() {
   _smEditingId = null;
   document.getElementById('smModalTitle').textContent = 'Add System Message';
   document.getElementById('smMessage').value = '';
+  document.getElementById('smMarkdown').value = 'false';
   document.getElementById('smLevel').value = 'warning';
   var now = new Date();
   document.getElementById('smStart').value = _smToLocalInputValue(now.getTime());
   document.getElementById('smEnd').value = _smToLocalInputValue(now.getTime() + 3600000);
   document.getElementById('smSaveError').classList.add('d-none');
   _smModal.show();
+  smUpdatePreview();
 }
 
 function smOpenEdit(id) {
@@ -235,11 +291,13 @@ function smOpenEdit(id) {
   _smEditingId = id;
   document.getElementById('smModalTitle').textContent = 'Edit System Message';
   document.getElementById('smMessage').value = row.dataset.smMessage || '';
+  document.getElementById('smMarkdown').value = row.dataset.smMarkdown === 'true' ? 'true' : 'false';
   document.getElementById('smLevel').value = row.dataset.smLevel || 'warning';
   document.getElementById('smStart').value = _smToLocalInputValue(parseInt(row.dataset.smStart, 10));
   document.getElementById('smEnd').value = _smToLocalInputValue(parseInt(row.dataset.smEnd, 10));
   document.getElementById('smSaveError').classList.add('d-none');
   _smModal.show();
+  smUpdatePreview();
 }
 
 function smSave() {
@@ -270,7 +328,8 @@ function smSave() {
     return;
   }
 
-  var payload = { message: message, level: level, startTime: startTime, endTime: endTime };
+  var payload = { message: message, markdown: document.getElementById('smMarkdown').value==='true',
+    level: level, startTime: startTime, endTime: endTime };
   if (_smEditingId != null) payload.id = _smEditingId;
 
   btn.disabled = true;

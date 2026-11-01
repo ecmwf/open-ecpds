@@ -1628,8 +1628,8 @@ public final class RESTServer {
                     final var icon = "danger".equals(level) ? "bi-exclamation-octagon-fill"
                             : "warning".equals(level) ? "bi-exclamation-triangle-fill" : "bi-info-circle-fill";
                     msb.append("<div class=\"").append(cssClass).append(" mb-2\"><i class=\"bi ").append(icon)
-                            .append("\"></i><div><div style=\"white-space:pre-wrap;\">")
-                            .append(escapeHtml(m.getMessage()))
+                            .append("\"></i><div style=\"min-width:0;overflow-wrap:anywhere;\"><div>")
+                            .append(m.getRenderedMessage())
                             .append("</div><div style=\"font-size:0.85em;opacity:0.85;\">")
                             .append("<i class=\"bi bi-clock-history\"></i> ")
                             .append(escapeHtml(m.getFormattedTimeframe())).append("</div></div></div>");
@@ -2297,6 +2297,15 @@ public final class RESTServer {
             Format.replaceAll(sb, "${prefillUser}", prefillUser != null ? prefillUser : "");
             Format.replaceAll(sb, "${registerUser}", prefillUser != null ? prefillUser : "");
             Format.replaceAll(sb, "${registerLinkHidden}", canRegister ? "" : "d-none");
+            var loginMessages = "";
+            try {
+                loginMessages = ecmwf.common.text.LoginPageContent.render(
+                        ecmwf.common.text.LoginPageContent.parse(mover.getMasterInterface().getLoginPageContent()),
+                        "portal");
+            } catch (final Exception e) {
+                _log.warn("Unable to load public login content", e);
+            }
+            Format.replaceAll(sb, "${loginPageContent}", loginMessages);
             return Response.status(status).entity(sb.toString()).type(MediaType.TEXT_HTML).build();
         } catch (final Exception e) {
             _log.warn("buildLoginResponse", e);

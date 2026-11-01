@@ -60,6 +60,13 @@ public final class MarkdownUtil {
     private static final HtmlRenderer MESSAGE_RENDERER = HtmlRenderer.builder().extensions(EXTENSIONS)
             .softbreak("<br />\n").build();
 
+    private static final Parser NOTICE_PARSER = Parser.builder().build();
+    private static final HtmlRenderer NOTICE_RENDERER = HtmlRenderer.builder().escapeHtml(true).softbreak("<br />\n")
+            .build();
+    private static final Safelist NOTICE_SAFELIST = new Safelist()
+            .addTags("p", "strong", "em", "ul", "ol", "li", "br", "a").addAttributes("a", "href")
+            .addProtocols("a", "href", "http", "https", "mailto");
+
     /**
      * The tags/attributes allowed through to the final output. Kept deliberately small and explicit rather than using
      * one of jsoup's built-in lists (e.g. {@code Safelist.basic()}, which excludes tables) - every tag here is one the
@@ -99,6 +106,34 @@ public final class MarkdownUtil {
      */
     public static String toMessageHtml(final String markdown) {
         return toSafeHtml(markdown, true);
+    }
+
+    public static String toNoticeHtml(final String markdown) {
+        return toNoticeHtml(markdown, false);
+    }
+
+    public static String toLoginNoticeHtml(final String markdown) {
+        return toNoticeHtml(markdown, true);
+    }
+
+    private static String toNoticeHtml(final String markdown, final boolean documentationOnly) {
+        if (markdown == null || markdown.isBlank()) {
+            return "";
+        }
+        final var cleaned = Jsoup.clean(NOTICE_RENDERER.render(NOTICE_PARSER.parse(markdown)), "", NOTICE_SAFELIST,
+                new org.jsoup.nodes.Document.OutputSettings().prettyPrint(false));
+        final var fragment = Jsoup.parseBodyFragment(cleaned);
+        fragment.outputSettings().prettyPrint(false);
+        if (documentationOnly) {
+            for (final var link : fragment.body().select("a[href]")) {
+                if (!link.attr("href").startsWith(LoginPageContent.DOCUMENTATION)) {
+                    link.removeAttr("href");
+                }
+            }
+        }
+        fragment.body().select("a[href]").attr("target", "_blank").attr("rel", "noopener noreferrer");
+        fragment.body().select("p,ul,ol").attr("style", "margin:0 0 .25rem");
+        return fragment.body().html();
     }
 
     /**

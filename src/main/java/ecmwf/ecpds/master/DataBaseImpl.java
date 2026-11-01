@@ -5030,7 +5030,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
 
     /** The SYS_CONFIG groups the Monitor UI may read and write through the generic monitor configuration methods. */
     private static final Set<String> MONITOR_CONFIG_GROUPS = Set.of("ProductModelName", "ProductModel",
-            "DelayNoticeSettings", "MonitoringColors");
+            "DelayNoticeSettings", "MonitoringColors", ecmwf.common.text.LoginPageContent.GROUP);
 
     /**
      * Checks that the group is one of the accepted Monitor UI configuration groups.
@@ -5167,6 +5167,16 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         checkMonitorConfigGroup(group);
         if (name == null || name.isBlank() || name.length() > 128) {
             throw new DataBaseException("Invalid parameter name: " + name);
+        }
+        if (ecmwf.common.text.LoginPageContent.GROUP.equals(group)) {
+            if (!ecmwf.common.text.LoginPageContent.KEY.equals(name)) {
+                throw new DataBaseException("Invalid login content parameter");
+            }
+            try {
+                ecmwf.common.text.LoginPageContent.parse(value);
+            } catch (final IllegalArgumentException e) {
+                throw new DataBaseException(e.getMessage(), e);
+            }
         }
         ecpds.setSysConfigValue(group, name, value);
         monitor.done();

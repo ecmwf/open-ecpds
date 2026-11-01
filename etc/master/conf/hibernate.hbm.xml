@@ -140,6 +140,9 @@
 		<property name="SYM_MESSAGE" type="java.lang.String">
 			<column name="SYM_MESSAGE" />
 		</property>
+		<property name="SYM_MARKDOWN" type="java.lang.Boolean">
+			<column name="SYM_MARKDOWN" />
+		</property>
 		<property name="SYM_LEVEL" type="java.lang.String">
 			<column name="SYM_LEVEL" />
 		</property>

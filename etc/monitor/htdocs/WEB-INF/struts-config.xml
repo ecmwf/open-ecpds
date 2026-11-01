@@ -1417,6 +1417,10 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.SystemMessagesAction">
 			<forward name="success" path=".pds.admin.systemmessages" />
 		</action>
+		<action path="/admin/logincontent"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.LoginPageContentAction">
+			<forward name="success" path=".pds.admin.logincontent" />
+		</action>
 		<action path="/admin/systemmessages/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.SystemMessagesAction">
 			<forward name="success" path=".pds.admin.systemmessages" />

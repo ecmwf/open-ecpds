@@ -84,6 +84,9 @@ public class SystemMessagesAction extends PDSAction {
         final var params = ECMWFActionForm.getPathParameters(mapping, request);
         final var action = params.isEmpty() ? "" : params.get(0).toString();
 
+        if ("preview".equals(action)) {
+            return handlePreview(request, response);
+        }
         if ("save".equals(action)) {
             return handleSave(request, response, user);
         }
@@ -153,6 +156,7 @@ public class SystemMessagesAction extends PDSAction {
                 entity.setId(id);
             }
             entity.setMessage(message);
+            entity.setMarkdown(Boolean.TRUE.equals(body.get("markdown")));
             entity.setLevel(level);
             entity.setStartTime(startTime);
             entity.setEndTime(endTime);
@@ -163,6 +167,40 @@ public class SystemMessagesAction extends PDSAction {
             response.getWriter().write("{\"success\":true}");
         } catch (final Exception e) {
             _log.warn("SystemMessagesAction.handleSave", e);
+            writeError(response, e.getMessage());
+        }
+        return null;
+    }
+
+    ActionForward handlePreview(final HttpServletRequest request, final HttpServletResponse response) {
+        response.setContentType("application/json;charset=UTF-8");
+        response.setHeader("Cache-Control", "no-store");
+        try {
+            if (!"POST".equalsIgnoreCase(request.getMethod())) {
+                throw new IllegalArgumentException("Preview requires POST");
+            }
+            final var body = _mapper.readValue(request.getInputStream(), Map.class);
+            final var message = body.get("message") != null ? String.valueOf(body.get("message")) : "";
+            if (message.length() > MAX_MESSAGE_LENGTH) {
+                throw new IllegalArgumentException("Message text too long (max " + MAX_MESSAGE_LENGTH + ")");
+            }
+            final var entity = new SystemMessage();
+            entity.setMessage(message);
+            entity.setMarkdown(Boolean.TRUE.equals(body.get("markdown")));
+            final var start = body.get("startTime");
+            final var end = body.get("endTime");
+            final var result = _mapper.createObjectNode();
+            result.put("success", true);
+            result.put("html", entity.getRenderedMessage());
+            if (start != null && end != null) {
+                entity.setStartTime(toLong(start, "Start time"));
+                entity.setEndTime(toLong(end, "End time"));
+                result.put("timeframe", entity.getFormattedTimeframe());
+            } else {
+                result.put("timeframe", "Choose Start and End to preview the service window.");
+            }
+            response.getWriter().write(_mapper.writeValueAsString(result));
+        } catch (final Exception e) {
             writeError(response, e.getMessage());
         }
         return null;
@@ -247,8 +285,8 @@ public class SystemMessagesAction extends PDSAction {
      */
     private static void writeError(final HttpServletResponse response, final String msg) {
         try {
-            final var safe = (msg != null ? msg : "error").replace("\"", "'");
-            response.getWriter().write("{\"success\":false,\"error\":\"" + safe + "\"}");
+            response.getWriter()
+                    .write(_mapper.writeValueAsString(Map.of("success", false, "error", msg != null ? msg : "error")));
         } catch (final Exception ignored) {
         }
     }

@@ -13,6 +13,7 @@
     /* ── Layout ──────────────────────────────────────────── */
     body { padding-top: 68px; padding-bottom: 34px; min-height: 100vh; overflow-x: hidden; }
     .topheader {
+      font-family: Arial, sans-serif;
       position: fixed; z-index: 1030; top: 0; left: 0; width: 100%;
       box-shadow: 0 2px 8px rgba(0,0,0,.30);
     }
@@ -30,6 +31,7 @@
       flex: 0 1 auto; min-width: 0; max-width: 40%;
     }
     .location_simple {
+      font-family: Arial, sans-serif;
       padding: 4px 14px; background: rgba(255,255,255,0.12);
       border-top: 1px solid rgba(255,255,255,0.18);
       border-bottom: 1px solid rgba(255,255,255,0.15);
@@ -63,12 +65,13 @@
       min-height: calc(100svh - 68px - 34px);
       display: flex; flex-direction: column;
       align-items: center;
-      padding: 1.25rem 1rem calc(1.25rem + 34px);
+      padding: 1.25rem 1rem;
       box-sizing: border-box;
     }
 
     /* ── Login card ──────────────────────────────────────── */
     #login-card {
+      font-family: var(--bs-font-sans-serif);
       background: #ffffff;
       border-radius: 16px;
       box-shadow: 0 20px 60px rgba(0,0,0,.35);
@@ -82,7 +85,7 @@
       color: #fff; text-align: center;
       padding: 1.2rem 2rem 1rem;
     }
-    #login-logo { font-size: 2rem; line-height: 1; margin-bottom: 0.4rem; opacity: 0.92; }
+    #login-logo { display: flex; align-items: center; justify-content: center; height: 1em; font-size: 2rem; line-height: 1; margin-bottom: 0.4rem; opacity: 0.92; }
     #login-title { font-size: 1.25rem; font-weight: 700; margin: 0 0 0.2rem; letter-spacing: 0.01em; }
     #login-subtitle { font-size: 0.75rem; margin: 0; opacity: 0.8; font-weight: 400; }
 
@@ -172,11 +175,11 @@
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .login-icon-btn svg { display: block; }
-    .login-icon-btn:hover { color: #0d6efd; background: rgba(13,110,253,.08); }
+    .login-icon-btn:not(:disabled):hover { color: #0d6efd; background: rgba(13,110,253,.08); }
     .login-icon-btn:disabled { opacity: .35; cursor: not-allowed; }
     [data-bs-theme=dark] #login-footer { background: #141d2b; border-top-color: #253348; }
     [data-bs-theme=dark] .login-icon-btn { color: #6a8aaa; }
-    [data-bs-theme=dark] .login-icon-btn:hover { color: #6ea8fe; background: rgba(110,168,254,.1); }
+    [data-bs-theme=dark] .login-icon-btn:not(:disabled):hover { color: #6ea8fe; background: rgba(110,168,254,.1); }
 
     /* ── Dark mode ───────────────────────────────────────── */
     [data-bs-theme=dark] #login-card {
@@ -319,6 +322,8 @@
         </button>
 
       </form>
+
+      ${loginPageContent}
 
       <!-- Clear button footer strip -->
       <div id="login-footer">
@@ -487,7 +492,6 @@
       document.body.style.paddingTop = hh + 'px';
       document.body.style.paddingBottom = fh + 'px';
       wrap.style.minHeight = 'calc(100svh - ' + hh + 'px - ' + fh + 'px)';
-      wrap.style.paddingBottom = 'calc(1.25rem + ' + fh + 'px)';
     }
     fixLayout();
     window.addEventListener('resize', fixLayout);
