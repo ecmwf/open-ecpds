@@ -1,6 +1,6 @@
 site_name: OpenECPDS Documentation
 site_description: >-
-  Documentation for OpenECPDS — a multi-purpose data store for the acquisition,
+  Documentation for OpenECPDS — a domain-agnostic data store for the acquisition,
   dissemination, and portal-based exchange of data across diverse environments and
   protocols.
 site_url: https://ecmwf.github.io/open-ecpds/

@@ -6,7 +6,13 @@
 
 ---
 
-OpenECPDS is a mature, production-grade data management platform originally developed at [ECMWF](https://www.ecmwf.int/) and now open-sourced to encourage collaboration. It delivers three strategic services from a single system:
+OpenECPDS is a mature, production-grade data management platform originally developed at [ECMWF](https://www.ecmwf.int/) and now open-sourced to encourage collaboration.
+
+**Built for demanding meteorological operations, designed for any data domain.** OpenECPDS is **domain-agnostic**, not a meteorology-specific platform: its core transfers, stores and distributes files without requiring a particular scientific format or subject matter. Research, industry, public services and enterprise teams can use it to automate provider ingestion, distribute datasets to partners, and offer self-service data access across on-premises and cloud environments.
+
+See **[Why OpenECPDS?](https://ecmwf.github.io/open-ecpds/why-openecpds/)** for its benefits, potential use cases and comparison with Managed File Transfer platforms.
+
+It delivers three strategic services from a single system:
 
 | Service | Description |
 |---|---|
@@ -223,17 +229,20 @@ Full documentation is published at **[ecmwf.github.io/open-ecpds](https://ecmwf.
 
 | Section | Description |
 |---|---|
+| [Home](https://ecmwf.github.io/open-ecpds/) | Platform overview, core capabilities and quick links |
+| [Why OpenECPDS](https://ecmwf.github.io/open-ecpds/why-openecpds/) | Benefits, domain-agnostic use cases and comparison with Managed File Transfer platforms |
 | [Getting Started](https://ecmwf.github.io/open-ecpds/getting-started/requirements/) | Requirements, standalone container, installation, first run, IDE setup, ECPDS CLI |
-| [Architecture](https://ecmwf.github.io/open-ecpds/architecture/overview/) | Overview, centralised vs. federated, data ownership & catalogue, components, failover, data transfer lifecycle, continental data movers, data mover allocation & load balancing, Java dependencies |
+| [Architecture](https://ecmwf.github.io/open-ecpds/architecture/overview/) | Overview, centralised vs. federated, data ownership & catalogue, components, failover, data transfer lifecycle, continental data movers, data mover allocation & load balancing, database, Java dependencies |
 | [Deployment](https://ecmwf.github.io/open-ecpds/deployment/kubernetes/) | Kubernetes, physical infrastructure, container registry, releasing |
 | [Concepts](https://ecmwf.github.io/open-ecpds/concepts/entities/) | Entities, host types, protocols, plugin infrastructure, object storage, destination/host/web-user options, additional features |
 | [Monitor UI](https://ecmwf.github.io/open-ecpds/monitor-ui/overview/) | Monitoring, destinations, hosts, transfer history, data files, transfer methods & modules, users, administration |
-| [Administration](https://ecmwf.github.io/open-ecpds/administration/certificates/) | TLS certificate management, mover control-channel security, TOTP authentication, critical action password, purge all data, product descriptions, system messages |
+| [Administration](https://ecmwf.github.io/open-ecpds/administration/certificates/) | Service configuration, TLS certificates, mover control-channel security, TOTP, OpenID Connect, ECaccess identity, critical action password, purge, storage lifecycle policies, product descriptions & status messages, system messages, destination metadata |
+| [Service Configuration](https://ecmwf.github.io/open-ecpds/configuration/master/) | Master, Monitor and Data Mover `ecmwf.properties` reference (under Administration) |
 | [Use Cases](https://ecmwf.github.io/open-ecpds/use-cases/ecpds-cli/) | CLI tool, data portal, data users, web users, data user options, acquisition, acquisition options, dissemination |
-| [Transfer Modules](https://ecmwf.github.io/open-ecpds/transfer-modules/) | FTP, FTPS, SFTP, HTTP/S, WebDAV, S3, GCS, Azure Blob, ECauth, Portal, Test |
+| [Transfer Modules](https://ecmwf.github.io/open-ecpds/transfer-modules/) | ECtrans common options, FTP, FTPS, SFTP, HTTP/S, WebDAV, S3, GCS, Azure Blob, ECauth, optional ECaccess gateways, Portal, Test |
 | [Host Directory](https://ecmwf.github.io/open-ecpds/host-directory/) | Acquisition, dissemination, replication, source, backup, proxy scripts |
-| [Notifications (MQTT)](https://ecmwf.github.io/open-ecpds/notifications/mqtt-overview/) | Real-time dissemination notifications, automated MQTT acquisition, WMO WIS2 |
-| [Monitoring](https://ecmwf.github.io/open-ecpds/monitoring/transfer-statistics/) | Transfer network statistics, per-connection TCP socket metrics |
+| [Notifications (MQTT)](https://ecmwf.github.io/open-ecpds/notifications/mqtt-overview/) | Real-time dissemination notifications, automated MQTT acquisition, optional WMO WIS2 integration, implementation details |
+| [Monitoring](https://ecmwf.github.io/open-ecpds/monitoring/transfer-statistics/) | Transfer network statistics, TCP socket metrics, JMX with Hawtio & Prometheus, delay notifications |
 | [Event Logging](https://ecmwf.github.io/open-ecpds/event-logging/overview/) | PRS, RET, UPH, INH, ERR, CPY, DEA event categories and field reference |
 | [REST API](https://ecmwf.github.io/open-ecpds/rest-api/) | REST API reference (v1) |
 | [API Reference](https://ecmwf.github.io/open-ecpds/api-reference/) | JavaDocs |

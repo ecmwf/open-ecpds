@@ -11,10 +11,17 @@ monitoring,
 and automation in one operational system designed for sustained,
 mission-critical use.
 
+**OpenECPDS is domain-agnostic: meteorology is its origin, not its boundary.**
+Its core acquisition, storage, dissemination and portal services do not require a
+particular scientific format or subject matter. The same capabilities can support
+research datasets, industrial exports, public-sector data publishing and enterprise
+partner exchange. Domain-specific integrations, such as WMO WIS2, are optional;
+they are not prerequisites for using the platform.
+
 Many platforms can transfer files securely.
 OpenECPDS is designed for teams that also need to **scale distribution**,
 **orchestrate multiple data movers**,
-**integrate with scientific and operational workflows**,
+**integrate with business, scientific and operational workflows**,
 and **operate the whole system as infrastructure** rather than as a single gateway.
 
 If you are evaluating OpenECPDS against traditional MFT products,
@@ -374,13 +381,17 @@ OpenECPDS is especially relevant for organisations whose transfer requirements a
 **scale**,
 **operational continuity**,
 **multi-protocol distribution**,
-or **scientific and public-service workflows**.
+or **automated partner and user-facing data exchange**.
 That includes environments where datasets are large,
 distribution is repeated,
 and the same platform must serve both automated systems and external users.
 
 Typical candidates include:
 
+- **Industrial and enterprise teams** that acquire files from providers, distribute
+  exports to partners, or connect on-premises storage with cloud services
+- **Public-data publishers** offering scheduled dataset delivery and self-service
+  downloads, regardless of the subject matter
 - **National meteorological services** that disseminate operational products to many partners
   and also ingest data from upstream providers
 - **Scientific data centres** that need a blend of scheduled delivery,

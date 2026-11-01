@@ -23,6 +23,14 @@ OpenECPDS enhances data services by integrating innovative technologies to strea
 the acquisition, dissemination, and storage of data across diverse environments and
 protocols.
 
+**OpenECPDS is domain-agnostic, not specific to meteorology.** Its origins at ECMWF
+reflect demanding operational requirements, not restrictions on the data it can
+handle. The core moves and stores files without requiring a particular scientific
+format or subject matter. Research, industry, public services and enterprise teams
+can use the same acquisition, dissemination and portal services to exchange their
+own datasets, automate partner delivery and bridge on-premises and cloud storage.
+Domain-specific integrations, such as WMO WIS2, are optional.
+
 ## Why OpenECPDS
 
 <div class="grid cards" markdown>
