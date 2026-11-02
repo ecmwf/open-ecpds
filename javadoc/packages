@@ -8,6 +8,7 @@ ecmwf.ecpds.monitor
 ecmwf.ecpds.extension
 ecmwf.ecpds.extension.oidc
 ecmwf.ecpds.master
+ecmwf.ecpds.master.location
 ecmwf.ecpds.master.plugin.ecpds
 ecmwf.ecpds.master.plugin.ecpds.request
 ecmwf.ecpds.master.plugin.http.home.transfer
