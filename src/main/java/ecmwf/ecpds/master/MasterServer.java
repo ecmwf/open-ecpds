@@ -478,6 +478,23 @@ public final class MasterServer extends ECaccessProvider
         return service == null ? Map.of() : service.metadata(component);
     }
 
+    private Map<String, String> physicalLocationInventory() throws DataBaseException {
+        final Map<String, String> hosts = new HashMap<>();
+        hosts.put("master", Cnf.at("Login", "hostName", getRoot()));
+        for (final var server : getECpdsBase().getTransferServerArray()) {
+            hosts.put("mover." + server.getName(), server.getHost());
+        }
+        for (final var root : getClientRoots("ECpdsMonitor")) {
+            hosts.put("monitor." + root, getClientHost("ECpdsMonitor", root));
+        }
+        for (final var node : ManagementImpl
+                .parseDatabaseNodes(Cnf.at("DataBase", "alias", System.getProperty("database.alias", "")))) {
+            hosts.put("database." + node.get("host") + ":" + (node.get("port") != null ? node.get("port") : 3306),
+                    (String) node.get("host"));
+        }
+        return hosts;
+    }
+
     private final transient ecmwf.ecpds.master.storage.StorageLifecycleScheduler storageLifecycle = new ecmwf.ecpds.master.storage.StorageLifecycleScheduler(
             this);
 
@@ -1095,7 +1112,8 @@ public final class MasterServer extends ECaccessProvider
             weatherAutomationScheduler = new WeatherAutomationScheduler();
             weatherAutomationScheduler.start();
             storageLifecycle.start();
-            physicalLocations = ecmwf.ecpds.master.location.PhysicalLocationService.configured();
+            physicalLocations = ecmwf.ecpds.master.location.PhysicalLocationService
+                    .configured(this::physicalLocationInventory);
             if (physicalLocations.enabled()) {
                 physicalLocationScheduler = new MBeanScheduler("PhysicalLocationScheduler") {
                     @Override

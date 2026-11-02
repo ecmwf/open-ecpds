@@ -72,6 +72,12 @@ public final class PhysicalLocationService implements AutoCloseable {
     private final Store store;
     private final LongSupplier clock;
     private final Map<String, State> states = new ConcurrentHashMap<>();
+
+    private record Targets(Map<String, String> systems, Map<String, Machine> machines, Map<String, State> states) {
+    }
+
+    private volatile Targets targets;
+    private PhysicalLocationDiscovery discovery;
     private final ThreadPoolExecutor workers;
     private final LongAdder polls = new LongAdder();
     private final LongAdder successes = new LongAdder();
@@ -82,6 +88,10 @@ public final class PhysicalLocationService implements AutoCloseable {
     private volatile boolean closed;
 
     public static PhysicalLocationService configured() {
+        return configured(Map::of);
+    }
+
+    public static PhysicalLocationService configured(PhysicalLocationDiscovery.Inventory inventory) {
         PhysicalLocationConfig config;
         try {
             config = PhysicalLocationConfig.load();
@@ -91,7 +101,7 @@ public final class PhysicalLocationService implements AutoCloseable {
             config = PhysicalLocationConfig.disabled();
         }
         final var database = new SystemPhysicalLocationStore();
-        return new PhysicalLocationService(config, new SnmpLocationProvider(), new Store() {
+        final var service = new PhysicalLocationService(config, new SnmpLocationProvider(), new Store() {
             @Override
             public Snapshot find(String machine, String target) throws Exception {
                 return database.find(machine, target);
@@ -102,6 +112,10 @@ public final class PhysicalLocationService implements AutoCloseable {
                 database.save(attempt);
             }
         }, System::currentTimeMillis);
+        if (config.enabled() && config.discovery() != null) {
+            service.discovery = new PhysicalLocationDiscovery(config, inventory, service::replaceTargets);
+        }
+        return service;
     }
 
     PhysicalLocationService(PhysicalLocationConfig config, Provider provider, Store store, LongSupplier clock) {
@@ -110,6 +124,7 @@ public final class PhysicalLocationService implements AutoCloseable {
         this.store = store;
         this.clock = clock;
         config.machines().keySet().forEach(id -> states.put(id, new State()));
+        targets = new Targets(config.systems(), config.machines(), Map.copyOf(states));
         workers = new ThreadPoolExecutor(config.concurrency(), config.concurrency(), 0, TimeUnit.MILLISECONDS,
                 new SynchronousQueue<>(), runnable -> {
                     final var thread = new Thread(runnable, "PhysicalLocationPoll");
@@ -127,9 +142,13 @@ public final class PhysicalLocationService implements AutoCloseable {
         if (closed || !config.enabled()) {
             return;
         }
+        if (discovery != null) {
+            discovery.tick();
+        }
         final long now = clock.getAsLong();
-        for (final var machine : config.machines().values()) {
-            final var state = states.get(machine.id());
+        final var current = targets;
+        for (final var machine : current.machines().values()) {
+            final var state = current.states().get(machine.id());
             if (state.inFlight || state.nextDue > now) {
                 continue;
             }
@@ -141,6 +160,19 @@ public final class PhysicalLocationService implements AutoCloseable {
                 break;
             }
         }
+    }
+
+    synchronized void replaceTargets(Map<String, String> systems, Map<String, Machine> machines) {
+        if (closed) {
+            return;
+        }
+        // Keep removed in-flight states until completion, including across a rapid remove/re-add.
+        states.entrySet().removeIf(entry -> !machines.containsKey(entry.getKey()) && !entry.getValue().inFlight);
+        final Map<String, State> next = new HashMap<>();
+        for (final var machine : machines.values()) {
+            next.put(machine.id(), states.computeIfAbsent(machine.id(), _ -> new State()));
+        }
+        targets = new Targets(Map.copyOf(systems), Map.copyOf(machines), Map.copyOf(next));
     }
 
     private void collect(Machine machine, State state) {
@@ -204,11 +236,12 @@ public final class PhysicalLocationService implements AutoCloseable {
         if (!config.enabled() || component == null) {
             return Map.of();
         }
-        final var machine = config.systems().get(component);
+        final var current = targets;
+        final var machine = current.systems().get(component);
         if (machine == null) {
             return Map.of();
         }
-        final var state = states.get(machine);
+        final var state = current.states().get(machine);
         final var snapshot = state.snapshot;
         final Map<String, Object> result = new HashMap<>();
         result.put("machineId", machine);
@@ -245,17 +278,18 @@ public final class PhysicalLocationService implements AutoCloseable {
     }
 
     public Map<String, Long> measurements() {
-        final long stale = config.machines().keySet().stream().filter(machine -> {
-            final var snapshot = states.get(machine).snapshot;
-            return states.get(machine).persistenceFailureAt > 0 || snapshot == null || snapshot.lastSuccess() == 0
+        final var current = targets;
+        final long stale = current.states().values().stream().filter(state -> {
+            final var snapshot = state.snapshot;
+            return state.persistenceFailureAt > 0 || snapshot == null || snapshot.lastSuccess() == 0
                     || clock.getAsLong() - snapshot.lastSuccess() > config.staleAfter()
                     || clock.getAsLong() < snapshot.lastSuccess()
                     || snapshot.status() != Status.SUCCESS && snapshot.status() != Status.NOT_CONFIGURED;
         }).count();
-        return Map.of("TargetCount", (long) states.size(), "ActivePollCount", (long) activePolls(), "PollCount",
-                polls.sum(), "SuccessCount", successes.sum(), "FailureCount", failures.sum(), "TimeoutCount",
-                timeouts.sum(), "PersistenceFailureCount", persistenceFailures.sum(), "PollDurationMillis",
-                duration.sum(), "StaleCount", stale);
+        return Map.of("TargetCount", (long) current.machines().size(), "ActivePollCount", (long) activePolls(),
+                "PollCount", polls.sum(), "SuccessCount", successes.sum(), "FailureCount", failures.sum(),
+                "TimeoutCount", timeouts.sum(), "PersistenceFailureCount", persistenceFailures.sum(),
+                "PollDurationMillis", duration.sum(), "StaleCount", stale);
     }
 
     public String statistics() {
@@ -269,6 +303,9 @@ public final class PhysicalLocationService implements AutoCloseable {
     @Override
     public synchronized void close() {
         closed = true;
+        if (discovery != null) {
+            discovery.close();
+        }
         provider.close();
         workers.shutdownNow();
     }

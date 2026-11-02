@@ -26,6 +26,7 @@ import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.List;
 import java.util.function.Function;
 
 import com.google.common.net.InetAddresses;
@@ -33,9 +34,15 @@ import com.google.common.net.InetAddresses;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.text.Format;
 
-/** Startup-only allowlist; management addresses are literal IPs so collection never waits for DNS. */
+/** Startup policy and credentials; automatic targets are reconciled separately in the background. */
 public record PhysicalLocationConfig(boolean enabled, long interval, long staleAfter, long timeout, int retries,
-        int concurrency, Map<String, String> systems, Map<String, Machine> machines) {
+        int concurrency, Map<String, String> systems, Map<String, Machine> machines, int maxTargets,
+        Discovery discovery) {
+
+    public PhysicalLocationConfig(boolean enabled, long interval, long staleAfter, long timeout, int retries,
+            int concurrency, Map<String, String> systems, Map<String, Machine> machines) {
+        this(enabled, interval, staleAfter, timeout, retries, concurrency, systems, machines, 256, null);
+    }
 
     public PhysicalLocationConfig {
         systems = Map.copyOf(systems);
@@ -69,6 +76,44 @@ public record PhysicalLocationConfig(boolean enabled, long interval, long staleA
     }
 
     public record Machine(String id, InetAddress address, int port, Profile profile, String targetKey) {
+    }
+
+    public record Discovery(long interval, int port, Profile profile, List<Network> networks) {
+        public Discovery {
+            networks = List.copyOf(networks);
+        }
+
+        boolean permits(InetAddress address) {
+            return !address.isAnyLocalAddress() && !address.isMulticastAddress() && !address.isLinkLocalAddress()
+                    && (!(address instanceof java.net.Inet6Address ipv6) || ipv6.getScopeId() == 0)
+                    && networks.stream().anyMatch(network -> network.contains(address));
+        }
+    }
+
+    public record Network(InetAddress address, int prefix) {
+        static Network parse(String value) {
+            final var parts = value.strip().split("/", -1);
+            require(parts.length == 2, "Management networks must use CIDR notation");
+            final var address = InetAddresses.forString(parts[0]);
+            final int prefix = Integer.parseInt(parts[1]);
+            require(prefix > 0 && prefix <= address.getAddress().length * 8, "Invalid management CIDR prefix");
+            return new Network(address, prefix);
+        }
+
+        boolean contains(InetAddress candidate) {
+            final var base = address.getAddress();
+            final var other = candidate.getAddress();
+            if (base.length != other.length) {
+                return false;
+            }
+            for (int bit = 0; bit < prefix; bit++) {
+                final int mask = 1 << (7 - bit % 8);
+                if ((base[bit / 8] & mask) != (other[bit / 8] & mask)) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
     public static PhysicalLocationConfig disabled() {
@@ -120,12 +165,32 @@ public record PhysicalLocationConfig(boolean enabled, long interval, long staleA
                 profiles.put(profileName, profile);
             }
             // Changing the management endpoint/context invalidates the old value; rotating credentials does not.
-            final var identity = address.getHostAddress() + "\n" + port + "\n" + profile.context;
-            final var key = HexFormat.of()
-                    .formatHex(MessageDigest.getInstance("SHA-256").digest(identity.getBytes(StandardCharsets.UTF_8)));
-            machines.put(id, new Machine(id, address, port, profile, key));
+            machines.put(id, machine(id, address, port, profile));
         }
-        return new PhysicalLocationConfig(true, interval, staleAfter, timeout, retries, concurrency, systems, machines);
+        final var automatic = options.getOrDefault("discovery", "no");
+        require(List.of("yes", "true", "no", "false").contains(automatic.toLowerCase(java.util.Locale.ROOT)),
+                "Invalid discovery flag");
+        Discovery discovery = null;
+        if ("yes".equalsIgnoreCase(automatic) || "true".equalsIgnoreCase(automatic)) {
+            final var name = options.getOrDefault("discoveryProfile", "");
+            identifier(name);
+            final var profile = profiles.containsKey(name) ? profiles.get(name)
+                    : profile(sections.apply("PhysicalLocationProfile." + name));
+            final var networks = options.getOrDefault("allowedNetworks", "").split(",", -1);
+            require(networks.length <= 64, "Too many management networks");
+            discovery = new Discovery(duration(options, "inventoryInterval", "1m", 10_000, 3_600_000),
+                    number(options, "discoveryPort", 161, 1, 65535), profile,
+                    java.util.Arrays.stream(networks).map(Network::parse).toList());
+        }
+        return new PhysicalLocationConfig(true, interval, staleAfter, timeout, retries, concurrency, systems, machines,
+                maxTargets, discovery);
+    }
+
+    static Machine machine(String id, InetAddress address, int port, Profile profile) throws Exception {
+        final var identity = address.getHostAddress() + "\n" + port + "\n" + profile.context;
+        final var key = HexFormat.of()
+                .formatHex(MessageDigest.getInstance("SHA-256").digest(identity.getBytes(StandardCharsets.UTF_8)));
+        return new Machine(id == null ? "auto." + key : id, address, port, profile, key);
     }
 
     private static Profile profile(Map<String, String> options) throws Exception {

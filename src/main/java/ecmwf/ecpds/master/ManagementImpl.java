@@ -3204,7 +3204,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
      *
      * @return the list of {@code {host, port}} node maps, in the order configured (first is the primary)
      */
-    private static List<Map<String, Object>> parseDatabaseNodes(final String alias) {
+    static List<Map<String, Object>> parseDatabaseNodes(final String alias) {
         final List<Map<String, Object>> nodes = new ArrayList<>();
         if (alias == null || alias.isBlank()) {
             return nodes;
