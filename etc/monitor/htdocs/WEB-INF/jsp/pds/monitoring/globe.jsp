@@ -480,6 +480,7 @@
 <section class="card mt-2" id="globeWeatherPanel" aria-label="Network Weather evidence" hidden>
     <div class="card-body">
         <p id="globeWeatherStatus" role="status"></p>
+        <div id="globeWeatherEvidence" hidden>
         <label for="globeWeatherSearch" class="form-label">Filter permitted weather paths</label>
         <input type="search" class="form-control form-control-sm mb-2" id="globeWeatherSearch">
         <div class="table-responsive"><table class="table table-sm">
@@ -490,6 +491,7 @@
         <p class="small mb-0">Failures include application and storage errors, not just connectivity.
             Missing samples or coordinates mean unavailable coverage. Halos locate configured hosts, not faulty regions.
             Collection and probes do not depend on opening this panel.</p>
+        </div>
     </div>
 </section>
 
@@ -805,6 +807,7 @@
         var panel = document.getElementById("globeWeatherPanel");
         var weatherToggle = document.getElementById("globeWeatherToggle");
         panel.hidden = weatherToggle.hidden || weatherToggle.getAttribute("aria-pressed") !== "true";
+        document.getElementById("globeWeatherEvidence").hidden = rows.length === 0;
         document.getElementById("globeWeatherStatus").textContent = message;
         var body = document.getElementById("globeWeatherRows");
         body.replaceChildren();
