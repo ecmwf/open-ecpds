@@ -25,6 +25,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -89,6 +90,7 @@ public final class TransferTracing {
         }
         final var disabled = new AtomicBoolean();
         final var exporters = new ArrayList<SpanExporter>();
+        final var resourceOverrides = new AtomicReference<>(Resource.empty());
         sdk = AutoConfiguredOpenTelemetrySdk.builder()
                 .addPropertiesSupplier(() -> Map.of("otel.service.name", "open-ecpds-" + role,
                         "otel.exporter.otlp.protocol", "http/protobuf", "otel.traces.exporter", "otlp",
@@ -108,7 +110,11 @@ public final class TransferTracing {
                                                 Cnf.at("Login", "root", Cnf.at("Login", "hostName", role)))
                                         .build())
                                 .merge(resource))
-                .addSpanExporterCustomizer((exporter, properties) -> TelemetryTls.configure(exporter, properties))
+                .addResourceCustomizer((resource, properties) -> {
+                    final var overrides = TelemetryResources.overrides(properties, "traces");
+                    resourceOverrides.set(overrides);
+                    return resource.merge(overrides);
+                }).addSpanExporterCustomizer((exporter, properties) -> TelemetryTls.configure(exporter, properties))
                 .addSpanExporterCustomizer((exporter, _) -> {
                     final var monitored = new SpanExporter() {
                         @Override
@@ -150,7 +156,8 @@ public final class TransferTracing {
             // The SDK owns these exporters. Import must never flush or close them.
             final var exporter = SpanExporter.composite(exporters);
             imported = new MoverTracing.Delivery(spans -> {
-                final var result = exporter.export(spans.stream().map(TransferTracing::spanData).toList());
+                final var result = exporter
+                        .export(spans.stream().map(span -> spanData(span, resourceOverrides.get())).toList());
                 // Keep exactly one batch in flight, even if the exporter never completes.
                 // Delivery shutdown interrupts this daemon; it never waits for it.
                 while (!result.isDone() && !Thread.currentThread().isInterrupted()) {
@@ -433,7 +440,7 @@ public final class TransferTracing {
                 && !local.getTraceAttemptId().equals(incoming.getTraceAttemptId());
     }
 
-    private static SpanData spanData(final TransferSpan span) {
+    private static SpanData spanData(final TransferSpan span, final Resource overrides) {
         final var stateBuilder = TraceState.builder();
         if (span.getTraceState() != null && !span.getTraceState().isEmpty()) {
             final var entries = span.getTraceState().split(",");
@@ -458,7 +465,8 @@ public final class TransferTracing {
         });
         final var resource = Attributes.builder();
         span.getResource().forEach(resource::put);
-        return new ImportedSpan(span, context, parent, attributes.build(), Resource.create(resource.build()));
+        return new ImportedSpan(span, context, parent, attributes.build(),
+                Resource.create(resource.build()).merge(overrides));
     }
 
     /** Reconstructed data bypasses SDK sampling and ID/time generation entirely. */

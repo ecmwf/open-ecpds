@@ -137,6 +137,8 @@ public final class OperationalEvents {
                                         Cnf.at("Login", "root", Cnf.at("Login", "hostName", "master")))
                                 .build())
                         .merge(resource))
+                .addResourceCustomizer((resource, properties) -> resource
+                        .merge(ecmwf.common.telemetry.TelemetryResources.overrides(properties, "logs")))
                 .addLogRecordExporterCustomizer(
                         (exporter, properties) -> ecmwf.common.telemetry.TelemetryTls.configure(exporter, properties))
                 .addLogRecordExporterCustomizer((exporter, _) -> {

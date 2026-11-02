@@ -87,6 +87,8 @@ public final class TransferMetrics {
                                         Cnf.at("Login", "root", Cnf.at("Login", "hostName", "master")))
                                 .build())
                         .merge(resource))
+                .addResourceCustomizer((resource, properties) -> resource
+                        .merge(ecmwf.common.telemetry.TelemetryResources.overrides(properties, "metrics")))
                 .disableShutdownHook().build().getOpenTelemetrySdk();
         if (disabled.get()) {
             LOG.info("OpenTelemetry metrics disabled by OTEL_SDK_DISABLED");

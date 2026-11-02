@@ -331,6 +331,38 @@ The SDK exports OTLP metrics by default when enabled. Standard
 `otel.metric.export.*` JVM properties) override the interval and timeout in
 `ecmwf.properties`. Metrics export is best effort and is not journalled.
 
+### Per-signal resource attributes
+
+`OTEL_RESOURCE_ATTRIBUTES` remains the shared resource baseline. When the Collector
+cannot be changed, ECPDS also supports these **ECPDS-specific extensions**:
+
+```sh
+export OTEL_RESOURCE_ATTRIBUTES="deployment.environment.name=production,site=ecmwf"
+export ECPDS_OTEL_LOGS_RESOURCE_ATTRIBUTES="routing.dataset=ecpds-logs"
+export ECPDS_OTEL_METRICS_RESOURCE_ATTRIBUTES="routing.dataset=ecpds-metrics"
+export ECPDS_OTEL_TRACES_RESOURCE_ATTRIBUTES="routing.dataset=ecpds-traces"
+```
+
+Set these in the service environment (or export them from `/etc/ecpds/master.cnf`),
+then restart the Master. No Collector change is needed. The equivalent JVM
+properties are `-Decpds.otel.logs.resource.attributes=...`,
+`-Decpds.otel.metrics.resource.attributes=...` and
+`-Decpds.otel.traces.resource.attributes=...`; a JVM property takes precedence over
+the corresponding environment variable. These settings are not read from
+`ecmwf.properties`.
+
+Values use the same comma-separated `key=value` syntax as `OTEL_RESOURCE_ATTRIBUTES`.
+Each signal's values override matching shared keys and service defaults; other
+keys remain unchanged. An unset or empty override preserves existing behavior.
+These are resource attributes, not log-record, metric-point or span attributes.
+Keep `service.name` and other service identity fields consistent unless intentionally
+separating services, to preserve cross-signal correlation.
+
+The Master's trace overrides also apply to Mover spans forwarded through it.
+Forwarded spans otherwise retain their original Mover resource identity; they do
+not inherit the Master's shared resource attributes. Already-journalled log records
+retain their original resource attributes when retried.
+
 ### Native record schema
 
 Each record has:
