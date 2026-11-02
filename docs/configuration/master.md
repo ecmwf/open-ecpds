@@ -78,6 +78,13 @@ apply a changed value dynamically.
 
 ## Syntax and defaults
 
+Optional Master-only SNMP location collection uses `[PhysicalLocation]`,
+`[PhysicalLocationSystems]`, `[PhysicalLocationMachine.ID]` and
+`[PhysicalLocationProfile.ID]`. It is off by default and requires the additive
+`system-physical-location.sql` migration before enabling.
+See [Physical system locations](../monitoring/physical-locations.md) for target
+mappings, protected credential files, limits and RMI/display behavior.
+
 | Syntax | Meaning |
 |--------|---------|
 | `[Group]` followed by `key=value` | A case-sensitive section and option name. |

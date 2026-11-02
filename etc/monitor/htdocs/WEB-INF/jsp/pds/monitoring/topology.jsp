@@ -46,7 +46,7 @@
     #topoLegend{display:none;}
     #topoLegend.topo-legend-open{display:block;top:56px;}
 }
-#topoDetailPanel{position:absolute;right:10px;top:10px;z-index:10;width:280px;max-width:80vw;max-height:calc(100vh - 20px);overflow-y:auto;background:var(--bs-body-bg);color:var(--bs-body-color);border:1px solid var(--bs-border-color);border-radius:8px;padding:.75rem 1rem;font-size:.82rem;display:none;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+#topoDetailPanel{position:absolute;right:10px;top:10px;z-index:10;width:280px;max-width:80vw;max-height:calc(100% - 20px);overflow-y:auto;background:var(--bs-body-bg);color:var(--bs-body-color);border:1px solid var(--bs-border-color);border-radius:8px;padding:.75rem 1rem;font-size:.82rem;display:none;box-shadow:0 4px 16px rgba(0,0,0,.2);}
 #topoDetailPanel h6{color:#0d6efd;margin-bottom:.4rem;}
 #topoDetailPanel .close-btn{position:absolute;top:6px;right:8px;cursor:pointer;color:var(--bs-secondary-color,#6c757d);}
 #topoDetailPanel dl{margin:0;}
@@ -163,6 +163,10 @@
             <li>A Data Mover's ring color reflects its <strong>TransferGroup</strong> - Data Movers sharing the
                 same group get the same ring color, making it easy to spot which ones back the same group.</li>
             <li>Click any node to see its full details (host, ports, status) in the panel on the right.</li>
+            <li>When optional SNMP location collection is configured, a shortened physical location appears on each
+                mapped system. Click it for the full text, collection status and verification time.
+                A <strong>stale</strong> value is last-known information, not a successful current verification.
+                Location is administrator-maintained text, not discovered coordinates; it does not change host grouping.</li>
             <li>Drag any box to rearrange the diagram to your liking - your layout is remembered on this browser
                 between visits, including after navigating away and coming back.</li>
             <li>The <strong>15s/30s/1m/5m/Off</strong> pills control how often the diagram refreshes itself
@@ -210,6 +214,7 @@
 
     var cy = null;
     var refreshTimer = null;
+    var selectedDetailId = null;
 
     var topoContainerEl = document.getElementById("topoContainer");
 
@@ -285,7 +290,7 @@
                 "font-size": 11, "font-weight": 600, "color": pal.text, "padding": "22px"
             } },
             { selector: "node[kind!='host']", style: {
-                "shape": "round-rectangle", "width": 118, "height": 48, "label": "data(label)",
+                "shape": "round-rectangle", "width": 118, "height": "data(boxHeight)", "label": "data(label)",
                 "text-valign": "center", "text-halign": "center", "text-wrap": "wrap", "text-max-width": 108,
                 "font-size": 10.5, "font-weight": 600, "color": "#fff", "border-width": 2, "border-color": "#fff"
             } },
@@ -339,6 +344,23 @@
             var ports = pluginPortsLabel(p);
             return p.ref + (ports ? (":" + ports) : "");
         }).join(", ");
+    }
+
+    function locationLabel(info) {
+        var location = info && info.physicalLocation;
+        if (!location || !location.value) { return ""; }
+        var chars = Array.from(location.value);
+        var shortValue = chars.length > 32 ? chars.slice(0, 31).join("") + "\u2026" : location.value;
+        return "\n" + shortValue + (location.stale ? " (stale)" : "");
+    }
+
+    function systemHeight(base, info) {
+        if (!info.physicalLocation || !info.physicalLocation.value) { return base; }
+        // Reserve room for long unbroken tokens as well as ordinary words, without resizing existing plain nodes.
+        var lines = locationLabel(info).slice(1).split("\n").reduce(function (count, line) {
+            return count + Math.ceil(Array.from(line).length / CHARS_PER_LINE);
+        }, 0);
+        return base + lines * 14;
     }
 
     // Rough estimate of how many lines a Cytoscape "text-wrap:wrap" label will render as, so a mover box's
@@ -408,16 +430,19 @@
         var movers = data.movers || [];
 
         var masterHostId = hostNodeId(master.host);
+        var masterLabel = "Master Server\n" + pluginSummary(master.plugins);
         nodes.push({ data: {
             id: "master", kind: "master", parent: masterHostId,
-            label: "Master Server\n" + pluginSummary(master.plugins),
+            label: masterLabel + locationLabel(master),
+            boxHeight: systemHeight(48, master),
             details: JSON.stringify(master)
         } });
 
         var dbHostId = hostNodeId(database.host);
         var dbLabel = "Database" + (database.port ? ("\n:" + database.port) : "");
         nodes.push({ data: {
-            id: "database", kind: "database", parent: dbHostId, label: dbLabel,
+            id: "database", kind: "database", parent: dbHostId, label: dbLabel + locationLabel(database),
+            boxHeight: systemHeight(48, database),
             details: JSON.stringify(database)
         } });
         edges.push({ data: {
@@ -428,9 +453,11 @@
         monitors.forEach(function (monitor, idx) {
             var monitorHostId = hostNodeId(monitor.host);
             var nodeId = monitors.length > 1 ? ("monitor:" + (monitor.name || idx)) : "monitor";
+            var monitorLabel = "Monitor Server\n" + pluginSummary(monitor.plugins);
             nodes.push({ data: {
                 id: nodeId, kind: "monitor", parent: monitorHostId,
-                label: "Monitor Server\n" + pluginSummary(monitor.plugins),
+                label: monitorLabel + locationLabel(monitor),
+                boxHeight: systemHeight(48, monitor),
                 details: JSON.stringify(monitor)
             } });
             edges.push({ data: { id: "e-monitor-master-" + idx, source: nodeId, target: "master", label: "RMI" } });
@@ -450,8 +477,8 @@
             var moverData = {
                 id: nodeId, kind: "mover", parent: moverHostId, up: up,
                 transferGroup: mover.transferGroup || "",
-                label: moverLabel,
-                boxHeight: Math.max(58, 58 + (moverLines - 3) * 14),
+                label: moverLabel + locationLabel(mover),
+                boxHeight: systemHeight(Math.max(58, 58 + (moverLines - 3) * 14), mover),
                 details: JSON.stringify(mover)
             };
             var groupColor = groupColorFor(mover.transferGroup);
@@ -470,6 +497,7 @@
     }
 
     function showDetail(node) {
+        selectedDetailId = node.id();
         var details;
         try { details = JSON.parse(node.data("details") || "{}"); } catch (e) { details = {}; }
         var kind = node.data("kind");
@@ -486,6 +514,18 @@
         }
         if (details.host) { addRow("Host", details.host); }
         if (details.port) { addRow("Port", String(details.port)); }
+        function addLocation(location, prefix) {
+            if (!location) { return; }
+            addRow(prefix + "Physical location", location.value || (location.status === "NOT_CONFIGURED"
+                ? "Not configured in SNMP" : "Location unavailable"));
+            addRow(prefix + "Location status", (location.stale && location.value ? "Stale \u2014 " : "")
+                + (location.statusLabel || location.status) + " (SNMP sysLocation)");
+            if (location.lastSuccess) { addRow(prefix + "Last verified", location.lastSuccess); }
+            if (location.lastAttempt) { addRow(prefix + "Last attempt", location.lastAttempt); }
+        }
+        if (kind !== "database" || !details.nodes || details.nodes.length <= 1) {
+            addLocation(details.physicalLocation, "");
+        }
         if (kind === "mover") {
             if (details.transferGroup) { addRow("Transfer Group", details.transferGroup); }
             addRow("Enabled", details.active ? "Yes" : "No");
@@ -497,6 +537,9 @@
                 addRow("Cluster nodes", details.nodes.map(function (n) {
                     return n.host + (n.port ? (":" + n.port) : "");
                 }).join(", "));
+                details.nodes.forEach(function (n) {
+                    addLocation(n.physicalLocation, n.host + (n.port ? ":" + n.port : "") + " \u2014 ");
+                });
             }
         }
         if (details.plugins && details.plugins.length) {
@@ -739,8 +782,13 @@
             hostsByBucket[bucket].forEach(function (hostId, hostIdx) {
                 var x = BUCKET_BASE_X[bucket] + hostIdx * HOST_SPACING_X;
                 var y = BUCKET_Y[bucket];
+                var previousHeight = 0;
                 childrenByHost[hostId].forEach(function (n, childIdx) {
-                    positions[n.data.id] = { x: x, y: y + childIdx * CHILD_SPACING_Y };
+                    if (childIdx) {
+                        y += Math.max(CHILD_SPACING_Y, (previousHeight + n.data.boxHeight) / 2 + 20);
+                    }
+                    positions[n.data.id] = { x: x, y: y };
+                    previousHeight = n.data.boxHeight;
                 });
             });
         });
@@ -766,10 +814,10 @@
                 groupYCursor[g] = BOTTOM_BASE_Y;
             }
             var x = BOTTOM_BASE_X + groupColumnIndex[g] * GROUP_SPACING_X;
-            childrenByHost[hostId].forEach(function (n, childIdx) {
-                positions[n.data.id] = { x: x, y: groupYCursor[g] + childIdx * MOVER_SPACING_Y };
+            childrenByHost[hostId].forEach(function (n) {
+                positions[n.data.id] = { x: x, y: groupYCursor[g] };
+                groupYCursor[g] += Math.max(MOVER_SPACING_Y, n.data.boxHeight + 92);
             });
-            groupYCursor[g] += childrenByHost[hostId].length * MOVER_SPACING_Y;
         });
         return positions;
     }
@@ -924,6 +972,15 @@
             fitTopRow();
         }
         cy.scratch("_topoSignature", signature);
+        if (selectedDetailId) {
+            var selected = cy.getElementById(selectedDetailId);
+            if (selected.length && document.getElementById("topoDetailPanel").style.display !== "none") {
+                showDetail(selected);
+            } else if (!selected.length) {
+                document.getElementById("topoDetailPanel").style.display = "none";
+                selectedDetailId = null;
+            }
+        }
     }
 
     function refresh(manual) {

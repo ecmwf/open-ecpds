@@ -3286,6 +3286,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         // Master: own host plus every locally-running plugin (ref/name/port/status), read live from this JVM.
         final Map<String, Object> masterInfo = new HashMap<>();
         masterInfo.put("host", master.getRoot());
+        addPhysicalLocation(masterInfo, "master");
         final List<Map<String, Object>> pluginInfos = new ArrayList<>();
         try {
             for (final var info : master.getPluginContainer().getPluginInfos()) {
@@ -3323,6 +3324,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                     final Map<String, Object> monitorInfo = new HashMap<>();
                     monitorInfo.put("name", monitorRoot);
                     monitorInfo.put("host", master.getClientHost("ECpdsMonitor", monitorRoot));
+                    addPhysicalLocation(monitorInfo, "monitor." + monitorRoot);
                     final var monitorConnection = master.getMonitorInterface(monitorRoot);
                     monitorInfo.put("rmiConnected", monitorConnection != null);
                     if (monitorConnection != null) {
@@ -3349,12 +3351,19 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         // this very call reached the Master, which cannot serve most requests without a working database connection.
         final Map<String, Object> databaseInfo = new HashMap<>();
         final var dbNodes = parseDatabaseNodes(Cnf.at("DataBase", "alias", System.getProperty("database.alias", "")));
+        for (final var node : dbNodes) {
+            addPhysicalLocation(node,
+                    "database." + node.get("host") + ":" + (node.get("port") != null ? node.get("port") : 3306));
+        }
         if (dbNodes.isEmpty()) {
             databaseInfo.put("host", "database");
             databaseInfo.put("port", null);
         } else {
             databaseInfo.put("host", dbNodes.get(0).get("host"));
             databaseInfo.put("port", dbNodes.get(0).get("port"));
+            if (dbNodes.get(0).containsKey("physicalLocation")) {
+                databaseInfo.put("physicalLocation", dbNodes.get(0).get("physicalLocation"));
+            }
         }
         databaseInfo.put("nodes", dbNodes);
         databaseInfo.put("up", true);
@@ -3370,6 +3379,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                     final Map<String, Object> moverInfo = new HashMap<>();
                     moverInfo.put("name", server.getName());
                     moverInfo.put("host", server.getHost());
+                    addPhysicalLocation(moverInfo, "mover." + server.getName());
                     moverInfo.put("port", server.getPort());
                     moverInfo.put("transferGroup", server.getTransferGroupName());
                     final var active = server.getActive();
@@ -3412,6 +3422,18 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         topology.put("movers", movers);
 
         return monitor.done(topology);
+    }
+
+    @Override
+    public Map<String, Object> getSystemPhysicalLocation(final String component) {
+        return master.getSystemPhysicalLocation(component);
+    }
+
+    private void addPhysicalLocation(final Map<String, Object> info, final String component) {
+        final var location = getSystemPhysicalLocation(component);
+        if (!location.isEmpty()) {
+            info.put("physicalLocation", location);
+        }
     }
 
     /**

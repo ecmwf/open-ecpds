@@ -184,6 +184,7 @@ nav:
       - DEA (Denied Access): event-logging/dea-fields.md
   - Global Reach: global-reach.md
   - Monitoring:
+      - Physical System Locations: monitoring/physical-locations.md
       - Transfer Network Statistics: monitoring/transfer-statistics.md
       - JMX Monitoring with Hawtio and Prometheus: monitoring/jmx-export.md
       - Delay Notification: monitoring/delay-notification.md

@@ -91,6 +91,11 @@ activated `eclipse-m2e` profile supplies its IDE dependencies; `ecpds-core` uses
 its own dependency list. If unresolved imports remain after the update, use
 **Project → Clean...**. Do not add individual JARs manually to the build path.
 
+When adding a Java dependency, update both `ecpds-core/pom.xml` and the
+`eclipse-m2e` dependency list in the root `pom.xml`. The root Eclipse project
+compiles the shared sources too, so updating only the core module can leave
+unresolved imports there even when command-line Maven compilation succeeds.
+
 To build the application from the source:
 
 - Select the `pom.xml` file in the **Project Explorer** view.

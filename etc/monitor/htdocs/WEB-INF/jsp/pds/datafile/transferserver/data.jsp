@@ -59,6 +59,20 @@
 		<div class="card-body py-0">
 			<div class="field-grid">
 				<div class="field-row"><div class="field-label">Hostname</div><div class="field-value"><span class="val-code"><c:out value="${transferserver.host}" /></span></div></div>
+				<c:if test="${not empty physicalLocation}">
+					<div class="field-row"><div class="field-label">Physical location</div><div class="field-value" style="min-width:0;overflow-wrap:anywhere;">
+						<c:choose>
+							<c:when test="${not empty physicalLocation.value}"><c:out value="${physicalLocation.value}"/></c:when>
+							<c:when test="${physicalLocation.status == 'NOT_CONFIGURED'}"><span class="text-muted">Not configured in SNMP</span></c:when>
+							<c:otherwise><span class="text-muted">Location unavailable</span></c:otherwise>
+						</c:choose>
+						<c:if test="${physicalLocation.stale and not empty physicalLocation.value}"><span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis ms-1">Stale</span></c:if>
+						<div class="small text-muted">SNMP sysLocation &middot; <c:out value="${physicalLocation.statusLabel}"/>
+							<c:if test="${not empty physicalLocation.lastSuccess}"><br>Last verified: <c:out value="${physicalLocation.lastSuccess}"/></c:if>
+							<c:if test="${not empty physicalLocation.lastAttempt}"><br>Last attempt: <c:out value="${physicalLocation.lastAttempt}"/></c:if>
+						</div>
+					</div></div>
+				</c:if>
 				<div class="field-row"><div class="field-label">Port</div><div class="field-value"><span class="val-num"><c:out value="${transferserver.port}" /></span></div></div>
 				<c:set var="hostForReplication" value="${transferserver.hostForReplication}" />
 				<c:if test="${transferserver.replicate}">

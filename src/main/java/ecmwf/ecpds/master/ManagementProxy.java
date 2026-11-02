@@ -1503,6 +1503,12 @@ final class ManagementProxy implements ManagementInterface {
         return monitor.done(managementInterface.getSystemTopology());
     }
 
+    @Override
+    public Map<String, Object> getSystemPhysicalLocation(final String component)
+            throws MasterException, RemoteException {
+        return managementInterface.getSystemPhysicalLocation(component);
+    }
+
     /**
      * {@inheritDoc}
      *

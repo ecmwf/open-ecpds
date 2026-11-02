@@ -470,6 +470,14 @@ public final class MasterServer extends ECaccessProvider
     private final transient WeatherPersistenceScheduler weatherPersistenceScheduler;
     private final transient WeatherAutomationScheduler weatherAutomationScheduler;
 
+    private transient volatile ecmwf.ecpds.master.location.PhysicalLocationService physicalLocations;
+    private transient MBeanScheduler physicalLocationScheduler;
+
+    public Map<String, Object> getSystemPhysicalLocation(final String component) {
+        final var service = physicalLocations;
+        return service == null ? Map.of() : service.metadata(component);
+    }
+
     private final transient ecmwf.ecpds.master.storage.StorageLifecycleScheduler storageLifecycle = new ecmwf.ecpds.master.storage.StorageLifecycleScheduler(
             this);
 
@@ -1087,6 +1095,43 @@ public final class MasterServer extends ECaccessProvider
             weatherAutomationScheduler = new WeatherAutomationScheduler();
             weatherAutomationScheduler.start();
             storageLifecycle.start();
+            physicalLocations = ecmwf.ecpds.master.location.PhysicalLocationService.configured();
+            if (physicalLocations.enabled()) {
+                physicalLocationScheduler = new MBeanScheduler("PhysicalLocationScheduler") {
+                    @Override
+                    public int nextStep() {
+                        physicalLocations.tick();
+                        return NEXT_STEP_DELAY;
+                    }
+
+                    @Override
+                    public String getActivity() {
+                        return physicalLocations.statistics();
+                    }
+
+                    @Override
+                    public javax.management.MBeanInfo getMBeanInfo() {
+                        final var base = super.getMBeanInfo();
+                        final var attributes = new java.util.ArrayList<>(java.util.Arrays.asList(base.getAttributes()));
+                        for (final var name : physicalLocations.measurements().keySet()) {
+                            attributes.add(new javax.management.MBeanAttributeInfo(name, "java.lang.Long",
+                                    "Physical location collector " + name, true, false, false));
+                        }
+                        return new javax.management.MBeanInfo(base.getClassName(), base.getDescription(),
+                                attributes.toArray(javax.management.MBeanAttributeInfo[]::new), base.getConstructors(),
+                                base.getOperations(), base.getNotifications());
+                    }
+
+                    @Override
+                    public Object getAttribute(final String name)
+                            throws javax.management.AttributeNotFoundException, javax.management.MBeanException {
+                        final var value = physicalLocations.measurements().get(name);
+                        return value != null ? value : super.getAttribute(name);
+                    }
+                };
+                physicalLocationScheduler.setDelay(Timer.ONE_SECOND);
+                physicalLocationScheduler.start();
+            }
             _log.debug("Monitors to notify: {}", containersToNotify);
             _log.debug("Passwords allowed from: {}", allowedPasswordOn);
             localContainer.startPlugins();
@@ -7511,6 +7556,12 @@ public final class MasterServer extends ECaccessProvider
         weatherPersistenceScheduler.shutdown();
         weatherAutomationScheduler.shutdown();
         storageLifecycle.shutdown();
+        if (physicalLocationScheduler != null) {
+            physicalLocationScheduler.shutdown();
+        }
+        if (physicalLocations != null) {
+            physicalLocations.close();
+        }
         if (theDissDownloadScheduler != null) {
             theDissDownloadScheduler.shutdown();
         }

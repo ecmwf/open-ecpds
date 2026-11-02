@@ -83,6 +83,12 @@ This page lists the key third-party Java libraries bundled with OpenECPDS, group
 
 ---
 
+## Infrastructure Metadata
+
+| Library | Version | License | Purpose |
+|---|---|---|---|
+| [SNMP4J](https://www.snmp4j.org/) | 3.13.1 | Apache 2.0 | Optional Master-side SNMP physical-location collection |
+
 ## Cloud Storage
 
 | Library | Version | License | Purpose |

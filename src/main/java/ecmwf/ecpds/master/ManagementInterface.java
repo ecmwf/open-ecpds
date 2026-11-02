@@ -1611,6 +1611,13 @@ public interface ManagementInterface extends Remote {
     Map<String, Object> getSystemTopology() throws MasterException, RemoteException;
 
     /**
+     * Cached physical location for an explicitly mapped component (master, mover.NAME, monitor.ROOT or
+     * database.HOST:PORT). The Master owns collection and persistence; this call performs no SNMP or database I/O.
+     * Returns an empty map when disabled or unmapped. Contains only serializable display metadata, never credentials.
+     */
+    Map<String, Object> getSystemPhysicalLocation(String component) throws MasterException, RemoteException;
+
+    /**
      * Returns a live status snapshot of every Dissemination Host configured for the given destination: the number of
      * connections that destination currently has open on each host (independent hosts can be simultaneously in-flight
      * when {@code MAX CONNECTIONS > 1} and a mid-flight failure already caused a switch for new dispatches), plus, for

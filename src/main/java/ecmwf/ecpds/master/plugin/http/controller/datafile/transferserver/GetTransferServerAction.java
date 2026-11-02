@@ -78,7 +78,14 @@ public class GetTransferServerAction extends PDSAction {
             request.setAttribute("transferservers", TransferServerHome.findAll());
             return mapping.findForward("success");
         }
-        request.setAttribute("transferserver", TransferServerHome.findByPrimaryKey(parameters.get(0).toString()));
+        final var server = TransferServerHome.findByPrimaryKey(parameters.get(0).toString());
+        request.setAttribute("transferserver", server);
+        try {
+            request.setAttribute("physicalLocation",
+                    ecmwf.ecpds.master.MasterManager.getMI().getSystemPhysicalLocation("mover." + server.getName()));
+        } catch (final Exception ignored) {
+            // Optional metadata must not prevent details loading, including during rolling upgrades.
+        }
         return mapping.findForward("success");
     }
 }
