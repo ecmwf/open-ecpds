@@ -283,7 +283,15 @@ $(function() {
         if (pending) pending.abort();
         $('#journalRefreshNow').prop('disabled', true);
         pending = $.ajax({url:'/do/admin/eventjournal', data:{json:'status'}, dataType:'json', timeout:20000})
-            .done(function(data) { if (token === generation) { if (data.error) unavailable(data.error); else render(data); } })
+            .done(function(data) {
+                if (token !== generation) return;
+                try {
+                    if (data.error) unavailable(data.error); else render(data);
+                } catch (error) {
+                    console.error('Unable to display journal status', error);
+                    unavailable('Unable to display journal status. Refresh will retry according to the selected interval.');
+                }
+            })
             .fail(function(xhr, status) {
                 if (token !== generation || status === 'abort') return;
                 var expired = xhr.status === 401 || xhr.getResponseHeader('X-ECPDS-Session-Expired') === 'true';
@@ -314,7 +322,7 @@ $(function() {
     $('#collectionToggle').on('click', function() { control('collection', !$(this).text().toLowerCase().includes('resume')); });
     $('#deliveryToggle').on('click', function() { control('delivery', !$(this).text().toLowerCase().includes('resume')); });
     $('#journalRefresh').on('change', schedule);
-    $('#journalRefreshNow').on('click', load);
+    $('#journalRefreshNow').on('click', function() { stopped = false; load(); });
     $(window).on('pagehide', function() { stopped = true; ++generation; clearTimeout(timer); if (pending) pending.abort(); });
     $(window).on('pageshow', function(event) { if (event.originalEvent.persisted) { stopped = false; load(); } });
     load();
