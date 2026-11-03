@@ -51,9 +51,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ecmwf.common.text.AcquisitionOutput;
 import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.MasterManager;
-import ecmwf.ecpds.master.MasterServer;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
@@ -140,7 +140,7 @@ public class TestScriptAction extends PDSAction {
             // Resolve acquisition-format lines in the output: strip [options] prefix,
             // resolve $date/$dirdate, strip {regex} suffix — ready for the Preview mechanism.
             result.put("output",
-                    MasterServer.resolveAcqOutput(MasterManager.getMI().execDirScript(session, host, scriptToRun)));
+                    AcquisitionOutput.resolve(MasterManager.getMI().execDirScript(session, host, scriptToRun)));
 
         } catch (final Exception e) {
             _log.warn("TestScript execution error", e);
