@@ -121,6 +121,22 @@ public final class ECpdsBase extends DataBase {
     public record OperationalEventStatistics(long pendingCount, Long oldestAdmissionAt) {
     }
 
+    public record OperationalEventAdmissionStatistics(long pendingCount, long payloadBytes, Long oldestAdmissionAt) {
+    }
+
+    public OperationalEventAdmissionStatistics getOperationalEventAdmissionStatistics(final String owner,
+            final int limit) throws SQLException, IOException {
+        try (var rs = executeSelect("ECpdsBase", "getOperationalEventAdmissionStatistics",
+                new String[] { "owner=" + operationalEventHex(owner), "limit=" + Math.max(1, limit) })) {
+            if (!rs.next()) {
+                throw new SQLException("Operational event admission statistics query returned no result");
+            }
+            final var oldest = rs.getTimestamp("OLDEST_ADMISSION");
+            return new OperationalEventAdmissionStatistics(rs.getLong("PENDING_COUNT"), rs.getLong("PAYLOAD_BYTES"),
+                    oldest == null ? null : oldest.getTime());
+        }
+    }
+
     public OperationalEventStatistics getOperationalEventStatistics(final String owner)
             throws SQLException, IOException {
         try (var rs = executeSelect("ECpdsBase", "getOperationalEventStatistics",

@@ -184,11 +184,10 @@ variables → `ecmwf.properties` → built-in defaults**. Their standard overrid
 `otel.blrp.max.export.batch.size` / `OTEL_BLRP_MAX_EXPORT_BATCH_SIZE`, and
 `otel.blrp.schedule.delay` / `OTEL_BLRP_SCHEDULE_DELAY`. Delay is in milliseconds.
 These settings are optional; the values shown above are the defaults.
-With journaling enabled, the database is the normal pending queue.
-These settings tune only
-the bounded, in-memory fallback queue used when persistence fails; they do
-not limit the database backlog. With journaling disabled, they tune the normal
-in-memory log queue. Restart the Master after changes.
+With journaling disabled, these settings tune the normal in-memory log queue.
+With journaling enabled, a separate bounded admission queue and per-owner database
+limits apply instead (see below); persistence failures drop new telemetry rather
+than sending it through an alternate fallback queue. Restart the Master after changes.
 The SDK does not read arbitrary `OTEL_*` keys from `ecmwf.properties`.
 
 For containers, pass these variables through the container environment, or mount
@@ -440,6 +439,8 @@ splunkEnabled=yes
 openTelemetryEnabled=yes
 journalEnabled=yes
 journalOwner=production-master
+journalMaxPendingEvents=10000
+journalMaxPayloadBytes=67108864
 ```
 
 Supply the OTLP endpoint, authentication and TLS settings as described above.
@@ -458,9 +459,13 @@ Persisted events are retained until export is acknowledged and are retried
 after failures or Master restarts. Retries can produce duplicates; use
 `ecpds.event.id` for downstream deduplication.
 
-In journal mode, the database is the pending queue: `OTEL_BLRP_*` settings apply
-only to the best-effort fallback path, not to normal journal delivery.
-Shutdown need not drain the database; the next start resumes pending work.
+In journal mode, event producers serialize and enqueue without database I/O.
+A single background worker admits events to the database before export.
+The memory admission queue is bounded to 2,048 events and 8 MiB of UTF-8 payload;
+oversized events and new arrivals when it is full are dropped without waiting.
+Memory-queued events can be lost during shutdown or a crash; `forceFlush` does not
+provide a database-persistence barrier. Shutdown need not drain the database;
+the next start resumes persisted work. `OTEL_BLRP_*` does not control journal admission.
 Disabling OpenTelemetry or journaling pauses replay without deleting pending
 rows. Re-enabling it with the same owner resumes replay.
 
@@ -470,20 +475,36 @@ rows. Re-enabling it with the same owner resumes replay.
   automatic expiry or retry limit, including permanent HTTP errors. Fix the
   endpoint or credentials; an indefinitely rejected batch can block the backlog.
   An undecodable row is also retained with an error for operator investigation.
-- **Database failures:** operations continue, a prominent rate-limited
-  `DATABASE EVENT JOURNAL UNAVAILABLE` error reports persistence failures, and
-  the application attempts best-effort delivery through the SDK's memory queue.
-  Those events are **not guaranteed durable** and are not automatically
-  backfilled later. An ambiguous database acknowledgement can also result in a
-  persisted record and a best-effort delivery of the same event.
+- **Database failures:** operations do not wait for database admission. New telemetry
+  is dropped when persistence fails or capacity cannot be established; there is no
+  alternate exporter bypass. A rate-limited `DATABASE EVENT JOURNAL UNAVAILABLE`
+  error reports failed admissions. An ambiguous insert response may leave a row
+  persisted even though the admission was counted as dropped/unconfirmed.
 - **Acknowledgements:** an OTLP acknowledgement is not proof of indexing or
   durable storage in the final platform. Partially rejected batches are not
   automatically replayed. Monitor Collector/backend rejection diagnostics.
 - **Coverage:** the journal protects successfully persisted events; it is not
   a transactional audit trail and cannot guarantee an event for every operation.
-- **Capacity and latency:** persistence adds database load and latency.
-  The backlog is not capped or automatically purged. Size database storage and
-  recovery throughput for expected event rates and outage duration.
+- **Capacity:** `journalMaxPendingEvents` (default 10,000) and
+  `journalMaxPayloadBytes` (default 67,108,864 = 64 MiB) limit new admissions
+  **per owner**, under the single-active-writer requirement above. Limits require
+  a Master restart. At either limit the worker drops **new** events and retains
+  queued events for retry; it never purges existing rows. It rechecks capacity
+  in the background at most once per minute, scanning at most the row limit plus one.
+  An oversized existing backlog is reported as unavailable rather than an exact
+  count, and new admission remains blocked until capacity can be established.
+  Existing data above a limit is not reduced automatically.
+- **Accounting and storage:** after a successful capacity snapshot, the sole worker
+  accounts for its own inserts and acknowledged deletions. Ambiguous writes/deletes
+  suspend admission until remeasurement. Do not write/delete this owner's rows
+  from another process while it is active. These are serialized UTF-8 payload
+  limits, **not physical table, heap or cluster disk limits**: indexes, row overhead,
+  binary logs, Galera copies, other owners and legacy rows need additional capacity.
+  No new accounting table or database schema change is required.
+- **Drops:** the Monitor displays dropped/unconfirmed admissions since startup and
+  the last reason; the Master logs rate-limited `TELEMETRY DROPPED` warnings.
+  Counts reset on restart. Dropped events are not automatically replayed or backfilled;
+  Splunk/file output is independent and unchanged.
 - **Storage protection:** database durability, replication and backups remain
   essential. Protect journal payloads using the same access and retention
   controls as operational logs. Successfully acknowledged events are deleted;
@@ -504,7 +525,10 @@ OTLP acknowledgement.
 
 The Monitor page shows pending count, oldest admission timestamp and age,
 in-flight records, last successful persistence, last endpoint acknowledgement,
-and persistence/delivery failure history. It refreshes every 30 seconds by
+and persistence/delivery failure history, admission limits and dropped events.
+It reads cached worker statistics, at most one minute old; UI refresh never runs
+the old full-table aggregate. Deploy `getOperationalEventAdmissionStatistics.sql`
+with the updated Master code and matching Monitor pages. It refreshes every 30 seconds by
 default, with manual refresh and an option to disable automatic refresh. Warning
 and critical thresholds are configurable with `journalWarningPendingCount`,
 `journalCriticalPendingCount`, `journalWarningOldestAgeMillis` and

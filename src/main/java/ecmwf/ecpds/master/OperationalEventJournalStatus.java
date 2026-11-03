@@ -25,13 +25,15 @@ public record OperationalEventJournalStatus(boolean enabled, String owner, boole
         String deliveryFailureStage, long lastDeliveryFailureAt, long lastExportAt, long inFlightCount,
         Long pendingCount, Long oldestAdmissionAt, long observedAt, String queueError, boolean collectionPaused,
         boolean deliveryPaused, long warningPendingCount, long criticalPendingCount, long warningOldestAgeMillis,
-        long criticalOldestAgeMillis) implements Serializable {
+        long criticalOldestAgeMillis, long droppedEvents, String lastDropReason, long maxPendingEvents,
+        long maxPayloadBytes, Long pendingPayloadBytes) implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     public static OperationalEventJournalStatus disabled() {
         return new OperationalEventJournalStatus(false, "", false, false, 0, 0, 0, false, "", 0, 0, 0, null, null,
-                System.currentTimeMillis(), null, false, false, 1000, 10000, 300000, 1800000);
+                System.currentTimeMillis(), null, false, false, 1000, 10000, 300000, 1800000, 0, "", 10000,
+                64L * 1024 * 1024, null);
     }
 
     public OperationalEventJournalStatus withQueue(final Long count, final Long oldest, final String error) {
@@ -39,7 +41,8 @@ public record OperationalEventJournalStatus(boolean enabled, String owner, boole
                 lastPersistenceFailureAt, lastPersistedAt, deliveryDegraded, deliveryFailureStage,
                 lastDeliveryFailureAt, lastExportAt, inFlightCount, count, oldest, System.currentTimeMillis(), error,
                 collectionPaused, deliveryPaused, warningPendingCount, criticalPendingCount, warningOldestAgeMillis,
-                criticalOldestAgeMillis);
+                criticalOldestAgeMillis, droppedEvents, lastDropReason, maxPendingEvents, maxPayloadBytes,
+                pendingPayloadBytes);
     }
 
     public boolean danger() {
@@ -48,7 +51,7 @@ public record OperationalEventJournalStatus(boolean enabled, String owner, boole
 
     public boolean attention() {
         return enabled && (danger() || deliveryDegraded || collectionPaused || deliveryPaused || persistenceFailures > 0
-                || queueError != null || warningBacklog());
+                || droppedEvents > 0 || queueError != null || warningBacklog());
     }
 
     public boolean criticalBacklog() {

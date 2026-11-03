@@ -36,6 +36,7 @@
         Queue statistics are scoped to the active journal owner; unavailable values are not zero.
     </div></div>
     <div class="px-3 py-2 small border-bottom" id="journalUpdated" aria-live="polite">Waiting for the Master...</div>
+    <div class="px-3 py-2 small text-body-secondary border-bottom" id="journalLimits"></div>
     <div class="card-body">
         <ul class="nav nav-tabs mb-3" id="journalTabs" role="tablist">
             <li class="nav-item" role="presentation"><button class="nav-link active" id="journalHealthTab" data-bs-toggle="tab" data-bs-target="#journalHealth" type="button" role="tab" aria-controls="journalHealth" aria-selected="true"><i class="bi bi-heart-pulse me-1"></i>Health</button></li>
@@ -211,6 +212,8 @@ $(function() {
         currentStatus = s;
         $('#journalState').attr('class', 'badge ' + (data.danger ? 'bg-danger' : data.attention ? 'bg-warning text-dark' : s.enabled ? 'bg-success' : 'bg-secondary')).text(data.state);
         $('#journalUpdated').text('Updated ' + date(s.observedAt) + ' UTC');
+        $('#journalLimits').text('Admission limits per owner: ' + s.maxPendingEvents + ' events / '
+            + Math.round(s.maxPayloadBytes / 1048576) + ' MiB serialized payload. Statistics are cached for up to one minute.');
         notice('#journalError', '', false);
         if (!s.enabled) {
             $('.journal-value').text('Not measured');
@@ -236,12 +239,12 @@ $(function() {
         $('#criticalAge').text(age(s.criticalOldestAgeMillis));
         $('#collectionDescription').text(s.collectionPaused
             ? 'Collection is paused. New native OpenTelemetry events are not admitted; Splunk/file output is unaffected.'
-            : 'Collection is active. New native OpenTelemetry events are admitted to the durable journal.');
+            : 'Collection is active. New native OpenTelemetry events enter bounded journal admission; excess events are dropped.');
         $('#collectionToggle').prop('disabled', false).html(s.collectionPaused
             ? '<i class="bi bi-play-circle me-1"></i>Resume collection'
             : '<i class="bi bi-pause-circle me-1"></i>Pause collection');
         $('#deliveryDescription').text(s.deliveryPaused
-            ? 'Delivery is paused. New events continue to be persisted and the queue may grow.'
+            ? 'Delivery is paused. New events may be persisted up to the admission limits; excess events are dropped.'
             : s.deliveryDegraded ? 'Delivery is retrying after a failure; unacknowledged events remain queued.'
                 : 'Delivery is active. The worker exports queued events and removes them after endpoint acknowledgement.');
         $('#deliveryToggle').prop('disabled', false).html(s.deliveryPaused
@@ -250,10 +253,13 @@ $(function() {
         $('#collectionToggle,#deliveryToggle').prop('disabled', s.stopped);
         trend(s);
         var messages = [];
+        if (s.droppedEvents > 0) messages.push('Telemetry dropped/unconfirmed since Master startup: '
+            + s.droppedEvents.toLocaleString() + '. Last reason: ' + s.lastDropReason
+            + '. Dropped events are not replayed; Splunk/file output is unaffected.');
         var pendingAge = s.oldestAdmissionAt == null ? 0 : s.observedAt - s.oldestAdmissionAt;
         if (s.stopped) messages.push('The journal worker is stopped.');
-        if (s.persistenceDegraded) messages.push('Persistence failed and has not yet been confirmed recovered by a successful event admission. Operational processing continues with best-effort delivery; affected events are not guaranteed durable.');
-        else if (s.persistenceFailures > 0) messages.push('Persistence has recovered, but ' + s.persistenceFailures + ' event(s) could not be journalled since startup. They used best-effort delivery and are not automatically backfilled.');
+        if (s.persistenceDegraded) messages.push('Persistence failed and has not yet been confirmed recovered by a successful event admission. Operational processing continues; affected new telemetry is dropped.');
+        else if (s.persistenceFailures > 0) messages.push('Persistence has recovered, but ' + s.persistenceFailures + ' event admission(s) failed or could not be confirmed since startup. These are not automatically backfilled.');
         if (s.deliveryDegraded) messages.push('Delivery is retrying after a failure at: ' + s.deliveryFailureStage + '. Unacknowledged events remain in the database.');
         if (s.deliveryPaused) messages.push('Delivery is paused by an administrator; collection and persistence continue.');
         if (s.pendingCount != null && (s.pendingCount >= s.criticalPendingCount || pendingAge >= s.criticalOldestAgeMillis))

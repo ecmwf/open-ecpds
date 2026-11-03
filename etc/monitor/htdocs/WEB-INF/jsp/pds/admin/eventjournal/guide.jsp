@@ -17,8 +17,20 @@
         <p>Only the active Master's <strong>journal owner</strong> is measured. Keep that owner stable and run only one
             active Master per owner. Disabled journaling does not delete pending rows, and changing the owner leaves
             the other owner's rows untouched. Runtime counters reset on Master restart; pending rows survive.</p>
+        <h6>Bounded admission and drops</h6>
+        <p>Event producers enqueue without database I/O. The background worker drops new events when the memory queue
+            is full, database capacity cannot be established, or a per-owner limit is reached.
+            Defaults in <code>[OperationalEvents]</code> are <code>journalMaxPendingEvents=10000</code> and
+            <code>journalMaxPayloadBytes=67108864</code> (64 MiB serialized UTF-8 payload).
+            Restart the Master after changing these values. The memory queue holds at most 2,048 events and 8 MiB;
+            memory-queued events can be lost on shutdown or a crash. Persisted rows are never purged to make room.</p>
+        <p>Limits apply to new admissions, not existing oversized backlogs, other owners, index overhead or Galera replicas.
+            They are not a physical database disk limit. Do not write/delete this owner's rows from another process
+            while its Master is active. Dropped/unconfirmed admission counters reset on restart.
+            Dropped events are not replayed; Splunk/file output is unchanged.</p>
         <h6>Persistence failures</h6>
-        <p>A failed admission does not stop operational processing. The event uses best-effort in-memory delivery and
+        <p>A failed admission does not stop operational processing. The event is dropped (an ambiguous database response
+            may nevertheless leave a persisted row) and
             is not automatically backfilled into the journal. A red indicator remains until a successful admission
             confirms recovery. A yellow indicator then preserves the failure count for the rest of this Master process,
             even if the queue is empty. Check the Master log for <code>DATABASE EVENT JOURNAL UNAVAILABLE</code>
@@ -34,7 +46,7 @@
         <h6>Configuration and monitoring</h6>
         <p>Enable <code>openTelemetryEnabled=yes</code> and <code>journalEnabled=yes</code> in the Master's
             <code>[OperationalEvents]</code> configuration and restart the Master. Queue monitoring requires
-            <code>getOperationalEventStatistics.sql</code> in its <code>conf/sql</code> directory.
+            <code>getOperationalEventAdmissionStatistics.sql</code> in its <code>conf/sql</code> directory.
             Missing or unreadable statistics appear as unavailable, never as an empty queue.</p>
         <p>Administrators can pause/resume native OpenTelemetry collection and delivery separately. Collection pause
             does not affect Splunk/file logging. Delivery pause leaves collection and persistence active, so the queue
@@ -42,8 +54,9 @@
             restart. Configure <code>journalWarningPendingCount</code>, <code>journalCriticalPendingCount</code>,
             <code>journalWarningOldestAgeMillis</code> and <code>journalCriticalOldestAgeMillis</code> in
             <code>[OperationalEvents]</code>; restart the Master to change thresholds.</p>
-        <p>Refresh reads an owner-scoped database aggregate; the default interval is 30 seconds.
-            Home and menu indicators use runtime health without scanning the queue.
+        <p>Refresh reads cached background statistics, at most one minute old; the default page interval is 30 seconds.
+            The worker inspects at most the row limit plus one; an oversized backlog is unavailable, not an exact count.
+            Home and menu indicators also use cached health without scanning the queue.
             Control changes require Monitor and Master administration permissions and are recorded in the Master
             session audit log. This page cannot delete events, change configuration or force retries.</p>
     </div>

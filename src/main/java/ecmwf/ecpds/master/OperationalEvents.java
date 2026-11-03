@@ -91,6 +91,12 @@ public final class OperationalEvents {
             return;
         }
         final var journalEnabled = Cnf.at("OperationalEvents", "journalEnabled", false);
+        final var maxPendingEvents = journalEnabled ? positiveThreshold("journalMaxPendingEvents", 10000) : 10000;
+        final var maxPayloadBytes = journalEnabled ? positiveThreshold("journalMaxPayloadBytes", 64L * 1024 * 1024)
+                : 64L * 1024 * 1024;
+        if (maxPendingEvents >= Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("OperationalEvents.journalMaxPendingEvents must be below 2147483647");
+        }
         if (journalEnabled) {
             warningPendingCount = positiveThreshold("journalWarningPendingCount", 1000);
             criticalPendingCount = positiveThreshold("journalCriticalPendingCount", 10000);
@@ -149,7 +155,7 @@ public final class OperationalEvents {
                         return processor;
                     }
                     final var journal = new OperationalEventJournal(OperationalEventJournal.database(database, owner),
-                            exporterReference.get(), processor, true);
+                            exporterReference.get(), processor, true, maxPendingEvents, maxPayloadBytes);
                     INSTANCE.journal = journal;
                     return journal;
                 }).disableShutdownHook().build().getOpenTelemetrySdk();
@@ -165,19 +171,8 @@ public final class OperationalEvents {
         if (journal == null) {
             return OperationalEventJournalStatus.disabled();
         }
-        final var status = journal.status(INSTANCE.journalOwner, INSTANCE.collectionPaused, warningPendingCount,
+        return journal.status(INSTANCE.journalOwner, INSTANCE.collectionPaused, warningPendingCount,
                 criticalPendingCount, warningOldestAgeMillis, criticalOldestAgeMillis);
-        if (!includeQueue) {
-            return status;
-        }
-
-        try {
-            final var statistics = database.getOperationalEventStatistics(status.owner());
-            return status.withQueue(statistics.pendingCount(), statistics.oldestAdmissionAt(), null);
-        } catch (final java.sql.SQLException | java.io.IOException e) {
-            LOG.warn("Cannot retrieve operational event journal queue statistics", e);
-            return status.withQueue(null, null, "Unable to read queue statistics from the Master database.");
-        }
     }
 
     public static synchronized void setCollectionPaused(final boolean paused) {

@@ -7,11 +7,11 @@
             <c:when test="${journalUnavailable}"><strong>Operational event journal status unavailable.</strong>
                 The Master could not supply its runtime status; this does not mean journaling is disabled.</c:when>
             <c:when test="${journalDanger}"><strong>Operational event journaling is degraded or stopped.</strong>
-                Events may be delivered on a best-effort basis without durable persistence.</c:when>
+                New telemetry may be dropped; persisted, unacknowledged events are retained.</c:when>
             <c:when test="${journalHadPersistenceFailures}"><strong>Operational event persistence failures recorded.</strong>
                 Persistence has recovered, but some events could not be journalled since Master startup.</c:when>
-            <c:otherwise><strong>Operational event journal delivery needs attention.</strong>
-                Unacknowledged events are retained for retry.</c:otherwise>
+            <c:otherwise><strong>Operational event journaling needs attention.</strong>
+                Review queue health, pauses and dropped telemetry. Persisted, unacknowledged events are retained for retry.</c:otherwise>
         </c:choose>
         <a href="/do/admin/eventjournal" class="alert-link ms-1">Review event journal &rarr;</a>
     </div>
