@@ -37,7 +37,14 @@ import ecmwf.ecpds.extension.RemoteServiceProvider;
 /** ECCMD gateway discovery and Master-side relay; no EJB or server implementation. */
 public final class EcaccessGatewayProvider implements RemoteServiceProvider {
     private final Set<Access> exports = new HashSet<>();
-    private RmiEccmdClient client;
+    private EccmdClient client;
+
+    public EcaccessGatewayProvider() {
+    }
+
+    EcaccessGatewayProvider(final EccmdClient client) {
+        this.client = client;
+    }
 
     @Override
     public int apiVersion() {
@@ -54,7 +61,7 @@ public final class EcaccessGatewayProvider implements RemoteServiceProvider {
         if (target == null || target.isBlank()) {
             throw new IOException("Missing ECaccess gateway");
         }
-        final RmiEccmdClient current;
+        final EccmdClient current;
         synchronized (this) {
             current = client;
         }

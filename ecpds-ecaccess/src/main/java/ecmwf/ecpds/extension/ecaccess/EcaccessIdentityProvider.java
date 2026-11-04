@@ -22,25 +22,21 @@ import java.io.IOException;
 import java.rmi.RemoteException;
 
 import ecmwf.common.database.ECUser;
-import ecmwf.common.security.LoginManagement;
 import ecmwf.ecbatch.eis.rmi.client.EccmdException;
-import ecmwf.ecpds.extension.AuthenticationProvider;
 import ecmwf.ecpds.extension.ExtensionContext;
 import ecmwf.ecpds.extension.UserDirectoryProvider;
 
 /**
- * ECaccess Master identity behavior without the legacy Master or ECCMD server implementation.
+ * ECaccess user directory without credential authentication or the legacy Master implementation.
  */
-public final class EcaccessIdentityProvider implements AuthenticationProvider, UserDirectoryProvider {
+public final class EcaccessIdentityProvider implements UserDirectoryProvider {
     private EccmdClient client;
-    private String root;
 
     public EcaccessIdentityProvider() {
     }
 
-    EcaccessIdentityProvider(final EccmdClient client, final String root) {
+    EcaccessIdentityProvider(final EccmdClient client) {
         this.client = client;
-        this.root = root;
     }
 
     @Override
@@ -50,43 +46,7 @@ public final class EcaccessIdentityProvider implements AuthenticationProvider, U
 
     @Override
     public void start(final ExtensionContext context) throws IOException {
-        root = context.root();
         client = RmiEccmdClient.configured(context);
-    }
-
-    @Override
-    public Result authenticate(final String user, final String credentials, final String origin) throws IOException {
-        return authenticateIdentity(user, credentials, origin).result();
-    }
-
-    @Override
-    public Authentication authenticateIdentity(final String user, final String credentials, final String origin)
-            throws IOException {
-        if (user == null || user.isBlank() || credentials == null || credentials.isEmpty()) {
-            return new Authentication(Result.REJECTED, null);
-        }
-        final var eccmd = client();
-        try {
-            ECUser identity = null;
-            try {
-                identity = eccmd.password(user, credentials);
-            } catch (EccmdException e) {
-                // A rejected password may be an ActivID passcode, exactly as in the ECaccess Master.
-            }
-            if (identity == null && LoginManagement.isPasscode(credentials)) {
-                eccmd.preauthenticate(user, credentials, root);
-                identity = eccmd.lookup(user);
-            }
-            if (identity == null) {
-                return new Authentication(Result.REJECTED, null);
-            }
-            validate(user, identity);
-            return new Authentication(Result.ACCEPTED, identity);
-        } catch (EccmdException e) {
-            return new Authentication(Result.REJECTED, null);
-        } catch (RemoteException e) {
-            throw new IOException("ECaccess authentication service is unavailable");
-        }
     }
 
     @Override

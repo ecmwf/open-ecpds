@@ -17,9 +17,10 @@ startup and requires a restart; a configured provider that cannot start fails
 Master startup. See [Identity extensions](../concepts/plugin-infrastructure.md#identity-extensions)
 for installation, lifecycle and authentication precedence.
 
-The optional [ECaccess identity extension](../administration/ecaccess-identity.md)
-uses `host` and `port` in each identity-provider section and requires explicit
+The optional [ECaccess directory extension](../administration/ecaccess-identity.md)
+uses `host` and `port` in `[UserDirectoryExtension]` and requires explicit
 bounded `[RMIClientSocketFactory]` connection/read timeouts.
+It does not provide password/passcode authentication.
 
 `[RemoteServiceExtensions]` explicitly maps service IDs to provider configuration
 sections. It defaults to no registrations. See
@@ -80,8 +81,8 @@ apply a changed value dynamically.
 
 Optional Master-only SNMP location collection uses `[PhysicalLocation]`,
 `[PhysicalLocationSystems]`, `[PhysicalLocationMachine.ID]` and
-`[PhysicalLocationProfile.ID]`. It is off by default and requires the additive
-`system-physical-location.sql` migration before enabling.
+`[PhysicalLocationProfile.ID]`. It is off by default and uses the physical-location
+tables included in the installation schema.
 See [Physical system locations](../monitoring/physical-locations.md) for target
 mappings, protected credential files, limits and RMI/display behavior.
 

@@ -182,12 +182,9 @@ trafficAccountingJammedTimeout=5m
 
 The default file is `traffic-accounting.json` inside the Mover's startup-script
 temporary directory (`mover.tmp`, falling back to `java.io.tmpdir` when unset).
-The explicit `Server.trafficAccountingFile` setting still overrides this default.
+The explicit `Server.trafficAccountingFile` setting overrides this default.
 Temporary-directory cleanup or an ephemeral container mount loses the local checkpoint;
-use persistent storage if restart/outage recovery is required. Existing files at the
-old `var/traffic-accounting.json` location are not moved automatically: move the file
-while the Mover is stopped, or configure its old path explicitly to retain the counters
-and producer identity.
+use persistent storage if restart/outage recovery is required.
 
 Use a unique writable file per Mover on persistent storage outside
 content-file garbage collection; mount that directory persistently in containers.
@@ -197,9 +194,9 @@ history without masking newly collected bytes. A corrupt existing file prevents
 Mover startup rather than silently resetting accounting. Local checkpoint/delivery
 failures are logged and retried; shutdown attempts a final checkpoint.
 
-!!! warning "Accuracy and deployment"
-    Deploy matching Master, Mover (including Continental Movers and their REST
-    relays) and Monitor components. Only Movers providing application-stream
+!!! warning "Accuracy"
+    Master, Mover (including Continental Movers and their REST relays) and Monitor
+    components must use matching versions. Only Movers providing application-stream
     counters contribute; progress-sample history is not mixed into this counter.
     Allow 24 hours of continuous collection for a full window. Keep host clocks
     synchronized: future-minute snapshots are rejected until time catches up.

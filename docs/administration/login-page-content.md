@@ -54,26 +54,6 @@ already open retain their existing content until reloaded.
 
 ## Behaviour and defaults
 
-### Seeding an existing production database
-
-The standalone script [`login-page-content.sql`](https://github.com/ecmwf/open-ecpds/blob/main/docker/ecpds/database/login-page-content.sql)
-adds the same twelve phrases and article links used for new database installations.
-It requires the existing `SYS_CONFIG` table and preserves any configuration already
-saved, including disabled content. It is safe to rerun; it does not append to or
-replace an existing message list.
-
-Back up the database and run this script against the intended database:
-
-```sh
-mysql --default-character-set=utf8mb4 -u USER -p DATABASE < docker/ecpds/database/login-page-content.sql
-```
-
-The script prints the resulting configuration for verification. Use the
-administration editor to change an existing configuration. **Do not run the full
-`ecpds.sql` initialization script against production**: it drops existing tables.
-Reload the login pages to see the inserted content; no service restart is needed
-when the updated services are already deployed.
-
 ### Defaults and rotation
 
 When no configuration has been saved, both pages show a small built-in set of
@@ -91,6 +71,5 @@ This optional content fails closed to an empty area if configuration retrieval
 fails, leaving the login form available. It does not introduce analytics,
 tracking, remote article fetching or changes to login validation.
 
-Deploy the updated Master alongside the Monitor and Data Movers: the Data Portal
-obtains its configuration through a new Master RMI method. An older Master cannot
-provide it; the Portal omits the optional content in that case.
+The Data Portal obtains its configuration from the Master over RMI. If configuration
+is unavailable, the Portal omits the optional content.

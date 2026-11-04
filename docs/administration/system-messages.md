@@ -27,13 +27,6 @@ Data Portal. It follows the active theme and shows severity and the UTC service
 window. Preview never saves or publishes a notice. Raw HTML is displayed as text;
 unsupported formatting is flattened and unsafe links are removed.
 
-!!! warning "Database upgrade"
-    Before deploying the updated Master, Monitor and Movers, apply
-    [`system-message-markdown.sql`](https://github.com/ecmwf/open-ecpds/blob/main/docker/ecpds/database/system-message-markdown.sql)
-    to the existing MariaDB database. It adds `SYSTEM_MESSAGE.SYM_MARKDOWN` and
-    leaves existing notices in plain-text mode. Back up the database first.
-    New database installations already include this column.
-
 A **Status** column in the list shows, for each message, whether it is currently:
 
 - **Upcoming** — start time is in the future; already shown to users as an advance warning.

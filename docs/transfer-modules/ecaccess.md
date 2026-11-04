@@ -1,7 +1,7 @@
 # ECaccess gateway transfers
 
 The optional `ecpds-ecaccess` extension provides
-`ecmwf.ecpds.mover.ECaccessModule`, retaining the legacy module class name.
+`ecmwf.ecpds.mover.ECaccessModule`.
 It supports uploads, downloads with resume offsets, listing and filename
 filtering, size queries, deletion, directory creation/removal and moving files.
 
@@ -15,11 +15,11 @@ Build the adapter and extracted client-contract jar using the
 [ECaccess extension build instructions](../administration/ecaccess-identity.md#build-the-client-contracts-and-extension).
 The ordinary OpenECPDS build does not include them.
 
-Install the matching `ecpds-ecaccess-8.2.1.jar` on the application classpaths of
+Install the matching `ecpds-ecaccess-<version>.jar` on the application classpaths of
 the Master, Monitor and every Mover/Proxy executing this transfer method. Install
 `ecaccess-eccmd-client-1.0.0.jar` on the Master classpath as well. The legacy
 ECCMD wire contracts are confined to the Master-side adapter; Movers use the
-extension's own `EcaccessGatewayAccess` remote interface. Do not add old
+extension's own `EcaccessGatewayAccess` remote interface. Do not add ECaccess-J
 `master.jar`, `mover.jar`, `eccmd.jar` or `gateway.jar` alongside upstream:
 classpath precedence is not a supported way to replace core classes.
 
@@ -28,8 +28,8 @@ Restart affected services after installation or configuration changes.
 
 The Transfer Module definition must use class
 `ecmwf.ecpds.mover.ECaccessModule`. Leave its **Archive** empty to use the
-application classpath; do not point it at an old ECaccess-J archive. Existing
-Transfer Methods can keep referring to that definition. This extension does
+application classpath rather than an ECaccess-J archive. Transfer Methods
+refer to that definition. This extension does
 not create or modify database definitions automatically.
 
 ## Master configuration
@@ -53,12 +53,13 @@ soTimeOut=10000
 
 `ecaccess` is the service ID used by this module; `EcaccessTransfers` names its
 configuration section. Registration is independent of the authentication and
-user-directory providers. Installing a jar or setting `[Jeccmdd] useEccmd`
-does not activate the new provider. No EJB/JNDI backend is loaded.
+user-directory providers. Installing a jar alone does not activate the provider.
+No EJB/JNDI backend is loaded.
 
 `host` is required and accepts up to eight comma-, semicolon- or pipe-separated
-ECCMD hosts. `port` defaults to 640. Explicit connection and read timeouts between
-1 and 60,000 milliseconds are required; these factory settings also affect other
+ECCMD hosts. `port` defaults to 640. Effective connection and read timeouts must be
+between 1 and 60,000 milliseconds. `[RMIClientSocketFactory]` overrides inherited
+`[SocketConfig]` defaults; these factory settings also affect other
 Master RMI clients. Preserve the site's existing RMI transport/network policy.
 
 The Master resolves ECCMD's `EccmdEngine` registry binding on demand. Invalid

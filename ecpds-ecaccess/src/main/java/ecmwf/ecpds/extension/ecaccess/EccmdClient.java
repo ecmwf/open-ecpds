@@ -22,12 +22,11 @@ import java.io.IOException;
 import java.rmi.RemoteException;
 
 import ecmwf.common.database.ECUser;
+import ecmwf.ecbatch.eis.rmi.client.DataAccess;
 import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 
 interface EccmdClient extends AutoCloseable {
-    ECUser password(String user, String credential) throws EccmdException, RemoteException;
-
-    void preauthenticate(String user, String credential, String root) throws EccmdException, RemoteException;
+    DataAccess gateway(String target) throws IOException;
 
     ECUser lookup(String user) throws EccmdException, RemoteException;
 

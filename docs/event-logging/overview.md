@@ -253,9 +253,8 @@ Master connection. Continental Movers use the existing REST relay path.
 Forwarding queues are bounded and held in memory; connection failures are
 retried while the process is running, but full queues and shutdown can discard
 spans. Check Mover, relay and Master service logs for forwarding/export errors.
-Trace forwarding does not block transfers. Deploy the Master, Movers and
-Continental relays together when enabling retrieval traces so all components
-recognize the retrieval-span wire format.
+Trace forwarding does not block transfers. The Master, Movers and Continental
+relays must use matching versions for the retrieval-span wire format.
 
 Traces cover dispatch, transfer execution and completion for dissemination
 attempts. Retries have separate traces. UPH and dissemination ERR native logs
@@ -308,7 +307,7 @@ metricsExportTimeoutMillis=30000
 
 They use the same OTLP connection settings as logs and traces, but a separate
 SDK/provider. Metrics do not replace the existing Prometheus/JMX JVM and MBean
-export. The first application instruments cover transfer dispatch/completion,
+export. The application instruments cover transfer dispatch/completion,
 retrieval attempts/completion, and actual portal transfers, with counters and
 duration/byte histograms. Transfer outcomes and portal direction use bounded
 attributes; transfer, file, user, destination and host IDs are never metric
@@ -321,14 +320,95 @@ rolling 24-hour transferred bytes by Host Type, open Data Portal sessions and
 rolling portal upload/download rates, and cached DataMover storage used and
 capacity. The storage aggregation uses the same per-Mover cache snapshot as the
 globe. Active transfer count, distinct-host and throughput gauges are emitted
-only while live transfer sampling is enabled by an interested globe client;
-absence of these gauge points means the feed is not currently sampling, not
-that there are no active transfers.
+only while live transfer sampling is enabled, normally by an interested globe
+client. Their absence alone does not establish whether transfers are active.
 
 The SDK exports OTLP metrics by default when enabled. Standard
 `OTEL_METRIC_EXPORT_INTERVAL` and `OTEL_METRIC_EXPORT_TIMEOUT` (or corresponding
 `otel.metric.export.*` JVM properties) override the interval and timeout in
 `ecmwf.properties`. Metrics export is best effort and is not journalled.
+
+#### Metric inventory
+
+The following inventory covers the Master's application metrics. OTLP carries
+the dotted instrument names in the first column. The second column shows their
+Prometheus names with standard unit and counter-suffix translation enabled;
+Collector/exporter translation settings can change these names.
+
+Each histogram base name expands into three Prometheus series:
+`<base>_bucket`, `<base>_count` and `<base>_sum`. Buckets also have an `le`
+label. Durations are in milliseconds, sizes are in bytes and throughput is in
+bytes per second.
+
+| OTLP instrument | Prometheus name or histogram base | Type | Point attributes | Meaning |
+|---|---|---|---|---|
+| `ecpds.transfer.attempts` | `ecpds_transfer_attempts_total` | Counter | None | Transfer dispatch attempts. |
+| `ecpds.transfer.completions` | `ecpds_transfer_completions_total` | Counter | `outcome` | Transfer completion/status events, including retries and failures. |
+| `ecpds.transfer.duration` | `ecpds_transfer_duration_milliseconds` | Histogram | `outcome` | Duration reported at transfer completion. |
+| `ecpds.transfer.bytes` | `ecpds_transfer_bytes` | Histogram | `outcome` | Bytes reported sent at transfer completion, including unsuccessful attempts. |
+| `ecpds.retrieval.mover.attempts` | `ecpds_retrieval_mover_attempts_total` | Counter | `outcome` | Successful and failed Mover retrieval attempts. |
+| `ecpds.retrieval.completions` | `ecpds_retrieval_completions_total` | Counter | `outcome` | Successful and failed retrieval completions. |
+| `ecpds.retrieval.duration` | `ecpds_retrieval_duration_milliseconds` | Histogram | `outcome` | Retrieval completion duration. |
+| `ecpds.retrieval.bytes` | `ecpds_retrieval_bytes` | Histogram | `outcome` | Retrieved bytes; recorded only for successful retrievals. |
+| `ecpds.portal.transfers` | `ecpds_portal_transfers_total` | Counter | `direction`, `outcome` | Actual portal upload/download completions. |
+| `ecpds.portal.transfer.duration` | `ecpds_portal_transfer_duration_milliseconds` | Histogram | `direction`, `outcome` | Portal transfer duration. |
+| `ecpds.portal.transfer.bytes` | `ecpds_portal_transfer_bytes` | Histogram | `direction`, `outcome` | Portal transfer bytes, including unsuccessful transfers. |
+| `ecpds.traffic.bytes.24h` | `ecpds_traffic_bytes_24h` | Gauge | `host.type` | Actual bytes transferred in the rolling 24-hour window; independent of live sampling. |
+| `ecpds.portal.sessions` | `ecpds_portal_sessions` | Gauge | None | Currently open Data Portal connections. |
+| `ecpds.portal.throughput` | `ecpds_portal_throughput_bytes_per_second` | Gauge | `direction` | Rolling portal upload/download throughput. |
+| `ecpds.storage.bytes` | `ecpds_storage_bytes` | Gauge | `state` | Aggregate cached DataMover storage usage and capacity. |
+| `ecpds.transfer.active` | `ecpds_transfer_active` | Gauge | `host.type` | Active sampled transfers. |
+| `ecpds.transfer.active.hosts` | `ecpds_transfer_active_hosts` | Gauge | `host.type` | Distinct named hosts among active sampled transfers. |
+| `ecpds.transfer.active.throughput` | `ecpds_transfer_active_throughput_bytes_per_second` | Gauge | `host.type` | Sum of positive, finite active sampled throughput. |
+
+`outcome` is `success`, `retry` or `failure` for transfer completions and their
+histograms; retrieval and portal instruments use `success` or `failure`.
+`direction` is `upload` or `download`, and storage `state` is `used` or
+`capacity`. `host.type` uses `Dissemination`, `Acquisition`, `Replication`,
+`Source`, `Backup` or `Proxy`; Prometheus normally translates this attribute
+key to `host_type`. Resource attributes such as `service.name` identify the
+exporting Master separately; their mapping to Prometheus labels depends on
+Collector/exporter configuration.
+
+These are **18 instruments**, normally producing **30 distinct Prometheus
+metric names** when all are populated: five counters, six histograms with
+three names each, and seven gauges. Labels and histogram buckets create
+additional time series, not additional instrument names. JVM/process metrics
+are not registered by this component; configure separate instrumentation or
+the existing Prometheus/JMX export for those.
+
+#### Live sampling and missing metrics
+
+To keep the three `ecpds.transfer.active*` gauges sampling without an open
+globe page, add this to the Master's local `ecmwf.properties` override and
+restart the Master:
+
+```ini
+[Server]
+liveTransferMonitoringForceEnabled=yes
+```
+
+This keeps the underlying live transfer sampling active, not just metric
+export. It is not required for completion counters/histograms, portal metrics,
+storage or rolling 24-hour traffic accounting.
+
+Even with sampling enabled, the active gauges do not emit explicit zero
+points for empty Host Types. The distinct-host gauge needs a named host,
+and the throughput gauge needs a positive, finite rate. Missing points can
+therefore mean disabled sampling, no qualifying samples, or export/filtering
+issues; they are not an authoritative zero.
+
+Counters and histograms appear only after qualifying activity is recorded;
+they are not pre-populated with zero series. Histograms skip negative
+measurements, and retrieval byte measurements require success. Allow at least
+one configured export interval after activity before checking the Collector.
+
+Transfer completion counts, durations and bytes are recorded together in the
+Master's completion handler. If fresh `ecpds_transfer_bytes_*` data arrives
+but completion counts and non-negative durations remain absent, check the
+deployed software version, Collector metric filters/transforms and exporter
+name translation. Existing historical series alone do not prove that the
+current Master is still exporting that instrument.
 
 ### Per-signal resource attributes
 
@@ -405,11 +485,10 @@ opt-out, and combining the opt-out with OTLP client TLS credentials fail startup
 
 The Master routes OpenTelemetry SDK diagnostics for logs, traces and metrics to
 **`master.log`**, including HTTP status (such as 401), TLS and connection errors.
-These JUL diagnostics no longer propagate to the stderr/systemd console handler.
+These JUL diagnostics do not propagate to the stderr/systemd console handler.
 The dedicated `OpenTelemetrySdk` Log4j logger is file-only, even when general
 console logging is enabled; its default threshold is WARN (`log.otel.level`).
-SDK throttling still applies. Restart the Master with the updated code and
-`log4j2.properties`. Other libraries' stderr output is not redirected by this change.
+SDK throttling applies. Other libraries' stderr output is not redirected.
 
 Without database journaling, delivery uses a bounded in-memory queue and is
 **best effort**. A full queue, export failure or process shutdown can lose
@@ -429,7 +508,7 @@ independent and is not replayed by this feature.
 
 Journaling requires the `OPERATIONAL_EVENT` table in the Master's database,
 included in the supplied installation schema. The running service does not
-create tables. Deploy the supplied Master SQL files and Monitor pages.
+create tables. The Master uses the supplied SQL files to access the journal.
 
 Then configure and restart the Master:
 
@@ -526,9 +605,8 @@ OTLP acknowledgement.
 The Monitor page shows pending count, oldest admission timestamp and age,
 in-flight records, last successful persistence, last endpoint acknowledgement,
 and persistence/delivery failure history, admission limits and dropped events.
-It reads cached worker statistics, at most one minute old; UI refresh never runs
-the old full-table aggregate. Deploy `getOperationalEventAdmissionStatistics.sql`
-with the updated Master code and matching Monitor pages. It refreshes every 30 seconds by
+It reads cached worker statistics, at most one minute old; UI refresh does not run
+a full-table aggregate. The page refreshes every 30 seconds by
 default, with manual refresh and an option to disable automatic refresh. Warning
 and critical thresholds are configurable with `journalWarningPendingCount`,
 `journalCriticalPendingCount`, `journalWarningOldestAgeMillis` and

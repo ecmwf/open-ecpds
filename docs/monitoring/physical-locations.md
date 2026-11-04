@@ -29,17 +29,11 @@ any already loaded value remains visible as stale. No page waits for restoration
 
 ## Install and enable
 
-1. Apply `docker/ecpds/database/system-physical-location.sql` to the existing
-   ECPDS database. It is additive and safe to rerun on MariaDB.
-   **Do not run `ecpds.sql` against an existing installation**: that is the
-   destructive initialization script.
-2. Deploy matching Master and Monitor application builds, including SNMP4J
-   `3.13.1` on the Master's runtime classpath. Maven copies it into the shared
-   runtime libraries during packaging. ECaccess-J keeps it in `ext/`, and its Ant
-   `deploy` target copies it to the Master's RPM runtime libraries; the existing
-   RPM JAR wildcard includes it. No new Mover RMI method is required.
-3. Configure the Master as below, create its protected credential files, allow
-   UDP traffic from the Master to each selected SNMP agent, and restart the Master.
+The physical-location tables are included in the installation schema. The Master
+requires SNMP4J on its runtime classpath; the application packaging supplies it.
+
+Configure the Master as below, create its protected credential files, allow
+UDP traffic from the Master to each selected SNMP agent, and restart the Master.
 
 The feature is **disabled by default**. All configuration and credentials are read
 at Master startup; changing them, rotating credentials or disabling collection

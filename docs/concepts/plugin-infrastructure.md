@@ -130,11 +130,12 @@ credentials out of logs and exception messages.
 
 ### ECaccess integration boundary
 
-The optional `ecpds-ecaccess` module implements ECCMD authentication and directory
+The optional `ecpds-ecaccess` module implements ECCMD directory
 lookup without copying `MasterServer`. It is built only with the
 `ecaccess-extension` Maven profile and a separately extracted client-contract jar.
-See [ECaccess identity](../administration/ecaccess-identity.md) for build,
-configuration and passcode semantics.
+See [ECaccess directory](../administration/ecaccess-identity.md) for build
+and configuration. Credentials remain with core TOTP authentication; this adapter
+does not validate passwords or passcodes.
 The same optional jar supplies [ECaccess gateway transfers](../transfer-modules/ecaccess.md)
 through the independent remote-service SPI below. Gateway operations and legacy
 wire types remain entirely in that jar; the identity SPI does not dispatch them.

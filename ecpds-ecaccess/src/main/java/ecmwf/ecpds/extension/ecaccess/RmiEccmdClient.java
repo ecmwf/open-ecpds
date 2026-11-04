@@ -27,14 +27,14 @@ import java.util.Arrays;
 
 import ecmwf.common.database.ECUser;
 import ecmwf.common.rmi.RMIClientSocketFactory;
-import ecmwf.common.technical.Cnf;
+import ecmwf.common.rmi.SocketConfig;
 import ecmwf.ecbatch.eis.rmi.client.DataAccess;
 import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 import ecmwf.ecbatch.eis.rmi.client.EccmdInterface;
 import ecmwf.ecpds.extension.ExtensionContext;
 
 /**
- * On-demand connection to the existing ECCMD registry binding. Never replay a credential RPC after failure.
+ * On-demand connection to the existing ECCMD registry binding for directory and gateway lookup.
  */
 final class RmiEccmdClient implements EccmdClient {
     private final List<String> hosts;
@@ -65,15 +65,17 @@ final class RmiEccmdClient implements EccmdClient {
         if (port < 1 || port > 65535) {
             throw new IOException("Invalid ECaccess port");
         }
-        final var readTimeout = Cnf.at("RMIClientSocketFactory", "soTimeOut", 0);
-        final var connectTimeout = Cnf.at("RMIClientSocketFactory", "connectTimeOut", 0);
+        final var socketConfig = new SocketConfig("RMIClientSocketFactory");
+        final var readTimeout = socketConfig.getSOTimeOut();
+        final var connectTimeout = socketConfig.getConnectTimeOut();
         if (readTimeout < 1 || readTimeout > 60000 || connectTimeout < 1 || connectTimeout > 60000) {
             throw new IOException("Set RMIClientSocketFactory soTimeOut and connectTimeOut between 1 and 60000 ms");
         }
         return new RmiEccmdClient(hosts, port);
     }
 
-    DataAccess gateway(final String target) throws IOException {
+    @Override
+    public DataAccess gateway(final String target) throws IOException {
         try {
             return call(remote -> remote.getDataAccess(target));
         } catch (EccmdException e) {
@@ -96,7 +98,7 @@ final class RmiEccmdClient implements EccmdClient {
                     return connection = eccmd;
                 }
             } catch (RemoteException | NotBoundException e) {
-                // Failover applies to discovery only, never to a possibly consumed passcode.
+                // Try the next discovery endpoint.
             }
         }
         throw new RemoteException("ECCMD identity service is unavailable");
@@ -114,17 +116,6 @@ final class RmiEccmdClient implements EccmdClient {
             }
             throw new RemoteException("ECCMD identity request failed");
         }
-    }
-
-    @Override
-    public ECUser password(final String user, final String credential) throws EccmdException, RemoteException {
-        return call(remote -> remote.getECUser(user, credential));
-    }
-
-    @Override
-    public void preauthenticate(final String user, final String credential, final String root)
-            throws EccmdException, RemoteException {
-        call(remote -> remote.computePreAuth(user, credential, root, "monitoring"));
     }
 
     @Override

@@ -36,7 +36,7 @@ public final class IdentityExtensions implements AutoCloseable {
 
     private final List<Extension> providers = new ArrayList<>();
     private AuthenticationProvider authentication;
-    private UserDirectoryProvider directory;
+    private UserDirectories directory;
     private InteractiveLogins interactive;
 
     private IdentityExtensions() {
@@ -53,7 +53,7 @@ public final class IdentityExtensions implements AutoCloseable {
         final var extensions = new IdentityExtensions();
         try {
             extensions.authentication = extensions.load(AuthenticationProvider.class, root, authenticationOptions);
-            extensions.directory = extensions.load(UserDirectoryProvider.class, root, directoryOptions);
+            extensions.directory = UserDirectories.load(root, directoryOptions);
             final var provider = extensions.load(InteractiveLoginProvider.class, root, interactiveOptions);
             extensions.interactive = new InteractiveLogins(provider, provider == null ? Map.of() : mappings);
             return extensions;
@@ -115,17 +115,17 @@ public final class IdentityExtensions implements AutoCloseable {
     }
 
     public ECUser lookup(final String user) throws IOException {
-        final var result = directory == null ? null : directory.lookup(user);
-        if (result != null && !user.equals(result.getName())) {
-            throw new IOException("Directory extension returned a different user");
-        }
-        return result;
+        return directory == null ? null : directory.lookup(user);
     }
 
     @Override
     public synchronized void close() {
         if (interactive != null) {
             interactive.clear();
+        }
+        if (directory != null) {
+            directory.close();
+            directory = null;
         }
         for (var i = providers.size() - 1; i >= 0; i--) {
             final var provider = providers.get(i);
