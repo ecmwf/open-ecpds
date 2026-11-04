@@ -11,7 +11,12 @@ Other services have separate references: [Monitor](monitor.md) and
 ## Identity extensions
 
 `[AuthenticationExtension] class` and `[UserDirectoryExtension] class` select
-optional, trusted Master identity providers. Both default to blank (disabled).
+trusted Master identity providers. A blank authentication class automatically
+selects the bundled ECMWF TOTP adapter when `[TOTP] active=true`; otherwise it
+preserves local WebUser password authentication. A nonblank class selects the
+configured provider.
+Set `[AuthenticationExtension] required=yes` to fail Master startup if no
+authentication provider is configured; it defaults to `no`.
 Provider-specific options belong in the same section. Configuration is read at
 startup and requires a restart; a configured provider that cannot start fails
 Master startup. See [Identity extensions](../concepts/plugin-infrastructure.md#identity-extensions)

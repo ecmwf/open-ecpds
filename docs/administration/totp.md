@@ -1,12 +1,18 @@
 # TOTP Authentication
 
-OpenECPDS supports **Time-based One-time Password (TOTP)** authentication as an alternative to local password validation. When enabled, login credentials are verified against an external TOTP-compatible server (e.g. Keycloak) using an OAuth2 resource-owner password flow, rather than comparing against the password stored in the OpenECPDS database.
+OpenECPDS delegates external credential checks to a Master-side
+`AuthenticationProvider`. The bundled
+`ecmwf.ecpds.extension.ecmwf.EcmwfTotpAuthenticationProvider` adapts ECMWF's
+password/passcode verification endpoint. TOTP code generation is a standard
+algorithm; the endpoint request format and client credentials are ECMWF-specific.
 
 ---
 
 ## How TOTP Works
 
-When a user logs in, OpenECPDS forwards the supplied credentials to the configured TOTP endpoint with an HTTP POST. The endpoint validates the credentials and returns an HTTP status code. OpenECPDS accepts the login only if the response matches the configured `expectedStatus` (default `200`).
+When the ECMWF provider is selected, it forwards supplied credentials to the
+configured endpoint. OpenECPDS accepts the login only when the response status
+matches `expectedStatus` (default `200`).
 
 OpenECPDS **auto-detects the credential type** before forwarding:
 
@@ -21,7 +27,7 @@ This means users can log in with either their **regular password** or a **one-ti
 
 ## Configuration
 
-TOTP is configured in the MasterServer properties file under the `[TOTP]` section:
+The ECMWF provider reads endpoint and client settings from `[TOTP]`:
 
 ```ini
 [TOTP]
@@ -46,7 +52,19 @@ grantType=password
 expectedStatus=200
 ```
 
-Changes to `active` take effect only after restarting the MasterServer.
+For compatibility, a blank `[AuthenticationExtension] class` automatically
+selects the ECMWF provider when `[TOTP] active=true`. You may instead select it
+explicitly, or configure another trusted provider:
+
+```ini
+[AuthenticationExtension]
+class=ecmwf.ecpds.extension.ecmwf.EcmwfTotpAuthenticationProvider
+```
+
+Provider-specific options can be set in `[AuthenticationExtension]`; when
+absent, the ECMWF provider uses the corresponding `[TOTP]` values. An explicitly
+configured provider replaces the automatic ECMWF selection and does not require
+`TOTP.active=true`. Restart the Master after changing provider configuration.
 
 ---
 
@@ -56,14 +74,19 @@ Web Users are the operators and administrators who access the **Monitoring UI**.
 
 | `TOTP.active` | Behaviour |
 |---|---|
-| `true` | **All** Web Users authenticate through the TOTP endpoint. The password stored in the database is ignored entirely. |
-| `false` | **All** Web Users authenticate against the password stored in the database. |
+| `true`, no explicit provider | Web Users authenticate through the automatically selected ECMWF provider. |
+| `false`, no provider configured | Web Users authenticate against the password stored in the database. |
+| Any value, explicit provider configured | Web User credentials are validated by that provider; local passwords are not a fallback. |
 
 !!! warning "Global effect"
-    `TOTP.active` is a global switch. When set to `true`, every Web User must have a valid account on the TOTP server. Any Web User without an account on the TOTP server will be unable to log in.
+    When the ECMWF provider is selected, every Web User must be accepted by
+    its endpoint. Selecting another provider changes the credential verifier;
+    it does not relax local active-WebUser and authorization checks.
 
 !!! info "Password field in the UI"
-    When `TOTP.active = true`, the **Password** field and **Generate** button on the Web User edit page are still visible but have no effect at runtime — the stored password is never checked. The field only becomes relevant again if the MasterServer is restarted with `TOTP.active = false`.
+    When an external provider is selected, the **Password** field and
+    **Generate** button do not determine authentication; rejected credentials
+    never fall back to the local password.
 
 ---
 
@@ -71,17 +94,23 @@ Web Users are the operators and administrators who access the **Monitoring UI**.
 
 Data Users are the external users who access data through the **Data Portal**.
 
-TOTP for Data Users is controlled at the **individual user level** via the **TOTP Authentication** toggle (`isSynchronized` field) on the Data User edit page, combined with the global `TOTP.active` setting.
+External authentication for synchronized Data Users is controlled at the
+individual user level via the **TOTP Authentication** toggle
+(`isSynchronized`). The selected Master authentication provider validates their
+credentials. Non-synchronized and self-service users retain their existing
+local-password/subscriber-password handling.
 
-| `TOTP.active` (global) | Per-user TOTP toggle | Result |
+| Authentication provider | Per-user synchronization toggle | Result |
 |---|---|---|
-| `true` | Enabled ✓ | User authenticates through the TOTP endpoint |
-| `true` | Disabled ✗ | User authenticates against the database password |
-| `false` | Enabled ✓ | ⚠️ Login **fails** — TOTP endpoint is unavailable but database password is not used |
-| `false` | Disabled ✗ | User authenticates against the database password |
+| Configured | Enabled ✓ | User authenticates through the configured provider |
+| Configured or not | Disabled ✗ | User authenticates against the database password |
+| Not configured | Enabled ✓ | Login fails; database-password fallback is disabled |
 
 !!! danger "Per-user TOTP with global TOTP inactive"
-    If a Data User's **TOTP Authentication** toggle is enabled but `TOTP.active = false` globally, the user will be **locked out** — they cannot log in at all. TOTP authentication is attempted but throws an error, and no fallback to the database password occurs. Always ensure the global TOTP service is active before enabling per-user TOTP.
+    If a Data User's **TOTP Authentication** toggle is enabled but no
+    authentication provider is configured, login fails; the local password is
+    not used as a fallback. The ECMWF provider is selected automatically when
+    `TOTP.active=true`.
 
 !!! info "Self-Service users are exempt"
     Data Users with the **Self-Service Registration** portal service mode bypass TOTP entirely and always authenticate against their database password, regardless of the per-user TOTP toggle.
@@ -90,7 +119,8 @@ TOTP for Data Users is controlled at the **individual user level** via the **TOT
 
 ## Credential Auto-Detection
 
-Both Web Users and Data Users benefit from the same passcode auto-detection logic:
+The bundled ECMWF provider auto-detects passcodes for Web Users and synchronized
+Data Users:
 
 - A credential of **exactly 6 or 8 digits** is treated as a **TOTP passcode** (one-time code from an authenticator app).
 - Any other credential is treated as a **password**.
@@ -103,7 +133,7 @@ This means users can log in with either credential type without any additional c
 
 | User type | TOTP scope | Controlled by |
 |---|---|---|
-| Web User | Global | `TOTP.active` in MasterServer config |
-| Data User | Per-user | `TOTP.active` **and** per-user TOTP toggle |
+| Web User | Global | Configured `AuthenticationProvider`; ECMWF default selected by `TOTP.active` |
+| Synchronized Data User | Per-user | Configured provider and per-user synchronization toggle |
 
 See also: [Users & Access Control](../monitor-ui/users.md) for managing Web Users and Data Users in the UI.

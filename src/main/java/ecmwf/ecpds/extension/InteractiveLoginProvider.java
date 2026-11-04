@@ -32,10 +32,17 @@ public interface InteractiveLoginProvider extends Extension {
 
     ExternalIdentity authenticate(String code, String nonce, String codeVerifier) throws IOException;
 
-    record ExternalIdentity(String issuer, String subject) {
+    record ExternalIdentity(String issuer, String subject, String userId) {
+        public ExternalIdentity(final String issuer, final String subject) {
+            this(issuer, subject, null);
+        }
+
         public ExternalIdentity {
             if (issuer == null || issuer.isBlank() || subject == null || subject.isBlank()) {
                 throw new IllegalArgumentException("External identity requires issuer and subject");
+            }
+            if (userId != null && (userId.isBlank() || userId.length() > 255)) {
+                throw new IllegalArgumentException("Invalid local user claim");
             }
         }
     }

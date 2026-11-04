@@ -52,12 +52,12 @@ public class InsertFormAction extends PDSAction {
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
-        boolean totpActive = false;
+        boolean authenticationProviderActive = false;
         try {
-            totpActive = MasterManager.getMI().isTotpActive();
+            authenticationProviderActive = MasterManager.getMI().isTotpActive();
         } catch (Exception ignored) {
         }
-        request.setAttribute("totpActive", totpActive);
+        request.setAttribute("authenticationProviderActive", authenticationProviderActive);
         return mapping.findForward("success");
     }
 }

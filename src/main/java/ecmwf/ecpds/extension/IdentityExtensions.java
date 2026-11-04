@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.database.ECUser;
+import ecmwf.common.security.TOTP;
 
 /**
  * Startup-only identity providers. No discovery, provider chaining or classpath-based activation.
@@ -52,15 +53,36 @@ public final class IdentityExtensions implements AutoCloseable {
             final Map<String, String> mappings) throws IOException {
         final var extensions = new IdentityExtensions();
         try {
-            extensions.authentication = extensions.load(AuthenticationProvider.class, root, authenticationOptions);
+            final var authenticationClass = authenticationOptions.get("class");
+            if ((authenticationClass == null || authenticationClass.isBlank()) && TOTP.ACTIVE) {
+                final var defaultOptions = new java.util.HashMap<>(authenticationOptions);
+                defaultOptions.put("class", "ecmwf.ecpds.extension.ecmwf.EcmwfTotpAuthenticationProvider");
+                extensions.authentication = extensions.load(AuthenticationProvider.class, root, defaultOptions);
+            } else {
+                extensions.authentication = extensions.load(AuthenticationProvider.class, root, authenticationOptions);
+            }
+            if (requiredAuthentication(authenticationOptions) && extensions.authentication == null) {
+                throw new IOException(
+                        "AuthenticationExtension.required=yes but no authentication provider is configured");
+            }
             extensions.directory = UserDirectories.load(root, directoryOptions);
-            final var provider = extensions.load(InteractiveLoginProvider.class, root, interactiveOptions);
-            extensions.interactive = new InteractiveLogins(provider, provider == null ? Map.of() : mappings);
+            extensions.interactive = InteractiveLogins.load(root, interactiveOptions, mappings);
             return extensions;
         } catch (IOException | RuntimeException | LinkageError e) {
             extensions.close();
             throw e;
         }
+    }
+
+    private static boolean requiredAuthentication(final Map<String, String> options) throws IOException {
+        final var value = options.get("required");
+        if (value == null || value.isBlank() || "no".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
+            return false;
+        }
+        if ("yes".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value)) {
+            return true;
+        }
+        throw new IOException("AuthenticationExtension.required must be yes or no");
     }
 
     private <T extends Extension> T load(final Class<T> type, final String root, final Map<String, String> options)
@@ -121,7 +143,8 @@ public final class IdentityExtensions implements AutoCloseable {
     @Override
     public synchronized void close() {
         if (interactive != null) {
-            interactive.clear();
+            interactive.close();
+            interactive = null;
         }
         if (directory != null) {
             directory.close();

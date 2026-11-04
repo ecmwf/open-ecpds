@@ -55,12 +55,12 @@ public class InsertFormAction extends PDSAction {
         // Clear the id so the Data Login field is never pre-filled on the create form,
         // regardless of any id value Struts may have populated from the request context.
         ((IncomingUserActionForm) form).setId("");
-        boolean totpActive = false;
+        boolean authenticationProviderActive = false;
         try {
-            totpActive = MasterManager.getMI().isTotpActive();
+            authenticationProviderActive = MasterManager.getMI().isTotpActive();
         } catch (Exception ignored) {
         }
-        request.setAttribute("totpActive", totpActive);
+        request.setAttribute("authenticationProviderActive", authenticationProviderActive);
         return mapping.findForward("success");
     }
 }

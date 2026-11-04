@@ -601,9 +601,9 @@ public interface ManagementInterface extends Remote {
     void holdAllDestinations(ECpdsSession session, boolean graceful) throws MasterException, RemoteException;
 
     /**
-     * Checks if TOTP authentication is active on the MasterServer.
+     * Checks if an external credential authentication provider is active.
      *
-     * @return true, if TOTP is active
+     * @return true, if an external credential authentication provider is active
      *
      * @throws java.rmi.RemoteException
      *             the remote exception

@@ -247,7 +247,6 @@ import ecmwf.common.plugin.EventComparator;
 import ecmwf.common.plugin.PluginContainer;
 import ecmwf.common.plugin.PluginEvent;
 import ecmwf.common.security.LoginManagement;
-import ecmwf.common.security.TOTP;
 import ecmwf.common.security.Tools;
 import ecmwf.common.starter.Starter;
 import ecmwf.common.technical.ByteSize;
@@ -1514,17 +1513,17 @@ public final class MasterServer extends ECaccessProvider
             } else if (incomingPassword != null) {
                 final var selfService = "self-service".equals(user.getPortalService());
                 if (!selfService && user.getSynchronized()) {
-                    // User/password authentication through TOTP. Auto-detect passcodes (6 or 8 digits)
-                    // to match the behaviour of getWebUser/LoginManagement.
-                    final var isPasscode = LoginManagement.isPasscode(incomingPassword);
-                    boolean authenticated;
+                    // Auto-detect password versus one-time passcode, then delegate credential checks
+                    // to the configured Master authentication extension.
+                    boolean authenticated = false;
                     try {
-                        authenticated = TOTP.authenticate(incomingUser, incomingPassword, isPasscode);
-                    } catch (IOException | URISyntaxException e) {
-                        authenticated = false;
+                        authenticated = identityExtensions.authenticate(incomingUser, incomingPassword,
+                                from) == AuthenticationProvider.Result.ACCEPTED;
+                    } catch (IOException e) {
+                        _log.warn("Incoming-user authentication provider unavailable");
                     }
                     if (!authenticated) {
-                        recordPortalAccessDenial(incomingUser, "TOTP authentication failed", from);
+                        recordPortalAccessDenial(incomingUser, "External authentication failed", from);
                         throw new MasterException("Login failed");
                     }
                 } else {
@@ -1675,8 +1674,8 @@ public final class MasterServer extends ECaccessProvider
     /**
      * {@inheritDoc}
      *
-     * Returns a fresh IncomingProfile for an already-authenticated user without re-running credential validation, TOTP,
-     * connection-count checks, or last-login updates.
+     * Returns a fresh IncomingProfile for an already-authenticated user without re-running credential validation,
+     * external authentication, connection-count checks, or last-login updates.
      */
     @Override
     public IncomingProfile getIncomingProfileNoAuth(final String incomingUser) throws RemoteException {
@@ -6289,6 +6288,10 @@ public final class MasterServer extends ECaccessProvider
         return identityExtensions.interactive().displayName();
     }
 
+    boolean hasAuthenticationProvider() {
+        return identityExtensions.hasAuthenticationProvider();
+    }
+
     ecmwf.ecpds.extension.InteractiveLogins.Challenge beginInteractiveLogin(final String binding, final String origin)
             throws MasterException {
         try {
@@ -7332,8 +7335,7 @@ public final class MasterServer extends ECaccessProvider
                 throw new MasterException("Authentication failed");
             }
         }
-        // Existing TOTP, static and certificate paths retain precedence.
-        if (!TOTP.ACTIVE && identityExtensions.hasAuthenticationProvider()) {
+        if (identityExtensions.hasAuthenticationProvider()) {
             try {
                 final var authentication = identityExtensions.authenticateIdentity(user, credentials, root);
                 if (authentication.result() != AuthenticationProvider.Result.ACCEPTED) {
@@ -7346,19 +7348,6 @@ public final class MasterServer extends ECaccessProvider
                 _log.warn("External authentication unavailable");
                 throw new MasterException("Authentication failed");
             }
-        } else if (TOTP.ACTIVE) {
-            boolean authenticated;
-            try {
-                authenticated = TOTP.authenticate(user, credentials, isPasscode);
-            } catch (IOException | URISyntaxException e) {
-                authenticated = false;
-            }
-            final var mode = isPasscode ? "passcode" : "password";
-            if (!authenticated) {
-                _log.error("TOTP authentication failed for " + user + " (" + mode + ")");
-                throw new MasterException("Authentication failed");
-            }
-            _log.debug("TOTP authentication successful for " + user + " (" + mode + ")");
         } else if (!credentials.equals(webUser.getPassword())) {
             _log.error("Static authentication failed for " + user);
             throw new MasterException("Authentication failed");

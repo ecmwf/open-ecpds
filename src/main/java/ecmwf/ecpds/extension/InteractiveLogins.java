@@ -38,7 +38,9 @@ import ecmwf.ecpds.extension.InteractiveLoginProvider.ExternalIdentity;
 /**
  * Bounded, single-use login transactions owned by the Master. No tokens or identities come from the browser.
  */
-public final class InteractiveLogins {
+public final class InteractiveLogins implements AutoCloseable {
+    private static final org.apache.logging.log4j.Logger LOG = org.apache.logging.log4j.LogManager
+            .getLogger(InteractiveLogins.class);
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final long LIFETIME = Duration.ofMinutes(5).toMillis();
     private static final int CAPACITY = 1000;
@@ -55,6 +57,32 @@ public final class InteractiveLogins {
     private record Attempt(String binding, String origin, String nonce, String verifier, long expires) {
     }
 
+    public static InteractiveLogins load(final String root, final Map<String, String> options,
+            final Map<String, String> mappings) throws IOException {
+        final var context = new ExtensionContext(root, options);
+        final var configured = context.option("class");
+        if (configured == null || configured.isBlank()) {
+            return new InteractiveLogins(null, Map.of());
+        }
+        InteractiveLoginProvider provider = null;
+        try {
+            provider = Class.forName(configured.trim(), false, InteractiveLogins.class.getClassLoader())
+                    .asSubclass(InteractiveLoginProvider.class).getConstructor().newInstance();
+            if (provider.apiVersion() != Extension.API_VERSION) {
+                throw new IOException("Incompatible interactive login extension API");
+            }
+            provider.start(context);
+            final var logins = new InteractiveLogins(provider, mappings);
+            LOG.info("Started InteractiveLoginProvider: {}", configured.trim());
+            return logins;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError | IOException e) {
+            if (provider != null) {
+                closeProvider(provider);
+            }
+            throw new IOException("Cannot load interactive login extension: " + configured.trim(), e);
+        }
+    }
+
     public InteractiveLogins(final InteractiveLoginProvider provider, final Map<String, String> mappings)
             throws IOException {
         this(provider, mappings, Clock.systemUTC());
@@ -68,7 +96,10 @@ public final class InteractiveLogins {
         for (final var entry : mappings.entrySet()) {
             try {
                 final var identity = json.readValue(entry.getValue(), ExternalIdentity.class);
-                if (entry.getKey().isBlank() || identity == null || users.put(identity, entry.getKey()) != null) {
+                final var mappingIdentity = identity == null ? null
+                        : new ExternalIdentity(identity.issuer(), identity.subject());
+                if (entry.getKey().isBlank() || mappingIdentity == null
+                        || users.put(mappingIdentity, entry.getKey()) != null) {
                     throw new IOException("Invalid or duplicate interactive login identity mapping");
                 }
             } catch (IllegalArgumentException e) {
@@ -123,7 +154,8 @@ public final class InteractiveLogins {
             throw new IOException("Invalid interactive login response");
         }
         final var identity = provider.authenticate(code, attempt.nonce(), attempt.verifier());
-        final var user = users.get(identity);
+        final var mappedUser = users.get(new ExternalIdentity(identity.issuer(), identity.subject()));
+        final var user = mappedUser == null ? identity.userId() : mappedUser;
         if (user == null) {
             throw new IOException("External identity is not mapped to a local account");
         }
@@ -133,6 +165,22 @@ public final class InteractiveLogins {
     public void clear() {
         synchronized (pending) {
             pending.clear();
+        }
+    }
+
+    @Override
+    public void close() {
+        clear();
+        if (provider != null) {
+            closeProvider(provider);
+        }
+    }
+
+    private static void closeProvider(final InteractiveLoginProvider provider) {
+        try {
+            provider.close();
+        } catch (IOException | RuntimeException e) {
+            LOG.warn("Could not close interactive login extension {}", provider.getClass().getName());
         }
     }
 

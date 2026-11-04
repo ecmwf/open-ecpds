@@ -49,7 +49,7 @@
 							<li><strong>Web Login</strong> &mdash; the unique username used to log in.</li>
 							<li><strong>Comment</strong> &mdash; a free-text label to identify the account (e.g. full name or team).</li>
 							<li><strong>Enabled</strong> &mdash; when disabled, the user cannot log in regardless of authentication mode.</li>
-							<li><strong>Password</strong> &mdash; used for authentication only when TOTP is not active globally. When TOTP is active, the password is ignored at login time but can be pre-set as a fallback.</li>
+							<li><strong>Password</strong> &mdash; used when no external authentication provider is configured. When a provider is active, credentials are validated externally and the local password is not a fallback.</li>
 						</ul>
 					</div>
 				</div>

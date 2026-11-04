@@ -19,8 +19,8 @@ Install the matching `ecpds-ecaccess-<version>.jar` on the application classpath
 the Master, Monitor and every Mover/Proxy executing this transfer method. Install
 `ecaccess-eccmd-client-1.0.0.jar` on the Master classpath as well. The legacy
 ECCMD wire contracts are confined to the Master-side adapter; Movers use the
-extension's own `EcaccessGatewayAccess` remote interface. Do not add ECaccess-J
-`master.jar`, `mover.jar`, `eccmd.jar` or `gateway.jar` alongside upstream:
+extension's own `EcaccessGatewayAccess` remote interface. Do not add external
+server archives containing overlapping core implementations to OpenECPDS:
 classpath precedence is not a supported way to replace core classes.
 
 Master and participating Movers must use matching core and extension versions.
@@ -28,7 +28,7 @@ Restart affected services after installation or configuration changes.
 
 The Transfer Module definition must use class
 `ecmwf.ecpds.mover.ECaccessModule`. Leave its **Archive** empty to use the
-application classpath rather than an ECaccess-J archive. Transfer Methods
+application classpath rather than a separate archive. Transfer Methods
 refer to that definition. This extension does
 not create or modify database definitions automatically.
 

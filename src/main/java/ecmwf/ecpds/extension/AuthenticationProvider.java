@@ -23,7 +23,7 @@ import java.io.IOException;
 import ecmwf.common.database.ECUser;
 
 /**
- * Credential validation for Master WebUsers, not authorization or Data Portal authentication. Implementations must
+ * Credential validation for Master WebUsers and transfer-protocol users, not authorization. Implementations must
  * support concurrent calls, bound network waits and never log credentials.
  */
 public interface AuthenticationProvider extends Extension {

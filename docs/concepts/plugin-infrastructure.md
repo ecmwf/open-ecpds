@@ -17,12 +17,12 @@ The `ecmwf.ecpds.extension` package provides the initial OpenECPDS Extension SPI
 
 | Interface | Purpose |
 |---|---|
-| `AuthenticationProvider` | Validate credentials for the requested Master WebUser |
+| `AuthenticationProvider` | Validate credentials for Master WebUsers and synchronized transfer-protocol users |
 | `UserDirectoryProvider` | Supply a missing ECUser from an external directory |
 | `InteractiveLoginProvider` | Browser login returning a verified issuer and subject |
 | `Extension` | API-version check, startup and shutdown |
 
-These are **Master-side hooks**, not a replacement for Data Portal authentication.
+These are **Master-side hooks** for account credential validation.
 Authentication does not grant permissions, create a WebUser or bypass the active
 WebUser check. The core retains authorization and database persistence.
 
@@ -33,22 +33,35 @@ copies of OpenECPDS classes in the extension jar. Install trusted provider jars
 and their dependencies on the Master application classpath. A `[PluginList]`
 entry or transfer-module archive does not make an identity provider available.
 
-Enable providers explicitly in the Master's local `ecmwf.properties` override:
+Enable providers in the Master's local `ecmwf.properties` override:
 
 ```ini
 [AuthenticationExtension]
 class=org.example.ecpds.CompanyAuthentication
 endpoint=https://identity.example.invalid
+required=yes
 
 [UserDirectoryExtension]
 class=org.example.ecpds.CompanyDirectory
 endpoint=https://directory.example.invalid
 ```
 
-The class names above illustrate administrator-supplied implementations; they
-are not bundled providers. Each class must be public, implement the appropriate
+The example class names illustrate administrator-supplied implementations;
+they are not bundled providers. The bundled
+`ecmwf.ecpds.extension.ecmwf.EcmwfTotpAuthenticationProvider` adapts the
+existing ECMWF `[TOTP]` endpoint for Master WebUser and synchronized
+FTP/SFTP/Data Portal credential checks. With a blank `class`, that provider is
+selected automatically when `[TOTP] active=true`; otherwise blank preserves
+local WebUser password validation. Setting a class explicitly replaces the
+automatic ECMWF selection. Each provider class must be public, implement the appropriate
 SPI interface, and have a public no-argument constructor. Missing or blank
-`class` disables that role. Installing a jar alone never activates it.
+`class` disables an optional role unless documented automatic selection
+applies. Installing a jar alone never activates it.
+
+Set `required=yes` in `[AuthenticationExtension]` to fail Master startup if
+automatic provider selection leaves authentication unconfigured. It defaults
+to `no`; an explicitly configured provider that fails to load always fails
+startup regardless of this setting.
 
 Providers receive an immutable configuration snapshot through
 `ExtensionContext.option(name)` and the local service identity through `root()`.
@@ -73,10 +86,16 @@ The existing checks and authentication ordering remain in place:
 1. Empty credentials are rejected; the ECUser must exist or be imported, and a
    corresponding active WebUser must already exist locally.
 2. Existing configured static/anonymous and certificate authentication paths
-   retain precedence.
-3. If TOTP is active, its existing authentication path retains precedence.
-4. Otherwise a configured `AuthenticationProvider` replaces local WebUser
-   password validation. Without a configured provider, local validation is unchanged.
+   retain precedence for WebUser login.
+3. An active `AuthenticationProvider` validates ordinary WebUser credentials.
+   The ECMWF provider auto-selected by `[TOTP] active=true` preserves the
+   existing password/passcode endpoint behavior. Otherwise a configured
+   provider replaces local WebUser password validation; with no provider,
+   local validation is unchanged.
+4. For active synchronized incoming users, credential validation is delegated
+   to the same provider. Inactive providers or rejected credentials do not
+   fall back to a local password. Self-service subscriber-password handling
+   and open-access users retain their existing policy.
 
 An authentication provider returns `ACCEPTED`, `REJECTED` or `UNSUPPORTED`.
 **Only `ACCEPTED` succeeds.** Neither rejection, an unsupported request, a null

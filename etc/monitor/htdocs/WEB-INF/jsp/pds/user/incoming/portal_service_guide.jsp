@@ -102,7 +102,7 @@
 
         <p class="small fw-semibold mb-1"><i class="bi bi-shield-lock text-primary me-1"></i>TOTP (Time-based One-Time Password)</p>
         <ul class="small ps-3 mb-3">
-          <li>Enable the <strong>TOTP authentication</strong> toggle in the edit form to require a second factor.</li>
+          <li>Enable the <strong>External authentication</strong> toggle in the edit form to use the configured credential provider.</li>
           <li>The portal login page shows a numeric keypad where the visitor enters the 6-digit code.</li>
           <li>TOTP secrets are managed externally (via the authorised keys / ECAUTH module).</li>
           <li>When TOTP is active, <em>Standard Login</em> with the password alone is rejected.</li>

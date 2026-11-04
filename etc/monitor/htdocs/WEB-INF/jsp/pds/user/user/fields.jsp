@@ -90,16 +90,16 @@
 								<button type="button" id="buttonPassword" name="buttonPassword"
 									class="btn btn-sm btn-outline-secondary" onclick="generatePassword(); return false">Generate</button>
 							</div>
-							<c:if test="${totpActive}">
+							<c:if test="${authenticationProviderActive}">
 							<div class="d-flex align-items-start gap-2 mt-2 p-2 rounded" style="background:var(--bs-warning-bg-subtle,#fff3cd); border:1px solid var(--bs-warning-border-subtle,#ffc107); font-size:0.8rem;">
 								<i class="bi bi-exclamation-triangle-fill text-warning mt-1 flex-shrink-0"></i>
-								<span><strong>TOTP authentication is active.</strong> This password is currently <strong>not used</strong> for login — authentication is handled externally via TOTP. The password can still be set here as a fallback for use if TOTP is ever deactivated.</span>
+								<span><strong>External authentication is active.</strong> This password is currently <strong>not used</strong> for login — credentials are checked by the configured authentication provider.</span>
 							</div>
 							</c:if>
-							<c:if test="${!totpActive}">
+							<c:if test="${!authenticationProviderActive}">
 							<div class="d-flex align-items-start gap-2 mt-2 p-2 rounded" style="background:var(--bs-info-bg-subtle,#cff4fc); border:1px solid var(--bs-info-border-subtle,#9eeaf9); font-size:0.8rem;">
 								<i class="bi bi-info-circle-fill text-info mt-1 flex-shrink-0"></i>
-								<span><strong>TOTP is not active.</strong> This password is currently <strong>used for login</strong>. If TOTP is activated on the server, this password will be ignored and authentication will be handled externally.</span>
+								<span><strong>No external authentication provider is active.</strong> This password is currently <strong>used for login</strong>. If a provider is configured, this password will no longer be used for authentication.</span>
 							</div>
 							</c:if>
 						</div>

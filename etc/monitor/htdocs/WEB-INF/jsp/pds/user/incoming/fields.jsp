@@ -72,7 +72,7 @@
             </li>
             <li><strong>Comment</strong> &mdash; a free-text label to identify the account (e.g. organisation or contact name).</li>
             <li><strong>Country</strong> &mdash; country associated with this user, used to display the corresponding flag in the UI.</li>
-            <li><strong>TOTP authentication</strong> &mdash; when enabled, this user authenticates via Time-based One-Time Password (external provider). The password field is ignored while TOTP is active for this user. <strong>Note:</strong> if TOTP is not active globally on the server, enabling this toggle will effectively lock the user out (equivalent to disabling the account) until the server is restarted with TOTP activated.</li>
+            <li><strong>External authentication</strong> &mdash; when enabled, this user authenticates through the configured Master authentication provider. The local password is ignored. The provider must be active or the user cannot log in.</li>
             <li><strong>Or password</strong> &mdash; local password used for authentication when TOTP is disabled for this user. Use <em>Generate</em> to create a secure random password.</li>
             <li><strong>Enabled</strong> &mdash; when disabled, the user cannot connect regardless of authentication mode.</li>
           </ul>
@@ -149,17 +149,17 @@
           <div id="standardLoginFields" class="col-12">
             <div class="row g-3">
               <div class="col-12 col-md-6">
-                <label class="form-label form-label-sm fw-semibold text-muted mb-1">TOTP authentication
+                <label class="form-label form-label-sm fw-semibold text-muted mb-1">External authentication
                   <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em"
                      data-bs-toggle="popover" data-bs-placement="top"
                      data-bs-content="Enable Time-based One-Time Password (TOTP) authentication. When enabled, the password field is not used."
                      tabindex="0"></i>
                 </label>
                 <div class="form-check form-switch mb-0"><html:checkbox property="isSynchronized" styleId="isSynchronized" onclick="handleTOTPClick(this)" styleClass="form-check-input" /></div>
-                <c:if test="${!totpActive}">
+                <c:if test="${!authenticationProviderActive}">
                 <div class="d-flex align-items-start gap-2 mt-2 p-2 rounded" style="background:var(--bs-warning-bg-subtle,#fff3cd); border:1px solid var(--bs-warning-border-subtle,#ffc107); font-size:0.78rem;">
                   <i class="bi bi-exclamation-triangle-fill text-warning mt-1 flex-shrink-0"></i>
-                  <span><strong>TOTP is not active globally.</strong> Enabling this will <strong>lock out</strong> the user — TOTP authentication will fail and the password field is bypassed. This is equivalent to disabling the account, unless the server is restarted with TOTP activated.</span>
+                  <span><strong>No external authentication provider is active.</strong> Enabling this will prevent login until a provider is configured.</span>
                 </div>
                 </c:if>
               </div>
@@ -224,13 +224,13 @@
           </div>
           <div id="standardLoginFields" class="d-flex flex-column gap-2">
           <div class="row g-2 align-items-start">
-            <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">TOTP authentication <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Enable Time-based One-Time Password (TOTP) authentication. When enabled, the password field is not used." tabindex="0"></i></label></div>
+            <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">External authentication <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Use the configured Master authentication provider instead of the local password." tabindex="0"></i></label></div>
             <div class="col-sm-8">
               <div class="form-check form-switch mb-0"><html:checkbox property="isSynchronized" styleId="isSynchronized" onclick="handleTOTPClick(this)" styleClass="form-check-input" /></div>
-              <c:if test="${!totpActive}">
+              <c:if test="${!authenticationProviderActive}">
               <div class="d-flex align-items-start gap-2 mt-2 p-2 rounded" style="background:var(--bs-warning-bg-subtle,#fff3cd); border:1px solid var(--bs-warning-border-subtle,#ffc107); font-size:0.78rem;">
                 <i class="bi bi-exclamation-triangle-fill text-warning mt-1 flex-shrink-0"></i>
-                <span><strong>TOTP is not active globally.</strong> If enabled here, the user will <strong>not be able to log in</strong> — TOTP authentication will fail and the password field is bypassed. This is equivalent to disabling the account, unless the server is restarted with TOTP activated.</span>
+                <span><strong>No external authentication provider is active.</strong> If enabled here, the user cannot log in until a provider is configured.</span>
               </div>
               </c:if>
             </div>

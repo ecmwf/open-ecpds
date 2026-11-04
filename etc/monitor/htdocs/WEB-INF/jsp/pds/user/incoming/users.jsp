@@ -183,7 +183,7 @@ style="background:rgba(255,193,7,0.08); color:var(--bs-body-color); border-left:
             <li><span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-normal"><i class="bi bi-unlock-fill me-1"></i>Open Access</span> &mdash; no credentials required; anyone can access the data portal for this user anonymously.</li>
             <li><span class="badge rounded-pill bg-info-subtle text-info-emphasis border border-info-subtle fw-normal"><i class="bi bi-person-plus-fill me-1"></i>Self-Service</span> &mdash; visitors self-register with their email address and receive generated credentials by email.</li>
         </ul>
-        <div class="text-muted">TOTP authentication and password fields are only relevant for <strong>Standard Login</strong> users and are hidden for the other modes.</div>
+        <div class="text-muted">External authentication and password fields are only relevant for <strong>Standard Login</strong> users and are hidden for the other modes.</div>
     </div>
 </div>
 

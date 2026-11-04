@@ -59,12 +59,12 @@ public class UpdateFormAction extends PDSAction {
             final var haf = (UserActionForm) form;
             final var h = UserHome.findByPrimaryKey(id);
             haf.populateFromUser(h);
-            boolean totpActive = false;
+            boolean authenticationProviderActive = false;
             try {
-                totpActive = MasterManager.getMI().isTotpActive();
+                authenticationProviderActive = MasterManager.getMI().isTotpActive();
             } catch (Exception ignored) {
             }
-            request.setAttribute("totpActive", totpActive);
+            request.setAttribute("authenticationProviderActive", authenticationProviderActive);
             return mapping.findForward("success");
         }
         return mapping.findForward("cancel");

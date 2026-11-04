@@ -53,6 +53,7 @@ public class OidcLoginProvider implements InteractiveLoginProvider {
     private String secret;
     private String clientAuthentication;
     private String label;
+    private String userIdClaim;
     private URI authorizationEndpoint;
     private URI tokenEndpoint;
     private URI redirectUri;
@@ -73,6 +74,14 @@ public class OidcLoginProvider implements InteractiveLoginProvider {
         redirectUri = endpoint(required(context, "redirectUri"));
         final var jwks = endpoint(required(context, "jwksUri"));
         clientId = required(context, "clientId");
+        userIdClaim = context.option("userIdClaim");
+        if (userIdClaim != null && !userIdClaim.isBlank()
+                && (!userIdClaim.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,127}"))) {
+            throw new IOException("Invalid OIDC user ID claim name");
+        }
+        if (userIdClaim != null && userIdClaim.isBlank()) {
+            userIdClaim = null;
+        }
         secret = context.option("clientSecret");
         clientAuthentication = context.option("clientAuthentication");
         if (clientAuthentication == null) {
@@ -146,7 +155,14 @@ public class OidcLoginProvider implements InteractiveLoginProvider {
                     || (claims.getAudience().size() > 1 || azp != null) && !clientId.equals(azp)) {
                 throw new IOException("Invalid OIDC identity claims");
             }
-            return new ExternalIdentity(claims.getIssuer(), claims.getSubject());
+            final String userId;
+            if (userIdClaim == null) {
+                userId = null;
+            } else {
+                final var claim = claims.getClaim(userIdClaim);
+                userId = claim instanceof String value && !value.isBlank() && value.length() <= 255 ? value : null;
+            }
+            return new ExternalIdentity(claims.getIssuer(), claims.getSubject(), userId);
         } catch (com.nimbusds.jose.JOSEException | com.nimbusds.jose.proc.BadJOSEException | ParseException
                 | RuntimeException e) {
             throw new IOException("Invalid OIDC ID token");

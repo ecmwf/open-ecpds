@@ -25,6 +25,17 @@
 <style>
 #login-card #login-form.login-form-with-messages { padding-bottom: 0; margin-bottom: 0; }
 #login-card #login-form.login-form-with-messages + .ecpds-login-content { padding-top: .25rem; margin-top: 0; }
+#login-card:has(.login-interactive-form) #login-form { padding-top: .8rem; }
+.login-interactive-form { margin: 1rem -2rem -1rem; }
+.login-interactive-button {
+  display: block; width: 100%; padding: .7rem 1rem; color: #fff;
+  background: rgba(255,255,255,.12); border: 0;
+  border-top: 1px solid rgba(255,255,255,.25); border-radius: 0;
+  font: inherit; font-weight: 600; cursor: pointer; transition: background .15s;
+}
+.login-interactive-button:hover,
+.login-interactive-button:focus-visible { background: rgba(255,255,255,.22); }
+.login-interactive-button:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
 </style>
 
 <c:choose>
@@ -261,16 +272,15 @@
       <div id="login-logo"><i class="bi bi-speedometer2" aria-hidden="true"></i></div>
       <h1 id="login-title"><%=System.getProperty("monitor.nickName")%></h1>
       <p id="login-subtitle">Monitoring</p>
+      <c:if test="${not empty interactiveLoginName}">
+        <form action="<c:url value='/do/interactiveLogin'/>" method="post" class="login-interactive-form">
+          <input type="hidden" name="loginToken" value="<c:out value='${interactiveLoginToken}'/>">
+          <button type="submit" class="login-interactive-button">
+            <i class="bi bi-box-arrow-in-right"></i> <c:out value="${interactiveLoginName}"/>
+          </button>
+        </form>
+      </c:if>
     </div>
-
-    <c:if test="${not empty interactiveLoginName}">
-      <form action="<c:url value='/do/interactiveLogin'/>" method="post">
-        <input type="hidden" name="loginToken" value="<c:out value='${interactiveLoginToken}'/>">
-        <button type="submit" class="btn btn-primary w-100 mb-3">
-          <i class="bi bi-box-arrow-in-right"></i> <c:out value="${interactiveLoginName}"/>
-        </button>
-      </form>
-    </c:if>
 
     <form name="login-form" action="/do/login" method="post" autocomplete="off" id="login-form"
           class="<%=loginPageMessages.isEmpty() ? "" : "login-form-with-messages"%>">
