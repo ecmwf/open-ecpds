@@ -107,12 +107,12 @@ callback URI when their browser-visible HTTPS URL is identical. With split DNS,
 the same hostname can resolve to a public IP on the Internet and a private IP
 on the LAN. The identity provider registers the URL, not those IP addresses.
 
-For separate XDISS and XACQ Masters, configure one client on each Master:
+For separate ECPDS service instances, configure one client on each Master:
 
 | Service | Browser-visible Monitor URL | Registered callback URI |
 |---|---|---|
-| XDISS | `https://xdiss-monitor.ecmwf.int` | `https://xdiss-monitor.ecmwf.int/do/interactiveCallback` |
-| XACQ | `https://xacq-monitor.ecmwf.int` | `https://xacq-monitor.ecmwf.int/do/interactiveCallback` |
+| Service A | `https://monitor-a.example.org` | `https://monitor-a.example.org/do/interactiveCallback` |
+| Service B | `https://monitor-b.example.org` | `https://monitor-b.example.org/do/interactiveCallback` |
 
 Use the respective client ID, secret and `redirectUri` in each Master's
 `[InteractiveLoginExtension]`; both services can use the same issuer if the
