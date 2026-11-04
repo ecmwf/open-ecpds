@@ -6,6 +6,7 @@ ecmwf.ecpds.mover.plugin.mqtt
 ecmwf.ecpds.mover.service
 ecmwf.ecpds.monitor
 ecmwf.ecpds.extension
+ecmwf.ecpds.extension.ecmwf
 ecmwf.ecpds.extension.oidc
 ecmwf.ecpds.master
 ecmwf.ecpds.master.location
