@@ -1594,6 +1594,8 @@ public interface ManagementInterface extends Remote {
      */
     Map<String, long[][]> getMoverVolumeUsage(String moverName) throws MasterException, RemoteException;
 
+    Map<String, Long> getMoverVolumeUpdated(String moverName) throws MasterException, RemoteException;
+
     Map<String, List<StorageVolumeInfo>> getMoverStorageVolumeInfo(String moverName)
             throws MasterException, RemoteException;
 

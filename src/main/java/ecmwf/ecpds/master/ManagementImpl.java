@@ -3192,37 +3192,14 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     }
 
     @Override
+    public Map<String, Long> getMoverVolumeUpdated(final String moverName) {
+        return master.getMoverVolumeUpdated(moverName);
+    }
+
+    @Override
     public Map<String, List<StorageVolumeInfo>> getMoverStorageVolumeInfo(final String moverName)
             throws MasterException, RemoteException {
-        final Map<String, List<StorageVolumeInfo>> result = new java.util.TreeMap<>();
-        try {
-            final var servers = moverName == null ? base.getTransferServerArray()
-                    : new TransferServer[] { base.getTransferServer(moverName) };
-            for (final var server : servers) {
-                if (server == null) {
-                    continue;
-                }
-                final var volumes = new java.util.TreeMap<Integer, StorageVolumeInfo>();
-                final var count = server.getTransferGroup().getVolumeCount();
-                try {
-                    final var mover = master.getDataMoverInterface(server.getName());
-                    if (mover != null) {
-                        for (final var info : mover.getStorageVolumeInfo(count - 1)) {
-                            volumes.put(info.volume(), info);
-                        }
-                    }
-                } catch (final Exception e) {
-                    _log.warn("Cannot get storage volume details from Data Mover {}", server.getName(), e);
-                }
-                for (var volume = 0; volume < count; volume++) {
-                    volumes.putIfAbsent(volume, new StorageVolumeInfo(volume, "", "", "", ""));
-                }
-                result.put(server.getName(), List.copyOf(volumes.values()));
-            }
-            return result;
-        } catch (final Exception e) {
-            throw new MasterException("Cannot get Data Mover storage volume information: " + e.getMessage());
-        }
+        return master.getMoverStorageVolumeSnapshot(moverName);
     }
 
     @Override

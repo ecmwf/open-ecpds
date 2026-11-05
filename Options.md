@@ -1087,6 +1087,12 @@ This property allow to define the format or type of the payload data being trans
 ### mqtt.expiryInterval
 This property specifies how long the broker should retain the message if it is not delivered due to subscriber unavailability. By default, the message remains retained until the expiry date of the data transfer is reached.
 
+### mqtt.inlineMaxBytes
+Maximum original file size in bytes eligible for inline content. Set this option in Properties before JavaScript executes; 0 disables it (the default), and values above 16384 are capped at 16384 bytes (16 KiB). When the complete file can be read within this limit, JSON.parse(mqttEventJson).contentBase64 contains its Base64-encoded bytes for JavaScript to include in mqtt.payload. Larger files, unknown sizes, size mismatches and read failures omit contentBase64 without failing the notification. Base64 is encoding, not encryption: all subscribers authorized for the topic can read embedded content without authenticating to the Data Portal.
+
+### mqtt.payload
+The message body published to the MQTT broker. Set a static string in Properties, or return mqtt.payload from JavaScript to build a dynamic notification (for example, with JSON.stringify). Use JSON.parse(mqttEventJson) to access file metadata safely without inserting filenames into script source. An empty or missing payload skips publication. This option does not automatically include file content.
+
 ### mqtt.publish
 If data transfer requests directed to this destination trigger events ("acquisition.event" or "incoming.event"), enabling this option ensures notifications are published to the MQTT broker upon completion of these transfer requests.
 

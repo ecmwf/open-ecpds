@@ -319,7 +319,10 @@ public final class PipedInputStream extends InputStream {
             try {
                 wait(10);
             } catch (final InterruptedException ex) {
-                throw new java.io.InterruptedIOException();
+                Thread.currentThread().interrupt();
+                final var failure = new java.io.InterruptedIOException("Interrupted while waiting for pipe space");
+                failure.initCause(ex);
+                throw failure;
             }
         }
     }
@@ -369,7 +372,10 @@ public final class PipedInputStream extends InputStream {
             try {
                 wait(10);
             } catch (final InterruptedException ex) {
-                throw new java.io.InterruptedIOException();
+                Thread.currentThread().interrupt();
+                final var failure = new java.io.InterruptedIOException("Interrupted while waiting for pipe data");
+                failure.initCause(ex);
+                throw failure;
             }
         }
         final var ret = buffer[out++] & 0xFF;

@@ -843,8 +843,7 @@ public final class MasterServer extends ECaccessProvider
      * {@code i}. Entries are overwritten on every poll and survive until the next poll even if the mover disconnects,
      * so the last known state is always available for display.
      */
-    private final transient Map<String, long[][]> moverUsageCache = new ConcurrentHashMap<>();
-    private final transient Map<String, Long> moverUsageUpdated = new ConcurrentHashMap<>();
+    private final transient MoverStorageMonitor moverStorageMonitor = new MoverStorageMonitor();
 
     /** The management. */
     private final transient ManagementImpl management;
@@ -1131,6 +1130,7 @@ public final class MasterServer extends ECaccessProvider
             } else {
                 theMoverAvailabilityScheduler = null;
             }
+            ecmwf.ecpds.master.transfer.TransferServerProvider.getVolumeSnapshot(null);
             try {
                 weatherAdministration.load();
             } catch (final Exception e) {
@@ -3501,9 +3501,9 @@ public final class MasterServer extends ECaccessProvider
      * returning one {@link VolumeUsageResult} per volume index.
      *
      * <p>
-     * Contacts each data mover in the group exactly once and builds all per-volume sorted-mover lists in a single
-     * in-memory pass. The result is a {@code VolumeUsageResult[]} where index {@code i} contains the aggregated usage
-     * and the list of movers sorted by ascending used space on volume {@code i}.
+     * Schedules at most one background poll per data mover and builds all per-volume sorted-mover lists from recent
+     * cached samples. Slow Movers cannot block group aggregation. The result is a {@code VolumeUsageResult[]} where
+     * index {@code i} contains the aggregated usage and the movers sorted by ascending used space on volume {@code i}.
      * </p>
      *
      * <p>
@@ -3525,7 +3525,7 @@ public final class MasterServer extends ECaccessProvider
         final var volumeUsage = new long[2][volumeCount];
         var initialised = false;
 
-        // Collect per-mover usage for every volume in a single fan-out pass.
+        // Schedule polling without waiting for remote calls, then aggregate recent samples.
         // moversRaw[v] holds (moverName, usedOnVolume[v]) entries for sorting.
         @SuppressWarnings("unchecked")
         final var moversRaw = (ArrayList<Map.Entry<String, Long>>[]) new ArrayList[volumeCount];
@@ -3533,20 +3533,15 @@ public final class MasterServer extends ECaccessProvider
             moversRaw[v] = new ArrayList<>();
 
         for (final TransferServer server : getECpdsBase().getTransferServers(group.getName())) {
-            final var mover = getDataMoverInterface(server.getName());
-            if (mover == null)
-                continue;
-            final var usage = mover.computeVolumeUsage(volumeCount - 1);
+            final var name = server.getName();
+            moverStorageMonitor.refresh(name, volumeCount, () -> getDataMoverInterface(name));
+            final var usage = getStorageVolumeUsage(name);
             if (usage == null || usage.length != 2 || usage[0] == null || usage[1] == null
                     || usage[0].length != volumeCount || usage[1].length != volumeCount) {
-                _log.warn("Invalid volume usage returned by mover {}", server.getName());
                 continue;
             }
             final var used = usage[0];
             final var total = usage[1];
-            // Cache per-mover raw data for the dashboard
-            moverUsageCache.put(server.getName(), new long[][] { used.clone(), total.clone() });
-            moverUsageUpdated.put(server.getName(), System.currentTimeMillis());
             if (!initialised) {
                 System.arraycopy(used, 0, volumeUsage[0], 0, volumeCount);
                 System.arraycopy(total, 0, volumeUsage[1], 0, volumeCount);
@@ -3587,18 +3582,23 @@ public final class MasterServer extends ECaccessProvider
      * @return a map of mover name to {@code long[2][volumeCount]}; never {@code null}
      */
     public Map<String, long[][]> getMoverVolumeSnapshot(final String moverName) {
-        if (moverName != null) {
-            final var entry = moverUsageCache.get(moverName);
-            return entry != null ? Map.of(moverName, entry) : Map.of();
-        }
-        return new HashMap<>(moverUsageCache);
+        return moverStorageMonitor.usage(moverName);
+    }
+
+    public Map<String, Long> getMoverVolumeUpdated(final String moverName) {
+        return moverStorageMonitor.updated(moverName);
+    }
+
+    public Map<String, List<ecmwf.common.database.StorageVolumeInfo>> getMoverStorageVolumeSnapshot(
+            final String moverName) {
+        return moverStorageMonitor.details(moverName);
     }
 
     public long[][] getStorageVolumeUsage(final String moverName) {
-        final var updated = moverUsageUpdated.get(moverName);
+        final var updated = moverStorageMonitor.updated(moverName).get(moverName);
         return updated != null
                 && System.currentTimeMillis() - updated <= Cnf.durationAt("StoragePolicy", "maxUsageAge", 120_000)
-                        ? moverUsageCache.get(moverName) : null;
+                        ? moverStorageMonitor.usage(moverName).get(moverName) : null;
     }
 
     /**
@@ -7504,6 +7504,7 @@ public final class MasterServer extends ECaccessProvider
      */
     @Override
     public void shutdown() {
+        moverStorageMonitor.close();
         if (theTransferScheduler != null) {
             theTransferScheduler.shutdown(getGraceful());
         }

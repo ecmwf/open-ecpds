@@ -219,10 +219,12 @@ style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left
             return '#198754';
         }
 
-        var _tsDiskFails = 0, _tsDiskIv;
+        var _tsDiskBusy = false, _tsDiskIv;
         function refreshDiskUsage() {
-            $.getJSON('/do/datafile/moverdiskusage').done(function(data) {
-                _tsDiskFails = 0;
+            if (_tsDiskBusy) return;
+            _tsDiskBusy = true;
+            $.ajax({ url: '/do/datafile/moverdiskusage', dataType: 'json', timeout: 12000 }).done(function(data) {
+                document.getElementById('tsDiskAge').textContent = '';
                 var items = [];
                 $('.ts-disk-usage-cell').each(function() {
                     var cell = $(this);
@@ -237,7 +239,9 @@ style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left
                     var pct = totalCap > 0 ? Math.round(100 * totalUsed / totalCap) : 0;
                     var maxVolPct = 0;
                     vols.forEach(function(v) { if (v.pct > maxVolPct) maxVolPct = v.pct; });
-                    items.push({ cell: cell, pct: pct, totalUsed: totalUsed, totalCap: totalCap, maxVolPct: maxVolPct, volCount: vols.length });
+                    var sampled = data.updated && data.updated[mName];
+                    var stale = !sampled || data.now - sampled > 120000;
+                    items.push({ cell: cell, pct: pct, totalUsed: totalUsed, totalCap: totalCap, maxVolPct: maxVolPct, volCount: vols.length, stale: stale });
                 });
 
                 var withData = items.filter(function(x) { return x.pct !== null; });
@@ -264,19 +268,20 @@ style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left
                         ' (' + item.volCount + ' vols, max vol: ' + item.maxVolPct + '%)" style="cursor:default">' +
                         '<div style="background:var(--bs-secondary-bg);border-radius:3px;height:8px;width:100px;flex-shrink:0">' +
                         '<div style="background:' + color + ';border-radius:3px;height:8px;width:' + barPct + 'px"></div></div>' +
-                        '<span style="color:' + color + ';font-weight:600;white-space:nowrap">' + item.pct + '%</span>' + badge + '</div>'
+                        '<span style="color:' + color + ';font-weight:600;white-space:nowrap">' + item.pct + '%</span>' + badge
+                        + (item.stale ? '<span class="text-warning-emphasis small ms-1">Stale</span>' : '') + '</div>'
                     );
                 });
                 if (_tsTable) _tsTable.rows().invalidate('dom');
-            }).fail(function() {
-                if (++_tsDiskFails >= 3) {
+            }).fail(function(xhr) {
+                var expired = xhr.status === 401 || xhr.status === 403;
+                if (expired) {
                     clearInterval(_tsDiskIv);
-                    var el = document.getElementById('tsDiskAge');
-                    if (el) el.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>'
-                        + '<span class="text-warning-emphasis">Session expired</span>'
-                        + ' <a href="#" onclick="location.reload();return false;" class="small">reload</a>';
                 }
-            });
+                var el = document.getElementById('tsDiskAge');
+                if (el) el.textContent = expired ? 'Session expired or access denied; reload to sign in.'
+                    : 'Refresh unavailable; retrying. Displayed snapshots may be stale.';
+            }).always(function() { _tsDiskBusy = false; });
         }
 
         refreshDiskUsage();

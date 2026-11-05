@@ -447,9 +447,20 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                         final var vol = indexToVolume.get(idx);
                         maxCapacityPerVolume[idx] = virtualTotal;
                         try {
-                            usedPerVolume[idx] = vol.listSize();
+                            synchronized (sharedVolumeUsage) {
+                                final var path = vol.getAbsolutePath();
+                                final var cached = sharedVolumeUsage.get(path);
+                                final var now = System.currentTimeMillis();
+                                if (cached == null || now - cached[0] >= 30_000) {
+                                    final var size = vol.listSize();
+                                    sharedVolumeUsage.put(path, new long[] { System.currentTimeMillis(), size });
+                                    usedPerVolume[idx] = size;
+                                } else {
+                                    usedPerVolume[idx] = cached[1];
+                                }
+                            }
                         } catch (final IOException e) {
-                            _log.warn("Cannot compute content size for {}: {}", vol.getAbsolutePath(), e.getMessage());
+                            throw new IOException("Cannot compute content size for " + vol.getAbsolutePath(), e);
                         }
                     }
                 }
@@ -459,6 +470,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
     }
+
+    private final Map<String, long[]> sharedVolumeUsage = new HashMap<>();
 
     @Override
     public List<StorageVolumeInfo> getStorageVolumeInfo(final int volumeIndexMax) throws RemoteException {

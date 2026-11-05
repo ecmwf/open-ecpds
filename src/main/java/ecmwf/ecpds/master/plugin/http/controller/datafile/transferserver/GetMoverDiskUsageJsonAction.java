@@ -89,12 +89,14 @@ public class GetMoverDiskUsageJsonAction extends PDSAction {
         final var moverName = params.isEmpty() ? null : params.get(0).toString();
 
         Map<String, long[][]> snapshot;
+        Map<String, Long> updated;
         Map<String, java.util.List<ecmwf.common.database.StorageVolumeInfo>> volumeInfo = Map.of();
         java.util.Set<String> disabledVolumes;
         String storageInfoError = null;
         try {
             final var management = MasterManager.getMI();
             snapshot = management.getMoverVolumeUsage(moverName);
+            updated = management.getMoverVolumeUpdated(moverName);
             disabledVolumes = management.getDisabledStorageVolumes();
             try {
                 volumeInfo = management.getMoverStorageVolumeInfo(moverName);
@@ -109,6 +111,9 @@ public class GetMoverDiskUsageJsonAction extends PDSAction {
         final var root = MAPPER.createObjectNode();
         final var movers = root.putObject("movers");
         final var details = root.putObject("details");
+        root.put("now", System.currentTimeMillis());
+        final var timestamps = root.putObject("updated");
+        updated.forEach(timestamps::put);
         if (storageInfoError != null) {
             root.put("storageInfoError", storageInfoError);
         }
@@ -131,7 +136,18 @@ public class GetMoverDiskUsageJsonAction extends PDSAction {
                 vol.put("pct", pct);
             }
         }
-        for (final var entry : new TreeMap<>(volumeInfo).entrySet()) {
+        final var allDetails = new TreeMap<>(volumeInfo);
+        for (final var entry : snapshot.entrySet()) {
+            final var volumes = new TreeMap<Integer, ecmwf.common.database.StorageVolumeInfo>();
+            for (final var info : allDetails.getOrDefault(entry.getKey(), java.util.List.of())) {
+                volumes.put(info.volume(), info);
+            }
+            for (var index = 0; index < entry.getValue()[0].length; index++) {
+                volumes.putIfAbsent(index, new ecmwf.common.database.StorageVolumeInfo(index, "", "", "", ""));
+            }
+            allDetails.put(entry.getKey(), java.util.List.copyOf(volumes.values()));
+        }
+        for (final var entry : allDetails.entrySet()) {
             final var arr = details.putArray(entry.getKey());
             for (final var info : entry.getValue()) {
                 final var vol = arr.addObject();

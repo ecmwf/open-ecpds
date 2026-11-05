@@ -27,6 +27,17 @@ Transfer groups pool Data Movers. When a transfer is scheduled, the master selec
 
 Lists all registered Data Mover servers with their host address, disk usage, active connections, and operational status. A mover shown as inactive will not receive new transfer assignments until it re-registers.
 
+Disk usage and device/mount details are served from background snapshots; opening
+or refreshing these pages does not contact the Movers. Polls are single-flight per
+Mover with at most 16 concurrent workers and no queued backlog. Device/mount
+details are refreshed every five minutes. Shared-filesystem volume sizes use
+recursive scans, reused for 30 seconds; dedicated filesystem usage still uses
+filesystem counters. These samples are approximate during concurrent transfers.
+Usage older than two minutes is marked **Stale** in the Monitor. Refresh requests
+time out after 12 seconds, do not overlap, and retry transient failures without
+discarding the last displayed snapshot. Disabled Movers and inactive transfer
+groups are not polled.
+
 
 ![Data Movers](img/transfer-servers.png)
 

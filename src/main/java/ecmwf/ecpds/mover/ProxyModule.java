@@ -121,11 +121,17 @@ public abstract class ProxyModule extends TransferModule implements ECpdsProxy {
             try {
                 Thread.sleep(10);
             } catch (final InterruptedException e) {
-                _log.debug("Interrupted");
+                Thread.currentThread().interrupt();
+                _ticket.setError("Upload data-channel startup interrupted", e);
+                break;
             }
         }
         var hasError = false;
         if (_closed.get() || (hasError = _ticket.hasError()) || _out == null) {
+            if (!_ticket.hasError()) {
+                _ticket.setError(_closed.get() ? "Upload cancelled: module closed"
+                        : "Upload data channel did not connect within 120 seconds");
+            }
             if (put.isAlive()) {
                 _log.warn("Interrupt PutThread (closed=" + _closed.get() + ",hasError=" + hasError + ")");
                 put.interrupt();
@@ -174,11 +180,17 @@ public abstract class ProxyModule extends TransferModule implements ECpdsProxy {
             try {
                 Thread.sleep(10);
             } catch (final InterruptedException e) {
-                _log.debug("Interrupted");
+                Thread.currentThread().interrupt();
+                _ticket.setError("Download data-channel startup interrupted", e);
+                break;
             }
         }
         var hasError = false;
         if (_closed.get() || (hasError = _ticket.hasError()) || _in == null) {
+            if (!_ticket.hasError()) {
+                _ticket.setError(_closed.get() ? "Download cancelled: module closed"
+                        : "Download data channel did not connect within 120 seconds");
+            }
             if (get.isAlive()) {
                 _log.warn("Interrupt GetThread (closed=" + _closed.get() + ",hasError=" + hasError + ")");
                 get.interrupt();

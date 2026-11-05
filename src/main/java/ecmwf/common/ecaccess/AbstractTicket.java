@@ -139,24 +139,9 @@ public abstract class AbstractTicket implements Serializable, Closeable {
         synchronized (_errorSync) {
             if (_error == null) {
                 // Let's build the error message!
-                String message = null;
-                try {
-                    if (t == null) {
-                        throw new Exception("No exception specified (null)");
-                    }
-                    message = t.getMessage();
-                    if (message == null) {
-                        throw new Exception("No exception specified (null-message)");
-                    }
-                    if (message.isEmpty()) {
-                        throw new Exception("No exception specified (empty-message)");
-                    }
-                } catch (final Exception e) {
-                    if (message == null || message.isEmpty()) {
-                        message = "exception " + Format.getClassName(t);
-                    }
-                    _log.warn(error, e);
-                }
+                final var detail = t == null ? null : t.getMessage();
+                final var message = detail == null || detail.isBlank()
+                        ? t == null ? "no exception supplied" : "exception " + Format.getClassName(t) : detail;
                 setError(error);
                 if (message != null && _error != null) {
                     _error = _error + " (" + message + ")";

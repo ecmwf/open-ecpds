@@ -1809,10 +1809,8 @@ public final class TransferServerProvider {
             final var volumeCount = group.getVolumeCount();
 
             try {
-                // Single fan-out pass: contacts each DataMover once and returns one
-                // VolumeUsageResult per volume. Previously this required N_volumes separate
-                // calls, each fanning out to all movers — O(N_volumes × N_movers) RMI calls
-                // reduced to O(N_movers).
+                // Remote sampling is asynchronous; aggregate recent cached samples without
+                // allowing one slow Mover to hold up the group or the global polling tick.
                 final var results = MASTER.computeAllVolumeUsageAndMovers(group);
                 if (results == null || results.length != volumeCount) {
                     _log.warn("Unexpected result count from computeAllVolumeUsageAndMovers for group {}", groupName);

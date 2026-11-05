@@ -163,7 +163,8 @@ public final class SSHSession implements InteractiveSession {
                     ok = true;
                 } finally {
                     if (!ok && _log.isWarnEnabled()) {
-                        _log.warn("Waitfor buffer: {} (search={})", ret, Arrays.toString(searchElements));
+                        _log.warn("SSH reply read failed for {} while waiting for {} (received {} characters)",
+                                hostname, Arrays.toString(searchElements), ret.length());
                     }
                 }
                 if (n > 0) {

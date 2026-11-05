@@ -1494,6 +1494,11 @@ final class ManagementProxy implements ManagementInterface {
     }
 
     @Override
+    public Map<String, Long> getMoverVolumeUpdated(final String moverName) throws MasterException, RemoteException {
+        return managementInterface.getMoverVolumeUpdated(moverName);
+    }
+
+    @Override
     public Map<String, List<StorageVolumeInfo>> getMoverStorageVolumeInfo(final String moverName)
             throws MasterException, RemoteException {
         return managementInterface.getMoverStorageVolumeInfo(moverName);

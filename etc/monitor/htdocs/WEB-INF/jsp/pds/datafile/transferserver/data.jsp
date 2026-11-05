@@ -130,6 +130,19 @@
 			<i class="bi bi-hdd-fill text-primary"></i>
 			<span class="fw-semibold">Disk Usage</span>
 			<span id="moverDiskUsageAge" class="text-muted fw-normal small ms-1"></span>
+			<button class="btn btn-link btn-sm text-muted p-0 ms-1" type="button"
+				data-bs-toggle="collapse" data-bs-target="#moverDiskUsageLegend"
+				aria-expanded="false" aria-controls="moverDiskUsageLegend" aria-label="About storage volume disabling"
+				title="About storage volume disabling">
+				<i class="bi bi-info-circle" aria-hidden="true"></i>
+			</button>
+		</div>
+		<div class="collapse" id="moverDiskUsageLegend">
+			<div class="ecpds-help-panel">
+				<strong class="d-block mb-1">Disabling a storage volume</strong>
+				<p class="mb-1">Disabling a volume stops new routing to that volume on this Data Mover; active transfers are allowed to finish. Replication is paused for that volume index.</p>
+				<p class="mb-0">This does not disable the entire Data Mover. Use <strong>Re-enable</strong> to make the volume available again.</p>
+			</div>
 		</div>
 		<div class="card-body pb-2 pt-2">
 			<div id="moverStorageVolumeStatus" class="mb-3"></div>
@@ -169,14 +182,14 @@
 				+ '<thead><tr><th>Volume</th><th>Device</th><th>Mount point</th><th>Storage path</th><th>Status</th><th></th></tr></thead><tbody>';
 			volumes.forEach(function(v) {
 				var disabled = v.disabled === true;
-				html += '<tr class="' + (disabled ? 'table-warning' : '') + '">'
+				html += '<tr>'
 					+ '<td>Vol ' + v.volume + '</td>'
 					+ '<td class="font-monospace">' + htmlText(v.device) + '</td>'
 					+ '<td class="font-monospace">' + htmlText(v.mountPoint) + '</td>'
 					+ '<td class="font-monospace text-break">' + htmlText(v.volumePath) + '</td>'
 					+ '<td>' + (disabled
-						? '<span class="badge text-bg-warning">Disabled</span><div class="small text-muted">New routing stopped; active transfers drain.</div><div class="small text-warning-emphasis">Replication paused for this volume index.</div>'
-						: '<span class="badge text-bg-success">Enabled</span>') + '</td>'
+						? '<span class="badge rounded-pill border fw-normal bg-warning-subtle text-warning-emphasis border-warning-subtle">Disabled</span>'
+						: '<span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis border-success-subtle">Enabled</span>') + '</td>'
 					+ '<td>' + (storageVolumeCsrf
 						? '<button type="button" class="btn btn-sm ' + (disabled ? 'btn-outline-success' : 'btn-outline-danger')
 							+ '" data-volume="' + v.volume + '" data-disabled="' + (!disabled) + '">'
@@ -298,8 +311,9 @@
 			var summary = document.getElementById('moverDiskUsageSummary');
 			renderStorageVolumes(currentVols.storageInfo || []);
 			if (!vols || vols.length === 0) {
+				if (chartInst) { chartInst.destroy(); chartInst = null; }
 				if (summary) summary.innerHTML = '';
-				wrap.innerHTML = '<div class="text-muted small fst-italic py-1">No disk usage data available yet \u2014 waiting for first polling cycle.</div>';
+				wrap.innerHTML = '<div class="text-muted small fst-italic py-1">No disk usage snapshot available. Check that the Data Mover is connected and enabled, its transfer group is active, and background polling is running.</div>';
 				return;
 			}
 
@@ -427,32 +441,47 @@
 
 		function updateAge() {
 			var el = document.getElementById('moverDiskUsageAge');
-			if (!el || !fetchedAt) return;
+			if (!el || !fetchedAt || _tsRefreshFailed) return;
 			var sec = Math.round((Date.now() - fetchedAt) / 1000);
-			el.textContent = '(updated ' + sec + 's ago)';
+			el.textContent = '(sampled ' + sec + 's ago' + (sec > 120 ? ' \u2014 stale' : '') + ')';
 		}
 
-		var _tsFails = 0, _tsRefIv, _tsAgeIv;
+		var _tsBusy = false, _tsRefreshFailed = false, _tsRefIv, _tsAgeIv;
 		function refresh() {
-			$.getJSON('/do/datafile/moverdiskusage/' + encodeURIComponent(moverName))
+			if (_tsBusy) return;
+			_tsBusy = true;
+			$.ajax({
+				url: '/do/datafile/moverdiskusage/' + encodeURIComponent(moverName),
+				dataType: 'json',
+				timeout: 12000
+			})
 				.done(function(data) {
-					_tsFails = 0;
-					fetchedAt = Date.now();
+					_tsRefreshFailed = false;
+					var sampled = data.updated && data.updated[moverName];
+					fetchedAt = sampled ? Date.now() - Math.max(0, data.now - sampled) : null;
+					if (!sampled) document.getElementById('moverDiskUsageAge').textContent = '';
 					var vols = (data.movers && data.movers[moverName]) ? data.movers[moverName] : [];
 					vols.storageInfo = (data.details && data.details[moverName]) ? data.details[moverName] : [];
 					vols.storageInfoError = data.storageInfoError || null;
 					buildChart(vols);
+					updateAge();
 				})
-				.fail(function() {
-					if (++_tsFails >= 3) {
+				.fail(function(xhr) {
+					_tsRefreshFailed = true;
+					var expired = xhr.status === 401 || xhr.status === 403;
+					if (expired) {
 						clearInterval(_tsRefIv);
 						clearInterval(_tsAgeIv);
-						var el = document.getElementById('moverDiskUsageAge');
-						if (el) el.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>'
-							+ '<span class="text-warning-emphasis">Session expired</span>'
-							+ ' <a href="#" onclick="location.reload();return false;" class="small">reload</a>';
 					}
-				});
+					var el = document.getElementById('moverDiskUsageAge');
+					if (el) el.textContent = expired ? 'Session expired or access denied; reload to sign in.'
+						: 'Refresh unavailable; retrying. Any displayed snapshot may be stale.';
+					if (!currentVols.length) {
+						document.getElementById('moverDiskUsageWrap').textContent =
+							'Disk usage could not be loaded.' + (expired ? '' : ' Retrying automatically.');
+					}
+				})
+				.always(function() { _tsBusy = false; });
 		}
 
 		refresh();

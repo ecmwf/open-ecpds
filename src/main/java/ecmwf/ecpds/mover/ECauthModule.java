@@ -230,6 +230,16 @@ public final class ECauthModule extends ProxyModule {
             }
             isSuccess = true;
             return message;
+        } catch (final java.net.SocketTimeoutException e) {
+            final var failure = new java.net.SocketTimeoutException(
+                    "ECauth reply timed out on " + hostname + " before receiving OK/KO");
+            failure.initCause(e);
+            throw failure;
+        } catch (final java.io.InterruptedIOException e) {
+            final var failure = new java.io.InterruptedIOException("ECauth reply wait interrupted on " + hostname
+                    + " before receiving OK/KO; check preceding data-channel timeout or cancellation");
+            failure.initCause(e);
+            throw failure;
         } finally {
             success = isSuccess;
         }
