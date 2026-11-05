@@ -7336,17 +7336,24 @@ public final class MasterServer extends ECaccessProvider
             }
         }
         if (identityExtensions.hasAuthenticationProvider()) {
+            final var mode = isPasscode ? "passcode" : "password";
+            final AuthenticationProvider.Authentication authentication;
             try {
-                final var authentication = identityExtensions.authenticateIdentity(user, credentials, root);
-                if (authentication.result() != AuthenticationProvider.Result.ACCEPTED) {
+                authentication = identityExtensions.authenticateIdentity(user, credentials, root);
+            } catch (IOException | RuntimeException e) {
+                _log.warn("External authentication unavailable for {} ({})", user, mode, e);
+                throw new MasterException("Authentication failed");
+            }
+            if (authentication.result() != AuthenticationProvider.Result.ACCEPTED) {
+                throw new MasterException("Authentication failed");
+            }
+            if (authentication.user() != null) {
+                try {
+                    getDataBase().update(authentication.user());
+                } catch (DataBaseException | RuntimeException e) {
+                    _log.warn("Could not update user after external authentication for {} ({})", user, mode, e);
                     throw new MasterException("Authentication failed");
                 }
-                if (authentication.user() != null) {
-                    getDataBase().update(authentication.user());
-                }
-            } catch (IOException | DataBaseException | RuntimeException e) {
-                _log.warn("External authentication unavailable");
-                throw new MasterException("Authentication failed");
             }
         } else if (!credentials.equals(webUser.getPassword())) {
             _log.error("Static authentication failed for " + user);
