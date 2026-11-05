@@ -79,9 +79,10 @@
             <div class="alert alert-secondary py-2 px-3 mb-3 small">
               Select <strong>JavaScript</strong> or <strong>Python</strong> mode using the radio
               buttons above the editor — the wrapper is added automatically on save. The script
-              runs on an allocated DataMover and its <strong>standard output</strong> is interpreted
+              runs on an allocated DataMover and its <strong>returned string</strong> is interpreted
               as the listing specification — one path (with optional options and regex) per line,
-              exactly as in Plain Text mode. Variables (<code>$host[…]</code>,
+              exactly as in Plain Text mode. Use an explicit <code>return</code> in both languages;
+              Python's <code>print()</code> does not return the listing. Variables (<code>$host[…]</code>,
               <code>$transferMethod[…]</code>, etc.) are substituted <em>before</em> the script runs.
             </div>
 
@@ -93,21 +94,27 @@
               <div class="tab-pane fade show active" id="dg-acq-js" role="tabpanel">
                 <pre class="small p-2 rounded mb-2" style="background:var(--bs-secondary-bg); white-space:pre-wrap;">// Build directory lines dynamically — one per output line
 var today = new Date();
-var yyyy  = today.getFullYear();
-var mm    = String(today.getMonth() + 1).padStart(2, '0');
-var dd    = String(today.getDate()).padStart(2, '0');
-var base  = "/data/feed/" + yyyy + "/" + mm + "/" + dd + "/";
-base + "{.*\\.nc}\n" +
-"[fileage=&lt;48h]" + base.replace(dd, String(today.getDate()-1).padStart(2,'0')) + "{.*\\.nc}";</pre>
+var yesterday = new Date(today);
+yesterday.setDate(yesterday.getDate() - 1);
+var formatDate = function(date) {
+    var yyyy = date.getFullYear();
+    var mm = String(date.getMonth() + 1).padStart(2, '0');
+    var dd = String(date.getDate()).padStart(2, '0');
+    return yyyy + "/" + mm + "/" + dd;
+};
+return "/data/feed/" + formatDate(today) + "/{.*\\.nc}\n" +
+    "[fileage=&lt;48h]/data/feed/" + formatDate(yesterday) + "/{.*\\.nc}";</pre>
               </div>
               <div class="tab-pane fade" id="dg-acq-py" role="tabpanel">
                 <pre class="small p-2 rounded mb-2" style="background:var(--bs-secondary-bg); white-space:pre-wrap;">from datetime import datetime, timedelta
 
 base = "/data/feed/"
+lines = []
 for delta in range(3):  # today and 2 previous days
     day = datetime.utcnow() - timedelta(days=delta)
     age = delta * 24
-    print("[fileage=&lt;" + str(age + 24) + "h]" + base + day.strftime("%Y/%m/%d") + "/{.*\\.nc}")</pre>
+    lines.append("[fileage=&lt;" + str(age + 24) + "h]" + base + day.strftime("%Y/%m/%d") + "/{.*\\.nc}")
+return "\n".join(lines)</pre>
               </div>
             </div>
             <p class="small text-muted mt-2 mb-0">Use the <strong>Test on Server</strong> button to execute the script and inspect its output before saving.</p>

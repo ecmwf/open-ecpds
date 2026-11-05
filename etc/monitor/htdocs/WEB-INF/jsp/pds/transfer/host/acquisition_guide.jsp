@@ -65,7 +65,7 @@
 
         <p class="small fw-semibold mt-3 mb-1"><i class="bi bi-cpu text-primary me-1"></i>AcquisitionThread lifecycle</p>
         <ol class="small text-muted mb-2 ps-3">
-          <li class="mb-1"><strong>Read the Directory field.</strong> Each non-empty line is a <em>listing spec</em>. If the entire content is wrapped in <code>$(...)</code> it is evaluated as a script on a DataMover first; the output of the script is then treated as the listing spec lines.</li>
+          <li class="mb-1"><strong>Read the Directory field.</strong> Each non-empty line is a <em>listing spec</em>. If the entire content is wrapped in <code>$(...)</code> it is evaluated as a script on a DataMover first; its returned string is then treated as the listing spec lines.</li>
           <li class="mb-1"><strong>Parse each line</strong> — extract inline <code>[options]</code>, trailing <code>{regex}</code> filename filter, <code>$date</code> tokens, and optional wildcard filter — and build the final remote path.</li>
           <li class="mb-1"><strong>List the remote directory</strong> via a DataMover using the configured transfer module (FTP, SFTP, S3, HTTP, …). The raw listing output is stored in the <em>Directory Listings</em> panel.</li>
           <li class="mb-1"><strong>Parse each file entry</strong> using an FTP-style parser (<code>systemKey</code>, date formats, language code). Each entry is checked against the file selection filters.</li>
@@ -130,7 +130,7 @@
         <code class="small">$ectransModule[name]</code>
 
         <p class="small fw-semibold mt-3 mb-1"><i class="bi bi-terminal text-primary me-1"></i>Script mode</p>
-        <p class="small text-muted mb-2">If the entire Directory field content is wrapped in <code>$( ... )</code>, it is executed as a script on an allocated DataMover. The standard output of the script is then interpreted as the listing spec lines (one path per line). This allows dynamic directory list generation.</p>
+        <p class="small text-muted mb-2">If the entire Directory field content is wrapped in <code>$( ... )</code>, it is executed as a script on an allocated DataMover. The script must return a string; each line is interpreted as a listing spec. This allows dynamic directory list generation.</p>
 
         <p class="small fw-semibold mb-1"><i class="bi bi-filter text-primary me-1"></i>Wildcard filter</p>
         <p class="small text-muted mb-0">The <code>acquisition.wildcardFilter</code> option appends a glob-style wildcard to the path sent to the remote server before listing. This lets the transfer module filter server-side, reducing the number of entries returned. The <code>acquisition.regexPattern</code> option applies an additional server-side regex filter at the listing call level.</p>

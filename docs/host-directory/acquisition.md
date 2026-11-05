@@ -28,7 +28,7 @@ See [File-transfer connection limits](index.md#file-transfer-connection-limits).
 
 ### AcquisitionThread lifecycle
 
-1. **Read the Directory field.** Each non-empty line is a *listing spec*. If the entire content is wrapped in `$(...)` it is evaluated as a script on a DataMover first; the output of the script is then treated as the listing spec lines.
+1. **Read the Directory field.** Each non-empty line is a *listing spec*. If the entire content is wrapped in `$(...)` it is evaluated as a script on a DataMover first; the returned string is then treated as the listing spec lines.
 2. **Parse each line** — extract inline `[options]`, trailing `{regex}` filename filter, `$date` tokens, and optional wildcard filter — and build the final remote path.
 3. **List the remote directory** via a DataMover using the configured transfer module (FTP, SFTP, WebDAV, S3, HTTP, …). The raw listing output is stored in the *Directory Listings* panel.
 4. **Parse each file entry** using an FTP-style parser (`systemKey`, date formats, language code). Each entry is checked against the file selection filters.
@@ -111,22 +111,26 @@ The host form guide also lists these tokens as substituted before plain-text lin
 
 ### Script mode
 
-If the entire Directory field content is wrapped in `$( ... )`, it is executed as a script on an allocated DataMover. The standard output of the script is then interpreted as the listing spec lines (one path per line). This allows dynamic directory list generation.
+If the entire Directory field content is wrapped in `$( ... )`, it is executed as a script on an allocated DataMover. The script must return a string; each line of that string is interpreted as a listing spec. This allows dynamic directory list generation.
 
 !!! note
-    Select **JavaScript** or **Python** mode using the radio buttons above the editor — the wrapper is added automatically on save. The script runs on an allocated DataMover and its **standard output** is interpreted as the listing specification — one path (with optional options and regex) per line, exactly as in Plain Text mode. Variables (`$host[…]`, `$transferMethod[…]`, etc.) are substituted *before* the script runs.
+    Select **JavaScript** or **Python** mode using the radio buttons above the editor — the wrapper is added automatically on save. The script runs on an allocated DataMover and its **returned string** is interpreted as the listing specification — one path (with optional options and regex) per line, exactly as in Plain Text mode. Use an explicit `return` in both languages; Python's `print()` writes output and does not return the listing. Variables (`$host[…]`, `$transferMethod[…]`, etc.) are substituted *before* the script runs.
 
 #### JavaScript example
 
 ```javascript
 // Build directory lines dynamically — one per output line
 var today = new Date();
-var yyyy  = today.getFullYear();
-var mm    = String(today.getMonth() + 1).padStart(2, '0');
-var dd    = String(today.getDate()).padStart(2, '0');
-var base  = "/data/feed/" + yyyy + "/" + mm + "/" + dd + "/";
-base + "{.*\\.nc}\n" +
-"[fileage=<48h]" + base.replace(dd, String(today.getDate()-1).padStart(2,'0')) + "{.*\\.nc}";
+var yesterday = new Date(today);
+yesterday.setDate(yesterday.getDate() - 1);
+var formatDate = function(date) {
+    var yyyy = date.getFullYear();
+    var mm = String(date.getMonth() + 1).padStart(2, '0');
+    var dd = String(date.getDate()).padStart(2, '0');
+    return yyyy + "/" + mm + "/" + dd;
+};
+return "/data/feed/" + formatDate(today) + "/{.*\\.nc}\n" +
+    "[fileage=<48h]/data/feed/" + formatDate(yesterday) + "/{.*\\.nc}";
 ```
 
 #### Python example
@@ -135,10 +139,12 @@ base + "{.*\\.nc}\n" +
 from datetime import datetime, timedelta
 
 base = "/data/feed/"
+lines = []
 for delta in range(3):  # today and 2 previous days
     day = datetime.utcnow() - timedelta(days=delta)
     age = delta * 24
-    print("[fileage=<" + str(age + 24) + "h]" + base + day.strftime("%Y/%m/%d") + "/{.*\\.nc}")
+    lines.append("[fileage=<" + str(age + 24) + "h]" + base + day.strftime("%Y/%m/%d") + "/{.*\\.nc}")
+return "\n".join(lines)
 ```
 
 Use the **Test on Server** button to execute the script and inspect its output before saving.
@@ -150,7 +156,7 @@ The **Test on Server** button in the Directory card header sends the current edi
 **How it works:**
 
 - For **Plain Text** mode: the listing spec lines are evaluated as-is against the remote host. Each line is resolved and the resulting remote paths are returned.
-- For **JavaScript** and **Python** modes: the script is executed on an allocated DataMover; its standard output is returned and displayed exactly as the scheduler would see it at runtime.
+- For **JavaScript** and **Python** modes: the script is executed on an allocated DataMover; its returned string is displayed exactly as the scheduler receives it at runtime.
 
 **Preview File Content:**
 
