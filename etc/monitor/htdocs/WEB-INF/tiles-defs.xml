@@ -92,9 +92,18 @@
 		<put name="content" value="/WEB-INF/jsp/pds/index.jsp" />
 	</definition>
 
-	<definition name=".pds.operations.index" extends=".pds.base">
-		<put name="title" value="Operations" />
+	<definition name=".pds.operations.base" extends=".pds.base">
 		<put name="location" value="/WEB-INF/jsp/pds/operations/location.jsp" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/operations/submenu.jsp" />
+	</definition>
+
+	<definition name=".pds.operations.fullscreen" extends=".ecmwf.fullscreen.base">
+		<put name="location" value="/WEB-INF/jsp/pds/operations/location.jsp" />
+		<put name="submenu" value="/WEB-INF/jsp/pds/operations/submenu.jsp" />
+	</definition>
+
+	<definition name=".pds.operations.index" extends=".pds.operations.base">
+		<put name="title" value="Operations" />
 		<put name="content" value="/WEB-INF/jsp/pds/operations/index.jsp" />
 	</definition>
 
@@ -1187,7 +1196,7 @@
 
 	<!-- *** Monitoring ******************************************************************************************** -->
 
-	<definition name=".pds.monitoring" extends=".pds.base">
+	<definition name=".pds.monitoring" extends=".pds.operations.base">
 		<put name="date.select"
 			value="/WEB-INF/jsp/pds/common/date_select.jsp" />
 		<put name="title" value="Top Monitoring Display" />
@@ -1199,7 +1208,7 @@
 			value="/WEB-INF/jsp/pds/common/date_select.jsp" />
 	</definition>
 
-	<definition name=".pds.monitoring.delaynotification" extends=".pds.base">
+	<definition name=".pds.monitoring.delaynotification" extends=".pds.operations.base">
 		<put name="title" value="Delay Notification" />
 		<put name="location"
 			value="/WEB-INF/jsp/pds/operations/location.jsp" />
@@ -1211,7 +1220,7 @@
 		page="/WEB-INF/jsp/pds/monitoring/spare.jsp" />
 
 	<definition name=".pds.monitoring.toplevel"
-		extends=".ecmwf.fullscreen.base">
+		extends=".pds.operations.fullscreen">
 		<put name="title" value="Top Monitoring Display" />
 		<put name="location"
 			value="/WEB-INF/jsp/pds/operations/location.jsp" />
@@ -1221,7 +1230,7 @@
 	</definition>
 
 	<definition name=".pds.monitoring.globe"
-		extends=".ecmwf.fullscreen.base">
+		extends=".pds.operations.fullscreen">
 		<put name="title" value="Live Earth" />
 		<put name="location"
 			value="/WEB-INF/jsp/pds/operations/location.jsp" />
@@ -1229,8 +1238,14 @@
 			value="/WEB-INF/jsp/pds/monitoring/globe.jsp" />
 	</definition>
 
+	<definition name=".pds.monitoring.mqtt" extends=".pds.operations.base">
+		<put name="title" value="MQTT Activity" />
+		<put name="location" value="/WEB-INF/jsp/pds/operations/location.jsp" />
+		<put name="content" value="/WEB-INF/jsp/pds/monitoring/mqtt.jsp" />
+	</definition>
+
 	<definition name=".pds.monitoring.topology"
-		extends=".ecmwf.fullscreen.base">
+		extends=".pds.operations.fullscreen">
 		<put name="title" value="System Topology" />
 		<put name="location"
 			value="/WEB-INF/jsp/pds/operations/location.jsp" />
@@ -1246,7 +1261,7 @@
 	</definition>
 
 	<definition name=".pds.monitoring.summary"
-		extends=".ecmwf.fullscreen.base">
+		extends=".pds.operations.fullscreen">
 		<put name="title" value="Operators Monitoring Summary" />
 		<put name="location"
 			value="/WEB-INF/jsp/pds/monitoring/location.jsp" />
@@ -1255,7 +1270,7 @@
 	</definition>
 
 	<definition name=".pds.monitoring.summary.product"
-		extends=".ecmwf.fullscreen.base">
+		extends=".pds.operations.fullscreen">
 		<put name="title.expression" value="%{productNameAndTime}" />
 		<put name="location"
 			value="/WEB-INF/jsp/pds/monitoring/location.jsp" />
@@ -1385,8 +1400,9 @@
 		<put name="title" value="Scheduler Traffic" />
 		<put name="content" value="/WEB-INF/jsp/pds/admin/schedulertraffic.jsp" />
 	</definition>
-	<definition name=".pds.admin.eventjournal" extends=".pds.admin">
-		<put name="title" value="Operational Event Journal" />
+	<definition name=".pds.monitoring.eventjournal" extends=".pds.operations.base">
+		<put name="title" value="OpenTelemetry Journal" />
+		<put name="location" value="/WEB-INF/jsp/pds/operations/location.jsp" />
 		<put name="content" value="/WEB-INF/jsp/pds/admin/eventjournal/index.jsp" />
 	</definition>
 
@@ -1480,7 +1496,7 @@
 
 	<definition
 		name=".pds.transfer.destination.metadata.send.success"
-		extends=".pds.base">
+		extends=".pds.transfer.base">
 		<put name="title" value="Send your requirements to Data Services" />
 		<put name="content"
 			value="/WEB-INF/jsp/pds/transfer/destination/metadata/success.jsp" />

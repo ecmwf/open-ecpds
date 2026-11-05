@@ -35,22 +35,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.OperationalEventJournalStatus;
-import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
+import ecmwf.ecpds.master.plugin.http.controller.OperationsAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.model.users.User;
 
 /** Operational event journal monitoring and runtime controls. */
-public class OperationalEventJournalAction extends PDSAction {
+public class OperationalEventJournalAction extends OperationsAction {
     private static final Logger LOG = LogManager.getLogger(OperationalEventJournalAction.class);
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final String TOKEN = OperationalEventJournalAction.class.getName() + ".csrf";
-
-    @Override
-    protected boolean isAuthorized(final User user, final String currentPath, final HttpServletRequest request)
-            throws ECMWFException {
-        return super.isAuthorized(user, currentPath, request) && user.hasAccess("/do/admin/");
-    }
 
     public static OperationalEventJournalStatus populateStatus(final HttpServletRequest request, final User user) {
         if (Boolean.TRUE.equals(request.getAttribute("journalStatusLoaded"))) {
@@ -98,6 +92,13 @@ public class OperationalEventJournalAction extends PDSAction {
             try {
                 final var session = Util.getECpdsSessionFromObject(user);
                 final var operation = request.getParameter("op");
+                if ("discard".equals(operation)) {
+                    if (!"discard".equals(request.getParameter("confirmation"))) {
+                        throw new IllegalArgumentException("Confirm permanent deletion of pending journal events.");
+                    }
+                    final var discarded = MasterManager.getMI().discardOperationalEventJournal(session);
+                    return status(response, session, true, discarded);
+                }
                 final var state = request.getParameter("state");
                 if (state == null) {
                     throw new IllegalArgumentException("Unknown journal control state");
@@ -115,6 +116,8 @@ public class OperationalEventJournalAction extends PDSAction {
                     throw new IllegalArgumentException("Unknown journal control");
                 }
                 return status(response, session, true);
+            } catch (final IllegalStateException e) {
+                return error(response, HttpServletResponse.SC_CONFLICT, e.getMessage());
             } catch (final IllegalArgumentException e) {
                 LOG.warn("Invalid operational event journal control request", e);
                 return error(response, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
@@ -140,6 +143,11 @@ public class OperationalEventJournalAction extends PDSAction {
 
     private ActionForward status(final HttpServletResponse response, final ecmwf.ecpds.master.ECpdsSession session,
             final boolean changed) throws Exception {
+        return status(response, session, changed, null);
+    }
+
+    private ActionForward status(final HttpServletResponse response, final ecmwf.ecpds.master.ECpdsSession session,
+            final boolean changed, final Long discarded) throws Exception {
         final var root = JSON.createObjectNode();
         final var status = MasterManager.getMI().getOperationalEventJournalStatus(session, true);
         root.set("journal", JSON.valueToTree(status));
@@ -147,6 +155,9 @@ public class OperationalEventJournalAction extends PDSAction {
         root.put("danger", status.danger());
         root.put("attention", status.attention());
         root.put("changed", changed);
+        if (discarded != null) {
+            root.put("discarded", discarded);
+        }
         writeJson(response, root);
         return null;
     }

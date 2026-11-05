@@ -1912,12 +1912,17 @@ public interface ManagementInterface extends Remote {
     /** Read current Proxy, Backup or Replication workers without database or Mover calls. */
     SchedulerTrafficSnapshot getSchedulerTraffic(String type) throws RemoteException;
 
+    Map<String, Object> getMQTTActivity(ECpdsSession session, long since, String destination, String topic,
+            String status, int offset) throws Exception;
+
     OperationalEventJournalStatus getOperationalEventJournalStatus(ECpdsSession session, boolean includeQueue)
             throws Exception;
 
     void setOperationalEventCollectionPaused(ECpdsSession session, boolean paused) throws Exception;
 
     void setOperationalEventDeliveryPaused(ECpdsSession session, boolean paused) throws Exception;
+
+    long discardOperationalEventJournal(ECpdsSession session) throws Exception;
 
     /**
      * Gets the MasterServer's own geolocation, used to centre the "Live ECPDS Earth" globe. Resolved via the same GeoIP

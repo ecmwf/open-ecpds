@@ -665,6 +665,9 @@ public interface MoverInterface extends ClientInterface {
     void publishToMQTTBroker(final String topic, final int qos, final long expiryInterval, final String contentType,
             final String clientId, final String payload, final boolean retain) throws RemoteException;
 
+    MQTTPublishResult publishToMQTTBrokerConfirmed(String topic, int qos, long expiryInterval, String contentType,
+            String clientId, String payload, boolean retain) throws RemoteException;
+
     /**
      * Remove a retained notification from the MQTT broker.
      *

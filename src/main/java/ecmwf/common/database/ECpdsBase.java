@@ -121,6 +121,12 @@ public final class ECpdsBase extends DataBase {
     public record OperationalEventStatistics(long pendingCount, Long oldestAdmissionAt) {
     }
 
+    /** Explicit operator discard, scoped to one Master journal owner. */
+    public long discardOperationalEvents(final String owner) throws SQLException, IOException {
+        return executeUpdate("ECpdsBase", "discardOperationalEvents",
+                new String[] { "owner=" + operationalEventHex(owner) });
+    }
+
     public record OperationalEventAdmissionStatistics(long pendingCount, long payloadBytes, Long oldestAdmissionAt) {
     }
 

@@ -44,6 +44,7 @@ public class OperationsAction extends PDSAction {
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFException, ClassCastException {
         request.setAttribute("title", "Operations");
+        ecmwf.ecpds.master.plugin.http.controller.admin.OperationalEventJournalAction.populateStatus(request, user);
         setActiveSystemMessages(request);
         return mapping.findForward("success");
     }

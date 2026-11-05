@@ -208,7 +208,7 @@
 				refresh();
 			}).fail(function(xhr) {
 				var message = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'Storage volume update failed.';
-				window.alert(message);
+				ecpdsAlert('Storage volume update failed', message);
 				button.prop('disabled', false);
 			});
 		});

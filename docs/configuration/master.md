@@ -571,6 +571,10 @@ Independent Splunk-file and native OpenTelemetry event outputs. Journaling persi
 | `journalCriticalOldestAgeMillis` | `1800000` | `1800000` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
 | `journalCriticalPendingCount` | `10000` | `10000` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
 | `journalEnabled` | `false` | `no` | [OperationalEvents:88](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java#L88) |
+| `journalMaxMemoryBytes` | `8388608` | `8388608` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
+| `journalMaxMemoryEvents` | `2048` | `2048` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
+| `journalMaxPayloadBytes` | `67108864` | `67108864` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
+| `journalMaxPendingEvents` | `10000` | `10000` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
 | `journalOwner` | `Cnf.at("Login", "root", Cnf.at("Login", "hostName", "master"))` | - | [OperationalEvents:93](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java#L93) |
 | `journalWarningOldestAgeMillis` | `300000` | `300000` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
 | `journalWarningPendingCount` | `1000` | `1000` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
@@ -581,6 +585,21 @@ The warning and critical thresholds are positive values, and each warning value
 must be lower than its corresponding critical value. They are loaded at Master
 startup. Reaching either the pending-count or oldest-admission-age threshold
 raises the corresponding alert on the journal page.
+
+`journalMaxMemoryEvents` and `journalMaxMemoryBytes` bound the in-memory admission
+queue before database persistence (defaults: 2,048 events and 8 MiB).
+`journalMaxPendingEvents` and `journalMaxPayloadBytes` bound persisted pending
+records for the journal owner (defaults: 10,000 events and 64 MiB).
+Byte limits measure serialized UTF-8 telemetry, not source-file sizes or total
+Java heap/database storage. New events are dropped when capacity is exhausted;
+existing pending records are not purged automatically.
+
+All four limits must be positive; event-count limits must be below 2,147,483,647.
+Changes require a **Master restart**. The single-event byte ceiling is the smaller
+of `journalMaxMemoryBytes` and `journalMaxPayloadBytes`; Collector limits remain
+separate. Raising memory limits increases potential heap usage and telemetry lost
+on a crash. See [Database-backed event journal](../event-logging/overview.md)
+for delivery guarantees and operational guidance.
 
 ### [Operator]
 

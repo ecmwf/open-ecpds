@@ -75,8 +75,18 @@
     <div class="d-flex flex-wrap gap-2">
         <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Save Colors</button>
         <button type="submit" class="btn btn-outline-secondary" name="resetDefaults" value="on"
-                onclick="return confirm('Reset all monitoring status colors to their built-in defaults?');">
+                onclick="confirmMonitoringColorsReset(this); return false;">
             <i class="bi bi-arrow-counterclockwise me-1"></i>Reset All to Defaults
         </button>
     </div>
 </form>
+<script>
+function confirmMonitoringColorsReset(button) {
+    confirmationDialog({
+        title: 'Reset monitoring colors',
+        message: 'Reset all monitoring status colors to their built-in defaults?',
+        allowHtml: false, showLoading: false, confirmText: 'Reset to defaults',
+        onConfirm: function() { button.form.requestSubmit(button); }
+    });
+}
+</script>

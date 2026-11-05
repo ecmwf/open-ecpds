@@ -26,14 +26,19 @@ public record OperationalEventJournalStatus(boolean enabled, String owner, boole
         Long pendingCount, Long oldestAdmissionAt, long observedAt, String queueError, boolean collectionPaused,
         boolean deliveryPaused, long warningPendingCount, long criticalPendingCount, long warningOldestAgeMillis,
         long criticalOldestAgeMillis, long droppedEvents, String lastDropReason, long maxPendingEvents,
-        long maxPayloadBytes, Long pendingPayloadBytes) implements Serializable {
+        long maxPayloadBytes, Long pendingPayloadBytes, AdmissionDiagnostics admission) implements Serializable {
+
+    public record AdmissionDiagnostics(long memoryEvents, long memoryBytes, long maxMemoryEvents, long maxMemoryBytes,
+            long maxEventBytes, Long lastRejectedBytes, long lastRejectedAt,
+            java.util.Map<String, Long> droppedByReason) implements Serializable {
+    }
 
     private static final long serialVersionUID = 1L;
 
     public static OperationalEventJournalStatus disabled() {
         return new OperationalEventJournalStatus(false, "", false, false, 0, 0, 0, false, "", 0, 0, 0, null, null,
                 System.currentTimeMillis(), null, false, false, 1000, 10000, 300000, 1800000, 0, "", 10000,
-                64L * 1024 * 1024, null);
+                64L * 1024 * 1024, null, null);
     }
 
     public OperationalEventJournalStatus withQueue(final Long count, final Long oldest, final String error) {
@@ -42,7 +47,7 @@ public record OperationalEventJournalStatus(boolean enabled, String owner, boole
                 lastDeliveryFailureAt, lastExportAt, inFlightCount, count, oldest, System.currentTimeMillis(), error,
                 collectionPaused, deliveryPaused, warningPendingCount, criticalPendingCount, warningOldestAgeMillis,
                 criticalOldestAgeMillis, droppedEvents, lastDropReason, maxPendingEvents, maxPayloadBytes,
-                pendingPayloadBytes);
+                pendingPayloadBytes, admission);
     }
 
     public boolean danger() {

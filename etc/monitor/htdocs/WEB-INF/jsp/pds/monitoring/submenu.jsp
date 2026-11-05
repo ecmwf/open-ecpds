@@ -1,6 +1,8 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth" %>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c" %>
 
+<jsp:include page="/WEB-INF/jsp/pds/operations/submenu.jsp" />
+
 <c:set var="authorized" value="false" />
 
 <auth:if basePathKey="destination.basepath" paths="/">

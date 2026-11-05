@@ -105,6 +105,95 @@ See the [full reference and example](../concepts/destination-options.md#building
 in the Destination Options guide, including a complete WIS2-style GeoJSON notification
 with HTTPS, SFTP, WebDAV and S3 download links.
 
+### Demo upload notifications and public download links
+
+The standalone database seeds **mqtt_demo**, accessible to the `test` Data Portal
+user through `test_destinations`. Upload a file into `/mqtt_demo/` to generate a
+JSON notification with its identity, destination, relative filename, size,
+publication/expiry timestamps and HTTPS, SFTP and S3 download links.
+
+The upload-only demo sets `scheduler.standby = "yes"`: uploaded transfers enter
+`HOLD` (available for download), which triggers the event without outbound delivery.
+Without standby, an upload enters `WAIT` and normally notifies only after outbound
+delivery completes; a stopped destination leaves it waiting without a publication.
+Keep the demo destination stopped to avoid scheduling outbound delivery.
+
+The destination's JavaScript starts with four editable settings:
+
+```javascript
+var httpsBase = "https://localhost:7443";
+var sftpBase = "sftp://localhost:7022";
+var s3Endpoint = "https://localhost:7443/s3";
+var s3Bucket = "test";
+```
+
+These are standalone defaults. Eclipse uses HTTPS **4443** and SFTP **4022**.
+Replace `localhost` with a subscriber-reachable public hostname for remote clients.
+Base URLs have no trailing slash; `httpsBase` is the portal origin, not a listing URL.
+For example, `sample file.dat` uploaded into `mqtt_demo` produces:
+
+```text
+https://localhost:7443/ecpds/data/file/mqtt_demo/sample%20file.dat
+sftp://localhost:7022/mqtt_demo/sample%20file.dat
+https://localhost:7443/s3/test/mqtt_demo/sample%20file.dat
+```
+
+Links contain no passwords or access tokens and do not bypass authorization.
+HTTPS/SFTP require a Data Portal account with access to the destination. S3 uses
+the configured user's bucket (`test` in this demo) and normally requires a signed
+request, not a browser click. The S3 link also supplies `endpoint`, `bucket` and
+the unencoded object `key` for SDK clients. Use the same `key` under another
+user's bucket only if that user has destination access. Clients must trust the
+portal TLS certificate. URLs remain subject to file expiry and service availability.
+
+**Why configure public endpoints explicitly?** Publication runs on the Master,
+without a browser request. Mover names, internal addresses and upload connections
+do not reliably identify a public endpoint behind NAT, proxies or load balancers.
+Use the same public values as the portal's `[DataPortal]`
+`httpsPublicBaseUrl`, `s3PublicEndpointUrl`, `sftpPublicHost` and `sftpPublicPort`
+hints. These Mover-local hints are not currently exposed to MQTT scripts
+automatically. In multi-Mover deployments advertise a stable public service
+that can retrieve the file, rather than assuming any broker's address is a download URL.
+
+The demo reads **`mqttEventJson`**, a JSON string supplied as a script binding
+(not interpolated into script source), with fields `id`, `filename`, `destination`,
+`size`, `dataFileId`, `transferId`, `publishedAt` and `expiresAt`.
+IDs are strings except `size`; timestamps are UTC ISO-8601.
+The target filename is relative to the destination; the script adds the destination
+directory and URL-encodes each segment. This preserves spaces, Unicode and literal
+percent signs without treating quotes in filenames as JavaScript. Existing
+`$`-placeholder scripts remain supported. This binding requires updated Master
+code; database seed edits do not update existing destinations automatically.
+
+#### Inline content for small files
+
+The demo also sets `mqtt.inlineMaxBytes = "16384"` in Properties. It is disabled
+by default for other destinations (`0`); the Master always caps it at **16 KiB
+of original bytes**, even if a larger value is configured. The Master reads at
+most the limit plus one byte before running JavaScript. Files above the limit,
+unknown sizes, size mismatches and read failures omit inline content without
+failing the notification. Download links are always retained.
+
+When the complete file is available, `mqttEventJson` includes `contentBase64`.
+The demo JavaScript adds it to the message as:
+
+```javascript
+content: file.contentBase64 === undefined ? undefined : {
+  encoding: "base64",
+  type: "application/octet-stream",
+  data: file.contentBase64
+}
+```
+
+`content` is a top-level payload field, omitted by `JSON.stringify` when unavailable.
+Base64 preserves arbitrary text and binary bytes without interpreting them as
+JavaScript or assuming UTF-8. An empty file has an empty `data` string. Subscribers
+decode Base64 to obtain the original bytes; encoded data is about one-third larger.
+This is **encoding, not encryption**: all subscribers authorized for the topic can
+read the embedded file without subsequently authenticating to the portal. Enable
+this only on appropriately restricted topics. The activity dashboard/journal never
+stores message bodies or embedded content.
+
 ### Step 3 — Grant subscribe access to a data user
 
 Set `portal.mqttPermission` on the data user's account (in their **Properties** field):
@@ -116,6 +205,18 @@ portal.mqttPermission = "hourly_aq/#"
 ```
 
 ## Testing MQTT notifications
+
+After an MQTT publication finishes, the transfer history records its publication
+ID and counts of broker-accepted, failed and unconfirmed Mover results. Acceptance
+does not confirm subscriber delivery. This informational entry leaves the transfer
+status unchanged and contains no payload; see **Operations > MQTT Activity** for
+per-Mover details. Legacy Movers and RPC timeouts are unconfirmed, not successful.
+
+The Master also emits an [`NTF` operational event](../event-logging/overview.md#mqtt-notification-outcomes-ntf)
+per Mover outcome, through the shared Splunk/OpenTelemetry pipeline when enabled.
+It includes correlation IDs, topic, QoS, retain flag, payload byte count and status,
+but never payload content. No configured Movers produces one failed event with an
+empty Mover name.
 
 Once a destination is configured, test the subscription with
 [mqttx](https://mqttx.app/cli) (recommended — supports `--insecure` without a CA file):
@@ -148,6 +249,56 @@ mosquitto_sub \
     Port `8883` is MQTTS (MQTT over TLS). The `--insecure` flag skips hostname
     verification for self-signed certificates. In production, use a properly signed
     certificate and remove `--insecure`.
+
+## Monitoring publication activity
+
+Open **Operations → MQTT Activity** in the Monitor to follow destination event
+publications. The dashboard refreshes every five seconds and provides activity and
+outcome charts, destination/topic/status filters, pagination, and publication details
+with a result for each Mover. **Pause updates** freezes automatic refreshes.
+
+The Master records the result returned by each Mover after the MQTT broker's
+asynchronous publish operation completes:
+
+| Outcome | Meaning |
+|---|---|
+| Queued / Processing | The Master has observed the publication waiting or being processed |
+| Broker accepted | Every recorded Mover broker accepted its publish operation |
+| Mixed results | Movers returned different outcomes; inspect the per-Mover details |
+| Failed | Publishing could not be attempted or the broker rejected it |
+| Unconfirmed | A timeout, RPC failure or interruption prevents confirmation; the message may still have been accepted |
+| Skipped | The topic/payload was empty, or the transfer was missing or expired |
+
+Broker acceptance does **not** confirm subscriber receipt, application processing or
+data download, regardless of QoS. The Mover waits up to ten seconds for broker
+completion; a timeout does not cancel the underlying publication or cause an automatic
+retry. Payload-script errors retain the existing publication scheduler's retry behavior.
+An interrupted publication is marked unconfirmed after a Master restart, until the
+scheduler processes it again.
+
+This view covers outgoing **destination event publications**, not all MQTT client
+traffic or subscriptions. It requires updated Master, Monitor and Mover software;
+upgrade Movers first for complete confirmation support. If an older Mover explicitly
+rejects the new RPC as unsupported, the Master uses the legacy publishing RPC and
+records an **Unconfirmed** outcome. Other RPC failures never trigger a fallback or retry,
+because the broker may already have accepted the message.
+
+History is independent of the OpenTelemetry Journal and its telemetry admission
+limits. It is local to the Master, with at most 2,000 entries shown for the last
+24 hours, further bounded by an 8 MiB serialized snapshot limit. Its append journal
+is capped at 16 MiB and compacted automatically. Charts and totals describe the latest
+known outcome of retained publications, not a complete historical counter or audit log.
+Queued publications from before the upgrade appear when the scheduler processes them.
+
+The default history file is `${master.data}/mqtt-activity/history.jsonl`, configurable
+through `[MQTTActivity] historyFile` in the Master's `ecmwf.properties`. Keep it on
+persistent local storage, with a different directory for each Master instance.
+Persistence failures are displayed on the dashboard and do not stop publishing.
+History is not an HA-replicated store. Message payloads, client IDs and connection
+credentials are not retained; topic and file metadata are visible only for destinations
+the viewer is authorized to operate.
+Long metadata fields are limited to 1,024 characters; per-publication broker details
+are limited to 128 Movers, with an explicit unconfirmed outcome if that limit is exceeded.
 
 ## Related
 

@@ -1,4 +1,5 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
+<%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 
 <div class="mb-4 px-3 py-3 rounded" style="background:rgba(13,202,240,0.07); border-left:4px solid #0dcaf0; font-size:0.85rem; color:var(--bs-body-color);">
     <div class="d-flex align-items-start gap-2">
@@ -8,6 +9,7 @@
 </div>
 
 <jsp:include page="/WEB-INF/jsp/pds/common/system_messages_banner.jsp" />
+<jsp:include page="/WEB-INF/jsp/pds/admin/eventjournal/banner.jsp" />
 
 <div class="row row-cols-1 row-cols-md-2 g-3">
     <auth:link basePathKey="monitoring.basepath" href="">
@@ -69,6 +71,35 @@
             </div>
         </div>
     </auth:link>
+
+    <auth:link basePathKey="monitoring.basepath" href="/mqtt">
+        <div class="col">
+            <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3">
+                <i class="bi bi-broadcast text-info flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+                <div>
+                    <span class="tool-title">MQTT Activity</span>
+                    <p class="tool-desc">Watch publication activity and broker processing outcomes live. Follow notifications from Data Portal uploads or acquisition through the Master to each Mover's MQTT broker.</p>
+                </div>
+            </div>
+        </div>
+    </auth:link>
+
+    <div class="col">
+        <c:if test="${journalEnabled or journalUnavailable}"><a href="/do/monitoring/eventjournal" class="d-block h-100 text-decoration-none text-reset"></c:if>
+        <div class="admin-tool h-100 p-3 d-flex align-items-start gap-3 ${journalDanger ? 'border border-danger-subtle bg-danger-subtle' : journalAttention or journalUnavailable ? 'border border-warning-subtle bg-warning-subtle' : ''} ${not journalEnabled and not journalUnavailable ? 'opacity-50' : ''}"
+             <c:if test="${not journalEnabled and not journalUnavailable}">aria-disabled="true" title="OpenTelemetry database journaling is disabled on the Master. Pending rows may still exist."</c:if>>
+            <i class="bi bi-database-check ${journalDanger ? 'text-danger' : journalAttention or journalUnavailable ? 'text-warning' : 'text-info'} flex-shrink-0" style="font-size:1.6rem; margin-top:0.1rem;"></i>
+            <div>
+                <span class="tool-title">OpenTelemetry Journal
+                    <c:choose><c:when test="${journalAttention or journalUnavailable}"><span class="badge ${journalDanger ? 'bg-danger' : 'bg-warning text-dark'} ms-1">Attention</span></c:when>
+                    <c:when test="${not journalEnabled}"><span class="badge bg-secondary ms-1">Disabled</span></c:when></c:choose>
+                </span>
+                <p class="tool-desc">Monitor telemetry queue health, dropped events and export acknowledgements.
+                    Pause or resume collection and delivery with audited runtime controls. Splunk/file logging is unaffected.</p>
+            </div>
+        </div>
+        <c:if test="${journalEnabled or journalUnavailable}"></a></c:if>
+    </div>
 
     <auth:link basePathKey="monitoring.basepath" href="/delaynotification">
         <div class="col">

@@ -67,6 +67,7 @@
                 <tr><td><a href="/do/start"><i class="bi bi-house-fill"></i> Home</a></td></tr>
             </table>
             <jsp:include page="/WEB-INF/jsp/pds/submenu.jsp" />
+            <tiles:get name="submenu" />
         </div>
         <div class="px-3 py-2" style="border-top:1px solid var(--bs-border-color); flex-shrink:0;">
             <a href="https://github.com/ecmwf/open-ecpds" target="_blank" rel="noopener"

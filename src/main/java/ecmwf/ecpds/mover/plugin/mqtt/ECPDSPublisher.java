@@ -75,6 +75,13 @@ public class ECPDSPublisher implements MQTTInterface {
     @Override
     public void publish(final String topic, final int qos, final long expiryInterval, final String contentType,
             final String clientId, final String payload, final boolean retain) {
+        publishAsync(topic, qos, expiryInterval, contentType, clientId, payload, retain);
+    }
+
+    @Override
+    public java.util.concurrent.CompletionStage<Void> publishAsync(final String topic, final int qos,
+            final long expiryInterval, final String contentType, final String clientId, final String payload,
+            final boolean retain) {
         final Qos selectedQos = Qos.valueOf(qos >= 0 && qos <= 2 ? qos : 1);
         final PublishBuilder publish = Builders.publish().topic(topic).qos(selectedQos).retain(retain)
                 .payload(ByteBuffer.wrap(payload.getBytes()));
@@ -86,7 +93,13 @@ public class ECPDSPublisher implements MQTTInterface {
         }
         final var logMessage = getLogMessage(topic, selectedQos.name(), expiryInterval, contentType, payload, retain);
         if (clientId != null && !clientId.isBlank()) {
-            publishService.publishToClient(publish.build(), clientId).whenComplete((_, throwable) -> {
+            return publishService.publishToClient(publish.build(), clientId).<Void> thenApply(result -> {
+                if (result != com.hivemq.extension.sdk.api.services.publish.PublishToClientResult.SUCCESSFUL) {
+                    throw new java.util.concurrent.CompletionException(
+                            new IllegalStateException("Target client is not subscribed"));
+                }
+                return null;
+            }).whenComplete((_, throwable) -> {
                 if (throwable == null) {
                     log.debug("Publish sent successfully to {} ({})", clientId, logMessage);
                 } else {
@@ -94,7 +107,7 @@ public class ECPDSPublisher implements MQTTInterface {
                 }
             });
         } else {
-            publishService.publish(publish.build()).whenComplete((_, throwable) -> {
+            return publishService.publish(publish.build()).whenComplete((_, throwable) -> {
                 if (throwable == null) {
                     log.debug("Publish sent successfully ({})", logMessage);
                 } else {

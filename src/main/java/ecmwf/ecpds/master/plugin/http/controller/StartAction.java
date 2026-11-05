@@ -85,8 +85,10 @@ public class StartAction extends PDSAction {
                         && user.hasAccess(historyBasePath + "/"));
 
         final boolean hasAdmin = Boolean.TRUE.equals(request.getAttribute("hasAdmin"));
-        if (hasAdmin) {
+        if (Boolean.TRUE.equals(request.getAttribute("hasOperations"))) {
             ecmwf.ecpds.master.plugin.http.controller.admin.OperationalEventJournalAction.populateStatus(request, user);
+        }
+        if (hasAdmin) {
             try {
                 request.setAttribute("certStatus", MasterManager.getMI().getOverallCertStatus());
             } catch (final Exception e) {

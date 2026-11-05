@@ -72,6 +72,8 @@ final class OperationalEventJournal implements LogRecordProcessor {
 
         void acknowledge(String id) throws SQLException, IOException;
 
+        long discard() throws SQLException, IOException;
+
         ECpdsBase.OperationalEventAdmissionStatistics statistics(int limit) throws SQLException, IOException;
     }
 
@@ -90,6 +92,11 @@ final class OperationalEventJournal implements LogRecordProcessor {
             @Override
             public void acknowledge(final String id) throws SQLException, IOException {
                 database.deleteOperationalEvent(owner, id);
+            }
+
+            @Override
+            public long discard() throws SQLException, IOException {
+                return database.discardOperationalEvents(owner);
             }
 
             @Override
@@ -117,6 +124,7 @@ final class OperationalEventJournal implements LogRecordProcessor {
     private boolean persistenceDegraded;
     private boolean deliveryDegraded;
     private volatile boolean deliveryPaused;
+    private boolean collectionPaused;
     private String deliveryFailureStage = "";
     private long lastDeliveryFailureAt;
     private long lastExportAt;
@@ -126,12 +134,16 @@ final class OperationalEventJournal implements LogRecordProcessor {
     private final long maxPayloadBytes;
     private final Object admissionLock = new Object();
     private final ArrayDeque<Admission> admissions = new ArrayDeque<>();
-    private static final int MEMORY_EVENTS = 2048;
-    private static final long MEMORY_BYTES = 8L * 1024 * 1024;
+    private final long maxMemoryEvents;
+    private final long maxMemoryBytes;
     private long memoryBytes;
     private final AtomicLong droppedEvents = new AtomicLong();
     private final AtomicLong lastDropReport = new AtomicLong();
     private volatile String lastDropReason = "";
+    private final Object dropLock = new Object();
+    private final Map<String, Long> droppedByReason = new java.util.LinkedHashMap<>();
+    private Long lastRejectedBytes;
+    private long lastRejectedAt;
     private boolean capacityKnown;
     private long pendingEvents;
     private long pendingBytes;
@@ -149,6 +161,14 @@ final class OperationalEventJournal implements LogRecordProcessor {
     OperationalEventJournalStatus status(final String owner, final boolean collectionPaused,
             final long warningPendingCount, final long criticalPendingCount, final long warningOldestAgeMillis,
             final long criticalOldestAgeMillis) {
+        final OperationalEventJournalStatus.AdmissionDiagnostics admission;
+        synchronized (admissionLock) {
+            synchronized (dropLock) {
+                admission = new OperationalEventJournalStatus.AdmissionDiagnostics(admissions.size(), memoryBytes,
+                        maxMemoryEvents, maxMemoryBytes, Math.min(maxMemoryBytes, maxPayloadBytes), lastRejectedBytes,
+                        lastRejectedAt, Map.copyOf(droppedByReason));
+            }
+        }
         synchronized (healthLock) {
             final var snapshot = queue;
             return new OperationalEventJournalStatus(true, owner, stopped.get(), persistenceDegraded,
@@ -157,15 +177,62 @@ final class OperationalEventJournal implements LogRecordProcessor {
                     snapshot.oldest, snapshot.observed == 0 ? System.currentTimeMillis() : snapshot.observed,
                     snapshot.error, collectionPaused, deliveryPaused, warningPendingCount, criticalPendingCount,
                     warningOldestAgeMillis, criticalOldestAgeMillis, droppedEvents.get(), lastDropReason, maxEvents,
-                    maxPayloadBytes, snapshot.bytes);
+                    maxPayloadBytes, snapshot.bytes, admission);
         }
     }
 
-    void setDeliveryPaused(final boolean paused) {
+    synchronized void setDeliveryPaused(final boolean paused) {
         if (stopped.get()) {
             throw new IllegalStateException("Operational event journal worker is stopped");
         }
         deliveryPaused = paused;
+    }
+
+    synchronized void setCollectionPaused(final boolean paused) {
+        synchronized (admissionLock) {
+            collectionPaused = paused;
+        }
+    }
+
+    synchronized long discardPending() throws SQLException, IOException {
+        if (stopped.get() || !collectionPaused || !deliveryPaused) {
+            throw new IllegalStateException("Pause both collection and delivery before discarding pending events.");
+        }
+        if (inFlight != null && !inFlight.isDone()) {
+            throw new IllegalStateException("An export is still in flight. Wait for it to finish before discarding.");
+        }
+        final long deleted;
+        try {
+            deleted = store.discard();
+        } catch (final SQLException | IOException | RuntimeException e) {
+            capacityKnown = false;
+            nextStatistics = 0;
+            queue = new QueueSnapshot(null, null, null, System.currentTimeMillis(),
+                    "Discard could not be confirmed; refresh queue statistics before trying again.");
+            throw e;
+        }
+        final long memoryCount;
+        synchronized (admissionLock) {
+            memoryCount = admissions.size();
+            admissions.clear();
+            memoryBytes = 0;
+        }
+        inFlight = null;
+        inFlightIds = null;
+        inFlightBytes = null;
+        retryAfter = 0;
+        pendingEvents = 0;
+        pendingBytes = 0;
+        capacityKnown = true;
+        nextStatistics = 0;
+        queue = new QueueSnapshot(0L, 0L, null, System.currentTimeMillis(), null);
+        synchronized (healthLock) {
+            inFlightCount = 0;
+            deliveryDegraded = false;
+            deliveryFailureStage = "";
+            exportAcknowledged = false;
+        }
+        return deleted + memoryCount;
     }
 
     boolean isStopped() {
@@ -179,7 +246,14 @@ final class OperationalEventJournal implements LogRecordProcessor {
 
     OperationalEventJournal(final Store store, final LogRecordExporter exporter, final LogRecordProcessor fallback,
             final boolean startWorker, final long maxEvents, final long maxPayloadBytes) {
-        if (maxEvents <= 0 || maxEvents >= Integer.MAX_VALUE || maxPayloadBytes <= 0) {
+        this(store, exporter, fallback, startWorker, maxEvents, maxPayloadBytes, 2048, 8L * 1024 * 1024);
+    }
+
+    OperationalEventJournal(final Store store, final LogRecordExporter exporter, final LogRecordProcessor fallback,
+            final boolean startWorker, final long maxEvents, final long maxPayloadBytes, final long maxMemoryEvents,
+            final long maxMemoryBytes) {
+        if (maxEvents <= 0 || maxEvents >= Integer.MAX_VALUE || maxPayloadBytes <= 0 || maxMemoryEvents <= 0
+                || maxMemoryEvents >= Integer.MAX_VALUE || maxMemoryBytes <= 0) {
             throw new IllegalArgumentException("Invalid journal admission limits");
         }
         this.store = store;
@@ -187,6 +261,8 @@ final class OperationalEventJournal implements LogRecordProcessor {
         this.fallback = fallback;
         this.maxEvents = maxEvents;
         this.maxPayloadBytes = maxPayloadBytes;
+        this.maxMemoryEvents = maxMemoryEvents;
+        this.maxMemoryBytes = maxMemoryBytes;
         worker = Executors.newSingleThreadScheduledExecutor(task -> {
             final var thread = new Thread(task, "OperationalEventJournal");
             thread.setDaemon(true);
@@ -212,11 +288,16 @@ final class OperationalEventJournal implements LogRecordProcessor {
     void enqueue(final String id, final String payload) {
         final var bytes = payload.getBytes(StandardCharsets.UTF_8).length;
         synchronized (admissionLock) {
-            if (stopped.get()) {
-                drop("Journal stopped");
-            } else if (admissions.size() >= MEMORY_EVENTS || bytes > MEMORY_BYTES - memoryBytes
-                    || bytes > maxPayloadBytes) {
-                drop("Memory admission queue full or event oversized");
+            if (collectionPaused) {
+                return;
+            } else if (stopped.get()) {
+                drop("Journal stopped", (long) bytes);
+            } else if (bytes > Math.min(maxMemoryBytes, maxPayloadBytes)) {
+                drop("Single event exceeds serialized byte limit", (long) bytes);
+            } else if (admissions.size() >= maxMemoryEvents) {
+                drop("Memory event count limit reached", (long) bytes);
+            } else if (bytes > maxMemoryBytes - memoryBytes) {
+                drop("Memory byte capacity exhausted", (long) bytes);
             } else {
                 admissions.addLast(new Admission(id, payload, bytes));
                 memoryBytes += bytes;
@@ -225,8 +306,17 @@ final class OperationalEventJournal implements LogRecordProcessor {
     }
 
     private void drop(final String reason) {
-        lastDropReason = reason;
-        droppedEvents.incrementAndGet();
+        drop(reason, null);
+    }
+
+    private void drop(final String reason, final Long bytes) {
+        synchronized (dropLock) {
+            lastDropReason = reason;
+            lastRejectedBytes = bytes;
+            lastRejectedAt = System.currentTimeMillis();
+            droppedByReason.merge(reason, 1L, Long::sum);
+            droppedEvents.incrementAndGet();
+        }
     }
 
     /** All database I/O and capacity accounting run on this one background worker. */
@@ -263,7 +353,9 @@ final class OperationalEventJournal implements LogRecordProcessor {
                 memoryBytes -= admission.bytes;
             }
             if (!capacityKnown || pendingEvents >= maxEvents || admission.bytes > maxPayloadBytes - pendingBytes) {
-                drop(capacityKnown ? "Database journal admission limit reached" : "Database capacity unavailable");
+                drop(!capacityKnown ? "Database capacity unavailable" : pendingEvents >= maxEvents
+                        ? "Database event count limit reached" : "Database byte capacity exhausted",
+                        (long) admission.bytes);
                 continue;
             }
             try {
@@ -278,7 +370,7 @@ final class OperationalEventJournal implements LogRecordProcessor {
                 capacityKnown = false; // The database may have committed despite a lost response.
                 queue = new QueueSnapshot(null, null, null, System.currentTimeMillis(),
                         "Persistence failed; new telemetry is dropped until capacity is rechecked.");
-                drop("Database admission failed");
+                drop("Database admission failed", (long) admission.bytes);
                 synchronized (healthLock) {
                     totalPersistenceFailures++;
                     lastPersistenceFailureAt = System.currentTimeMillis();
@@ -429,8 +521,13 @@ final class OperationalEventJournal implements LogRecordProcessor {
             admissions.clear();
             memoryBytes = 0;
             if (lost > 0) {
-                lastDropReason = "Journal shutdown";
-                droppedEvents.addAndGet(lost);
+                synchronized (dropLock) {
+                    lastDropReason = "Journal shutdown";
+                    lastRejectedBytes = null;
+                    lastRejectedAt = System.currentTimeMillis();
+                    droppedByReason.merge(lastDropReason, (long) lost, Long::sum);
+                    droppedEvents.addAndGet(lost);
+                }
                 LOG.warn("Event journal shutdown: {} memory-queued events dropped; persisted events retained", lost);
             }
         }

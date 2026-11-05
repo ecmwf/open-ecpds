@@ -158,7 +158,7 @@ separately controlled by the normal Master settings.
 Start the development database first and ensure it has the
 `OPERATIONAL_EVENT` journal table. Start only one Master for the development
 configuration; start the Monitor separately to inspect
-**Admin Tasks → Operational Event Journal**.
+**Operations → OpenTelemetry Journal**.
 
 Stopping the IDE session does not stop the Collector. Use `make stop-otel`
 when finished; Ctrl-C in the log terminal only stops following its logs.

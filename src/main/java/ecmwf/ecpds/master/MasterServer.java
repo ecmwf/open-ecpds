@@ -39,6 +39,7 @@ import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_ECTRANS_FILTER_MIN
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_CLIENT_ID;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_CONTENT_TYPE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_EXPIRY_INTERVAL;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_INLINE_MAX_BYTES;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_PAYLOAD;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_QOS;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_RETAIN;
@@ -283,6 +284,7 @@ import ecmwf.ecpds.master.transfer.TransferScheduler.PurgeResult;
 import ecmwf.ecpds.master.transfer.TransferServerProvider;
 import ecmwf.ecpds.master.transfer.TransferServerProvider.TransferServerException;
 import ecmwf.ecpds.mover.MoverInterface;
+import ecmwf.ecpds.mover.MQTTPublishResult;
 
 /**
  * The Class MasterServer.
@@ -297,6 +299,19 @@ public final class MasterServer extends ECaccessProvider
 
     private final IdentityExtensions identityExtensions;
     private RemoteServices remoteServices;
+    private transient MQTTActivity mqttActivity;
+
+    private record MQTTMessage(String topic, int qos, long expiryInterval, String contentType, String clientId,
+            String payload, boolean retain) {
+    }
+
+    synchronized MQTTActivity getMQTTActivity() {
+        if (mqttActivity == null) {
+            mqttActivity = new MQTTActivity(java.nio.file.Path.of(Cnf.at("MQTTActivity", "historyFile",
+                    System.getProperty("master.data", ".") + "/mqtt-activity/history.jsonl")));
+        }
+        return mqttActivity;
+    }
 
     /** JSON mapper used by {@link #resolveManualValues(String, String)} to parse the supplied values map. */
     private static final ObjectMapper _JSON_MAPPER = new ObjectMapper();
@@ -2318,6 +2333,60 @@ public final class MasterServer extends ECaccessProvider
                     _log.warn("Publishing MQTT message on DataMover {}", moverName, t);
                 }
             }
+        }
+    }
+
+    private String publishToMQTTBrokerConfirmed(final DataTransfer transfer, final long publicationId,
+            final String topic, final int qos, final long expiryInterval, final String contentType,
+            final String clientId, final String payload, final boolean retain) {
+        final var activity = getMQTTActivity();
+        final var outcomes = new ArrayList<String>();
+        activity.message(publicationId, topic, qos >= 0 && qos <= 2 ? qos : 1, retain, payload, contentType);
+        for (final TransferServer server : getECpdsBase().getTransferServerArray()) {
+            final var name = server.getName();
+            final var mover = getDataMoverInterface(name);
+            final MQTTPublishResult result;
+            if (mover == null) {
+                result = new MQTTPublishResult("FAILED", "Mover is not connected; publish was not attempted");
+            } else {
+                result = publishToMQTTMover(mover, name, topic, qos, expiryInterval, contentType, clientId, payload,
+                        retain);
+            }
+            activity.broker(publicationId, name, result.status(), result.reason());
+            outcomes.add(result.status());
+            _operationalEvents.mqttNotification(transfer, publicationId, name, topic, qos, retain,
+                    payload.getBytes(StandardCharsets.UTF_8).length, result.status());
+        }
+        if (outcomes.isEmpty()) {
+            _operationalEvents.mqttNotification(transfer, publicationId, "", topic, qos, retain,
+                    payload.getBytes(StandardCharsets.UTF_8).length, "FAILED");
+        }
+        activity.complete(publicationId);
+        return MQTTActivity.transferHistorySummary(publicationId, outcomes);
+    }
+
+    private MQTTPublishResult publishToMQTTMover(final MoverInterface mover, final String name, final String topic,
+            final int qos, final long expiryInterval, final String contentType, final String clientId,
+            final String payload, final boolean retain) {
+        try {
+            return mover.publishToMQTTBrokerConfirmed(topic, qos, expiryInterval, contentType, clientId, payload,
+                    retain);
+        } catch (final Exception e) {
+            if (MQTTPublishResult.unsupportedMethod(e)) {
+                // This dispatch error proves the new method was never invoked.
+                try {
+                    mover.publishToMQTTBroker(topic, qos, expiryInterval, contentType, clientId, payload, retain);
+                    return new MQTTPublishResult("UNCONFIRMED",
+                            "Legacy Mover accepted the RPC but cannot report broker completion; upgrade this Mover");
+                } catch (final Exception legacyFailure) {
+                    _log.warn("Publishing MQTT notification through legacy DataMover {}", name, legacyFailure);
+                    return new MQTTPublishResult("UNCONFIRMED", "Legacy Mover publish RPC failed");
+                }
+            }
+            // A failed RPC cannot prove whether the broker accepted the message. Never retry here.
+            _log.warn("Awaiting MQTT publication result from DataMover {}", name, e);
+            return new MQTTPublishResult("UNCONFIRMED",
+                    "Mover RPC did not return a broker result; check connectivity and Master/Mover versions");
         }
     }
 
@@ -7515,6 +7584,9 @@ public final class MasterServer extends ECaccessProvider
         remoteServices.close();
         identityExtensions.close();
         super.shutdown();
+        if (mqttActivity != null) {
+            mqttActivity.close();
+        }
     }
 
     /**
@@ -8277,6 +8349,10 @@ public final class MasterServer extends ECaccessProvider
             publication.setDone(false);
             try {
                 getDataBase().insert(publication, true);
+                if (publication.getOptions().endsWith(MQTT_TOKEN)) {
+                    getMQTTActivity().queued(publication.getId(), transfer.getId(), transfer.getDestination().getName(),
+                            transfer.getTarget());
+                }
             } catch (final Throwable t) {
                 _log.error("Publication NOT recorded: {}", publication, t);
             }
@@ -8584,6 +8660,7 @@ public final class MasterServer extends ECaccessProvider
             @Override
             public void configurableRun() {
                 final var key = _getKey(publication);
+                final var mqtt = publication.getOptions().endsWith(MQTT_TOKEN);
                 try {
                     publication.setProcessedTime(new Timestamp(System.currentTimeMillis()));
                     final var selectedConnectOptions = publication.getOptions();
@@ -8591,6 +8668,12 @@ public final class MasterServer extends ECaccessProvider
                     _events.info("Starting processing for Publication-{} (DataTransfer-{}): {}", publication.getId(),
                             dataTransferId, selectedConnectOptions);
                     final var transfer = getECpdsBase().getDataTransferObject(dataTransferId);
+                    if (mqtt) {
+                        getMQTTActivity().queued(publication.getId(), dataTransferId,
+                                transfer == null ? "" : transfer.getDestination().getName(),
+                                transfer == null ? "" : transfer.getTarget());
+                        getMQTTActivity().processing(publication.getId());
+                    }
                     final long remainingMilliseconds;
                     try {
                         if (transfer != null && (remainingMilliseconds = transfer.getExpiryTime().getTime()
@@ -8601,14 +8684,35 @@ public final class MasterServer extends ECaccessProvider
                                         selectedConnectOptions.substring(0,
                                                 selectedConnectOptions.length() - MQTT_TOKEN.length()),
                                         destination.getData()));
-                                ScriptManager.exec(setup.getScriptLanguage(), Map.of(), setup.getScriptContent(),
-                                        value -> {
+                                final var event = new java.util.LinkedHashMap<String, Object>(Map.of("filename",
+                                        transfer.getTarget(), "destination", transfer.getDestinationName(), "size",
+                                        transfer.getDataFile().getSize(), "id",
+                                        new java.util.UUID(transfer.getDataFileId() * 1000, transfer.getId() * 1000)
+                                                .toString(),
+                                        "dataFileId", Long.toString(transfer.getDataFileId()), "transferId",
+                                        Long.toString(transfer.getId()), "publishedAt",
+                                        java.time.Instant.now().toString(), "expiresAt",
+                                        transfer.getExpiryTime().toInstant().toString()));
+                                final var content = MQTTInlineContent.readBase64(transfer.getDataFile().getSize(),
+                                        setup.getInteger(DESTINATION_MQTT_INLINE_MAX_BYTES), () -> {
+                                            final var proxy = TransferScheduler.get(transfer, 0, -1);
+                                            final var socketConfig = proxy.getSocketConfig();
+                                            socketConfig.setConnectTimeOut(5000);
+                                            socketConfig.setSoTimeOut(5000);
+                                            return proxy.getDataInputStream();
+                                        });
+                                if (content != null) {
+                                    event.put("contentBase64", content);
+                                }
+                                final var eventJson = _JSON_MAPPER.writeValueAsString(event);
+                                final MQTTMessage message = ScriptManager.exec(setup.getScriptLanguage(),
+                                        Map.of("mqttEventJson", eventJson), setup.getScriptContent(), value -> {
                                             final var topic = getMQTTTopic(destination, setup, transfer, value);
                                             if (topic != null && !topic.isBlank()) {
                                                 final var payload = setup.getString(DESTINATION_MQTT_PAYLOAD, value);
                                                 if (payload != null && !payload.isBlank()) {
                                                     _log.debug("Payload detected for DataTransfer-{}", dataTransferId);
-                                                    publishToMQTTBroker(topic,
+                                                    return new MQTTMessage(topic,
                                                             setup.getInteger(DESTINATION_MQTT_QOS, value),
                                                             setup.getOptionalDuration(DESTINATION_MQTT_EXPIRY_INTERVAL,
                                                                     value)
@@ -8618,32 +8722,71 @@ public final class MasterServer extends ECaccessProvider
                                                             setup.getString(DESTINATION_MQTT_CLIENT_ID, value), payload,
                                                             setup.getBoolean(DESTINATION_MQTT_RETAIN, value));
                                                 } else {
+                                                    getMQTTActivity().finish(publication.getId(), "SKIPPED",
+                                                            "Empty MQTT payload");
                                                     _log.warn(
                                                             "No payload for DataTransfer-{}; ignoring & publication set to done -> {}",
                                                             dataTransferId, value);
                                                 }
                                             } else {
+                                                getMQTTActivity().finish(publication.getId(), "SKIPPED",
+                                                        "Empty MQTT topic");
                                                 _log.warn(
                                                         "No topic for DataTransfer-{}; ignoring & publication set to done",
                                                         dataTransferId);
                                             }
                                             return null;
                                         });
+                                // Broker completion is outside the script deadline: a slow broker must not trigger
+                                // a script retry and duplicate an otherwise successful publication.
+                                if (message != null) {
+                                    final var notificationSummary = publishToMQTTBrokerConfirmed(transfer,
+                                            publication.getId(), message.topic(), message.qos(),
+                                            message.expiryInterval(), message.contentType(), message.clientId(),
+                                            message.payload(), message.retain());
+                                    // Bypass completion hooks/accounting; a history failure must not retry the publish.
+                                    final var history = new TransferHistory();
+                                    history.setDataTransfer(transfer);
+                                    history.setDataTransferId(transfer.getId());
+                                    history.setDestinationName(transfer.getDestinationName());
+                                    history.setStatusCode(transfer.getStatusCode());
+                                    history.setTime(new Timestamp(System.currentTimeMillis()));
+                                    history.setComment(notificationSummary);
+                                    history.setSent(transfer.getSent());
+                                    history.setUserStatus(transfer.getUserStatus());
+                                    try {
+                                        getDataBase().insert(history, true);
+                                    } catch (final Exception e) {
+                                        _log.error("MQTT notification history NOT recorded for Publication-{}",
+                                                publication.getId(), e);
+                                    }
+                                }
                             } else { // This is an event.js request (e.g. Aviso)
                                 ScriptManager.exec(ScriptManager.JS,
                                         replace(selectedConnectOptions, eventScriptContent.toString()));
                             }
                         } else {
+                            if (mqtt) {
+                                getMQTTActivity().finish(publication.getId(), "SKIPPED",
+                                        "Transfer is missing or expired");
+                            }
                             _log.warn("DataTransfer-{} not found or expired; ignoring & publication set to done",
                                     dataTransferId);
                         }
                         publication.setDone(true);
                     } catch (final ScriptException e) {
+                        if (mqtt) {
+                            getMQTTActivity().finish(publication.getId(), "FAILED",
+                                    "MQTT payload script failed; see Master event log");
+                        }
                         _events.error("Event invocation failed ({})", e.getMessage(), e);
                     } finally {
                         getDataBase().tryUpdate(publication);
                     }
                 } catch (final Throwable t) {
+                    if (mqtt) {
+                        getMQTTActivity().interrupted(publication.getId());
+                    }
                     _events.warn("Running EventThread {}", key, t);
                 } finally {
                     _toRemove.add(key);

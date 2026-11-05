@@ -13,7 +13,7 @@
             <c:otherwise><strong>Operational event journaling needs attention.</strong>
                 Review queue health, pauses and dropped telemetry. Persisted, unacknowledged events are retained for retry.</c:otherwise>
         </c:choose>
-        <a href="/do/admin/eventjournal" class="alert-link ms-1">Review event journal &rarr;</a>
+        <a href="/do/monitoring/eventjournal" class="alert-link ms-1">Review OpenTelemetry Journal &rarr;</a>
     </div>
 </div>
 </c:if>

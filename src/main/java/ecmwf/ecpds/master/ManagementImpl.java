@@ -43,6 +43,7 @@ import java.rmi.server.ServerNotActiveException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -4174,13 +4175,87 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     @Override
     public OperationalEventJournalStatus getOperationalEventJournalStatus(final ECpdsSession session,
             final boolean includeQueue) throws Exception {
-        requireWeatherAdministrator(session);
+        requireJournalOperations(session);
         return OperationalEvents.journalStatus(base, includeQueue);
+    }
+
+    private void requireJournalOperations(final ECpdsSession session) throws Exception {
+        if (session == null || session.getWebUser() == null) {
+            throw new MasterException("Operations session required");
+        }
+        final var user = base.getWebUser(session.getWebUser().getId());
+        if (!user.getActive()) {
+            throw new MasterException("Inactive Operations user");
+        }
+        final var categories = base.getCategoriesPerUserId(user.getId());
+        final var resources = Arrays.stream(base.getUrlArray()).map(ecmwf.common.database.Url::getName).toList();
+        final var linked = Arrays.stream(base.getCatUrlArray()).map(ecmwf.common.database.CatUrl::getUrlName).toList();
+        final var monitoring = new ArrayList<>(
+                base.getCategoriesPerResourceId(journalResourcePath("/do/monitoring", resources, linked)));
+        monitoring.addAll(base.getCategoriesPerResourceId(journalResourcePath("/do/monitoring/", resources, linked)));
+        if (!hasJournalOperationsAccess(categories, monitoring,
+                base.getCategoriesPerResourceId(journalResourcePath("/do/transfer/history/", resources, linked)))) {
+            throw new MasterException("Operations access denied");
+        }
+    }
+
+    static String journalResourcePath(final String path, final Collection<String> resources,
+            final Collection<String> linked) throws MasterException {
+        if (resources.contains(path)) {
+            return path;
+        }
+        // Match the Monitor's exact-resource lookup followed by authoritative linked-parent lookup.
+        var candidate = path;
+        while (!candidate.isEmpty()) {
+            if (linked.contains(candidate)) {
+                return candidate;
+            }
+            final var slash = candidate.substring(0, candidate.length() - 1).lastIndexOf('/');
+            if (slash < 0) {
+                break;
+            }
+            candidate = candidate.substring(0, slash + 1);
+        }
+        throw new MasterException("No Operations resource found");
+    }
+
+    static boolean hasJournalOperationsAccess(final Collection<ecmwf.common.database.Category> categories,
+            final Collection<ecmwf.common.database.Category> monitoring,
+            final Collection<ecmwf.common.database.Category> history) {
+        return java.util.stream.Stream.of(monitoring, history).allMatch(required -> categories.stream().anyMatch(
+                c -> c.getActive() && required.stream().anyMatch(r -> r.getActive() && r.getId() == c.getId())));
+    }
+
+    @Override
+    public Map<String, Object> getMQTTActivity(final ECpdsSession session, final long since, final String destination,
+            final String topic, final String status, final int offset) throws Exception {
+        if (session == null || session.getWebUser() == null) {
+            throw new MasterException("Authenticated MQTT activity viewer required");
+        }
+        final var user = base.getWebUser(session.getWebUser().getId());
+        final var required = base.getCategoriesPerResourceId("/do/monitoring/");
+        final var categories = base.getCategoriesPerUserId(user.getId());
+        if (!user.getActive() || categories.stream().noneMatch(
+                c -> c.getActive() && required.stream().anyMatch(r -> r.getActive() && r.getId() == c.getId()))) {
+            throw new MasterException("MQTT activity access denied");
+        }
+        final var activeCategories = categories.stream().filter(ecmwf.common.database.Category::getActive)
+                .map(ecmwf.common.database.Category::getId).collect(java.util.stream.Collectors.toSet());
+        final var prefix = "/do/transfer/destination/operations/";
+        final var destinations = java.util.Arrays.stream(base.getCatUrlArray())
+                .filter(link -> activeCategories.contains(link.getCategoryId()))
+                .map(ecmwf.common.database.CatUrl::getUrlName)
+                .filter(url -> url.startsWith(prefix) && url.endsWith("/"))
+                .map(url -> url.substring(prefix.length(), url.length() - 1))
+                .collect(java.util.stream.Collectors.toSet());
+        return master.getMQTTActivity().snapshot(destinations, Math.max(System.currentTimeMillis() - 86400000L, since),
+                destination == null ? "" : destination, topic == null ? "" : topic, status == null ? "" : status,
+                Math.max(0, Math.min(2000, offset)));
     }
 
     @Override
     public void setOperationalEventCollectionPaused(final ECpdsSession session, final boolean paused) throws Exception {
-        requireWeatherAdministrator(session);
+        requireJournalOperations(session);
         final var action = master.startECpdsAction(session, "update");
         Exception failure = null;
         try {
@@ -4195,7 +4270,7 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
 
     @Override
     public void setOperationalEventDeliveryPaused(final ECpdsSession session, final boolean paused) throws Exception {
-        requireWeatherAdministrator(session);
+        requireJournalOperations(session);
         final var action = master.startECpdsAction(session, "update");
         Exception failure = null;
         try {
@@ -4205,6 +4280,27 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
             throw e;
         } finally {
             master.logECpdsAction(action, "Operational event delivery " + (paused ? "paused" : "resumed"), failure);
+        }
+    }
+
+    @Override
+    public long discardOperationalEventJournal(final ECpdsSession session) throws Exception {
+        requireJournalOperations(session);
+        final var action = master.startECpdsAction(session, "delete");
+        Exception failure = null;
+        long discarded = 0;
+        try {
+            discarded = OperationalEvents.discardPendingEvents();
+            return discarded;
+        } catch (final Exception e) {
+            failure = e;
+            throw e;
+        } finally {
+            master.logECpdsAction(action,
+                    "Operational event journal discard for owner "
+                            + OperationalEvents.journalStatus(base, false).owner() + ": " + discarded
+                            + " pending events permanently discarded (database and memory queue)",
+                    failure);
         }
     }
 

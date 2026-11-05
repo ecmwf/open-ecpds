@@ -386,8 +386,13 @@ setTimeout(function(){
     var row=rows.children[Number(button.dataset.index)],op=button.dataset.messageOp;
     if(op==='edit'){open(row);return;}
     if(op==='remove'){
-      if(!window.confirm('Remove this message from the draft? Click Save to publish the change.'))return;
-      row.remove();
+      confirmationDialog({
+        title:'Remove draft message',
+        message:'Remove this message from the draft? Click Save to publish the change.',
+        allowHtml:false,showLoading:false,confirmText:'Remove',
+        onConfirm:function(){row.remove();redraw();add.focus();}
+      });
+      return;
     }
     if(op==='up'&&row.previousElementSibling)rows.insertBefore(row,row.previousElementSibling);
     if(op==='down'&&row.nextElementSibling)rows.insertBefore(row.nextElementSibling,row);

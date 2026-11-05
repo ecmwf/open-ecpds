@@ -50,6 +50,15 @@ public interface MQTTInterface {
     void publish(final String topic, final int qos, final long expiryInterval, final String contentType,
             final String clientId, final String payload, final boolean retain);
 
+    /** A completion means broker processing only, not subscriber delivery. */
+    default java.util.concurrent.CompletionStage<Void> publishAsync(final String topic, final int qos,
+            final long expiryInterval, final String contentType, final String clientId, final String payload,
+            final boolean retain) {
+        publish(topic, qos, expiryInterval, contentType, clientId, payload, retain);
+        return java.util.concurrent.CompletableFuture
+                .failedFuture(new UnsupportedOperationException("MQTT provider does not expose broker completion"));
+    }
+
     /**
      * Remove a retained notification from the MQTT broker.
      *

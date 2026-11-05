@@ -199,6 +199,7 @@ complete.
 | `mqtt.contentType` | MIME type | *none* | Content type describing the MQTT payload format, for example `application/json` |
 | `mqtt.clientId` | String | *none* | Publish messages to a specific MQTT client connected to the HiveMQ broker |
 | `mqtt.retain` | Boolean | *disabled* | Set the MQTT retain flag so the broker stores the latest message on the topic and delivers it to new subscribers until it expires or is replaced |
+| `mqtt.inlineMaxBytes` | Integer | `0` (disabled) | Opt in to exposing complete file content as Base64 in `mqttEventJson.contentBase64`; capped at 16384 original bytes. Set in Properties, before JavaScript executes; unavailable or larger files omit this field |
 
 ### Quick-start example — retained JSON notifications
 
@@ -219,12 +220,17 @@ The script is executed once per completed transfer and must return a plain objec
 keys mirror the `mqtt.*` option names. Only the keys you return are used; everything else
 falls back to the properties.
 
+For file metadata, prefer `JSON.parse(mqttEventJson)` over embedding raw
+`$`-placeholders in quoted JavaScript: filenames can contain quotes or backslashes.
+See the [demo notification example](../notifications/mqtt-dissemination.md#demo-upload-notifications-and-public-download-links)
+for authenticated download URLs and optional bounded Base64 inline content.
+
 **Runtime variables** — the following `$`-prefixed placeholders are substituted into the
 script source before execution:
 
 | Variable | Description |
 |---|---|
-| `$filename` | Full target path as stored on the Data Mover (e.g. `destination/data/file.dat`) |
+| `$filename` | Target filename relative to the destination (e.g. `data/file.dat`) |
 | `$filesize` | File size in bytes (integer literal) |
 | `$destination` | Destination name |
 | `$date` | Product date formatted as `yyyyMMdd` |
@@ -241,7 +247,8 @@ script source before execution:
 | `$metadata[key]` | Value of the metadata attribute named `key` (if present) |
 
 **Return object structure** — the script must return an object with a `mqtt` key. Any
-property listed in the table above can be overridden dynamically:
+property listed in the table above can be overridden dynamically, except
+`inlineMaxBytes`, which controls the file read before the script runs:
 
 ```javascript
 return {
@@ -276,26 +283,36 @@ mqtt.retain = "yes"
 **JavaScript** (in the destination's **JavaScript** field):
 
 ```javascript
-// $-placeholders are substituted before execution
-var destination = "$destination";
-var filename    = "$filename";
-var filesize    = $filesize;                          // integer literal
-var pubtime     = new Date($timefile).toISOString();  // integer literal -> ISO string
+var file        = JSON.parse(mqttEventJson);
+var destination = file.destination;
+var filename    = file.filename.replace(/^\/+/, "");
+var filesize    = file.size;
+var pubtime     = file.publishedAt;
 var dataId      = destination + "/" + filename;
+function segment(value) {
+  return encodeURIComponent(value).replace(/[!'()*]/g, function(c) {
+    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
+  });
+}
+var parts = filename.split("/");
+if (!filename || parts.some(function(part) { return !part || part === "." || part === ".."; })) {
+  throw new Error("Invalid portal file path");
+}
+var path = segment(destination) + "/" + parts.map(segment).join("/");
 
 // Adjust host and ports for your deployment
 var host      = "localhost";
 var httpsPort = 7443;
 var sftpPort  = 7022;
 
-var baseUrl = "https://" + host + ":" + httpsPort + "/";
-var s3Url   = "https://" + host + ":" + httpsPort + "/s3/";
-var sftpUrl = "sftp://test@" + host + ":" + sftpPort + "/";
+var baseUrl = "https://" + host + ":" + httpsPort + "/ecpds/data/file/";
+var s3Url   = "https://" + host + ":" + httpsPort + "/s3/test/";
+var sftpUrl = "sftp://" + host + ":" + sftpPort + "/";
 
 return {
   mqtt: {
     payload: JSON.stringify({
-      id:       "$uuid",
+      id:       file.id,
       type:     "Feature",
       geometry: null,
       properties: {
@@ -306,13 +323,13 @@ return {
       },
       links: [
         { rel: "canonical", type: "application/octet-stream",
-          length: filesize, href: baseUrl + filename,
+          length: filesize, href: baseUrl + path,
           title: "Download via HTTPS" },
         { rel: "alternate", type: "application/octet-stream",
-          length: filesize, href: sftpUrl + filename,
+          length: filesize, href: sftpUrl + path,
           title: "Download via SFTP" },
         { rel: "alternate", type: "application/octet-stream",
-          length: filesize, href: s3Url + filename,
+          length: filesize, href: s3Url + path,
           title: "Download via S3" }
       ]
     })
@@ -323,6 +340,9 @@ return {
 The resulting MQTT message published on topic `destinationName/filename` will be a
 GeoJSON Feature carrying three access URLs. Any subscriber can pick the protocol that
 suits them best.
+
+All three links require destination access; the S3 URL uses the `test` user's bucket
+and requires a signed request. No credentials or presigned access tokens are embedded.
 
 !!! tip "Access control"
     To allow a data user to subscribe to these notifications, set the

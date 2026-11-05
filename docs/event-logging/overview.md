@@ -520,6 +520,8 @@ journalEnabled=yes
 journalOwner=production-master
 journalMaxPendingEvents=10000
 journalMaxPayloadBytes=67108864
+journalMaxMemoryEvents=2048
+journalMaxMemoryBytes=8388608
 ```
 
 Supply the OTLP endpoint, authentication and TLS settings as described above.
@@ -540,7 +542,11 @@ after failures or Master restarts. Retries can produce duplicates; use
 
 In journal mode, event producers serialize and enqueue without database I/O.
 A single background worker admits events to the database before export.
-The memory admission queue is bounded to 2,048 events and 8 MiB of UTF-8 payload;
+The memory admission queue defaults to 2,048 events and 8 MiB of UTF-8 payload,
+configured with `journalMaxMemoryEvents` and `journalMaxMemoryBytes` in
+`[OperationalEvents]` (Master restart required). Both must be positive, and the
+event-count limit must be below 2,147,483,647. Increasing these limits increases
+potential heap usage and telemetry lost on a crash;
 oversized events and new arrivals when it is full are dropped without waiting.
 Memory-queued events can be lost during shutdown or a crash; `forceFlush` does not
 provide a database-persistence barrier. Shutdown need not drain the database;
@@ -590,7 +596,7 @@ rows. Re-enabling it with the same owner resumes replay.
   this table is not a permanent history archive.
 
 Monitor pending count and oldest admission time through
-**Admin Tasks → Operational Event Journal**.
+**Operations → OpenTelemetry Journal** (`/do/monitoring/eventjournal`).
 For a local Docker Collector that prints received records, use
 `make start-otel` and `make logs-otel`; an optional Eclipse launch group starts
 it before debugging the Master. See
@@ -605,6 +611,17 @@ OTLP acknowledgement.
 The Monitor page shows pending count, oldest admission timestamp and age,
 in-flight records, last successful persistence, last endpoint acknowledgement,
 and persistence/delivery failure history, admission limits and dropped events.
+The Admission & rejections tab lists memory queue usage against its configured
+limits, owner-scoped database count/byte usage against configured limits, and
+the effective single serialized event ceiling (the smaller of `journalMaxMemoryBytes` and
+`journalMaxPayloadBytes`). Sizes include serialized telemetry attributes and
+resource metadata, not just message bodies. Collector limits are separate.
+Drop counters distinguish oversize, memory count/byte pressure, database count/byte
+pressure, serialization and persistence/capacity failures; the latest rejection
+includes its timestamp and serialized byte size when measurable. Memory usage is
+sampled on each refresh. Counters are historical since startup and remain after
+discard; the old combined "queue full or event oversized" reason cannot be
+retroactively split into causes.
 It reads cached worker statistics, at most one minute old; UI refresh does not run
 a full-table aggregate. The page refreshes every 30 seconds by
 default, with manual refresh and an option to disable automatic refresh. Warning
@@ -613,7 +630,7 @@ and critical thresholds are configurable with `journalWarningPendingCount`,
 `journalCriticalOldestAgeMillis` in `[OperationalEvents]`; changes require a
 Master restart. Both count and oldest-age thresholds can trigger an alert.
 
-Administrators can pause or resume native event collection independently from
+Users with Operations access, including operators, can pause or resume native event collection independently from
 delivery. Pausing collection does not change the `splunk.log` output and does
 not stop delivery of already-journalled events. Pausing delivery continues
 database admission, so the backlog can grow; a batch already in flight may
@@ -622,8 +639,8 @@ The page displays a browser-local backlog trend. It estimates drain time only
 after at least four queue samples spanning two minutes show a healthy decrease
 of at least two events; treat the estimate as an extrapolation, not a guarantee.
 
-Persistence failures highlight the Admin Tasks card, home-page and administration
-menu entries, with a banner on the home and Admin Tasks pages. Red means persistence
+Persistence failures highlight the Operations card and home-page menu entry,
+with a banner on the home and Operations pages. Red means persistence
 has failed without a successful admission confirming recovery, or the worker is
 stopped. After persistence recovers, a yellow warning retains the failure count
 for the rest of the Master process. Runtime counters reset on Master restart;
@@ -633,9 +650,17 @@ Detailed exceptions remain in service logs; payloads and credentials are not sho
 The task is greyed out when journaling is disabled on the Master.
 Disabled journaling can still leave pending rows in the database.
 A Master connection failure is shown as unavailable. The page is read-only
-for event data: it does not expose payloads, purge records or force retries.
+for event payloads and cannot force retries. Its Delivery tab provides an
+explicit **Discard pending events** action for intentional telemetry loss.
+Both collection and delivery must be paused, and any in-flight export must
+finish first. A confirmation shows the last observed database count and owner.
+The audited action permanently deletes only that owner's rows and memory-queued
+admissions; other owners, Splunk logs and transfer history are untouched.
+Success immediately resets queue statistics and active delivery-failure state,
+but does not erase historical persistence failures or drop counters. Both pauses
+remain in effect. Install `discardOperationalEvents.sql` with the updated Master.
 
-The publisher exports the seven categories listed below. Operational events
+The publisher exports the eight categories listed below. Operational events
 and the Monitor's database change log are separate records.
 
 ## Event Categories
@@ -652,6 +677,40 @@ operation being recorded:
 | **ERR** | ERRor | Captures error events, specifically when a file fails to be disseminated successfully. | [ERR fields](err-fields.md) |
 | **CPY** | CoPY / Replication | Tracks file replication between different data movers. Records whether the replication was successful. | [CPY fields](cpy-fields.md) |
 | **DEA** | DEnied Access | Captures unauthorised access attempts, helping administrators identify security threats, misconfigurations, or unexpected behaviour. | [DEA fields](dea-fields.md) |
+| **NTF** | NoTiFication outcome | Records each MQTT Mover/broker outcome: accepted, failed or unconfirmed. Not subscriber delivery. | [NTF fields](#mqtt-notification-outcomes-ntf) |
+
+### MQTT notification outcomes (NTF)
+
+The Master emits one `NTF` record per configured Mover after its MQTT publication
+result is known, including disconnected Movers. If none are configured, it emits
+one `FAILED` record with an empty `MoverName`. These records use the same independent
+Splunk and native OpenTelemetry switches as other operational events, including
+the OpenTelemetry journal when enabled. Native event name is `ecpds.NTF`, body is
+`NTF`, and severity is `INFO`; filter the `Status` attribute for failure alerts.
+
+| Field | Meaning |
+|---|---|
+| `TimeStamp` | Time the Master records the result. |
+| `PublicationId`, `DataTransferId` | Correlation with MQTT Activity and transfer history. |
+| `DestinationName` | Destination whose notification is being published. |
+| `TransferProtocol` | `mqtt`. |
+| `MoverName` | Mover hosting the broker, or empty when no Movers are configured. |
+| `Topic` | Publication topic. |
+| `FieldEncoding` | `percent-record-separators`: in destination, Mover and topic strings, `%`, `;`, CR and LF are escaped as `%25`, `%3B`, `%0D` and `%0A` in both outputs. Decode once to recover the original value. |
+| `QoS`, `Retain` | Effective MQTT QoS and retain flag. |
+| `PayloadBytes` | UTF-8 encoded message length, not content. |
+| `Status` | `ACCEPTED`, `FAILED` or `UNCONFIRMED`. |
+| `SubscriberDeliveryConfirmed` | Always `false`: broker acceptance never proves subscriber receipt. |
+
+Legacy Movers and uncertain RPC/broker timeouts are `UNCONFIRMED`, not successful.
+The record contains no message body, inline file content, client ID or credentials.
+It does not create a new trace/span or infer a dissemination attempt from a transfer
+ID. Publication scripting failures/skips occur before broker submission and remain
+visible in MQTT Activity, rather than producing a broker-outcome `NTF`.
+
+```text
+NTF;TimeStamp=2026:11- 05 16:00:00.0;PublicationId=42;DataTransferId=123;DestinationName=mqtt_demo;TransferProtocol=mqtt;MoverName=ecpds-mover;Topic=openecpds/demo/file.dat;FieldEncoding=percent-record-separators;QoS=1;Retain=false;PayloadBytes=160;Status=ACCEPTED;SubscriberDeliveryConfirmed=false
+```
 
 ## Field formats
 

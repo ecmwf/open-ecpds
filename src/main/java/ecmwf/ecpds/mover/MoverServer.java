@@ -1507,6 +1507,23 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         if (mqttInterface != null) {
             mqttInterface.remove(topic);
         }
+
+    }
+
+    @Override
+    public MQTTPublishResult publishToMQTTBrokerConfirmed(final String topic, final int qos, final long expiryInterval,
+            final String contentType, final String clientId, final String payload, final boolean retain) {
+        final var service = mqttInterface;
+        if (service == null) {
+            return new MQTTPublishResult("FAILED", "MQTT service is not running on this Mover");
+        }
+        try {
+            return MQTTPublishResult.await(
+                    service.publishAsync(topic, qos, expiryInterval, contentType, clientId, payload, retain), 10000);
+        } catch (final RuntimeException e) {
+            _log.warn("MQTT publication failed for topic {}", topic, e);
+            return new MQTTPublishResult("FAILED", "MQTT publish invocation failed: " + e.getClass().getSimpleName());
+        }
     }
 
     /**

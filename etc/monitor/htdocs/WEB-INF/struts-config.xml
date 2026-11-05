@@ -1324,6 +1324,10 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetTopologyDisplayAction">
 			<forward name="success" path=".pds.monitoring.topology" />
 		</action>
+		<action path="/monitoring/mqtt"
+			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.MQTTActivityAction">
+			<forward name="success" path=".pds.monitoring.mqtt" />
+		</action>
 		<action path="/monitoring/topology/data"
 			type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetSystemTopologyJsonAction">
 		</action>
@@ -1448,9 +1452,13 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.SchedulerTrafficAction">
 			<forward name="success" path=".pds.admin.schedulertraffic" />
 		</action>
+		<action path="/monitoring/eventjournal"
+			type="ecmwf.ecpds.master.plugin.http.controller.admin.OperationalEventJournalAction">
+			<forward name="success" path=".pds.monitoring.eventjournal" />
+		</action>
 		<action path="/admin/eventjournal"
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.OperationalEventJournalAction">
-			<forward name="success" path=".pds.admin.eventjournal" />
+			<forward name="success" path=".pds.monitoring.eventjournal" />
 		</action>
 		<action path="/admin/requeue/*"
 			type="ecmwf.ecpds.master.plugin.http.controller.admin.RequeueDestinationBadTransfersAction">

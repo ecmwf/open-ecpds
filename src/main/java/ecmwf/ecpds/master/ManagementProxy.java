@@ -1674,6 +1674,12 @@ final class ManagementProxy implements ManagementInterface {
     }
 
     @Override
+    public Map<String, Object> getMQTTActivity(final ECpdsSession session, final long since, final String destination,
+            final String topic, final String status, final int offset) throws Exception {
+        return managementInterface.getMQTTActivity(session, since, destination, topic, status, offset);
+    }
+
+    @Override
     public OperationalEventJournalStatus getOperationalEventJournalStatus(final ECpdsSession session,
             final boolean includeQueue) throws Exception {
         return managementInterface.getOperationalEventJournalStatus(session, includeQueue);
@@ -1687,6 +1693,11 @@ final class ManagementProxy implements ManagementInterface {
     @Override
     public void setOperationalEventDeliveryPaused(final ECpdsSession session, final boolean paused) throws Exception {
         managementInterface.setOperationalEventDeliveryPaused(session, paused);
+    }
+
+    @Override
+    public long discardOperationalEventJournal(final ECpdsSession session) throws Exception {
+        return managementInterface.discardOperationalEventJournal(session);
     }
 
     /** {@inheritDoc} */

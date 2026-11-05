@@ -385,16 +385,16 @@ Refreshing the page does not start transfers or change scheduler behaviour.
 Access follows the normal administration
 URL permissions (`/do/admin/schedulertraffic`).
 
-## Operational Event Journal
+## OpenTelemetry Journal (moved to Operations)
 
-**Operational Event Journal** (`/do/admin/eventjournal`) monitors and controls
+**Operations → OpenTelemetry Journal** (`/do/monitoring/eventjournal`) monitors and controls
 the Master's OpenTelemetry database queue. Its Health, Collecting new events and
 Delivering queued events tabs show pending count, oldest admission timestamp and
 age, runtime failures, collection/delivery state, queue trend and configured
 warning/critical thresholds. A drain estimate appears only after enough healthy
 browser-collected samples show a measurable decrease. The page uses the
-administration card layout, selectable auto-refresh (30 seconds by default),
-manual refresh, contextual help and an **Event Journal Guide**.
+standard Monitor layout with an Operations breadcrumb, selectable auto-refresh (30 seconds by default),
+manual refresh, contextual help and an **OpenTelemetry Journal Guide**.
 
 The task is greyed out when journaling is disabled on the Master. Master
 connection failures appear as unavailable rather than disabled. Pending rows can
@@ -402,11 +402,11 @@ remain while journaling is disabled. Queue values are scoped to the active owner
 unavailable measurements are not shown as zero.
 
 Persistence failures produce red attention indicators on the task card and menu
-entries, with banners on the home and Admin Tasks pages. A successful admission
+entry, with banners on the home and Operations pages. A successful admission
 confirms recovery and changes the indicator to yellow: the failure count remains
 visible until Master restart, because those events used best-effort delivery.
 Export or replay failures also require attention; unacknowledged records remain
-pending for automatic retry. Administrators can pause/resume native OpenTelemetry
+pending for automatic retry. Users with Operations access, including operators, can pause/resume native OpenTelemetry
 collection and queue delivery at runtime. Collection pause does not affect
 Splunk/file output. Delivery pause keeps persistence active, so the queue can
 grow; an already in-flight export may complete. Both controls reset on Master
@@ -414,6 +414,8 @@ restart and are recorded in the Master session audit log. Runtime counters reset
 on restart, but database rows survive. The page exposes no payloads, credentials,
 purge or force-retry controls.
 
-Access requires administration permissions on the Monitor and Master. See
+Viewing and controls require Operations access (monitoring and transfer history) on the Monitor and Master.
+The former `/do/admin/eventjournal` URL remains a compatibility alias with the same Operations permissions.
+The journal is system-wide for the active owner, not filtered by destination. See
 [Event logging](../event-logging/overview.md#durable-database-journal) for
 configuration, delivery guarantees and operational limits.

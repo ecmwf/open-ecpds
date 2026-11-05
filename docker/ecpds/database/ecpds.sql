@@ -350,10 +350,12 @@ INSERT INTO `CAT_URL` VALUES
 (10060,'/do/transfer/destination/efas_iconeu_opendata'),
 (10052,'/do/transfer/destination/hourly_aq'),
 (10055,'/do/transfer/destination/hourly_aq'),
+(10052,'/do/transfer/destination/mqtt_demo'),
 (10052,'/do/transfer/destination/hostsStatus/efas_iconeu_opendata'),
 (10060,'/do/transfer/destination/hostsStatus/efas_iconeu_opendata'),
 (10052,'/do/transfer/destination/hostsStatus/hourly_aq'),
 (10055,'/do/transfer/destination/hostsStatus/hourly_aq'),
+(10052,'/do/transfer/destination/hostsStatus/mqtt_demo'),
 (10052,'/do/transfer/destination/hostsStatus/s2s_kwbc_enfo'),
 (10061,'/do/transfer/destination/hostsStatus/s2s_kwbc_enfo'),
 (10052,'/do/transfer/destination/hostsStatus/wis2_sbo'),
@@ -362,6 +364,7 @@ INSERT INTO `CAT_URL` VALUES
 (10060,'/do/transfer/destination/metadata/efas_iconeu_opendata'),
 (10052,'/do/transfer/destination/metadata/hourly_aq'),
 (10055,'/do/transfer/destination/metadata/hourly_aq'),
+(10052,'/do/transfer/destination/metadata/mqtt_demo'),
 (10052,'/do/transfer/destination/metadata/s2s_kwbc_enfo'),
 (10061,'/do/transfer/destination/metadata/s2s_kwbc_enfo'),
 (10052,'/do/transfer/destination/metadata/wis2_sbo'),
@@ -370,6 +373,7 @@ INSERT INTO `CAT_URL` VALUES
 (10060,'/do/transfer/destination/operations/efas_iconeu_opendata/'),
 (10052,'/do/transfer/destination/operations/hourly_aq/'),
 (10055,'/do/transfer/destination/operations/hourly_aq/'),
+(10052,'/do/transfer/destination/operations/mqtt_demo/'),
 (10052,'/do/transfer/destination/operations/s2s_kwbc_enfo/'),
 (10061,'/do/transfer/destination/operations/s2s_kwbc_enfo/'),
 (10052,'/do/transfer/destination/operations/wis2_sbo/'),
@@ -950,6 +954,7 @@ LOCK TABLES `DESTINATION` WRITE;
 INSERT INTO `DESTINATION` VALUES
 ('efas_iconeu_opendata','anonymous','de',0,0,5,-1,30000,2,600000,0,'',0,0,0,0,1,'Acquisition of DWD ICON-EU forecasts for EFAS [328 files (344,05 MB) per day]',0,1200000,1759154183598,0,14,10000,1,'STOP','admin',1,0,0,'none',NULL,1,0,-1,0,'yyyyMMdd',0,'internet','scheduler.standby = \"yes\"\n###### END-OF-PROPERTIES ######\n'),
 ('hourly_aq','anonymous','us',0,0,5,-1,30000,2,600000,0,'',0,0,0,0,1,'Acquisition of hourly_aq data in the ASCII format from USEPA [24 files (17,21 MB) per day]',0,1200000,1759154573465,0,9,10000,1,'STOP','admin',1,0,0,'none',NULL,1,0,-1,0,'yyyyMMdd',0,'internet','mqtt.contentType = \"application/json\"\nmqtt.expiryInterval = \"PT48H\"\nmqtt.publish = \"yes\"\nmqtt.retain = \"yes\"\nscheduler.standby = \"yes\"\n###### END-OF-PROPERTIES ######\n// Variables substituted at runtime: $filename, $filesize, $destination, $date, $time,\n// $timefile (ms epoch), $uuid, $checksum, $movername, $datatransferid\nvar destination = "$destination";\nvar filename = "$filename";\nvar filesize = $filesize;\nvar pubtime = new Date($timefile).toISOString();\nvar dataId = destination + "/" + filename;\n// Host/ports used to build access URLs - adjust if not using standalone defaults\nvar host = "localhost";\nvar httpsPort = 7443;\nvar sftpPort = 7022;\nvar baseUrl = "https://" + host + ":" + httpsPort + "/";\nvar s3Url = "https://" + host + ":" + httpsPort + "/s3/";\nvar sftpUrl = "sftp://test@" + host + ":" + sftpPort + "/";\nreturn {\n  mqtt: {\n    payload: JSON.stringify({\n      id: "$uuid",\n      type: "Feature",\n      geometry: null,\n      properties: {\n        datetime: pubtime,\n        pubtime: pubtime,\n        data_id: dataId,\n        content_length: filesize\n      },\n      links: [\n        { rel: "canonical", type: "application/octet-stream", length: filesize,\n          href: baseUrl + filename, title: "Download via HTTPS" },\n        { rel: "alternate", type: "application/octet-stream", length: filesize,\n          href: sftpUrl + filename, title: "Download via SFTP" },\n        { rel: "alternate", type: "application/octet-stream", length: filesize,\n          href: s3Url + filename, title: "Download via S3" }\n      ]\n    })\n  }\n};\n'),
+('mqtt_demo','admin','ex',0,0,5,-1,30000,2,600000,0,'',0,0,0,0,1,'Data Portal upload destination for demonstrating MQTT event notifications',0,1200000,0,0,NULL,10000,0,'STOP','admin',1,0,0,'none',NULL,0,0,-1,0,'yyyyMMdd',0,'internet','incoming.event = \"yes\"\nscheduler.standby = \"yes\"\nmqtt.contentType = \"application/json\"\nmqtt.expiryInterval = \"PT48H\"\nmqtt.publish = \"yes\"\nmqtt.qos = \"1\"\nmqtt.retain = \"no\"\nmqtt.topic = \"openecpds/demo/\"\nmqtt.inlineMaxBytes = \"16384\"\n###### END-OF-PROPERTIES ######\n// Public endpoints: standalone defaults. Eclipse uses ports 4443 and 4022.\nvar httpsBase = \"https://localhost:7443\";\nvar sftpBase = \"sftp://localhost:7022\";\nvar s3Endpoint = \"https://localhost:7443/s3\";\nvar s3Bucket = \"test\";\nvar file = JSON.parse(mqttEventJson);\nfunction segment(value) {\n  return encodeURIComponent(value).replace(/[!\\x27()*]/g, function(c) {\n    return \"%\" + c.charCodeAt(0).toString(16).toUpperCase();\n  });\n}\nvar target = file.filename.replace(/^\\/+/, \"\");\nvar parts = target.split(\"/\");\nif (!target || parts.some(function(part) { return !part || part === \".\" || part === \"..\"; })) {\n  throw new Error(\"Invalid portal file path\");\n}\nvar path = segment(file.destination) + \"/\" + parts.map(segment).join(\"/\");\nreturn {\n  mqtt: {\n    payload: JSON.stringify({\n      id: file.id,\n      event: \"file-uploaded\",\n      source: \"open-ecpds-demo\",\n      published_at: file.publishedAt,\n      expires_at: file.expiresAt,\n      content: file.contentBase64 === undefined ? undefined : {\n        encoding: \"base64\", type: \"application/octet-stream\", data: file.contentBase64\n      },\n      file: {\n        destination: file.destination,\n        name: file.filename,\n        size: file.size,\n        data_file_id: file.dataFileId,\n        transfer_id: file.transferId\n      },\n      links: [\n        { rel: \"canonical\", protocol: \"https\", type: \"application/octet-stream\",\n          length: file.size, href: httpsBase + \"/ecpds/data/file/\" + path,\n          title: \"Download via HTTPS (authentication required)\" },\n        { rel: \"alternate\", protocol: \"sftp\", type: \"application/octet-stream\",\n          length: file.size, href: sftpBase + \"/\" + path,\n          title: \"Download via SFTP (authentication required)\" },\n        { rel: \"alternate\", protocol: \"s3\", type: \"application/octet-stream\",\n          length: file.size, href: s3Endpoint + \"/\" + segment(s3Bucket) + \"/\" + path,\n          endpoint: s3Endpoint, bucket: s3Bucket, key: file.destination + \"/\" + target,\n          title: \"Download via S3 (signed request required)\" }\n      ]\n    })\n  }\n};\n'),
 ('s2s_kwbc_enfo','anonymous','de',0,0,5,-1,30000,2,600000,0,'',0,0,0,0,1,'S2S project, Ensemble Forecast from NCEP [16 files (2,64 GB) per day]',0,1200000,1759156182523,0,15,10000,1,'STOP','admin',1,0,0,'none',NULL,1,0,-1,0,'yyyyMMdd',1,'internet','scheduler.standby = \"yes\"\n###### END-OF-PROPERTIES ######\n'),
 ('wis2_sbo','admin','ex',0,0,10,-1,60000,5,600000,0,'admin@ecmwf.int',0,0,0,0,1,'WIS2 surface data acq [~50K files (~60 MB) per day]',0,1200000,1759154285020,4,13,10000,0,'STOP','admin',1,0,0,'none',NULL,1,0,-1,0,'yyyyMMdd',0,'internet','scheduler.standby = \"yes\"\n###### END-OF-PROPERTIES ######\n');
 /*!40000 ALTER TABLE `DESTINATION` ENABLE KEYS */;
@@ -1622,6 +1627,7 @@ LOCK TABLES `POLICY_ASSOCIATION` WRITE;
 INSERT INTO `POLICY_ASSOCIATION` VALUES
 ('test_destinations','efas_iconeu_opendata'),
 ('test_destinations','hourly_aq'),
+('test_destinations','mqtt_demo'),
 ('test_destinations','wis2_sbo');
 /*!40000 ALTER TABLE `POLICY_ASSOCIATION` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -2358,16 +2364,20 @@ INSERT INTO `URL` VALUES
 ('/do/transfer/destination/edit/'),
 ('/do/transfer/destination/efas_iconeu_opendata'),
 ('/do/transfer/destination/hourly_aq'),
+('/do/transfer/destination/mqtt_demo'),
 ('/do/transfer/destination/hostsStatus/efas_iconeu_opendata'),
 ('/do/transfer/destination/hostsStatus/hourly_aq'),
+('/do/transfer/destination/hostsStatus/mqtt_demo'),
 ('/do/transfer/destination/hostsStatus/s2s_kwbc_enfo'),
 ('/do/transfer/destination/hostsStatus/wis2_sbo'),
 ('/do/transfer/destination/metadata/efas_iconeu_opendata'),
 ('/do/transfer/destination/metadata/hourly_aq'),
+('/do/transfer/destination/metadata/mqtt_demo'),
 ('/do/transfer/destination/metadata/s2s_kwbc_enfo'),
 ('/do/transfer/destination/metadata/wis2_sbo'),
 ('/do/transfer/destination/operations/efas_iconeu_opendata/'),
 ('/do/transfer/destination/operations/hourly_aq/'),
+('/do/transfer/destination/operations/mqtt_demo/'),
 ('/do/transfer/destination/operations/s2s_kwbc_enfo/'),
 ('/do/transfer/destination/operations/wis2_sbo/'),
 ('/do/transfer/destination/s2s_kwbc_enfo'),

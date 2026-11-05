@@ -166,6 +166,9 @@ public enum ECtransOptions implements ECtransOptionDefinition {
     /** The destination mqtt payload. */
     DESTINATION_MQTT_PAYLOAD("payload", String.class, STRING_NONE),
 
+    /** Maximum original file bytes exposed inline to MQTT scripts; disabled by default, capped at 16 KiB. */
+    DESTINATION_MQTT_INLINE_MAX_BYTES("inlineMaxBytes", Integer.class, 0),
+
     /** The destination scheduler active time range. */
     DESTINATION_SCHEDULER_ACTIVE_TIME_RANGE("activeTimeRange", TimeRange.class, TIME_RANGE_NONE),
 

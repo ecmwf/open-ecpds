@@ -194,7 +194,6 @@
                 <auth:link basePathKey="admin.basepath" href="/filter" wrappingTags="li"><i class="bi bi-file-zip"></i>Compress Files</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/requeue" wrappingTags="li"><i class="bi <%=_badIconClass%>"></i>Outstanding Transfers</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/schedulertraffic" wrappingTags="li"><i class="bi bi-arrow-left-right"></i>Scheduler Traffic</auth:link>
-                <jsp:include page="/WEB-INF/jsp/pds/admin/eventjournal/menu.jsp" />
                 <auth:link basePathKey="admin.basepath" href="/upload" wrappingTags="li"><i class="bi bi-upload"></i>Upload Files</auth:link>
                 <auth:link basePathKey="admin.feedback.basepath" href="" wrappingTags="li"><i class="bi <%=_feedbackIconClass%>"></i>User Feedback</auth:link>
                 <auth:link basePathKey="admin.basepath" href="/metafields" wrappingTags="li"><i class="bi bi-list-check"></i>Metadata Fields</auth:link>
@@ -227,6 +226,8 @@
                         <auth:link basePathKey="monitoring.basepath" href="?type=0|1|2|3|4|5|6|7|8|18|20|21|22|23|27&status=&network=&" wrappingTags="li"><i class="bi bi-cloud-arrow-down"></i>Acquisition</auth:link>
                         <auth:link basePathKey="monitoring.basepath" href="/globe" wrappingTags="li"><i class="bi bi-globe2"></i>Live Earth</auth:link>
                         <auth:link basePathKey="monitoring.basepath" href="/topology" wrappingTags="li"><i class="bi bi-diagram-3"></i>System Topology</auth:link>
+                        <auth:link basePathKey="monitoring.basepath" href="/mqtt" wrappingTags="li"><i class="bi bi-broadcast"></i>MQTT Activity</auth:link>
+                        <jsp:include page="/WEB-INF/jsp/pds/admin/eventjournal/menu.jsp" />
                         <auth:link basePathKey="monitoring.basepath" href="/delaynotification" wrappingTags="li"><i class="bi bi-bell"></i>Delay Notification</auth:link>
                     </ul>
                 </div>

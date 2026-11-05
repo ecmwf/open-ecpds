@@ -94,8 +94,14 @@ public final class OperationalEvents {
         final var maxPendingEvents = journalEnabled ? positiveThreshold("journalMaxPendingEvents", 10000) : 10000;
         final var maxPayloadBytes = journalEnabled ? positiveThreshold("journalMaxPayloadBytes", 64L * 1024 * 1024)
                 : 64L * 1024 * 1024;
+        final var maxMemoryEvents = journalEnabled ? positiveThreshold("journalMaxMemoryEvents", 2048) : 2048;
+        final var maxMemoryBytes = journalEnabled ? positiveThreshold("journalMaxMemoryBytes", 8L * 1024 * 1024)
+                : 8L * 1024 * 1024;
         if (maxPendingEvents >= Integer.MAX_VALUE) {
             throw new IllegalArgumentException("OperationalEvents.journalMaxPendingEvents must be below 2147483647");
+        }
+        if (maxMemoryEvents >= Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("OperationalEvents.journalMaxMemoryEvents must be below 2147483647");
         }
         if (journalEnabled) {
             warningPendingCount = positiveThreshold("journalWarningPendingCount", 1000);
@@ -155,7 +161,8 @@ public final class OperationalEvents {
                         return processor;
                     }
                     final var journal = new OperationalEventJournal(OperationalEventJournal.database(database, owner),
-                            exporterReference.get(), processor, true, maxPendingEvents, maxPayloadBytes);
+                            exporterReference.get(), processor, true, maxPendingEvents, maxPayloadBytes,
+                            maxMemoryEvents, maxMemoryBytes);
                     INSTANCE.journal = journal;
                     return journal;
                 }).disableShutdownHook().build().getOpenTelemetrySdk();
@@ -180,15 +187,24 @@ public final class OperationalEvents {
         if (journal == null || journal.isStopped()) {
             throw new IllegalStateException("Operational event journal is not enabled");
         }
+        journal.setCollectionPaused(paused);
         INSTANCE.collectionPaused = paused;
     }
 
-    public static void setDeliveryPaused(final boolean paused) {
+    public static synchronized void setDeliveryPaused(final boolean paused) {
         final var journal = INSTANCE.journal;
         if (journal == null) {
             throw new IllegalStateException("Operational event journal is not enabled");
         }
         journal.setDeliveryPaused(paused);
+    }
+
+    public static synchronized long discardPendingEvents() throws java.sql.SQLException, java.io.IOException {
+        final var journal = INSTANCE.journal;
+        if (journal == null || !INSTANCE.collectionPaused) {
+            throw new IllegalStateException("Pause both collection and delivery before discarding pending events.");
+        }
+        return journal.discardPending();
     }
 
     private static long positiveThreshold(final String name, final long fallback) {
@@ -222,6 +238,31 @@ public final class OperationalEvents {
     }
 
     public record Field(String name, Object value) {
+    }
+
+    /** Record broker outcomes independently of transfer completion and without publishing message bodies. */
+    void mqttNotification(final DataTransfer transfer, final long publicationId, final String mover, final String topic,
+            final int qos, final boolean retain, final int payloadBytes, final String status) {
+        try {
+            if (!isEnabled()) {
+                return;
+            }
+            emit("NTF", field("TimeStamp", Timestamp.from(Instant.now())), field("PublicationId", publicationId),
+                    field("DataTransferId", transfer.getId()),
+                    field("DestinationName", notificationField(transfer.getDestinationName())),
+                    field("TransferProtocol", "mqtt"), field("MoverName", notificationField(mover)),
+                    field("Topic", notificationField(topic)), field("FieldEncoding", "percent-record-separators"),
+                    field("QoS", qos >= 0 && qos <= 2 ? qos : 1), field("Retain", retain),
+                    field("PayloadBytes", payloadBytes), field("Status", status),
+                    field("SubscriberDeliveryConfirmed", false));
+        } catch (final RuntimeException e) {
+            // Logging failure must never turn a completed publish into a retried publication.
+            LOG.error("Failed to record MQTT notification outcome for Publication-{}", publicationId, e);
+        }
+    }
+
+    private static String notificationField(final String value) {
+        return value.replace("%", "%25").replace(";", "%3B").replace("\r", "%0D").replace("\n", "%0A");
     }
 
     public void emit(final String category, final Field... fields) {
