@@ -20,43 +20,97 @@ package ecmwf.ecpds.master;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import ecmwf.common.database.ECpdsBase;
+import ecmwf.common.technical.Cnf;
+
 /**
- * Bounded, local publication history. Independent of operational telemetry admission and export. Payloads and
+ * Bounded publication history with asynchronous database persistence, independent of telemetry admission. Payloads and
  * connection options are deliberately never retained.
  */
 public final class MQTTActivity implements AutoCloseable {
     private static final Logger LOG = LogManager.getLogger(MQTTActivity.class);
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final int MAX_ENTRIES = 2000;
-    private static final long MAX_BYTES = 16 * 1024 * 1024;
-    private static final long MAX_AGE = 24 * 60 * 60 * 1000L;
-    private final Path file;
+
+    record Limits(int maxEntries, long maxBytes, int retentionHours) {
+        Limits {
+            if (maxEntries <= 0 || maxEntries == Integer.MAX_VALUE || maxBytes <= 0 || retentionHours <= 0) {
+                throw new IllegalArgumentException(
+                        "MQTTActivity limits must be positive; maxEntries must be below 2147483647");
+            }
+        }
+
+        static Limits configured() {
+            return new Limits(Integer.parseInt(Cnf.at("MQTTActivity", "maxEntries", "2000")),
+                    Long.parseLong(Cnf.at("MQTTActivity", "maxBytes", "8388608")),
+                    Integer.parseInt(Cnf.at("MQTTActivity", "retentionHours", "24")));
+        }
+
+        long maxAge() {
+            return retentionHours * 3600000L;
+        }
+    }
+
+    private final Limits limits;
+    private final Store store;
+    private final ScheduledExecutorService worker;
     private final Map<Long, Entry> entries = new LinkedHashMap<>();
-    private FileChannel lockChannel;
-    private FileLock lock;
-    private String persistenceError = "";
-    private long journalBytes;
+    private final Map<Long, Entry> dirty = new LinkedHashMap<>();
+    private String persistenceError = "MQTT activity history is loading from the database";
     private long retainedBytes;
+    private boolean loaded;
+    private boolean cleanup = true;
+    private boolean closed;
+
+    interface Store {
+        List<Entry> load() throws Exception;
+
+        void save(Entry entry) throws Exception;
+
+        void retain(Set<Long> ids, long cutoff) throws Exception;
+    }
+
+    static Store database(final ECpdsBase database, final String owner, final Limits limits) {
+        if (owner.isBlank() || owner.length() > 255) {
+            throw new IllegalArgumentException("MQTTActivity.owner must contain 1 to 255 characters");
+        }
+        return new Store() {
+            @Override
+            public List<Entry> load() throws Exception {
+                final var result = new ArrayList<Entry>();
+                for (final var payload : database.getMQTTActivity(owner, limits.maxEntries(), limits.maxBytes())) {
+                    result.add(JSON.readValue(payload, Entry.class));
+                }
+                return result;
+            }
+
+            @Override
+            public void save(final Entry entry) throws Exception {
+                database.saveMQTTActivity(owner, entry.id(), entry.updatedAt(), entry.updatedAt() + limits.maxAge(),
+                        JSON.writeValueAsString(entry));
+            }
+
+            @Override
+            public void retain(final Set<Long> ids, final long cutoff) throws Exception {
+                database.retainMQTTActivity(owner, ids, cutoff);
+            }
+        };
+    }
 
     public record Broker(String mover, String status, String reason, long completedAt) implements Serializable {
         public Broker {
@@ -78,43 +132,82 @@ public final class MQTTActivity implements AutoCloseable {
         }
     }
 
-    public MQTTActivity(final Path file) {
-        this.file = file.toAbsolutePath();
+    public MQTTActivity(final ECpdsBase database, final String owner) {
+        this(database, owner, Limits.configured());
+    }
+
+    private MQTTActivity(final ECpdsBase database, final String owner, final Limits limits) {
+        this(database(database, owner, limits), limits, true);
+    }
+
+    MQTTActivity(final Store store, final boolean startWorker) {
+        this(store, new Limits(2000, 8388608, 24), startWorker);
+    }
+
+    MQTTActivity(final Store store, final Limits limits, final boolean startWorker) {
+        this.store = store;
+        this.limits = limits;
+        worker = Executors.newSingleThreadScheduledExecutor(task -> {
+            final var thread = new Thread(task, "MQTTActivity");
+            thread.setDaemon(true);
+            return thread;
+        });
+        if (startWorker) {
+            worker.scheduleWithFixedDelay(this::flush, 0, 1, TimeUnit.SECONDS);
+        }
+    }
+
+    // Only the persistence worker calls this method; no SQL I/O holds the admission lock.
+    void flush() {
         try {
-            final var parent = this.file.getParent();
-            Files.createDirectories(parent,
-                    PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
-            lockChannel = FileChannel.open(parent.resolve("history.lock"), StandardOpenOption.CREATE,
-                    StandardOpenOption.WRITE);
-            lock = lockChannel.tryLock();
-            if (lock == null) {
-                throw new IOException("MQTT activity history is already in use");
-            }
-            if (Files.exists(this.file)) {
-                if (Files.size(this.file) > MAX_BYTES) {
-                    throw new IOException("MQTT activity history exceeds its size limit");
+            if (!loaded) {
+                final var recovered = new LinkedHashMap<Long, Entry>();
+                for (final var entry : store.load()) {
+                    recovered.put(entry.id(), entry);
                 }
-                for (final var line : Files.readAllLines(this.file, StandardCharsets.UTF_8)) {
-                    try {
-                        final var entry = JSON.readValue(line, Entry.class);
-                        put(entry);
-                    } catch (final Exception e) {
-                        persistenceError = "Some MQTT activity history could not be recovered";
-                        LOG.warn("Ignoring unreadable MQTT activity history entry", e);
+                synchronized (this) {
+                    final var now = System.currentTimeMillis();
+                    recovered.replaceAll((_, entry) -> {
+                        if (entry.updatedAt() >= now - limits.maxAge()
+                                && ("PROCESSING".equals(entry.status()) || "QUEUED".equals(entry.status()))) {
+                            return copy(entry, "UNCONFIRMED", "Master restarted before broker result was recorded",
+                                    entry.brokers());
+                        }
+                        return entry;
+                    });
+                    recovered.putAll(entries);
+                    entries.clear();
+                    dirty.clear();
+                    retainedBytes = 0;
+                    for (final var entry : recovered.values().stream()
+                            .sorted(Comparator.comparingLong(Entry::updatedAt)).toList()) {
+                        save(entry);
                     }
+                    loaded = true;
                 }
             }
-            // A process restart cannot prove the outcome of an interrupted broker call.
-            for (final var entry : new ArrayList<>(entries.values())) {
-                if ("PROCESSING".equals(entry.status()) || "QUEUED".equals(entry.status())) {
-                    put(copy(entry, "UNCONFIRMED", "Master restarted before broker result was recorded",
-                            entry.brokers()));
+            final Map<Long, Entry> pending;
+            final Set<Long> retained;
+            synchronized (this) {
+                prune();
+                if (dirty.isEmpty() && !cleanup) {
+                    return;
                 }
+                pending = new LinkedHashMap<>(dirty);
+                retained = Set.copyOf(entries.keySet());
             }
-            compact();
+            for (final var entry : pending.values()) {
+                store.save(entry);
+            }
+            store.retain(retained, System.currentTimeMillis() - limits.maxAge());
+            synchronized (this) {
+                pending.forEach((id, entry) -> dirty.remove(id, entry));
+                // A concurrent prune must be reflected in the next database cleanup.
+                cleanup = !retained.equals(entries.keySet());
+                persistenceError = "";
+            }
         } catch (final Exception e) {
             degraded(e);
-            releaseLock();
         }
     }
 
@@ -218,8 +311,9 @@ public final class MQTTActivity implements AutoCloseable {
         return Map.ofEntries(Map.entry("rows", rows), Map.entry("total", matches.size()), Map.entry("counts", counts),
                 Map.entry("buckets", buckets), Map.entry("destinations", choices),
                 Map.entry("now", System.currentTimeMillis()), Map.entry("persistenceError", persistenceError),
-                Map.entry("maxEntries", MAX_ENTRIES), Map.entry("retentionHours", 24),
-                Map.entry("lastAcceptedAt", lastAccepted), Map.entry("oldestPendingAt", oldestPending));
+                Map.entry("maxEntries", limits.maxEntries()), Map.entry("maxBytes", limits.maxBytes()),
+                Map.entry("retentionHours", limits.retentionHours()), Map.entry("lastAcceptedAt", lastAccepted),
+                Map.entry("oldestPendingAt", oldestPending));
     }
 
     private static Entry copy(final Entry e, final String status, final String reason, final List<Broker> brokers) {
@@ -239,17 +333,19 @@ public final class MQTTActivity implements AutoCloseable {
     }
 
     private void prune() {
-        final var cutoff = System.currentTimeMillis() - MAX_AGE;
+        final var cutoff = System.currentTimeMillis() - limits.maxAge();
         final var it = entries.values().iterator();
         while (it.hasNext()) {
             final var e = it.next();
-            if (entries.size() > MAX_ENTRIES || retainedBytes > MAX_BYTES / 2 || e.updatedAt() < cutoff) {
+            if (entries.size() > limits.maxEntries() || retainedBytes > limits.maxBytes() || e.updatedAt() < cutoff) {
                 try {
                     retainedBytes -= JSON.writeValueAsBytes(e).length;
                 } catch (final IOException ignored) {
                     // Entries consist only of primitive fields and immutable records.
                 }
                 it.remove();
+                dirty.remove(e.id());
+                cleanup = true;
             }
         }
     }
@@ -257,65 +353,41 @@ public final class MQTTActivity implements AutoCloseable {
     private void save(final Entry e) {
         try {
             put(e);
-            if (lock == null || !lock.isValid()) {
-                return;
-            }
-            final var line = JSON.writeValueAsString(e) + "\n";
-            final var size = line.getBytes(StandardCharsets.UTF_8).length;
-            if (journalBytes + size > MAX_BYTES) {
-                compact();
-            } else {
-                Files.writeString(file, line, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
-                journalBytes += size;
+            if (entries.containsKey(e.id())) {
+                dirty.put(e.id(), e);
             }
         } catch (final Exception failure) {
             degraded(failure);
         }
     }
 
-    private void compact() throws IOException {
-        final var temporary = file.resolveSibling(file.getFileName() + ".tmp");
-        Files.deleteIfExists(temporary);
-        Files.createFile(temporary, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
-        try (final var writer = Files.newBufferedWriter(temporary, StandardCharsets.UTF_8)) {
-            for (final var entry : entries.values()) {
-                writer.write(JSON.writeValueAsString(entry));
-                writer.newLine();
-            }
+    private synchronized void degraded(final Exception e) {
+        if (!persistenceError.startsWith("MQTT activity database persistence is degraded")) {
+            LOG.warn("MQTT activity database persistence failure", e);
         }
-        try {
-            Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-        } finally {
-            Files.deleteIfExists(temporary);
-        }
-        journalBytes = Files.size(file);
-    }
-
-    private void degraded(final Exception e) {
-        persistenceError = "MQTT activity persistence is degraded; recent results may not survive a restart";
-        LOG.warn("MQTT activity persistence failure: {}", file, e);
+        persistenceError = "MQTT activity database persistence is degraded; recent results may not survive a restart";
     }
 
     private static String limited(final String text) {
         return text == null ? "" : text.substring(0, Math.min(1024, text.length()));
     }
 
-    private void releaseLock() {
-        try {
-            if (lock != null) {
-                lock.release();
-            }
-            if (lockChannel != null) {
-                lockChannel.close();
-            }
-        } catch (final IOException e) {
-            LOG.warn("Closing MQTT activity history", e);
-        }
-        lock = null;
-    }
-
     @Override
-    public synchronized void close() {
-        releaseLock();
+    public void close() {
+        synchronized (this) {
+            if (closed) {
+                return;
+            }
+            closed = true;
+            worker.execute(this::flush);
+            worker.shutdown();
+        }
+        try {
+            if (!worker.awaitTermination(5, TimeUnit.SECONDS)) {
+                LOG.warn("MQTT activity persistence did not finish before shutdown");
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

@@ -59,8 +59,9 @@
     function charts(snapshot) {
         const textColor = getComputedStyle(root).color;
         const keys = Object.keys(states);
-        const minutes = Number(byId('mqttMinutes').value);
-        const width = minutes > 60 ? 3600000 : 60000;
+        const minutes = Math.min(Number(byId('mqttMinutes').value) || snapshot.retentionHours * 60,
+            snapshot.now / 60000);
+        const width = Math.max(minutes > 60 ? 3600000 : 60000, Math.ceil(minutes / 1440) * 60000);
         const end = Math.floor(snapshot.now / width) * width;
         const start = Math.floor((snapshot.now - minutes * 60000) / width) * width;
         const times = [];
@@ -74,7 +75,7 @@
             });
         });
         const data = {
-            labels: times.map(t => new Date(t).toISOString().slice(11, 16)),
+            labels: times.map(t => new Date(t).toISOString().slice(minutes > 1440 ? 5 : 11, 16).replace('T', ' ')),
             datasets: keys.map(status => ({
                 label: states[status].label,
                 data: times.map(t => (grouped[t] || {})[status] || 0),
@@ -175,6 +176,8 @@
     }
     function render(snapshot) {
         lastSnapshot = snapshot;
+        byId('mqttLimits').textContent = ': ' + number(snapshot.maxEntries) + ' publications, '
+            + number(snapshot.maxBytes) + ' bytes, ' + number(snapshot.retentionHours) + ' hours';
         rows = snapshot.rows;
         const select = byId('mqttDestination'), chosen = select.value;
         const all = node('option', 'All authorized destinations');

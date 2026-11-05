@@ -307,8 +307,8 @@ public final class MasterServer extends ECaccessProvider
 
     synchronized MQTTActivity getMQTTActivity() {
         if (mqttActivity == null) {
-            mqttActivity = new MQTTActivity(java.nio.file.Path.of(Cnf.at("MQTTActivity", "historyFile",
-                    System.getProperty("master.data", ".") + "/mqtt-activity/history.jsonl")));
+            mqttActivity = new MQTTActivity(getECpdsBase(),
+                    Cnf.at("MQTTActivity", "owner", Cnf.at("Login", "root", Cnf.at("Login", "hostName", "master"))));
         }
         return mqttActivity;
     }

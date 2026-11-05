@@ -128,11 +128,9 @@ available through the Data Portal, so the commands below have something to list 
 ## Try MQTT upload notifications
 
 The pre-configured **`mqtt_demo`** destination lets you test notifications without
-an external data provider. This requires an image containing the demo and a database
-initialised from its updated seed. Upgrading an image with an existing `/data` volume
-does not add or update destinations automatically; do not delete that volume to
-upgrade. See [MQTT destination configuration](../notifications/mqtt-dissemination.md#demo-upload-notifications-and-public-download-links)
-for the settings to apply to an existing installation.
+an external data provider. See
+[MQTT destination configuration](../notifications/mqtt-dissemination.md#demo-upload-notifications-and-public-download-links)
+for its settings.
 
 ### 1. Subscribe before uploading
 
@@ -220,8 +218,8 @@ separate export queue: a stopped Collector does not prevent MQTT publication.
 
 If nothing arrives, check that the subscription was active before upload, port
 `8883` is published, and the file appears under `mqtt_demo`. A transfer stuck in
-**WAIT** with no publication usually means `scheduler.standby` is missing from an
-older destination configuration. Inspect MQTT Activity for failures or unconfirmed
+**WAIT** with no publication usually means `scheduler.standby` is missing from the
+destination configuration. Inspect MQTT Activity for failures or unconfirmed
 results; use a different filename for another test upload.
 
 !!! note "Remote hosts and custom port mappings"
@@ -360,7 +358,7 @@ curl -k https://localhost:8443/ecpds/v1/version
 ```
 
 ```json
-{ "status": "ok", "version": "6.7.7-20240701" }
+{ "status": "ok", "version": "8.3.0-04112026" }
 ```
 
 ```bash

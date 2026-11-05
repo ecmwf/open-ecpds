@@ -92,6 +92,40 @@ public final class ECpdsBase extends DataBase {
     /** The ecpds. */
     private final ECpdsGet ecpds = new ECpdsGet(this);
 
+    /** Load bounded MQTT dashboard metadata, newest first; independent of publication processing. */
+    public List<String> getMQTTActivity(final String owner, final int limit, final long maxBytes)
+            throws SQLException, IOException {
+        final var entries = new ArrayList<String>();
+        long bytes = 0;
+        try (var rs = executeSelect("ECpdsBase", "getMQTTActivity",
+                new String[] { "owner=" + operationalEventHex(owner), "limit=" + Math.max(1, limit) })) {
+            while (rs.next()) {
+                final var payload = rs.getString("MQA_PAYLOAD");
+                bytes += payload.getBytes(StandardCharsets.UTF_8).length;
+                if (bytes > maxBytes) {
+                    break;
+                }
+                entries.add(payload);
+            }
+        }
+        return entries;
+    }
+
+    public void saveMQTTActivity(final String owner, final long id, final long updatedAt, final long expiresAt,
+            final String payload) throws SQLException, IOException {
+        executeUpdate("ECpdsBase", "saveMQTTActivity", new String[] { "owner=" + operationalEventHex(owner), "id=" + id,
+                "updatedAt=" + updatedAt, "expiresAt=" + expiresAt, "payload=" + operationalEventHex(payload) });
+    }
+
+    /** One active Master per owner; retain only its bounded dashboard snapshot. */
+    public void retainMQTTActivity(final String owner, final Set<Long> ids, final long cutoff)
+            throws SQLException, IOException {
+        final var retained = ids.isEmpty() ? "NULL"
+                : ids.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(","));
+        executeUpdate("ECpdsBase", "retainMQTTActivity", new String[] { "owner=" + operationalEventHex(owner),
+                "cutoff=" + cutoff, "ids=" + retained, "empty=" + (ids.isEmpty() ? 1 : 0) });
+    }
+
     /** Persist an operational event independently of the business operation. */
     public void insertOperationalEvent(final String owner, final String id, final String payload)
             throws SQLException, IOException {

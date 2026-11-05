@@ -7,8 +7,7 @@ database maintenance procedures.
 
 The catalog reflects the schema defined in
 [`docker/ecpds/database/ecpds.sql`](https://github.com/ecmwf/open-ecpds/blob/master/docker/ecpds/database/ecpds.sql).
-The schema can change between releases; consult the source for the version you are
-investigating. The table set may also differ where a deployment has site-specific changes.
+Deployments with site-specific changes may have additional or different tables.
 
 ## Transfers, files and products
 
@@ -25,6 +24,7 @@ investigating. The table set may also differ where a deployment has site-specifi
 | `MONITORING_VALUE` | Timing values used to monitor expected, earliest, latest and predicted product arrival. |
 | `PRODUCT_STATUS` | Current status and timing information for monitored products and cycles. |
 | `PUBLICATION` | Scheduled publication or notification work associated with a transfer. |
+| `MQTT_ACTIVITY` | Master-scoped MQTT publication outcomes and per-Mover broker results for the Activity dashboard, with configurable entry, byte and age limits (24 hours by default) and asynchronous persistence; stored expiry times also govern regular database purge cleanup. |
 | `METADATA_ATTRIBUTE` | Names of metadata attributes that can be attached to data files. |
 | `METADATA_VALUE` | Metadata attribute values associated with individual data files. |
 | `PRODUCT_METADATA` | Product descriptions and tips, optionally scoped by product type. |
@@ -83,6 +83,7 @@ investigating. The table set may also differ where a deployment has site-specifi
 | `CHANGE_LOG` | Before-and-after records for changes to managed objects. |
 | `OPERATIONAL_EVENT` | Optional durable delivery outbox for native OpenTelemetry events; acknowledged records are deleted. |
 | `SYSTEM_MESSAGE` | Scheduled system messages displayed to users. |
+| `SYSTEM_PHYSICAL_LOCATION` | SNMP-collected physical locations and collection status per machine, including last attempt and success times. |
 | `DELAY_NOTICE` | Registered delay notices and their status and content history. |
 | `STORAGE_POLICY` | Storage lifecycle policy definitions and their matching criteria. |
 | `STORAGE_LIFECYCLE` | Per-file lifecycle evaluation state, pinning details, eligibility times and reclamation results. |

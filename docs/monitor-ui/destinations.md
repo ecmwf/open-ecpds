@@ -121,8 +121,8 @@ that identity. These snapshots do not include Host credentials.
 Host events show **vs Previous** only: comparing an association or a global Host
 state with the current Destination settings would be misleading. Ordinary
 Destination settings retain both comparison tabs. Unchanged priorities/states and
-failed actions do not create Host-change entries. History starts when this
-version is deployed; previously unrecorded changes cannot be reconstructed.
+failed actions do not create Host-change entries. Unrecorded changes cannot be
+reconstructed.
 The existing anonymous-user and `dontRecordActions` exclusions still apply.
 As with existing settings history, database recording failures are logged but do
 not roll back a completed configuration change.

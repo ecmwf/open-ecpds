@@ -584,8 +584,8 @@ rows. Re-enabling it with the same owner resumes replay.
   suspend admission until remeasurement. Do not write/delete this owner's rows
   from another process while it is active. These are serialized UTF-8 payload
   limits, **not physical table, heap or cluster disk limits**: indexes, row overhead,
-  binary logs, Galera copies, other owners and legacy rows need additional capacity.
-  No new accounting table or database schema change is required.
+  binary logs, Galera copies, other owners and rows outside this worker's accounting
+  need additional capacity.
 - **Drops:** the Monitor displays dropped/unconfirmed admissions since startup and
   the last reason; the Master logs rate-limited `TELEMETRY DROPPED` warnings.
   Counts reset on restart. Dropped events are not automatically replayed or backfilled;
@@ -702,7 +702,7 @@ the OpenTelemetry journal when enabled. Native event name is `ecpds.NTF`, body i
 | `Status` | `ACCEPTED`, `FAILED` or `UNCONFIRMED`. |
 | `SubscriberDeliveryConfirmed` | Always `false`: broker acceptance never proves subscriber receipt. |
 
-Legacy Movers and uncertain RPC/broker timeouts are `UNCONFIRMED`, not successful.
+Uncertain RPC/broker timeouts are `UNCONFIRMED`, not successful.
 The record contains no message body, inline file content, client ID or credentials.
 It does not create a new trace/span or infer a dissemination attempt from a transfer
 ID. Publication scripting failures/skips occur before broker submission and remain

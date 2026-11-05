@@ -4248,9 +4248,9 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
                 .filter(url -> url.startsWith(prefix) && url.endsWith("/"))
                 .map(url -> url.substring(prefix.length(), url.length() - 1))
                 .collect(java.util.stream.Collectors.toSet());
-        return master.getMQTTActivity().snapshot(destinations, Math.max(System.currentTimeMillis() - 86400000L, since),
+        return master.getMQTTActivity().snapshot(destinations, Math.max(0, since),
                 destination == null ? "" : destination, topic == null ? "" : topic, status == null ? "" : status,
-                Math.max(0, Math.min(2000, offset)));
+                Math.max(0, offset));
     }
 
     @Override

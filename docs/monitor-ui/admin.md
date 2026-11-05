@@ -312,8 +312,8 @@ Existing module socket-statistics settings still determine available measurement
 acquisition payload GETs request diagnostics just as dissemination does, without
 overriding `ectrans.socketStatistics="false"`. Late socket closures can supplement
 their recorded execution. The transfer detail page separates retrieval and
-dissemination socket measurements using the stored leg; unidentified legacy rows
-are not assigned to a leg by inference.
+dissemination socket measurements using the stored leg; records without readable
+provenance are not assigned to a leg by inference.
 Missing or dropped measurements mean coverage loss, not packet loss.
 Failures without socket measurements remain sending outcomes, not zero-valued
 connections. RTT, sent/received bytes, rates and other socket measurements are
@@ -415,7 +415,6 @@ on restart, but database rows survive. The page exposes no payloads, credentials
 purge or force-retry controls.
 
 Viewing and controls require Operations access (monitoring and transfer history) on the Monitor and Master.
-The former `/do/admin/eventjournal` URL remains a compatibility alias with the same Operations permissions.
 The journal is system-wide for the active owner, not filtered by destination. See
 [Event logging](../event-logging/overview.md#durable-database-journal) for
 configuration, delivery guarantees and operational limits.

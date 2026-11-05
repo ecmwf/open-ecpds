@@ -31,7 +31,7 @@
         <li><strong>Broker accepted is not subscriber delivery.</strong> QoS does not prove that a subscriber received or used a notification.</li>
         <li><strong>Mixed results</strong> means Movers returned different outcomes. Open a publication's details for each broker's result.</li>
         <li><strong>Unconfirmed</strong> messages may still have been accepted; no automatic retry is performed by this view.</li>
-        <li><strong>History</strong> contains up to 2,000 recent publications / 24 hours, with an additional byte limit. It is not an audit log or the operational telemetry journal. Payload contents and connection credentials are never stored here.</li>
+        <li><strong>History</strong> is bounded by the Master's configured entry, byte and age limits<span id="mqttLimits"></span>. It is not an audit log or the operational telemetry journal. Payload contents and connection credentials are never stored here.</li>
       </ul>
       <strong class="d-block mb-1 mt-2">Controls</strong>
       <ul class="mb-0 ps-3">
@@ -52,7 +52,7 @@
   <form id="mqttFilters" class="mb-3">
     <div class="row g-2 align-items-end">
       <div class="col-6 col-lg-2"><label for="mqttMinutes" class="form-label small">Time window</label>
-        <select id="mqttMinutes" class="form-select form-select-sm w-100"><option value="15">Last 15 minutes</option><option value="60" selected>Last hour</option><option value="1440">Last 24 hours</option></select>
+        <select id="mqttMinutes" class="form-select form-select-sm w-100"><option value="15">Last 15 minutes</option><option value="60" selected>Last hour</option><option value="1440">Last 24 hours</option><option value="0">All retained history</option></select>
       </div>
       <div class="col-6 col-lg-3"><label for="mqttDestination" class="form-label small">Destination</label>
         <select id="mqttDestination" class="form-select form-select-sm w-100"><option value="">All authorized destinations</option></select>

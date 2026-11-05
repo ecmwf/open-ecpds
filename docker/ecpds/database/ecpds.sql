@@ -1860,6 +1860,21 @@ CREATE TABLE `PUBLICATION` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `MQTT_ACTIVITY`
+--
+DROP TABLE IF EXISTS `MQTT_ACTIVITY`;
+CREATE TABLE `MQTT_ACTIVITY` (
+  `MQA_OWNER` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `MQA_ID` bigint NOT NULL,
+  `MQA_UPDATED_AT` bigint NOT NULL,
+  `MQA_EXPIRES_AT` bigint NOT NULL,
+  `MQA_PAYLOAD` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  PRIMARY KEY (`MQA_OWNER`, `MQA_ID`),
+  KEY `MQA_OWNER_UPDATED_IDX` (`MQA_OWNER`, `MQA_UPDATED_AT`, `MQA_ID`),
+  KEY `MQA_EXPIRES_IDX` (`MQA_EXPIRES_AT`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+--
 -- Dumping data for table `PUBLICATION`
 --
 

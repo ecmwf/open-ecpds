@@ -56,7 +56,7 @@ selected Period are disabled. The button displays the applied dates.
 Closing the popup without applying leaves the previous range unchanged.
 
 The range filters Chart, Table and summary cards together, and survives switching views,
-sorting and pagination. The three date-only traffic pages no longer have a text search.
+sorting and pagination. The three date-only traffic pages use date filters, without a text search.
 On Transfer Rates the separate text search intersects the date range. Charts aggregate only matching rows:
 searching for one group or mover does not include other groups or movers on the
 same day. Table sorting and pagination remain available; charts retain date order.

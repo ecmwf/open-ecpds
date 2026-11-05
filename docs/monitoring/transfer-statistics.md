@@ -5,7 +5,7 @@ The transfer detail page (`/do/transfer/data/<id>`) separates recorded measureme
 **Retrieval socket statistics**, **Dissemination socket statistics** and
 **Socket statistics - unidentified leg**. Only nonempty sections appear.
 The leg comes from recorded execution provenance, never from addresses or byte direction.
-Legacy rows and rows whose provenance cannot be read remain unidentified.
+Records without readable provenance remain unidentified.
 
 ---
 

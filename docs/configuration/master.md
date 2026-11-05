@@ -530,6 +530,35 @@ External service-status integration, independent of the web monitoring UI. `acti
 | `delay` | `300000` ms (duration fallback) | `120` | [MonitorManager:75](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/monitor/MonitorManager.java#L75) |
 | `dontSend` | `false` | `no` | [MonitorManager:81](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/monitor/MonitorManager.java#L81) |
 
+### [MQTTActivity]
+
+Bounded database-backed MQTT publication history, independent of OpenTelemetry.
+Updates are coalesced by a background worker; database failures do not retry MQTT publication.
+By default, the dashboard retains up to 2,000 publications for 24 hours and 8 MiB of metadata.
+The regular database purge also removes expired history for inactive Masters.
+
+| Option | Code fallback when absent | Shipped value | Reader |
+|--------|---------------------------|---------------|--------|
+| `owner` | `[Login] root`, then `[Login] hostName`, then `master` | Not set | [MasterServer](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java) |
+| `maxEntries` | `2000` | `2000` | [MQTTActivity](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MQTTActivity.java) |
+| `maxBytes` | `8388608` | `8388608` | [MQTTActivity](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MQTTActivity.java) |
+| `retentionHours` | `24` | `24` | [MQTTActivity](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MQTTActivity.java) |
+
+All limits must be positive integers. `maxEntries` must be below 2,147,483,647;
+`retentionHours` must not exceed 2,147,483,647. `maxBytes` is a signed 64-bit byte
+count measuring serialized UTF-8 metadata, not total heap or database storage.
+Larger limits increase memory use, database storage and restart recovery work.
+Oldest entries are evicted when count or byte limits are exceeded.
+Age is measured from the publication's last update. Each row stores its expiry so
+the regular purge honors each Master's retention, including inactive Masters.
+After a retention change, retained rows receive their new expiry when that Master
+loads and persists history; already deleted history cannot be recovered.
+The dashboard's **All retained history** time window covers the configured age limit.
+
+Keep `owner` stable across failover and run one active Master per owner; it must
+contain 1-255 characters. Changes require a Master restart. See
+[Monitoring publication activity](../notifications/mqtt-dissemination.md#monitoring-publication-activity).
+
 ### [NetworkWeather]
 
 Network Weather admission/control limits. Values are counts except `maxConfigurationBytes` and `maxControlResponseBytes`, which are bytes. The Monitor controls activation; these settings bound accepted work rather than enabling probes.

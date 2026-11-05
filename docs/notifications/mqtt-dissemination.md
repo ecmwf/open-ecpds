@@ -210,7 +210,7 @@ After an MQTT publication finishes, the transfer history records its publication
 ID and counts of broker-accepted, failed and unconfirmed Mover results. Acceptance
 does not confirm subscriber delivery. This informational entry leaves the transfer
 status unchanged and contains no payload; see **Operations > MQTT Activity** for
-per-Mover details. Legacy Movers and RPC timeouts are unconfirmed, not successful.
+per-Mover details. RPC timeouts are unconfirmed, not successful.
 
 The Master also emits an [`NTF` operational event](../event-logging/overview.md#mqtt-notification-outcomes-ntf)
 per Mover outcome, through the shared Splunk/OpenTelemetry pipeline when enabled.
@@ -277,26 +277,41 @@ An interrupted publication is marked unconfirmed after a Master restart, until t
 scheduler processes it again.
 
 This view covers outgoing **destination event publications**, not all MQTT client
-traffic or subscriptions. It requires updated Master, Monitor and Mover software;
-upgrade Movers first for complete confirmation support. If an older Mover explicitly
-rejects the new RPC as unsupported, the Master uses the legacy publishing RPC and
-records an **Unconfirmed** outcome. Other RPC failures never trigger a fallback or retry,
-because the broker may already have accepted the message.
+traffic or subscriptions.
 
 History is independent of the OpenTelemetry Journal and its telemetry admission
-limits. It is local to the Master, with at most 2,000 entries shown for the last
-24 hours, further bounded by an 8 MiB serialized snapshot limit. Its append journal
-is capped at 16 MiB and compacted automatically. Charts and totals describe the latest
+limits. The Master keeps a bounded in-memory cache backed by the `MQTT_ACTIVITY`
+database table. `[MQTTActivity] maxEntries`, `maxBytes` and `retentionHours` configure
+its bounds (defaults: 2,000 entries, 8 MiB serialized metadata, 24 hours since last
+update); changes require a Master restart. See
+[MQTT Activity configuration](../configuration/master.md#mqttactivity).
+A single background worker coalesces updates,
+persists changed entries and removes history outside those bounds. Retention
+cleanup runs while the activity service is active. The regular database purge
+also deletes expired entries across all Masters using each row's stored expiry,
+including inactive Masters. The dashboard's **All retained history** time window
+covers the configured retention.
+Charts and totals describe the latest
 known outcome of retained publications, not a complete historical counter or audit log.
-Queued publications from before the upgrade appear when the scheduler processes them.
 
-The default history file is `${master.data}/mqtt-activity/history.jsonl`, configurable
-through `[MQTTActivity] historyFile` in the Master's `ecmwf.properties`. Keep it on
-persistent local storage, with a different directory for each Master instance.
-Persistence failures are displayed on the dashboard and do not stop publishing.
-History is not an HA-replicated store. Message payloads, client IDs and connection
-credentials are not retained; topic and file metadata are visible only for destinations
-the viewer is authorized to operate.
+`[MQTTActivity] owner` identifies the logical Master in this table. It defaults to
+`[Login] root`, then `[Login] hostName` (finally `master`). Keep it stable and run
+only **one active Master per owner**. A failover Master with the same database and
+owner can recover history without the former Master's filesystem. Database
+backup/replication policies cover persisted MQTT activity. Owner scoping is
+independent of `[OperationalEvents] journalOwner`.
+
+Persistence failures are displayed on the dashboard; the bounded cache continues
+to update and the worker retries database writes. These retries **do not republish
+MQTT messages**. Updates awaiting persistence can be lost on a crash; shutdown
+allows up to five seconds for a final flush. Publishing and recording its outcome
+are not an atomic transaction. Interrupted `QUEUED`/`PROCESSING` history is
+recovered as `UNCONFIRMED`, not falsely reported as accepted.
+
+Message payloads, client IDs and connection credentials are not retained; topic
+and file metadata are visible only for destinations the viewer is authorized to
+operate. This table is dashboard history, not the `PUBLICATION` processing queue,
+the OpenTelemetry delivery queue, or a permanent audit archive.
 Long metadata fields are limited to 1,024 characters; per-publication broker details
 are limited to 128 Movers, with an explicit unconfirmed outcome if that limit is exceeded.
 

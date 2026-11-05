@@ -55,10 +55,10 @@ public final class MQTTActivityAction extends PDSAction {
         }
         response.setContentType("application/json;charset=UTF-8");
         try {
-            final var minutes = Math.max(1, Math.min(1440, number(request, "minutes", 60)));
+            final var minutes = Math.max(0, Math.min(1440, number(request, "minutes", 60)));
             final var result = MasterManager.getMI().getMQTTActivity(Util.getECpdsSessionFromObject(user),
-                    System.currentTimeMillis() - minutes * 60000L, text(request, "destination"), text(request, "topic"),
-                    text(request, "status"), number(request, "offset", 0));
+                    minutes == 0 ? 0 : System.currentTimeMillis() - minutes * 60000L, text(request, "destination"),
+                    text(request, "topic"), text(request, "status"), number(request, "offset", 0));
             JSON.writeValue(response.getWriter(), result);
         } catch (final Exception e) {
             LOG.warn("Retrieving MQTT activity", e);

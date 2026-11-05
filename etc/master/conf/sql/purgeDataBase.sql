@@ -128,6 +128,11 @@ LOOP 1000 DELETE FROM PORTAL_TRAFFIC
 WHERE PTR_TIME < DATE_FORMAT(DATE(NOW() - INTERVAL 7 DAY), '%Y-%m-%d 00:00:00')
 LIMIT 1000;
 
+## Remove MQTT activity at its configured expiry, including inactive Masters' history.
+LOOP 1000 DELETE FROM MQTT_ACTIVITY
+WHERE MQA_EXPIRES_AT < $currentTimeMillis
+LIMIT 1000;
+
 ##
 ## Delete the Publication entries which are
 ## associated to an expired data transfer
