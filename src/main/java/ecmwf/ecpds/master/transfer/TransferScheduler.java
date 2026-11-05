@@ -1634,6 +1634,19 @@ public final class TransferScheduler extends MBeanScheduler {
         final var expiry = transfer.getExpiryTime();
         final var expired = expiry != null && expiry.before(new Date(System.currentTimeMillis()));
         if (!expired) {
+            try {
+                if (group != null && rr.dataFile.getFileSystem() != null
+                        && MASTER.isReplicationVolumeDisabled(group.getName(), rr.dataFile.getFileSystem())) {
+                    rr.message = "Replication paused for TransferGroup " + group.getName() + " volume "
+                            + rr.dataFile.getFileSystem() + " because an equivalent Data Mover filesystem is disabled";
+                    _log.warn(rr.message);
+                    return rr;
+                }
+            } catch (final DataBaseException e) {
+                rr.message = "Cannot verify storage volume state for replication";
+                _log.warn(rr.message, e);
+                return rr;
+            }
             final var sourceMover = MASTER.getDataMoverInterface(sourceMoverName);
             if (sourceMover == null) {
                 rr.message = "Source DataMover " + sourceMoverName + " not available for replication";

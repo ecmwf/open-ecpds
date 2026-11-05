@@ -132,6 +132,7 @@
 			<span id="moverDiskUsageAge" class="text-muted fw-normal small ms-1"></span>
 		</div>
 		<div class="card-body pb-2 pt-2">
+			<div id="moverStorageVolumeStatus" class="mb-3"></div>
 			<div id="moverDiskUsageSummary" class="d-flex flex-wrap gap-3 mb-2" style="font-size:0.82rem"></div>
 			<div id="moverDiskUsageWrap">
 				<div class="text-muted small fst-italic">Loading&hellip;</div>
@@ -147,6 +148,70 @@
 		var fetchedAt  = null;
 		var currentVols = [];
 		var _obsTheme  = null;
+		var storageVolumeCsrf = null;
+
+		function htmlText(value) {
+			var el = document.createElement('span');
+			el.textContent = value == null || value === '' ? 'Unavailable' : String(value);
+			return el.innerHTML;
+		}
+
+		function renderStorageVolumes(volumes) {
+			var target = document.getElementById('moverStorageVolumeStatus');
+			if (!target) return;
+			if (!volumes || volumes.length === 0) {
+				target.innerHTML = '<div class="text-muted small">'
+					+ htmlText(currentVols.storageInfoError || 'Filesystem device and mount details are unavailable.')
+					+ '</div>';
+				return;
+			}
+			var html = '<div class="table-responsive"><table class="table table-sm align-middle mb-0">'
+				+ '<thead><tr><th>Volume</th><th>Device</th><th>Mount point</th><th>Storage path</th><th>Status</th><th></th></tr></thead><tbody>';
+			volumes.forEach(function(v) {
+				var disabled = v.disabled === true;
+				html += '<tr class="' + (disabled ? 'table-warning' : '') + '">'
+					+ '<td>Vol ' + v.volume + '</td>'
+					+ '<td class="font-monospace">' + htmlText(v.device) + '</td>'
+					+ '<td class="font-monospace">' + htmlText(v.mountPoint) + '</td>'
+					+ '<td class="font-monospace text-break">' + htmlText(v.volumePath) + '</td>'
+					+ '<td>' + (disabled
+						? '<span class="badge text-bg-warning">Disabled</span><div class="small text-muted">New routing stopped; active transfers drain.</div><div class="small text-warning-emphasis">Replication paused for this volume index.</div>'
+						: '<span class="badge text-bg-success">Enabled</span>') + '</td>'
+					+ '<td>' + (storageVolumeCsrf
+						? '<button type="button" class="btn btn-sm ' + (disabled ? 'btn-outline-success' : 'btn-outline-danger')
+							+ '" data-volume="' + v.volume + '" data-disabled="' + (!disabled) + '">'
+							+ (disabled ? 'Re-enable' : 'Disable') + '</button>'
+						: '') + '</td></tr>';
+			});
+			target.innerHTML = html + '</tbody></table></div>';
+		}
+
+		$.getJSON('/do/datafile/movervolume').done(function(data) {
+			storageVolumeCsrf = data.csrf || null;
+			if (currentVols.length) renderStorageVolumes(currentVols.storageInfo || []);
+		});
+
+		$(document).on('click', '#moverStorageVolumeStatus button[data-volume]', function() {
+			var button = $(this);
+			button.prop('disabled', true);
+			$.ajax({
+				url: '/do/datafile/movervolume',
+				method: 'POST',
+				dataType: 'json',
+				data: {
+					csrf: storageVolumeCsrf,
+					mover: moverName,
+					volume: button.attr('data-volume'),
+					disabled: button.attr('data-disabled')
+				}
+			}).done(function() {
+				refresh();
+			}).fail(function(xhr) {
+				var message = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'Storage volume update failed.';
+				window.alert(message);
+				button.prop('disabled', false);
+			});
+		});
 
 		function fmtBytes(b) {
 			if (b == null || isNaN(b)) return '?';
@@ -231,6 +296,7 @@
 			currentVols = vols || [];
 			var wrap = document.getElementById('moverDiskUsageWrap');
 			var summary = document.getElementById('moverDiskUsageSummary');
+			renderStorageVolumes(currentVols.storageInfo || []);
 			if (!vols || vols.length === 0) {
 				if (summary) summary.innerHTML = '';
 				wrap.innerHTML = '<div class="text-muted small fst-italic py-1">No disk usage data available yet \u2014 waiting for first polling cycle.</div>';
@@ -373,6 +439,8 @@
 					_tsFails = 0;
 					fetchedAt = Date.now();
 					var vols = (data.movers && data.movers[moverName]) ? data.movers[moverName] : [];
+					vols.storageInfo = (data.details && data.details[moverName]) ? data.details[moverName] : [];
+					vols.storageInfoError = data.storageInfoError || null;
 					buildChart(vols);
 				})
 				.fail(function() {

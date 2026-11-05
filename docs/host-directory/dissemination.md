@@ -35,7 +35,7 @@ Use `(condition) path` lines to select different target paths based on variable 
 ## Script Mode
 
 !!! note
-    Select **JavaScript** or **Python** mode using the radio buttons above the editor — the wrapper is added automatically on save. The script is evaluated by `Format.choose()` via `ScriptManager`; the **return value / last expression** is used as the resolved target path. Variables are substituted before the script runs.
+    Select **JavaScript** or **Python** mode using the radio buttons above the editor — the wrapper is added automatically on save. The script is evaluated by `Format.choose()` via `ScriptManager`; its **returned string** is used as the resolved target path. Use an explicit `return` in both languages. JavaScript only auto-returns a single-line expression; Python's `print()` writes output and does not return the path. Variables are substituted before the script runs.
 
 ### JavaScript
 
@@ -43,7 +43,7 @@ Use `(condition) path` lines to select different target paths based on variable 
 // Return the resolved target path as a string
 var host = "$host[name]";
 var stream = "$dataFile[metaStream]";
-"/outgoing/" + host + "/" + stream + "/";
+return "/outgoing/" + host + "/" + stream + "/";
 ```
 
 ### Python
@@ -51,7 +51,7 @@ var stream = "$dataFile[metaStream]";
 ```python
 host   = "$host[name]"
 stream = "$dataFile[metaStream]"
-print("/outgoing/" + host + "/" + stream + "/")
+return "/outgoing/" + host + "/" + stream + "/"
 ```
 
 ### Test on Server
@@ -61,7 +61,7 @@ The **Test on Server** button in the Directory card header sends the current edi
 **How it works:**
 
 - For **Plain Text** and selector-syntax modes: the template is evaluated with a representative set of runtime variables and the resulting path is returned.
-- For **JavaScript** and **Python** modes: the script is executed on an allocated DataMover; the return value or printed output is used as the resolved path, exactly as at transfer time.
+- For **JavaScript** and **Python** modes: the script is executed on an allocated DataMover; its returned string is used as the resolved path, exactly as at transfer time.
 
 **Picking values for `$dataFile[…]`/`$dataTransfer[…]`/`$destination[…]`/`$country[…]`/`$transferServer[…]`/`$transferGroup[…]`/`$moverName`:**
 

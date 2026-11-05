@@ -108,6 +108,7 @@ import ecmwf.common.database.ECtransModule;
 import ecmwf.common.database.ExistingStorageDirectory;
 import ecmwf.common.database.Host;
 import ecmwf.common.database.IncomingConnection;
+import ecmwf.common.database.StorageVolumeInfo;
 import ecmwf.common.database.MSUser;
 import ecmwf.common.database.TransferMethod;
 import ecmwf.common.ecaccess.ConnectionException;
@@ -457,6 +458,57 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
+    }
+
+    @Override
+    public List<StorageVolumeInfo> getStorageVolumeInfo(final int volumeIndexMax) throws RemoteException {
+        final List<StorageVolumeInfo> result = new ArrayList<>();
+        final var repository = GenericFile.getGenericFile(getRepository());
+        for (var volume = 0; volume <= volumeIndexMax; volume++) {
+            final var directory = GenericFile.getGenericFile(repository, "volume" + volume);
+            try {
+                if (!directory.exists() || !directory.isDirectory()) {
+                    continue;
+                }
+                final var path = java.nio.file.Paths.get(directory.getAbsolutePath()).toRealPath();
+                final var mount = findMount(path);
+                result.add(new StorageVolumeInfo(volume, path.toString(), mount.device(), mount.mountPoint(),
+                        directory.getFileSystemId()));
+            } catch (final IOException e) {
+                _log.warn("Cannot inspect storage volume {} on {}", volume, getRoot(), e);
+            }
+        }
+        return result;
+    }
+
+    private record MountInfo(String device, String mountPoint) {
+    }
+
+    private static MountInfo findMount(final java.nio.file.Path path) throws IOException {
+        java.nio.file.Path bestMount = null;
+        var bestDevice = "";
+        for (final var line : Files.readAllLines(java.nio.file.Path.of("/proc/self/mountinfo"))) {
+            final var sections = line.split(" - ", 2);
+            if (sections.length != 2) {
+                continue;
+            }
+            final var left = sections[0].split(" ");
+            final var right = sections[1].split(" ");
+            if (left.length < 5 || right.length < 2) {
+                continue;
+            }
+            final var mountPoint = java.nio.file.Path.of(unescapeMountInfo(left[4])).normalize();
+            if (path.startsWith(mountPoint)
+                    && (bestMount == null || mountPoint.getNameCount() > bestMount.getNameCount())) {
+                bestMount = mountPoint;
+                bestDevice = unescapeMountInfo(right[1]);
+            }
+        }
+        return bestMount == null ? new MountInfo("", "") : new MountInfo(bestDevice, bestMount.toString());
+    }
+
+    private static String unescapeMountInfo(final String value) {
+        return value.replace("\\040", " ").replace("\\011", "\t").replace("\\012", "\n").replace("\\134", "\\");
     }
 
     /**

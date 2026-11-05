@@ -180,7 +180,9 @@ for delta in range(3):  # today and 2 previous days
               Select <strong>JavaScript</strong> or <strong>Python</strong> mode using the radio
               buttons above the editor — the wrapper is added automatically on save. The script is
               evaluated by <code>Format.choose()</code> via <code>ScriptManager</code>;
-              the <strong>return value / last expression</strong> is used as the resolved target path.
+              its <strong>returned string</strong> is used as the resolved target path. Use an explicit
+              <code>return</code> in both languages. JavaScript only auto-returns a single-line
+              expression; Python's <code>print()</code> writes output and does not return the path.
               Variables are substituted before the script runs.
             </div>
             <ul class="nav nav-pills mb-3" id="disScriptTab" role="tablist">
@@ -192,12 +194,12 @@ for delta in range(3):  # today and 2 previous days
                 <pre class="small p-2 rounded mb-0" style="background:var(--bs-secondary-bg); white-space:pre-wrap;">// Return the resolved target path as a string
 var host = "$host[name]";
 var stream = "$dataFile[metaStream]";
-"/outgoing/" + host + "/" + stream + "/";</pre>
+return "/outgoing/" + host + "/" + stream + "/";</pre>
               </div>
               <div class="tab-pane fade" id="dg-dis-py" role="tabpanel">
                 <pre class="small p-2 rounded mb-0" style="background:var(--bs-secondary-bg); white-space:pre-wrap;">host   = "$host[name]"
 stream = "$dataFile[metaStream]"
-print("/outgoing/" + host + "/" + stream + "/")</pre>
+return "/outgoing/" + host + "/" + stream + "/"</pre>
               </div>
             </div>
           </div>

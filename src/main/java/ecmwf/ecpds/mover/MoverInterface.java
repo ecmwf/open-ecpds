@@ -39,6 +39,7 @@ import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.ExistingStorageDirectory;
 import ecmwf.common.database.Host;
 import ecmwf.common.database.IncomingConnection;
+import ecmwf.common.database.StorageVolumeInfo;
 import ecmwf.common.ecaccess.ClientInterface;
 import ecmwf.common.ectrans.ECtransException;
 import ecmwf.common.technical.ProxySocket;
@@ -736,6 +737,8 @@ public interface MoverInterface extends ClientInterface {
      *             the remote exception
      */
     long[][] computeVolumeUsage(final int volumeIndexMax) throws RemoteException;
+
+    List<StorageVolumeInfo> getStorageVolumeInfo(final int volumeIndexMax) throws RemoteException;
 
     /**
      * Deploys a new TLS certificate to this Data Mover. The certificate is provided as a PKCS#12 keystore; it replaces

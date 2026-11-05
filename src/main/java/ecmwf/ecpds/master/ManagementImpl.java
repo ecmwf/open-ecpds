@@ -79,6 +79,7 @@ import ecmwf.common.ectrans.ECtransGroups;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.database.TransferMethod;
 import ecmwf.common.database.TransferServer;
+import ecmwf.common.database.StorageVolumeInfo;
 import ecmwf.common.database.Url;
 import ecmwf.common.database.WebUser;
 import ecmwf.common.monitor.MonitorException;
@@ -3187,6 +3188,69 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
     public Map<String, long[][]> getMoverVolumeUsage(final String moverName) {
         final var monitor = new MonitorCall("getMoverVolumeUsage(" + moverName + ")");
         return monitor.done(master.getMoverVolumeSnapshot(moverName));
+    }
+
+    @Override
+    public Map<String, List<StorageVolumeInfo>> getMoverStorageVolumeInfo(final String moverName)
+            throws MasterException, RemoteException {
+        final Map<String, List<StorageVolumeInfo>> result = new java.util.TreeMap<>();
+        try {
+            final var servers = moverName == null ? base.getTransferServerArray()
+                    : new TransferServer[] { base.getTransferServer(moverName) };
+            for (final var server : servers) {
+                if (server == null) {
+                    continue;
+                }
+                final var volumes = new java.util.TreeMap<Integer, StorageVolumeInfo>();
+                final var count = server.getTransferGroup().getVolumeCount();
+                try {
+                    final var mover = master.getDataMoverInterface(server.getName());
+                    if (mover != null) {
+                        for (final var info : mover.getStorageVolumeInfo(count - 1)) {
+                            volumes.put(info.volume(), info);
+                        }
+                    }
+                } catch (final Exception e) {
+                    _log.warn("Cannot get storage volume details from Data Mover {}", server.getName(), e);
+                }
+                for (var volume = 0; volume < count; volume++) {
+                    volumes.putIfAbsent(volume, new StorageVolumeInfo(volume, "", "", "", ""));
+                }
+                result.put(server.getName(), List.copyOf(volumes.values()));
+            }
+            return result;
+        } catch (final Exception e) {
+            throw new MasterException("Cannot get Data Mover storage volume information: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public java.util.Set<String> getDisabledStorageVolumes() {
+        return master.getDisabledStorageVolumes();
+    }
+
+    @Override
+    public void setStorageVolumeDisabled(final ECpdsSession session, final String moverName, final int volume,
+            final boolean disabled) throws Exception {
+        requireWeatherAdministrator(session);
+        final var server = base.getTransferServer(moverName);
+        if (server == null || server.getTransferGroup() == null || volume < 0
+                || volume >= server.getTransferGroup().getVolumeCount()) {
+            throw new IllegalArgumentException("Unknown Data Mover or storage volume");
+        }
+        final var action = master.startECpdsAction(session, "setStorageVolumeDisabled");
+        Exception failure = null;
+        try {
+            master.setStorageVolumeDisabled(moverName, volume, disabled);
+            _log.warn("Data Mover {} volume {} {} by {}", moverName, volume, disabled ? "disabled" : "re-enabled",
+                    session.getWebUser().getName());
+        } catch (final Exception e) {
+            failure = e;
+            throw e;
+        } finally {
+            master.logECpdsAction(action,
+                    (disabled ? "Disabled" : "Re-enabled") + " Data Mover " + moverName + " volume " + volume, failure);
+        }
     }
 
     /**

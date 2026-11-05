@@ -48,6 +48,7 @@ import ecmwf.common.database.PortalSubscriber;
 import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferMethod;
 import ecmwf.common.database.TransferServer;
+import ecmwf.common.database.StorageVolumeInfo;
 import ecmwf.common.database.Url;
 import ecmwf.common.database.WebUser;
 import ecmwf.common.monitor.MonitorException;
@@ -1592,6 +1593,14 @@ public interface ManagementInterface extends Remote {
      *             the remote exception
      */
     Map<String, long[][]> getMoverVolumeUsage(String moverName) throws MasterException, RemoteException;
+
+    Map<String, List<StorageVolumeInfo>> getMoverStorageVolumeInfo(String moverName)
+            throws MasterException, RemoteException;
+
+    java.util.Set<String> getDisabledStorageVolumes() throws MasterException, RemoteException;
+
+    void setStorageVolumeDisabled(ECpdsSession session, String moverName, int volume, boolean disabled)
+            throws Exception;
 
     /**
      * Returns a snapshot of the OpenECPDS system topology: the Master Server itself (host and locally-running

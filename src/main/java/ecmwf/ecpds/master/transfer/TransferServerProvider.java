@@ -652,7 +652,8 @@ public final class TransferServerProvider {
             final var s = declaredServers[(startIndex + i) % declaredServers.length];
             final var name = s.getName();
 
-            if (!s.getActive() || !MASTER.existsClientInterface(name, "DataMover")) {
+            if (!s.getActive() || !MASTER.existsClientInterface(name, "DataMover")
+                    || MASTER.isStorageVolumeDisabled(name, fileSystem)) {
                 continue;
             }
 
@@ -1144,14 +1145,38 @@ public final class TransferServerProvider {
         }
 
         assertValidVolumeCount(group);
-        fileSystem = allocatedFileSystem != null ? allocatedFileSystem
-                : fileSize > 0 ? WeightedAllocator.allocate(group, fileSize) : WeightedAllocator.allocate(group);
+        fileSystem = allocatedFileSystem != null ? allocatedFileSystem : allocateAvailableVolume(group, fileSize);
 
         servers.addAll(computeLeastActivityOrdering(caller, group, server, fileSystem));
 
         if (servers.isEmpty()) {
             throw new TransferServerException("No TransferServer available for TransferGroup " + group.getName());
         }
+    }
+
+    private static int allocateAvailableVolume(final TransferGroup group, final long fileSize)
+            throws DataBaseException, TransferServerException {
+        final var volumes = group.getVolumeCount();
+        final var eligible = new boolean[volumes];
+        for (final var server : MASTER.getECpdsBase().getTransferServers(group.getName())) {
+            if (!server.getActive() || !MASTER.existsClientInterface(server.getName(), "DataMover")) {
+                continue;
+            }
+            for (var volume = 0; volume < volumes; volume++) {
+                if (!MASTER.isStorageVolumeDisabled(server.getName(), volume)) {
+                    eligible[volume] = true;
+                }
+            }
+        }
+        var anyEligible = false;
+        for (final var value : eligible) {
+            anyEligible |= value;
+        }
+        if (!anyEligible) {
+            throw new TransferServerException(
+                    "No enabled storage volume available for TransferGroup " + group.getName());
+        }
+        return WeightedAllocator.allocate(group, fileSize, eligible);
     }
 
     /**
@@ -1467,6 +1492,48 @@ public final class TransferServerProvider {
                 Runtime.getRuntime()
                         .addShutdownHook(new Thread(WeightedAllocator::stopUsageUpdater, "GroupUsageUpdaterShutdown"));
             }
+        }
+
+        public static int allocate(final TransferGroup group, final long fileSize, final boolean[] eligible) {
+            final var volumeCount = group.getVolumeCount();
+            if (eligible.length != volumeCount) {
+                throw new IllegalArgumentException("Eligibility count does not match TransferGroup volume count");
+            }
+            final var weights = new double[volumeCount];
+            var total = 0.0;
+            final var stats = GROUPS.get(group.getName());
+            for (var i = 0; i < volumeCount; i++) {
+                if (!eligible[i]) {
+                    continue;
+                }
+                var weight = 1.0;
+                if (stats != null) {
+                    synchronized (stats.lock) {
+                        weight = Math.max(1L, stats.volumes[i].freeSpace());
+                    }
+                }
+                if (fileSize > 0) {
+                    weight = Math.max(1.0, weight - Math.min(weight, FILE_SIZE_PENALTY_FACTOR * fileSize));
+                }
+                weights[i] = weight;
+                total += weight;
+            }
+            if (total <= 0.0) {
+                throw new IllegalArgumentException("No eligible storage volumes");
+            }
+            var selected = ThreadLocalRandom.current().nextDouble(total);
+            for (var i = 0; i < weights.length; i++) {
+                selected -= weights[i];
+                if (selected < 0.0) {
+                    return i;
+                }
+            }
+            for (var i = weights.length - 1; i >= 0; i--) {
+                if (weights[i] > 0.0) {
+                    return i;
+                }
+            }
+            throw new IllegalStateException("No eligible storage volumes");
         }
 
         /**

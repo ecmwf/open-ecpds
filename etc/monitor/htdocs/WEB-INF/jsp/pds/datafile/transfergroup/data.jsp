@@ -209,6 +209,7 @@
 			</div>
 		</div>
 		<div class="card-body pb-2 pt-2">
+			<div id="tgStorageDegraded" class="alert alert-warning py-2 mb-2 d-none" role="status"></div>
 			<div id="tgDiskUsageSummary" class="d-flex flex-wrap gap-3 mb-2" style="font-size:0.82rem"></div>
 			<div id="tgDiskUsageWrap">
 				<div class="text-muted small fst-italic">Loading&hellip;</div>
@@ -470,6 +471,31 @@
 			el.textContent = '(updated ' + sec + 's ago)';
 		}
 
+		function renderStorageDegraded(details, error) {
+			var el = document.getElementById('tgStorageDegraded');
+			if (!el) return;
+			var disabled = [];
+			groupMovers.forEach(function(moverName) {
+				(details[moverName] || []).forEach(function(volume) {
+					if (volume.disabled) disabled.push(moverName + ' (volume ' + volume.volume + ')');
+				});
+			});
+			if (error) {
+				el.textContent = 'Unable to verify disabled storage volumes for this transfer group. '
+					+ 'Physical device and mount details are unavailable.';
+				el.classList.remove('d-none');
+				return;
+			}
+			if (disabled.length === 0) {
+				el.classList.add('d-none');
+				el.textContent = '';
+				return;
+			}
+			el.textContent = 'Degraded transfer group: disabled storage volumes on ' + disabled.join(', ')
+				+ '. Replication is paused for the affected volume indexes.';
+			el.classList.remove('d-none');
+		}
+
 		var _tgFails = 0, _tgRefIv, _tgAgeIv;
 		function refresh() {
 			var p1 = $.getJSON('/do/datafile/diskusage/' + encodeURIComponent(groupName));
@@ -479,6 +505,7 @@
 				fetchedAt = Date.now();
 				var worstVols  = (r1[0].groups && r1[0].groups[groupName]) ? r1[0].groups[groupName] : [];
 				var moversData = r2[0].movers || {};
+				renderStorageDegraded(r2[0].details || {}, r2[0].storageInfoError);
 				lastWorstVols  = worstVols;
 				lastAvgVols    = worstVols.length > 0 ? computeAverage(moversData, worstVols.length) : [];
 				renderChart(currentView === 'worst' ? lastWorstVols : lastAvgVols);
@@ -513,4 +540,3 @@
 	</script>
 
 </c:if>
-

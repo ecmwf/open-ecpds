@@ -279,6 +279,9 @@
 		<action path="/datafile/moverdiskusage/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.datafile.transferserver.GetMoverDiskUsageJsonAction">
 		</action>
+		<action path="/datafile/movervolume"
+			type="ecmwf.ecpds.master.plugin.http.controller.datafile.transferserver.SetMoverStorageVolumeAction">
+		</action>
 
 		<action path="/datafile/moveravailability/*" parameter="{1}"
 			type="ecmwf.ecpds.master.plugin.http.controller.datafile.transferserver.GetMoverAvailabilityJsonAction">

@@ -56,6 +56,7 @@ import ecmwf.common.database.PortalSubscriber;
 import ecmwf.common.database.TransferGroup;
 import ecmwf.common.database.TransferMethod;
 import ecmwf.common.database.TransferServer;
+import ecmwf.common.database.StorageVolumeInfo;
 import ecmwf.common.database.Url;
 import ecmwf.common.database.WebUser;
 import ecmwf.common.monitor.MonitorException;
@@ -1490,6 +1491,23 @@ final class ManagementProxy implements ManagementInterface {
     public Map<String, long[][]> getMoverVolumeUsage(final String moverName) throws MasterException, RemoteException {
         final var monitor = new MonitorCall("getMoverVolumeUsage(" + moverName + ")");
         return monitor.done(managementInterface.getMoverVolumeUsage(moverName));
+    }
+
+    @Override
+    public Map<String, List<StorageVolumeInfo>> getMoverStorageVolumeInfo(final String moverName)
+            throws MasterException, RemoteException {
+        return managementInterface.getMoverStorageVolumeInfo(moverName);
+    }
+
+    @Override
+    public java.util.Set<String> getDisabledStorageVolumes() throws MasterException, RemoteException {
+        return managementInterface.getDisabledStorageVolumes();
+    }
+
+    @Override
+    public void setStorageVolumeDisabled(final ECpdsSession session, final String moverName, final int volume,
+            final boolean disabled) throws Exception {
+        managementInterface.setStorageVolumeDisabled(session, moverName, volume, disabled);
     }
 
     /**

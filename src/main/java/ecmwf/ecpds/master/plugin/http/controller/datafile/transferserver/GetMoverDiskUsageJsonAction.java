@@ -59,7 +59,11 @@ import org.apache.struts.action.ActionMapping;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import ecmwf.ecpds.master.MasterManager;
+import ecmwf.ecpds.master.storage.DisabledStorageVolumes;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.controller.ECMWFActionForm;
@@ -72,6 +76,7 @@ public class GetMoverDiskUsageJsonAction extends PDSAction {
 
     /** Shared Jackson mapper (thread-safe). */
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final Logger LOG = LogManager.getLogger(GetMoverDiskUsageJsonAction.class);
 
     /**
      * {@inheritDoc}
@@ -84,14 +89,29 @@ public class GetMoverDiskUsageJsonAction extends PDSAction {
         final var moverName = params.isEmpty() ? null : params.get(0).toString();
 
         Map<String, long[][]> snapshot;
+        Map<String, java.util.List<ecmwf.common.database.StorageVolumeInfo>> volumeInfo = Map.of();
+        java.util.Set<String> disabledVolumes;
+        String storageInfoError = null;
         try {
-            snapshot = MasterManager.getMI().getMoverVolumeUsage(moverName);
+            final var management = MasterManager.getMI();
+            snapshot = management.getMoverVolumeUsage(moverName);
+            disabledVolumes = management.getDisabledStorageVolumes();
+            try {
+                volumeInfo = management.getMoverStorageVolumeInfo(moverName);
+            } catch (final Exception e) {
+                LOG.warn("Cannot load Data Mover storage device information", e);
+                storageInfoError = "Physical device and mount details are unavailable.";
+            }
         } catch (final Exception e) {
-            snapshot = Map.of();
+            throw new ECMWFException("Cannot load Data Mover storage status", e);
         }
 
         final var root = MAPPER.createObjectNode();
         final var movers = root.putObject("movers");
+        final var details = root.putObject("details");
+        if (storageInfoError != null) {
+            root.put("storageInfoError", storageInfoError);
+        }
 
         // Sort mover names for stable output
         for (final var entry : new TreeMap<>(snapshot).entrySet()) {
@@ -109,6 +129,19 @@ public class GetMoverDiskUsageJsonAction extends PDSAction {
                 vol.put("total", total);
                 vol.put("free", free);
                 vol.put("pct", pct);
+            }
+        }
+        for (final var entry : new TreeMap<>(volumeInfo).entrySet()) {
+            final var arr = details.putArray(entry.getKey());
+            for (final var info : entry.getValue()) {
+                final var vol = arr.addObject();
+                vol.put("volume", info.volume());
+                vol.put("volumePath", info.volumePath());
+                vol.put("device", info.device());
+                vol.put("mountPoint", info.mountPoint());
+                vol.put("fileSystem", info.fileSystem());
+                vol.put("disabled",
+                        disabledVolumes.contains(DisabledStorageVolumes.key(entry.getKey(), info.volume())));
             }
         }
 

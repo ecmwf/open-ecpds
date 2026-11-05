@@ -496,9 +496,32 @@ public final class MasterServer extends ECaccessProvider
 
     private final transient ecmwf.ecpds.master.storage.StorageLifecycleScheduler storageLifecycle = new ecmwf.ecpds.master.storage.StorageLifecycleScheduler(
             this);
+    private final transient ecmwf.ecpds.master.storage.DisabledStorageVolumes disabledStorageVolumes;
 
     public ecmwf.ecpds.master.storage.StorageLifecycleScheduler getStorageLifecycle() {
         return storageLifecycle;
+    }
+
+    public boolean isStorageVolumeDisabled(final String moverName, final int volume) {
+        return disabledStorageVolumes.isDisabled(moverName, volume);
+    }
+
+    public boolean isReplicationVolumeDisabled(final String groupName, final int volume) throws DataBaseException {
+        final var servers = getECpdsBase().getTransferServers(groupName);
+        final var names = new String[servers.length];
+        for (var i = 0; i < servers.length; i++) {
+            names[i] = servers[i].getName();
+        }
+        return disabledStorageVolumes.isDisabledInGroup(names, volume);
+    }
+
+    public java.util.Set<String> getDisabledStorageVolumes() {
+        return disabledStorageVolumes.snapshot();
+    }
+
+    public void setStorageVolumeDisabled(final String moverName, final int volume, final boolean value)
+            throws DataBaseException {
+        disabledStorageVolumes.setDisabled(moverName, volume, value);
     }
 
     public boolean isStorageFileBusy(final long id) {
@@ -893,6 +916,7 @@ public final class MasterServer extends ECaccessProvider
             InstanceAlreadyExistsException, MBeanRegistrationException, NotCompliantMBeanException,
             MalformedObjectNameException, InstanceNotFoundException, ConnectionException, DataBaseException {
         super(new ECpdsBase(), starter);
+        disabledStorageVolumes = new ecmwf.ecpds.master.storage.DisabledStorageVolumes(getECpdsBase());
         identityExtensions = IdentityExtensions.load(getRoot(), Cnf.at("AuthenticationExtension", Map.of()),
                 Cnf.at("UserDirectoryExtension", Map.of()), Cnf.at("InteractiveLoginExtension", Map.of()),
                 Cnf.at("InteractiveLoginMapping", Map.of()));
