@@ -23,8 +23,9 @@ Master startup. See [Identity extensions](../concepts/plugin-infrastructure.md#i
 for installation, lifecycle and authentication precedence.
 
 The optional [ECaccess directory extension](../administration/ecaccess-identity.md)
-uses `host` and `port` in `[UserDirectoryExtension]` and requires explicit
-bounded `[RMIClientSocketFactory]` connection/read timeouts.
+uses `host`, `port` and its own `requestTimeoutMillis` in `[UserDirectoryExtension]`.
+The request deadline defaults to 10,000 milliseconds and accepts 1 through 60,000;
+it does not constrain the shared `[RMIClientSocketFactory]` connection/read timeouts.
 It does not provide password/passcode authentication.
 
 `[RemoteServiceExtensions]` explicitly maps service IDs to provider configuration
@@ -711,6 +712,10 @@ Proxy data/control socket settings. `plainText` chooses non-TLS transport and ot
 ### [RMIClientSocketFactory]
 
 Template-defined configuration; see the reader links for its consuming component.
+Keep the read timeout suitable for synchronous Master-to-Mover retrieval calls,
+which can wait while an entire file is downloaded. ECCMD directory and discovery
+deadlines are configured separately in their provider sections; they must not be
+implemented by shortening this shared timeout.
 
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|

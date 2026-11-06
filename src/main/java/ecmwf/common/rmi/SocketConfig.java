@@ -1239,9 +1239,11 @@ public class SocketConfig {
             throws IOException {
         var successful = false;
         Socket socket = null;
+        var phase = "creation";
         try {
             try {
                 socket = factory.createSocket();
+                phase = "configuration";
                 if (currentReceiveBufferSize > 0) {
                     socket.setReceiveBufferSize(currentReceiveBufferSize);
                 }
@@ -1251,19 +1253,23 @@ public class SocketConfig {
                 if (currentReuseAddress != null) {
                     socket.setReuseAddress(currentReuseAddress);
                 }
+                phase = "binding";
                 if (isNotEmpty(currentListenAddress)) {
                     socket.bind(new InetSocketAddress(InetAddress.getByName(currentListenAddress), localPort));
                 } else {
                     socket.bind(new InetSocketAddress(localPort));
                 }
+                phase = "connection";
                 socket.connect(new InetSocketAddress(InetAddress.getByName(host), port), currentConnectTimeOut);
             } catch (SocketTimeoutException | BindException e) {
                 // Socket timeout or binding failed due to port conflict or invalid address; not
                 // retrying!
                 throw e;
             } catch (final Throwable t) {
-                _log.warn("Initial socket binding failed. Falling back to legacy constructor for {}:{} (backLog={})",
-                        currentListenAddress, port, currentBackLog, t);
+                _log.warn(
+                        "Client socket {} failed (remote={}:{}, local={}:{}, connectTimeOut={}ms): {}. Falling back to legacy constructor",
+                        phase, host, port, isNotEmpty(currentListenAddress) ? currentListenAddress : "*", localPort,
+                        currentConnectTimeOut, t.toString(), t);
                 StreamPlugThread.closeQuietly(socket);
                 socket = factory.createSocket(host, port,
                         isNotEmpty(currentListenAddress) ? InetAddress.getByName(currentListenAddress) : null,
@@ -1439,15 +1445,18 @@ public class SocketConfig {
     public ServerSocket getServerSocket(final ServerSocketFactory factory, final int port) throws IOException {
         var successful = false;
         ServerSocket serverSocket = null;
+        var phase = "creation";
         try {
             try {
                 serverSocket = factory.createServerSocket();
+                phase = "configuration";
                 if (currentReceiveBufferSize > 0) {
                     serverSocket.setReceiveBufferSize(currentReceiveBufferSize);
                 }
                 if (currentReuseAddress != null) {
                     serverSocket.setReuseAddress(currentReuseAddress);
                 }
+                phase = "binding";
                 if (isNotEmpty(currentListenAddress)) {
                     serverSocket.bind(new InetSocketAddress(InetAddress.getByName(currentListenAddress), port),
                             currentBackLog);
@@ -1458,8 +1467,9 @@ public class SocketConfig {
                 // Binding failed due to port conflict or invalid address; not retrying.
                 throw e;
             } catch (final Throwable t) {
-                _log.warn("Initial socket binding failed. Falling back to legacy constructor for {}:{} (backLog={})",
-                        currentListenAddress, port, currentBackLog, t);
+                _log.warn("Server socket {} failed (local={}:{}, backLog={}): {}. Falling back to legacy constructor",
+                        phase, isNotEmpty(currentListenAddress) ? currentListenAddress : "*", port, currentBackLog,
+                        t.toString(), t);
                 StreamPlugThread.closeQuietly(serverSocket);
                 if (isNotEmpty(currentListenAddress)) {
                     serverSocket = factory.createServerSocket(port, currentBackLog,

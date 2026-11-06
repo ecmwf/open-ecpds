@@ -57,20 +57,26 @@ Add these sections to the Master's local `ecmwf.properties` override:
 class=ecmwf.ecpds.extension.ecaccess.EcaccessIdentityProvider
 host=eccmd.example.org
 port=640
-
-[RMIClientSocketFactory]
-connectTimeOut=10000
-soTimeOut=10000
+requestTimeoutMillis=10000
 ```
 
-No global ECCMD singleton is installed.
-The two effective socket timeouts must be between 1 and 60,000 milliseconds
-before the extension can start. Values in `[RMIClientSocketFactory]` override
-the inherited `[SocketConfig]` defaults; they need not be repeated when those
-defaults are already suitable. These settings are shared with other RMI clients
-using that factory on the Master; choose values suitable for that deployment.
+No global ECCMD singleton is installed. `requestTimeoutMillis` defaults to 10,000
+and accepts 1 through 60,000 milliseconds. It bounds each directory lookup,
+including registry discovery and host failover, independently of the shared
+RMI socket timeouts. Each provider admits at most eight concurrent requests;
+excess requests fail immediately rather than accumulating an unbounded queue.
+Timeout or caller interruption cancels the request and interrupts its worker.
+The existing interruptible RMI transport closes the active socket; a peer using
+non-interruptible transport can retain a bounded worker until its I/O completes.
 Keep the existing trusted RMI network/TLS setup: the extension does not turn
 plain RMI into a new encrypted transport.
+
+Keep `[RMIClientSocketFactory] soTimeOut` suitable for synchronous Master-to-Mover
+retrieval calls. It inherits `[SocketConfig] soTimeOut`, whose shipped value is
+`86400000` milliseconds, unless explicitly overridden. Download RPCs can remain
+unanswered while a large file is retrieved; a shared read timeout of 60 seconds
+can cancel a healthy transfer. Configure ECCMD request deadlines independently
+using `requestTimeoutMillis` in each provider section.
 
 `host` is required and accepts up to eight comma-, semicolon- or pipe-separated
 hosts. `port` defaults to 640 and accepts 1 through 65535. Hosts are tried in
@@ -103,5 +109,5 @@ Configured scheduled ECUser refreshes also use this directory hook and the
 core's existing update handling. No authentication or per-thread identity cache
 is involved.
 
-The adapter uses on-demand discovery and the configured socket waits. Operators should retry
+The adapter uses on-demand discovery and its own request deadline. Operators should retry
 lookup after restoring the ECCMD service.

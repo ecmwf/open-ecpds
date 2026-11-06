@@ -22,12 +22,19 @@ import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import ecmwf.common.database.ECUser;
 import ecmwf.common.rmi.RMIClientSocketFactory;
-import ecmwf.common.rmi.SocketConfig;
+import ecmwf.common.rmi.interruptible.InterruptibleRMIThread;
 import ecmwf.ecbatch.eis.rmi.client.DataAccess;
 import ecmwf.ecbatch.eis.rmi.client.EccmdException;
 import ecmwf.ecbatch.eis.rmi.client.EccmdInterface;
@@ -39,12 +46,21 @@ import ecmwf.ecpds.extension.ExtensionContext;
 final class RmiEccmdClient implements EccmdClient {
     private final List<String> hosts;
     private final int port;
+    private final int requestTimeoutMillis;
+    private final ThreadPoolExecutor requests = new ThreadPoolExecutor(0, 8, 60, TimeUnit.SECONDS,
+            new SynchronousQueue<>(), task -> {
+                final var thread = new InterruptibleRMIThread(task);
+                thread.setName("ECCMD-Request");
+                thread.setDaemon(true);
+                return thread;
+            });
     private volatile EccmdInterface connection;
     private boolean closed;
 
-    RmiEccmdClient(final List<String> hosts, final int port) {
+    RmiEccmdClient(final List<String> hosts, final int port, final int requestTimeoutMillis) {
         this.hosts = List.copyOf(hosts);
         this.port = port;
+        this.requestTimeoutMillis = requestTimeoutMillis;
     }
 
     static RmiEccmdClient configured(final ExtensionContext context) throws IOException {
@@ -65,13 +81,17 @@ final class RmiEccmdClient implements EccmdClient {
         if (port < 1 || port > 65535) {
             throw new IOException("Invalid ECaccess port");
         }
-        final var socketConfig = new SocketConfig("RMIClientSocketFactory");
-        final var readTimeout = socketConfig.getSOTimeOut();
-        final var connectTimeout = socketConfig.getConnectTimeOut();
-        if (readTimeout < 1 || readTimeout > 60000 || connectTimeout < 1 || connectTimeout > 60000) {
-            throw new IOException("Set RMIClientSocketFactory soTimeOut and connectTimeOut between 1 and 60000 ms");
+        final int requestTimeoutMillis;
+        try {
+            requestTimeoutMillis = Integer.parseInt(
+                    context.option("requestTimeoutMillis") == null ? "10000" : context.option("requestTimeoutMillis"));
+        } catch (NumberFormatException e) {
+            throw new IOException("Invalid ECaccess requestTimeoutMillis");
         }
-        return new RmiEccmdClient(hosts, port);
+        if (requestTimeoutMillis < 1 || requestTimeoutMillis > 60000) {
+            throw new IOException("ECaccess requestTimeoutMillis must be between 1 and 60000 ms");
+        }
+        return new RmiEccmdClient(hosts, port, requestTimeoutMillis);
     }
 
     @Override
@@ -83,19 +103,32 @@ final class RmiEccmdClient implements EccmdClient {
         }
     }
 
-    private synchronized EccmdInterface connection() throws RemoteException {
-        if (closed) {
-            throw new RemoteException("ECCMD identity client is closed");
-        }
-        if (connection != null) {
-            return connection;
+    private EccmdInterface connection() throws RemoteException {
+        synchronized (this) {
+            if (closed || Thread.currentThread().isInterrupted()) {
+                throw new RemoteException("ECCMD identity client is closed or interrupted");
+            }
+            if (connection != null) {
+                return connection;
+            }
         }
         for (final var host : hosts) {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new RemoteException("ECCMD identity request interrupted");
+            }
             try {
                 final var registry = LocateRegistry.getRegistry(host, port, new RMIClientSocketFactory());
                 final var remote = registry.lookup("EccmdEngine");
                 if (remote instanceof EccmdInterface eccmd) {
-                    return connection = eccmd;
+                    synchronized (this) {
+                        if (closed || Thread.currentThread().isInterrupted()) {
+                            throw new RemoteException("ECCMD identity client is closed or interrupted");
+                        }
+                        if (connection == null) {
+                            connection = eccmd;
+                        }
+                        return connection;
+                    }
                 }
             } catch (RemoteException | NotBoundException e) {
                 // Try the next discovery endpoint.
@@ -105,6 +138,39 @@ final class RmiEccmdClient implements EccmdClient {
     }
 
     private <T> T call(final Operation<T> operation) throws EccmdException, RemoteException {
+        final Future<T> request;
+        try {
+            request = requests.submit(() -> execute(operation));
+        } catch (RejectedExecutionException e) {
+            throw new RemoteException("ECCMD identity client is closed or busy");
+        }
+        try {
+            return request.get(requestTimeoutMillis, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            throw new RemoteException("ECCMD identity request timed out after " + requestTimeoutMillis + " ms");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RemoteException("ECCMD identity request interrupted");
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof EccmdException failure) {
+                throw failure;
+            }
+            if (e.getCause() instanceof RemoteException failure) {
+                throw failure;
+            }
+            if (e.getCause() instanceof RuntimeException failure) {
+                throw failure;
+            }
+            if (e.getCause() instanceof Error failure) {
+                throw failure;
+            }
+            throw new RemoteException("ECCMD identity request failed");
+        } finally {
+            request.cancel(true);
+        }
+    }
+
+    private <T> T execute(final Operation<T> operation) throws EccmdException, RemoteException {
         final var current = connection();
         try {
             return operation.call(current);
@@ -124,9 +190,12 @@ final class RmiEccmdClient implements EccmdClient {
     }
 
     @Override
-    public synchronized void close() throws IOException {
-        closed = true;
-        connection = null;
+    public void close() throws IOException {
+        synchronized (this) {
+            closed = true;
+            connection = null;
+        }
+        requests.shutdownNow();
     }
 
     @FunctionalInterface

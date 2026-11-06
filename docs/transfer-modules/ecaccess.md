@@ -45,10 +45,7 @@ ecaccess=EcaccessTransfers
 class=ecmwf.ecpds.extension.ecaccess.EcaccessGatewayProvider
 host=eccmd.example.org
 port=640
-
-[RMIClientSocketFactory]
-connectTimeOut=10000
-soTimeOut=10000
+requestTimeoutMillis=10000
 ```
 
 `ecaccess` is the service ID used by this module; `EcaccessTransfers` names its
@@ -57,10 +54,16 @@ user-directory providers. Installing a jar alone does not activate the provider.
 No EJB/JNDI backend is loaded.
 
 `host` is required and accepts up to eight comma-, semicolon- or pipe-separated
-ECCMD hosts. `port` defaults to 640. Effective connection and read timeouts must be
-between 1 and 60,000 milliseconds. `[RMIClientSocketFactory]` overrides inherited
-`[SocketConfig]` defaults; these factory settings also affect other
-Master RMI clients. Preserve the site's existing RMI transport/network policy.
+ECCMD hosts. `port` defaults to 640. `requestTimeoutMillis` defaults to 10,000
+and accepts 1 through 60,000 milliseconds. It bounds ECCMD gateway discovery,
+including registry lookup and host failover, not the subsequent gateway transfer.
+Each provider admits at most eight concurrent discovery requests; excess requests
+fail immediately. These deadlines do not shorten the shared Master RMI socket
+timeouts. Preserve the site's existing RMI transport/network policy.
+
+Keep the shared Master read timeout suitable for synchronous Master-to-Mover
+retrieval calls. See [RMI timeout configuration](../administration/ecaccess-identity.md#master-configuration)
+for the relationship between shared socket timeouts and provider deadlines.
 
 The Master resolves ECCMD's `EccmdEngine` registry binding on demand. Invalid
 provider configuration fails startup, while an unavailable ECCMD daemon fails
