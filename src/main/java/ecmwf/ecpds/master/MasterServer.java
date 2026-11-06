@@ -988,7 +988,7 @@ public final class MasterServer extends ECaccessProvider
                 _log.debug("Starting EventRepository");
                 theEventRepository = new EventRepository("EventRepository");
                 theEventRepository.start();
-                if (!eventScriptContent.isEmpty() && Cnf.at("Server", "eventScheduler", true)) {
+                if (Cnf.at("Server", "eventScheduler", true)) {
                     _log.debug("Starting EventScheduler");
                     theEventScheduler = new EventScheduler("EventScheduler");
                     theEventScheduler.start();
@@ -8319,7 +8319,9 @@ public final class MasterServer extends ECaccessProvider
                 selectedConnectOptions.append(";standby=" + standby);
                 // Insert into the Publication table, to be processed by the event scheduler for
                 // the global notification system!
-                insertPublication(transfer, selectedConnectOptions);
+                if (!eventScriptContent.isEmpty()) {
+                    insertPublication(transfer, selectedConnectOptions);
+                }
                 final var destination = transfer.getDestination();
                 if (DESTINATION_MQTT.getECtransSetup(destination.getData())
                         .getBoolean(ECtransOptions.DESTINATION_MQTT_PUBLISH)) {
@@ -8762,7 +8764,7 @@ public final class MasterServer extends ECaccessProvider
                                                 publication.getId(), e);
                                     }
                                 }
-                            } else { // This is an event.js request (e.g. Aviso)
+                            } else if (!eventScriptContent.isEmpty()) { // This is an event.js request (e.g. Aviso)
                                 ScriptManager.exec(ScriptManager.JS,
                                         replace(selectedConnectOptions, eventScriptContent.toString()));
                             }
