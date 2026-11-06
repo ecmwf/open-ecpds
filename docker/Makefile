@@ -17,6 +17,9 @@ VERSION=$(shell grep '<revision>' ../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\
 BUILD=$(shell grep '<build.number>' ../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
 TAG="$(VERSION)-$(BUILD)"
 
+# Use the same JDK as development builds, not the container's stale environment.
+include ../.devcontainer/java-version.env
+
 # Define color codes
 CYAN   := \033[36m
 GREEN  := \033[32m

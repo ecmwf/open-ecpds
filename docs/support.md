@@ -35,7 +35,7 @@ via Maven. The versions used include:
 
 | Tool | Version |
 |------|---------|
-| GraalVM | 25.0.3 |
+| GraalVM | 25.4.4.1.1 |
 | Maven | 3.9.9 |
 | Docker | 29.2.1 |
 | Kompose | 1.37.0 |

@@ -6,7 +6,16 @@ This page lists the key third-party Java libraries bundled with OpenECPDS, group
 
 | Requirement | Version | Purpose |
 |---|---|---|
-| [GraalVM Community Edition](https://www.graalvm.org/) | 25.2.4 (Java 25) | Java runtime used by the OpenECPDS container images; Java 25 is required to run all components |
+| [GraalVM Community Edition](https://www.graalvm.org/) | 25.4.4.1.1 (Java 25) | Java runtime used by the OpenECPDS container images; Java 25 is required to run all components |
+
+Development and application-image builds read SDKMAN Java `25.4.4.1+1-graalce`
+from `.devcontainer/java-version.env`, matching the Polyglot/Truffle libraries
+selected by `graalvm.version` in `pom.xml`. Update that shared file and keep these
+versions aligned when upgrading: the embedded Graal compiler depends on Truffle
+runtime internals. Rebuild the Java base and application images for each target
+architecture; restarting an existing container does not update its Java runtime.
+Standalone builds evaluate JavaScript against the installed libraries to detect
+an incompatible compiler/runtime before the image is created.
 
 ---
 
@@ -131,9 +140,9 @@ This page lists the key third-party Java libraries bundled with OpenECPDS, group
 
 | Library | Version | License | Purpose |
 |---|---|---|---|
-| [GraalVM Polyglot](https://www.graalvm.org/) | 25.0.x | UPL 1.0 | Polyglot scripting host for user-defined JavaScript/Python scripts |
-| [GraalVM JavaScript](https://www.graalvm.org/) | 25.0.x | UPL 1.0 | JavaScript engine (metadata transformation scripts, rule evaluation) |
-| [GraalVM Python](https://www.graalvm.org/) | 25.0.x | UPL 1.0 | Python engine (user-defined data processing scripts) |
+| [GraalVM Polyglot](https://www.graalvm.org/) | 25.4.4.1.1 | UPL 1.0 | Polyglot scripting host for user-defined JavaScript/Python scripts |
+| [GraalVM JavaScript](https://www.graalvm.org/) | 25.4.4.1.1 | UPL 1.0 | JavaScript engine (metadata transformation scripts, rule evaluation) |
+| [GraalVM Python](https://www.graalvm.org/) | 25.4.4.1.1 | UPL 1.0 | Python engine (user-defined data processing scripts) |
 
 ---
 

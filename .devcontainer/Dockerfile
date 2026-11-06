@@ -36,12 +36,13 @@ ENV OLLAMA_EMBD_MODEL_NAME=mxbai-embed-large
 
 # Install SDKMAN for GraalVM and Java
 ENV SDKMAN_DIR=/root/.sdkman
-ENV SDKMAN_JDK=25.4.4.1+1-graalce
 ENV SDKMAN_MAVEN=3.9.9
 
+COPY java-version.env /tmp/java-version.env
 RUN curl -s "https://get.sdkman.io" | bash && \
-    bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install java ${SDKMAN_JDK}" && \
-    bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install maven ${SDKMAN_MAVEN}"
+    bash -c 'source /tmp/java-version.env && source "$SDKMAN_DIR/bin/sdkman-init.sh" && sdk install java "$SDKMAN_JDK"' && \
+    bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install maven ${SDKMAN_MAVEN}" && \
+    rm /tmp/java-version.env
 
 # Set Java environment variables
 ENV JAVA_HOME=$SDKMAN_DIR/candidates/java/current

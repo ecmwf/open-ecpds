@@ -76,6 +76,19 @@ RUN yum install -d1 -y \
         /tmp/rpms/ecpds-tools-*.rpm && \
     yum clean all && rm -rf /tmp/rpms
 
+# Verify the embedded compiler can initialize against the packaged Truffle libraries.
+RUN printf '%s\n' \
+        'import org.graalvm.polyglot.Context;' \
+        'class ScriptSmokeTest {' \
+        '  public static void main(String[] args) {' \
+        '    try (var context = Context.newBuilder("js").build()) {' \
+        '      if (context.eval("js", "1 + 1").asInt() != 2) throw new AssertionError();' \
+        '    }' \
+        '  }' \
+        '}' > /tmp/ScriptSmokeTest.java && \
+    java --class-path '/usr/local/ecpds/lib/*' /tmp/ScriptSmokeTest.java && \
+    rm /tmp/ScriptSmokeTest.java
+
 # ── Redirect all runtime data to /data (single mountable volume) ──────────────
 # Patch ecenv files so services write logs/tmp/data under /data
 RUN sed -i \
