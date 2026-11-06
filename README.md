@@ -161,6 +161,62 @@ mqttx sub \
   -t '#'
 ```
 
+### Try MQTT upload notifications
+
+The pre-configured **`mqtt_demo`** destination lets you try upload notifications
+without an external data provider. **Leave this destination stopped in the Monitor**:
+its standby settings keep uploaded files in **HOLD**, available for download without
+outbound delivery, and trigger MQTT publication.
+
+In one terminal, subscribe with [mqttx CLI](https://mqttx.app/cli):
+
+```bash
+mqttx sub \
+  -h localhost -p 8883 \
+  -l mqtts \
+  -u test -P test2021 \
+  --insecure \
+  -t 'openecpds/demo/#'
+```
+
+Wait for a successful connection/subscription and leave it running. Messages are
+non-retained, so subscribing after publication will not replay them. `--insecure`
+is only for the evaluation container's self-signed certificate.
+
+In a second terminal, create a small file and connect over SFTP:
+
+```bash
+printf 'Hello from the standalone MQTT demo!\n' > mqtt-demo.txt
+sftp -P 7022 test@localhost
+```
+
+Enter password `test2021`, accept the host key after checking it is your evaluation
+container, then run at the SFTP prompt:
+
+```text
+put mqtt-demo.txt /mqtt_demo/mqtt-demo.txt
+bye
+```
+
+Allow roughly a minute for asynchronous publication. The subscriber receives JSON
+on `openecpds/demo/mqtt-demo.txt`, including authenticated download links and, for
+files up to **16 KiB**, inline Base64 content. Base64 is not encryption.
+Verify the file through HTTPS:
+
+```bash
+curl --fail -k -u test:test2021 \
+  https://localhost:7443/ecpds/data/file/mqtt_demo/mqtt-demo.txt
+```
+
+In the Monitor, open **Operations → MQTT Activity** and filter on `mqtt_demo`.
+**ACCEPTED means broker acceptance, not proof of subscriber receipt.** Use a
+different filename for another test upload.
+
+See the [full MQTT upload walkthrough](https://ecmwf.github.io/open-ecpds/getting-started/standalone/#try-mqtt-upload-notifications)
+for troubleshooting and public endpoint configuration. For a remote container,
+replace `localhost` in the commands and update the destination's public endpoint
+settings so notification links use the reachable hostname and mapped ports.
+
 ### Submitting files with the ecpds CLI
 
 The `ecpds` command-line client submits files directly to the Master Server (port **9640**).

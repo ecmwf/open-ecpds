@@ -125,110 +125,6 @@ data from external providers:
 Once started, the destination retrieves files from its source host and makes them
 available through the Data Portal, so the commands below have something to list and download.
 
-## Try MQTT upload notifications
-
-The pre-configured **`mqtt_demo`** destination lets you test notifications without
-an external data provider. See
-[MQTT destination configuration](../notifications/mqtt-dissemination.md#demo-upload-notifications-and-public-download-links)
-for its settings.
-
-### 1. Subscribe before uploading
-
-In one terminal, use [mqttx CLI](https://mqttx.app/cli) to connect to the standalone
-MQTTS broker and leave the subscription running:
-
-```bash
-mqttx sub \
-  -h localhost -p 8883 \
-  -l mqtts \
-  -u test -P test2021 \
-  --insecure \
-  -t 'openecpds/demo/#'
-```
-
-Wait until MQTTX reports a successful connection/subscription before proceeding.
-The demo uses non-retained messages: subscribing after publication will not replay
-the notification. `--insecure` is for the evaluation container's self-signed certificate.
-
-### 2. Upload a small file
-
-In a second terminal, create a file:
-
-```bash
-printf 'Hello from the standalone MQTT demo!\n' > mqtt-demo.txt
-sftp -P 7022 test@localhost
-```
-
-Enter password `test2021`, accept the host key after checking it is your evaluation
-container, then run these commands at the SFTP prompt:
-
-```text
-put mqtt-demo.txt /mqtt_demo/mqtt-demo.txt
-bye
-```
-
-**Leave `mqtt_demo` stopped in the Monitor.** Its Properties include
-`incoming.event = "yes"`, `mqtt.publish = "yes"` and
-`scheduler.standby = "yes"`. The uploaded transfer enters **HOLD**, meaning the file
-is available for download without scheduling outbound delivery. HOLD is expected
-for this demo and triggers the notification.
-
-### 3. Wait for the notification
-
-Keep the first terminal open. Publication is asynchronous: allow roughly a minute
-for the event repository and scheduler to process the upload; this is not a delivery
-deadline. The topic is:
-
-```text
-openecpds/demo/mqtt-demo.txt
-```
-
-The JSON body includes file identity, destination, size, publication/expiry times,
-and authenticated download links:
-
-```text
-https://localhost:7443/ecpds/data/file/mqtt_demo/mqtt-demo.txt
-sftp://localhost:7022/mqtt_demo/mqtt-demo.txt
-https://localhost:7443/s3/test/mqtt_demo/mqtt-demo.txt
-```
-
-The S3 link requires a signed request using the `test` bucket/account. Files up to
-**16 KiB** also include `content` with `encoding: "base64"` and a `data` string.
-Larger files keep the links but omit inline content. Base64 is not encryption:
-any subscriber authorized for the topic can read embedded file content.
-
-Verify the uploaded file through HTTPS:
-
-```bash
-curl --fail -k -u test:test2021 \
-  https://localhost:7443/ecpds/data/file/mqtt_demo/mqtt-demo.txt
-```
-
-### 4. Check the result in the Monitor
-
-Log in at `https://localhost:8443` and open **Operations → MQTT Activity**
-(`/do/monitoring/mqtt`). Filter on destination `mqtt_demo` to see publication
-processing and per-Mover broker outcomes. The transfer's history also records the
-publication ID and result counts. **ACCEPTED means broker acceptance, not proof
-that a subscriber received the message.**
-
-When enabled, Splunk and native OpenTelemetry also receive an **NTF** operational
-event with the result, not the message body. The OpenTelemetry Journal is a
-separate export queue: a stopped Collector does not prevent MQTT publication.
-
-If nothing arrives, check that the subscription was active before upload, port
-`8883` is published, and the file appears under `mqtt_demo`. A transfer stuck in
-**WAIT** with no publication usually means `scheduler.standby` is missing from the
-destination configuration. Inspect MQTT Activity for failures or unconfirmed
-results; use a different filename for another test upload.
-
-!!! note "Remote hosts and custom port mappings"
-    Replace `localhost` in the commands with your container host. Also edit the
-    destination's JavaScript public endpoint settings so notification links use
-    the subscriber-reachable hostname and externally mapped HTTPS/SFTP ports.
-    Docker cannot infer those public URLs. Standalone defaults are **7443** for
-    HTTPS/S3, **7022** for SFTP and **8883** for MQTTS; Eclipse's ports differ.
-
 ## Try the protocols
 
 All examples use the pre-configured `test / test2021` account.
@@ -418,6 +314,110 @@ curl -k -u api:api2021 -X DELETE \
     The `api` user is pre-configured in the standalone container with the `.*` permission
     pattern, granting access to all API operations. In production, restrict permissions
     per the [REST API Reference — Permission Configuration](../rest-api.md#permission-configuration).
+
+## Try MQTT upload notifications
+
+The pre-configured **`mqtt_demo`** destination lets you test notifications without
+an external data provider. See
+[MQTT destination configuration](../notifications/mqtt-dissemination.md#demo-upload-notifications-and-public-download-links)
+for its settings.
+
+### 1. Subscribe before uploading
+
+In one terminal, use [mqttx CLI](https://mqttx.app/cli) to connect to the standalone
+MQTTS broker and leave the subscription running:
+
+```bash
+mqttx sub \
+  -h localhost -p 8883 \
+  -l mqtts \
+  -u test -P test2021 \
+  --insecure \
+  -t 'openecpds/demo/#'
+```
+
+Wait until MQTTX reports a successful connection/subscription before proceeding.
+The demo uses non-retained messages: subscribing after publication will not replay
+the notification. `--insecure` is for the evaluation container's self-signed certificate.
+
+### 2. Upload a small file
+
+In a second terminal, create a file:
+
+```bash
+printf 'Hello from the standalone MQTT demo!\n' > mqtt-demo.txt
+sftp -P 7022 test@localhost
+```
+
+Enter password `test2021`, accept the host key after checking it is your evaluation
+container, then run these commands at the SFTP prompt:
+
+```text
+put mqtt-demo.txt /mqtt_demo/mqtt-demo.txt
+bye
+```
+
+**Leave `mqtt_demo` stopped in the Monitor.** Its Properties include
+`incoming.event = "yes"`, `mqtt.publish = "yes"` and
+`scheduler.standby = "yes"`. The uploaded transfer enters **HOLD**, meaning the file
+is available for download without scheduling outbound delivery. HOLD is expected
+for this demo and triggers the notification.
+
+### 3. Wait for the notification
+
+Keep the first terminal open. Publication is asynchronous: allow roughly a minute
+for the event repository and scheduler to process the upload; this is not a delivery
+deadline. The topic is:
+
+```text
+openecpds/demo/mqtt-demo.txt
+```
+
+The JSON body includes file identity, destination, size, publication/expiry times,
+and authenticated download links:
+
+```text
+https://localhost:7443/ecpds/data/file/mqtt_demo/mqtt-demo.txt
+sftp://localhost:7022/mqtt_demo/mqtt-demo.txt
+https://localhost:7443/s3/test/mqtt_demo/mqtt-demo.txt
+```
+
+The S3 link requires a signed request using the `test` bucket/account. Files up to
+**16 KiB** also include `content` with `encoding: "base64"` and a `data` string.
+Larger files keep the links but omit inline content. Base64 is not encryption:
+any subscriber authorized for the topic can read embedded file content.
+
+Verify the uploaded file through HTTPS:
+
+```bash
+curl --fail -k -u test:test2021 \
+  https://localhost:7443/ecpds/data/file/mqtt_demo/mqtt-demo.txt
+```
+
+### 4. Check the result in the Monitor
+
+Log in at `https://localhost:8443` and open **Operations → MQTT Activity**
+(`/do/monitoring/mqtt`). Filter on destination `mqtt_demo` to see publication
+processing and per-Mover broker outcomes. The transfer's history also records the
+publication ID and result counts. **ACCEPTED means broker acceptance, not proof
+that a subscriber received the message.**
+
+When enabled, Splunk and native OpenTelemetry also receive an **NTF** operational
+event with the result, not the message body. The OpenTelemetry Journal is a
+separate export queue: a stopped Collector does not prevent MQTT publication.
+
+If nothing arrives, check that the subscription was active before upload, port
+`8883` is published, and the file appears under `mqtt_demo`. A transfer stuck in
+**WAIT** with no publication usually means `scheduler.standby` is missing from the
+destination configuration. Inspect MQTT Activity for failures or unconfirmed
+results; use a different filename for another test upload.
+
+!!! note "Remote hosts and custom port mappings"
+    Replace `localhost` in the commands with your container host. Also edit the
+    destination's JavaScript public endpoint settings so notification links use
+    the subscriber-reachable hostname and externally mapped HTTPS/SFTP ports.
+    Docker cannot infer those public URLs. Standalone defaults are **7443** for
+    HTTPS/S3, **7022** for SFTP and **8883** for MQTTS; Eclipse's ports differ.
 
 ## Logs
 
