@@ -193,9 +193,14 @@ bk-images: ## Backup images (args: app, tag)
 rm-images: ## Remove all local OpenECPDS images for ARCH, except dev containers
 	@images=$$($(DOCKER) images --format "{{.Repository}}:{{.Tag}}") || exit 1; \
 	for ref in $$(printf '%s\n' "$$images" | awk -F: \
-		'($$1 ~ /^open-ecpds\// || $$1 ~ /^ghcr.io\/ecmwf\/open-ecpds\//) && $$1 !~ /\/dev$$/' | sort -u); do \
+		'($$1 ~ /^open-ecpds\// || $$1 ~ /^ghcr.io\/ecmwf\/open-ecpds\//) && $$1 !~ /\/dev$$/ && $$2 != "<none>"' | sort -u); do \
 		arch=$$($(DOCKER) image inspect --format "{{.Architecture}}" "$$ref") || exit 1; \
 		if [ "$$arch" = "$(ARCH)" ]; then \
+			containers=$$($(DOCKER) ps -a --filter "ancestor=$$ref" --format "{{.Names}}") || exit 1; \
+			if [ -n "$$containers" ]; then \
+				printf 'Skipping image %s (used by container(s): %s)\n' "$$ref" "$$(printf '%s\n' "$$containers" | paste -sd ',' -)"; \
+				continue; \
+			fi; \
 			echo "Removing image $$ref (linux/$$arch) ..."; \
 			$(DOCKER) rmi "$$ref" || exit 1; \
 		fi; \
