@@ -6,9 +6,9 @@ remote data providers. When enabled on an [acquisition host](../concepts/entitie
 this client can be configured to subscribe to specific topics on a remote MQTT broker,
 allowing OpenECPDS to receive real-time notifications when new data becomes available.
 
-The default `http.mqttProfile = "script"` retains existing script-based extraction.
+The default `http.mqttProfile = "script"` selects script-based extraction.
 The optional [WIS2 profile](wmo-wis2.md#optional-wis2-acquisition-profile) interprets
-WIS2 notifications without changing the MQTT transport.
+WIS2 notifications using the shared MQTT transport.
 
 ## Retrieval options
 
@@ -22,6 +22,10 @@ retrieval:
 - **Inline Data Extraction** — Alternatively, the system can extract the data content
   directly from the MQTT message itself, allowing immediate processing without requiring a
   separate download step.
+
+Both retrieval paths use the shared acquisition engine. The optional WIS2 profile
+supplies built-in WIS2 field interpretation and producer-advertised digest checks,
+in addition to OpenECPDS integrity controls.
 
 ## Configuration
 

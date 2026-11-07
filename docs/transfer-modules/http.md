@@ -166,7 +166,7 @@ http.useHead = "no"  # no HEAD request during listing
 
 ### MQTT broker — real-time notifications
 
-Subscribes to an MQTT broker. The **Directory** field is the *topic filter* (e.g. `cache/+/data/core/weather/#`). Each received message is processed by the JavaScript editor to extract file metadata.
+Subscribes to an MQTT broker. The **Directory** field is the *topic filter* (e.g. `cache/+/data/core/weather/#`). With the default `script` profile, each received message is processed by the configured extraction script. Selecting the optional [WIS2 profile](../notifications/wmo-wis2.md#optional-wis2-acquisition-profile) or an installed profile replaces that script's interpretation, not the MQTT transport.
 
 ```properties
 http.mqttMode = "yes"
@@ -189,7 +189,7 @@ http.mqttPersistenceDirectory = "/tmp/mqtt"
 http.mqttSessionExpiryInterval = "1d"      # how long broker retains the session
 ```
 
-#### Fields extracted from each MQTT message
+#### Fields extracted from each MQTT message (script profile)
 
 ```properties
 http.mqttHref = "..."            # download URL

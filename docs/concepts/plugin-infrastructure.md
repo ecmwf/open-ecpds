@@ -350,13 +350,15 @@ for stateless, thread-safe MQTT message interpretation on Movers. A profile prov
 `name()` and `decode(topic, payload)`, returning a `Result` with a retrieval URL,
 filename, byte length (`-1` if unknown), optional Base64 inline body, and
 `AcquisitionNotification` attribution/expected integrity. Return `null` to ignore
-a message or throw `IOException` for invalid input. Do not start a broker, access
-the database or perform scheduling from a profile.
+a message or throw `IOException` for invalid input. The acquisition engine manages
+MQTT connections, file registration and scheduling.
 
-The generic acquisition engine carries attribution through its listing envelope,
-persists it in existing file metadata and verifies advertised integrity during
-retrieval. The bundled `wis2` implementation is explicitly opt-in; `script` preserves
-the original message-extraction path and does not discover providers.
+For profile-backed files, the generic acquisition engine carries attribution
+through its listing envelope, persists it in existing file metadata and verifies
+producer-advertised integrity during retrieval, in addition to existing OpenECPDS
+integrity controls. Profiles use the shared inline-file ingestion path. The
+bundled `wis2` implementation is explicitly opt-in; `script` selects custom
+message extraction.
 
 For an external implementation, install its trusted JAR and dependencies on each
 participating Mover's application classpath, with:
@@ -368,13 +370,14 @@ META-INF/services/ecmwf.common.ectrans.notification.NotificationProfile
 containing the provider's fully qualified class name. Compile against the matching
 core artifact, provide a public no-argument constructor, and select its ID using
 `http.mqttProfile`. IDs match `[a-z][a-z0-9_-]{0,63}`. Reserved/duplicate IDs or
-incompatible API versions fail profile selection; there is no script fallback.
-Instances are created for listing operations and have no network-resource lifecycle.
+incompatible API versions fail profile selection.
+Instances are created for listing operations.
 Changes to installed providers require a Mover restart.
 
-This is a trusted in-process extension, not a sandbox. Provider options, if needed,
+Trusted providers execute directly within the Mover process. Provider options, if needed,
 can use the independent typed option-provider mechanism above. The generic MQTT
-transport and existing destination publication scripts remain unchanged.
+transport serves the acquisition profiles; destination publication uses its
+configured publication scripts.
 
 ## Server Plugins (incoming)
 

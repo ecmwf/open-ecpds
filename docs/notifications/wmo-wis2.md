@@ -13,8 +13,8 @@ meteorological data within the global community.
 
 ## Optional WIS2 acquisition profile
 
-MQTT remains a generic transport. Existing acquisition hosts keep their script-based
-extraction unless an administrator explicitly selects the bundled WIS2 profile:
+MQTT is a generic transport. Acquisition hosts use script-based extraction by
+default; an administrator can explicitly select the bundled WIS2 profile:
 
 ```properties
 http.mqttMode = "yes"
@@ -28,50 +28,55 @@ acquisition.requeueOnFailure = "yes"
 Configure the broker address, credentials, TLS and session settings as for any
 [MQTT acquisition host](mqtt-acquisition.md). The host Directory is the topic filter,
 for example `origin/a/wis2/+/+/data/core/#` or `cache/a/wis2/+/+/data/core/#`.
-The profile replaces the message-extraction script on that host; it does not change
-destination publication scripts or start another broker. Set `http.mqttProfile = "script"`
-to restore the existing extraction path.
+The profile interprets acquisition messages on that host. Set
+`http.mqttProfile = "script"` to select script-based extraction.
 
-The initial profile:
+This profile uses the shared MQTT acquisition engine, including inline file
+ingestion and OpenECPDS integrity controls. It provides built-in interpretation
+of WIS2 notifications, structured attribution and verification against a
+producer-advertised digest.
+
+The WIS2 profile:
 
 - Validates the fields used for acquisition: data topic, message ID, full `data_id`,
   publication timestamp, selected retrieval link, advertised length and integrity.
   It prefers an `update` link over `canonical`, and uses the first URL when that
   link advertises an array of alternatives.
 - Registers versions using the full data identity, normalized publication timestamp
-  and full advertised digest, rather than a mirror URL or broker message ID.
+  and full advertised digest.
   Identical relays within the same destination/target therefore share a scheduled
   file; later publication timestamps or different digests identify another version.
 - Checks advertised Base64 SHA-256, SHA-384 or SHA-512 digests against the received
-  bytes before a scheduled retrieval is marked complete. Unsupported algorithms
-  and malformed digests reject the notification, rather than disabling verification.
+  bytes before a scheduled retrieval is marked complete. Algorithm and digest
+  validation rejects unsupported algorithms and malformed digests.
   A mismatch fails the retrieval and removes the failed local file through the
   existing retrieval cleanup. Internal OpenECPDS checksums remain independent.
-- Accepts Base64 inline content up to 16 KiB, checking its declared length and
-  advertised digest before submission. Missing integrity is allowed and is shown
-  as **Not advertised**; this profile does not invent a producer digest.
+- Uses shared MQTT inline-content ingestion to interpret WIS2
+  `properties.content` directly through its built-in decoder. The profile
+  accepts Base64 content up to 16 KiB **decoded**, including empty files, and
+  checks its declared length and advertised digest before submission. If the
+  length is absent, it uses the decoded byte count. Notifications include a valid
+  `canonical` or `update` link; inline content is submitted directly as file bytes.
+  The acquisition card displays the availability and value of the advertised
+  digest. Inline-content validation applies the WIS2 profile's limits.
 - Preserves notification attribution in the existing file metadata store, including
   identities longer than one metadata value column. **Data Files → file details**
   shows an **Acquisition Notification** card alongside normal acquisition state
   and transfer history. Rejected messages are reported in acquisition listing
-  progress and Mover logs, without recording their complete payload.
+  progress and Mover logs.
 
-Notification metadata is bounded to 16 KiB and each identity/topic field to 4,096
-characters. Reserved `notify.chunks` and `notify.<number>` attributes encode that
-metadata in existing bounded value columns; do not edit these internal attributes.
-Invalid or incomplete stored attribution blocks retrieval rather than silently
-dropping its expected digest. No database schema migration is required.
+The WIS2 notification payload is bounded to 1 MiB. Stored notification metadata is
+bounded to 16 KiB and each identity/topic field to 4,096 characters.
+Reserved `notify.chunks` and `notify.<number>` attributes encode that
+metadata in existing bounded value columns.
+Invalid or incomplete stored attribution blocks retrieval.
 
-Upgrade the Master, Monitor and participating Movers together before enabling the
-profile. Previously scheduled files do not acquire integrity metadata retroactively.
-Changing a host back to script mode does not remove integrity checks from files
-already registered with notification metadata.
+Advertised-digest checks follow the notification metadata attached to each file,
+independently of the host's current profile selection.
 
-This is a data acquisition profile, not full WNM JSON Schema validation or WMO Global
-Cache certification. It does not enforce cross-publication lineage rules, provide
-historical replay, choose weighted cache candidates, or provide a separate incoming
-activity dashboard with deadline outcomes. Those are separate increments. Durable
-MQTT sessions still depend on broker retention and stable client identity.
+MQTT subscriptions run within acquisition listing cycles.
+Broker-side session recovery depends on the configured QoS, session expiry,
+stable client identity and clean-start settings.
 
 ## Related
 
