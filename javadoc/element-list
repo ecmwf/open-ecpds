@@ -7,6 +7,8 @@ ecmwf.common.ecaccess
 ecmwf.common.ecauth
 ecmwf.common.ectrans
 ecmwf.common.ectrans.module
+ecmwf.common.ectrans.notification
+ecmwf.common.ectrans.notification.wis2
 ecmwf.common.ftp
 ecmwf.common.ftpd
 ecmwf.common.mbean

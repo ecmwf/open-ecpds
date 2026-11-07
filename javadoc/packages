@@ -82,6 +82,8 @@ ecmwf.common.parser.discovery
 ecmwf.common.parser.format
 ecmwf.common.parser
 ecmwf.common.ectrans
+ecmwf.common.ectrans.notification
+ecmwf.common.ectrans.notification.wis2
 ecmwf.common.ectrans.module
 ecmwf.common.ssh
 ecmwf.common.ftpd
