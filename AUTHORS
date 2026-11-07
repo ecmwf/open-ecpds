@@ -21,3 +21,11 @@ List of software packages which are contributed inside OpenECPDS:
 - S3Proxy (https://github.com/gaul/s3proxy)
     Copyright (C) 2014-2021 Andrew Gaul
     Apache License 2.0 (http://www.apache.org/licenses/)
+
+Design inspiration and acknowledgements
+=======================================
+
+We thank the wis2hauler contributors (https://github.com/golfvert/wis2hauler)
+for design inspiration informing OpenECPDS's WIS2 acquisition improvements,
+particularly notification identity and content-integrity verification.
+The OpenECPDS implementation is independently developed.

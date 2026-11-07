@@ -51,6 +51,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +89,7 @@ import ecmwf.common.ecaccess.MBeanRepository;
 import ecmwf.common.ecaccess.MBeanScheduler;
 import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ectrans.ECtransException;
+import ecmwf.common.ectrans.notification.AcquisitionNotification;
 import ecmwf.common.mbean.MBeanManager;
 import ecmwf.common.monitor.MonitorCallback;
 import ecmwf.common.monitor.MonitorException;
@@ -2317,6 +2319,17 @@ public final class TransferScheduler extends MBeanScheduler {
             if (hostForSource == null || !hostForSource.getActive() || dr.dataFile.getDeleteOriginal()) {
                 _log.warn(dr.message = "Host for source not available or source file deleted");
             } else {
+                final var metadata = new LinkedHashMap<String, String>();
+                for (final var value : BASE.getMetaDataByDataFileId(dr.dataFile.getId()))
+                    metadata.put(value.getMetadataAttributeName(), value.getValue());
+                try {
+                    final var notification = AcquisitionNotification.fromMetadata(metadata);
+                    final var integrity = notification == null ? null : notification.integrity();
+                    dr.dataFile.setRetrievalIntegrity(integrity == null ? null : integrity.method(),
+                            integrity == null ? null : integrity.value());
+                } catch (final IOException e) {
+                    throw new DataBaseException("Invalid acquisition notification metadata", e);
+                }
                 final var provider = new TransferServerProvider("download", hostForSource.getTransferGroupName(),
                         transfer.getDestinationName(), transfer.getSize(), transfer.getTransferServer(),
                         dr.dataFile.getFileSystem());

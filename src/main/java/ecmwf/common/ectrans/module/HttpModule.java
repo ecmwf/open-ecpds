@@ -86,6 +86,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_PERSISTENCE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_PERSISTENCE_DIRECTORY;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_PERSISTENCE_MODE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_PORT;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_PROFILE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_QOS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_SCHEME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_SESSION_EXPIRY_INTERVAL;
@@ -217,6 +218,9 @@ import org.jsoup.select.NodeVisitor;
 
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.TransferModule;
+import ecmwf.common.ectrans.notification.AcquisitionListing;
+import ecmwf.common.ectrans.notification.AcquisitionNotification;
+import ecmwf.common.ectrans.notification.NotificationProfiles;
 import ecmwf.common.parser.core.ParserConfig;
 import ecmwf.common.parser.core.RemoteListingEngine;
 import ecmwf.common.rmi.ClientSocketFactory;
@@ -1739,6 +1743,14 @@ public final class HttpModule extends TransferModule {
             final String rootDirectory, final String directory, final String line, final int level,
             final String pattern, final AtomicInteger counter, final String alternativeName, final ByteSize size,
             final Long date, final String body, final String message) {
+        addEntry(manager, resultList, rootDirectory, directory, line, level, pattern, counter, alternativeName, size,
+                date, body, message, null);
+    }
+
+    private void addEntry(final ExecutorManager<ListThread> manager, final ProcessEntry resultList,
+            final String rootDirectory, final String directory, final String line, final int level,
+            final String pattern, final AtomicInteger counter, final String alternativeName, final ByteSize size,
+            final Long date, final String body, final String message, final AcquisitionNotification notification) {
         try {
             if (isEmpty(pattern) || line.matches(pattern)) {
                 // We don't want to have duplicated lines!
@@ -1753,11 +1765,13 @@ public final class HttpModule extends TransferModule {
                         // Let's create a new list task and add it to the list manager queue!
                         try {
                             manager.put(new ListThread(manager, resultList, rootDirectory, directory, line, level,
-                                    pattern, alternativeName, size, date, body, message));
+                                    pattern, alternativeName, size, date, body, message, notification));
                         } catch (final InterruptedException e) {
                         }
                     } else {
                         // No ftp processing so no recursion!
+                        if (notification != null)
+                            throw new IOException("Notification profiles require http.ftpLike=yes");
                         resultList.add(line);
                     }
                 } else {
@@ -1925,6 +1939,9 @@ public final class HttpModule extends TransferModule {
             // file references!
             final var brokerUrl = getSetup().get(HOST_HTTP_MQTT_URL, getSetup().getString(HOST_HTTP_MQTT_SCHEME) + "://"
                     + host + ":" + getSetup().getInteger(HOST_HTTP_MQTT_PORT));
+            final var profile = NotificationProfiles.resolve(getSetup().getString(HOST_HTTP_MQTT_PROFILE));
+            if (profile != null && manager == null)
+                throw new IOException("Notification profiles require http.ftpLike=yes");
             var disconnected = false;
             try {
                 final var connOpts = new MqttConnectionOptions();
@@ -1962,10 +1979,24 @@ public final class HttpModule extends TransferModule {
                     @Override
                     public void messageArrived(final String topic, final MqttMessage message) throws Exception {
                         receivedSignal.countDown();
-                        if (getDebug()) {
+                        if (getDebug() && profile == null) {
                             _log.debug("messageArrived: topic={} ; debugString={}", topic, message.toDebugString());
                         }
                         try {
+                            if (profile != null) {
+                                final var result = profile.decode(topic, message.getPayload());
+                                if (result != null) {
+                                    result.notification().encode();
+                                    addEntry(manager, resultList, rootDirectory, targetDirectory, result.href(), level,
+                                            pattern, counter, result.filename(),
+                                            result.size() == -1 ? null : ByteSize.of(result.size()),
+                                            result.notification().timeMillis(), result.body(),
+                                            getSetup().getBoolean(HOST_HTTP_MQTT_ADD_PAYLOAD)
+                                                    ? Base64.getEncoder().encodeToString(message.getPayload()) : "",
+                                            result.notification());
+                                }
+                                return;
+                            }
                             final var bindings = new HashMap<>(Map.of("mqttPayload",
                                     new ObjectMapper().readValue(
                                             new String(message.getPayload(), StandardCharsets.UTF_8), Map.class),
@@ -1991,7 +2022,13 @@ public final class HttpModule extends TransferModule {
                                 return null;
                             });
                         } catch (final Throwable t) {
-                            _log.debug("Notification ignored (href resolution error): {}", topic, t);
+                            if (profile != null) {
+                                _log.warn("Notification rejected by profile {} ({})", profile.name(),
+                                        t.getClass().getSimpleName());
+                                resultList.add("err:Notification rejected by profile " + profile.name());
+                            } else {
+                                _log.debug("Notification ignored (href resolution error): {}", topic, t);
+                            }
                         }
                     }
 
@@ -2268,6 +2305,8 @@ public final class HttpModule extends TransferModule {
         /** The message. */
         final String message;
 
+        final AcquisitionNotification notification;
+
         /**
          * Instantiates a new list thread.
          *
@@ -2299,7 +2338,7 @@ public final class HttpModule extends TransferModule {
         ListThread(final ExecutorManager<ListThread> manager, final ProcessEntry resultList, final String rootDirectory,
                 final String currentDirectory, final String currentName, final int level, final String pattern,
                 final String alternativeName, final ByteSize size, final Long date, final String body,
-                final String message) {
+                final String message, final AcquisitionNotification notification) {
             super(manager);
             this.manager = manager;
             this.resultList = resultList;
@@ -2313,6 +2352,7 @@ public final class HttpModule extends TransferModule {
             this.date = date;
             this.body = body;
             this.message = message;
+            this.notification = notification;
         }
 
         /**
@@ -2394,12 +2434,9 @@ public final class HttpModule extends TransferModule {
             if (isEmpty(pattern) || entry.name.matches(pattern)) {
                 _log.debug("Adding ftp entry: {} => {}", currentName, element);
                 final var hasError = entry.hasError();
-                final var theBody = isEmpty(body) ? "" : body;
                 final var theMessage = isEmpty(message) ? "" : message;
-                resultList.add(
-                        (hasError ? "err:" : "") + element + (hasError ? " (exception: " + entry.getError() + ")" : "")
-                                + (hasError || (theBody.isEmpty() && theMessage.isEmpty()) ? ""
-                                        : " [" + theBody + ";" + theMessage + "]"));
+                resultList.add(hasError ? "err:" + element + " (exception: " + entry.getError() + ")"
+                        : AcquisitionListing.format(element, body, theMessage, notification));
             } else if (getDebug()) {
                 _log.debug("Discarding {} (wrong-pattern) - {} != {}", entry.fullName, entry.name, pattern);
             }

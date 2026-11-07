@@ -32,6 +32,7 @@ package ecmwf.ecpds.master.plugin.http.model.datafile;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.Map;
 
 import ecmwf.ecpds.master.plugin.http.model.CollectionSizeBean;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
@@ -42,6 +43,10 @@ import ecmwf.web.model.users.User;
  * The Interface DataFile.
  */
 public interface DataFile extends ModelBean, CollectionSizeBean {
+
+    default Map<String, String> getNotificationDetails() throws DataFileException {
+        return Map.of();
+    }
 
     /**
      * Gets the arrived time.

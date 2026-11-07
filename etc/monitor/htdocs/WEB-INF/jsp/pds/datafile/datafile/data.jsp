@@ -170,6 +170,23 @@
 </div>
 </div>
 
+<c:set var="notificationDetails" value="${datafile.notificationDetails}"/>
+<c:if test="${not empty notificationDetails}">
+<div class="card border-0 shadow-sm mb-3">
+<div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">
+<i class="bi bi-broadcast text-primary"></i>
+<span class="fw-semibold">Acquisition Notification</span>
+</div>
+<div class="card-body py-0">
+<div class="field-grid">
+<c:forEach var="field" items="${notificationDetails}">
+<div class="field-row"><div class="field-label"><c:out value="${field.key}"/></div><div class="field-value"><span class="val-code text-break d-inline-block"><c:out value="${field.value}"/></span></div></div>
+</c:forEach>
+</div>
+</div>
+</div>
+</c:if>
+
 <%-- Card: Timing --%>
 <div class="card border-0 shadow-sm mb-3">
 <div class="card-header d-flex align-items-center gap-2" style="background:var(--bs-secondary-bg)">

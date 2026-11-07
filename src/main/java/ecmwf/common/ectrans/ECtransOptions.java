@@ -1461,6 +1461,9 @@ public enum ECtransOptions implements ECtransOptionDefinition {
     /** The host http mqtt href. */
     HOST_HTTP_MQTT_HREF("mqttHref", String.class, STRING_NONE),
 
+    /** Opt-in notification interpretation; script preserves existing behaviour. */
+    HOST_HTTP_MQTT_PROFILE("mqttProfile", String.class, "script"),
+
     /** The host http mqtt alternative name. */
     HOST_HTTP_MQTT_ALTERNATIVE_NAME("mqttAlternativeName", String.class, STRING_NONE),
 

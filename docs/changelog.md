@@ -5,6 +5,12 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.2.1-201020
 
 ---
 
+## open-ecpds 8.3.0-04112026
+
+- **Opt-in WIS2 acquisition profiles**: Adds a versioned notification-profile SPI and bundled `wis2` profile, selected with `http.mqttProfile="wis2"`; generic MQTT transport and default script extraction remain unchanged. File versions use full data identity, normalized publication time and advertised integrity rather than mirror URLs or broker message IDs. Notification attribution persists in existing file metadata and appears in the Monitor's **Acquisition Notification** card. Advertised SHA-256, SHA-384 and SHA-512 digests are verified before scheduled retrieval completes; invalid digests and mismatches fail rather than bypassing verification. Supports Base64 inline content up to 16 KiB, including empty files, without fetching the linked URL. No database schema change. Historical replay, weighted cache selection and a dedicated incoming-activity dashboard are not included. See [WIS2 acquisition profile](notifications/wmo-wis2.md#optional-wis2-acquisition-profile) and [Notification profiles](concepts/plugin-infrastructure.md#notification-profiles).
+
+---
+
 ## open-ecpds 8.2.2-27102026
 
 - **Database-backed MQTT Activity**: Bounded, asynchronous database persistence, independent of MQTT delivery and the OpenTelemetry Journal. Entry, byte and age limits are configurable; the regular database purge honors stored expiry times, including inactive Masters' entries. Database failures keep bounded in-memory results and never republish notifications. See [Monitoring publication activity](notifications/mqtt-dissemination.md#monitoring-publication-activity).

@@ -170,6 +170,7 @@ Subscribes to an MQTT broker. The **Directory** field is the *topic filter* (e.g
 
 ```properties
 http.mqttMode = "yes"
+http.mqttProfile = "script"                # script (default) | wis2 | installed profile ID
 http.mqttScheme = "ssl"                    # ssl | tcp  (default: ssl)
 http.mqttPort = "8883"                     # broker port (default: 8883)
 http.mqttUrl = "ssl://broker.example.com:8883"  # alternative URL, overrides mqttScheme+mqttPort+hostname

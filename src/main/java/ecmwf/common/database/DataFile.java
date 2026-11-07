@@ -153,6 +153,24 @@ public class DataFile extends DataBaseObject {
 
     private int retrievalAttempt;
 
+    /** Expected producer digest sent with retrieval requests; the durable value is in file metadata. */
+    private String retrievalIntegrityMethod;
+
+    private String retrievalIntegrityValue;
+
+    public String getRetrievalIntegrityMethod() {
+        return retrievalIntegrityMethod;
+    }
+
+    public String getRetrievalIntegrityValue() {
+        return retrievalIntegrityValue;
+    }
+
+    public void setRetrievalIntegrity(final String method, final String value) {
+        retrievalIntegrityMethod = method;
+        retrievalIntegrityValue = value;
+    }
+
     /** The transfer group. */
     protected TransferGroup transferGroup;
 

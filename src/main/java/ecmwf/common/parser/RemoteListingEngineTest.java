@@ -35,6 +35,10 @@ public class RemoteListingEngineTest {
         testMetadata(engine);
         testPreviewConfig(engine);
         testHttpMetadata();
+        testNotificationProfiles();
+        testMqttNotificationListing("script");
+        testMqttNotificationListing("wis2");
+        testMqttNotificationListing("wis2", true);
 
         System.out.println("====================================");
         System.out.println("ALL TESTS COMPLETED");
@@ -390,6 +394,304 @@ public class RemoteListingEngineTest {
 
         for (FtpParser.FileEntry e : entries) {
             System.out.println("name=" + e.name + ", size=" + e.size + ", time=" + e.time + ", link=" + e.link);
+        }
+    }
+
+    private static void testNotificationProfiles() throws Exception {
+        var profile = ecmwf.common.ectrans.notification.NotificationProfiles.resolve("wis2");
+        require(ecmwf.common.ectrans.notification.NotificationProfiles.resolve("script") == null,
+                "Default script interpretation must remain independent of profile discovery");
+        expectIOException(() -> ecmwf.common.ectrans.notification.NotificationProfiles.resolve("missing"));
+        var json = new com.fasterxml.jackson.databind.ObjectMapper();
+        var wnm = json.readTree(wis2Message());
+        var topic = "origin/a/wis2/fr/example/data/core/weather";
+        var first = profile.decode(topic, json.writeValueAsBytes(wnm));
+        require(first.size() == 5 && first.filename().equals("file.txt")
+                && first.notification().integrity().method().equals("SHA-512"),
+                "WIS2 fields must become retrieval metadata without changing the digest algorithm");
+        var relay = wnm.deepCopy();
+        ((com.fasterxml.jackson.databind.node.ObjectNode) relay).put("id", "another-broker-message");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) relay.path("properties")).put("global-cache", "cache-one");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) relay.path("links").get(0)).put("href",
+                "https://mirror/file");
+        var second = profile.decode("cache/a/wis2/fr/example/data/core/weather", json.writeValueAsBytes(relay));
+        require(first.notification().uniqueName().equals(second.notification().uniqueName()),
+                "Broker IDs, cache topics and mirror URLs must not create duplicate file versions");
+        var update = wnm.deepCopy();
+        var updateLinks = (com.fasterxml.jackson.databind.node.ArrayNode) update.path("links");
+        updateLinks.addObject().put("rel", "update").put("href", "https://provider/update").put("length", 5);
+        ((com.fasterxml.jackson.databind.node.ObjectNode) update.path("properties")).put("pubtime",
+                "2026-11-07T14:00:01Z");
+        var corrected = profile.decode(topic, json.writeValueAsBytes(update));
+        require(corrected.href().endsWith("/update")
+                && !first.notification().uniqueName().equals(corrected.notification().uniqueName()),
+                "Update links take precedence and later publications have distinct version identities");
+        var invalid = wnm.deepCopy();
+        ((com.fasterxml.jackson.databind.node.ObjectNode) invalid.path("properties")).put("pubtime", "not-a-date");
+        expectIOException(() -> profile.decode(topic, json.writeValueAsBytes(invalid)));
+        expectIOException(() -> profile.decode("other/topic", json.writeValueAsBytes(wnm)));
+        expectIOException(
+                () -> profile.decode("cache/a/wis2/fr/example/data/core/weather", json.writeValueAsBytes(wnm)));
+        expectIOException(() -> profile.decode(topic, "{} {}".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        var badDigest = wnm.deepCopy();
+        ((com.fasterxml.jackson.databind.node.ObjectNode) badDigest.path("properties").path("integrity")).put("method",
+                "unsupported");
+        expectIOException(() -> profile.decode(topic, json.writeValueAsBytes(badDigest)));
+        var noLength = wnm.deepCopy();
+        ((com.fasterxml.jackson.databind.node.ObjectNode) noLength.path("links").get(0)).remove("length");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) noLength.path("properties")).remove("integrity");
+        var unspecified = profile.decode(topic, json.writeValueAsBytes(noLength));
+        require(unspecified.size() == -1 && unspecified.notification().integrity() == null,
+                "Missing length and integrity must remain unknown rather than becoming invented values");
+        var fractionalLength = wnm.deepCopy();
+        ((com.fasterxml.jackson.databind.node.ObjectNode) fractionalLength.path("links").get(0)).put("length", 5.5);
+        expectIOException(() -> profile.decode(topic, json.writeValueAsBytes(fractionalLength)));
+        var inline = wnm.deepCopy();
+        ((com.fasterxml.jackson.databind.node.ObjectNode) inline.path("properties")).putObject("content")
+                .put("encoding", "base64").put("value", "aGVsbG8=");
+        require(profile.decode(topic, json.writeValueAsBytes(inline)).body().equals("aGVsbG8="),
+                "Valid inline content must retain its complete bytes");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) inline.path("links").get(0)).remove("length");
+        require(profile.decode(topic, json.writeValueAsBytes(inline)).size() == 5,
+                "Inline bytes supply a missing length without fetching the retrieval URL");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) inline.path("properties").path("content")).put("value",
+                "d3Jvbmc=");
+        expectIOException(() -> profile.decode(topic, json.writeValueAsBytes(inline)));
+        first.notification().integrity().verifyContent("hello".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        expectIOException(() -> first.notification().integrity()
+                .verifyContent("wrong".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        for (var algorithm : new String[] { "SHA-256", "SHA-384" }) {
+            var content = "hello".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            var expected = java.util.Base64.getEncoder()
+                    .encodeToString(java.security.MessageDigest.getInstance(algorithm).digest(content));
+            new ecmwf.common.ectrans.notification.AcquisitionNotification.Integrity(algorithm, expected)
+                    .verifyContent(content);
+        }
+
+        var longIdentity = "wis2/example/" + "x".repeat(2000) + "/file.txt";
+        var full = new ecmwf.common.ectrans.notification.AcquisitionNotification("wis2", "id", longIdentity,
+                "2026-11-07T14:00:00+00:00", topic, "origin", "canonical", first.notification().integrity());
+        var metadata = new java.util.LinkedHashMap<String, String>();
+        for (var pair : full.metadata().split(",")) {
+            var parts = pair.split("=", 2);
+            require(parts[0].length() <= 25 && parts[1].length() <= 255,
+                    "Notification metadata must fit existing database columns");
+            metadata.put(parts[0], parts[1]);
+        }
+        var restored = ecmwf.common.ectrans.notification.AcquisitionNotification.fromMetadata(metadata);
+        require(restored.identity().equals(longIdentity) && restored.integrity().equals(full.integrity()),
+                "Persistence must preserve the full identity and full expected digest");
+        metadata.remove("notify.0");
+        expectIOException(() -> ecmwf.common.ectrans.notification.AcquisitionNotification.fromMetadata(metadata));
+        expectIOException(() -> ecmwf.common.ectrans.notification.AcquisitionNotification.decode("bnVsbA=="));
+        var envelope = ecmwf.common.ectrans.notification.AcquisitionListing.format("file entry", "aGVsbG8=", "", full);
+        var listing = ecmwf.common.ectrans.notification.AcquisitionListing.parse(envelope);
+        require(listing.notification().equals(full) && listing.body().equals("aGVsbG8="),
+                "The Mover-to-Master listing envelope must preserve attribution and inline bytes");
+        var empty = ecmwf.common.ectrans.notification.AcquisitionListing
+                .parse(ecmwf.common.ectrans.notification.AcquisitionListing.format("file entry", "", "", full));
+        var absent = ecmwf.common.ectrans.notification.AcquisitionListing
+                .parse(ecmwf.common.ectrans.notification.AcquisitionListing.format("file entry", null, "", full));
+        require("".equals(empty.body()) && absent.body() == null,
+                "An empty inline file must remain distinct from a URL retrieval");
+        expectIOException(
+                () -> ecmwf.common.ectrans.notification.AcquisitionListing.parse(envelope.replace(";n1:", ";n2:")));
+        var legacy = ecmwf.common.ectrans.notification.AcquisitionListing.parse("file entry [aGVsbG8=;e30=]");
+        require(legacy.notification() == null && legacy.body().equals("aGVsbG8=") && legacy.message().equals("e30="),
+                "Legacy script body/message listings must retain their original interpretation");
+
+        var root = java.nio.file.Files.createTempDirectory("ecpds-profile-spi-");
+        var metaInf = java.nio.file.Files.createDirectory(root.resolve("META-INF"));
+        var services = java.nio.file.Files.createDirectory(metaInf.resolve("services"));
+        var descriptor = services.resolve(ecmwf.common.ectrans.notification.NotificationProfile.class.getName());
+        try {
+            java.nio.file.Files.writeString(descriptor, FixtureProfile.class.getName());
+            try (var loader = new java.net.URLClassLoader(new java.net.URL[] { root.toUri().toURL() },
+                    RemoteListingEngineTest.class.getClassLoader())) {
+                require(ecmwf.common.ectrans.notification.NotificationProfiles.resolve("fixture", loader)
+                        .decode("topic", new byte[0]) == null,
+                        "External stateless profiles must be discovered and invoked through the SPI");
+            }
+        } finally {
+            java.nio.file.Files.deleteIfExists(descriptor);
+            java.nio.file.Files.deleteIfExists(services);
+            java.nio.file.Files.deleteIfExists(metaInf);
+            java.nio.file.Files.deleteIfExists(root);
+        }
+        System.out.println("Notification profile, identity, integrity and persistence checks passed");
+    }
+
+    public static final class FixtureProfile implements ecmwf.common.ectrans.notification.NotificationProfile {
+        @Override
+        public String name() {
+            return "fixture";
+        }
+
+        @Override
+        public Result decode(String topic, byte[] payload) {
+            return null;
+        }
+    }
+
+    private static String wis2Message() throws Exception {
+        var digest = java.util.Base64.getEncoder().encodeToString(java.security.MessageDigest.getInstance("SHA-512")
+                .digest("hello".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        return """
+                {"id":"notification-one","type":"Feature","properties":{
+                  "data_id":"wis2/example/file.txt","pubtime":"2026-11-07T14:00:00Z",
+                  "integrity":{"method":"sha512","value":"%s"}},
+                  "links":[{"rel":"canonical","href":"https://provider/file.txt","length":5}]}
+                """.formatted(digest);
+    }
+
+    private static void testMqttNotificationListing(String profile) throws Exception {
+        testMqttNotificationListing(profile, false);
+    }
+
+    private static void testMqttNotificationListing(String profile, boolean emptyInline) throws Exception {
+        var topic = "origin/a/wis2/fr/example/data/core/weather";
+        var wnm = new com.fasterxml.jackson.databind.ObjectMapper().readTree(wis2Message());
+        if (emptyInline) {
+            var properties = (com.fasterxml.jackson.databind.node.ObjectNode) wnm.path("properties");
+            properties.remove("integrity");
+            properties.putObject("content").put("encoding", "base64").put("value", "");
+            ((com.fasterxml.jackson.databind.node.ObjectNode) wnm.path("links").get(0)).remove("length");
+        }
+        var payload = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsBytes(wnm);
+        try (var server = new java.net.ServerSocket(0, 1, java.net.InetAddress.getLoopbackAddress())) {
+            server.setSoTimeout(30000);
+            var finished = new java.util.concurrent.CompletableFuture<Void>();
+            var broker = new Thread(() -> {
+                try (var socket = server.accept()) {
+                    socket.setSoTimeout(30000);
+                    var in = socket.getInputStream();
+                    var out = socket.getOutputStream();
+                    readMqttPacket(in);
+                    writeMqttPacket(out, 0x20, new byte[] { 0, 0, 0 });
+                    var subscribe = readMqttPacket(in);
+                    writeMqttPacket(out, 0x90, new byte[] { subscribe[1], subscribe[2], 0, 0 });
+                    var message = new java.io.ByteArrayOutputStream();
+                    var topicBytes = topic.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                    message.write(topicBytes.length >> 8);
+                    message.write(topicBytes.length & 255);
+                    message.write(topicBytes);
+                    message.write(0);
+                    message.write(payload);
+                    writeMqttPacket(out, 0x30, message.toByteArray());
+                    while (true) {
+                        var packet = readMqttPacket(in);
+                        if ((packet[0] & 0xf0) == 0xe0)
+                            break;
+                        if ((packet[0] & 0xf0) == 0xc0)
+                            writeMqttPacket(out, 0xd0, new byte[0]);
+                    }
+                    finished.complete(null);
+                } catch (Throwable e) {
+                    finished.completeExceptionally(e);
+                }
+            }, "notification-test-broker");
+            broker.setDaemon(true);
+            broker.start();
+            var setup = new ecmwf.common.ectrans.ECtransSetup("http",
+                    ecmwf.common.ectrans.ECtransSetup.SEPARATOR
+                            + "return { http: { mqttHref: mqttPayload.links[0].href,"
+                            + "mqttSize: 5, mqttTime: Date.parse(mqttPayload.properties.pubtime),"
+                            + "mqttAlternativeName: 'script-file.txt' } };");
+            setup.set("mqttMode", "yes");
+            setup.set("mqttProfile", profile);
+            setup.set("mqttUrl", "tcp://127.0.0.1:" + server.getLocalPort());
+            setup.set("sslValidation", "yes");
+            setup.set("mqttAwait", "3s");
+            setup.set("mqttQos", 0);
+            setup.set("ftpLike", "yes");
+            setup.set("mqttAddPayload", "yes");
+            if (profile.equals("script")) {
+                ecmwf.common.technical.ScriptManager.exec(setup.getScriptLanguage(),
+                        Map.of("mqttPayload",
+                                new com.fasterxml.jackson.databind.ObjectMapper().readValue(payload, Map.class),
+                                "mqttTopic", topic),
+                        setup.getScriptContent(), value -> {
+                            require(setup.getString(ecmwf.common.ectrans.ECtransOptions.HOST_HTTP_MQTT_HREF, value)
+                                    .equals("https://provider/file.txt"),
+                                    "Fixture script must resolve the notification URL");
+                            return null;
+                        });
+            }
+            var module = new ecmwf.common.ectrans.module.HttpModule();
+            try {
+                module.connect(":@127.0.0.1", setup);
+                var results = module.listAsStringArray(topic, null);
+                require(results.length == 1 && !results[0].startsWith("err:"),
+                        profile + " MQTT callback must emit a file listing: " + java.util.Arrays.toString(results));
+                var listing = ecmwf.common.ectrans.notification.AcquisitionListing.parse(results[0]);
+                var entries = FtpParser.parseDir(null, "UNIX", null, null, "en", null, "UTC",
+                        new String[] { listing.line() });
+                require(entries.length == 1 && entries[0].size == (emptyInline ? 0 : 5),
+                        profile + " listing must be understood by the acquisition parser");
+                if (emptyInline)
+                    require("".equals(listing.body()),
+                            "MQTT must preserve an empty inline file without fetching its URL");
+                require(java.util.Arrays.equals(java.util.Base64.getDecoder().decode(listing.message()), payload),
+                        "Optional raw payload attachment must be unchanged");
+                require(profile.equals("wis2") ? listing.notification() != null && !results[0].contains("script-file")
+                        : listing.notification() == null && results[0].contains("script-file.txt"),
+                        "WIS2 is explicitly selected and default scripts retain their extraction behaviour");
+                finished.get(5, java.util.concurrent.TimeUnit.SECONDS);
+                broker.join(1000);
+                require(!broker.isAlive(), "Test broker must close after disconnect");
+            } finally {
+                module.close();
+            }
+        }
+        System.out.println(profile + " MQTT transport-to-listing checks passed");
+    }
+
+    private static byte[] readMqttPacket(java.io.InputStream in) throws Exception {
+        int header = in.read();
+        if (header < 0)
+            throw new java.io.EOFException();
+        int length = 0;
+        int multiplier = 1;
+        for (int i = 0; i < 4; i++) {
+            int next = in.read();
+            if (next < 0)
+                throw new java.io.EOFException();
+            length += (next & 127) * multiplier;
+            if ((next & 128) == 0)
+                break;
+            multiplier *= 128;
+        }
+        if (length > 1024 * 1024)
+            throw new java.io.IOException("Test MQTT packet too large");
+        var body = in.readNBytes(length);
+        var packet = new byte[body.length + 1];
+        packet[0] = (byte) header;
+        System.arraycopy(body, 0, packet, 1, body.length);
+        return packet;
+    }
+
+    private static void writeMqttPacket(java.io.OutputStream out, int header, byte[] body) throws Exception {
+        out.write(header);
+        int remaining = body.length;
+        do {
+            int digit = remaining % 128;
+            remaining /= 128;
+            out.write(remaining > 0 ? digit | 128 : digit);
+        } while (remaining > 0);
+        out.write(body);
+        out.flush();
+    }
+
+    @FunctionalInterface
+    private interface CheckedAction {
+        void run() throws Exception;
+    }
+
+    private static void expectIOException(CheckedAction action) throws Exception {
+        try {
+            action.run();
+            throw new AssertionError("Invalid notification must fail explicitly");
+        } catch (java.io.IOException expected) {
         }
     }
 }

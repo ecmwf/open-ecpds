@@ -63,6 +63,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.rmi.RemoteException;
+import java.security.DigestInputStream;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -135,6 +136,7 @@ import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.ECtransSize;
 import ecmwf.common.ectrans.NotificationInterface;
 import ecmwf.common.ectrans.TransferModule;
+import ecmwf.common.ectrans.notification.AcquisitionNotification.Integrity;
 import ecmwf.common.mbean.MBeanManager;
 import ecmwf.common.monitor.MonitorCallback;
 import ecmwf.common.monitor.MonitorException;
@@ -2459,6 +2461,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final var fileName = getPath(dataFile);
             file = GenericFile.getGenericFile(getRepository(), fileName);
             if (!OPERATIONAL) {
+                if (dataFile.getRetrievalIntegrityMethod() != null || dataFile.getRetrievalIntegrityValue() != null)
+                    throw new IOException("Cannot verify notification integrity in simulated retrieval mode");
                 // This is NOT an operational mover. First check if we should
                 // not simulate an error!
                 if (errorsFrequency > 0) {
@@ -2500,6 +2504,11 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             // This is an operational system, let's process the download of the
             // DataFile!
             _log.debug("File to download: {}", file.getAbsolutePath());
+            final var integrity = dataFile.getRetrievalIntegrityMethod() == null
+                    && dataFile.getRetrievalIntegrityValue() == null ? null
+                            : new Integrity(dataFile.getRetrievalIntegrityMethod(),
+                                    dataFile.getRetrievalIntegrityValue());
+            final var expectedDigest = integrity == null ? null : integrity.newDigest();
             final var ectransIn = new ECtransInputStream(new Host[] { hostForSource }, dataFile, 0);
             final var sourceFileSize = ectransIn.getSourceFileSize();
             InputStream get = ectransIn; // We need to have a standard input stream for buffering and more!
@@ -2532,6 +2541,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                         _log.warn("Cannot init {}", cheksumAlgorithm, t);
                     }
                 }
+                if (expectedDigest != null)
+                    get = new DigestInputStream(get, expectedDigest);
                 final var completed = new StringBuilder("0");
                 final long delta;
                 if ((delta = Cnf.durationAt("RetrievalInputStream", "monitored", -1)) > 0) {
@@ -2581,6 +2592,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     });
                 }
                 file.receiveFile(get, sourceFileSize);
+                if (integrity != null)
+                    integrity.verify(expectedDigest.digest());
                 completed.setCharAt(0, '1');
             } finally {
                 // Let's make sure the download is removed from the download

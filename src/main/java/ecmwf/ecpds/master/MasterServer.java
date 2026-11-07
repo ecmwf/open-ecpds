@@ -238,6 +238,8 @@ import ecmwf.common.ecaccess.NativeAuthenticationProvider;
 import ecmwf.common.ecaccess.StorageRepository;
 import ecmwf.common.ecaccess.TicketRepository;
 import ecmwf.common.ectrans.ECtransOptions;
+import ecmwf.common.ectrans.notification.AcquisitionListing;
+import ecmwf.common.ectrans.notification.AcquisitionNotification;
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ftp.FtpParser;
 import ecmwf.common.ftp.FtpParser.FileEntry;
@@ -12589,8 +12591,8 @@ public final class MasterServer extends ECaccessProvider
              */
             private void _parseEntry(final ECpdsBase base, final AcquisitionResult ar, final Host copy,
                     final String namePattern, final String currentPath, final Destination destination,
-                    final FileEntry entry, final String body, final String message)
-                    throws ScriptException, IOException {
+                    final FileEntry entry, final String body, final String message,
+                    final AcquisitionNotification notification) throws ScriptException, IOException {
                 String outcome;
                 if (entry.exception == null) {
                     // File entry found with no error
@@ -12613,7 +12615,7 @@ public final class MasterServer extends ECaccessProvider
                                 if ("".equals(namePattern) || entry.name.matches(namePattern)) {
                                     // It does match the required pattern!
                                     outcome = _processValidEntry(base, ar, copy, currentPath, destination, entry,
-                                            symlink, body, message);
+                                            symlink, body, message, notification);
                                 } else {
                                     outcome = "not-selected: wrong pattern";
                                 }
@@ -12660,7 +12662,8 @@ public final class MasterServer extends ECaccessProvider
              */
             String _processValidEntry(final ECpdsBase base, final AcquisitionResult ar, final Host copy,
                     final String currentPath, final Destination destination, final FileEntry entry,
-                    final boolean symlink, final String body, final String message) throws ScriptException {
+                    final boolean symlink, final String body, final String message,
+                    final AcquisitionNotification notification) throws ScriptException, IOException {
                 // Check if this is an absolute or relative entry name
                 final var name = Format.cleanTextContent(entry.name);
                 final var lower = name.toLowerCase();
@@ -12746,10 +12749,12 @@ public final class MasterServer extends ECaccessProvider
                         // different file time do we consider it as a single
                         // file or as different files? If we don't know the time
                         // then we just use the original name.
-                        final var uniqueName = (_getBoolean(HOST_ACQUISITION_UNIQUE_BY_TARGET_ONLY) ? ""
-                                : _getBoolean(HOST_ACQUISITION_USE_TARGET_AS_UNIQUE_NAME) ? initialTarget : original)
-                                + (entry.time == -1 || !_getBoolean(HOST_ACQUISITION_UNIQUE_BY_NAME_AND_TIME) ? ""
-                                        : "." + entry.time);
+                        final var uniqueName = notification != null ? notification.uniqueName()
+                                : (_getBoolean(HOST_ACQUISITION_UNIQUE_BY_TARGET_ONLY) ? ""
+                                        : _getBoolean(HOST_ACQUISITION_USE_TARGET_AS_UNIQUE_NAME) ? initialTarget
+                                                : original)
+                                        + (entry.time == -1 || !_getBoolean(HOST_ACQUISITION_UNIQUE_BY_NAME_AND_TIME)
+                                                ? "" : "." + entry.time);
                         if ("queue".equals(action)) {
                             // This is a queue request. Check if the file is not
                             // already in the database?
@@ -12820,6 +12825,19 @@ public final class MasterServer extends ECaccessProvider
                                     metadata = _replaceDate("$dirdate", metadata, true);
                                     metadata = _replaceDate("$date", metadata, false);
                                     metadata = Format.replaceAll(metadata, "$timestamp", entry.time / 1000L * 1000L);
+                                    final var hasInlineBody = notification == null ? isNotEmpty(body) : body != null;
+                                    final String fileMetadata;
+                                    if (notification != null) {
+                                        if (_getBoolean(HOST_ACQUISITION_NORETRIEVAL))
+                                            throw new IOException(
+                                                    "Notification profiles require acquisition.noRetrieval=no");
+                                        fileMetadata = (isEmpty(metadata) ? "" : metadata + ",")
+                                                + notification.metadata();
+                                        if (hasInlineBody && notification.integrity() != null)
+                                            notification.integrity().verifyContent(Base64.getDecoder().decode(body));
+                                    } else {
+                                        fileMetadata = metadata;
+                                    }
                                     final long dataFileId;
                                     final long notificationId;
                                     if (!isEmpty(message)) {
@@ -12839,13 +12857,13 @@ public final class MasterServer extends ECaccessProvider
                                     } else {
                                         notificationId = -1;
                                     }
-                                    if (isEmpty(body)) {
+                                    if (!hasInlineBody) {
                                         // Retrieval is going to be scheduled
                                         dataFileId = ECpdsClient.put(
                                                 "Scheduled from Acquisition Host=" + _host.getName() + " ("
                                                         + _host.getNickname() + ") on DataMover=" + ar.server.getName()
                                                         + " for Destination=" + _desName,
-                                                _host.getLogin(), destination, _host.getName(), metadata, original,
+                                                _host.getLogin(), destination, _host.getName(), fileMetadata, original,
                                                 uniqueName, effectiveTarget, entry.time,
                                                 entry.size >= 0 ? entry.size : -1, _getBoolean(HOST_ACQUISITION_EVENT),
                                                 _getInt(HOST_ACQUISITION_PRIORITY),
@@ -12865,7 +12883,7 @@ public final class MasterServer extends ECaccessProvider
                                                 "Received from Acquisition Host=" + _host.getName() + " ("
                                                         + _host.getNickname() + ") on DataMover=" + ar.server.getName()
                                                         + " for Destination=" + _desName,
-                                                _host.getLogin(), destination, _host.getName(), metadata, original,
+                                                _host.getLogin(), destination, _host.getName(), fileMetadata, original,
                                                 uniqueName, effectiveTarget, entry.time,
                                                 entry.size >= 0 ? entry.size : -1, _getBoolean(HOST_ACQUISITION_EVENT),
                                                 _getInt(HOST_ACQUISITION_PRIORITY),
@@ -12939,6 +12957,8 @@ public final class MasterServer extends ECaccessProvider
                 /** The message. */
                 final String _message;
 
+                final AcquisitionNotification _notification;
+
                 /**
                  * Instantiates a new list thread.
                  *
@@ -12965,7 +12985,8 @@ public final class MasterServer extends ECaccessProvider
                  */
                 ListThread(final ExecutorManager<ListThread> manager, final ECpdsBase base, final AcquisitionResult ar,
                         final Host copy, final String namePattern, final String currentPath,
-                        final Destination destination, final FileEntry entry, final String body, final String message) {
+                        final Destination destination, final FileEntry entry, final String body, final String message,
+                        final AcquisitionNotification notification) {
                     super(manager);
                     _base = base;
                     _ar = ar;
@@ -12976,6 +12997,7 @@ public final class MasterServer extends ECaccessProvider
                     _entry = entry;
                     _body = body;
                     _message = message;
+                    _notification = notification;
                 }
 
                 /**
@@ -12988,7 +13010,8 @@ public final class MasterServer extends ECaccessProvider
                  */
                 @Override
                 public void process() throws ScriptException, IOException {
-                    _parseEntry(_base, _ar, _copy, _namePattern, _currentPath, _destination, _entry, _body, _message);
+                    _parseEntry(_base, _ar, _copy, _namePattern, _currentPath, _destination, _entry, _body, _message,
+                            _notification);
                 }
             }
 
@@ -13134,27 +13157,13 @@ public final class MasterServer extends ECaccessProvider
                                     // This was an error so we just report it!
                                     _add(entry);
                                 } else {
-                                    // If we have a body and message content then let's extract them!
-                                    final var pattern = Pattern.compile("^(.*)\\s\\[(.+)]$");
-                                    final var matcher = pattern.matcher(entry);
-                                    final String newLine;
-                                    final String body;
-                                    final String message;
-                                    if (matcher.matches()) {
-                                        newLine = matcher.group(1); // text before " ["
-                                        final var groupContent = matcher.group(2); // inside the brackets
-                                        final var bodyAndMessage = groupContent.split(";", 2);
-                                        if (bodyAndMessage.length == 2) {
-                                            body = bodyAndMessage[0].isEmpty() ? null : bodyAndMessage[0];
-                                            message = bodyAndMessage[1];
-                                        } else {
-                                            body = null;
-                                            message = groupContent;
-                                        }
-                                    } else {
-                                        newLine = entry;
-                                        body = null;
-                                        message = null;
+                                    final AcquisitionListing listing;
+                                    try {
+                                        listing = AcquisitionListing.parse(entry);
+                                    } catch (final IOException e) {
+                                        _add("err:Invalid acquisition notification metadata");
+                                        _log.warn("Invalid acquisition notification metadata", e);
+                                        continue;
                                     }
                                     final var entries = FtpParser.parseDir(_getString(HOST_ACQUISITION_REGEX_FORMAT),
                                             _getString(HOST_ACQUISITION_SYSTEM_KEY).toUpperCase(),
@@ -13162,7 +13171,8 @@ public final class MasterServer extends ECaccessProvider
                                             _getString(HOST_ACQUISITION_RECENT_DATE_FORMAT),
                                             _getString(HOST_ACQUISITION_SERVER_LANGUAGE_CODE).toLowerCase(),
                                             _getString(HOST_ACQUISITION_SHORT_MONTH_NAMES),
-                                            _getString(HOST_ACQUISITION_SERVER_TIME_ZONE_ID), new String[] { newLine });
+                                            _getString(HOST_ACQUISITION_SERVER_TIME_ZONE_ID),
+                                            new String[] { listing.line() });
                                     // Did we find anything?
                                     if (entries.length == 0) {
                                         continue;
@@ -13174,10 +13184,11 @@ public final class MasterServer extends ECaccessProvider
                                         }
                                         // Let's start the listing!
                                         manager.put(new ListThread(manager, base, ar, copy, namePattern, currentPath,
-                                                destination, entries[0], body, message));
+                                                destination, entries[0], listing.body(), listing.message(),
+                                                listing.notification()));
                                     } else {
                                         _parseEntry(base, ar, copy, namePattern, currentPath, destination, entries[0],
-                                                body, message);
+                                                listing.body(), listing.message(), listing.notification());
                                     }
                                     filesCount++;
                                 }

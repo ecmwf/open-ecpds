@@ -28,10 +28,14 @@ package ecmwf.ecpds.master.plugin.http.dao.transfer;
 
 import static ecmwf.ecpds.master.DataFilePath.getPath;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import ecmwf.common.database.DataBaseObject;
+import ecmwf.common.ectrans.notification.AcquisitionNotification;
 import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.plugin.http.dao.OjbImplementedBean;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
@@ -428,6 +432,19 @@ public class DataFileBean extends ModelBeanBase implements DataFile, OjbImplemen
     @Override
     public Collection<MetaData> getMetaData() throws DataFileException {
         return MetaDataHome.findByDataFile(this);
+    }
+
+    @Override
+    public Map<String, String> getNotificationDetails() throws DataFileException {
+        final var metadata = new LinkedHashMap<String, String>();
+        for (final var value : getMetaData())
+            metadata.put(value.getName(), value.getValue());
+        try {
+            final var notification = AcquisitionNotification.fromMetadata(metadata);
+            return notification == null ? Map.of() : notification.details();
+        } catch (final IOException e) {
+            return Map.of("Metadata", "Invalid notification metadata; retrieval is blocked");
+        }
     }
 
     /**
