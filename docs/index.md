@@ -31,6 +31,18 @@ can use the same acquisition, dissemination and portal services to exchange thei
 own datasets, automate partner delivery and bridge on-premises and cloud storage.
 Domain-specific integrations, such as WMO WIS2, are optional.
 
+## OpenECPDS in ten minutes
+
+Watch a narrated introduction to the standalone environment, transfer controls,
+custom MQTT notifications, S3 access and the Monitor UI.
+
+<video controls playsinline preload="metadata" width="100%" aria-label="OpenECPDS: a ten-minute narrated introduction">
+  <source src="https://github.com/user-attachments/assets/6e59092f-9510-4ed5-8dd5-173f7e58e3c7" type="video/mp4">
+  Your browser does not support embedded video.
+</video>
+
+[Watch or download the video](https://github.com/user-attachments/assets/6e59092f-9510-4ed5-8dd5-173f7e58e3c7).
+
 ## Why OpenECPDS
 
 <div class="grid cards" markdown>
