@@ -22,9 +22,11 @@ It delivers three strategic services from a single system:
 
 Built on container technologies, it scales from a laptop to hundreds of systems managing petabytes of data. It supports a wide range of protocols (FTP, SFTP, HTTP/S, WebDAV, S3, GCS, Azure Blob, MQTT/WIS2, …) and integrates with object storage, MQTT brokers, and Kubernetes.
 
-### Live Earth — see OpenECPDS in action
+### OpenECPDS in ten minutes — from first launch to real workflows
 
-https://github.com/user-attachments/assets/ebc582f1-c86e-4416-996f-1cec4e1a9059
+A narrated introduction to the standalone environment, transfer controls, custom MQTT notifications, S3 access and the Monitor UI.
+
+https://github.com/user-attachments/assets/6e59092f-9510-4ed5-8dd5-173f7e58e3c7
 
 ---
 
