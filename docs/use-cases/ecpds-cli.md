@@ -115,13 +115,15 @@ use from containers, CI pipelines, or any unprivileged environment.
     process listings. Consider setting it via an environment variable or reading from a
     secrets manager and passing it programmatically.
 
-### ECUSER / privileged-port authentication (legacy)
+<a id="ecuser-privileged-port-authentication-legacy"></a>
 
-When `-user`/`-pass` are **not** provided, the CLI falls back to the legacy mode: the
+### ECUSER / privileged-port authentication
+
+When `-user`/`-pass` are **not** provided, the CLI uses ECUSER authentication: the
 server identifies the caller by their Unix username (obtained from `getpwuid`) and
 verifies that the connection originated from a **privileged port** (< 1024). This mode
 is only available to privileged processes (typically those running as `root` on a trusted
-host). It is the original ECMWF production mode and requires no password.
+host). It requires no password.
 
 ```bash
 # Must be run as root or with CAP_NET_BIND_SERVICE on a trusted host

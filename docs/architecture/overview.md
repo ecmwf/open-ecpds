@@ -56,8 +56,8 @@ configured, operated and evolved according to its own workload and availability
 requirements, without depending on the operation or release schedule of another
 ECPDS service.
 
-Software upgrades, infrastructure maintenance, configuration changes and
-potentially disruptive performance tests can consequently be scheduled
+Infrastructure maintenance, configuration changes and potentially disruptive
+performance tests can consequently be scheduled
 independently. There is no single global ECPDS maintenance window that all three
 services must use. For example, a maintenance opportunity between DISS's main
 dissemination windows may be unsuitable for ACQ's continuous acquisition workload;

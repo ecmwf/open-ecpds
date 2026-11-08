@@ -4,9 +4,6 @@ The OpenECPDS Monitor is a web-based management interface for operators and admi
 It provides real-time visibility into destinations, hosts, data files, transfer history,
 and system health, as well as management of users and configuration.
 
-!!! note
-	This is only a limited overview of the Monitoring UI and its capabilities. The documentation will be expanded soon to cover all available pages, using real-world examples and up-to-date screenshots to provide a more comprehensive view of the application's features and the information it can present.
-
 Three accounts are pre-configured in the standalone container:
 
 | Account | Password | Role |

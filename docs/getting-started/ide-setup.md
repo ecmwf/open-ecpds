@@ -152,8 +152,7 @@ Collector.
 
 The development overrides in `run/etc/ecpds/master/ecmwf.properties` enable
 `openTelemetryEnabled=yes` and `journalEnabled=yes` in `[OperationalEvents]`.
-Production configuration defaults remain unchanged. Traces and metrics remain
-separately controlled by the normal Master settings.
+Traces and metrics are separately controlled by the Master settings.
 
 Start the development database first and ensure it has the
 `OPERATIONAL_EVENT` journal table. Start only one Master for the development

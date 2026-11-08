@@ -107,7 +107,7 @@ The report controls below the table generate a CSV for notices created in the se
 filtered by status. The on-page summary shows status totals and the most affected products. The CSV includes affected
 product/cycle rows; message history and recipient addresses are optional, and addresses are excluded by default.
 
-Deploy the Master and the Monitors together, as the Monitor calls new Master operations.
+Deploy matching Master and Monitor versions, as the Monitor calls Master operations.
 
 ## From a monitoring page
 

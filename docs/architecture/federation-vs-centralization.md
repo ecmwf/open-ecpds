@@ -86,7 +86,7 @@ as ECMWF does for the current ECPDS deployment):
 **Advantages of a more federated operational model** (each organisation running its own
 OpenECPDS instance, all built on the same open-source platform and standard protocols):
 
-- Local autonomy: an organisation controls its own upgrade cadence, configuration,
+- Local autonomy: an organisation controls its own maintenance schedule, configuration,
   scaling, and data residency.
 - Isolation: operational issues, load spikes, or outages in one organisation's instance
   do not directly affect another's.

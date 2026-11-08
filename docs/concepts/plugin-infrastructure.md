@@ -339,9 +339,8 @@ Use a unique lowercase alphanumeric module name starting with a letter, and
 alphanumeric option names starting with a letter.
 
 The ECaccess extension uses this mechanism for its four `ecaccess.*` options.
-Their property names and defaults are unchanged, but their definitions and help
-are absent from the catalogue when the extension is not installed. Existing
-stored properties are not migrated or deleted by discovery.
+Their definitions and help are available in the catalogue when the extension is
+installed. Discovery does not modify stored properties.
 
 ## Notification profiles
 

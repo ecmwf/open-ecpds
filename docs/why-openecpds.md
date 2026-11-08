@@ -44,7 +44,7 @@ OpenECPDS originated from operational needs at [ECMWF](https://www.ecmwf.int/),
 where large-scale,
 time-sensitive,
 international data exchange is part of daily production.
-It is now available as open source,
+It is available as open source,
 giving organisations access to the same architectural ideas that support demanding real-world
 workflows in meteorology,
 science,

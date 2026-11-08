@@ -161,9 +161,9 @@ The demo reads **`mqttEventJson`**, a JSON string supplied as a script binding
 IDs are strings except `size`; timestamps are UTC ISO-8601.
 The target filename is relative to the destination; the script adds the destination
 directory and URL-encodes each segment. This preserves spaces, Unicode and literal
-percent signs without treating quotes in filenames as JavaScript. Existing
-`$`-placeholder scripts remain supported. This binding requires updated Master
-code; database seed edits do not update existing destinations automatically.
+percent signs without treating quotes in filenames as JavaScript.
+`$`-placeholder scripts are also supported. Database seed edits do not update
+existing destinations automatically.
 
 #### Inline content for small files
 

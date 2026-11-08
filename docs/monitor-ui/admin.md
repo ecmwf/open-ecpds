@@ -269,8 +269,8 @@ and the current assessment do not survive a restart.
 
 ### Source registration and transport
 
-Updated Movers negotiate by default (`[Server] networkWeatherNegotiation=yes`).
-An explicit `no` remains a per-Mover opt-out. Negotiation alone captures nothing.
+Movers negotiate by default (`[Server] networkWeatherNegotiation=yes`).
+An explicit `no` is a per-Mover opt-out. Negotiation alone captures nothing.
 Continental routes require `[Security] rccSharedSecret` signing at every hop.
 Deploy matching Master, Monitor, local relay and Continental Mover versions.
 Sources must be registered and verified before collection can start; the

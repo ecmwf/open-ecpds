@@ -77,7 +77,7 @@ event attributes retain their formatted string representation. The `TimeStamp`
 value represents an absolute instant. In OpenTelemetry, the log record's
 top-level timestamp is set from that instant and is timezone-independent;
 backends commonly display it in UTC. The `TimeStamp` attribute itself, like
-the legacy Splunk field, is formatted without a UTC offset using the Master
+the Splunk field, is formatted without a UTC offset using the Master
 JVM's default timezone. The examples assume that timezone is UTC, so their
 attribute value and top-level timestamp show the same wall-clock time. Prefer
 the top-level OpenTelemetry timestamp for cross-service correlation; a
@@ -432,7 +432,7 @@ the corresponding environment variable. These settings are not read from
 
 Values use the same comma-separated `key=value` syntax as `OTEL_RESOURCE_ATTRIBUTES`.
 Each signal's values override matching shared keys and service defaults; other
-keys remain unchanged. An unset or empty override preserves existing behavior.
+keys retain their shared or default values. An unset or empty override has no effect.
 These are resource attributes, not log-record, metric-point or span attributes.
 Keep `service.name` and other service identity fields consistent unless intentionally
 separating services, to preserve cross-signal correlation.
@@ -596,7 +596,7 @@ rows. Re-enabling it with the same owner resumes replay.
 - **Drops:** the Monitor displays dropped/unconfirmed admissions since startup and
   the last reason; the Master logs rate-limited `TELEMETRY DROPPED` warnings.
   Counts reset on restart. Dropped events are not automatically replayed or backfilled;
-  Splunk/file output is independent and unchanged.
+  Splunk/file output is independent.
 - **Storage protection:** database durability, replication and backups remain
   essential. Protect journal payloads using the same access and retention
   controls as operational logs. Successfully acknowledged events are deleted;
@@ -626,9 +626,8 @@ resource metadata, not just message bodies. Collector limits are separate.
 Drop counters distinguish oversize, memory count/byte pressure, database count/byte
 pressure, serialization and persistence/capacity failures; the latest rejection
 includes its timestamp and serialized byte size when measurable. Memory usage is
-sampled on each refresh. Counters are historical since startup and remain after
-discard; the old combined "queue full or event oversized" reason cannot be
-retroactively split into causes.
+sampled on each refresh. Counters cover the period since startup and remain after
+discard.
 It reads cached worker statistics, at most one minute old; UI refresh does not run
 a full-table aggregate. The page refreshes every 30 seconds by
 default, with manual refresh and an option to disable automatic refresh. Warning
@@ -665,7 +664,7 @@ The audited action permanently deletes only that owner's rows and memory-queued
 admissions; other owners, Splunk logs and transfer history are untouched.
 Success immediately resets queue statistics and active delivery-failure state,
 but does not erase historical persistence failures or drop counters. Both pauses
-remain in effect. Install `discardOperationalEvents.sql` with the updated Master.
+remain in effect. The action requires the `discardOperationalEvents.sql` query.
 
 The publisher exports the eight categories listed below. Operational events
 and the Monitor's database change log are separate records.
@@ -699,7 +698,7 @@ category, capturing relevant attributes such as timestamps, file identifiers, pr
 statuses, and transfer details.
 
 !!! note
-    All duration values are measured in **milliseconds**. Timestamps in the legacy Splunk
+    All duration values are measured in **milliseconds**. Timestamps in the Splunk
     output and timestamp-valued attributes are formatted in the Master JVM's default
     timezone, without an explicit offset. All timestamps are formatted as
     `yyyy-MM-dd HH:mm:ss.fffffffff`, where `yyyy` is the 4-digit year, `MM` is the

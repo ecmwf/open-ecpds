@@ -14,8 +14,8 @@ active-mode fallback, and stream readiness. Command timing records contain the
 command verb, not credentials; the existing full dialogue can still contain
 sensitive paths or server replies.
 
-The `Ftp timeout on STOR` message remains unchanged, but its exception cause now
-preserves the original socket timeout stack, distinguishing passive negotiation,
+The `Ftp timeout on STOR` exception preserves the original socket timeout stack,
+distinguishing passive negotiation,
 data connection establishment, and command-reply waits.
 
 The no-progress watchdog logs idle time, module status, progress bytes and

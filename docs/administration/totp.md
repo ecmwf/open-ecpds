@@ -52,8 +52,8 @@ grantType=password
 expectedStatus=200
 ```
 
-For compatibility, a blank `[AuthenticationExtension] class` automatically
-selects the ECMWF provider when `[TOTP] active=true`. You may instead select it
+If `[AuthenticationExtension] class` is blank, the ECMWF provider is selected
+automatically when `[TOTP] active=true`. You may instead select it
 explicitly, or configure another trusted provider:
 
 ```ini

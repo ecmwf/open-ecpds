@@ -10,10 +10,9 @@ This page lists the key third-party Java libraries bundled with OpenECPDS, group
 
 Development and application-image builds read SDKMAN Java `25.4.4.1+1-graalce`
 from `.devcontainer/java-version.env`, matching the Polyglot/Truffle libraries
-selected by `graalvm.version` in `pom.xml`. Update that shared file and keep these
-versions aligned when upgrading: the embedded Graal compiler depends on Truffle
-runtime internals. Rebuild the Java base and application images for each target
-architecture; restarting an existing container does not update its Java runtime.
+selected by `graalvm.version` in `pom.xml`. Keep these versions aligned: the
+embedded Graal compiler depends on Truffle runtime internals. Build the Java base
+and application images for each target architecture.
 Standalone builds evaluate JavaScript against the installed libraries to detect
 an incompatible compiler/runtime before the image is created.
 
