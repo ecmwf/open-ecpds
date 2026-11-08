@@ -26,7 +26,7 @@ Built on container technologies, it scales from a laptop to hundreds of systems 
 
 A narrated introduction to the standalone environment, transfer controls, custom MQTT notifications, S3 access and the Monitor UI.
 
-https://github.com/user-attachments/assets/6e59092f-9510-4ed5-8dd5-173f7e58e3c7
+https://github.com/user-attachments/assets/951b8fcf-59a8-4de8-b876-d73c2c99aec6
 
 ---
 
