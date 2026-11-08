@@ -906,6 +906,9 @@ If "http.mqttPersistence" is set, this option allows the selection of the persis
 ### http.mqttPort
 Allow specifying the MQTT port number of the remote MQTT/S server to connect to.
 
+### http.mqttProfile
+Select notification interpretation for MQTT acquisition: script (default) keeps existing JavaScript extraction; wis2 enables the bundled WIS2 data profile. An explicitly selected profile replaces message extraction scripts, validates notification identity and expected integrity, and carries attribution into the Data File metadata. Unknown or incompatible profiles fail the listing rather than falling back. This does not enable a broker or change MQTT transport settings.
+
 ### http.mqttQos
 Set the Quality of Service (QoS) level for messages published by the MQTT client. For a value of "0", the message is delivered at most once without any confirmation, offering the lowest delivery guarantee. For a value of "1", the message is delivered at least once, which may result in duplicates but ensures message delivery. For a value of "2", the message is delivered exactly once through a handshake process, guaranteeing no duplicates but involving higher communication overhead.
 
