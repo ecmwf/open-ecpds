@@ -22,8 +22,8 @@
             the other owner's rows untouched. Runtime counters reset on Master restart; pending rows survive.</p>
         <h6>Bounded admission and drops</h6>
         <p>The Admission &amp; rejections tab shows current memory queue usage, cached database usage, and the actual enforced limits
-            in events and bytes. The single-event ceiling is the smaller of the configured memory byte limit and database
-            byte limit. Sizes refer to serialized telemetry, including attributes and resource metadata,
+            in events and bytes. The single-event ceiling is the smallest of <code>journalMaxEventBytes</code>,
+            the configured memory byte limit and database byte limit. Sizes refer to serialized telemetry, including attributes and resource metadata,
             not source file or MQTT payload size. Collector limits are separate and are not discovered here.</p>
         <p>Rejection counts distinguish an oversized event, memory event-count pressure, memory byte pressure,
             database event-count pressure, database byte pressure and persistence/capacity failures.
@@ -33,10 +33,12 @@
             cannot retrospectively distinguish these causes; updated diagnostics apply after Master restart.</p>
         <p>Event producers enqueue without database I/O. The background worker drops new events when the memory queue
             is full, database capacity cannot be established, or a per-owner limit is reached.
-            Defaults in <code>[OperationalEvents]</code> are <code>journalMaxPendingEvents=10000</code> and
-            <code>journalMaxPayloadBytes=67108864</code> (64 MiB serialized UTF-8 payload).
-            The memory queue defaults to 2,048 events and 8 MiB, configurable with <code>journalMaxMemoryEvents</code>
-            and <code>journalMaxMemoryBytes</code> in the same section. Values must be positive; event-count limits
+            Defaults in <code>[OperationalEvents]</code> are <code>journalMaxPendingEvents=50000</code> and
+            <code>journalMaxPayloadBytes=134217728</code> (128 MiB serialized UTF-8 payload).
+            The memory queue defaults to 4,096 events and 16 MiB, configurable with <code>journalMaxMemoryEvents</code>
+            and <code>journalMaxMemoryBytes</code>. <code>journalMaxEventBytes</code> defaults to 65,536 bytes
+            and cannot exceed 16,777,215 bytes (the MEDIUMTEXT column limit). Database packet limits may be lower.
+            Values must be positive; event-count limits
             must be below 2,147,483,647. Restart the Master after changing these values.
             Raising memory limits increases potential heap usage and telemetry lost on a crash;
             memory-queued events can be lost on shutdown or a crash. Persisted rows are never purged to make room.</p>

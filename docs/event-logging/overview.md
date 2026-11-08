@@ -518,10 +518,11 @@ splunkEnabled=yes
 openTelemetryEnabled=yes
 journalEnabled=yes
 journalOwner=production-master
-journalMaxPendingEvents=10000
-journalMaxPayloadBytes=67108864
-journalMaxMemoryEvents=2048
-journalMaxMemoryBytes=8388608
+journalMaxPendingEvents=50000
+journalMaxPayloadBytes=134217728
+journalMaxMemoryEvents=4096
+journalMaxMemoryBytes=16777216
+journalMaxEventBytes=65536
 ```
 
 Supply the OTLP endpoint, authentication and TLS settings as described above.
@@ -542,12 +543,18 @@ after failures or Master restarts. Retries can produce duplicates; use
 
 In journal mode, event producers serialize and enqueue without database I/O.
 A single background worker admits events to the database before export.
-The memory admission queue defaults to 2,048 events and 8 MiB of UTF-8 payload,
+The memory admission queue defaults to 4,096 events and 16 MiB of UTF-8 payload,
 configured with `journalMaxMemoryEvents` and `journalMaxMemoryBytes` in
 `[OperationalEvents]` (Master restart required). Both must be positive, and the
 event-count limit must be below 2,147,483,647. Increasing these limits increases
 potential heap usage and telemetry lost on a crash;
 oversized events and new arrivals when it is full are dropped without waiting.
+The independent `journalMaxEventBytes` defaults to 65,536 bytes (64 KiB), with
+an effective ceiling bounded by both queue byte limits. Its configured value must
+be positive and at most 16,777,215 bytes, the journal column's MEDIUMTEXT limit.
+Database packet limits and Collector request limits may be lower. In journal mode
+export batches contain up to 256 records; the per-event ceiling does not bound
+the total OTLP request to the same size.
 Memory-queued events can be lost during shutdown or a crash; `forceFlush` does not
 provide a database-persistence barrier. Shutdown need not drain the database;
 the next start resumes persisted work. `OTEL_BLRP_*` does not control journal admission.
@@ -570,8 +577,8 @@ rows. Re-enabling it with the same owner resumes replay.
   automatically replayed. Monitor Collector/backend rejection diagnostics.
 - **Coverage:** the journal protects successfully persisted events; it is not
   a transactional audit trail and cannot guarantee an event for every operation.
-- **Capacity:** `journalMaxPendingEvents` (default 10,000) and
-  `journalMaxPayloadBytes` (default 67,108,864 = 64 MiB) limit new admissions
+- **Capacity:** `journalMaxPendingEvents` (default 50,000) and
+  `journalMaxPayloadBytes` (default 134,217,728 = 128 MiB) limit new admissions
   **per owner**, under the single-active-writer requirement above. Limits require
   a Master restart. At either limit the worker drops **new** events and retains
   queued events for retry; it never purges existing rows. It rechecks capacity
@@ -613,8 +620,8 @@ in-flight records, last successful persistence, last endpoint acknowledgement,
 and persistence/delivery failure history, admission limits and dropped events.
 The Admission & rejections tab lists memory queue usage against its configured
 limits, owner-scoped database count/byte usage against configured limits, and
-the effective single serialized event ceiling (the smaller of `journalMaxMemoryBytes` and
-`journalMaxPayloadBytes`). Sizes include serialized telemetry attributes and
+the effective single serialized event ceiling (the smallest of `journalMaxEventBytes`,
+`journalMaxMemoryBytes` and `journalMaxPayloadBytes`). Sizes include serialized telemetry attributes and
 resource metadata, not just message bodies. Collector limits are separate.
 Drop counters distinguish oversize, memory count/byte pressure, database count/byte
 pressure, serialization and persistence/capacity failures; the latest rejection
@@ -677,40 +684,12 @@ operation being recorded:
 | **ERR** | ERRor | Captures error events, specifically when a file fails to be disseminated successfully. | [ERR fields](err-fields.md) |
 | **CPY** | CoPY / Replication | Tracks file replication between different data movers. Records whether the replication was successful. | [CPY fields](cpy-fields.md) |
 | **DEA** | DEnied Access | Captures unauthorised access attempts, helping administrators identify security threats, misconfigurations, or unexpected behaviour. | [DEA fields](dea-fields.md) |
-| **NTF** | NoTiFication outcome | Records each MQTT Mover/broker outcome: accepted, failed or unconfirmed. Not subscriber delivery. | [NTF fields](#mqtt-notification-outcomes-ntf) |
+| **NTF** | NoTiFication outcome | Records each MQTT Mover/broker outcome: accepted, failed or unconfirmed. Not subscriber delivery. | [NTF fields](ntf-fields.md) |
 
 ### MQTT notification outcomes (NTF)
 
-The Master emits one `NTF` record per configured Mover after its MQTT publication
-result is known, including disconnected Movers. If none are configured, it emits
-one `FAILED` record with an empty `MoverName`. These records use the same independent
-Splunk and native OpenTelemetry switches as other operational events, including
-the OpenTelemetry journal when enabled. Native event name is `ecpds.NTF`, body is
-`NTF`, and severity is `INFO`; filter the `Status` attribute for failure alerts.
-
-| Field | Meaning |
-|---|---|
-| `TimeStamp` | Time the Master records the result. |
-| `PublicationId`, `DataTransferId` | Correlation with MQTT Activity and transfer history. |
-| `DestinationName` | Destination whose notification is being published. |
-| `TransferProtocol` | `mqtt`. |
-| `MoverName` | Mover hosting the broker, or empty when no Movers are configured. |
-| `Topic` | Publication topic. |
-| `FieldEncoding` | `percent-record-separators`: in destination, Mover and topic strings, `%`, `;`, CR and LF are escaped as `%25`, `%3B`, `%0D` and `%0A` in both outputs. Decode once to recover the original value. |
-| `QoS`, `Retain` | Effective MQTT QoS and retain flag. |
-| `PayloadBytes` | UTF-8 encoded message length, not content. |
-| `Status` | `ACCEPTED`, `FAILED` or `UNCONFIRMED`. |
-| `SubscriberDeliveryConfirmed` | Always `false`: broker acceptance never proves subscriber receipt. |
-
-Uncertain RPC/broker timeouts are `UNCONFIRMED`, not successful.
-The record contains no message body, inline file content, client ID or credentials.
-It does not create a new trace/span or infer a dissemination attempt from a transfer
-ID. Publication scripting failures/skips occur before broker submission and remain
-visible in MQTT Activity, rather than producing a broker-outcome `NTF`.
-
-```text
-NTF;TimeStamp=2026:11- 05 16:00:00.0;PublicationId=42;DataTransferId=123;DestinationName=mqtt_demo;TransferProtocol=mqtt;MoverName=ecpds-mover;Topic=openecpds/demo/file.dat;FieldEncoding=percent-record-separators;QoS=1;Retain=false;PayloadBytes=160;Status=ACCEPTED;SubscriberDeliveryConfirmed=false
-```
+The Master records MQTT publication outcomes per Mover. See [NTF fields](ntf-fields.md)
+for the fields, acknowledgement semantics and both output examples.
 
 ## Field formats
 
@@ -743,6 +722,7 @@ statuses, and transfer details.
 - [ERR (Error)](err-fields.md)
 - [CPY (Copy / Replication)](cpy-fields.md)
 - [DEA (Denied Access)](dea-fields.md)
+- [NTF (Notification Outcome)](ntf-fields.md)
 
 ## Related
 

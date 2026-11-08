@@ -7,6 +7,8 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.2.1-201020
 
 ## open-ecpds 8.3.0-04112026
 
+- **OpenTelemetry Journal admission**: Defaults to 4,096 events / 16 MiB in memory and 50,000 events / 128 MiB per database owner. The new `journalMaxEventBytes` independently limits a serialized event to 64 KiB by default; the Monitor displays the effective limit. See [Durable database journal](event-logging/overview.md#durable-database-journal).
+- **MQTT notification event reference**: Documents NTF fields and matching Splunk and OpenTelemetry examples. See [NTF fields](event-logging/ntf-fields.md).
 - **Opt-in WIS2 acquisition profiles**: Adds a versioned notification-profile SPI and bundled `wis2` profile, selected with `http.mqttProfile="wis2"`; the default `script` profile selects generic MQTT script extraction. File versions use full data identity, normalized publication time and advertised integrity. Notification attribution persists in existing file metadata and appears in the Monitor's **Acquisition Notification** card. Advertised SHA-256, SHA-384 and SHA-512 digests are verified before scheduled retrieval completes, complementing OpenECPDS integrity controls; invalid digests reject notifications and mismatches fail retrieval. The WIS2 profile uses shared MQTT inline-content ingestion to interpret WIS2 `properties.content` directly (Base64, up to 16 KiB decoded), with profile-specific validation, explicit support for empty inline files and direct submission of the inline file bytes. See [WIS2 acquisition profile](notifications/wmo-wis2.md#optional-wis2-acquisition-profile) and [Notification profiles](concepts/plugin-infrastructure.md#notification-profiles).
 
 ---

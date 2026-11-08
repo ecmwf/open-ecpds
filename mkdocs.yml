@@ -182,6 +182,7 @@ nav:
       - ERR (Error): event-logging/err-fields.md
       - CPY (Copy / Replication): event-logging/cpy-fields.md
       - DEA (Denied Access): event-logging/dea-fields.md
+      - NTF (Notification Outcome): event-logging/ntf-fields.md
   - Global Reach: global-reach.md
   - Monitoring:
       - Physical System Locations: monitoring/physical-locations.md

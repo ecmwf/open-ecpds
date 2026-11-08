@@ -601,10 +601,11 @@ Independent Splunk-file and native OpenTelemetry event outputs. Journaling persi
 | `journalCriticalOldestAgeMillis` | `1800000` | `1800000` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
 | `journalCriticalPendingCount` | `10000` | `10000` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
 | `journalEnabled` | `false` | `no` | [OperationalEvents:88](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java#L88) |
-| `journalMaxMemoryBytes` | `8388608` | `8388608` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
-| `journalMaxMemoryEvents` | `2048` | `2048` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
-| `journalMaxPayloadBytes` | `67108864` | `67108864` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
-| `journalMaxPendingEvents` | `10000` | `10000` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
+| `journalMaxEventBytes` | `65536` | `65536` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
+| `journalMaxMemoryBytes` | `16777216` | `16777216` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
+| `journalMaxMemoryEvents` | `4096` | `4096` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
+| `journalMaxPayloadBytes` | `134217728` | `134217728` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
+| `journalMaxPendingEvents` | `50000` | `50000` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
 | `journalOwner` | `Cnf.at("Login", "root", Cnf.at("Login", "hostName", "master"))` | - | [OperationalEvents:93](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java#L93) |
 | `journalWarningOldestAgeMillis` | `300000` | `300000` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
 | `journalWarningPendingCount` | `1000` | `1000` | [OperationalEvents](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java) |
@@ -617,17 +618,19 @@ startup. Reaching either the pending-count or oldest-admission-age threshold
 raises the corresponding alert on the journal page.
 
 `journalMaxMemoryEvents` and `journalMaxMemoryBytes` bound the in-memory admission
-queue before database persistence (defaults: 2,048 events and 8 MiB).
+queue before database persistence (defaults: 4,096 events and 16 MiB).
 `journalMaxPendingEvents` and `journalMaxPayloadBytes` bound persisted pending
-records for the journal owner (defaults: 10,000 events and 64 MiB).
+records for the journal owner (defaults: 50,000 events and 128 MiB).
 Byte limits measure serialized UTF-8 telemetry, not source-file sizes or total
 Java heap/database storage. New events are dropped when capacity is exhausted;
 existing pending records are not purged automatically.
 
-All four limits must be positive; event-count limits must be below 2,147,483,647.
-Changes require a **Master restart**. The single-event byte ceiling is the smaller
-of `journalMaxMemoryBytes` and `journalMaxPayloadBytes`; Collector limits remain
-separate. Raising memory limits increases potential heap usage and telemetry lost
+All five limits must be positive; event-count limits must be below 2,147,483,647.
+Changes require a **Master restart**. `journalMaxEventBytes` defaults to 65,536
+bytes (64 KiB) and cannot exceed 16,777,215 bytes, the MEDIUMTEXT column limit.
+The effective single-event ceiling is the smallest of this setting and the two
+queue byte limits. Database packet and Collector limits remain separate. Raising
+memory limits increases potential heap usage and telemetry lost
 on a crash. See [Database-backed event journal](../event-logging/overview.md)
 for delivery guarantees and operational guidance.
 

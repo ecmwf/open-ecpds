@@ -120,8 +120,9 @@
                         A full queue can reject a small event. Database usage is cached for up to one minute; memory usage is sampled on refresh.</p>
                     <p class="mb-0">Memory limits use <code>journalMaxMemoryEvents</code> and <code>journalMaxMemoryBytes</code>.
                         Database limits use <code>journalMaxPendingEvents</code> and <code>journalMaxPayloadBytes</code>.
+                        The single-event ceiling uses <code>journalMaxEventBytes</code>, bounded by both queue byte limits.
                         All are configured in the Master's <code>[OperationalEvents]</code> section; restart required. Raising memory limits increases potential heap usage and telemetry lost on a crash.
-                        The single-event ceiling is the smaller of the memory and database byte limits. It does not guarantee Collector acceptance.</p>
+                        The ceiling does not guarantee database packet or Collector acceptance.</p>
                 </div></div>
                 <dl class="journal-admission-grid mb-3">
                     <div><dt><i class="bi bi-memory me-1" aria-hidden="true"></i>Memory queue events</dt>

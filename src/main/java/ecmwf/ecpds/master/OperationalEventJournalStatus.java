@@ -37,8 +37,9 @@ public record OperationalEventJournalStatus(boolean enabled, String owner, boole
 
     public static OperationalEventJournalStatus disabled() {
         return new OperationalEventJournalStatus(false, "", false, false, 0, 0, 0, false, "", 0, 0, 0, null, null,
-                System.currentTimeMillis(), null, false, false, 1000, 10000, 300000, 1800000, 0, "", 10000,
-                64L * 1024 * 1024, null, null);
+                System.currentTimeMillis(), null, false, false, 1000, 10000, 300000, 1800000, 0, "",
+                OperationalEventJournal.DEFAULT_MAX_PENDING_EVENTS, OperationalEventJournal.DEFAULT_MAX_PAYLOAD_BYTES,
+                null, null);
     }
 
     public OperationalEventJournalStatus withQueue(final Long count, final Long oldest, final String error) {

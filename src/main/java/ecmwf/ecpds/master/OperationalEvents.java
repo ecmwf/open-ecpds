@@ -91,17 +91,29 @@ public final class OperationalEvents {
             return;
         }
         final var journalEnabled = Cnf.at("OperationalEvents", "journalEnabled", false);
-        final var maxPendingEvents = journalEnabled ? positiveThreshold("journalMaxPendingEvents", 10000) : 10000;
-        final var maxPayloadBytes = journalEnabled ? positiveThreshold("journalMaxPayloadBytes", 64L * 1024 * 1024)
-                : 64L * 1024 * 1024;
-        final var maxMemoryEvents = journalEnabled ? positiveThreshold("journalMaxMemoryEvents", 2048) : 2048;
-        final var maxMemoryBytes = journalEnabled ? positiveThreshold("journalMaxMemoryBytes", 8L * 1024 * 1024)
-                : 8L * 1024 * 1024;
+        final var maxPendingEvents = journalEnabled
+                ? positiveThreshold("journalMaxPendingEvents", OperationalEventJournal.DEFAULT_MAX_PENDING_EVENTS)
+                : OperationalEventJournal.DEFAULT_MAX_PENDING_EVENTS;
+        final var maxPayloadBytes = journalEnabled
+                ? positiveThreshold("journalMaxPayloadBytes", OperationalEventJournal.DEFAULT_MAX_PAYLOAD_BYTES)
+                : OperationalEventJournal.DEFAULT_MAX_PAYLOAD_BYTES;
+        final var maxMemoryEvents = journalEnabled
+                ? positiveThreshold("journalMaxMemoryEvents", OperationalEventJournal.DEFAULT_MAX_MEMORY_EVENTS)
+                : OperationalEventJournal.DEFAULT_MAX_MEMORY_EVENTS;
+        final var maxMemoryBytes = journalEnabled
+                ? positiveThreshold("journalMaxMemoryBytes", OperationalEventJournal.DEFAULT_MAX_MEMORY_BYTES)
+                : OperationalEventJournal.DEFAULT_MAX_MEMORY_BYTES;
+        final var maxEventBytes = journalEnabled
+                ? positiveThreshold("journalMaxEventBytes", OperationalEventJournal.DEFAULT_MAX_EVENT_BYTES)
+                : OperationalEventJournal.DEFAULT_MAX_EVENT_BYTES;
         if (maxPendingEvents >= Integer.MAX_VALUE) {
             throw new IllegalArgumentException("OperationalEvents.journalMaxPendingEvents must be below 2147483647");
         }
         if (maxMemoryEvents >= Integer.MAX_VALUE) {
             throw new IllegalArgumentException("OperationalEvents.journalMaxMemoryEvents must be below 2147483647");
+        }
+        if (maxEventBytes > OperationalEventJournal.DATABASE_MAX_EVENT_BYTES) {
+            throw new IllegalArgumentException("OperationalEvents.journalMaxEventBytes exceeds MEDIUMTEXT capacity");
         }
         if (journalEnabled) {
             warningPendingCount = positiveThreshold("journalWarningPendingCount", 1000);
@@ -162,7 +174,7 @@ public final class OperationalEvents {
                     }
                     final var journal = new OperationalEventJournal(OperationalEventJournal.database(database, owner),
                             exporterReference.get(), processor, true, maxPendingEvents, maxPayloadBytes,
-                            maxMemoryEvents, maxMemoryBytes);
+                            maxMemoryEvents, maxMemoryBytes, maxEventBytes);
                     INSTANCE.journal = journal;
                     return journal;
                 }).disableShutdownHook().build().getOpenTelemetrySdk();

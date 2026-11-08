@@ -61,6 +61,12 @@ import io.opentelemetry.sdk.resources.Resource;
  * journal owner. New telemetry is dropped under pressure; existing records are never expired.
  */
 final class OperationalEventJournal implements LogRecordProcessor {
+    static final long DEFAULT_MAX_PENDING_EVENTS = 50000;
+    static final long DEFAULT_MAX_PAYLOAD_BYTES = 128L * 1024 * 1024;
+    static final long DEFAULT_MAX_MEMORY_EVENTS = 4096;
+    static final long DEFAULT_MAX_MEMORY_BYTES = 16L * 1024 * 1024;
+    static final long DEFAULT_MAX_EVENT_BYTES = 64L * 1024;
+    static final long DATABASE_MAX_EVENT_BYTES = 16L * 1024 * 1024 - 1;
     private static final Logger LOG = LogManager.getLogger(OperationalEventJournal.class);
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final AttributeKey<String> EVENT_ID = AttributeKey.stringKey("ecpds.event.id");
@@ -136,6 +142,7 @@ final class OperationalEventJournal implements LogRecordProcessor {
     private final ArrayDeque<Admission> admissions = new ArrayDeque<>();
     private final long maxMemoryEvents;
     private final long maxMemoryBytes;
+    private final long maxEventBytes;
     private long memoryBytes;
     private final AtomicLong droppedEvents = new AtomicLong();
     private final AtomicLong lastDropReport = new AtomicLong();
@@ -165,8 +172,8 @@ final class OperationalEventJournal implements LogRecordProcessor {
         synchronized (admissionLock) {
             synchronized (dropLock) {
                 admission = new OperationalEventJournalStatus.AdmissionDiagnostics(admissions.size(), memoryBytes,
-                        maxMemoryEvents, maxMemoryBytes, Math.min(maxMemoryBytes, maxPayloadBytes), lastRejectedBytes,
-                        lastRejectedAt, Map.copyOf(droppedByReason));
+                        maxMemoryEvents, maxMemoryBytes, maxEventBytes, lastRejectedBytes, lastRejectedAt,
+                        Map.copyOf(droppedByReason));
             }
         }
         synchronized (healthLock) {
@@ -241,19 +248,28 @@ final class OperationalEventJournal implements LogRecordProcessor {
 
     OperationalEventJournal(final Store store, final LogRecordExporter exporter, final LogRecordProcessor fallback,
             final boolean startWorker) {
-        this(store, exporter, fallback, startWorker, 10000, 64L * 1024 * 1024);
+        this(store, exporter, fallback, startWorker, DEFAULT_MAX_PENDING_EVENTS, DEFAULT_MAX_PAYLOAD_BYTES);
     }
 
     OperationalEventJournal(final Store store, final LogRecordExporter exporter, final LogRecordProcessor fallback,
             final boolean startWorker, final long maxEvents, final long maxPayloadBytes) {
-        this(store, exporter, fallback, startWorker, maxEvents, maxPayloadBytes, 2048, 8L * 1024 * 1024);
+        this(store, exporter, fallback, startWorker, maxEvents, maxPayloadBytes, DEFAULT_MAX_MEMORY_EVENTS,
+                DEFAULT_MAX_MEMORY_BYTES);
     }
 
     OperationalEventJournal(final Store store, final LogRecordExporter exporter, final LogRecordProcessor fallback,
             final boolean startWorker, final long maxEvents, final long maxPayloadBytes, final long maxMemoryEvents,
             final long maxMemoryBytes) {
+        this(store, exporter, fallback, startWorker, maxEvents, maxPayloadBytes, maxMemoryEvents, maxMemoryBytes,
+                DEFAULT_MAX_EVENT_BYTES);
+    }
+
+    OperationalEventJournal(final Store store, final LogRecordExporter exporter, final LogRecordProcessor fallback,
+            final boolean startWorker, final long maxEvents, final long maxPayloadBytes, final long maxMemoryEvents,
+            final long maxMemoryBytes, final long maxEventBytes) {
         if (maxEvents <= 0 || maxEvents >= Integer.MAX_VALUE || maxPayloadBytes <= 0 || maxMemoryEvents <= 0
-                || maxMemoryEvents >= Integer.MAX_VALUE || maxMemoryBytes <= 0) {
+                || maxMemoryEvents >= Integer.MAX_VALUE || maxMemoryBytes <= 0 || maxEventBytes <= 0
+                || maxEventBytes > DATABASE_MAX_EVENT_BYTES) {
             throw new IllegalArgumentException("Invalid journal admission limits");
         }
         this.store = store;
@@ -263,6 +279,7 @@ final class OperationalEventJournal implements LogRecordProcessor {
         this.maxPayloadBytes = maxPayloadBytes;
         this.maxMemoryEvents = maxMemoryEvents;
         this.maxMemoryBytes = maxMemoryBytes;
+        this.maxEventBytes = Math.min(maxEventBytes, Math.min(maxMemoryBytes, maxPayloadBytes));
         worker = Executors.newSingleThreadScheduledExecutor(task -> {
             final var thread = new Thread(task, "OperationalEventJournal");
             thread.setDaemon(true);
@@ -292,7 +309,7 @@ final class OperationalEventJournal implements LogRecordProcessor {
                 return;
             } else if (stopped.get()) {
                 drop("Journal stopped", (long) bytes);
-            } else if (bytes > Math.min(maxMemoryBytes, maxPayloadBytes)) {
+            } else if (bytes > maxEventBytes) {
                 drop("Single event exceeds serialized byte limit", (long) bytes);
             } else if (admissions.size() >= maxMemoryEvents) {
                 drop("Memory event count limit reached", (long) bytes);
