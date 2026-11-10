@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -49,11 +49,14 @@ final class MoverStorageMonitor implements AutoCloseable {
     }
 
     MoverStorageMonitor(final int concurrency) {
-        workers = new ThreadPoolExecutor(0, concurrency, 60, TimeUnit.SECONDS, new SynchronousQueue<>(), task -> {
-            final var thread = new Thread(task, "MoverStoragePoll");
-            thread.setDaemon(true);
-            return thread;
-        });
+        // Single-flight admission bounds queued and running work to one poll per Mover.
+        workers = new ThreadPoolExecutor(concurrency, concurrency, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>(),
+                task -> {
+                    final var thread = new Thread(task, "MoverStoragePoll");
+                    thread.setDaemon(true);
+                    return thread;
+                });
+        workers.allowCoreThreadTimeOut(true);
     }
 
     void refresh(final String name, final int count, final Supplier<MoverInterface> source) {
@@ -103,7 +106,7 @@ final class MoverStorageMonitor implements AutoCloseable {
                 }
             });
         } catch (final RejectedExecutionException e) {
-            // No queued work: busy or stuck Movers cannot create an unbounded polling backlog.
+            // Shutdown can reject a poll after it has acquired its single-flight slot.
             pending.remove(name);
         }
     }
