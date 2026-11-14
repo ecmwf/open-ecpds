@@ -1,0 +1,134 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * In applying the License, ECMWF does not waive the privileges and immunities
+ * granted to it by virtue of its status as an inter-governmental organization
+ * nor does it submit to any jurisdiction.
+ */
+
+package ecmwf.ecpds.master;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import javax.management.AttributeNotFoundException;
+import javax.management.InvalidAttributeValueException;
+import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanException;
+import javax.management.MBeanInfo;
+import javax.management.MBeanOperationInfo;
+import ecmwf.common.database.DBIterator;
+import ecmwf.common.database.DataTransfer;
+import ecmwf.common.mbean.MBeanManager;
+import ecmwf.common.technical.Cnf;
+
+/**
+ * The Class AcqDownloadScheduler.
+ */
+public final class AcqDownloadScheduler extends DownloadScheduler {
+    private final MasterServer _master;
+
+    /** The _cache ratio. */
+    public int _maxPresetPerDestination = Cnf.at("Scheduler", "maxPresetPerDestination", 60);
+
+    /**
+     * Instantiates a new acq download scheduler.
+     *
+     * @param name
+     *            the name
+     */
+    public AcqDownloadScheduler(final MasterServer _master, final String name) {
+        // Bind the Master before superclass construction and field initialization.
+        this._master = _master;
+        super(_master, name,
+                "The AcqDownloadScheduler is implementing the retrieval mechanism for the Acquisition files.");
+    }
+
+    /**
+     * Gets the MBean info.
+     *
+     * @return the MBean info
+     */
+    @Override
+    public MBeanInfo getMBeanInfo() {
+        return MBeanManager.addMBeanInfo(super.getMBeanInfo(), null, new MBeanAttributeInfo[] { new MBeanAttributeInfo(
+                "MaxPresetPerDestination", "java.lang.Integer",
+                "MaxPresetPerDestination: maximum number of DataTransfers retrieved from the Data-base per Destination.",
+                true, true, false) }, new MBeanOperationInfo[] {});
+    }
+
+    /**
+     * Gets the attribute.
+     *
+     * @param attributeName
+     *            the attribute name
+     *
+     * @return the attribute
+     *
+     * @throws AttributeNotFoundException
+     *             the attribute not found exception
+     * @throws MBeanException
+     *             the MBean exception
+     */
+    @Override
+    public Object getAttribute(final String attributeName) throws AttributeNotFoundException, MBeanException {
+        try {
+            if ("MaxPresetPerDestination".equals(attributeName)) {
+                return _maxPresetPerDestination;
+            }
+        } catch (final Exception e) {
+            MasterServer._log.warn("Getting an MBean attribute", e);
+            throw new MBeanException(e);
+        }
+        return super.getAttribute(attributeName);
+    }
+
+    /**
+     * Sets the attribute.
+     *
+     * @param name
+     *            the name
+     * @param value
+     *            the value
+     *
+     * @return true, if successful
+     *
+     * @throws InvalidAttributeValueException
+     *             the invalid attribute value exception
+     * @throws MBeanException
+     *             the MBean exception
+     */
+    @Override
+    public boolean setAttribute(final String name, final Object value)
+            throws InvalidAttributeValueException, MBeanException {
+        if ("MaxPresetPerDestination".equals(name)) {
+            _maxPresetPerDestination = (Integer) value;
+            return true;
+        }
+        return super.setAttribute(name, value);
+    }
+
+    /**
+     * Gets the data transfers to download iterator.
+     *
+     * @return the data transfers to download iterator
+     *
+     * @throws IOException
+     *             Signals that an I/O exception has occurred.
+     * @throws SQLException
+     *             the SQL exception
+     */
+    @Override
+    public DBIterator<DataTransfer> getDataTransfersToDownloadIterator() throws IOException, SQLException {
+        return _master.getECpdsBase().getAcquisitionDataTransfersToDownloadIterator(_maxPresetPerDestination);
+    }
+}

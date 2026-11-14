@@ -93,7 +93,7 @@ import ecmwf.ecpds.master.AttachmentAccessTicket;
 import ecmwf.ecpds.master.DataTransferEvent;
 import ecmwf.ecpds.master.IncomingProfile;
 import ecmwf.ecpds.master.MasterServer;
-import ecmwf.ecpds.master.MasterServer.DownloadScheduler;
+import ecmwf.ecpds.master.DownloadScheduler;
 import ecmwf.ecpds.master.MoverAccessTicket;
 import ecmwf.ecpds.master.OperationalEvents;
 import ecmwf.ecpds.master.ProductStatusEvent;
