@@ -61,6 +61,7 @@ ecmwf.ecpds.master.plugin.http.model
 ecmwf.ecpds.master.plugin.http.view
 ecmwf.ecpds.master.plugin.service
 ecmwf.ecpds.master.transfer
+ecmwf.ecpds.master.scheduler
 ecmwf.ecpds.master.storage
 ecmwf.ecpds.master.weather
 ecmwf.common.database

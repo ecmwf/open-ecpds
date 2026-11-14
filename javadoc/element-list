@@ -90,6 +90,7 @@ ecmwf.ecpds.master.plugin.http.model.monitoring
 ecmwf.ecpds.master.plugin.http.model.transfer
 ecmwf.ecpds.master.plugin.http.view
 ecmwf.ecpds.master.plugin.service
+ecmwf.ecpds.master.scheduler
 ecmwf.ecpds.master.storage
 ecmwf.ecpds.master.transfer
 ecmwf.ecpds.master.weather
