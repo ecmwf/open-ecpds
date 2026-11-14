@@ -83,6 +83,8 @@ public final class OpsViewManager {
     /** The Constant OPTIONS. */
     private static final String OPTIONS = Cnf.at("OpsViewManager", "options", "");
 
+    private static final Duration REQUEST_TIMEOUT = getRequestTimeout();
+
     /** The Constant URL:. */
     private static final String URL = Cnf.at("OpsViewManager", "url", "https://localhost/passive:1443");
 
@@ -203,6 +205,11 @@ public final class OpsViewManager {
             throw new OpsViewManagerException("OpsViewManager not activated");
         }
         return new AtomicBoolean(false);
+    }
+
+    private static Duration getRequestTimeout() {
+        final var timeout = new Options(OPTIONS).get("requestTimeout", 30_000L);
+        return Duration.ofMillis(timeout > 0 ? timeout : 30_000L);
     }
 
     /**
@@ -589,7 +596,7 @@ public final class OpsViewManager {
     private static CloseableClientResponse send(final String url, final String method,
             final Map<String, String> headers, final Map<String, String> query, final Object body) throws IOException {
         try {
-            final var builder = HttpRequest.newBuilder(buildUri(url, query)).timeout(Duration.ofSeconds(30))
+            final var builder = HttpRequest.newBuilder(buildUri(url, query)).timeout(REQUEST_TIMEOUT)
                     .header("Accept", "application/json");
             headers.forEach(builder::header);
             if (body != null) {
