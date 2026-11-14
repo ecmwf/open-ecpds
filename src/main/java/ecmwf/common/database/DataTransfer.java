@@ -38,6 +38,29 @@ public class DataTransfer extends DataBaseObject {
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = 9043274581568789473L;
 
+    long notificationRevision;
+
+    private transient DataTransfer notificationBaseline;
+
+    public long notificationRevisionForCapture() {
+        return notificationRevision;
+    }
+
+    synchronized DataTransfer notificationBaseline() {
+        return notificationBaseline;
+    }
+
+    synchronized void rememberNotificationBaseline() {
+        rememberNotificationBaseline(this);
+    }
+
+    synchronized void rememberNotificationBaseline(final DataTransfer source) {
+        synchronized (source) {
+            notificationBaseline = (DataTransfer) source.clone();
+            notificationBaseline.notificationBaseline = null;
+        }
+    }
+
     /** The daf id. */
     protected Long DAF_ID;
 
@@ -224,7 +247,8 @@ public class DataTransfer extends DataBaseObject {
         return traceParent;
     }
 
-    public void setTraceParent(final String value) {
+    // Setter synchronization lets fenced writes snapshot and publish revisions without racing mutations.
+    public synchronized void setTraceParent(final String value) {
         traceParent = value;
     }
 
@@ -233,7 +257,7 @@ public class DataTransfer extends DataBaseObject {
         return traceState;
     }
 
-    public void setTraceState(final String value) {
+    public synchronized void setTraceState(final String value) {
         traceState = value;
     }
 
@@ -242,7 +266,7 @@ public class DataTransfer extends DataBaseObject {
         return traceAttemptId;
     }
 
-    public void setTraceAttemptId(final String value) {
+    public synchronized void setTraceAttemptId(final String value) {
         traceAttemptId = value;
     }
 
@@ -270,7 +294,7 @@ public class DataTransfer extends DataBaseObject {
      * @param moverName
      *            the new mover name
      */
-    public void setMoverName(final String moverName) {
+    public synchronized void setMoverName(final String moverName) {
         this.moverName = moverName;
     }
 
@@ -289,7 +313,7 @@ public class DataTransfer extends DataBaseObject {
      * @param ratio
      *            the ratio
      */
-    public void setRatio(final double ratio) {
+    public synchronized void setRatio(final double ratio) {
         this.ratio = ratio;
     }
 
@@ -324,7 +348,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new data file id
      */
-    public void setDataFileId(final long param) {
+    public synchronized void setDataFileId(final long param) {
         DAF_ID = param;
     }
 
@@ -334,7 +358,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new data file id
      */
-    public void setDataFileId(final String param) {
+    public synchronized void setDataFileId(final String param) {
         DAF_ID = Long.parseLong(param);
     }
 
@@ -353,7 +377,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new comment
      */
-    public void setComment(final String param) {
+    public synchronized void setComment(final String param) {
         DAT_COMMENT = strim(param, 255);
     }
 
@@ -372,7 +396,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new deleted
      */
-    public void setDeleted(final boolean param) {
+    public synchronized void setDeleted(final boolean param) {
         DAT_DELETED = param;
     }
 
@@ -391,7 +415,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new deleted
      */
-    public void setNotify(final boolean param) {
+    public synchronized void setNotify(final boolean param) {
         notify = param;
     }
 
@@ -410,7 +434,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new compressedOnTheFly
      */
-    public void setCompressedOnTheFly(final boolean param) {
+    public synchronized void setCompressedOnTheFly(final boolean param) {
         compressedOnTheFly = param;
     }
 
@@ -429,7 +453,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new compressed
      */
-    public void setCompressed(final String param) {
+    public synchronized void setCompressed(final String param) {
         compressed = param;
     }
 
@@ -448,7 +472,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new recordUPH
      */
-    public void setRecordUPH(final boolean param) {
+    public synchronized void setRecordUPH(final boolean param) {
         recordUPH = param;
     }
 
@@ -467,7 +491,7 @@ public class DataTransfer extends DataBaseObject {
      * @param statistics
      *            the new statistics
      */
-    public void setStatistics(final String statistics) {
+    public synchronized void setStatistics(final String statistics) {
         this.statistics = statistics;
     }
 
@@ -476,7 +500,7 @@ public class DataTransfer extends DataBaseObject {
         return weatherExecutionId;
     }
 
-    public void setWeatherExecutionId(String executionId) {
+    public synchronized void setWeatherExecutionId(String executionId) {
         if (executionId != null) {
             if (executionId.length() != 36 || !java.util.UUID.fromString(executionId).toString().equals(executionId)) {
                 throw new IllegalArgumentException("Invalid Network Weather execution identity");
@@ -491,7 +515,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new deleted
      */
-    public void setDeleted(final String param) {
+    public synchronized void setDeleted(final String param) {
         DAT_DELETED = Boolean.parseBoolean(param);
     }
 
@@ -510,7 +534,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new asap
      */
-    public void setAsap(final boolean param) {
+    public synchronized void setAsap(final boolean param) {
         DAT_ASAP = param;
     }
 
@@ -520,7 +544,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new asap
      */
-    public void setAsap(final String param) {
+    public synchronized void setAsap(final String param) {
         DAT_ASAP = Boolean.parseBoolean(param);
     }
 
@@ -539,7 +563,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new event
      */
-    public void setEvent(final boolean param) {
+    public synchronized void setEvent(final boolean param) {
         DAT_EVENT = param;
     }
 
@@ -549,7 +573,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new event
      */
-    public void setEvent(final String param) {
+    public synchronized void setEvent(final String param) {
         DAT_EVENT = Boolean.parseBoolean(param);
     }
 
@@ -568,7 +592,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new group by
      */
-    public void setGroupBy(final String param) {
+    public synchronized void setGroupBy(final String param) {
         DAT_GROUP_BY = strim(param, 64);
     }
 
@@ -587,7 +611,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new replicated
      */
-    public void setReplicated(final boolean param) {
+    public synchronized void setReplicated(final boolean param) {
         DAT_REPLICATED = param;
     }
 
@@ -597,7 +621,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new replicated
      */
-    public void setReplicated(final String param) {
+    public synchronized void setReplicated(final String param) {
         DAT_REPLICATED = Boolean.parseBoolean(param);
     }
 
@@ -616,7 +640,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new backup host name
      */
-    public void setBackupHostName(final String param) {
+    public synchronized void setBackupHostName(final String param) {
         HOS_NAME_BACKUP = stringToInteger(param);
     }
 
@@ -635,7 +659,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new proxy host name
      */
-    public void setProxyHostName(final String param) {
+    public synchronized void setProxyHostName(final String param) {
         HOS_NAME_PROXY = stringToInteger(param);
     }
 
@@ -654,7 +678,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new duration
      */
-    public void setDuration(final long param) {
+    public synchronized void setDuration(final long param) {
         DAT_DURATION = param;
     }
 
@@ -673,7 +697,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new duration
      */
-    public void setDurationOnClose(final long param) {
+    public synchronized void setDurationOnClose(final long param) {
         durationOnClose = param;
     }
 
@@ -692,7 +716,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new duration
      */
-    public void setProxyName(final String param) {
+    public synchronized void setProxyName(final String param) {
         proxyName = param;
     }
 
@@ -702,7 +726,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new duration
      */
-    public void setDuration(final String param) {
+    public synchronized void setDuration(final String param) {
         DAT_DURATION = Long.parseLong(param);
     }
 
@@ -721,7 +745,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new expiry time
      */
-    public void setExpiryTime(final java.sql.Timestamp param) {
+    public synchronized void setExpiryTime(final java.sql.Timestamp param) {
         DAT_EXPIRY_TIME = timestampToBigDecimal(param);
     }
 
@@ -740,7 +764,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new failed time
      */
-    public void setFailedTime(final java.sql.Timestamp param) {
+    public synchronized void setFailedTime(final java.sql.Timestamp param) {
         DAT_FAILED_TIME = timestampToBigDecimal(param);
     }
 
@@ -759,7 +783,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new finish time
      */
-    public void setFinishTime(final java.sql.Timestamp param) {
+    public synchronized void setFinishTime(final java.sql.Timestamp param) {
         DAT_FINISH_TIME = timestampToBigDecimal(param);
     }
 
@@ -778,7 +802,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new first finish time
      */
-    public void setFirstFinishTime(final java.sql.Timestamp param) {
+    public synchronized void setFirstFinishTime(final java.sql.Timestamp param) {
         DAT_FIRST_FINISH_TIME = timestampToBigDecimal(param);
     }
 
@@ -797,7 +821,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new id
      */
-    public void setId(final long param) {
+    public synchronized void setId(final long param) {
         DAT_ID = param;
     }
 
@@ -807,7 +831,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new id
      */
-    public void setId(final String param) {
+    public synchronized void setId(final String param) {
         DAT_ID = Long.parseLong(param);
     }
 
@@ -826,7 +850,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new identity
      */
-    public void setIdentity(final String param) {
+    public synchronized void setIdentity(final String param) {
         DAT_IDENTITY = param;
     }
 
@@ -845,7 +869,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new priority
      */
-    public void setPriority(final int param) {
+    public synchronized void setPriority(final int param) {
         DAT_PRIORITY = param;
     }
 
@@ -855,7 +879,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new priority
      */
-    public void setPriority(final String param) {
+    public synchronized void setPriority(final String param) {
         DAT_PRIORITY = Integer.parseInt(param);
     }
 
@@ -874,7 +898,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new queue time
      */
-    public void setQueueTime(final java.sql.Timestamp param) {
+    public synchronized void setQueueTime(final java.sql.Timestamp param) {
         DAT_QUEUE_TIME = timestampToBigDecimal(param);
     }
 
@@ -893,7 +917,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new requeue count
      */
-    public void setRequeueCount(final int param) {
+    public synchronized void setRequeueCount(final int param) {
         DAT_REQUEUE_COUNT = param;
     }
 
@@ -903,7 +927,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new requeue count
      */
-    public void setRequeueCount(final String param) {
+    public synchronized void setRequeueCount(final String param) {
         DAT_REQUEUE_COUNT = Integer.parseInt(param);
     }
 
@@ -922,7 +946,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new replicate count
      */
-    public void setReplicateCount(final int param) {
+    public synchronized void setReplicateCount(final int param) {
         DAT_REPLICATE_COUNT = param;
     }
 
@@ -932,7 +956,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new replicate count
      */
-    public void setReplicateCount(final String param) {
+    public synchronized void setReplicateCount(final String param) {
         DAT_REPLICATE_COUNT = Integer.parseInt(param);
     }
 
@@ -951,7 +975,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new requeue history
      */
-    public void setRequeueHistory(final int param) {
+    public synchronized void setRequeueHistory(final int param) {
         DAT_REQUEUE_HISTORY = param;
     }
 
@@ -961,7 +985,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new requeue history
      */
-    public void setRequeueHistory(final String param) {
+    public synchronized void setRequeueHistory(final String param) {
         DAT_REQUEUE_HISTORY = Integer.parseInt(param);
     }
 
@@ -980,7 +1004,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new retry time
      */
-    public void setRetryTime(final java.sql.Timestamp param) {
+    public synchronized void setRetryTime(final java.sql.Timestamp param) {
         DAT_RETRY_TIME = timestampToBigDecimal(param);
     }
 
@@ -999,7 +1023,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new scheduled time
      */
-    public void setScheduledTime(final java.sql.Timestamp param) {
+    public synchronized void setScheduledTime(final java.sql.Timestamp param) {
         DAT_SCHEDULED_TIME = timestampToBigDecimal(param);
     }
 
@@ -1018,7 +1042,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new sent
      */
-    public void setSent(final long param) {
+    public synchronized void setSent(final long param) {
         DAT_SENT = param;
     }
 
@@ -1028,7 +1052,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new sent
      */
-    public void setSent(final String param) {
+    public synchronized void setSent(final String param) {
         DAT_SENT = Long.parseLong(param);
     }
 
@@ -1047,7 +1071,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new size
      */
-    public void setSize(final long param) {
+    public synchronized void setSize(final long param) {
         DAT_SIZE = param;
     }
 
@@ -1057,7 +1081,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new size
      */
-    public void setSize(final String param) {
+    public synchronized void setSize(final String param) {
         DAT_SIZE = Long.parseLong(param);
     }
 
@@ -1076,7 +1100,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new start count
      */
-    public void setStartCount(final int param) {
+    public synchronized void setStartCount(final int param) {
         DAT_START_COUNT = param;
     }
 
@@ -1086,7 +1110,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new start count
      */
-    public void setStartCount(final String param) {
+    public synchronized void setStartCount(final String param) {
         DAT_START_COUNT = Integer.parseInt(param);
     }
 
@@ -1105,7 +1129,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new start time
      */
-    public void setStartTime(final java.sql.Timestamp param) {
+    public synchronized void setStartTime(final java.sql.Timestamp param) {
         DAT_START_TIME = timestampToBigDecimal(param);
     }
 
@@ -1124,7 +1148,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new puts the time
      */
-    public void setPutTime(final java.sql.Timestamp param) {
+    public synchronized void setPutTime(final java.sql.Timestamp param) {
         DAT_PUT_TIME = timestampToBigDecimal(param);
     }
 
@@ -1143,7 +1167,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new target
      */
-    public void setTarget(final String param) {
+    public synchronized void setTarget(final String param) {
         DAT_TARGET = param;
     }
 
@@ -1151,7 +1175,7 @@ public class DataTransfer extends DataBaseObject {
         return DAT_DELIVERED_NAME;
     }
 
-    public void setDeliveredName(final String name) {
+    public synchronized void setDeliveredName(final String name) {
         DAT_DELIVERED_NAME = name;
     }
 
@@ -1175,7 +1199,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new time base
      */
-    public void setTimeBase(final java.sql.Timestamp param) {
+    public synchronized void setTimeBase(final java.sql.Timestamp param) {
         DAT_TIME_BASE = timestampToBigDecimal(param);
     }
 
@@ -1194,7 +1218,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new replicate time
      */
-    public void setReplicateTime(final java.sql.Timestamp param) {
+    public synchronized void setReplicateTime(final java.sql.Timestamp param) {
         DAT_REPLICATE_TIME = timestampToBigDecimal(param);
     }
 
@@ -1213,7 +1237,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new backup time
      */
-    public void setBackupTime(final java.sql.Timestamp param) {
+    public synchronized void setBackupTime(final java.sql.Timestamp param) {
         DAT_BACKUP_TIME = timestampToBigDecimal(param);
     }
 
@@ -1232,7 +1256,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new proxy time
      */
-    public void setProxyTime(final java.sql.Timestamp param) {
+    public synchronized void setProxyTime(final java.sql.Timestamp param) {
         DAT_PROXY_TIME = timestampToBigDecimal(param);
     }
 
@@ -1251,7 +1275,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new time step
      */
-    public void setTimeStep(final long param) {
+    public synchronized void setTimeStep(final long param) {
         DAT_TIME_STEP = param;
     }
 
@@ -1261,7 +1285,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new time step
      */
-    public void setTimeStep(final String param) {
+    public synchronized void setTimeStep(final String param) {
         DAT_TIME_STEP = Long.parseLong(param);
     }
 
@@ -1280,7 +1304,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new unique key
      */
-    public void setUniqueKey(final String param) {
+    public synchronized void setUniqueKey(final String param) {
         DAT_UNIQUE_KEY = param;
     }
 
@@ -1299,7 +1323,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new user status
      */
-    public void setUserStatus(final String param) {
+    public synchronized void setUserStatus(final String param) {
         DAT_USER_STATUS = param;
     }
 
@@ -1318,7 +1342,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new destination name
      */
-    public void setDestinationName(final String param) {
+    public synchronized void setDestinationName(final String param) {
         DES_NAME = param;
     }
 
@@ -1337,7 +1361,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new host name
      */
-    public void setHostName(final String param) {
+    public synchronized void setHostName(final String param) {
         HOS_NAME = stringToInteger(param);
     }
 
@@ -1356,7 +1380,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new monitoring value id
      */
-    public void setMonitoringValueId(final Long param) {
+    public synchronized void setMonitoringValueId(final Long param) {
         MOV_ID = param;
     }
 
@@ -1375,7 +1399,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new status code
      */
-    public void setStatusCode(final String param) {
+    public synchronized void setStatusCode(final String param) {
         STA_CODE = param;
     }
 
@@ -1394,7 +1418,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new transfer server name
      */
-    public void setTransferServerName(final String param) {
+    public synchronized void setTransferServerName(final String param) {
         TRS_NAME = param;
     }
 
@@ -1413,7 +1437,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new original transfer server name
      */
-    public void setOriginalTransferServerName(final String param) {
+    public synchronized void setOriginalTransferServerName(final String param) {
         TRS_NAME_ORIGINAL = param;
     }
 
@@ -1432,7 +1456,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new transfer server
      */
-    public void setTransferServer(final TransferServer param) {
+    public synchronized void setTransferServer(final TransferServer param) {
         transferServer = param;
     }
 
@@ -1451,7 +1475,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new original transfer server
      */
-    public void setOriginalTransferServer(final TransferServer param) {
+    public synchronized void setOriginalTransferServer(final TransferServer param) {
         originalTransferServer = param;
     }
 
@@ -1470,7 +1494,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new destination
      */
-    public void setDestination(final Destination param) {
+    public synchronized void setDestination(final Destination param) {
         destination = param;
     }
 
@@ -1489,7 +1513,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new data file
      */
-    public void setDataFile(final DataFile param) {
+    public synchronized void setDataFile(final DataFile param) {
         dataFile = param;
     }
 
@@ -1508,7 +1532,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new host
      */
-    public void setHost(final Host param) {
+    public synchronized void setHost(final Host param) {
         host = param;
     }
 
@@ -1527,7 +1551,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new backup host
      */
-    public void setBackupHost(final Host param) {
+    public synchronized void setBackupHost(final Host param) {
         backupHost = param;
     }
 
@@ -1546,7 +1570,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new proxy host
      */
-    public void setProxyHost(final Host param) {
+    public synchronized void setProxyHost(final Host param) {
         proxyHost = param;
     }
 
@@ -1565,7 +1589,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new monitoring value
      */
-    public void setMonitoringValue(final MonitoringValue param) {
+    public synchronized void setMonitoringValue(final MonitoringValue param) {
         monitoringValue = param;
     }
 
@@ -1584,7 +1608,7 @@ public class DataTransfer extends DataBaseObject {
      * @param param
      *            the new connect options
      */
-    public void setConnectOptions(final String param) {
+    public synchronized void setConnectOptions(final String param) {
         connectOptions = param;
     }
 

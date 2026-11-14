@@ -170,6 +170,7 @@ nav:
   - Notifications (MQTT):
       - MQTT Overview: notifications/mqtt-overview.md
       - Real-Time Dissemination: notifications/mqtt-dissemination.md
+      - Notification History: notifications/history.md
       - Automated Acquisition: notifications/mqtt-acquisition.md
       - WMO WIS2 Integration: notifications/wmo-wis2.md
       - Implementation Details: notifications/implementation.md

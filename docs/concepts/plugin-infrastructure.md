@@ -82,21 +82,21 @@ are trusted in-process Java code, not sandboxed applications.
 
 ### Authentication policy
 
-The existing checks and authentication ordering remain in place:
+Authentication follows this order:
 
 1. Empty credentials are rejected; the ECUser must exist or be imported, and a
    corresponding active WebUser must already exist locally.
-2. Existing configured static/anonymous and certificate authentication paths
+2. Configured static/anonymous and certificate authentication paths
    retain precedence for WebUser login.
 3. An active `AuthenticationProvider` validates ordinary WebUser credentials.
-   The ECMWF provider auto-selected by `[TOTP] active=true` preserves the
-   existing password/passcode endpoint behavior. Otherwise a configured
+   The ECMWF provider auto-selected by `[TOTP] active=true` handles
+   password/passcode validation. Otherwise a configured
    provider replaces local WebUser password validation; with no provider,
-   local validation is unchanged.
+   local password validation applies.
 4. For active synchronized incoming users, credential validation is delegated
    to the same provider. Inactive providers or rejected credentials do not
    fall back to a local password. Self-service subscriber-password handling
-   and open-access users retain their existing policy.
+   and open-access authentication use their respective policies.
 
 An authentication provider returns `ACCEPTED`, `REJECTED` or `UNSUPPORTED`.
 **Only `ACCEPTED` succeeds.** Neither rejection, an unsupported request, a null
@@ -157,7 +157,7 @@ See [ECaccess directory](../administration/ecaccess-identity.md) for build
 and configuration. Credentials remain with core TOTP authentication; this adapter
 does not validate passwords or passcodes.
 The same optional jar supplies [ECaccess gateway transfers](../transfer-modules/ecaccess.md)
-through the independent remote-service SPI below. Gateway operations and legacy
+through the independent remote-service SPI below. Gateway operations and ECCMD
 wire types remain entirely in that jar; the identity SPI does not dispatch them.
 
 ## Remote service extensions
@@ -222,11 +222,11 @@ assignment occurs.
 
 The provider uses the same API-version and startup/shutdown lifecycle as other
 identity extensions. It starts after authentication and directory providers.
-An active interactive provider adds a separate button; existing credential,
-certificate and TOTP login behavior is unchanged. Interactive login deliberately
+An active interactive provider supplies a separate sign-in button alongside
+credential, certificate and TOTP login. Interactive login deliberately
 does not run through the credential-validation SPI or require a local password.
 
-The initial bundled example is
+The bundled OIDC provider is
 `ecmwf.ecpds.extension.oidc.OidcLoginProvider`, implementing OIDC authorization-code
 login. See [OpenID Connect login](../administration/openid-connect.md) for setup,
 supported provider features and operational requirements.
@@ -330,7 +330,7 @@ Archive-only transfer-module loading does not register application-wide options.
 `ECtransOptionRegistry.get(group)` supplies the combined, immutable catalogue
 for editor completion/help, property validation, hidden-option handling and
 normalization; secret redaction also includes registered definitions.
-`ECtransOptions.get(group)` retains its built-in-enum-only API.
+`ECtransOptions.get(group)` returns only built-in enum options.
 Discovery uses the core application classloader at first catalogue access and
 is cached for the process lifetime, not the request/thread context classloader.
 Malformed service providers, invalid names and duplicate group/parameter names

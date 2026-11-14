@@ -163,8 +163,7 @@ public abstract class StorageRepository<O> extends MBeanRepository<O> {
             if (object == null) {
                 continue;
             }
-            if (expired(object)) {
-                removeValue(object);
+            if (removeIfExpired(object)) {
                 if (storageThreadsList.isEmpty()) {
                     try {
                         update(object);
@@ -184,6 +183,27 @@ public abstract class StorageRepository<O> extends MBeanRepository<O> {
             }
         }
         return NEXT_STEP_DELAY;
+    }
+
+    protected boolean removeIfExpired(final O object) {
+        if (!expired(object)) {
+            return false;
+        }
+        removeValue(object);
+        return true;
+    }
+
+    /** Atomically test and remove the current instance; expired must not modify this repository. */
+    protected final boolean removeCurrentIfExpired(final O object) {
+        final var removed = new java.util.concurrent.atomic.AtomicBoolean();
+        computeValue(getKey(object), (_, current) -> {
+            if (current == object && expired(object)) {
+                removed.set(true);
+                return null;
+            }
+            return current;
+        });
+        return removed.get();
     }
 
     /**

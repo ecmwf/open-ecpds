@@ -30,8 +30,8 @@ If successful, you should be logged into the development container.
 
 If a container already exists, `make dev` offers to reuse it (starting it if
 stopped), replace it with a locally-built image, or cancel. Reusing skips the build.
-Replacement builds successfully before removing the old container; bind-mounted
-host files are preserved, but files stored only inside the old container are lost.
+Replacement builds successfully before removing the existing container; bind-mounted
+host files are preserved, but files stored only inside that container are lost.
 
 By default, the container targets your host's native architecture. To build/run a
 second, side-by-side dev container for another architecture (e.g. for multi-arch
@@ -166,7 +166,7 @@ make stop-otel
 No OpenECPDS image build is needed. The Collector accepts OTLP HTTP/protobuf
 on the Docker host at `http://127.0.0.1:4318` and prints decoded telemetry to
 container logs. It is not started by ordinary `make up`, `make start-db` or
-`make start-backend`; existing application startup remains unchanged.
+`make start-backend`. Start it explicitly with `make start-otel`.
 
 This is a diagnostic sink, not durable storage: acknowledgements allow the
 Master to remove delivered journal rows, and removing the container discards

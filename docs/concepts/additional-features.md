@@ -313,7 +313,7 @@ It also exposes port timing,
 active/passive behaviour,
 extended mode,
 and per-socket buffer sizing,
-which is useful for legacy or bandwidth-constrained environments.
+which is useful for networks with specific connection or bandwidth constraints.
 
 ### SFTP / SSH-style delivery
 

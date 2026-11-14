@@ -55,7 +55,7 @@ an incompatible compiler/runtime before the image is created.
 | Library | Version | License | Purpose |
 |---|---|---|---|
 | [EhCache](https://www.ehcache.org/) | 3.10.x | Apache 2.0 | JCache (JSR-107) provider used as Hibernate's second-level cache |
-| [JAXB API](https://javaee.github.io/jaxb-v2/) | 2.3.1 | CDDL 1.1 | `javax.xml.bind` API required by EhCache XML config parsing (removed from JDK 9+) |
+| [JAXB API](https://javaee.github.io/jaxb-v2/) | 2.3.1 | CDDL 1.1 | `javax.xml.bind` API required by EhCache XML config parsing |
 | [JAXB Impl](https://eclipse-ee4j.github.io/jaxb-ri/) | 2.3.9 | CDDL 1.1 | JAXB 2.x runtime implementation required by EhCache |
 
 ---
@@ -129,7 +129,7 @@ an incompatible compiler/runtime before the image is created.
 | [Apache Log4j 2 Core](https://logging.apache.org/log4j/2.x/) | 2.26.x | Apache 2.0 | Logging implementation |
 | [Apache Log4j 2 API](https://logging.apache.org/log4j/2.x/) | 2.26.x | Apache 2.0 | Logging API |
 | [Log4j SLF4J Bridge](https://logging.apache.org/log4j/2.x/) | 2.26.x | Apache 2.0 | Routes SLF4J log calls to Log4j 2 |
-| [Log4j 1.2 API Bridge](https://logging.apache.org/log4j/2.x/) | 2.26.x | Apache 2.0 | Compatibility bridge for legacy Log4j 1.x calls |
+| [Log4j 1.2 API Bridge](https://logging.apache.org/log4j/2.x/) | 2.26.x | Apache 2.0 | Routes Log4j 1.x API calls through Log4j 2 |
 | [LMAX Disruptor](https://github.com/LMAX-Exchange/disruptor) | 4.0.0 | Apache 2.0 | High-throughput async logging queue used by Log4j 2 |
 | [Apache Sling Commons Threads](https://sling.apache.org/) | 3.3.0 | Apache 2.0 | Thread pool management used by the logging subsystem |
 
@@ -180,7 +180,7 @@ an incompatible compiler/runtime before the image is created.
 | Library | Version | License | Purpose |
 |---|---|---|---|
 | [Google Guava](https://github.com/google/guava) | (BOM) | Apache 2.0 | General-purpose utility library (collections, I/O, hashing) |
-| [Jackson Databind (Codehaus, legacy)](https://github.com/codehaus/jackson) | 1.9.11 | Apache 2.0 | Legacy Jackson 1.x used by a small number of modules (S3, OpsView) |
+| [Jackson Databind (Codehaus)](https://github.com/codehaus/jackson) | 1.9.11 | Apache 2.0 | Jackson 1.x JSON binding used by S3 and OpsView modules |
 | [Apache Commons IO](https://commons.apache.org/proper/commons-io/) | 2.20.x | Apache 2.0 | File and stream I/O utilities |
 | [Apache Commons Lang](https://commons.apache.org/proper/commons-lang/) | 2.6 | Apache 2.0 | String and object utilities |
 | [Apache Commons Compress](https://commons.apache.org/proper/commons-compress/) | 1.27.x | Apache 2.0 | Archive and compression formats (tar, gz, bz2, zstd) |

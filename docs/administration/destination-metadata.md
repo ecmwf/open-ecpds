@@ -2,13 +2,13 @@
 
 **Destination Metadata** lets administrators attach structured, free-form information to a Destination — organisational details, contacts, escalation procedures, known issues, anything worth recording against a specific data flow but that doesn't belong in a transfer option or a Host property. Field *definitions* (what fields exist, their type, and their central default) are managed once, globally, on **Metadata Field Definitions** (`/do/admin/metafields`); each Destination then has its own **Metadata** tab (`/do/transfer/destination/metadata/{name}`) where those fields are filled in (or, for locked fields, simply displayed).
 
-The most useful part of this feature for day-to-day operations is that it closes a real gap: OpenECPDS already knows a destination is failing (via monitoring/Opsview), but nothing in Opsview itself used to say *what to do about it* or *who to call*. Destination Metadata — combined with the **Include in Notes** export — lets that operational knowledge live right next to the alert, instead of in a separate wiki an operator has to go find under pressure.
+Destination Metadata — combined with the **Include in Notes** export — puts operational instructions and contacts alongside monitoring/Opsview alerts. Operators can see *what to do* and *who to call* directly from the affected destination's notes.
 
 ---
 
 ## Why this exists
 
-Every Destination tends to accumulate the same kind of "soft" information over time: who owns it, who to contact when it breaks, what's normal and what isn't, links to external documentation, a standard escalation path. Historically this lived wherever each team happened to put it — a wiki page, a shared spreadsheet, someone's memory — which means it's inconsistent, hard to discover from inside OpenECPDS, and easy to forget to update.
+Every Destination needs operational information: who owns it, who to contact when it breaks, what's normal and what isn't, links to external documentation, and a standard escalation path. Keeping this information with the Destination makes it accessible from OpenECPDS and easier to maintain consistently.
 
 Destination Metadata gives this information a proper home:
 

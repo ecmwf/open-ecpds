@@ -186,7 +186,7 @@ rclone lsd :s3: \
   --no-check-certificate
 ```
 
-> **Note:** `--s3-v2-auth` forces the older AWS V2 signature scheme. Some rclone/AWS SDK versions have V4-signing quirks that don't match this server's implementation, causing a `SignatureDoesNotMatch` error; V2 auth is a reliable workaround.
+> **Note:** `--s3-v2-auth` selects AWS Signature V2 authentication. Use this setting with the rclone example to avoid `SignatureDoesNotMatch` errors from incompatible V4 request signing.
 
 ### WebDAV
 
@@ -461,7 +461,7 @@ docker rm standalone
 
     This is a limitation of Docker Desktop's virtualized networking, not an OpenECPDS
     issue. On macOS/Windows, containers reach the outside world through a userspace VM
-    networking layer (gVisor-tap-vsock, formerly vpnkit) that performs NAT for outbound
+    networking layer (gVisor-tap-vsock) that performs NAT for outbound
     traffic but does not relay the ICMP "TTL Exceeded" replies sent back by intermediate
     routers for each traceroute probe. Only the local `docker0` bridge answers, because
     that hop never actually leaves the VM.

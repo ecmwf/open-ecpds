@@ -236,12 +236,38 @@ public class TicketRepository extends StorageRepository<AbstractTicket> {
      */
     public AbstractTicket remove(final long id) {
         final var ticket = removeKey(Format.formatLong(id, 10, true));
+        closeRemoved(ticket, id);
+        return ticket;
+    }
+
+    /**
+     * Run an operation before removing its ticket, passing null when no ticket exists. A failure leaves the ticket in
+     * the repository; the operation is responsible for rolling back its own changes. It must not modify this
+     * repository.
+     */
+    public AbstractTicket removeAfter(final long id, final java.util.function.Consumer<AbstractTicket> operation) {
+        final var removed = new java.util.concurrent.atomic.AtomicReference<AbstractTicket>();
+        computeValue(Format.formatLong(id, 10, true), (_, ticket) -> {
+            operation.accept(ticket);
+            removed.set(ticket);
+            return null;
+        });
+        final var ticket = removed.get();
+        closeRemoved(ticket, id);
+        return ticket;
+    }
+
+    private void closeRemoved(final AbstractTicket ticket, final long id) {
         if (ticket != null) {
             _log.debug("Ticket removed: " + id);
             ticket.notifyUsers();
             ticket.close(0);
         }
-        return ticket;
+    }
+
+    @Override
+    protected boolean removeIfExpired(final AbstractTicket ticket) {
+        return removeCurrentIfExpired(ticket);
     }
 
     /**

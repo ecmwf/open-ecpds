@@ -123,7 +123,7 @@ Imports a certificate from an uploaded file. Supported formats:
 |---|---|---|
 | PEM | `.pem`, `.crt` | May include both certificate and private key |
 | PKCS#12 / PFX | `.pfx`, `.p12` | Standard format from most CAs and tools |
-| Java KeyStore | `.jks` | Legacy format, still widely used |
+| Java KeyStore | `.jks` | Java certificate and private-key container |
 
 If the uploaded file is password-protected (PKCS#12, JKS, or encrypted PEM), enter the password in the **Password** field. Leave it blank if the file uses the same password as the current keystore.
 
@@ -152,20 +152,17 @@ This is the recommended way to synchronise all components after importing a new 
 
 Each Mover retains its configured keystore password, file permissions and ownership.
 The certificate, private key and complete chain are preserved, and the SHA-256
-fingerprint does not change. The PKCS#12 file can be read by OpenSSL without `-legacy`.
+fingerprint does not change. PKCS#12 files use AES-256/PBES2 protection with
+PBKDF2-HMAC-SHA256 and a SHA-256 MAC and can be read directly by OpenSSL.
 
-When Master, Monitor, or Mover HTTP/MQTT services start, an incompatible existing
-PKCS#12 keystore containing a private key is automatically repackaged in the current
-OpenSSL-compatible format; already-compatible files are left unchanged. The configured
-password is used to read and write it; the certificate, private key, complete chain,
-and SHA-256 fingerprint are preserved, as are file permissions and ownership.
-JKS and certificate-only
-truststores are left unchanged. If a keystore cannot be read with the configured
-password or has unsupported entries, it is not replaced and the conversion failure is
-logged.
+Master, Monitor and Mover HTTP/MQTT services check private-key PKCS#12 protection
+at startup and write this format when needed. The configured password, certificate,
+private key, complete chain, SHA-256 fingerprint, file permissions and ownership
+are preserved. Writes are validated before atomic replacement. JKS and
+certificate-only truststores are not rewritten. Unreadable keystores and unsupported
+entries are left untouched, and the failure is logged.
 
-This also updates the keystore used by Hawtio when it shares the service's PKCS#12
-file. Verify the file locally with:
+Hawtio can share the service's PKCS#12 file. Verify the file locally with:
 
 ```bash
 openssl pkcs12 -in /path/to/ecpds-mover.pfx -info -noout
@@ -221,10 +218,51 @@ After replacing the file on disk, use one of the **Reload from Disk** actions in
 
 ---
 
+## Changing Keystore Passwords
+
+The standalone `tools/RotateKeystorePassword.java` script requires a JDK 17+ on a
+POSIX filesystem. It supports ordinary file-backed JKS, JCEKS and PKCS#12 stores,
+not hardware tokens or custom providers. Run it from the source checkout:
+
+```bash
+java tools/RotateKeystorePassword.java --keystore /path/to/service.pfx
+```
+
+The existing password, new password and confirmation are prompted without echoing.
+For automation, supply file paths instead of passwords:
+
+```bash
+java tools/RotateKeystorePassword.java \
+  --keystore /path/to/service.pfx \
+  --old-password-file /secure/old-password \
+  --new-password-file /secure/new-password
+```
+
+Password files must be owned by the invoking user, have no group/other permissions
+(for example, mode `0600`), and contain UTF-8 text. One final LF or CRLF is removed;
+spaces are not trimmed. Do not put passwords in command arguments or shell history.
+
+The script changes the store password and all private/secret key-entry passwords.
+If any key entry cannot be recovered with the existing store password, it fails
+without replacing the original. Certificates, complete chains and key material are
+verified before atomic replacement. A uniquely named `.backup-...` file retains
+the original bytes and password. POSIX permissions, owner and group are preserved
+on both files; ACLs, extended attributes and hard-link relationships are not.
+Protect and retain the backup until recovery is no longer needed, then dispose
+of it according to your credential-retention policy.
+
+Stop all services and other writers using the file first. After rotation, update
+every matching password configuration, including overrides and Hawtio if it shares
+the file, before restarting. The script does not edit configuration or restart
+services. It preserves the keystore format and does not select different
+cryptographic protection algorithms. Use a strong, unique new password.
+
+---
+
 ## Security Recommendations
 
 - Use certificates with a **validity period of one year or less** and rotate them regularly.
 - Use **RSA 2048-bit or ECDSA P-256** keys or stronger.
-- Enable only **TLS 1.2 and TLS 1.3** (the defaults). Earlier protocol versions are disabled by default.
+- Enable only **TLS 1.2 and TLS 1.3** (the defaults). Other TLS versions are disabled by default.
 - Ensure the certificate's **Subject Alternative Names** cover all hostnames under which the Monitor and Data Movers are accessed to avoid TLS errors on modern clients.
 - After deploying a production certificate, verify the SHA-256 fingerprint shown in the UI matches the fingerprint of the file provided by your CA.

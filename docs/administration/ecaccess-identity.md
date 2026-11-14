@@ -40,7 +40,7 @@ repository for reproducible builds beyond a local checkout.
 Install the built `ecpds-ecaccess/target/ecpds-ecaccess-<version>.jar` and
 `ecaccess-eccmd-client-1.0.0.jar` on the **Master application classpath**, alongside
 the matching OpenECPDS core and runtime libraries. The adapter jar does not bundle
-core classes. Do not install the legacy `eccmd.jar`, `gateway.jar` or `monitor.jar`
+core classes. Do not install the external `eccmd.jar`, `gateway.jar` or `monitor.jar`
 alongside upstream: they contain overlapping implementations.
 
 The adapter uses the existing `RMIClientSocketFactory` transport and ECCMD's
@@ -93,10 +93,10 @@ This extension never sends passwords or passcodes to ECCMD and does not implemen
 `AuthenticationProvider`. Register `EcaccessIdentityProvider` only under
 `[UserDirectoryExtension]`; incompatible provider registrations fail startup.
 
-The existing `[TOTP]` token endpoint and password/passcode client settings remain in
-the core. Static/certificate paths remain unchanged. OpenECPDS's generic authentication
-and interactive-login SPIs remain available for other providers; they are independent
-of this directory extension.
+The core provides the `[TOTP]` token endpoint, password/passcode client settings,
+and static/certificate authentication. OpenECPDS's generic authentication and
+interactive-login SPIs are available for other providers; they are independent of
+this directory extension.
 
 ## User import and refresh
 

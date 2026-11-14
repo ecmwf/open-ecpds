@@ -9,7 +9,7 @@ downloads and requeue, per destination, destination type, transfer group or file
     Master, Monitor and Mover components in place, set `[StoragePolicy] enabled=yes` on the Master.
     **Existing `ENFORCE` policies take effect immediately when enabled.**
     Use `DRY_RUN` policies first if you want estimates without deletion.
-    The original is **never released early**. Normal transfer expiry and explicit purge remain unchanged.
+    The original is **never released early**. Normal transfer expiry and explicit purge apply independently.
 
 ## Principles
 

@@ -9,7 +9,7 @@ See also the [Master](master.md) and [Monitor](monitor.md) references.
 
 The optional [ECaccess transfer module](../transfer-modules/ecaccess.md) requires
 Master RMI connectivity and the existing `ECproxyPlugin` callback listener.
-Its gateway properties belong to Hosts, not a new Mover provider section.
+Its gateway properties belong to Hosts, not a Mover provider section.
 
 ## File location and overrides
 
@@ -53,8 +53,9 @@ source links. Java expressions are preserved for context-dependent defaults.
 Credentials are not reproduced.
 
 Rows marked **template entry** have no direct literal reader in this process's
-reviewed sources. Some entries are substitutions or retained compatibility
-settings; named-socket and open-map readers are described separately.
+reviewed sources. Some entries are substitutions; their presence alone does not
+identify an active runtime setting. Named-socket and open-map readers are
+described separately.
 
 Names are case-sensitive. Duration-reading options accept suffixes such as `s`,
 `m`, `h` and `d`; bare configured durations mean **hours**. Plain numeric socket
@@ -623,7 +624,7 @@ Retrieval stream buffering and cancellation, plus progress-monitor update durati
 
 ### [Scheduler]
 
-Worker cadence, concurrency and watchdogs. `*JammedTimeout`, `maximumDuration*` and `timeOut*` read durations; a negative timeout leaves that execution limit unset. `*TimeRanges` accepts configured execution windows. `max*Threads` values are concurrency counts; `cacheRatio` scales prefetch. The legacy `purgeDataBase`/`updateECUsers` intervals are hours, with optional clock-time lists.
+Worker cadence, concurrency and watchdogs. `*JammedTimeout`, `maximumDuration*` and `timeOut*` read durations; a negative timeout leaves that execution limit unset. `*TimeRanges` accepts configured execution windows. `max*Threads` values are concurrency counts; `cacheRatio` scales prefetch. The `purgeDataBase`/`updateECUsers` intervals are hours, with optional clock-time lists.
 
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
@@ -884,7 +885,7 @@ name=implementation.Class@/path/to/plugin,option=value
 The library path and per-plugin options depend on the plugin. Server plugins
 support `maxConnections` and `inverseResolution`; deleting or adding a plugin
 definition changes which services start. These are options **inside the value**,
-not new top-level `ecmwf.properties` groups. See
+not top-level `ecmwf.properties` groups. See
 [Plugin Infrastructure](../concepts/plugin-infrastructure.md).
 
 `[ECtrans]` is an open family of global transfer-option defaults, with keys

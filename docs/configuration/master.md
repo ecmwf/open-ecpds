@@ -124,9 +124,9 @@ value as a **path**, but their fallback is **content**. Shipped credentials are
 not reproduced here.
 
 Entries marked **template entry** have no direct literal reader in the reviewed
-sources. They may be consumed through substitutions or retained for
-compatibility; their presence alone is not evidence of an active runtime
-switch. Named-socket and open-map readers are documented separately.
+sources. They may be consumed through substitutions; their presence alone is
+not evidence of an active runtime switch. Named-socket and open-map readers are
+documented separately.
 
 ## Operational guidance
 
@@ -241,7 +241,7 @@ ECauth connection and host-list cache. Durations control connection timeout, ref
 
 ### [ECauthSession]
 
-Legacy fallback command for ECauth token generation; `[Command] ecauth` and `[Server] ecauth` take precedence.
+Fallback command for ECauth token generation; `[Command] ecauth` and `[Server] ecauth` take precedence.
 
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
@@ -484,7 +484,7 @@ Failed-login throttling and ban tracking. `active` enables enforcement; `max` is
 
 ### [Mail]
 
-SMTP and optional mail-store configuration. `host`/`user` are the legacy shared defaults; `smtpHost` overrides the outgoing host. `starttls`, `tls` and `auth` affect transport/authentication. Store settings apply only to mail retrieval. Keep passwords in protected local configuration.
+SMTP and optional mail-store configuration. `host`/`user` are the shared defaults; `smtpHost` overrides the outgoing host. `starttls`, `tls` and `auth` affect transport/authentication. Store settings apply only to mail retrieval. Keep passwords in protected local configuration.
 
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
@@ -765,7 +765,7 @@ Shared runtime-resource diagnostics. `defaultDebugFrequency` counts resource-clo
 
 ### [Scheduler]
 
-Worker cadence, concurrency and watchdogs. `*JammedTimeout`, `maximumDuration*` and `timeOut*` read durations; a negative timeout leaves that execution limit unset. `*TimeRanges` accepts configured execution windows. `max*Threads` values are concurrency counts; `cacheRatio` scales prefetch. The legacy `purgeDataBase`/`updateECUsers` intervals are hours, with optional clock-time lists.
+Worker cadence, concurrency and watchdogs. `*JammedTimeout`, `maximumDuration*` and `timeOut*` read durations; a negative timeout leaves that execution limit unset. `*TimeRanges` accepts configured execution windows. `max*Threads` values are concurrency counts; `cacheRatio` scales prefetch. The `purgeDataBase`/`updateECUsers` intervals are hours, with optional clock-time lists.
 
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
@@ -1178,7 +1178,7 @@ name=implementation.Class@/path/to/plugin,option=value
 The library path and per-plugin options depend on the plugin. Server plugins
 support `maxConnections` and `inverseResolution`; deleting or adding a plugin
 definition changes which services start. These are options **inside the value**,
-not new top-level `ecmwf.properties` groups. See
+not top-level `ecmwf.properties` groups. See
 [Plugin Infrastructure](../concepts/plugin-infrastructure.md).
 
 `[ECtrans]` is an open family of global transfer-option defaults, with keys

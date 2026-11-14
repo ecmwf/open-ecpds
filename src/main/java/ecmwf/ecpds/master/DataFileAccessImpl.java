@@ -1217,6 +1217,9 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                         // If this is a download and the DataTransfer is in Standby
                         // mode then we should set it to Done!
                         if (success && !event.getUpload() && StatusFactory.HOLD.equals(transfer.getStatusCode())) {
+                            final var strictCapture = transfer.getNotify()
+                                    && master.isStrictNotificationCapture(transfer);
+                            final var strictEventId = strictCapture ? master.strictNotificationEventId(transfer) : null;
                             if (event.getDuration() == 0) {
                                 _log.debug("0ms duration detected for DataTransfer-{} download (forcing 1ms)",
                                         transfer.getId());
@@ -1233,20 +1236,45 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                             if (transfer.getFirstFinishTime() == null) {
                                 transfer.setFirstFinishTime(finishTime);
                             }
+                            var captured = false;
                             try {
                                 final var destination = base.getDestination(transfer.getDestinationName());
                                 final var options = new DestinationOption(destination);
-                                if (destination.getMailOnEnd()) {
-                                    master.sendECpdsMessage(transfer);
-                                }
-                                if (options.deleteFromSpoolOnSuccess()) {
-                                    transfer.setDeleted(true);
-                                }
+                                final var deleteOnSuccess = options.deleteFromSpoolOnSuccess();
                                 final var value = destination.getSchedulerValue();
                                 value.setLastTransferOk(transfer.getId());
-                                base.update(value);
-                                base.update(transfer);
+                                if (strictCapture) {
+                                    final var captureResult = master.captureStrictNotification(transfer, strictEventId);
+                                    if (captureResult == MasterServer.StrictCaptureResult.ALREADY_COMMITTED) {
+                                        continue;
+                                    }
+                                    if (captureResult != MasterServer.StrictCaptureResult.COMMITTED) {
+                                        throw new IllegalStateException("Strict notification was not captured");
+                                    }
+                                    captured = true;
+                                    if (deleteOnSuccess) {
+                                        transfer.setDeleted(true);
+                                        base.update(transfer);
+                                    }
+                                    if (destination.getMailOnEnd()) {
+                                        master.sendECpdsMessage(transfer);
+                                    }
+                                    base.update(value);
+                                } else {
+                                    if (destination.getMailOnEnd()) {
+                                        master.sendECpdsMessage(transfer);
+                                    }
+                                    if (deleteOnSuccess) {
+                                        transfer.setDeleted(true);
+                                    }
+                                    base.update(value);
+                                    base.update(transfer);
+                                }
                             } catch (final Throwable t) {
+                                if (strictCapture && !captured) {
+                                    throw new MasterException(
+                                            "Strict notification capture failed for transfer " + transfer.getId());
+                                }
                                 _log.error("Updating DataTransfer-{} status", transfer.getId(), t);
                             }
                         }

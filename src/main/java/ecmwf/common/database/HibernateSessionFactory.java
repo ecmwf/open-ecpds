@@ -27,6 +27,10 @@ package ecmwf.common.database;
  */
 
 import java.io.File;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 
 import org.apache.logging.log4j.LogManager;
@@ -39,6 +43,8 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.mapping.PersistentClass;
 import org.hibernate.service.ServiceRegistry;
+
+import ecmwf.common.technical.Cnf;
 
 /**
  * A factory for creating HibernateSession objects.
@@ -88,7 +94,11 @@ public class HibernateSessionFactory {
                 final ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
                         .applySettings(getConfiguration().getProperties()).build();
                 final var sources = new MetadataSources(serviceRegistry);
-                sources.addFile(getFile(HIBERNATE_HBM));
+                if (revisionFencingEnabled()) {
+                    sources.addInputStream(new ByteArrayInputStream(hibernateMapping()));
+                } else {
+                    sources.addFile(getFile(HIBERNATE_HBM));
+                }
                 metadata = sources.getMetadataBuilder().build();
                 sessionFactory = metadata.getSessionFactoryBuilder().build();
                 for (final PersistentClass persistentClass : metadata.getEntityBindings()) {
@@ -169,6 +179,7 @@ public class HibernateSessionFactory {
                 _log.debug("Loading hibernate configuation from {}", System.getProperty(HIBERNATE_CFG));
             }
             configuration = new Configuration().configure(getFile(HIBERNATE_CFG));
+            configureStatistics(configuration);
             _log.debug("Creating Configuration from ecmwf.properties");
         }
 
@@ -203,10 +214,67 @@ public class HibernateSessionFactory {
                 .setProperty("hibernate.connection.url", protocol + ":" + subProtocol + ":" + alias)
                 .setProperty("hibernate.connection.username", user)
                 .setProperty("hibernate.connection.password", password);
-        conf.addFile(getFile(HIBERNATE_HBM));
+        if (revisionFencingEnabled()) {
+            try (java.io.InputStream mapping = new ByteArrayInputStream(hibernateMapping())) {
+                conf.addInputStream(mapping);
+            } catch (final IOException e) {
+                throw new HibernateException("Failed to load notification revision mapping", e);
+            }
+        } else {
+            conf.addFile(getFile(HIBERNATE_HBM));
+        }
         conf.configure(getFile(HIBERNATE_CFG));
+        configureStatistics(conf);
         conf.setEntityNotFoundDelegate((entityName, id) -> _log.error("Entity not found: {}#{}", id, entityName));
         configuration = conf;
+    }
+
+    private static void configureStatistics(final Configuration conf) {
+        if (Cnf.at("DataBase", "cacheStatistics", false)) {
+            conf.setProperty("hibernate.generate_statistics", "true");
+        }
+    }
+
+    static String cacheStatistics() {
+        final var statistics = getSessionFactory().getStatistics();
+        if (!statistics.isStatisticsEnabled()) {
+            return "Hibernate statistics disabled; enable HibernateStatisticsEnabled to collect counters.";
+        }
+        final var result = new StringBuilder("Hibernate L2 cache counters (direct JDBC is not included):\n")
+                .append("Region\tHits\tMisses\tPuts\n");
+        for (final var region : statistics.getSecondLevelCacheRegionNames()) {
+            final var counters = statistics.getCacheRegionStatistics(region);
+            if (counters != null) {
+                result.append(region).append('\t').append(counters.getHitCount()).append('\t')
+                        .append(counters.getMissCount()).append('\t').append(counters.getPutCount()).append('\n');
+            }
+        }
+        return result.toString();
+    }
+
+    private static boolean revisionFencingEnabled() {
+        return Cnf.at("NotificationHistory", "revisionFencing", true);
+    }
+
+    private static byte[] hibernateMapping() {
+        try {
+            final var file = getFile(HIBERNATE_HBM);
+            final var xml = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+            final var transferClass = xml.indexOf("<class name=\"DataTransfer\" table=\"DATA_TRANSFER\"");
+            final var id = transferClass < 0 ? -1 : xml.indexOf("</id>", transferClass);
+            if (id < 0) {
+                throw new HibernateException("DataTransfer mapping could not be located");
+            }
+            final var insertion = """
+                    <version name="notificationRevision" type="ecmwf.common.database.TransferNotificationRevisionType">
+                    \t\t\t<column name="DAT_NOTIFICATION_REVISION" />
+                    \t\t</version>
+                    """;
+            return (xml.substring(0, id + "</id>".length()) + "\n\t\t" + insertion
+                    + xml.substring(id + "</id>".length())).getBytes(StandardCharsets.UTF_8);
+        } catch (final IOException e) {
+            throw new HibernateException("Failed to load notification revision mapping", e);
+        }
     }
 
     /**

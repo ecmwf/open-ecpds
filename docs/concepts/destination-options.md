@@ -3,7 +3,7 @@
 !!! info
     These options configure behaviour in the **Destination editor** **Properties** field.
     They apply to a specific **Destination** and use the `scheduler.`, `incoming.`,
-    `alias.` and `mqtt.` prefixes.
+    `alias.`, `notification.` and `mqtt.` prefixes.
 
 ## `scheduler.*` — Transfer Scheduler Options
 
@@ -185,6 +185,27 @@ alias.pattern = "
 "
 ```
 
+## `notification.*` — Native Notification Capture
+
+These options control capture by the native
+[notification history and replay](../notifications/history.md) service.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `notification.aviso` | Boolean | `false` | Enable Aviso history capture and watch/replay access for this destination. Requires a transfer event trigger; independent of durable MQTT CloudEvents |
+| `notification.captureMode` | String | `async` | `async` captures events without blocking the transfer; capture failures are logged. `strict` commits the transfer update, native history and any enabled MQTT outbox work atomically before acknowledging the originating operation; capture failures propagate to that operation |
+
+Capture requires the Master's notification history service and history/event
+repositories, with destination `incoming.event` or Host `acquisition.event`
+enabled for the transfer, and either `notification.aviso` or `mqtt.cloudEvents`
+enabled for the destination. With both native notification options off, native
+capture is skipped, including strict capture.
+The global history service and revision fencing are enabled by default.
+Strict capture requires `[NotificationHistory] revisionFencing=yes` on every
+Master sharing the database; see [Strict capture](../notifications/history.md#strict-capture).
+MQTT publishing is optional and controlled separately by `mqtt.cloudEvents`;
+MQTT-only destinations retain internal history but do not allow Aviso access.
+
 ## `mqtt.*` — MQTT Publishing Options
 
 These options control MQTT notifications published when destination transfer requests
@@ -193,6 +214,7 @@ complete.
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `mqtt.publish` | Boolean | *disabled* | Publish MQTT notifications when transfer requests for this destination complete, provided those transfers triggered events through `acquisition.event` or `incoming.event` |
+| `mqtt.cloudEvents` | Boolean | `false` | Queue captured native CloudEvents for durable delivery to every configured Data Mover's MQTT broker. Requires notification history capture; independent of `mqtt.publish` and WIS2 publishing. Uses QoS 1 and the topic `<mqttTopicPrefix>/<URL-encoded destination>`; the Master's `[NotificationHistory] mqttTopicPrefix` defaults to `open-ecpds/notifications`. See [MQTT CloudEvents](../notifications/history.md#mqtt-cloudevents) for delivery guarantees and limits |
 | `mqtt.topic` | String | `destinationName/` | MQTT topic to publish to. If the topic ends with `/` — including the default case when no topic is specified — the target name is appended |
 | `mqtt.qos` | Integer | *broker/client default* | MQTT Quality of Service level: `0` (at most once), `1` (at least once), or `2` (exactly once) |
 | `mqtt.expiryInterval` | Duration | Transfer expiry time | How long the broker should retain an undelivered message when subscribers are unavailable |

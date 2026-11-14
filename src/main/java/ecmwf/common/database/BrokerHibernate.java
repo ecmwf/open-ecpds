@@ -61,10 +61,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.Cache;
 import org.hibernate.HibernateException;
+import org.hibernate.LockMode;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
+import org.hibernate.StaleObjectStateException;
 import org.hibernate.TransactionException;
+import org.hibernate.dialect.lock.OptimisticEntityLockException;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.mapping.PersistentClass;
 import org.hibernate.metamodel.MappingMetamodel;
@@ -81,6 +85,10 @@ import jakarta.persistence.criteria.CriteriaQuery;
  * The Class BrokerHibernate.
  */
 final class BrokerHibernate implements Broker {
+
+    private enum RevisionRefresh {
+        UNCHANGED, MERGED, CONFLICT
+    }
 
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(BrokerHibernate.class);
@@ -167,6 +175,135 @@ final class BrokerHibernate implements Broker {
         TRACKER.onOpen();
     }
 
+    @Override
+    public <T> T transaction(final Broker.TransactionWork<T> work) {
+        setReadOnly(false);
+        session.setDefaultReadOnly(false);
+        final var transaction = session.beginTransaction();
+        try {
+            final var result = session.doReturningWork(
+                    connection -> causalWork(connection, current -> work.run(new TransactionAccess(current))));
+            transaction.commit();
+            return result;
+        } catch (final RuntimeException | Error failure) {
+            if (transaction.isActive()) {
+                try {
+                    transaction.rollback();
+                } catch (final RuntimeException rollback) {
+                    failure.addSuppressed(rollback);
+                }
+            }
+            throw failure;
+        } finally {
+            session.clear();
+        }
+    }
+
+    private final class TransactionAccess implements Broker.Transaction {
+        private final Connection connection;
+
+        private TransactionAccess(final Connection connection) {
+            this.connection = connection;
+        }
+
+        @Override
+        public Broker.PreparedQuery prepare(final String sql, final Object... parameters) throws SQLException {
+            final var statement = prepareStatement(connection, sql, parameters);
+            return new Broker.PreparedQuery() {
+                @Override
+                public ResultSet executeQuery() throws SQLException {
+                    return statement.executeQuery();
+                }
+
+                @Override
+                public int executeUpdate() throws SQLException {
+                    return statement.executeUpdate();
+                }
+
+                @Override
+                public void close() throws SQLException {
+                    statement.close();
+                }
+            };
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T extends DataBaseObject> T get(final T object) {
+            session.setCacheMode(org.hibernate.CacheMode.IGNORE);
+            return (T) session.find(object.getClass(), getObjectIdentifier(object, session));
+        }
+
+        @Override
+        public <T extends DataBaseObject> T merge(final T object) {
+            return session.merge(object);
+        }
+
+        @Override
+        public void flush() {
+            session.flush();
+        }
+
+        @Override
+        public void refresh(final DataBaseObject object) {
+            session.refresh(object);
+        }
+
+        @Override
+        public boolean samePersistentState(final DataBaseObject left, final DataBaseObject right) {
+            return BrokerHibernate.this.samePersistentState(left, right);
+        }
+
+        @Override
+        public boolean supportsTransferRevisionFencing() {
+            return TransferNotificationRevisionType.isMapped(session);
+        }
+    }
+
+    @FunctionalInterface
+    private interface ConnectionWork<T> {
+        T run(Connection connection) throws SQLException;
+    }
+
+    private static PreparedStatement prepareStatement(final Connection connection, final String sql,
+            final Object... parameters) throws SQLException {
+        final var statement = connection.prepareStatement(sql);
+        try {
+            statement.setQueryTimeout(5);
+            for (var i = 0; i < parameters.length; i++) {
+                statement.setObject(i + 1, parameters[i]);
+            }
+            return statement;
+        } catch (final SQLException failure) {
+            statement.close();
+            throw failure;
+        }
+    }
+
+    private static <T> T causalWork(final Connection connection, final ConnectionWork<T> work) throws SQLException {
+        Integer previous = null;
+        try (final var query = prepareStatement(connection, "SHOW SESSION VARIABLES LIKE 'wsrep_sync_wait'");
+                final var rows = query.executeQuery()) {
+            if (rows.next()) {
+                previous = rows.getInt(2);
+            }
+        }
+        if (previous != null) {
+            try (final var query = prepareStatement(connection, "SET SESSION wsrep_sync_wait=?", previous | 13)) {
+                query.execute();
+            }
+        }
+        try {
+            return work.run(connection);
+        } finally {
+            if (previous != null) {
+                try (final var query = prepareStatement(connection, "SET SESSION wsrep_sync_wait=?", previous)) {
+                    query.execute();
+                }
+            }
+        }
+    }
+
     /**
      * This method is used to get the identifier of a given object in Hibernate. It takes two parameters - the object
      * and a Hibernate Session.
@@ -241,7 +378,9 @@ final class BrokerHibernate implements Broker {
      */
     @Override
     public <T extends DataBaseObject> void clearCache(final Class<T> mappedClass, final List<Object> primaryKeys) {
-        clearCache(HibernateSessionFactory.getPersistenClass(mappedClass), primaryKeys);
+        final var mapping = session.getSessionFactory().unwrap(SessionFactoryImplementor.class).getMappingMetamodel()
+                .getEntityDescriptor(mappedClass);
+        clearCache(mappedClass, mapping.getIdentifierType().getReturnedClass(), primaryKeys);
     }
 
     /**
@@ -275,14 +414,17 @@ final class BrokerHibernate implements Broker {
      *            the primary keys
      */
     private void clearCache(final PersistentClass persistentClass, final List<Object> primaryKeys) {
-        final var mappedClass = persistentClass.getMappedClass();
+        clearCache(persistentClass.getMappedClass(), persistentClass.getIdentifier().getType().getReturnedClass(),
+                primaryKeys);
+    }
+
+    private void clearCache(final Class<?> mappedClass, final Class<?> hibernateClass, final List<Object> primaryKeys) {
         if (primaryKeys == null || primaryKeys.isEmpty()) {
             cache.evict(mappedClass);
             if (DEBUG_CACHE) {
                 _log.debug("Cache {} cleared for all entities", mappedClass.getName());
             }
         } else {
-            final var hibernateClass = persistentClass.getIdentifier().getType().getReturnedClass();
             for (final var primaryKey : primaryKeys) {
                 if (primaryKey instanceof final Serializable serializableKey) {
                     final var hibernateKey = convert(serializableKey, hibernateClass);
@@ -504,7 +646,7 @@ final class BrokerHibernate implements Broker {
      * a parameter and returns an object of the same type.
      *
      * It first sets the session to read-only mode to prevent any modifications to the object. Then, it retrieves the
-     * primary key value of the input object using the getObjectIdentifier method. Finally, it uses the session.get
+     * primary key value of the input object using the getObjectIdentifier method. Finally, it uses the session.find
      * method to retrieve the object with the specified primary key from the database. If the object is not found, it
      * returns null.
      *
@@ -516,7 +658,7 @@ final class BrokerHibernate implements Broker {
         setReadOnly(true);
         session.setDefaultReadOnly(true);
         try {
-            return (T) session.find(object.getClass(), getObjectIdentifier(object, session));
+            return trackNotificationBaseline((T) session.find(object.getClass(), getObjectIdentifier(object, session)));
         } catch (final HibernateException e) {
             _log.error("get", e);
             throw e;
@@ -569,7 +711,7 @@ final class BrokerHibernate implements Broker {
                         throw new NoSuchElementException("No more results");
                     }
                     hasNextChecked = false;
-                    return finalResults.get();
+                    return trackNotificationBaseline(finalResults.get());
                 }
 
                 @Override
@@ -642,7 +784,7 @@ final class BrokerHibernate implements Broker {
                         throw new NoSuchElementException("No more results");
                     }
                     hasNextChecked = false;
-                    return finalResults.get();
+                    return trackNotificationBaseline(finalResults.get());
                 }
 
                 @Override
@@ -658,9 +800,17 @@ final class BrokerHibernate implements Broker {
                     _log.warn("Failed to close ScrollableResults after exception", closeEx);
                 }
             }
+
             _log.error("getIterator: {} -> {}", target.getName(), sql, e);
             throw new BrokerException("Unable to retrieve data");
         }
+    }
+
+    private static <T extends DataBaseObject> T trackNotificationBaseline(final T object) {
+        if (object instanceof final DataTransfer transfer && transfer.notificationRevision > 0) {
+            transfer.rememberNotificationBaseline();
+        }
+        return object;
     }
 
     /**
@@ -725,28 +875,231 @@ final class BrokerHibernate implements Broker {
      */
     private void perform(final ExecuteOperation operation, final DataBaseObject object) {
         setReadOnly(false);
+        final var verifyRevision = operation == ExecuteOperation.UPDATE && object instanceof DataTransfer
+                && TransferNotificationRevisionType.isMapped(session);
+        performTransaction(operation, object, verifyRevision, 0);
+    }
+
+    private void performTransaction(final ExecuteOperation operation, final DataBaseObject object,
+            final boolean verifyRevision, final int revisionRetries) {
+        DataTransfer versionSource = null;
+        DataTransfer versionSnapshot = null;
         try {
             session.beginTransaction();
+            DataTransfer versioned = null;
             switch (operation) {
             case SAVE:
                 session.persist(object);
                 break;
             case UPDATE:
-                session.merge(object);
+                var updateObject = object;
+                if (verifyRevision && object instanceof final DataTransfer transfer
+                        && transfer.notificationRevision > 0) {
+                    versionSource = transfer;
+                    synchronized (transfer) {
+                        versionSnapshot = (DataTransfer) transfer.clone();
+                    }
+                    updateObject = versionSnapshot;
+                }
+                final var merged = session.merge(updateObject);
+                if (verifyRevision) {
+                    session.lock(merged, LockMode.OPTIMISTIC);
+                    versioned = (DataTransfer) merged;
+                }
                 break;
             case DELETE:
                 session.remove(object);
                 break;
             }
             session.flush();
+            if (versioned != null) {
+                // A no-op merge otherwise performs no database version check.
+                verifyTransferRevision(versioned);
+            }
             session.getTransaction().commit();
-        } catch (final HibernateException e) {
+            if (versioned != null && versionSource != null) {
+                synchronized (versionSource) {
+                    if (samePersistentState(versionSource, versionSnapshot)) {
+                        versionSource.notificationRevision = versioned.notificationRevision;
+                        versionSource.rememberNotificationBaseline();
+                    }
+                }
+            }
+        } catch (final RuntimeException e) {
             _log.warn("perform", e);
-            session.getTransaction().rollback();
+            try {
+                if (session.getTransaction().isActive()) {
+                    session.getTransaction().rollback();
+                }
+            } catch (final RuntimeException rollbackFailure) {
+                e.addSuppressed(rollbackFailure);
+            }
+            for (var cause = (Throwable) e; cause != null; cause = cause.getCause()) {
+                if (cause instanceof final StaleObjectStateException stale) {
+                    try {
+                        cache.evictEntityData(stale.getEntityName(), stale.getIdentifier());
+                    } catch (final RuntimeException evictionFailure) {
+                        e.addSuppressed(evictionFailure);
+                    }
+                    break;
+                } else if (cause instanceof final OptimisticEntityLockException optimistic
+                        && optimistic.getEntity() instanceof final DataTransfer transfer) {
+                    try {
+                        cache.evictEntityData(DataTransfer.class, transfer.getId());
+                    } catch (final RuntimeException evictionFailure) {
+                        e.addSuppressed(evictionFailure);
+                    }
+                    break;
+                }
+            }
+            if (versionSource != null && optimisticConflict(e)) {
+                try {
+                    final var refresh = refreshRevision(versionSource);
+                    if (refresh == RevisionRefresh.UNCHANGED) {
+                        _log.debug("Refreshed unchanged DataTransfer-{} after a revision conflict",
+                                versionSource.getId());
+                        return;
+                    }
+                    if (refresh == RevisionRefresh.MERGED && revisionRetries < RETRY_TRANSACTION_COUNT) {
+                        session.clear();
+                        performTransaction(operation, object, verifyRevision, revisionRetries + 1);
+                        return;
+                    }
+                } catch (final RuntimeException refreshFailure) {
+                    e.addSuppressed(refreshFailure);
+                }
+            }
             throw e;
         } finally {
             session.clear();
         }
+    }
+
+    private static boolean optimisticConflict(final Throwable failure) {
+        for (var cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause instanceof StaleObjectStateException || cause instanceof OptimisticEntityLockException
+                    || cause instanceof jakarta.persistence.OptimisticLockException) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private RevisionRefresh refreshRevision(final DataTransfer transfer) {
+        final long failedRevision;
+        synchronized (transfer) {
+            failedRevision = transfer.notificationRevision;
+            if (failedRevision <= 0) {
+                return RevisionRefresh.CONFLICT;
+            }
+        }
+        final var factory = HibernateSessionFactory.getSessionFactory();
+        if (factory == null) {
+            return RevisionRefresh.CONFLICT;
+        }
+        try (final var currentSession = factory.openSession()) {
+            currentSession.setCacheMode(org.hibernate.CacheMode.IGNORE);
+            final var transaction = currentSession.beginTransaction();
+            try {
+                currentSession.doWork(connection -> causalWork(connection, current -> {
+                    try (final var query = prepareStatement(current, "SELECT DAT_ID FROM DATA_TRANSFER WHERE DAT_ID=?",
+                            transfer.getId()); final var rows = query.executeQuery()) {
+                        if (!rows.next()) {
+                            throw new SQLException("Notification transfer no longer exists");
+                        }
+                    }
+                    return null;
+                }));
+                final var stored = currentSession.find(DataTransfer.class, transfer.getId());
+                if (stored == null) {
+                    transaction.rollback();
+                    return RevisionRefresh.CONFLICT;
+                }
+                synchronized (transfer) {
+                    if (transfer.notificationRevision != failedRevision) {
+                        transaction.rollback();
+                        return RevisionRefresh.CONFLICT;
+                    }
+                    final var refresh = reconcileTransferState(transfer, stored);
+                    if (refresh == RevisionRefresh.CONFLICT) {
+                        transaction.rollback();
+                        return refresh;
+                    }
+                    transfer.notificationRevision = stored.notificationRevision;
+                    transfer.rememberNotificationBaseline(stored);
+                    transaction.commit();
+                    return refresh;
+                }
+            } catch (final RuntimeException failure) {
+                if (transaction.isActive()) {
+                    transaction.rollback();
+                }
+                throw failure;
+            }
+        }
+    }
+
+    private RevisionRefresh reconcileTransferState(final DataTransfer transfer, final DataTransfer stored) {
+        if (samePersistentState(transfer, stored)) {
+            return RevisionRefresh.UNCHANGED;
+        }
+        final var baseline = transfer.notificationBaseline();
+        if (baseline == null || baseline.getId() != transfer.getId()
+                || baseline.notificationRevision != transfer.notificationRevision) {
+            return RevisionRefresh.CONFLICT;
+        }
+        final var factory = session.getSessionFactory().unwrap(SessionFactoryImplementor.class);
+        final var mapping = factory.getMappingMetamodel().getEntityDescriptor(DataTransfer.class);
+        final var local = mapping.getValues(transfer);
+        final var base = mapping.getValues(baseline);
+        final var remote = mapping.getValues(stored);
+        final var merged = local.clone();
+        final var updateable = mapping.getPropertyUpdateability();
+        final var types = mapping.getPropertyTypes();
+        for (var i = 0; i < updateable.length; i++) {
+            if (!updateable[i] || mapping.isVersioned() && i == mapping.getVersionProperty()) {
+                continue;
+            }
+            final var localChanged = !types[i].isEqual(local[i], base[i], factory);
+            final var remoteChanged = !types[i].isEqual(remote[i], base[i], factory);
+            if (localChanged && remoteChanged && !types[i].isEqual(local[i], remote[i], factory)) {
+                return RevisionRefresh.CONFLICT;
+            }
+            if (!localChanged || remoteChanged) {
+                merged[i] = remote[i];
+            }
+        }
+        mapping.setValues(transfer, merged);
+        return RevisionRefresh.MERGED;
+    }
+
+    private boolean samePersistentState(final DataBaseObject left, final DataBaseObject right) {
+        final var factory = session.getSessionFactory().unwrap(SessionFactoryImplementor.class);
+        final var mapping = factory.getMappingMetamodel().getEntityDescriptor(left.getClass());
+        final var before = mapping.getValues(left);
+        final var snapshot = mapping.getValues(right);
+        final var updateable = mapping.getPropertyUpdateability();
+        final var types = mapping.getPropertyTypes();
+        for (var i = 0; i < updateable.length; i++) {
+            if (updateable[i] && (!mapping.isVersioned() || i != mapping.getVersionProperty())
+                    && !types[i].isEqual(before[i], snapshot[i], factory)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void verifyTransferRevision(final DataTransfer transfer) {
+        session.doWork(connection -> causalWork(connection, current -> {
+            try (final var query = prepareStatement(current, """
+                    SELECT DAT_NOTIFICATION_REVISION FROM DATA_TRANSFER WHERE DAT_ID=? FOR UPDATE
+                    """, transfer.getId()); final var rows = query.executeQuery()) {
+                if (!rows.next() || rows.getLong(1) != transfer.notificationRevision || rows.wasNull()) {
+                    throw new OptimisticEntityLockException(transfer, "Notification transfer revision changed");
+                }
+            }
+            return null;
+        }));
     }
 
     /**

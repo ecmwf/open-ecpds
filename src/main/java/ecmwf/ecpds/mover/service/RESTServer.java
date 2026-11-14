@@ -40,6 +40,7 @@ import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -56,6 +57,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HEAD;
@@ -80,6 +82,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.io.EofException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import ecmwf.common.database.DataFile;
 import ecmwf.common.database.DataTransfer;
@@ -102,6 +105,7 @@ import ecmwf.common.text.BASE64Coder;
 import ecmwf.common.text.Format;
 import ecmwf.common.version.Version;
 import ecmwf.ecpds.master.LiveTransferSample;
+import ecmwf.ecpds.master.NotificationHistory;
 import ecmwf.ecpds.mover.MoverProvider;
 import ecmwf.ecpds.mover.MoverServer;
 import ecmwf.ecpds.mover.service.RESTClient.MonitorRequest;
@@ -195,6 +199,9 @@ public final class RESTServer {
     private static final Set<String> RESERVED_HEADERS = Set.of(ACCEPT_RANGES.toLowerCase(),
             CONTENT_DISPOSITION.toLowerCase(), ETAG.toLowerCase(), LAST_MODIFIED.toLowerCase());
 
+    private static final java.util.concurrent.Semaphore notificationStreams = new java.util.concurrent.Semaphore(
+            Math.max(1, Cnf.at("NotificationHistorySSE", "maxStreams", 16)));
+
     /**
      * Get version.
      *
@@ -219,6 +226,217 @@ public final class RESTServer {
         } catch (final Throwable t) {
             _log.warn("getVersion", t);
             return RESTMessage.getErrorMessage(t).getResponse();
+        }
+    }
+
+    @GET
+    @Path("aviso/api/v1/schema")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response avisoSchema(@Context final UriInfo ui) {
+        checkIsControlChannel(ui);
+        final var schema = avisoFileAvailableSchema();
+        return Response.ok(Map.of("status", "success", "schema", Map.of("file_available", schema), "event_types",
+                List.of("file_available"), "total_schemas", 1)).build();
+    }
+
+    @GET
+    @Path("aviso/api/v1/schema/{eventType}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response avisoEventSchema(@Context final UriInfo ui, @PathParam("eventType") final String eventType) {
+        checkIsControlChannel(ui);
+        if (!"file_available".equals(eventType)) {
+            return Response.status(404).entity(Map.of("status", "error", "message",
+                    "Event type '" + eventType + "' not found", "available_types", List.of("file_available"))).build();
+        }
+        return Response.ok(Map.of("status", "success", "event_type", eventType, "schema", avisoFileAvailableSchema()))
+                .build();
+    }
+
+    private static Map<String, Object> avisoFileAvailableSchema() {
+        final var destination = new LinkedHashMap<String, Object>();
+        destination.put("type", "StringHandler");
+        destination.put("max_length", 32);
+        destination.put("required", true);
+        destination.put("description", "OpenECPDS destination name.");
+        final var target = new LinkedHashMap<String, Object>();
+        target.put("type", "StringHandler");
+        target.put("max_length", 256);
+        target.put("required", false);
+        target.put("description", "Exact file target path.");
+        final var identifier = new LinkedHashMap<String, Object>();
+        identifier.put("destination", destination);
+        identifier.put("target", target);
+        final var schema = new LinkedHashMap<String, Object>();
+        schema.put("payload", null);
+        schema.put("identifier", identifier);
+        return schema;
+    }
+
+    private record AvisoRequest(String destination, String target, Long fromSequence, Long fromTime, Long toSequence,
+            Long toTime) {
+    }
+
+    private static NotificationHistory.Replay liveStart(final long sequence) {
+        return new NotificationHistory.Replay(sequence, 0, 0, sequence, false, false, List.of());
+    }
+
+    private static AvisoRequest parseAvisoRequest(final JsonNode body, final boolean watch) {
+        if (body == null || !body.isObject() || !"file_available".equals(body.path("event_type").asText())) {
+            throw newException(400, "Invalid Aviso event type or request body");
+        }
+        final var identifier = body.path("identifier");
+        final var destination = identifier.path("destination");
+        final var target = identifier.path("target");
+        if (!identifier.isObject() || !destination.isTextual() || destination.asText().isBlank()
+                || destination.asText().length() > 32
+                || !target.isMissingNode() && !target.isNull()
+                        && (!target.isTextual() || target.asText().isBlank() || target.asText().length() > 256)
+                || identifier.fieldNames().hasNext() && containsUnknownIdentifier(identifier)) {
+            throw newException(400, "Invalid Aviso file_available identifier");
+        }
+        final var fromSequence = parseAvisoId(body, "from_id");
+        final var toSequence = parseAvisoId(body, "to_id");
+        final var fromTime = parseAvisoDate(body, "from_date");
+        final var toTime = parseAvisoDate(body, "to_date");
+        if (fromSequence != null && fromTime != null || toSequence != null && toTime != null
+                || watch && (toSequence != null || toTime != null) || !watch && fromSequence == null && fromTime == null
+                || fromSequence != null && toSequence != null && toSequence < fromSequence
+                || fromTime != null && toTime != null && toTime < fromTime) {
+            throw newException(400, "Invalid Aviso replay cursor");
+        }
+        return new AvisoRequest(destination.asText(), target.isTextual() ? target.asText() : null, fromSequence,
+                fromTime, toSequence, toTime);
+    }
+
+    private static boolean containsUnknownIdentifier(final JsonNode identifier) {
+        final var fields = identifier.fieldNames();
+        while (fields.hasNext()) {
+            final var field = fields.next();
+            if (!"destination".equals(field) && !"target".equals(field)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Long parseAvisoId(final JsonNode body, final String field) {
+        final var node = body.get(field);
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        if (!node.isTextual()) {
+            throw newException(400, "Invalid Aviso " + field);
+        }
+        final var value = node.asText();
+        final var prefix = "file_available@";
+        if (!value.startsWith(prefix) || !value.substring(prefix.length()).matches("[0-9]+")) {
+            throw newException(400, "Invalid Aviso " + field);
+        }
+        try {
+            final var sequence = Long.parseLong(value.substring(prefix.length()));
+            if (sequence < 1) {
+                throw newException(400, "Invalid Aviso " + field);
+            }
+            return sequence;
+        } catch (final NumberFormatException e) {
+            throw newException(400, "Invalid Aviso " + field);
+        }
+    }
+
+    private static Long parseAvisoDate(final JsonNode body, final String field) {
+        final var node = body.get(field);
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        if (!node.isTextual()) {
+            throw newException(400, "Invalid Aviso " + field);
+        }
+        try {
+            return OffsetDateTime.parse(node.asText()).toInstant().toEpochMilli();
+        } catch (final Exception e) {
+            throw newException(400, "Invalid Aviso " + field);
+        }
+    }
+
+    @POST
+    @Path("aviso/api/v1/watch")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces("text/event-stream")
+    public Response avisoWatch(@Context final UriInfo ui, @HeaderParam("authorization") final String authString,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
+            final JsonNode body) {
+        checkIsControlChannel(ui);
+        return avisoStream(ui, authString, request, response, parseAvisoRequest(body, true), true);
+    }
+
+    @POST
+    @Path("aviso/api/v1/replay")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces("text/event-stream")
+    public Response avisoReplay(@Context final UriInfo ui, @HeaderParam("authorization") final String authString,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
+            final JsonNode body) {
+        checkIsControlChannel(ui);
+        return avisoStream(ui, authString, request, response, parseAvisoRequest(body, false), false);
+    }
+
+    private Response avisoStream(final UriInfo ui, final String authString, final HttpServletRequest request,
+            final HttpServletResponse response, final AvisoRequest aviso, final boolean watch) {
+        final var session = getUserSession(authString, request, response);
+        if (!notificationStreams.tryAcquire()) {
+            session.close(true);
+            throw newException(503, "Notification stream capacity reached");
+        }
+        var transferred = false;
+        try {
+            final var user = session.getUser();
+            final var master = mover.getMasterInterface();
+            final NotificationStream.Reader reader = (cursor, upper, fromTime, toTime) -> master
+                    .replayAvisoNotificationHistory(user, aviso.destination(), aviso.target(), cursor, upper, fromTime,
+                            toTime, 100);
+            final var hasReplay = aviso.fromSequence() != null || aviso.fromTime() != null;
+            final var after = aviso.fromSequence() == null ? 0 : aviso.fromSequence() - 1;
+            final var initial = hasReplay ? reader.read(after, aviso.toSequence(), aviso.fromTime(), aviso.toTime())
+                    : liveStart(master.currentAvisoNotificationSequence(user, aviso.destination()));
+            if (hasReplay && initial.historyGap()) {
+                return Response.status(410).type(MediaType.APPLICATION_JSON_TYPE).header(CACHE_CONTROL, "no-store")
+                        .entity(Map.of("error", "history_gap", "removedThrough", initial.removedThrough(), "removedAt",
+                                initial.removedAt()))
+                        .build();
+            }
+            final var interval = Math.max(250, Cnf.durationAt("NotificationHistorySSE", "pollInterval", 2000));
+            final var duration = Math.max(1000,
+                    Math.min(3600000, Cnf.durationAt("NotificationHistorySSE", "maxDuration", 300000)));
+            final var baseUrl = ui.getBaseUri().resolve("aviso/api/v1").toString();
+            final StreamingOutput output = out -> {
+                try {
+                    NotificationStream.write(out, reader, initial, aviso.destination(), after, aviso.fromSequence(),
+                            aviso.fromTime(), aviso.toSequence(), aviso.toTime(), watch, baseUrl, interval, duration);
+                } finally {
+                    notificationStreams.release();
+                    session.close(true);
+                }
+            };
+            final var result = Response.ok(output, "text/event-stream").header(CACHE_CONTROL, "no-store")
+                    .header("X-Accel-Buffering", "no").build();
+            transferred = true;
+            return result;
+        } catch (final Exception failure) {
+            for (var cause = (Throwable) failure; cause != null; cause = cause.getCause()) {
+                if (cause instanceof EccmdException) {
+                    throw newException(403, "Forbidden");
+                }
+                if (cause instanceof IllegalArgumentException) {
+                    throw newException(400, "Invalid Aviso request");
+                }
+            }
+            _log.warn("Aviso notification stream setup failed", failure);
+            throw newException(503, "Aviso notification stream unavailable");
+        } finally {
+            if (!transferred) {
+                notificationStreams.release();
+                session.close(true);
+            }
         }
     }
 

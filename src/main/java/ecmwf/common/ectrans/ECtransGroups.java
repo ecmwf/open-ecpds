@@ -45,7 +45,7 @@ public enum ECtransGroups {
 
     /** The destination. */
     DESTINATION(Module.DESTINATION_ALIAS, Module.DESTINATION_ECTRANS, Module.DESTINATION_INCOMING,
-            Module.DESTINATION_SCHEDULER, Module.DESTINATION_MQTT),
+            Module.DESTINATION_NOTIFICATION, Module.DESTINATION_SCHEDULER, Module.DESTINATION_MQTT),
 
     /** The user. */
     USER(Module.USER_PORTAL),
@@ -122,6 +122,8 @@ public enum ECtransGroups {
         DESTINATION_MQTT,
         /** The destination incoming. */
         DESTINATION_INCOMING,
+        /** The destination notification. */
+        DESTINATION_NOTIFICATION,
         /** The destination scheduler. */
         DESTINATION_SCHEDULER;
 

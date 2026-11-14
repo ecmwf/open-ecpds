@@ -1,9 +1,8 @@
 # Contributing
 
 OpenECPDS is an open-source project, and contributions from the community are welcome.
-The launch of OpenECPDS signifies a commitment to ongoing maintenance and updates,
-focusing on long-term sustainability and continuous improvement to meet evolving user
-needs.
+Ongoing maintenance and updates focus on long-term sustainability and continuous
+improvement to meet evolving user needs.
 
 !!! note
     Parts of this page are a starting point for contributors. Project-specific policies

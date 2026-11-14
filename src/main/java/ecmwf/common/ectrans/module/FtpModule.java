@@ -66,6 +66,7 @@ import static ecmwf.common.ectrans.ECtransOptions.HOST_FTP_NOPASSWORD;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_FTP_PARALLEL_STREAMS;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_FTP_PASSIVE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_FTP_PASSWORD;
+import static ecmwf.common.ectrans.ECtransOptions.HOST_FTP_SHARED_KEY;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_FTP_PORT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_FTP_PORT_TIME_OUT;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_FTP_POST_CONNECT_CMD;
@@ -297,6 +298,9 @@ public final class FtpModule extends TransferModule {
         }
         user = setup.get(HOST_FTP_LOGIN, user);
         password = setup.get(HOST_FTP_PASSWORD, password);
+        final var sharedKey = setup.getString(HOST_FTP_SHARED_KEY);
+        final var loginPassword = setup.getBoolean(HOST_FTP_NOPASSWORD) ? null : password;
+        final var loginSharedKey = sharedKey == null || sharedKey.isEmpty() ? null : sharedKey;
         usecleanpath = setup.getBoolean(HOST_FTP_USECLEANPATH);
         usenlist = setup.getBoolean(HOST_FTP_USENLIST);
         usetmp = setup.getBoolean(HOST_FTP_USETMP);
@@ -354,10 +358,19 @@ public final class FtpModule extends TransferModule {
         setAttribute("remote.hostName", host);
         try {
             key = SessionCache.getKey(host, port, user, dir, "hash=" + client.toString().hashCode());
-            if (keepAlive <= 0 || (ftp = cache.remove(key)) == null || !ftp.commandIsOpen()) {
+            if (keepAlive > 0) {
+                ftp = cache.remove(key);
+                if (ftp != null && !ftp.hasCredentials(user, loginPassword, loginSharedKey)) {
+                    ftp.close(false);
+                    ftp = null;
+                }
+            } else {
+                ftp = null;
+            }
+            if (ftp == null || !ftp.commandIsOpen()) {
                 ftp = client;
                 ftp.connect(host, port);
-                ftp.login(user, getSetup().getBoolean(HOST_FTP_NOPASSWORD) ? null : password);
+                ftp.login(user, loginPassword, loginSharedKey);
             } else {
                 _log.debug("Found cached ftp connection ({})", key);
                 fromCache = true;

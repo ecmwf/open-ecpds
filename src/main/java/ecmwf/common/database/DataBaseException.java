@@ -47,7 +47,7 @@ public class DataBaseException extends Exception {
      *            the exception
      */
     public DataBaseException(final Object me, final Exception exception) {
-        super(Format.trimString(exception.getMessage(), null));
+        super(Format.trimString(exception.getMessage(), null), exception);
         _originalMessage = exception.getMessage();
     }
 
@@ -60,6 +60,12 @@ public class DataBaseException extends Exception {
     public DataBaseException(final String message) {
         super(Format.trimString(message, "Internal error"));
         _originalMessage = message;
+    }
+
+    public static DataBaseException withCause(final String message, final Throwable cause) {
+        final var exception = new DataBaseException(message);
+        exception.initCause(cause);
+        return exception;
     }
 
     /**

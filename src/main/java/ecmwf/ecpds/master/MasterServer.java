@@ -28,6 +28,7 @@ package ecmwf.ecpds.master;
 
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_ECTRANS;
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_MQTT;
+import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_NOTIFICATION;
 import static ecmwf.ecpds.master.OperationalEvents.field;
 import static ecmwf.common.ectrans.ECtransGroups.Module.DESTINATION_SCHEDULER;
 import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_ACQUISITION;
@@ -44,6 +45,7 @@ import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_PAYLOAD;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_QOS;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_RETAIN;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_MQTT_TOPIC;
+import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_NOTIFICATION_CAPTURE_MODE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_FORCE;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_FORCE_STOP;
 import static ecmwf.common.ectrans.ECtransOptions.DESTINATION_SCHEDULER_MASTER_TO_NOTIFY_ON_DONE;
@@ -124,7 +126,6 @@ import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.Socket;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -160,7 +161,6 @@ import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CompletableFuture;
-import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.zip.Deflater;
@@ -293,6 +293,14 @@ import ecmwf.ecpds.mover.MQTTPublishResult;
  */
 public final class MasterServer extends ECaccessProvider
         implements HandlerInterface, MasterInterface, ECaccessInterface {
+    public enum StrictCaptureResult {
+        NOT_REQUIRED, COMMITTED, ALREADY_COMMITTED
+    }
+
+    private static final class AlreadyCapturedNotification extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+    }
+
     /** The Constant serialVersionUID. */
     private static final long serialVersionUID = 3373001425401551480L;
 
@@ -302,6 +310,7 @@ public final class MasterServer extends ECaccessProvider
     private final IdentityExtensions identityExtensions;
     private RemoteServices remoteServices;
     private transient MQTTActivity mqttActivity;
+    private transient NotificationHistory notificationHistory;
 
     private record MQTTMessage(String topic, int qos, long expiryInterval, String contentType, String clientId,
             String payload, boolean retain) {
@@ -943,6 +952,28 @@ public final class MasterServer extends ECaccessProvider
             _loadActualTrafficFromDb();
             OpenTelemetryLogging.install();
             OperationalEvents.start(getECpdsBase());
+            final var notificationHistoryEnabled = Cnf.at("NotificationHistory", "enabled", true);
+            final var notificationRevisionFencing = Cnf.at("NotificationHistory", "revisionFencing", true);
+            if (notificationRevisionFencing && !notificationHistoryEnabled) {
+                throw new IllegalStateException("Notification revision fencing requires NotificationHistory.enabled");
+            }
+            if (notificationHistoryEnabled) {
+                try {
+                    notificationHistory = new NotificationHistory(this);
+                    if (notificationRevisionFencing) {
+                        notificationHistory.validateTransferRevisionSchema();
+                    }
+                } catch (final RuntimeException e) {
+                    _log.error("Notification history is disabled because its configuration is invalid", e);
+                    if (notificationRevisionFencing) {
+                        if (notificationHistory != null) {
+                            notificationHistory.close();
+                            notificationHistory = null;
+                        }
+                        throw e;
+                    }
+                }
+            }
             TransferTracing.start("master");
             TransferMetrics.start(this);
             NativeAuthenticationProvider.setProvider(MasterProvider.class);
@@ -1743,6 +1774,33 @@ public final class MasterServer extends ECaccessProvider
         }
     }
 
+    @Override
+    public NotificationHistory.Replay replayAvisoNotificationHistory(final String user, final String destination,
+            final String target, final long after, final Long upper, final Long fromTime, final Long toTime,
+            final int limit) throws RemoteException {
+        if (notificationHistory == null) {
+            throw new RemoteException("Notification history is disabled");
+        }
+        try {
+            return notificationHistory.replayAviso(getIncomingProfileNoAuth(user), destination, target, after, upper,
+                    fromTime, toTime, limit);
+        } catch (final Exception e) {
+            throw new RemoteException("Aviso notification replay failed", e);
+        }
+    }
+
+    @Override
+    public long currentAvisoNotificationSequence(final String user, final String destination) throws RemoteException {
+        if (notificationHistory == null) {
+            throw new RemoteException("Notification history is disabled");
+        }
+        try {
+            return notificationHistory.currentAvisoSequence(getIncomingProfileNoAuth(user), destination);
+        } catch (final Exception e) {
+            throw new RemoteException("Aviso notification sequence unavailable", e);
+        }
+    }
+
     /**
      * Gets the transfer scheduler.
      *
@@ -2389,6 +2447,26 @@ public final class MasterServer extends ECaccessProvider
             _log.warn("Awaiting MQTT publication result from DataMover {}", name, e);
             return new MQTTPublishResult("UNCONFIRMED",
                     "Mover RPC did not return a broker result; check connectivity and Master/Mover versions");
+        }
+    }
+
+    boolean publishNotificationOutbox(final ecmwf.common.database.NotificationOutboxStore.Delivery delivery) {
+        final var mover = getDataMoverInterface(delivery.mover());
+        if (mover == null) {
+            return false;
+        }
+        try {
+            final var result = mover.publishToMQTTBrokerConfirmed(delivery.topic(), 1, 0,
+                    "application/cloudevents+json", "", delivery.payload(), false);
+            if (!"ACCEPTED".equals(result.status())) {
+                _log.warn("Notification outbox delivery {} to {} was {}", delivery.id(), delivery.mover(),
+                        result.status());
+                return false;
+            }
+            return true;
+        } catch (final Exception e) {
+            _log.warn("Notification outbox delivery {} to {} was unconfirmed", delivery.id(), delivery.mover(), e);
+            return false;
         }
     }
 
@@ -5320,15 +5398,21 @@ public final class MasterServer extends ECaccessProvider
      *            the update repository
      */
     public void checkPendingTicket(final DataTransfer transfer, final boolean updateRepository) {
-        final var ticket = (PendingUpdateTicket) theTicketRepository.remove(transfer.getId());
+        checkPendingTicket(transfer, updateRepository, null);
+    }
+
+    private void checkPendingTicket(final DataTransfer transfer, final boolean updateRepository,
+            final Runnable beforeRemove) {
+        final var ticket = (PendingUpdateTicket) theTicketRepository.removeAfter(transfer.getId(), current -> {
+            if (current != null) {
+                applyPendingTicket(transfer, (PendingUpdateTicket) current);
+            }
+            if (beforeRemove != null) {
+                beforeRemove.run();
+            }
+        });
         if (ticket != null) {
             ticket.completed();
-            transfer.setStatusCode(ticket.getStatusCode());
-            transfer.setUserStatus(ticket.getUserName());
-            transfer.setComment(ticket.getByAndFrom());
-            transfer.setDuration(0);
-            transfer.setSent(0);
-            transfer.setPutTime(null);
             final var code = ticket.getStatusCode();
             if (!StatusFactory.STOP.equals(code) && !StatusFactory.FAIL.equals(code) && !StatusFactory.INIT.equals(code)
                     && !StatusFactory.SCHE.equals(code) && !StatusFactory.FETC.equals(code)) {
@@ -5338,6 +5422,15 @@ public final class MasterServer extends ECaccessProvider
                 addDataTransfer(transfer);
             }
         }
+    }
+
+    private void applyPendingTicket(final DataTransfer transfer, final PendingUpdateTicket ticket) {
+        transfer.setStatusCode(ticket.getStatusCode());
+        transfer.setUserStatus(ticket.getUserName());
+        transfer.setComment(ticket.getByAndFrom());
+        transfer.setDuration(0);
+        transfer.setSent(0);
+        transfer.setPutTime(null);
     }
 
     /**
@@ -5384,10 +5477,11 @@ public final class MasterServer extends ECaccessProvider
             }
         }
         final var code = transfer.getStatusCode();
-        final var done = StatusFactory.DONE.equals(code);
-        final var stop = StatusFactory.STOP.equals(code) || StatusFactory.FAIL.equals(code);
-        final var retr = StatusFactory.RETR.equals(code) || StatusFactory.INTR.equals(code);
+        var done = StatusFactory.DONE.equals(code);
+        var stop = StatusFactory.STOP.equals(code) || StatusFactory.FAIL.equals(code);
+        var retr = StatusFactory.RETR.equals(code) || StatusFactory.INTR.equals(code);
         if (done || stop || retr) {
+            final var strictCapture = done && isStrictNotificationCapture(transfer);
             final var retryTime = transfer.getRetryTime();
             final var finishTime = transfer.getFinishTime();
             final var time = new Timestamp(retryTime != null && finishTime != null
@@ -5396,14 +5490,42 @@ public final class MasterServer extends ECaccessProvider
             if (done && transfer.getFirstFinishTime() == null) {
                 transfer.setFirstFinishTime(time);
             }
-            checkPendingTicket(transfer, false);
+            if (strictCapture) {
+                try {
+                    checkPendingTicket(transfer, false, () -> {
+                        if (!StatusFactory.DONE.equals(transfer.getStatusCode())) {
+                            return;
+                        }
+                        if (transfer.getDuration() == 0) {
+                            _log.debug("0ms duration detected for DataTransfer-{} push (forcing 1ms)", id);
+                            transfer.setDuration(1);
+                        }
+                        transfer.setNotify(true);
+                        transfer.setRecordUPH(true);
+                        if (captureStrictNotification(transfer,
+                                strictNotificationEventId(transfer)) == StrictCaptureResult.ALREADY_COMMITTED) {
+                            throw new AlreadyCapturedNotification();
+                        }
+                    });
+                } catch (final AlreadyCapturedNotification duplicate) {
+                    return;
+                }
+                final var effectiveCode = transfer.getStatusCode();
+                done = StatusFactory.DONE.equals(effectiveCode);
+                stop = StatusFactory.STOP.equals(effectiveCode) || StatusFactory.FAIL.equals(effectiveCode);
+                retr = StatusFactory.RETR.equals(effectiveCode) || StatusFactory.INTR.equals(effectiveCode);
+            } else {
+                checkPendingTicket(transfer, false);
+            }
             theTransferScheduler.notifyCompletion(transfer);
             if (done && transfer.getDuration() == 0) {
                 _log.debug("0ms duration detected for DataTransfer-{} push (forcing 1ms)", id);
                 transfer.setDuration(1);
             }
             if (done) {
-                transfer.setNotify(true);
+                if (!strictCapture) {
+                    transfer.setNotify(true);
+                }
                 transfer.setRecordUPH(true);
             }
             try {
@@ -5559,22 +5681,92 @@ public final class MasterServer extends ECaccessProvider
             _log.warn("TransferHistory " + transfer.getId() + "=" + code + " not added (no message specified)");
         }
         if (transfer.getNotify()) {
+            final var strictCapturePending = transfer.getEvent() && isStrictNotificationCapture(transfer);
             // Is global notification enabled ?
             // Transfer is completed or file is available for download, so we might want to
             // trigger an external event!
-            if ((theEventRepository != null) && transfer.getEvent()) {
-                if (theEventRepository.getThreadsSize() > 0) {
-                    theEventRepository.put(transfer);
-                } else {
+            if (!strictCapturePending && (theEventRepository != null) && transfer.getEvent()) {
+                NotificationHistory.Event nativeEvent = null;
+                if (notificationHistory != null) {
                     try {
-                        theEventRepository.update(transfer);
+                        nativeEvent = notificationHistory.event(transfer);
                     } catch (final Exception e) {
-                        _log.warn("Firing event", e);
+                        _log.error("Notification history event was not prepared for transfer {}", transfer.getId(), e);
                     }
                 }
+                final var event = new QueuedTransferEvent(transfer, nativeEvent);
+                queueTransferEvent(event);
             }
-            // No need to notify again!
+            if (!strictCapturePending) {
+                // No need to notify again!
+                transfer.setNotify(false);
+            }
+        }
+    }
+
+    public boolean isStrictNotificationCapture(final DataTransfer transfer) {
+        if (!NotificationHistory.isCaptureEnabled(transfer)) {
+            return false;
+        }
+        final var mode = DESTINATION_NOTIFICATION.getECtransSetup(transfer.getDestination().getData())
+                .getString(DESTINATION_NOTIFICATION_CAPTURE_MODE);
+        if (!"strict".equalsIgnoreCase(mode)) {
+            return false;
+        }
+        if (!Cnf.at("NotificationHistory", "revisionFencing", true) || notificationHistory == null
+                || theEventRepository == null) {
+            throw new IllegalStateException(
+                    "Strict notification capture requires NotificationHistory, revisionFencing, and EventRepository");
+        }
+        return true;
+    }
+
+    public StrictCaptureResult captureStrictNotification(final DataTransfer transfer) {
+        return captureStrictNotification(transfer, null);
+    }
+
+    public String strictNotificationEventId(final DataTransfer transfer) {
+        if (!isStrictNotificationCapture(transfer)) {
+            return null;
+        }
+        return notificationHistory.strictEventId(transfer);
+    }
+
+    public StrictCaptureResult captureStrictNotification(final DataTransfer transfer, final String eventId) {
+        if (!transfer.getNotify() || !isStrictNotificationCapture(transfer)) {
+            return StrictCaptureResult.NOT_REQUIRED;
+        }
+        try {
+            final var duplicate = notificationHistory.captureWithTransfer(transfer,
+                    eventId == null ? notificationHistory.strictEventId(transfer) : eventId);
+            if (duplicate) {
+                transfer.setNotify(false);
+                return StrictCaptureResult.ALREADY_COMMITTED;
+            }
+            if (theEventRepository != null && transfer.getEvent()) {
+                try {
+                    queueTransferEvent(new QueuedTransferEvent(transfer, null));
+                } catch (final RuntimeException failure) {
+                    _log.warn("Firing event after strict notification capture for transfer {}", transfer.getId(),
+                            failure);
+                }
+            }
             transfer.setNotify(false);
+            return StrictCaptureResult.COMMITTED;
+        } catch (final Exception e) {
+            throw new IllegalStateException("Strict notification capture failed for transfer " + transfer.getId(), e);
+        }
+    }
+
+    private void queueTransferEvent(final QueuedTransferEvent event) {
+        if (theEventRepository.getThreadsSize() > 0) {
+            theEventRepository.put(event);
+        } else {
+            try {
+                theEventRepository.update(event);
+            } catch (final Exception e) {
+                _log.warn("Firing event", e);
+            }
         }
     }
 
@@ -7507,6 +7699,9 @@ public final class MasterServer extends ECaccessProvider
     @Override
     public void shutdown() {
         moverStorageMonitor.close();
+        if (notificationHistory != null) {
+            notificationHistory.close();
+        }
         if (theTransferScheduler != null) {
             theTransferScheduler.shutdown(getGraceful());
         }
@@ -8042,6 +8237,11 @@ public final class MasterServer extends ECaccessProvider
             return transfer.getDeleted() || !StatusFactory.EXEC.equals(code) && !StatusFactory.WAIT.equals(code);
         }
 
+        @Override
+        protected boolean removeIfExpired(final DataTransfer transfer) {
+            return removeCurrentIfExpired(transfer);
+        }
+
         /**
          * Update.
          *
@@ -8069,8 +8269,8 @@ public final class MasterServer extends ECaccessProvider
             }
             final var event = new DataTransferEvent(transfer);
             event.setSource("MasterServer.TransferRepository.update");
+            getDataBase().update(transfer);
             handle(event);
-            getDataBase().tryUpdate(transfer);
             if (!transfer.getDeleted() && !StatusFactory.RETR.equals(code)) {
                 addTransferHistory(transfer);
             }
@@ -8266,7 +8466,27 @@ public final class MasterServer extends ECaccessProvider
     /**
      * The Class NotificationRepository.
      */
-    private final class EventRepository extends StorageRepository<DataTransfer> {
+    private static final class QueuedTransferEvent {
+        private final DataTransfer transfer;
+        private final NotificationHistory.Event nativeEvent;
+
+        private QueuedTransferEvent(final DataTransfer transfer, final NotificationHistory.Event nativeEvent) {
+            this.transfer = transfer;
+            this.nativeEvent = nativeEvent;
+        }
+
+        @Override
+        public int hashCode() {
+            return transfer.hashCode();
+        }
+
+        @Override
+        public boolean equals(final Object other) {
+            return other instanceof QueuedTransferEvent event && transfer.equals(event.transfer);
+        }
+    }
+
+    private final class EventRepository extends StorageRepository<QueuedTransferEvent> {
 
         /**
          * Instantiates a new event repository.
@@ -8289,8 +8509,8 @@ public final class MasterServer extends ECaccessProvider
          * @return the status
          */
         @Override
-        public String getStatus(final DataTransfer transfer) {
-            return transfer.getStatusCode();
+        public String getStatus(final QueuedTransferEvent event) {
+            return event.transfer.getStatusCode();
         }
 
         /**
@@ -8303,7 +8523,8 @@ public final class MasterServer extends ECaccessProvider
          *             the exception
          */
         @Override
-        public void update(final DataTransfer transfer) throws Exception {
+        public void update(final QueuedTransferEvent queued) throws Exception {
+            final var transfer = queued.transfer;
             final var code = transfer.getStatusCode();
             final var selectedConnectOptions = new StringBuilder();
             final var currentConnectOptions = transfer.getConnectOptions();
@@ -8333,6 +8554,9 @@ public final class MasterServer extends ECaccessProvider
                 }
             } else {
                 _log.error("Publication cancelled (no options found)");
+            }
+            if (notificationHistory != null && queued.nativeEvent != null) {
+                notificationHistory.capture(queued.nativeEvent);
             }
         }
 
@@ -14417,6 +14641,10 @@ public final class MasterServer extends ECaccessProvider
                                 // The update does not write an history if the
                                 // status is RETR.
                                 addTransferHistory(transfer);
+                            }
+                            final var captureResult = captureStrictNotification(transfer);
+                            if (captureResult == StrictCaptureResult.ALREADY_COMMITTED) {
+                                continue;
                             }
                             theTransferRepository.update(transfer);
                             if (setup.getBoolean(DESTINATION_SCHEDULER_RESET_QUEUE_ON_CHANGE)) {

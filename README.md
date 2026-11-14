@@ -6,7 +6,7 @@
 
 ---
 
-OpenECPDS is a mature, production-grade data management platform originally developed at [ECMWF](https://www.ecmwf.int/) and now open-sourced to encourage collaboration.
+OpenECPDS is a mature, production-grade data management platform developed at [ECMWF](https://www.ecmwf.int/) and distributed as open-source software to encourage collaboration.
 
 **Built for demanding meteorological operations, designed for any data domain.** OpenECPDS is **domain-agnostic**, not a meteorology-specific platform: its core transfers, stores and distributes files without requiring a particular scientific format or subject matter. Research, industry, public services and enterprise teams can use it to automate provider ingestion, distribute datasets to partners, and offer self-service data access across on-premises and cloud environments.
 
@@ -116,7 +116,7 @@ rclone lsd :s3: \
   --no-check-certificate
 ```
 
-> **Note:** `--s3-v2-auth` forces the older AWS V2 signature scheme. Some rclone/AWS SDK versions have V4-signing quirks that don't match this server's implementation, causing a `SignatureDoesNotMatch` error; V2 auth is a reliable workaround.
+> **Note:** `--s3-v2-auth` selects AWS Signature V2 authentication. Use this setting with the rclone example to avoid `SignatureDoesNotMatch` errors from incompatible V4 request signing.
 
 **WebDAV** — using [curl](https://curl.se/):
 ```bash

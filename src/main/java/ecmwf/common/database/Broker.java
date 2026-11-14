@@ -29,6 +29,7 @@ package ecmwf.common.database;
  * @since 2024-07-01
  */
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -38,6 +39,41 @@ import ecmwf.common.technical.CloseableIterator;
  * The Interface Broker.
  */
 interface Broker extends AutoCloseable {
+
+    @FunctionalInterface
+    interface TransactionWork<T> {
+        T run(Transaction transaction) throws SQLException;
+    }
+
+    /** Operations sharing one connection and commit; none commits independently. */
+    interface Transaction {
+        PreparedQuery prepare(String sql, Object... parameters) throws SQLException;
+
+        /** Read current state without consulting or populating the shared entity cache. */
+        <T extends DataBaseObject> T get(T object);
+
+        <T extends DataBaseObject> T merge(T object);
+
+        void flush();
+
+        void refresh(DataBaseObject object);
+
+        boolean samePersistentState(DataBaseObject left, DataBaseObject right);
+
+        boolean supportsTransferRevisionFencing();
+    }
+
+    interface PreparedQuery extends AutoCloseable {
+        ResultSet executeQuery() throws SQLException;
+
+        int executeUpdate() throws SQLException;
+
+        @Override
+        void close() throws SQLException;
+    }
+
+    /** Commit all work together, or roll it all back on failure. */
+    <T> T transaction(TransactionWork<T> work) throws SQLException;
 
     /**
      * Clear cache for the specified entities.

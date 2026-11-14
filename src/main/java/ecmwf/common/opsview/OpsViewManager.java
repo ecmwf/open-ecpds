@@ -596,8 +596,8 @@ public final class OpsViewManager {
     private static CloseableClientResponse send(final String url, final String method,
             final Map<String, String> headers, final Map<String, String> query, final Object body) throws IOException {
         try {
-            final var builder = HttpRequest.newBuilder(buildUri(url, query)).timeout(REQUEST_TIMEOUT)
-                    .header("Accept", "application/json");
+            final var builder = HttpRequest.newBuilder(buildUri(url, query)).timeout(REQUEST_TIMEOUT).header("Accept",
+                    "application/json");
             headers.forEach(builder::header);
             if (body != null) {
                 builder.header("Content-Type", "application/json");

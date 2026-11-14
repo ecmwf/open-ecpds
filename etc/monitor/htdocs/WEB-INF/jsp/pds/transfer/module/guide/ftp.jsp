@@ -64,6 +64,7 @@
               <tr><td><code>ftp.port</code></td><td><code>21</code></td><td>Remote FTP port</td></tr>
               <tr><td><code>ftp.login</code></td><td><em>from host</em></td><td>FTP username</td></tr>
               <tr><td><code>ftp.password</code></td><td><em>from host</em></td><td>FTP password</td></tr>
+              <tr><td><code>ftp.sharedKey</code></td><td><em>none</em></td><td>Additional per-account DissFTPd key (64 hexadecimal characters). Requires the password too; no password-only fallback. Does not encrypt FTP traffic; use a secure tunnel.</td></tr>
               <tr><td><code>ftp.nopassword</code></td><td><code>false</code></td><td>Authenticate without sending a password (anonymous-style)</td></tr>
               <tr><td><code>ftp.listenAddress</code></td><td><em>none</em></td><td>Local IP address to bind for data connections</td></tr>
             </tbody>

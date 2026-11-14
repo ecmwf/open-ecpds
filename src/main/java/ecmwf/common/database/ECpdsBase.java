@@ -42,6 +42,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.management.timer.Timer;
 
@@ -69,6 +70,19 @@ public final class ECpdsBase extends DataBase {
 
     /** The Constant CACHE_PAUSE. */
     private static final long CACHE_PAUSE = Cnf.durationAt("ECpdsBase", "cachePause", 5 * Timer.ONE_SECOND);
+
+    private static final long RESULT_CACHE_TIMEOUT = TimeUnit.MILLISECONDS
+            .toNanos(Math.max(0, Cnf.durationAt("ECpdsBase", "resultCacheTimeout", 30 * Timer.ONE_SECOND)));
+
+    private final Object systemMessageCacheLock = new Object();
+    private List<SystemMessage> systemMessageCache;
+    private long systemMessageCacheLoaded;
+    private final Object metadataCatalogLock = new Object();
+    private DestinationMetadataCatalog metadataCatalog;
+
+    private record DestinationMetadataCatalog(List<DestinationMetaField> fields, Map<Integer, Set<Integer>> types,
+            long loadedAt) {
+    }
 
     /** The operationsCache. */
     private final SessionCache<String, List<Operation>> operationsCache = new SessionCache<>("operations", CACHE_PAUSE);
@@ -3449,16 +3463,13 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Collection<DestinationMetaField> getDestinationMetaFields() throws DataBaseException {
-        try (var it = ecpds.getDestinationMetaFields(DestinationMetaField.class)) {
-            final List<DestinationMetaField> list = new ArrayList<>();
-            while (it.hasNext()) {
-                list.add(it.next());
+        final List<DestinationMetaField> list = new ArrayList<>();
+        for (final var field : destinationMetadataCatalog().fields()) {
+            if (field.getActive()) {
+                list.add((DestinationMetaField) field.clone());
             }
-            _log.debug("getDestinationMetaFields: {} field(s)", list.size());
-            return list;
-        } catch (final Exception e) {
-            throw new DataBaseException(e.getMessage(), e);
         }
+        return list;
     }
 
     /**
@@ -3470,16 +3481,54 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public Collection<DestinationMetaField> getAllDestinationMetaFields() throws DataBaseException {
-        try (var it = ecpds.getAllDestinationMetaFields(DestinationMetaField.class)) {
-            final List<DestinationMetaField> list = new ArrayList<>();
-            while (it.hasNext()) {
-                list.add(it.next());
-            }
-            _log.debug("getAllDestinationMetaFields: {} field(s)", list.size());
-            return list;
-        } catch (final Exception e) {
-            throw new DataBaseException(e.getMessage(), e);
+        final List<DestinationMetaField> list = new ArrayList<>();
+        for (final var field : destinationMetadataCatalog().fields()) {
+            list.add((DestinationMetaField) field.clone());
         }
+        return list;
+    }
+
+    private DestinationMetadataCatalog destinationMetadataCatalog() throws DataBaseException {
+        synchronized (metadataCatalogLock) {
+            final var now = System.nanoTime();
+            if (metadataCatalog != null && now - metadataCatalog.loadedAt() < RESULT_CACHE_TIMEOUT) {
+                return metadataCatalog;
+            }
+            final List<DestinationMetaField> fields = new ArrayList<>();
+            final Map<Integer, Set<Integer>> types = new HashMap<>();
+            try {
+                try (var it = ecpds.getAllDestinationMetaFields(DestinationMetaField.class)) {
+                    while (it.hasNext()) {
+                        fields.add((DestinationMetaField) it.next().clone());
+                    }
+                }
+                try (var rs = executeSelect("ECpdsBase", "getDestinationMetaFieldTypes")) {
+                    while (rs.next()) {
+                        types.computeIfAbsent(rs.getInt("DMF_ID"), _ -> new LinkedHashSet<>())
+                                .add(rs.getInt("DES_TYPE"));
+                    }
+                }
+            } catch (final Exception e) {
+                throw new DataBaseException(e.getMessage(), e);
+            }
+            metadataCatalog = new DestinationMetadataCatalog(fields, types, now);
+            return metadataCatalog;
+        }
+    }
+
+    private void invalidateMetadataCatalog() {
+        synchronized (metadataCatalogLock) {
+            metadataCatalog = null;
+        }
+    }
+
+    @Override
+    public void clearCache() {
+        super.clearCache();
+        synchronized (systemMessageCacheLock) {
+            systemMessageCache = null;
+        }
+        invalidateMetadataCatalog();
     }
 
     /**
@@ -3493,10 +3542,14 @@ public final class ECpdsBase extends DataBase {
      *             the data base exception
      */
     public void saveDestinationMetaField(final DestinationMetaField field) throws DataBaseException {
-        if (field.DMF_ID != null && field.DMF_ID > 0) {
-            update(field);
-        } else {
-            insert(field, true);
+        try {
+            if (field.DMF_ID != null && field.DMF_ID > 0) {
+                update(field);
+            } else {
+                insert(field, true);
+            }
+        } finally {
+            invalidateMetadataCatalog();
         }
     }
 
@@ -3514,6 +3567,8 @@ public final class ECpdsBase extends DataBase {
             remove(field);
         } catch (final Exception e) {
             throw new DataBaseException(e.getMessage(), e);
+        } finally {
+            invalidateMetadataCatalog();
         }
     }
 
@@ -3528,16 +3583,7 @@ public final class ECpdsBase extends DataBase {
      */
     public java.util.Map<Integer, java.util.Set<Integer>> getDestinationMetaFieldTypeMap() throws DataBaseException {
         final var map = new java.util.HashMap<Integer, java.util.Set<Integer>>();
-        try (var rs = executeSelect("ECpdsBase", "getDestinationMetaFieldTypes")) {
-            while (rs.next()) {
-                final int fieldId = rs.getInt("DMF_ID");
-                final int desType = rs.getInt("DES_TYPE");
-                map.computeIfAbsent(fieldId, _ -> new java.util.HashSet<>()).add(desType);
-            }
-        } catch (final Exception e) {
-            throw new DataBaseException(e.getMessage(), e);
-        }
-        _log.debug("getDestinationMetaFieldTypeMap: {} field(s) with type restrictions", map.size());
+        destinationMetadataCatalog().types().forEach((id, types) -> map.put(id, new LinkedHashSet<>(types)));
         return map;
     }
 
@@ -3565,6 +3611,8 @@ public final class ECpdsBase extends DataBase {
             }
         } catch (final Exception e) {
             throw new DataBaseException(e.getMessage(), e);
+        } finally {
+            invalidateMetadataCatalog();
         }
     }
 
@@ -5394,17 +5442,28 @@ public final class ECpdsBase extends DataBase {
      * @return the system message list
      */
     public List<SystemMessage> getSystemMessageList() {
-        final List<SystemMessage> list = new ArrayList<>();
-        try (var it = getAll(SystemMessage.class)) {
-            while (it.hasNext()) {
-                list.add(it.next());
+        synchronized (systemMessageCacheLock) {
+            final var now = System.nanoTime();
+            if (systemMessageCache == null || now - systemMessageCacheLoaded >= RESULT_CACHE_TIMEOUT) {
+                final List<SystemMessage> loaded = new ArrayList<>();
+                try (var it = executeQuery("ECpdsBase", "getSystemMessages", SystemMessage.class)) {
+                    while (it.hasNext()) {
+                        loaded.add((SystemMessage) it.next().clone());
+                    }
+                    loaded.sort((a, b) -> Long.compare(b.getCreatedAt(), a.getCreatedAt()));
+                } catch (final Exception e) {
+                    _log.warn("getSystemMessageList", e);
+                    return new ArrayList<>();
+                }
+                systemMessageCache = loaded;
+                systemMessageCacheLoaded = now;
             }
-            list.sort((a, b) -> Long.compare(b.getCreatedAt(), a.getCreatedAt()));
-        } catch (final Exception e) {
-            _log.warn("getSystemMessageList", e);
+            final List<SystemMessage> list = new ArrayList<>();
+            for (final var message : systemMessageCache) {
+                list.add((SystemMessage) message.clone());
+            }
+            return list;
         }
-        logSqlRequest("getSystemMessageList", list.size());
-        return list;
     }
 
     /**
@@ -5444,6 +5503,10 @@ public final class ECpdsBase extends DataBase {
         } catch (final Exception e) {
             _log.warn("saveSystemMessage", e);
             throw new DataBaseException("saveSystemMessage", e);
+        } finally {
+            synchronized (systemMessageCacheLock) {
+                systemMessageCache = null;
+            }
         }
     }
 
@@ -5464,6 +5527,10 @@ public final class ECpdsBase extends DataBase {
         } catch (final Exception e) {
             _log.warn("removeSystemMessage", e);
             throw new DataBaseException("removeSystemMessage", e);
+        } finally {
+            synchronized (systemMessageCacheLock) {
+                systemMessageCache = null;
+            }
         }
     }
 

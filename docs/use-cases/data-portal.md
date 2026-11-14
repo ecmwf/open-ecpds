@@ -7,10 +7,10 @@ page examines the workflow for uploading and downloading files using these metho
 
 !!! note "Cancelled HTTPS downloads"
     If a client or intermediary closes a connection during a download, the Mover records
-    Jetty's connection EOF as a short debug message instead of a Jersey HTTP 503 stack
-    trace. This does not mean the download completed; the client must retry or resume it.
+    Jetty's connection EOF as a short debug message. This does not mean the download
+    completed; the client must retry or resume it.
     Frequent cancellations warrant checking client/proxy timeouts and network stability.
-    Other streaming I/O failures remain reported normally.
+    Other streaming I/O failures are reported normally.
 
 ## Data Mover roles
 

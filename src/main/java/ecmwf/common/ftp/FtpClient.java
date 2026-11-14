@@ -45,7 +45,10 @@ import java.io.StringReader;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -53,6 +56,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.management.timer.Timer;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.logging.log4j.LogManager;
 
@@ -70,6 +75,7 @@ import ecmwf.common.transport.ptcp.psocket.PTCPSocket;
  * The Class FtpClient.
  */
 public final class FtpClient {
+    private String _sharedKey;
     private volatile Socket diagnosticDataSocket;
 
     public String getConnectionDiagnostics() {
@@ -287,7 +293,7 @@ public final class FtpClient {
             throw new IOException("Did not login successfully before");
         }
         _openServer(_host, _port);
-        login(_user, _password);
+        login(_user, _password, _sharedKey);
     }
 
     /**
@@ -982,12 +988,12 @@ public final class FtpClient {
     private int _issueCommand(final String cmd) throws IOException {
         final var started = System.nanoTime();
         if (!commandIsOpen()) {
-            throw new FtpLoginException("Not connected to host for '" + cmd + "'");
+            throw new FtpLoginException("Not connected to host for '" + redactCommand(cmd) + "'");
         }
         _lastCommand = cmd;
         int reply;
         if (_debug) {
-            _log.debug("> {}", cmd != null && cmd.startsWith("PASS ") ? "PASS ********" : cmd);
+            _log.debug("> {}", redactCommand(cmd));
         }
         if (_replyPending) {
             if (_debug) {
@@ -1424,12 +1430,61 @@ public final class FtpClient {
      *             Signals that an I/O exception has occurred.
      */
     public void login(final String user, final String password) throws IOException {
+        login(user, password, null);
+    }
+
+    public boolean hasCredentials(final String user, final String password, final String sharedKey) {
+        return _logged && java.util.Objects.equals(_user, user) && java.util.Objects.equals(_password, password)
+                && java.util.Objects.equals(_sharedKey, sharedKey);
+    }
+
+    private static String redactCommand(final String command) {
+        if (command != null && (command.startsWith("PASS ") || command.startsWith("AUTHKEY "))) {
+            return command.substring(0, command.indexOf(' ')) + " ********";
+        }
+        return command;
+    }
+
+    public void login(final String user, final String password, final String sharedKey) throws IOException {
+        _logged = false;
+        if (sharedKey != null && (!sharedKey.matches("[0-9a-fA-F]{64}") || password == null)) {
+            throw new FtpLoginException("Shared-key authentication requires a 64-digit hexadecimal key and password");
+        }
+        if (user == null || user.contains("\r") || user.contains("\n")
+                || password != null && (password.contains("\r") || password.contains("\n"))) {
+            throw new FtpLoginException("Invalid FTP credentials");
+        }
         if (_issueCommand("USER " + user) == FTP_ERROR) {
             throw new FtpLoginException("Invalid user name");
+        }
+        if (sharedKey != null) {
+            getResponseString();
+            if (_lastReplyCode != 331 || _issueCommand("AUTHKEY") == FTP_ERROR || _lastReplyCode != 334) {
+                throw new FtpLoginException("Shared-key authentication is required but unavailable");
+            }
+            final var response = getResponseString();
+            if (!response.matches("334 HMAC-SHA256 [0-9a-f]{64}")) {
+                throw new FtpLoginException("Invalid shared-key challenge");
+            }
+            final var nonce = response.substring("334 HMAC-SHA256 ".length());
+            try {
+                final var mac = Mac.getInstance("HmacSHA256");
+                mac.init(new SecretKeySpec(HexFormat.of().parseHex(sharedKey), "HmacSHA256"));
+                final var message = "OpenECPDS-DissFTP-AUTH-v1\n" + user + "\n" + nonce;
+                final var proof = HexFormat.of().formatHex(mac.doFinal(message.getBytes(StandardCharsets.UTF_8)));
+                if (_issueCommand("AUTHKEY " + proof) == FTP_ERROR || _lastReplyCode != 200) {
+                    throw new FtpLoginException("Shared-key authentication failed");
+                }
+            } catch (final GeneralSecurityException e) {
+                throw new FtpLoginException("Shared-key authentication unavailable");
+            }
         }
         _log.debug("LastReplyCode: {}", _lastReplyCode);
         if (_lastReplyCode != 230 && password != null && _issueCommand("PASS " + password) == FTP_ERROR) {
             throw new FtpLoginException("Login failed");
+        }
+        if (_lastReplyCode != 230) {
+            throw new FtpLoginException("FTP authentication did not complete");
         }
         if (_dataAlive) {
             dissCommandCheck("OPTS DATAALIVE");
@@ -1440,6 +1495,7 @@ public final class FtpClient {
         _logged = true;
         _user = user;
         _password = password;
+        _sharedKey = sharedKey;
     }
 
     /**

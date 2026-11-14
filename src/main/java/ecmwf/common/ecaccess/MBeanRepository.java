@@ -371,6 +371,10 @@ public abstract class MBeanRepository<O> extends MBeanScheduler {
         return _objects.remove(key);
     }
 
+    protected O computeValue(final String key, final java.util.function.BiFunction<String, O, O> update) {
+        return _objects.compute(key, update);
+    }
+
     /**
      * Contains value.
      *

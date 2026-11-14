@@ -142,8 +142,17 @@ public enum ECtransOptions implements ECtransOptionDefinition {
     /** The destination incoming download period (rolling window size). Empty means disabled. */
     DESTINATION_INCOMING_DOWNLOAD_PERIOD("downloadPeriod", Duration.class, DURATION_NONE),
 
+    /** Enable Aviso history capture and access for this destination. */
+    DESTINATION_NOTIFICATION_AVISO("aviso", Boolean.class, false),
+
+    /** The destination notification capture mode. */
+    DESTINATION_NOTIFICATION_CAPTURE_MODE("captureMode", String.class, "async", Arrays.asList("async", "strict")),
+
     /** The destination mqtt publish. */
     DESTINATION_MQTT_PUBLISH("publish", Boolean.class, false),
+
+    /** Publish native CloudEvents through the durable outbox. */
+    DESTINATION_MQTT_CLOUD_EVENTS("cloudEvents", Boolean.class, false),
 
     /** The destination mqtt topic. */
     DESTINATION_MQTT_TOPIC("topic", String.class, STRING_NONE),
@@ -669,6 +678,8 @@ public enum ECtransOptions implements ECtransOptionDefinition {
 
     /** The host ftp password. */
     HOST_FTP_PASSWORD("password", String.class, STRING_NONE),
+
+    HOST_FTP_SHARED_KEY("sharedKey", String.class, STRING_NONE),
 
     /** The host ftp usecleanpath. */
     HOST_FTP_USECLEANPATH("usecleanpath", Boolean.class, false),

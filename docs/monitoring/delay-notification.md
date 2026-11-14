@@ -116,7 +116,7 @@ The **Email Notifications** card contains two inner cards: **Delay Notification*
 contact email addresses are available for the page's scope: one product/cycle, the deduplicated union across a
 product's cycles (`/do/monitoring/summary/GWAVE`), or across all products and cycles
 (`/do/monitoring/summary/`). All-cycles aggregation also works for products not configured to use grouped links.
-Legacy Outlook actions do not register a notice; **Copy BCC Emails** copies the explicit contacts.
+Outlook actions do not register a notice; **Copy BCC Emails** copies the explicit contacts.
 
 - **Register Delay Notice** fills **Product name**, clears model and timing filters for this visit, and shows only
   the requested cycle (or all cycles for an all-cycles link). Matching cells are selected as *Definite*. Saved model

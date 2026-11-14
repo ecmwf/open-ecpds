@@ -38,8 +38,80 @@ The host name / IP and port are taken from the host record. Use the options belo
 | `ftp.port` | `21` | Remote FTP port |
 | `ftp.login` | *from host* | FTP username |
 | `ftp.password` | *from host* | FTP password |
+| `ftp.sharedKey` | *none* | Additional per-account DissFTPd HMAC-SHA256 key (64 hexadecimal characters); requires the password as well |
 | `ftp.nopassword` | `false` | Authenticate without sending a password (anonymous-style) |
 | `ftp.listenAddress` | *none* | Local IP address to bind for data connections |
+
+### DissFTPd shared-key authentication
+
+With an updated DissFTPd server, a host can require proof of a separate shared
+key as well as its normal password. Generate a different key for each account
+on the server, without printing it:
+
+```bash
+(umask 077; set -C; openssl rand -hex 32 > /secure/path/account.key)
+```
+
+In DissFTPd's `dissFTP.properties`, configure the account's key file:
+
+```properties
+sharedKeyFile.account=/secure/path/account.key
+```
+
+The file contains exactly 64 hexadecimal characters, optionally followed by a
+newline. Relative paths resolve under the DissFTP configuration directory.
+Keep the file readable only by the service account, outside its FTP root, and
+not writable by FTP users. Keep a real, nonempty password for this account in
+`dissFTP.accounts`; empty passwords and `*` are rejected for key-protected
+accounts. Restart DissFTPd after changing its configuration. Key-file contents
+are loaded at each new login; existing authenticated connections are not revoked
+by changing a key.
+
+Provision the same hexadecimal value securely in the OpenECPDS host's
+`ftp.sharedKey` option. It is marked as a secured option, like `ftp.password`.
+Do not use the RCC or CLI shared secret. `ftp.nopassword` must remain false.
+
+The client requests a random, connection-bound challenge and returns an
+HMAC-SHA256 proof covering the protocol version, account name and challenge.
+Challenges expire after 60 seconds and each proof attempt consumes its challenge.
+The key is never transmitted. The server requires key verification before
+accepting the password, and the client repeats the exchange on reconnect.
+Cached connections are not reused across different passwords or keys.
+
+There is **no password-only fallback** when a key is configured: missing,
+unreadable or invalid server key files deny login, as do missing or incorrect
+client keys. Existing accounts without `sharedKeyFile.<account>` and hosts
+without `ftp.sharedKey` retain password-only behaviour. Ordinary FTP clients
+cannot access key-protected accounts unless they implement this extension.
+
+**This is authentication, not encryption or two-factor authentication.** Plain
+FTP still exposes the password and file contents, and an active attacker can
+relay the handshake. Use the `ftp` module over a trusted secure tunnel with
+authenticated endpoints. The separate `ftps` module does not implement this
+shared-key extension.
+
+### DissFTPd container configuration overrides
+
+The DissFTPd container accepts optional configuration files under
+`/etc/ecpds/dissftpd/`. For example, bind-mount a local accounts file read-only:
+
+```bash
+--mount type=bind,src=/absolute/path/dissFTP.accounts,dst=/etc/ecpds/dissftpd/dissFTP.accounts,readonly
+```
+
+The filename is `dissFTP.accounts` (plural). You can also override
+`dissFTP.properties` and `dissFTP.groups` in the same directory, or mount the
+whole directory. Each supplied file **replaces** its packaged counterpart; it
+is not merged. Files not supplied continue to use the packaged defaults under
+`/usr/local/ecpds/dissftpd/conf/`. An empty accounts override allows no accounts;
+an existing but unreadable or invalid override does not fall back to defaults.
+
+Keep accounts files and shared keys accessible only to the service account.
+Use absolute container paths for `sharedKeyFile.<account>` and mount those key
+files read-only too. Relative key paths still resolve under the packaged
+configuration directory. Restart the container after changing accounts, groups
+or properties. Rebuild the DissFTPd RPM and container image to enable this
+override support.
 
 ### Data channel mode
 
@@ -110,7 +182,7 @@ ftp.useNoop = "30s"
 | `ftp.ignoreCheck` | `true` | Skip post-transfer integrity check (SIZE command) |
 | `ftp.retryAfterTimeoutOnCheck` | `false` | Retry the integrity check after a timeout instead of failing |
 | `ftp.ignoreDelete` | `true` | Ignore errors when deleting remote files |
-| `ftp.md5Ext` | `.md5` | Legacy option: extension used for the checksum sidecar file, but only applied when `ectrans.checksumAlgorithm` is `MD5` (default) and `ectrans.checksumExt` is not set. For other algorithms, or to override regardless of algorithm, use `ectrans.checksumExt` instead (see [ECtrans Common Options](ectrans.md)) |
+| `ftp.md5Ext` | `.md5` | Extension used for the checksum sidecar file when `ectrans.checksumAlgorithm` is `MD5` (default) and `ectrans.checksumExt` is not set. For other algorithms, or to override regardless of algorithm, use `ectrans.checksumExt` (see [ECtrans Common Options](ectrans.md)) |
 
 ### Directory listing
 

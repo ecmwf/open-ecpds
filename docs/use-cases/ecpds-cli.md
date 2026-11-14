@@ -115,8 +115,6 @@ use from containers, CI pipelines, or any unprivileged environment.
     process listings. Consider setting it via an environment variable or reading from a
     secrets manager and passing it programmatically.
 
-<a id="ecuser-privileged-port-authentication-legacy"></a>
-
 ### ECUSER / privileged-port authentication
 
 When `-user`/`-pass` are **not** provided, the CLI uses ECUSER authentication: the

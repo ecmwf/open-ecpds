@@ -17,6 +17,7 @@
 - [Master Options](#master-options)
 - [Monitor Options](#monitor-options)
 - [Mqtt Options](#mqtt-options)
+- [Notification Options](#notification-options)
 - [Portal Options](#portal-options)
 - [Proxy Options](#proxy-options)
 - [Retrieval Options](#retrieval-options)
@@ -566,6 +567,9 @@ Allow specifying a buffer size when sending data on the data channel.
 ### ftp.setNoop
 Allow specifying the "No-Operation" command. This command does not affect anything at all. It performs no action other than having the server send an OK reply. This command is used to keep connections with the FTP servers "alive" (connected) while nothing is being done.
 
+### ftp.sharedKey
+Optional per-account DissFTPd shared key: 64 hexadecimal characters generated with openssl rand -hex 32. Requires both HMAC-SHA256 challenge-response and the account password; fails if the server does not support or accept the key. Does not encrypt FTP traffic; use a secure tunnel. Incompatible with ftp.nopassword.
+
 ### ftp.suffix
 When using the "ftp.usetmp" option, this option allow setting the suffix to use for the temporary file name (e.g. ".tmp").
 
@@ -1084,6 +1088,9 @@ These options help fine-tune the notification system with MQTT and are accessibl
 ### mqtt.clientId
 The client identifier (client ID) is a unique identifier that distinguishes one MQTT client from another. This option allows publishing all messages to a specific MQTT client connected to the HiveMQ broker.
 
+### mqtt.cloudEvents
+Publish the captured native CloudEvent through the durable MQTT outbox.
+
 ### mqtt.contentType
 This property allow to define the format or type of the payload data being transmitted in the MQTT messages. It specifies how the payload should be interpreted or processed by the receiving end (e.g. "application/json").
 
@@ -1107,6 +1114,16 @@ This option allow setting the retain flag. This ensures that all messages are sa
 
 ### mqtt.topic
 Build the MQTT topic. It is either defined in the destination setup (Properties or JavaScript), or by default it is using the destination name. If the topic ends with a "/" (the default when no topic is specified), the target name is appended.
+
+## Notification Options
+
+These options control native notification capture and Aviso access for a destination.
+
+### notification.aviso
+Enable Aviso history capture and watch/replay access for this destination. Requires incoming.event or acquisition.event for new notifications. Disabled by default; durable MQTT CloudEvents remain independent.
+
+### notification.captureMode
+Use strict to persist the transfer state and native notification atomically before acknowledging the transfer; requires NotificationHistory revision fencing and notification.aviso or mqtt.cloudEvents.
 
 ## Portal Options
 

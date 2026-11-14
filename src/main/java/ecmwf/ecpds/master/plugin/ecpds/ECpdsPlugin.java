@@ -2010,7 +2010,12 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                 }
                 _log.debug("DataFile {}, DataTransfer {} downloaded: {} ({})", dataFile.getId(), transfer.getId(),
                         dataFile.getDownloaded(), transfer.getStatusCode());
-                DATABASE.update(transfer);
+                final var captureResult = MASTER.captureStrictNotification(transfer);
+                if (captureResult == MasterServer.StrictCaptureResult.NOT_REQUIRED) {
+                    DATABASE.update(transfer);
+                } else if (captureResult == MasterServer.StrictCaptureResult.ALREADY_COMMITTED) {
+                    continue;
+                }
                 if (notDownloaded && !forceStop) {
                     MASTER.addTransferHistory(transfer, thisStatus,
                             "File not retrieved (source host will be used instead)");

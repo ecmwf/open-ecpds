@@ -29,6 +29,21 @@ Deployments with site-specific changes may have additional or different tables.
 | `METADATA_VALUE` | Metadata attribute values associated with individual data files. |
 | `PRODUCT_METADATA` | Product descriptions and tips, optionally scoped by product type. |
 
+## Notification history and delivery
+
+These tables support optional [notification history and replay](../notifications/history.md)
+and durable MQTT CloudEvents delivery.
+
+| Table | Purpose |
+|---|---|
+| `NOTIFICATION_HISTORY` | Captured file-availability events, including their destination, sequence, event identity and CloudEvents payload, for history and replay. |
+| `NOTIFICATION_HISTORY_STATE` | Shared history sequence allocation, payload-byte accounting and timestamp state. |
+| `NOTIFICATION_HISTORY_STREAM` | Per-destination sequence counters and removed-history boundaries used for replay gap detection. |
+| `NOTIFICATION_CHECKPOINT` | Named consumer replay positions and acknowledgement timestamps per Data Portal user and destination. |
+| `NOTIFICATION_OUTBOX` | MQTT topics and CloudEvents payloads awaiting delivery to Data Mover brokers. |
+| `NOTIFICATION_OUTBOX_STATE` | Shared pending-delivery payload-byte accounting and concurrency state for outbox capacity enforcement. |
+| `NOTIFICATION_OUTBOX_TARGET` | Per-Mover pending deliveries, retry schedules, attempt counts and delivery-claim leases. |
+
 ## Destinations, hosts and transfer configuration
 
 | Table | Purpose |
@@ -106,11 +121,50 @@ Deployments with site-specific changes may have additional or different tables.
 
 This catalog is a database administration reference, not an end-user configuration
 interface. Use the Monitor UI or supported APIs to manage operational records.
-Table names and layouts can change between releases.
+This catalog describes tables managed by the application's supplied schema.
 
 Do not load the destructive full installation dump into a populated database.
 Schema operations must follow the site's backup and database change procedures.
 Optional features report database-readiness problems on their administration pages.
+
+## Application caches
+
+Hibernate second-level caching is configured in `conf/hibernate.hbm.xml`,
+`conf/hibernate.cfg.xml` and `conf/ehcache.xml`. An entity with a cache mapping but
+without an explicit Ehcache region uses the default template. Hibernate query
+caching remains disabled.
+
+The Master also caches the complete system-message list and destination metadata
+catalog (field definitions and type restrictions) for 30 seconds. Returned objects
+are copies, and message expiry is still evaluated against the current time on
+each request. Administrative saves/deletes invalidate the corresponding local
+snapshot; other Masters and external database changes become visible on refresh.
+Database read failures are not cached. Destination-specific metadata values and
+transactional notification, outbox and lifecycle state are not added to these caches.
+
+```ini
+[ECpdsBase]
+resultCacheTimeout=30s
+```
+
+Set this to `0` to disable these result caches. The database MBean's `clearCache`
+operation clears both snapshots as well as Hibernate's cache. Existing Ehcache
+region sizes and expiry policies are unchanged; Galera does not invalidate local
+Java caches.
+
+To collect Hibernate second-level cache hit/miss/put counters, enable:
+
+```ini
+[DataBase]
+cacheStatistics=yes
+```
+
+The database MBean also exposes the writable `HibernateStatisticsEnabled`
+attribute for temporary runtime collection and the read-only
+`HibernateCacheStatistics` report. Collection is off by default, unless enabled
+separately in Hibernate configuration. Counters are local to the Master and do
+not include direct JDBC operations, result-cache hits or Ehcache evictions.
+Disable collection after profiling if it is no longer needed.
 
 ## SQL script timeouts
 

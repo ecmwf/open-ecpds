@@ -106,6 +106,42 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     /** The brokerFactory. */
     private BrokerFactory brokerFactory = null;
 
+    /** Database-only work may be retried after a transaction conflict. */
+    <T> T transaction(final Broker.TransactionWork<T> work) {
+        if (brokerFactory == null) {
+            throw new IllegalStateException("Database broker is not initialized");
+        }
+        for (var attempt = 0;; attempt++) {
+            try (var broker = brokerFactory.getBroker()) {
+                return broker.transaction(work);
+            } catch (final Exception failure) {
+                if (attempt >= 9 || !transactionConflict(failure)) {
+                    if (failure instanceof final RuntimeException runtime) {
+                        throw runtime;
+                    }
+                    throw new IllegalStateException("Database transaction failed", failure);
+                }
+                try {
+                    final var delay = Math.min(250, 5 << Math.min(attempt, 6));
+                    Thread.sleep(java.util.concurrent.ThreadLocalRandom.current().nextLong(delay + 1));
+                } catch (final InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Database transaction interrupted", failure);
+                }
+            }
+        }
+    }
+
+    private static boolean transactionConflict(final Throwable failure) {
+        for (var cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sql && ("40001".equals(sql.getSQLState()) || sql.getErrorCode() == 1213
+                    || sql.getErrorCode() == 1205)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Initialise.
      *
@@ -308,6 +344,24 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
             result = new DBIterator<>();
         }
         return result;
+    }
+
+    @Override
+    public ApiPermission[] getApiPermissionsForClient(final String clientId) {
+        final List<ApiPermission> list = new ArrayList<>();
+        try (var iterator = executeQuery("ECpdsBase", "getApiPermissionsForClient", ApiPermission.class,
+                new String[] { "clientId=" + clientId })) {
+            iterator.forEachRemaining(permission -> {
+                // SQL collations may ignore trailing spaces; retain the exact Java identity check.
+                if (clientId.equals(permission.getClientId())) {
+                    list.add(permission);
+                }
+            });
+        } catch (IOException | SQLException e) {
+            _log.warn("getApiPermissionsForClient", e);
+        }
+        logSqlRequest("getApiPermissionsForClient", list.size());
+        return list.toArray(new ApiPermission[0]);
     }
 
     /**
@@ -986,6 +1040,12 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
             if ("Repository".equals(attributeName)) {
                 return dataFile.getRepository();
             }
+            if ("HibernateStatisticsEnabled".equals(attributeName)) {
+                return HibernateSessionFactory.getSessionFactory().getStatistics().isStatisticsEnabled();
+            }
+            if ("HibernateCacheStatistics".equals(attributeName)) {
+                return HibernateSessionFactory.cacheStatistics();
+            }
         } catch (final Exception e) {
             _log.warn("Getting an MBean attribute", e);
             throw new MBeanException(e);
@@ -1028,6 +1088,10 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
             maxCount = (Long) value;
             return true;
         }
+        if ("HibernateStatisticsEnabled".equals(name)) {
+            HibernateSessionFactory.getSessionFactory().getStatistics().setStatisticsEnabled((Boolean) value);
+            return true;
+        }
         return false;
     }
 
@@ -1056,8 +1120,14 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
                         true, false),
                 new MBeanAttributeInfo("MaxCount", "java.lang.Long",
                         "MaxCount: log a sql request if it returns or affects more rows than this.", true, true, false),
-                new MBeanAttributeInfo(
-                        "Repository", "java.lang.String", "Repository: path for SQL scripts.", true, false, false) },
+                new MBeanAttributeInfo("Repository", "java.lang.String", "Repository: path for SQL scripts.", true,
+                        false, false),
+                new MBeanAttributeInfo("HibernateStatisticsEnabled", "java.lang.Boolean",
+                        "HibernateStatisticsEnabled: enable Hibernate statistics collection on this Master.", true,
+                        true, false),
+                new MBeanAttributeInfo("HibernateCacheStatistics", "java.lang.String",
+                        "HibernateCacheStatistics: per-region second-level cache hits, misses and puts; excludes direct JDBC.",
+                        true, false, false) },
                 new MBeanConstructorInfo[0],
                 new MBeanOperationInfo[] {
                         new MBeanOperationInfo("clearCache", "clearCache(): clear the object cache", null, "void",
@@ -1375,7 +1445,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
             }
         }
         // We couldn't update the database so we throw the last exception!
-        throw new DataBaseException(Format.getMessage(throwable));
+        throw DataBaseException.withCause(Format.getMessage(throwable), throwable);
     }
 
     /**

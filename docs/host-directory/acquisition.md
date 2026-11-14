@@ -249,8 +249,8 @@ If a file already exists in the database, the scheduler evaluates whether it sho
 | Option | Default | Description |
 |---|---|---|
 | `acquisition.requeueon` | — | A JavaScript expression that evaluates to `true` to re-queue. Variables: `$time1`/`$size1` (existing DB record), `$time2`/`$size2` (new remote values, in ms and bytes), `$destination`, `$target`, `$original`. Example: `$time2 > $time1 && $size2 != $size1` |
-| `acquisition.requeueonupdate` | `false` | Legacy shortcut: re-queue when the remote modification time is newer than the stored one. Ignored if `requeueon` is set. |
-| `acquisition.requeueonsamesize` | `false` | Legacy shortcut: when combined with `requeueonupdate`, also re-queue when size differs. Ignored if `requeueon` is set. |
+| `acquisition.requeueonupdate` | `false` | Re-queue when the remote modification time is newer than the stored one. Ignored if `requeueon` is set. |
+| `acquisition.requeueonsamesize` | `false` | When combined with `requeueonupdate`, also re-queue when size differs. Ignored if `requeueon` is set. |
 | `acquisition.requeueOnFailure` | `false` | If `true` and a retrieval fails, put the transfer back to `SCHE` (re-scheduled) rather than marking it `FAIL`. Allows automatic retry on next acquisition cycle. |
 
 ### Target & metadata

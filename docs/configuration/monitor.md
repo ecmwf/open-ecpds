@@ -611,7 +611,7 @@ name=implementation.Class@/path/to/plugin,option=value
 The library path and per-plugin options depend on the plugin. Server plugins
 support `maxConnections` and `inverseResolution`; deleting or adding a plugin
 definition changes which services start. These are options **inside the value**,
-not new top-level `ecmwf.properties` groups. See
+not top-level `ecmwf.properties` groups. See
 [Plugin Infrastructure](../concepts/plugin-infrastructure.md).
 
 `[ECtrans]` is an open family of global transfer-option defaults, with keys

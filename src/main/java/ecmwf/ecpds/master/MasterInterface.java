@@ -353,6 +353,11 @@ public interface MasterInterface extends ProviderInterface {
      */
     IncomingProfile getIncomingProfileNoAuth(String incomingUser) throws RemoteException;
 
+    NotificationHistory.Replay replayAvisoNotificationHistory(String user, String destination, String target,
+            long after, Long upper, Long fromTime, Long toTime, int limit) throws RemoteException;
+
+    long currentAvisoNotificationSequence(String user, String destination) throws RemoteException;
+
     /**
      * Releases a pending connection slot for the given user. Must be called when a session closes before being
      * confirmed by the incoming connections poll, to prevent the pending counter from leaking.

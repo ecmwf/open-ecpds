@@ -169,14 +169,14 @@ When their stored delivered name is NULL, `delivered=` searches **Target** inste
 Sorting uses the same effective filename. This does not change stored values.
 Failed, queued, running and other non-DONE transfers show an empty Delivered
 value and do not match a delivered filename filter, even if an older name remains
-stored. Historical DONE transfers and modules that do not report a name use the
-Target fallback; this does not recover an unrecorded historical remote filename.
+stored. DONE transfers without a reported name use the Target fallback;
+unrecorded remote filenames cannot be recovered.
 
 The field describes the latest delivery attempt, not a history of remote names.
 It is cleared when a new Mover delivery attempt starts and populated on success.
-Historical transfers are not backfilled.
+Only successful delivery reports populate this field.
 
 Recording the name uses the existing transfer update path: there is no additional
-database request per transfer or parsing of history messages. No index is added
-for the new text field. Searching or sorting it can cost more on large result
+database request per transfer or parsing of history messages. The text field is
+not indexed. Searching or sorting it can cost more on large result
 sets; destination and time/status filters still constrain the existing queries.

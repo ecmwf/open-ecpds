@@ -41,7 +41,7 @@ The admin page shows an **Ungrouped**/**Grouped** toggle above each message's te
 | `{{EXPECTED_DELAY}}` | The expected delay selected for the notice. |
 | `{{NOTE}}` | The note entered for the notice. |
 
-The `{{DESCRIPTION}}` placeholder is included in all four built-in message bodies. The last four placeholders are available in the Grouped Products Delay and Products Resumed messages. They are replaced with the current notice's values (or the saved values when composing a resolution) and are empty in regular monitoring-page emails. In the Grouped Products Delay template, a value placed with its own placeholder is omitted from the automatically inserted affected block, while the other details remain there. If none is used, `{{AFFECTED}}` continues to include all of those details as before.
+The `{{DESCRIPTION}}` placeholder is included in all four built-in message bodies. The last four placeholders are available in the Grouped Products Delay and Products Resumed messages. They are replaced with the current notice's values (or the saved values when composing a resolution) and are empty in regular monitoring-page emails. In the Grouped Products Delay template, a value placed with its own placeholder is omitted from the automatically inserted affected block, while the other details remain there. If none is used, `{{AFFECTED}}` includes all of those details.
 
 ---
 

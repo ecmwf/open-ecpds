@@ -22,8 +22,8 @@ IDE.
 
 To reset a disposable development database, stop all IDE-launched Masters first,
 then run `make start-db` and confirm reinitialization. The target stops the
-database container before deleting its data, and also detects an incomplete
-previous initialization. Merely restarting a container does not rerun the
+database container before deleting its data, and also detects incomplete
+initialization. Merely restarting a container does not rerun the
 initialization SQL. Resetting deletes all development database data.
 
 ## Visual Studio Code
@@ -101,7 +101,7 @@ To build the application from the source:
 - Select the `pom.xml` file in the **Project Explorer** view.
 - In the contextual menu, choose **Run As → OpenECPDS Clean Compile**.
 
-The application can now be started within Eclipse using the preconfigured Debug and Run
+The application can be started within Eclipse using the preconfigured Debug and Run
 options available: **OpenECPDS Master Server**, **OpenECPDS Mover Server**, and
 **OpenECPDS Monitor Server**. These configurations are accessible under
 **Run → Run Configurations...** and **Run → Debug Configurations...**

@@ -199,7 +199,7 @@ Passwords must contain at least eight UTF-8 bytes.
 Where operationally necessary, explicitly select SNMPv2c:
 
 ```ini
-[PhysicalLocationProfile.legacy]
+[PhysicalLocationProfile.community]
 version=v2c
 communityPasswordFile=/etc/ecpds/master/snmp-community.secret
 ```

@@ -76,7 +76,7 @@ below so that the published images work on both `amd64` and `arm64` hosts.
 
 ## Multi-arch push (two machines)
 
-Multi-arch publishing requires Docker with the Buildx plugin. Podman remains
+Multi-arch publishing requires Docker with the Buildx plugin. Podman is
 supported for local builds and single-architecture pushes. If both engines are
 installed, select Docker explicitly with `DOCKER=docker` on the release commands.
 Native push targets reject an `ARCH` that differs from the executing environment's
