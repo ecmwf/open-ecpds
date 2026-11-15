@@ -272,7 +272,7 @@ If the data file is already compressed, this option allows configuration for han
 When "ectrans.createChecksum" is enabled, this option selects the algorithm used to compute the checksum on the fly during dissemination. Supported values are "MD5" (default), "SHA-1", "SHA-256", "CRC32" and "Adler32". The resulting checksum value is passed to the underlying transfer module unchanged (e.g. for FTP/FTPS/SFTP it is written to a sidecar file whose extension is derived automatically from the algorithm, or overridden with "ectrans.checksumExt").
 
 ### ectrans.checksumExt
-Allow overriding the extension used for the checksum sidecar file written by the transfer module (e.g. ".sha256"), regardless of the algorithm selected with "ectrans.checksumAlgorithm". When not set, a suitable extension is derived automatically from the configured algorithm (e.g. ".md5", ".sha1", ".sha256", ".crc32", ".adler32"), except when the algorithm is "MD5" and the module's own legacy "md5Ext" option is set, which then takes precedence for backward compatibility.
+Allow overriding the extension used for the checksum sidecar file written by the transfer module (e.g. ".sha256"), regardless of the algorithm selected with "ectrans.checksumAlgorithm". When not set, the module's "md5Ext" option is used if the algorithm is "MD5" and that option is set; otherwise, a suitable extension is derived automatically from the configured algorithm (e.g. ".md5", ".sha1", ".sha256", ".crc32", ".adler32").
 
 ### ectrans.closeAsynchronous
 This option enables the asynchronous closure of the transfer module once the data transfer has completed, which accelerates dissemination, especially under heavy loads on target hosts where closing streams might take some time. However, it's important to note a potential issue: if there's a failure during the closure process, indicating a problem on the remote host, the transfer scheduler remains unaware of this failure, and the file isn't requeued. This behaviour depends on the underlying transfer module.
@@ -499,7 +499,7 @@ Allow setting the login while logging into the remote FTP server. This is overwr
 Allow forcing the FTP client to bind a privileged port (500 &lt;= N &lt;= 1023) instead of an unprivileged port (N &gt; 1023) when using the Active FTP mode.
 
 ### ftp.md5Ext
-Legacy option to configure the extension used for the checksum sidecar file when requesting a checksum with "ectrans.createChecksum". Only applied when "ectrans.checksumAlgorithm" is "MD5" (the default) and "ectrans.checksumExt" is not set; for other algorithms, use "ectrans.checksumExt" instead, or leave both unset to use the algorithm's default extension (e.g. ".sha256").
+Configure the extension used for the checksum sidecar file when requesting a checksum with "ectrans.createChecksum". Only applied when "ectrans.checksumAlgorithm" is "MD5" (the default) and "ectrans.checksumExt" is not set; for other algorithms, use "ectrans.checksumExt" instead, or leave both unset to use the algorithm's default extension (e.g. ".sha256").
 
 ### ftp.mkdirs
 Allow creating the directory named by the target pathname, including any necessary but non-existent parent directories.
@@ -568,7 +568,7 @@ Allow specifying a buffer size when sending data on the data channel.
 Allow specifying the "No-Operation" command. This command does not affect anything at all. It performs no action other than having the server send an OK reply. This command is used to keep connections with the FTP servers "alive" (connected) while nothing is being done.
 
 ### ftp.sharedKey
-Optional per-account DissFTPd shared key: 64 hexadecimal characters generated with openssl rand -hex 32. Requires both HMAC-SHA256 challenge-response and the account password; fails if the server does not support or accept the key. Does not encrypt FTP traffic; use a secure tunnel. Incompatible with ftp.nopassword.
+Configure an additional per-account shared key for a DissFTPd server supporting HMAC-SHA256 challenge-response. Unset by default; accounts without a server-side key use ordinary password authentication. Generate a separate 32-byte random key for each account with "openssl rand -hex 32" and provision its 64 hexadecimal characters securely in this option and the server's "sharedKeyFile.account" file. The server requires both the key proof and the account password; keep "ftp.nopassword=no". This is a secured option: do not put the key in scripts, logs or source control, and do not reuse an RCC or CLI shared secret. If configured, an unsupported server or rejected key fails login without password-only fallback. The key is not transmitted, but this authenticates rather than encrypts: plain FTP still exposes the password and file contents, so use a trusted secure tunnel with authenticated endpoints. Applies to the ftp module, not ftps.
 
 ### ftp.suffix
 When using the "ftp.usetmp" option, this option allow setting the suffix to use for the temporary file name (e.g. ".tmp").
@@ -627,7 +627,7 @@ Allow specifying the listen address used by the FTPS client (e.g. when waiting f
 Allow setting the login while logging into the remote FTPS server. This is overwriting the login set through the interface.
 
 ### ftps.md5Ext
-Legacy option to configure the extension used for the checksum sidecar file when requesting a checksum with "ectrans.createChecksum". Only applied when "ectrans.checksumAlgorithm" is "MD5" (the default) and "ectrans.checksumExt" is not set; for other algorithms, use "ectrans.checksumExt" instead, or leave both unset to use the algorithm's default extension (e.g. ".sha256").
+Configure the extension used for the checksum sidecar file when requesting a checksum with "ectrans.createChecksum". Only applied when "ectrans.checksumAlgorithm" is "MD5" (the default) and "ectrans.checksumExt" is not set; for other algorithms, use "ectrans.checksumExt" instead, or leave both unset to use the algorithm's default extension (e.g. ".sha256").
 
 ### ftps.mkdirs
 Allow creating the directory named by the target pathname, including any necessary but non-existent parent directories.
@@ -911,7 +911,7 @@ If "http.mqttPersistence" is set, this option allows the selection of the persis
 Allow specifying the MQTT port number of the remote MQTT/S server to connect to.
 
 ### http.mqttProfile
-Select notification interpretation for MQTT acquisition: script (default) keeps existing JavaScript extraction; wis2 enables the bundled WIS2 data profile. An explicitly selected profile replaces message extraction scripts, validates notification identity and expected integrity, and carries attribution into the Data File metadata. Unknown or incompatible profiles fail the listing rather than falling back. This does not enable a broker or change MQTT transport settings.
+Select how an acquisition Host interprets received MQTT notifications. "script" (default) uses JavaScript with mqttPayload and mqttTopic to produce "http.mqttHref", "http.mqttAlternativeName", "http.mqttSize" and optional "http.mqttBody". "wis2" uses the bundled WIS2 data profile instead of message-extraction scripts and requires "http.mqttMode=yes" and "http.ftpLike=yes". Configure broker connectivity separately and put the topic filter in the Host Directory, for example "origin/a/wis2/+/+/data/core/#". The WIS2 profile validates notification identity and publication time, prefers an update link over a canonical link, and carries attribution and advertised integrity into the Data File metadata. It supports Base64 inline content up to 16 KiB of decoded bytes, including empty files, and checks advertised length and integrity; scheduled downloads also verify supported advertised integrity before completing. Installed extensions may register additional profile names. Unknown or incompatible selections fail the listing rather than falling back to script interpretation. This option does not enable a broker or control destination MQTT/CloudEvent publishing.
 
 ### http.mqttQos
 Set the Quality of Service (QoS) level for messages published by the MQTT client. For a value of "0", the message is delivered at most once without any confirmation, offering the lowest delivery guarantee. For a value of "1", the message is delivered at least once, which may result in duplicates but ensures message delivery. For a value of "2", the message is delivered exactly once through a handshake process, guaranteeing no duplicates but involving higher communication overhead.
@@ -1083,47 +1083,47 @@ Control the visibility of the "Share Feedback" icon in the portal header for thi
 
 ## Mqtt Options
 
-These options help fine-tune the notification system with MQTT and are accessible via the destination editor.
+These destination options configure scripted MQTT publications and independent native CloudEvent delivery. Topic, payload and message options apply to "mqtt.publish"; "mqtt.cloudEvents" uses its own topic and fixed message settings.
 
 ### mqtt.clientId
-The client identifier (client ID) is a unique identifier that distinguishes one MQTT client from another. This option allows publishing all messages to a specific MQTT client connected to the HiveMQ broker.
+Restrict ordinary "mqtt.publish" messages to a specific subscriber client ID on each Data Mover's HiveMQ broker. Unset by default, which uses normal topic-based delivery to matching subscribers. This selects the recipient, not a publisher connection ID, and the target client must be subscribed to the publication topic; an unsuccessful targeted delivery is reported as a publication failure. Use a known, stable client ID configured on the subscriber, in addition to its Data Portal credentials and topic permissions. Does not target native "mqtt.cloudEvents" publications, which always use normal topic-based delivery.
 
 ### mqtt.cloudEvents
-Publish the captured native CloudEvent through the durable MQTT outbox.
+Enable durable MQTT publication of captured native CloudEvents; disabled by default. Requires the transfer event trigger ("incoming.event" on the destination or "acquisition.event" on the acquisition Host), the Master notification history and event repositories, and at least one configured Data Mover. Uses the topic "open-ecpds/notifications/" followed by the URL-encoded destination name, for example "open-ecpds/notifications/mqtt_demo"; change the prefix through the Master's "[NotificationHistory] mqttTopicPrefix" setting. The structured JSON has "specversion=1.0", type "org.openecpds.file.available.v1" and transfer metadata; no JavaScript is needed. Independent of "mqtt.publish" and "notification.aviso". Destination "mqtt.topic", "mqtt.payload", "mqtt.inlineMaxBytes", "mqtt.qos", "mqtt.retain", "mqtt.expiryInterval", "mqtt.contentType" and "mqtt.clientId" do not customize this publication: it uses QoS 1, no retain, no message-expiry interval and content type "application/cloudevents+json". History and pending deliveries are stored together, then retried independently for every configured Mover until broker acceptance; duplicates are possible, so deduplicate by CloudEvent source and ID. Subscribe before uploading: non-retained messages are not replayed to new subscribers. Subscribers need "portal.mqttPermission" for this topic; file-path permissions do not filter MQTT payloads. "notification.captureMode=strict" makes capture atomic with the transfer update, not with subscriber receipt.
 
 ### mqtt.contentType
-This property allow to define the format or type of the payload data being transmitted in the MQTT messages. It specifies how the payload should be interpreted or processed by the receiving end (e.g. "application/json").
+Set the MQTT content-type property for ordinary "mqtt.publish" messages. Defaults to "text/plain"; use "application/json" when the payload is JSON. This labels the payload for consumers but does not generate, convert or validate its contents; build JSON explicitly in "mqtt.payload" or JavaScript. Native "mqtt.cloudEvents" messages always use "application/cloudevents+json", independently of this option.
 
 ### mqtt.expiryInterval
-This property specifies how long the broker should retain the message if it is not delivered due to subscriber unavailability. By default, the message remains retained until the expiry date of the data transfer is reached.
+Set the MQTT message-expiry interval for ordinary "mqtt.publish" messages, for example "PT48H" for 48 hours. This limits how long the broker may keep a message awaiting delivery, including a retained message; it does not enable retention or change the file's lifetime. When unset, the interval is the transfer's remaining lifetime at publication time. Messages for transfers already missing or expired are skipped. "mqtt.retain" separately controls delivery of the latest message to new subscribers. Does not affect native "mqtt.cloudEvents" publications, which do not set a message-expiry interval.
 
 ### mqtt.inlineMaxBytes
-Maximum original file size in bytes eligible for inline content. Set this option in Properties before JavaScript executes; 0 disables it (the default), and values above 16384 are capped at 16384 bytes (16 KiB). When the complete file can be read within this limit, JSON.parse(mqttEventJson).contentBase64 contains its Base64-encoded bytes for JavaScript to include in mqtt.payload. Larger files, unknown sizes, size mismatches and read failures omit contentBase64 without failing the notification. Base64 is encoding, not encryption: all subscribers authorized for the topic can read embedded content without authenticating to the Data Portal.
+Maximum original file size in bytes eligible for inline content in scripted "mqtt.publish" messages. Set this option in Properties before JavaScript executes; 0 disables it (the default), and values above 16384 are capped at 16384 bytes (16 KiB). For example, "mqtt.inlineMaxBytes=16384" allows a script to include files up to 16 KiB. When the complete file can be read within the limit and matches its recorded size, JSON.parse(mqttEventJson).contentBase64 contains its Base64-encoded bytes; an empty file produces an empty string. JavaScript must explicitly include this value in mqtt.payload. Larger files, unknown sizes, size mismatches and read failures omit contentBase64 without failing the notification. Base64 adds roughly one third to the payload size and is encoding, not encryption: subscribers authorized for the topic can read embedded content without authenticating to the Data Portal. Does not add file content to native "mqtt.cloudEvents" or Aviso events.
 
 ### mqtt.payload
-The message body published to the MQTT broker. Set a static string in Properties, or return mqtt.payload from JavaScript to build a dynamic notification (for example, with JSON.stringify). Use JSON.parse(mqttEventJson) to access file metadata safely without inserting filenames into script source. An empty or missing payload skips publication. This option does not automatically include file content.
+Set the body of ordinary "mqtt.publish" messages as a static string in Properties, or return mqtt.payload from JavaScript to build a dynamic notification with JSON.stringify. There is no default payload; a missing, empty or whitespace-only payload skips publication. Use JSON.parse(mqttEventJson) to access id, filename, destination, size, dataFileId, transferId, publishedAt and expiresAt safely, without inserting filenames into script source. IDs are strings, size is a byte count and timestamps are UTC ISO-8601. For example, return {mqtt:{payload:JSON.stringify(JSON.parse(mqttEventJson))}}; set "mqtt.contentType=application/json" separately. File content is not included automatically; "mqtt.inlineMaxBytes" makes optional contentBase64 available to the script. Does not customize the native CloudEvent generated by "mqtt.cloudEvents".
 
 ### mqtt.publish
-If data transfer requests directed to this destination trigger events ("acquisition.event" or "incoming.event"), enabling this option ensures notifications are published to the MQTT broker upon completion of these transfer requests.
+Enable ordinary MQTT publications using the destination's Properties or JavaScript; disabled by default. Requires the transfer event trigger ("incoming.event" on the destination or "acquisition.event" on the acquisition Host) and a nonempty "mqtt.payload". Publications are processed when a transfer completes or becomes available for download in HOLD. For an upload-only destination, "scheduler.standby=yes" makes files available without outbound dissemination. Set "mqtt.topic" and return a payload from JavaScript to customize the message; "mqttEventJson" supplies file metadata safely. This option does not enable native CloudEvents or Aviso access. Enabling both "mqtt.publish" and "mqtt.cloudEvents" produces independent publications, potentially on different topics. Broker acceptance is not confirmation of subscriber delivery or processing.
 
 ### mqtt.qos
-Allow selecting the Quality of Service (QoS) when publishing messages to the MQTT broker. The options are 0 (at most once), 1 (at least once) or 2 (exactly once).
+Select the MQTT Quality of Service for ordinary "mqtt.publish" messages: 0 (at most once), 1 (at least once, the default) or 2 (exactly once at the MQTT protocol level). These levels describe MQTT delivery exchanges, not successful processing by a subscriber application; consumers should handle retries and duplicates appropriately. Does not affect native "mqtt.cloudEvents" publications, which always use QoS 1.
 
 ### mqtt.retain
-This option allow setting the retain flag. This ensures that all messages are saved by the broker and sent to new subscribers upon their connection. Retained messages remain available until it expires or a newer message is published on the same topic with the retain flag.
+Set the retain flag for ordinary "mqtt.publish" messages; disabled by default. When enabled, the broker stores the latest retained message for each topic and sends it to new matching subscribers, subject to message expiry. It is not a history of all messages: another retained publication on the same topic replaces the previous one. With a topic ending in "/", each appended target has its own topic and retained message. When disabled, subscribe before publication to receive a live notification. Native "mqtt.cloudEvents" messages always use retain=false, independently of this option; use Aviso replay for retained notification history when "notification.aviso" is enabled.
 
 ### mqtt.topic
-Build the MQTT topic. It is either defined in the destination setup (Properties or JavaScript), or by default it is using the destination name. If the topic ends with a "/" (the default when no topic is specified), the target name is appended.
+Set the topic for ordinary "mqtt.publish" messages in Properties or by returning mqtt.topic from JavaScript. By default, the topic is the destination name followed by "/" and the target name. A configured topic ending in "/" also appends the target: "openecpds/demo/" publishes a file named "sample.txt" on "openecpds/demo/sample.txt". Without a trailing "/", the configured topic is used as-is for all files. Consecutive slashes are collapsed; date-grouped destinations use their formatted date and filename as the appended target. Subscribers need "portal.mqttPermission" for the resulting topic. Does not change the separate topic used by "mqtt.cloudEvents".
 
 ## Notification Options
 
 These options control native notification capture and Aviso access for a destination.
 
 ### notification.aviso
-Enable Aviso history capture and watch/replay access for this destination. Requires incoming.event or acquisition.event for new notifications. Disabled by default; durable MQTT CloudEvents remain independent.
+Enable native notification history capture and read-only Aviso watch/replay access for this destination. Disabled by default. New notifications require the transfer event trigger: set "incoming.event=yes" on the destination for portal uploads, or "acquisition.event=yes" on the acquisition Host. Events describe completed transfers or files available for download in HOLD; "scheduler.standby=yes" supports an upload-only destination without outbound dissemination. The Master notification history and event repositories must be enabled. Data Portal users access "/ecpds/aviso/api/v1/watch" and "/ecpds/aviso/api/v1/replay" on a directly connected Mover using their destination access, get permission and file-path restrictions. A watch without a cursor receives new events only; replay requires a starting event ID or date within retained history. Does not require MQTT publishing or grant MQTT topic access. "mqtt.cloudEvents" controls independent durable MQTT delivery; "notification.captureMode" controls persistence guarantees.
 
 ### notification.captureMode
-Use strict to persist the transfer state and native notification atomically before acknowledging the transfer; requires NotificationHistory revision fencing and notification.aviso or mqtt.cloudEvents.
+Select how native transfer notifications are persisted: "async" (default) queues capture in memory without blocking the originating transfer update, so a process failure, full queue or database error before persistence can lose an event. "strict" commits the transfer update and native history, including any requested MQTT outbox deliveries, in one database transaction before acknowledging the update. Strict capture failures fail the originating operation rather than silently reverting to asynchronous capture; retrying the same captured revision does not create another history/outbox record. Requires a transfer event trigger, either "notification.aviso=yes" or "mqtt.cloudEvents=yes", and the Master EventRepository plus "[NotificationHistory] enabled=yes" and "revisionFencing=yes" with the required database schema. All Masters sharing that database must use matching builds and fencing settings. Strict capture does not wait for MQTT broker acceptance or subscriber processing, and does not make scripted "mqtt.publish" messages part of this transaction.
 
 ## Portal Options
 
@@ -1211,7 +1211,7 @@ Allow the configuration of a regular expression (regex) to control whether the "
 If enabled, specify that any upload or download must be added to the data transfer history list. Disabling this option can be useful if this is an anonymous user triggering too many requests.
 
 ### portal.recordSplunk
-If enabled, emit an INH (INcoming History) event for each upload or download to the configured operational event outputs (Splunk file and/or OpenTelemetry). The legacy option name is retained for compatibility.
+If enabled, emit an INH (INcoming History) event for each upload or download to the configured operational event outputs (Splunk file and/or OpenTelemetry).
 
 ### portal.registrationAdminEmail
 Specify the administrator email address to notify when a new self-service registration is submitted or when a subscriber verifies their email and is awaiting approval. Only used when the Portal Service is set to "Self-Service". If left empty, no admin notification is sent.
@@ -1537,7 +1537,7 @@ Allow setting the login while logging into the remote SFTP server. This is overw
 Allow specifying the Message Authentication Code (MAC) algorithms to allow (e.g. "hmac-md5,hmac-md5-96,hmac-sha1,hmac-sha1-96"). The list of valid algorithms can be found at http://www.jcraft.com/jsch/README (multiple algorithms can be specified using the columns separator). By default all supported algorithms are allowed.
 
 ### sftp.md5Ext
-Legacy option to configure the extension used for the checksum sidecar file when requesting a checksum with "ectrans.createChecksum". Only applied when "ectrans.checksumAlgorithm" is "MD5" (the default) and "ectrans.checksumExt" is not set; for other algorithms, use "ectrans.checksumExt" instead, or leave both unset to use the algorithm's default extension (e.g. ".sha256").
+Configure the extension used for the checksum sidecar file when requesting a checksum with "ectrans.createChecksum". Only applied when "ectrans.checksumAlgorithm" is "MD5" (the default) and "ectrans.checksumExt" is not set; for other algorithms, use "ectrans.checksumExt" instead, or leave both unset to use the algorithm's default extension (e.g. ".sha256").
 
 ### sftp.mkdirs
 Allow creating the directory named by the target pathname, including any necessary but non-existent parent directories.

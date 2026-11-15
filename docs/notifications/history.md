@@ -166,16 +166,17 @@ topic access only to users authorized for all events published on that topic.
 
 ## Aviso client API
 
+For an upload, watch and replay walkthrough using the standalone `aviso_demo`
+destination, see [Try Aviso watch and replay](../getting-started/standalone.md#try-aviso-watch-and-replay).
+
 The Mover exposes a read-only Aviso-compatible API under
-`https://mover.example/ecpds/aviso/api/v1`. It replaces the earlier, unpublished
-`/data/notifications` REST, SSE and checkpoint routes. It supports the generic
+`https://mover.example/ecpds/aviso/api/v1`. It supports the generic
 `file_available` event only; notification publishing and management endpoints
 are not provided.
 
-Configure the current official Aviso client's server base URL as
+Configure the official Aviso client's server base URL as
 `https://mover.example/ecpds/aviso/`, for example with `AVISO_BASE_URL`.
 The client appends `api/v1/...`; do not include that suffix in its base URL.
-The former `/ecpds/api/v1` routes are not retained.
 
 Schema discovery is public:
 

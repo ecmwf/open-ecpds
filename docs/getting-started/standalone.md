@@ -419,6 +419,86 @@ results; use a different filename for another test upload.
     Docker cannot infer those public URLs. Standalone defaults are **7443** for
     HTTPS/S3, **7022** for SFTP and **8883** for MQTTS; Eclipse's ports differ.
 
+## Try Aviso watch and replay
+
+The pre-configured **`aviso_demo`** destination demonstrates the read-only
+[Aviso API](../notifications/history.md#aviso-client-api) independently of MQTT.
+The `test` user has access through the `test_destinations` policy. Its Properties are:
+
+```properties
+incoming.event = "yes"
+notification.aviso = "yes"
+notification.captureMode = "strict"
+scheduler.standby = "yes"
+```
+
+No MQTT subscription, MQTT options or JavaScript are needed. Strict capture stores
+the transfer update and notification together. **Leave `aviso_demo` stopped in the
+Monitor** so uploaded files are available in HOLD without outbound dissemination.
+
+### 1. Start a watch
+
+In one terminal, connect before uploading:
+
+```bash
+curl --fail-with-body -k -N --user test \
+  -H 'Content-Type: application/json' \
+  -d '{"event_type":"file_available","identifier":{"destination":"aviso_demo"}}' \
+  https://localhost:7443/ecpds/aviso/api/v1/watch
+```
+
+Enter the standalone Data Portal password `test2021`. Wait for the
+`connection_established` message before proceeding. A watch without a cursor
+receives new events only. `-k` is for the evaluation container's self-signed
+certificate; use a trusted certificate in production.
+
+### 2. Upload a file
+
+In another terminal:
+
+```bash
+printf 'Hello from the standalone Aviso demo!\n' > aviso-demo.txt
+sftp -P 7022 test@localhost
+```
+
+Enter password `test2021`, verify and accept the host key, then upload:
+
+```text
+put aviso-demo.txt /aviso_demo/aviso-demo.txt
+bye
+```
+
+The watch emits an SSE `live-notification` frame containing a CloudEvent with
+type `int.ecmwf.aviso.file_available`, an ID such as `file_available@123`,
+`data.identifier.destination` set to `aviso_demo`, and
+`data.identifier.target` set to `aviso-demo.txt`. Transfer details, including
+size and status, are in `data.payload`. Allow time for notification processing;
+the watch closes after five minutes by default and can be reconnected.
+
+### 3. Replay the notification
+
+Copy the event ID received above into `from_id`:
+
+```bash
+curl --fail-with-body -k -N --user test \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "event_type": "file_available",
+    "identifier": {"destination": "aviso_demo"},
+    "from_id": "file_available@123"
+  }' \
+  https://localhost:7443/ecpds/aviso/api/v1/replay
+```
+
+Replay includes the starting event, emits `replay` frames, and closes when
+complete. If the watch was not connected during upload, use a `from_date` UTC
+timestamp preceding the upload instead of `from_id`. Access uses the Data Portal
+user's destination and file permissions, not MQTT topic permissions.
+
+Replace `localhost` with the standalone host reachable from your terminal; from
+the development container this may be `ecpds-mover`. New database initializations
+include this demo; existing databases are not changed by rebuilding the image.
+
 ## Logs
 
 !!! note "DEBUG logging"
