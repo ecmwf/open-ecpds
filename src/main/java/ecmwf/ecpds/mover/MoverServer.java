@@ -31,19 +31,13 @@ import static ecmwf.common.ectrans.ECtransGroups.Module.HOST_PROXY;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_CHECKFILTERSIZE;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_FILTERPATTERN;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_FILTER_MINIMUM_SIZE;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_HOST_SELECTOR;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_INITIAL_INPUT_FILTER;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_INITIAL_INPUT_SIZE;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_STREAM_TIMEOUT;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_USEDNSNAME;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_PROXY_HTTP_MOVER_URL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_PROXY_HTTP_PROXY_URL;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_PROXY_MODULO;
 import static ecmwf.common.ectrans.ECtransOptions.HOST_PROXY_TIMEOUT;
-import static ecmwf.common.ectrans.ECtransOptions.HOST_TEST_BYTES_PER_SEC;
-import static ecmwf.common.text.Util.isEmpty;
 import static ecmwf.common.text.Util.isNotEmpty;
-import static ecmwf.ecpds.master.DataFilePath.getDir;
 import static ecmwf.ecpds.master.DataFilePath.getPath;
 
 import java.io.BufferedInputStream;
@@ -57,8 +51,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -71,10 +63,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.StringTokenizer;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
 
@@ -91,7 +80,6 @@ import javax.management.MBeanRegistrationException;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.timer.Timer;
-import javax.script.ScriptException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -99,29 +87,21 @@ import org.apache.logging.log4j.util.Supplier;
 
 import ecmwf.common.callback.RemoteInputStream;
 import ecmwf.common.callback.RemoteInputStreamImp;
-import ecmwf.common.checksum.Checksum;
 import ecmwf.common.checksum.Checksum.Algorithm;
+import ecmwf.common.checksum.Checksum;
 import ecmwf.common.database.DataFile;
 import ecmwf.common.database.DataTransfer;
-import ecmwf.common.database.ECUser;
-import ecmwf.common.database.ECtransDestination;
-import ecmwf.common.database.ECtransModule;
 import ecmwf.common.database.ExistingStorageDirectory;
 import ecmwf.common.database.Host;
 import ecmwf.common.database.IncomingConnection;
 import ecmwf.common.database.StorageVolumeInfo;
-import ecmwf.common.database.MSUser;
-import ecmwf.common.database.TransferMethod;
 import ecmwf.common.ecaccess.ConnectionException;
 import ecmwf.common.ecaccess.ECauthToken;
-import ecmwf.common.ecaccess.ECauthTokenManager;
 import ecmwf.common.ecaccess.MBeanRepository;
 import ecmwf.common.ecaccess.NativeAuthenticationProvider;
 import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ecaccess.TicketRepository;
-import ecmwf.common.ectrans.AllocateInterface;
 import ecmwf.common.ectrans.DefaultCallback;
-import ecmwf.common.ectrans.ECtransCallback;
 import ecmwf.common.ectrans.ECtransContainer;
 import ecmwf.common.ectrans.ECtransDel;
 import ecmwf.common.ectrans.ECtransException;
@@ -129,59 +109,42 @@ import ecmwf.common.ectrans.ECtransGet;
 import ecmwf.common.ectrans.ECtransList;
 import ecmwf.common.ectrans.ECtransMkdir;
 import ecmwf.common.ectrans.ECtransMove;
-import ecmwf.common.ectrans.ECtransProvider;
 import ecmwf.common.ectrans.ECtransPut;
 import ecmwf.common.ectrans.ECtransRmdir;
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.ECtransSize;
-import ecmwf.common.ectrans.NotificationInterface;
 import ecmwf.common.ectrans.TransferModule;
 import ecmwf.common.ectrans.notification.AcquisitionNotification.Integrity;
 import ecmwf.common.mbean.MBeanManager;
-import ecmwf.common.monitor.MonitorCallback;
-import ecmwf.common.monitor.MonitorException;
 import ecmwf.common.monitor.MonitorManager;
-import ecmwf.common.monitor.MonitorThread;
 import ecmwf.common.rmi.ClientSocketStatistics;
 import ecmwf.common.rmi.SocketConfig;
 import ecmwf.common.rmi.interruptible.InterruptibleInputStream;
+import ecmwf.common.security.HttpCertificateProvider;
 import ecmwf.common.starter.Starter;
-import ecmwf.common.technical.BoundedInputStream;
-import ecmwf.common.technical.ByteSize;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.GenericFile;
-import ecmwf.common.technical.GenericFileChecker;
-import ecmwf.common.technical.GenericFileFilter;
 import ecmwf.common.technical.MonitoredInputStream;
 import ecmwf.common.technical.PipedInputStream;
 import ecmwf.common.technical.PipedOutputStream;
 import ecmwf.common.technical.ProgressHandler;
 import ecmwf.common.technical.ProgressInterface;
 import ecmwf.common.technical.ProxySocket;
-import ecmwf.common.technical.RandomInputStream;
 import ecmwf.common.technical.ScriptManager;
 import ecmwf.common.technical.StreamManager;
 import ecmwf.common.technical.StreamManagerImp;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.technical.Synchronized;
 import ecmwf.common.technical.ThreadService;
-import ecmwf.common.technical.ThreadService.ConfigurableLoopRunnable;
-import ecmwf.common.technical.ThreadService.ConfigurableRunnable;
 import ecmwf.common.telemetry.MoverTracing;
 import ecmwf.common.text.Format;
-import ecmwf.common.text.Format.DuplicatedChooseScore;
 import ecmwf.common.text.Options;
 import ecmwf.common.version.Version;
 import ecmwf.ecpds.master.DataAccessInterface;
 import ecmwf.ecpds.master.DownloadProgress;
-import ecmwf.ecpds.master.LiveTransferSample;
-import ecmwf.ecpds.master.MasterConnection;
 import ecmwf.ecpds.master.MasterException;
 import ecmwf.ecpds.master.MasterInterface;
 import ecmwf.ecpds.master.transfer.HostOption;
-import ecmwf.ecpds.master.transfer.StatusFactory;
-import ecmwf.ecpds.master.transfer.TransferComparator;
-import ecmwf.common.security.HttpCertificateProvider;
 
 /**
  * The Class MoverServer.
@@ -193,36 +156,36 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     private static final long serialVersionUID = -8236856567764955573L;
 
     /** The Constant _log. */
-    private static final transient Logger _log = LogManager.getLogger(MoverServer.class);
+    static final transient Logger _log = LogManager.getLogger(MoverServer.class);
 
     /** The Constant operational. */
-    private static final transient boolean OPERATIONAL = Cnf.at("Mover", "operational", true);
+    static final transient boolean OPERATIONAL = Cnf.at("Mover", "operational", true);
 
     /** The _algorithm used for the hash of the files. */
-    private static final Algorithm _algorithm = Algorithm.ADLER32;
+    static final Algorithm _algorithm = Algorithm.ADLER32;
 
     /** The ectrans. */
     private final transient ECtransContainer ectrans;
 
     /** The masterManager. */
-    private final transient MasterManager masterManager;
+    final transient MasterManager masterManager;
 
     /** The transferRepository. */
-    private final transient TransferRepository transferRepository;
+    final transient TransferRepository transferRepository;
 
     /** The downloadRepository. */
     private final transient DownloadRepository downloadRepository;
 
     /** The liveStatsRepository (Live ECPDS Earth - Phase 0). */
-    private final transient LiveStatsRepository liveStatsRepository;
+    final transient LiveStatsRepository liveStatsRepository;
 
-    private final transient ecmwf.ecpds.master.TrafficAccounting trafficAccounting = new ecmwf.ecpds.master.TrafficAccounting();
-    private final transient java.nio.file.Path trafficAccountingPath = java.nio.file.Path
+    final transient ecmwf.ecpds.master.TrafficAccounting trafficAccounting = new ecmwf.ecpds.master.TrafficAccounting();
+    final transient java.nio.file.Path trafficAccountingPath = java.nio.file.Path
             .of(Cnf.at("Server", "trafficAccountingFile",
                     java.nio.file.Path.of(System.getProperty("mover.tmp", System.getProperty("java.io.tmpdir")),
                             "traffic-accounting.json").toString()));
     private final transient TrafficAccountingScheduler trafficAccountingScheduler;
-    private final transient WeatherNegotiationScheduler weatherNegotiationScheduler;
+    final transient WeatherNegotiationScheduler weatherNegotiationScheduler;
 
     @Override
     public ecmwf.ecpds.master.weather.WeatherSourceIdentity getWeatherSourceIdentity(java.util.UUID challenge)
@@ -266,7 +229,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     private final transient MoverRepository moverRepository;
 
     /** The dataTransferMutexProvider. */
-    private final transient Synchronized dataTransferMutexProvider = new Synchronized();
+    final transient Synchronized dataTransferMutexProvider = new Synchronized();
 
     /** The fileCheckerMonitor. */
     private final transient FileCheckerMonitor fileCheckerMonitor;
@@ -275,7 +238,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     private final transient Object masterSynch = new Object();
 
     /** The masterSynch. */
-    private final transient ECauthTokenGenerator tokenGenerator;
+    private final transient MoverTokenGenerator tokenGenerator;
 
     /** The errorsSync. */
     private final transient Object errorsSync = new Object();
@@ -284,7 +247,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     private final transient Integer errorsFrequency = Cnf.at("TestModule", "errorsFrequency", 1000);
 
     /** The restProvider. */
-    private transient RESTProvider restProvider = null;
+    transient RESTProvider restProvider = null;
 
     /** The mqttInterface. */
     private transient MQTTInterface mqttInterface = null;
@@ -300,63 +263,6 @@ public final class MoverServer extends StarterServer implements MoverInterface {
 
     /** The errors. */
     private int errors = 0;
-
-    /**
-     * The Class ContextManagementThread.
-     */
-    final class IncomingUsersManagementThread extends ConfigurableLoopRunnable {
-        /** The max wait time. */
-        private final long maxWaitTime = Cnf.durationAt("IncomingUsersManagementThread", "maxWaitTime",
-                2 * Timer.ONE_MINUTE);
-
-        /** The old connections. */
-        private final List<IncomingConnection> oldConnections = new ArrayList<>();
-
-        /** The new connections. */
-        private final List<IncomingConnection> newConnections = new ArrayList<>();
-
-        /** The last update. */
-        private long lastUpdate = System.currentTimeMillis();
-
-        /** The last update. */
-        private boolean reset = true;
-
-        /**
-         * Instantiates a new incoming users management thread.
-         */
-        IncomingUsersManagementThread() {
-            setPause(Cnf.at("IncomingUsersManagementThread", "delay", 2000));
-        }
-
-        /**
-         * Configurable loop run.
-         */
-        @Override
-        public synchronized void configurableLoopRun() {
-            try {
-                if (masterManager.isConnected()) {
-                    // The MoverServer is connected to the MasterServer!
-                    newConnections.clear();
-                    newConnections.addAll(getIncomingConnections());
-                    final var currentTime = System.currentTimeMillis();
-                    if (reset || currentTime - lastUpdate > maxWaitTime || !newConnections.equals(oldConnections)) {
-                        _log.debug("Sending Incoming Connections to MasterServer ({})", newConnections.size());
-                        getMasterInterface().updateIncomingConnectionIds(getRoot(), newConnections);
-                        oldConnections.clear();
-                        oldConnections.addAll(newConnections);
-                        lastUpdate = currentTime;
-                        reset = false;
-                    }
-                } else {
-                    // Not connected so we initiate a reset to force the MoverServer to re-send the
-                    // list of Incoming Connections!
-                    reset = true;
-                }
-            } catch (final Throwable t) {
-                _log.warn("Sending incoming connection ids", t);
-            }
-        }
-    }
 
     /**
      * Compute the used and total capacity for each volume in the data repository.
@@ -524,457 +430,6 @@ public final class MoverServer extends StarterServer implements MoverInterface {
 
     private static String unescapeMountInfo(final String value) {
         return value.replace("\\040", " ").replace("\\011", "\t").replace("\\012", "\n").replace("\\134", "\\");
-    }
-
-    /**
-     * The Class VolumeFilter.
-     */
-    static final class VolumeFilter implements GenericFileFilter {
-        /** The volumeIndexMax. */
-        private final int volumeIndexMax;
-
-        /**
-         * Instantiates a new data file filter.
-         *
-         * @param file
-         *            the file
-         */
-        VolumeFilter(final int volumeIndexMax) {
-            this.volumeIndexMax = volumeIndexMax;
-        }
-
-        // Check if the format is as expected for a volume
-        private boolean endsWithVolumeIndex(final String filename) {
-            if (filename == null)
-                return false;
-            final var prefix = "volume";
-            if (!filename.startsWith(prefix))
-                return false;
-            final var numberPart = filename.substring(prefix.length());
-            if (!numberPart.matches("\\d+"))
-                return false;
-            final var value = Integer.parseInt(numberPart);
-            return value >= 0 && value <= volumeIndexMax;
-        }
-
-        /**
-         * Accept.
-         *
-         * @param dir
-         *            the dir
-         * @param name
-         *            the name
-         *
-         * @return true, if successful
-         */
-        @Override
-        public boolean accept(final GenericFile dir, final String name) {
-            return endsWithVolumeIndex(name);
-        }
-    }
-
-    /**
-     * The Class DataFileFilter.
-     */
-    static final class DataFileFilter implements GenericFileFilter {
-        /** The filePath. */
-        private final String filePath;
-
-        /**
-         * Instantiates a new data file filter.
-         *
-         * @param file
-         *            the file
-         */
-        DataFileFilter(final GenericFile file) {
-            this.filePath = file.getAbsolutePath();
-        }
-
-        /**
-         * Accept.
-         *
-         * @param dir
-         *            the dir
-         * @param name
-         *            the name
-         *
-         * @return true, if successful
-         */
-        @Override
-        public boolean accept(final GenericFile dir, final String name) {
-            final var path = GenericFile.getGenericFile(dir, name).getAbsolutePath();
-            return path.equals(filePath) || path.startsWith(filePath + ".");
-        }
-    }
-
-    /**
-     * The Class FileCheckerMonitor.
-     */
-    private static final class FileCheckerMonitor implements MonitorCallback {
-        /**
-         * Start.
-         */
-        public void start() {
-            if (MonitorManager.isActivated()) {
-                try {
-                    MonitorThread.getInstance().subscribe("FileSystem", this);
-                } catch (final MonitorException e) {
-                    _log.debug(e);
-                }
-            }
-        }
-
-        /**
-         * Stop.
-         */
-        public void stop() {
-            if (MonitorManager.isActivated()) {
-                try {
-                    MonitorThread.getInstance().unSubscribe("FileSystem");
-                } catch (final MonitorException e) {
-                    _log.debug(e);
-                }
-            }
-        }
-
-        /**
-         * Gets the monitor manager.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the monitor manager
-         *
-         * @throws MonitorException
-         *             the monitor exception
-         */
-        @Override
-        public MonitorManager getMonitorManager(final String name) throws MonitorException {
-            final var hasException = FileChecker.hasException();
-            final var path = FileChecker.path;
-            // The name is always FileSystem!
-            try {
-                return new MonitorManager(
-                        Cnf.at("Login", "service",
-                                Cnf.at("Login", "hostName", InetAddress.getLocalHost().getHostName())),
-                        name, hasException ? MonitorManager.RED : MonitorManager.GREEN,
-                        hasException ? path != null ? path : "WARNING" : "OK");
-            } catch (final Throwable t) {
-                throw new MonitorException(t.getMessage());
-            }
-        }
-    }
-
-    /**
-     * The Class PurgeThread. This Thread is used to purge the file system (e.g. remove expired directories from the
-     * repository).
-     */
-    private final class PurgeThread extends ConfigurableRunnable {
-        /** The directoriesList. */
-        final List<ExistingStorageDirectory> directoriesList = new ArrayList<>();
-
-        /** The shouldContinue. */
-        boolean shouldContinue = true;
-
-        /** The force. */
-        final boolean force;
-
-        /**
-         * Instantiates a new purge thread.
-         *
-         * @param directories
-         *            the directories
-         */
-        public PurgeThread(final List<ExistingStorageDirectory> directories) {
-            directoriesList.addAll(directories);
-            force = false;
-        }
-
-        /**
-         * Instantiates a new purge thread.
-         */
-        public PurgeThread() {
-            force = true;
-        }
-
-        /**
-         * worthChecking.
-         *
-         * @param dir
-         *            the dir
-         * @param listCount
-         *            the list count
-         * @param listSize
-         *            the list size
-         *
-         * @return true, if successful
-         */
-        private boolean worthChecking(final String dir, final long listCount, final long listSize) {
-            for (final ExistingStorageDirectory directory : directoriesList) {
-                if (dir.equals(getDir(directory.getFileSystem(), directory.getArrivedTime()))) {
-                    final long count = directory.getFilesCount();
-                    final var size = directory.getFilesSize();
-                    if (count < listCount || size < listSize) {
-                        // There is a difference so we have to process the directories to check if files
-                        // can be removed to recover some disk space?
-                        _log.info("Spotted a difference in count/size for dir: {} (count:{}/{}, size:{}/{})", dir,
-                                count, listCount, size, listSize);
-                        return true;
-                    }
-                    // Same number of files and size so we do nothing!
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        /**
-         * Stop.
-         */
-        public void stop() {
-            shouldContinue = false;
-        }
-
-        /**
-         * Configurable run.
-         */
-        @Override
-        public void configurableRun() {
-            try {
-                final var repository = GenericFile.getGenericFile(getRepository());
-                final var volumes = repository.listFiles();
-                if (volumes == null) {
-                    // The repository is not a directory?
-                    _log.warn("Repository {} not a directory?", repository.getAbsolutePath());
-                    return;
-                }
-                final List<String> alreadyProcessed = new ArrayList<>();
-                for (final GenericFile dataVolume : volumes) {
-                    final var realPath = dataVolume.getFile().toPath().toRealPath().toString();
-                    if (alreadyProcessed.contains(realPath)) {
-                        // This volume was already processed!
-                        _log.debug("Skipping dataVolume {} (already processed - symbolic link?)",
-                                dataVolume.getAbsolutePath());
-                        continue;
-                    }
-                    alreadyProcessed.add(realPath);
-                    final var times = dataVolume.listFiles();
-                    if (times == null) {
-                        // This volume is not a directory?
-                        _log.debug("Skipping dataVolume {} (not a directory)", dataVolume.getAbsolutePath());
-                        continue;
-                    }
-                    for (final GenericFile arrivedTime : times) {
-                        if (force || worthChecking(dataVolume.getName() + "/" + arrivedTime.getName(),
-                                arrivedTime.listCount(), arrivedTime.listSize())) {
-                            // We can scan this directory!
-                            final var steps = arrivedTime.listFiles();
-                            var stepsDeleted = 0;
-                            if (steps == null) {
-                                // This is not a directory?
-                                _log.debug("Skipping arrivedTime {} (not a directory)", arrivedTime.getAbsolutePath());
-                                continue;
-                            }
-                            for (final GenericFile dataStep : steps) {
-                                // Let's scan this directory to look for
-                                // DataFiles!
-                                final var files = dataStep.listFiles();
-                                var filesDeleted = 0;
-                                if (files == null) {
-                                    // This is not a directory?
-                                    _log.debug("Skipping dataStep {} (not a directory)", dataStep.getAbsolutePath());
-                                    continue;
-                                }
-                                for (final GenericFile dataFile : files) {
-                                    if (!shouldContinue) {
-                                        // We are asked to stop the
-                                        // activity!
-                                        _log.debug("Stopping purge");
-                                        return;
-                                    }
-                                    // Let's process this DataFile!
-                                    final var name = dataFile.getName();
-                                    final var path = dataFile.getAbsolutePath();
-                                    try {
-                                        if (dataFile.isFile() && name.length() > 10 && getMasterProxy()
-                                                .isValidDataFile(Long.parseLong(name.substring(0, 10)))) {
-                                            // This is a valid DataFile!
-                                            _log.debug("DataFile {} is still valid (keep it)", path);
-                                            continue;
-                                        }
-                                    } catch (final NumberFormatException e) {
-                                        // This is not a DataFile (bad name format)!
-                                        _log.warn("File {} not a DataFile (please remove it from repository)", path);
-                                        continue;
-                                    }
-                                    // This is not a valid DataFile!
-                                    final var deleted = dataFile.delete();
-                                    _log.debug("Deleting file {} (not a valid DataFile): {}", path, deleted);
-                                    if (deleted) {
-                                        filesDeleted++;
-                                    }
-                                }
-                                // Let's remove the dataStep directory if all
-                                // the files have been deleted!
-                                if (filesDeleted == files.length) {
-                                    final var deleted = dataStep.delete(true);
-                                    _log.info("Removed empty directory: {}: {}", dataStep.getAbsolutePath(), deleted);
-                                    stepsDeleted++;
-                                }
-                            }
-                            // Let's remove the arrivedTime directory if all
-                            // the steps have been deleted!
-                            if (stepsDeleted == steps.length) {
-                                final var deleted = arrivedTime.delete(true);
-                                _log.info("Removed empty directory: {}: {}", arrivedTime.getAbsolutePath(), deleted);
-                            }
-                        } else {
-                            // The file exists and should not be deleted for
-                            // now!
-                            _log.debug("Skipping arrivedTime {} (not expired)", arrivedTime.getAbsolutePath());
-                        }
-                    }
-                }
-            } catch (final Throwable t) {
-                _log.warn("configurableRun", t);
-            }
-        }
-    }
-
-    /**
-     * The Class FileChecker.
-     */
-    private static final class FileChecker extends GenericFileChecker {
-        /** The Constant _fs. */
-        private static final Logger _fs = LogManager.getLogger("FileSystemLogs");
-
-        /** The lastException. */
-        private static boolean lastException = false;
-
-        /** The lastExceptionTime. */
-        private static long lastExceptionTime = -1;
-
-        /** The lastExceptionUpdateTime. */
-        private static long lastExceptionUpdateTime = -1;
-
-        /** The path. */
-        public static String path = null;
-
-        /**
-         * Checks for exception.
-         *
-         * @return true, if successful
-         */
-        protected static synchronized boolean hasException() {
-            if (lastException && System.currentTimeMillis() - lastExceptionTime > 5 * Timer.ONE_MINUTE) {
-                lastException = false;
-            }
-            return lastException && System.currentTimeMillis() - lastExceptionUpdateTime > 6 * Timer.ONE_MINUTE;
-        }
-
-        /**
-         * Sets the exception.
-         *
-         * @param currentPath
-         *            the current path
-         */
-        private static synchronized void setException(final String currentPath) {
-            lastExceptionTime = System.currentTimeMillis();
-            if (!lastException) {
-                lastExceptionUpdateTime = System.currentTimeMillis();
-                lastException = true;
-            }
-            path = currentPath;
-        }
-
-        /**
-         * Instantiates a new file checker.
-         *
-         * @param file
-         *            the file
-         */
-        FileChecker(final GenericFile file) {
-            super(file);
-        }
-
-        /**
-         * Catch exception.
-         *
-         * @param service
-         *            the service
-         * @param t
-         *            the t
-         */
-        @Override
-        public void catchException(final String service, final Throwable t) {
-            if (t instanceof IOException && "Stream Closed".equals(t.getMessage())) {
-                // This is because the stream was closed and does not indicate a
-                // problem with the filesystem so we should ignore it (this can
-                // happen if the transmission is interrupted).
-                return;
-            }
-            final var currentPath = super.getGenericFile().getAbsolutePath();
-            _fs.info("Executing {} on {}", service, currentPath, t);
-            if (t instanceof IOException && "InputStream.read".equals(service)
-                    && "Input/output error".equals(t.getMessage())) {
-                _log.warn("Deleting file: {} (Input/output error)", currentPath);
-                // TODO: don't delete the file before doing a better checking of
-                // the file (it might be a temporary error)!
-                try {
-                    delete();
-                } catch (final Throwable e) {
-                    _log.debug(e);
-                }
-            }
-            setException(currentPath);
-        }
-
-        /**
-         * Gets the generic file.
-         *
-         * @return the generic file
-         */
-        @Override
-        public GenericFile getGenericFile() {
-            return new FileChecker(super.getGenericFile());
-        }
-
-        /**
-         * Gets the parent file.
-         *
-         * @return the parent file
-         */
-        @Override
-        public GenericFile getParentFile() {
-            return new FileChecker(super.getParentFile());
-        }
-    }
-
-    /**
-     * The Class ECauthTokenGenerator.
-     */
-    private final class ECauthTokenGenerator extends ECauthTokenManager {
-
-        /**
-         * Request E cauth token.
-         *
-         * @param user
-         *            the user
-         *
-         * @return the ecauth token
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public ECauthToken requestECauthToken(final String user) throws IOException {
-            try {
-                return getMasterProxy().getECauthToken(user);
-            } catch (final Exception e) {
-                _log.warn("getECauthToken", e);
-                throw new IOException("Getting ECauthToken for " + user, e);
-            }
-        }
     }
 
     /**
@@ -1175,12 +630,12 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         if (!OPERATIONAL) {
             _log.warn("!!!!! THIS IS NOT AN OPERATIONAL DATA-MOVER !!!!!");
         }
-        tokenGenerator = new ECauthTokenGenerator();
+        tokenGenerator = new MoverTokenGenerator(MoverServer.this);
         NativeAuthenticationProvider.setProvider(ecmwf.ecpds.mover.MoverProvider.class);
         if (Cnf.has("MasterServer")) {
             // The DataMover is connected directly to the MasterServer!
             _log.debug("Direct connection to MasterServer requested");
-            masterManager = new MasterManager(Cnf.at("MasterServer", "host"),
+            masterManager = new MasterManager(MoverServer.this, Cnf.at("MasterServer", "host"),
                     Cnf.at("MasterServer", "port", (short) 6601), this);
         } else {
             masterManager = null;
@@ -1200,7 +655,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         }
         if (Cnf.at("Server", "transferRepository", true)) {
             _log.debug("Starting TransferRepository");
-            transferRepository = new TransferRepository("TransferRepository");
+            transferRepository = new TransferRepository(MoverServer.this, "TransferRepository");
             transferRepository.start();
         } else {
             transferRepository = null;
@@ -1212,23 +667,23 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         } else {
             downloadRepository = null;
         }
-        trafficAccountingScheduler = new TrafficAccountingScheduler();
+        trafficAccountingScheduler = new TrafficAccountingScheduler(MoverServer.this);
         trafficAccountingScheduler.start();
         if (Cnf.at("Server", "networkWeatherNegotiation", true)) {
-            weatherNegotiationScheduler = new WeatherNegotiationScheduler();
+            weatherNegotiationScheduler = new WeatherNegotiationScheduler(MoverServer.this);
             weatherNegotiationScheduler.start();
         } else {
             weatherNegotiationScheduler = null;
         }
         if (Cnf.at("Server", "liveStatsRepository", true)) {
             _log.debug("Starting LiveStatsRepository");
-            liveStatsRepository = new LiveStatsRepository("LiveStatsRepository");
+            liveStatsRepository = new LiveStatsRepository(MoverServer.this, "LiveStatsRepository");
             liveStatsRepository.start();
         } else {
             liveStatsRepository = null;
         }
-        moverRepository = new MoverRepository();
-        ectrans = new ECtransContainer(new MoverProvider(moverRepository, false));
+        moverRepository = new MoverRepository(MoverServer.this);
+        ectrans = new ECtransContainer(new MoverECtransProvider(MoverServer.this, moverRepository, false));
         try {
             new MBeanManager("ECaccess:service=ECTrans", ectrans);
         } catch (final Exception e) {
@@ -1242,7 +697,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         if (masterManager != null) {
             // Directly connected to the MasterServer!
             masterManager.setStarted(true);
-            incomingUsersManagementThread = new IncomingUsersManagementThread();
+            incomingUsersManagementThread = new IncomingUsersManagementThread(MoverServer.this);
             incomingUsersManagementThread.execute();
         }
     }
@@ -2132,9 +1587,11 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 final var put = new ECtransPut(fileName, descriptor, 0, fileSize, toFilter, null);
                 final var accountingCallback = new DefaultCallback(HOST_ECTRANS.getECtransSetup(targetHost.getData()));
                 accountingCallback.setByteCounter(bytes -> trafficAccounting.add(targetHost.getType(), bytes));
-                new ECtransContainer(new MoverProvider(new LocalRepository(targetHost)), false).syncExec(put, null,
-                        targetHost.getECUserName(), targetHost.getName() + "@" + targetHost.getTransferMethodName(),
-                        null, accountingCallback, true);
+                new ECtransContainer(
+                        new MoverECtransProvider(MoverServer.this, new LocalRepository(MoverServer.this, targetHost)),
+                        false).syncExec(put, null, targetHost.getECUserName(),
+                                targetHost.getName() + "@" + targetHost.getTransferMethodName(), null,
+                                accountingCallback, true);
             } finally {
                 descriptor.releaseStorageReader();
             }
@@ -2237,7 +1694,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final String listenAddress;
             try {
                 final var ectransModule = host.getTransferMethod().getECtransModule();
-                final var provider = new MoverProvider(new ECproxyRepository(host));
+                final var provider = new MoverECtransProvider(MoverServer.this, new ECproxyRepository(host));
                 final var transferModule = provider.loadTransferModule(ectransModule);
                 final var setup = new ECtransSetup(ectransModule.getName(), host.getData());
                 port = transferModule.getPort(setup);
@@ -2683,7 +2140,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 _log.debug("Previous purge still alive (kill it)");
                 purgeThread.stop();
             }
-            purgeThread = new PurgeThread(directories);
+            purgeThread = new PurgeThread(MoverServer.this, directories);
             purgeThread.execute();
         }
     }
@@ -2699,7 +2156,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 _log.debug("Previous purge still alive (kill it)");
                 purgeThread.stop();
             }
-            purgeThread = new PurgeThread();
+            purgeThread = new PurgeThread(MoverServer.this);
             purgeThread.execute();
         }
     }
@@ -3031,7 +2488,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             GenericFile file = dataFile.getFileSystem() == null ? null
                     : new FileChecker(GenericFile.getGenericFile(getRepository(), getPath(dataFile)));
             var size = dataFile.getSize();
-            callBack = new MoverCallback(transfer, targetName, trace);
+            callBack = new MoverCallback(MoverServer.this, transfer, targetName, trace);
             final var setup = HOST_ECTRANS.getECtransSetup(host.getData());
             // Do we have to compress the file?
             final String filter;
@@ -3176,7 +2633,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         try {
             final var repository = new ECproxyRepository(host);
             final var ticket = getTicketRepository().add(new ECaccessTicket(repository, ECaccessTicket.INPUT));
-            new ECtransContainer(new MoverProvider(repository), false).asyncExec(
+            new ECtransContainer(new MoverECtransProvider(MoverServer.this, repository), false).asyncExec(
                     new ECtransPut(target, ticket, remotePosn, size), null, host.getECUserName(),
                     host.getName() + "@" + host.getTransferMethodName(), null,
                     new ECproxyCallback(ticket, host.getData()));
@@ -3213,7 +2670,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         try {
             final var repository = new ECproxyRepository(host);
             final var ticket = getTicketRepository().add(new ECaccessTicket(repository, ECaccessTicket.OUTPUT));
-            new ECtransContainer(new MoverProvider(repository), false).asyncExec(
+            new ECtransContainer(new MoverECtransProvider(MoverServer.this, repository), false).asyncExec(
                     new ECtransGet(source, ticket, remotePosn, removeOriginal), null, host.getECUserName(),
                     host.getName() + "@" + host.getTransferMethodName(), null,
                     new ECproxyCallback(ticket, host.getData()));
@@ -3272,11 +2729,11 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         }
         ecproxyCallback.setByteCounter(
                 bytes -> trafficAccounting.add(host.getType() != null ? host.getType() : HostOption.PROXY, bytes));
-        new ECtransContainer(new MoverProvider(new StreamRepository(host, out)), false).asyncExec(
-                new ECtransGet(source, null, remotePosn, deleteOriginal), null, host.getECUserName(),
-                host.getName() + "@" + host.getTransferMethodName(), null,
-                HostOption.ACQUISITION.equals(host.getType()) ? new Options("ectransAction=get", ";\n") : null,
-                ecproxyCallback);
+        new ECtransContainer(new MoverECtransProvider(MoverServer.this, new StreamRepository(host, out)), false)
+                .asyncExec(new ECtransGet(source, null, remotePosn, deleteOriginal), null, host.getECUserName(),
+                        host.getName() + "@" + host.getTransferMethodName(), null,
+                        HostOption.ACQUISITION.equals(host.getType()) ? new Options("ectransAction=get", ";\n") : null,
+                        ecproxyCallback);
         return ecproxyCallback;
     }
 
@@ -3366,9 +2823,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     public long size(final Host host, final String source) throws RemoteException {
         try {
             final var size = new ECtransSize(source);
-            new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(size, null,
-                    host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
-                    new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+            new ECtransContainer(new MoverECtransProvider(MoverServer.this, new ECproxyRepository(host)), false)
+                    .syncExec(size, null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(),
+                            null, new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
             return size.getSize();
         } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
@@ -3397,9 +2854,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             throws RemoteException {
         try {
             final var list = new ECtransList(directory, pattern, true);
-            new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(list, null,
-                    host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
-                    new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+            new ECtransContainer(new MoverECtransProvider(MoverServer.this, new ECproxyRepository(host)), false)
+                    .syncExec(list, null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(),
+                            null, new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
             return list.getListAsStringArray();
         } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
@@ -3429,7 +2886,8 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     public RemoteInputStream listAsByteArray(final Host host, final String directory, final String pattern,
             final boolean synchronous) throws RemoteException {
         try {
-            final var container = new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false);
+            final var container = new ECtransContainer(
+                    new MoverECtransProvider(MoverServer.this, new ECproxyRepository(host)), false);
             final InputStream in;
             if (synchronous) {
                 // We are sending back the result AFTER the exec is completed. This is GZipped!
@@ -3520,9 +2978,9 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     }
                 }
             };
-            new ECtransContainer(new MoverProvider(new StreamRepository(host, limitedOut)), false).syncExec(
-                    new ECtransGet(source, null, 0L, false), null, host.getECUserName(),
-                    host.getName() + "@" + host.getTransferMethodName(), null, true);
+            new ECtransContainer(new MoverECtransProvider(MoverServer.this, new StreamRepository(host, limitedOut)),
+                    false).syncExec(new ECtransGet(source, null, 0L, false), null, host.getECUserName(),
+                            host.getName() + "@" + host.getTransferMethodName(), null, true);
             return rawOut.toString(StandardCharsets.UTF_8);
         } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
@@ -3545,9 +3003,10 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     @Override
     public void del(final Host host, final String source) throws RemoteException {
         try {
-            new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(new ECtransDel(source),
-                    null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
-                    new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+            new ECtransContainer(new MoverECtransProvider(MoverServer.this, new ECproxyRepository(host)), false)
+                    .syncExec(new ECtransDel(source), null, host.getECUserName(),
+                            host.getName() + "@" + host.getTransferMethodName(), null,
+                            new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
         } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
@@ -3569,9 +3028,10 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     @Override
     public void mkdir(final Host host, final String dir) throws RemoteException {
         try {
-            new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(new ECtransMkdir(dir),
-                    null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
-                    new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+            new ECtransContainer(new MoverECtransProvider(MoverServer.this, new ECproxyRepository(host)), false)
+                    .syncExec(new ECtransMkdir(dir), null, host.getECUserName(),
+                            host.getName() + "@" + host.getTransferMethodName(), null,
+                            new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
         } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
@@ -3593,9 +3053,10 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     @Override
     public void rmdir(final Host host, final String dir) throws RemoteException {
         try {
-            new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(new ECtransRmdir(dir),
-                    null, host.getECUserName(), host.getName() + "@" + host.getTransferMethodName(), null,
-                    new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+            new ECtransContainer(new MoverECtransProvider(MoverServer.this, new ECproxyRepository(host)), false)
+                    .syncExec(new ECtransRmdir(dir), null, host.getECUserName(),
+                            host.getName() + "@" + host.getTransferMethodName(), null,
+                            new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
         } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
@@ -3619,10 +3080,10 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     @Override
     public void move(final Host host, final String source, final String target) throws RemoteException {
         try {
-            new ECtransContainer(new MoverProvider(new ECproxyRepository(host)), false).syncExec(
-                    new ECtransMove(source, target), null, host.getECUserName(),
-                    host.getName() + "@" + host.getTransferMethodName(), null,
-                    new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+            new ECtransContainer(new MoverECtransProvider(MoverServer.this, new ECproxyRepository(host)), false)
+                    .syncExec(new ECtransMove(source, target), null, host.getECUserName(),
+                            host.getName() + "@" + host.getTransferMethodName(), null,
+                            new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
         } catch (final Throwable t) {
             throw Format.getRemoteException("DataMover=" + getRoot(), t);
         }
@@ -3837,407 +3298,6 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         }
         MoverTracing.shutdown();
         super.shutdown();
-    }
-
-    /**
-     * The Class MoverProvider.
-     */
-    private final class MoverProvider extends ECtransProvider {
-        /** The _repository. */
-        private final GenericRepository _repository;
-
-        /** The _set dir. */
-        private final boolean _setDir;
-
-        /**
-         * Instantiates a new mover provider.
-         *
-         * @param repository
-         *            the repository
-         */
-        private MoverProvider(final GenericRepository repository) {
-            this(repository, true);
-        }
-
-        /**
-         * Instantiates a new mover provider.
-         *
-         * @param repository
-         *            the repository
-         * @param setDir
-         *            the set dir
-         */
-        private MoverProvider(final GenericRepository repository, final boolean setDir) {
-            _repository = repository;
-            _setDir = setDir;
-        }
-
-        /**
-         * Gets the root.
-         *
-         * @return the root
-         */
-        @Override
-        public String getRoot() {
-            return MoverServer.this.getRoot();
-        }
-
-        /**
-         * Gets the allocate interface.
-         *
-         * @param url
-         *            the url
-         * @param properties
-         *            the properties
-         *
-         * @return the allocate interface
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         * @throws MoverException
-         *             the mover exception
-         */
-        @Override
-        public AllocateInterface getAllocateInterface(final String url, final Properties properties)
-                throws IOException, MoverException {
-            if (restProvider == null) {
-                throw new MoverException("No RESTProvider available");
-            }
-            return restProvider.getRESTAllocate(url, properties);
-        }
-
-        /**
-         * Gets the notification interface.
-         *
-         * @param url
-         *            the url
-         * @param name
-         *            the name
-         * @param password
-         *            the password
-         *
-         * @return the notification interface
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         * @throws MoverException
-         *             the mover exception
-         */
-        @Override
-        public NotificationInterface getNotificationInterface(final String url, final String name,
-                final String password) throws IOException, MoverException {
-            if (restProvider == null) {
-                throw new MoverException("No RESTProvider available");
-            }
-            return restProvider.getNotificationInterface(url, name, password);
-        }
-
-        /**
-         * Update MS user.
-         *
-         * @param msuser
-         *            the msuser
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public void updateMSUser(final MSUser msuser) throws IOException {
-            final var host = _repository.getHost(msuser.getName());
-            if (host == null) {
-                // Not found in the cache?
-                _log.warn("Host {} not found in cache (update canceled)", msuser.getName());
-            } else {
-                final var hostId = host.getName();
-                if (hostId == null) {
-                    // This Host was specifically tagged for not being updated!
-                    _log.debug("Source Host for retrieval (no update): {}", msuser.getName());
-                } else if (!hostId.equals(msuser.getName())) {
-                    // The Host name does not match the MSUser name?
-                    _log.warn("Host {} does not match (update canceled)", msuser.getName());
-                } else {
-                    // The Host should be updated!
-                    _log.debug("Updating Host: {} ({})", hostId, host.getNickname());
-                    host.setData(msuser.getData());
-                    try {
-                        getMasterProxy().updateData(host);
-                    } catch (final Exception e) {
-                        _log.warn("updateData", e);
-                    }
-                }
-            }
-        }
-
-        /**
-         * Gets the object.
-         *
-         * @param key
-         *            the key
-         *
-         * @return the object
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public Object getObject(final Object key) throws IOException {
-            final var hostName = key.toString();
-            final var host = _repository.getHost(hostName);
-            if (host == null) {
-                throw new IOException("Host " + hostName + " not found");
-            }
-            return host.clone();
-        }
-
-        /**
-         * Gets the MS user.
-         *
-         * @param ecuser
-         *            the ecuser
-         * @param name
-         *            the name
-         *
-         * @return the MS user
-         *
-         * @throws ECtransException
-         *             the ectrans exception
-         */
-        @Override
-        public MSUser getMSUser(final String ecuser, final String name) throws ECtransException {
-            final var host = _repository.getHost(name);
-            if (host == null) {
-                _log.debug("MSUser {} not found in the repository", name);
-                return null;
-            }
-            final var method = host.getTransferMethod();
-            final var destination = new ECtransDestination(method.getName());
-            destination.setActive(method.getActive());
-            destination.setComment(method.getComment());
-            destination.setECtransModuleName(method.getECtransModuleName());
-            destination.setECtransModule(method.getECtransModule());
-            destination.setResolve(method.getResolve());
-            destination.setRestrict(method.getRestrict());
-            destination.setValue(method.getValue());
-            var hostDir = host.getDir();
-            String realDir = null;
-            if (_setDir && isNotEmpty(hostDir)) {
-                final var token = new StringTokenizer(hostDir, "\n");
-                if (token.hasMoreTokens() && !(hostDir = token.nextToken()).trim().startsWith("(")) {
-                    final var index = hostDir.indexOf("$");
-                    if (index != -1) {
-                        realDir = hostDir.substring(0, index);
-                    } else {
-                        realDir = hostDir;
-                    }
-                }
-            }
-            final var setup = HOST_ECTRANS.getECtransSetup(host.getData());
-            var hostName = host.getHost();
-            // Do we have a host selector to find an alternative host-name/IP?
-            final var hostSelector = setup.getString(HOST_ECTRANS_HOST_SELECTOR);
-            if (isNotEmpty(hostSelector)) {
-                try {
-                    final var sb = new StringBuilder(hostSelector);
-                    Format.replaceAll(sb, "$mover", getRoot());
-                    Format.replaceAll(sb, "$host", host.getHost());
-                    Format.replaceAll(sb, "$network", host.getNetworkName());
-                    Format.replaceAll(sb, "$group", host.getTransferGroupName());
-                    hostName = Format.choose(sb.toString());
-                    _log.debug("Using alternative hostname: {}", hostName);
-                } catch (final DuplicatedChooseScore e) {
-                    throw new ECtransException("Could not resolve host field (multiple choices selected)");
-                } catch (final ScriptException e) {
-                    throw new ECtransException("Could not resolve host field (" + e.getMessage() + ")");
-                }
-            }
-            if (!setup.getBoolean(HOST_ECTRANS_USEDNSNAME) && hostName != null && hostName.indexOf("$") == -1) {
-                // The host name is static (not using parameters) so we can
-                // process its IP address
-                final var hostLocation = host.getHostLocation();
-                final var hostIp = hostLocation.getIp();
-                try {
-                    hostName = InetAddress.getByName(hostName).getHostAddress();
-                    if (isEmpty(hostIp) || !hostIp.equals(hostName)) {
-                        final var hostId = host.getName();
-                        if (isNotEmpty(hostId)) {
-                            // This Host should be updated on the Master!
-                            _log.debug("Host-{} IP change (update): {} != {}", hostId, hostIp, hostName);
-                            hostLocation.setIp(hostName);
-                            try {
-                                getMasterProxy().updateLocation(host);
-                            } catch (final Throwable t) {
-                                _log.warn("updateLocation", t);
-                            }
-                        }
-                    }
-                } catch (final UnknownHostException _) {
-                    if (!isNotEmpty(hostIp)) {
-                        throw new ECtransException("unknown host " + hostName + " (consider setting the "
-                                + HOST_ECTRANS_USEDNSNAME.getFullName() + " option to true)");
-                    }
-                    _log.warn("Using cached IP address: {}", hostIp);
-                    hostName = hostIp;
-                }
-            }
-            // For the non operational system include the transfer rate for the
-            // host in the ectrans data (to allow the test module to transmit at
-            // the host usual rate)! For this to work, the hibernate.hbm.xml file must
-            // include the hostStats in the HOST.
-            if (!OPERATIONAL) {
-                final var hostStats = host.getHostStats();
-                if (hostStats != null && hostStats.getDuration() > 0) {
-                    final var bytesPerSecond = (long) (hostStats.getSent() / ((double) hostStats.getDuration() / 1000));
-                    _log.info("Setting bytesPerSecond for Host-{} to: {}", host.getName(), bytesPerSecond);
-                    setup.set(HOST_TEST_BYTES_PER_SEC, ByteSize.of(bytesPerSecond));
-                } else {
-                    _log.debug("No transfer rate found for Host-{}", host.getName());
-                }
-            }
-            final var msuser = new MSUser(name);
-            msuser.setActive(host.getActive());
-            msuser.setComment(host.getComment());
-            msuser.setData(setup.getData());
-            msuser.setDir(realDir);
-            msuser.setECtransDestinationName(destination.getName());
-            msuser.setECtransDestination(destination);
-            msuser.setECUserName(host.getECUserName());
-            msuser.setECUser(host.getECUser());
-            msuser.setHost(hostName);
-            msuser.setLogin(host.getLogin());
-            msuser.setPasswd(host.getPasswd());
-            return msuser;
-        }
-
-        /**
-         * Gets the EC user.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the EC user
-         */
-        @Override
-        public ECUser getECUser(final String name) {
-            return _repository.getECUser(name);
-        }
-
-        /**
-         * Gets the ectrans module.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the ectrans module
-         */
-        @Override
-        public ECtransModule getECtransModule(final String name) {
-            return _repository.getECtransModule(name);
-        }
-
-        /**
-         * Gets the ectrans destination.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the ectrans destination
-         */
-        @Override
-        public ECtransDestination getECtransDestination(final String name) {
-            final var method = _repository.getTransferMethod(name);
-            if (method == null) {
-                return null;
-            }
-            final var destination = new ECtransDestination(method.getName());
-            destination.setActive(method.getActive());
-            destination.setComment(method.getComment());
-            destination.setECtransModuleName(method.getECtransModuleName());
-            destination.setECtransModule(method.getECtransModule());
-            destination.setResolve(method.getResolve());
-            destination.setRestrict(method.getRestrict());
-            destination.setValue(method.getValue());
-            return destination;
-        }
-
-        /**
-         * Gets the data input stream.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data input stream
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public InputStream getDataInputStream(final Object ticket) throws IOException {
-            return _repository.getDataInputStream(ticket);
-        }
-
-        /**
-         * Gets the data output stream.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data output stream
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public OutputStream getDataOutputStream(final Object ticket) throws IOException {
-            return _repository.getDataOutputStream(ticket);
-        }
-
-        /**
-         * Gets the data input file.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data input file
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public File getDataInputFile(final Object ticket) throws IOException {
-            return _repository.getDataInputFile(ticket);
-        }
-
-        /**
-         * Gets the data output file.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data output file
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public File getDataOutputFile(final Object ticket) throws IOException {
-            return _repository.getDataOutputFile(ticket);
-        }
-
-        /**
-         * Gets the original filename.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the original filename
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public String getOriginalFilename(final Object ticket) throws IOException {
-            return _repository.getOriginalFilename(ticket);
-        }
     }
 
     /**
@@ -4627,1596 +3687,6 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     }
 
     /**
-     * The Class MoverCallback.
-     */
-    private final class MoverCallback implements ProgressHandler, ECtransCallback {
-        private final MoverTracing.Attempt trace;
-        private final String _liveAttemptId = java.util.UUID.randomUUID().toString();
-        private final ecmwf.ecpds.master.weather.WeatherCapture.Execution weather;
-        /** The _name. */
-        private final String _name;
-
-        /** The _file name. */
-        private final String _fileName;
-
-        /** The _transfer. */
-        private final DataTransfer _transfer;
-
-        /** The _data file. */
-        private final DataFile _dataFile;
-
-        /** The _descriptor. */
-        private FileDescriptor _descriptor = null;
-
-        /** The _monitor. */
-        private ProgressInterface _monitor = null;
-
-        /** The _update. */
-        private long _update = -1;
-
-        /** The last time a live transfer sample was pushed (Live ECPDS Earth - Phase 0). */
-        private long _lastLiveSample = -1;
-
-        /**
-         * The TransferModule currently handling this transfer, captured via {@link #connected(TransferModule)} as soon
-         * as it becomes available, so that {@link #_offerLiveSample(String)} can query its real, currently connected
-         * remote address (Live ECPDS Earth - Phase 0).
-         */
-        private volatile TransferModule _module = null;
-
-        /** The _closed. */
-        private final AtomicBoolean _closed = new AtomicBoolean(false);
-
-        /** The _setup. */
-        private final ECtransSetup _setup;
-
-        /** The _file size. */
-        private long _fileSize = -1;
-
-        /** The _timeout. */
-        private final long _timeout;
-
-        /** The _filter. */
-        private String _filter = null;
-
-        /** The _ratio. */
-        private boolean _filtered = false;
-
-        /**
-         * Instantiates a new mover callback.
-         *
-         * @param transfer
-         *            the transfer
-         * @param fileName
-         *            the file name
-         */
-        private MoverCallback(final DataTransfer transfer, final String fileName, final MoverTracing.Attempt trace) {
-            this.trace = trace;
-            _name = Format.formatLong(transfer.getId(), 10, true);
-            _fileName = fileName;
-            _transfer = transfer;
-            _dataFile = transfer.getDataFile();
-            _fileSize = _dataFile.getSize();
-            _setup = HOST_ECTRANS.getECtransSetup(transfer.getHost().getData());
-            _transfer.setFinishTime(new Timestamp(System.currentTimeMillis()));
-            _transfer.setComment(null);
-            _transfer.setDuration(0);
-            _transfer.setSent(0);
-            _transfer.setDeliveredName(null);
-            _transfer.setRatio(1);
-            _transfer.setPutTime(null);
-            _timeout = _setup.getDuration(HOST_ECTRANS_STREAM_TIMEOUT).toMillis();
-            ecmwf.ecpds.master.weather.WeatherCapture.Execution capture = null;
-            if (weatherNegotiationScheduler != null) {
-                try {
-                    final var host = transfer.getHost();
-                    capture = weatherNegotiationScheduler.capture.start(transfer.getId(), transfer.getDestinationName(),
-                            host.getName(), host.getHost(), host.getTransferMethodName());
-                } catch (final RuntimeException e) {
-                    _log.warn("Network Weather could not freeze transfer {} execution scope", transfer.getId(), e);
-                }
-            }
-            weather = capture;
-            _transfer.setWeatherExecutionId(capture == null ? null : capture.executionId().toString());
-        }
-
-        @Override
-        public void executionFinished(final TransferModule module, final boolean successful) {
-            try {
-                captureWeather(module, successful);
-            } finally {
-                trace.finish(_transfer, successful && !_closed.get());
-            }
-        }
-
-        private void captureWeather(final TransferModule module, final boolean successful) {
-            if (weather == null) {
-                return;
-            }
-            try {
-                final var statistics = module == null ? null : module.getAttribute(ClientSocketStatistics.class);
-                final var operation = module == null ? null : module.getAttribute("remote.operation");
-                final var cancelled = !successful && module != null
-                        && Boolean.TRUE.equals(module.getAttribute("ectrans.cancellationRequested"));
-                final var outcome = cancelled ? ecmwf.ecpds.master.weather.WeatherObservation.Outcome.CANCELLED
-                        : !successful ? ecmwf.ecpds.master.weather.WeatherObservation.Outcome.FAILURE
-                                : module == null || module.getAvailable() || "exec".equals(operation)
-                                        || "copy".equals(operation)
-                                                ? ecmwf.ecpds.master.weather.WeatherObservation.Outcome.UNKNOWN
-                                                : ecmwf.ecpds.master.weather.WeatherObservation.Outcome.SUCCESS;
-                weather.finish(outcome,
-                        cancelled ? ecmwf.ecpds.master.weather.WeatherObservation.Category.CANCELLED
-                                : ecmwf.ecpds.master.weather.WeatherObservation.Category.UNCLASSIFIED,
-                        statistics == null ? null : statistics.snapshot());
-            } catch (final RuntimeException e) {
-                _log.warn("Network Weather capture failed for transfer {}; delivery processing continues",
-                        _transfer.getId(), e);
-            }
-        }
-
-        @Override
-        public void transferredBytes(final long bytes) {
-            trafficAccounting.add(_transfer.getHost().getType(), bytes);
-        }
-
-        @Override
-        public boolean isByteAccountingEnabled() {
-            return true;
-        }
-
-        /**
-         * Sets the file size.
-         *
-         * @param filter
-         *            the filter
-         * @param fileSize
-         *            the file size
-         */
-        void setFileSize(final String filter, final long fileSize) {
-            _filtered = _fileSize != fileSize;
-            _transfer.setRatio((double) _fileSize / (double) fileSize);
-            _filter = filter;
-            if (_filtered) {
-                // The file has already been filtered while in the queue!
-                _fileSize = fileSize;
-            }
-        }
-
-        /**
-         * Sets the file descriptor.
-         *
-         * @param descriptor
-         *            the new file descriptor
-         */
-        void setFileDescriptor(final FileDescriptor descriptor) {
-            _descriptor = descriptor;
-        }
-
-        /**
-         * Notifies that the {@link TransferModule} handling this transfer has connected, capturing a reference to it so
-         * that {@link #_offerLiveSample(String)} can later query its real, currently connected remote address (see
-         * {@link TransferModule#getConnectedRemoteAddress()}) - preferred over the configured Host address for
-         * anycast/load-balanced endpoints (e.g. Amazon S3, Google Cloud Storage) where a later DNS lookup of the same
-         * hostname may return a different IP than the one actually used for this transfer.
-         *
-         * @param module
-         *            the module
-         */
-        @Override
-        public void connected(final TransferModule module) {
-            _module = module;
-            if (weather != null) {
-                final var statistics = module.getAttribute(ClientSocketStatistics.class);
-                if (statistics != null) {
-                    statistics.setSnapshotListener(weather::supplement);
-                }
-            }
-        }
-
-        /**
-         * Offer a live transfer sample to the {@link LiveStatsRepository}, if enabled (Live ECPDS Earth - Phase 0).
-         *
-         * @param status
-         *            one of {@link LiveTransferSample#STATUS_ACTIVE}, {@link LiveTransferSample#STATUS_DONE} or
-         *            {@link LiveTransferSample#STATUS_FAILED}
-         */
-        private void _offerLiveSample(final String status) {
-            if (LiveTransferSample.STATUS_ACTIVE.equals(status) && _closed.get())
-                return;
-            if (liveStatsRepository == null || !liveStatsRepository.isMasterEnabled()) {
-                return;
-            }
-            try {
-                final var host = _transfer.getHost();
-                final var protocol = host != null ? host.getTransferMethodName() : null;
-                final var hostNickname = host != null ? host.getNickname() : null;
-                final var module = _module;
-                final var connectedAddress = module != null ? module.getConnectedRemoteAddress() : null;
-                final var hostAddress = connectedAddress != null && !connectedAddress.isBlank() ? connectedAddress
-                        : host != null ? host.getHost() : null;
-                final var rate = _transfer.getDuration() > 0
-                        ? (double) _transfer.getSent() * 8000 / _transfer.getDuration() : -1;
-                liveStatsRepository.offer(new LiveTransferSample(_transfer.getId(), getRoot(),
-                        _transfer.getDestinationName(), _transfer.getHostName(), hostNickname, hostAddress, protocol,
-                        _fileSize, _transfer.getSent(), _transfer.getDuration(), rate, status,
-                        LiveTransferSample.DIRECTION_DISSEMINATION, host != null ? host.getType() : null)
-                                .withAttempt(_liveAttemptId));
-            } catch (final Throwable t) {
-                _log.debug("Building LiveTransferSample for DataTransfer-{}", _transfer.getId(), t);
-            }
-        }
-
-        /**
-         * Refresh transfer stats.
-         */
-        private void refreshTransferStats() {
-            if (_monitor != null) {
-                final var putTime = _monitor.getStartTime();
-                if (_monitor instanceof final MonitoredInputStream monIn) {
-                    _transfer.setDurationOnClose(monIn.getDurationOnClose());
-                }
-                _transfer.setDuration(_monitor.getDuration());
-                _transfer.setSent(_monitor.getByteSent());
-                _transfer.setPutTime(putTime > 0 ? new Timestamp(putTime) : null);
-            }
-        }
-
-        /**
-         * Update the finish time (called from completed or failed method).
-         */
-        private void updateFinishTime() {
-            _transfer.setFinishTime(new Timestamp(System.currentTimeMillis() - _transfer.getFinishTime().getTime()));
-        }
-
-        /**
-         * Close the data transfer and the associated monitor.
-         *
-         * @return true, if successful
-         */
-        private boolean closeTransferAndMonitor() {
-            if (!_closed.compareAndSet(false, true)) {
-                _log.debug("Already closed");
-                return false;
-            } else {
-                try {
-                    closeDataTransfer(_transfer);
-                } catch (final Throwable t) {
-                    _log.warn("Closing DataTransfer: {}", _transfer.getId(), t);
-                } finally {
-                    if (_monitor != null) {
-                        try {
-                            _monitor.closeAndInterruptIfRequired();
-                        } finally {
-                            refreshTransferStats();
-                        }
-                    }
-                }
-                return true;
-            }
-        }
-
-        /**
-         * Gets the ectrans setup.
-         *
-         * @return the ectrans setup
-         */
-        @Override
-        public ECtransSetup getECtransSetup() {
-            return _setup;
-        }
-
-        /**
-         * Gets the unique name.
-         *
-         * @return the unique name
-         */
-        @Override
-        public String getUniqueName() {
-            return _name;
-        }
-
-        /**
-         * Sets the MS user.
-         *
-         * @param msuser
-         *            the new MS user
-         */
-        @Override
-        public void setMSUser(final MSUser msuser) {
-            _transfer.setHostName(msuser.getName());
-        }
-
-        /**
-         * Update.
-         *
-         * @param monitor
-         *            the monitor
-         */
-        @Override
-        public void update(final ProgressInterface monitor) {
-            if (_monitor == null || _monitor.getByteSent() > _transfer.getSent()) {
-                // First update or update in the number of bytes sent!
-                _update = System.currentTimeMillis();
-                _monitor = monitor;
-                refreshTransferStats();
-                if (_update - _lastLiveSample >= 2 * Timer.ONE_SECOND) {
-                    _lastLiveSample = _update;
-                    _offerLiveSample(LiveTransferSample.STATUS_ACTIVE);
-                }
-            } else if (!_closed.get() && _timeout > 0 && System.currentTimeMillis() - _update > _timeout) {
-                final var module = _module;
-                _log.warn("Transfer {} no progress: idle={}ms progressBytes={} moduleStatus={}", _transfer.getId(),
-                        System.currentTimeMillis() - _update, _monitor == null ? 0 : _monitor.getByteSent(),
-                        module == null ? "unavailable" : module.getStatus());
-                if (module != null) {
-                    if (module.getAttribute(
-                            "diagnostics.connections") instanceof final java.util.function.Supplier<?> connections) {
-                        _log.warn("Transfer {} connection diagnostics: {}", _transfer.getId(), connections.get());
-                    }
-                    for (final var name : new String[] { "diagnostics.inputBytes", "diagnostics.outputBytes" }) {
-                        if (module.getAttribute(name) instanceof final java.util.function.LongSupplier counter) {
-                            _log.warn("Transfer {} {}={}", _transfer.getId(), name, counter.getAsLong());
-                        }
-                    }
-                }
-                failed(module, "stream timeout after " + Format.formatDuration(_timeout));
-            }
-        }
-
-        /**
-         * Retry.
-         *
-         * @param comment
-         *            the comment
-         */
-        @Override
-        public void retry(final String comment) {
-            if (!_closed.get()) {
-                _log.warn("Transfer {} ({}) retry{}", _transfer.getId(), _dataFile.getSource(),
-                        isNotEmpty(comment) ? ": " + comment : "");
-            }
-        }
-
-        /**
-         * Completed.
-         *
-         * @param module
-         *            the module
-         */
-        @Override
-        public void completed(final TransferModule module) {
-            captureWeather(module, true);
-            if (!closeTransferAndMonitor()) { // If it is closed then no need to process the transfer history again!
-                return;
-            }
-            try {
-                if (_transfer.getDuration() == 0) {
-                    // If the transfer was less than a millisecond then we set 1
-                    // millisecond to allow the processing of the rate!
-                    _log.debug("0ms duration detected for DataTransfer-{} push (forcing 1ms)", _transfer.getId());
-                    _transfer.setDuration(1);
-                }
-                final var statistics = module.getAttribute(ClientSocketStatistics.class);
-                final var hostName = (String) module.getAttribute("remote.hostName");
-                final var fileName = (String) module.getAttribute("remote.fileName");
-                final var operation = (String) module.getAttribute("remote.operation");
-                final var targetName = isNotEmpty(fileName) ? fileName : _fileName;
-                final var from = masterManager != null ? "DataMover=" + getRoot() : "Proxy Host="
-                        + _transfer.getProxyHostName() + " (" + _transfer.getProxyHost().getNickname() + ")";
-                final String comment;
-                boolean usedCompressedFile = false;
-                if ("exec".equals(operation)) {
-                    comment = "External transfer initiated from " + from + " to " + hostName + " at " + targetName;
-                } else if ("copy".equals(operation)) {
-                    comment = "Local copy initiated from " + from + " to " + hostName + " at " + targetName;
-                } else {
-                    final var sourceHost = _descriptor != null ? _descriptor.getSelectedSourceHost() : null;
-                    final var source = sourceHost != null
-                            ? " using Host=" + sourceHost.getName() + " (" + sourceHost.getNickname() + ")" : "";
-                    if (module.getAvailable()) {
-                        // The file is available but not sent anywhere (data portal), so we have to make
-                        // sure there will be no transfer rate displayed!
-                        _transfer.setSent(0);
-                        comment = "Available on " + from + source + " as " + targetName;
-                    } else { // operation == sent
-                        // The file has been transmitted successfully!
-                        if (module.getAttribute("compression.fileSize") instanceof final Long fileSize) {
-                            // This was compression on the fly so let's compute the ratio
-                            // and the number of bytes sent now that we have the data!
-                            _transfer.setCompressedOnTheFly(true);
-                            if (fileSize > 0) {
-                                _transfer.setRatio((double) _fileSize / (double) fileSize);
-                            } else {
-                                _transfer.setRatio(1); // safe default
-                            }
-                            _transfer.setSent(fileSize);
-                            _filtered = true;
-                        }
-                        final var rate = Format.getMBitsPerSeconds(_transfer.getSent(), _transfer.getDuration());
-                        final var ratio = (int) (100 / _transfer.getRatio());
-                        final String compression;
-                        if (_filter != null) {
-                            final var onTheFly = _transfer.getCompressedOnTheFly() ? " on-the-fly" : "";
-                            compression = " " + _filter + (_filtered ? " (" + ratio + "%" + onTheFly + ")" : "");
-                            usedCompressedFile = !_transfer.getCompressedOnTheFly();
-                        } else {
-                            compression = "";
-                        }
-                        comment = "Sent" + compression + " from " + from + source + " to "
-                                + (isNotEmpty(hostName) ? hostName + " at " : "") + targetName
-                                + (rate == -1 ? "" : " (" + rate + " Mbits/s)")
-                                + (module.getAttribute("s3.discoveredRegion") instanceof final String r
-                                        ? " [s3.region=" + r + "]" : "");
-                    }
-                }
-                final var statisticsString = statistics != null && !statistics.isEmpty() ? statistics.toString() : null;
-                synchronized (transferRepository) {
-                    updateFinishTime();
-                    _transfer.setComment(comment);
-                    _transfer.recordDeliveredName(fileName);
-                    _transfer.setStatistics(statisticsString);
-                    _transfer.setCompressed(_filter);
-                    _transfer.setStatusCode(StatusFactory.DONE);
-                    transferRepository.notifyAll();
-                }
-                _log.info("Transfer {} ({}) completed: {} - statistics: '{}'", _transfer.getId(), targetName, comment,
-                        statisticsString != null ? statisticsString : "none");
-                _offerLiveSample(LiveTransferSample.STATUS_DONE);
-                if (usedCompressedFile && _descriptor != null && _descriptor.isLocal()) {
-                    // We have successfully transmitted a local compressed file, so we might now
-                    // unlink the uncompressed version of it to save some disk space!
-                    try {
-                        final var localFile = _descriptor.getFile(false);
-                        if (localFile != null && localFile.supportsUnlinkWhileOpen()) {
-                            if (Cnf.at("Mover", "unlinkUncompressedFileOnSuccess", false)) {
-                                if (localFile.delete()) {
-                                    _log.debug("File successfully unlinked after transmission: {}",
-                                            localFile.getAbsolutePath());
-                                } else {
-                                    _log.warn("Cannot unlink file after successful transmission: {}",
-                                            localFile.getAbsolutePath());
-                                }
-                            } else {
-                                _log.debug("Unlink of uncompressed file on success is disabled: {}",
-                                        localFile.getAbsolutePath());
-                            }
-                        }
-                    } catch (final Throwable t) {
-                        _log.warn("Cannot unlink file after successful transmission", t);
-                    }
-                }
-            } finally {
-                trace.finish(_transfer, StatusFactory.DONE.equals(_transfer.getStatusCode()));
-                if (_descriptor != null) {
-                    _descriptor.releaseStorageReader();
-                }
-            }
-        }
-
-        /**
-         * Failed.
-         *
-         * @param module
-         *            the module
-         * @param comment
-         *            the comment
-         */
-        @Override
-        public void failed(final TransferModule module, String comment) {
-            captureWeather(module, false);
-            final var availableStatistics = module == null ? null : module.getAttribute(ClientSocketStatistics.class);
-            final var beforeCloseStatistics = availableStatistics == null || availableStatistics.isEmpty() ? null
-                    : availableStatistics.toString();
-            if (!closeTransferAndMonitor()) { // If it is closed then no need to process the transfer history again!
-                return;
-            }
-            try {
-                comment = isNotEmpty(comment) ? comment : null;
-                var existingComment = _transfer.getComment();
-                existingComment = isNotEmpty(existingComment) ? existingComment : null;
-                if (comment == null && existingComment == null) {
-                    comment = "Transmission failed";
-                } else if (comment != null && existingComment != null) {
-                    comment = comment + " (" + existingComment + ")";
-                } else {
-                    if (comment == null) {
-                        comment = existingComment;
-                    }
-                }
-                final String statisticsString;
-                if (module != null) {
-                    final var statistics = module.getAttribute(ClientSocketStatistics.class);
-                    statisticsString = statistics != null && !statistics.isEmpty() ? statistics.toString()
-                            : beforeCloseStatistics;
-                } else {
-                    statisticsString = null;
-                }
-                synchronized (transferRepository) {
-                    updateFinishTime();
-                    _transfer.setComment(comment);
-                    _transfer.setFailedTime(new Timestamp(System.currentTimeMillis()));
-                    _transfer.setStatistics(statisticsString);
-                    _transfer.setStatusCode(StatusFactory.RETR);
-                    transferRepository.notifyAll();
-                }
-                _log.warn("Transfer {} ({}) failed: {} - statistics: '{}'", _transfer.getId(), _dataFile.getSource(),
-                        comment, statisticsString != null ? statisticsString : "none");
-                _offerLiveSample(LiveTransferSample.STATUS_FAILED);
-            } finally {
-                trace.finish(_transfer, false);
-                if (_descriptor != null) {
-                    _descriptor.releaseStorageReader();
-                }
-            }
-        }
-    }
-
-    /**
-     * The Interface GenericRepository.
-     */
-    private interface GenericRepository {
-        /**
-         * Gets the host.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the host
-         */
-        Host getHost(String name);
-
-        /**
-         * Gets the EC user.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the EC user
-         */
-        ECUser getECUser(String name);
-
-        /**
-         * Gets the ectrans module.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the ectrans module
-         */
-        ECtransModule getECtransModule(String name);
-
-        /**
-         * Gets the transfer method.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the transfer method
-         */
-        TransferMethod getTransferMethod(String name);
-
-        /**
-         * Gets the data input stream.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data input stream
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        InputStream getDataInputStream(Object ticket) throws IOException;
-
-        /**
-         * Gets the data output stream.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data output stream
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        OutputStream getDataOutputStream(Object ticket) throws IOException;
-
-        /**
-         * Gets the data input file.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data input file
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        File getDataInputFile(Object ticket) throws IOException;
-
-        /**
-         * Gets the data output file.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data output file
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        File getDataOutputFile(Object ticket) throws IOException;
-
-        /**
-         * Gets the original file name.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data output file
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        String getOriginalFilename(Object ticket) throws IOException;
-    }
-
-    /**
-     * The Class MoverRepository.
-     */
-    private class MoverRepository implements GenericRepository {
-
-        /**
-         * Gets the host.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the host
-         */
-        @Override
-        public Host getHost(final String name) {
-            return transferRepository.getHost(name);
-        }
-
-        /**
-         * Gets the EC user.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the EC user
-         */
-        @Override
-        public ECUser getECUser(final String name) {
-            return transferRepository.getECUser(name);
-        }
-
-        /**
-         * Gets the ectrans module.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the ectrans module
-         */
-        @Override
-        public ECtransModule getECtransModule(final String name) {
-            return transferRepository.getECtransModule(name);
-        }
-
-        /**
-         * Gets the transfer method.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the transfer method
-         */
-        @Override
-        public TransferMethod getTransferMethod(final String name) {
-            return transferRepository.getTransferMethod(name);
-        }
-
-        /**
-         * Gets the data input stream.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data input stream
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public InputStream getDataInputStream(final Object ticket) throws IOException {
-            final var descriptor = (FileDescriptor) ticket;
-            return new java.io.FilterInputStream(openDataInputStream(ticket)) {
-                @Override
-                public void close() throws IOException {
-                    try {
-                        super.close();
-                    } finally {
-                        java.lang.ref.Reference.reachabilityFence(descriptor);
-                    }
-                }
-            };
-        }
-
-        private InputStream openDataInputStream(final Object ticket) throws IOException {
-            final var desc = (FileDescriptor) ticket;
-            final var file = desc.getFile(false);
-            final var dataFile = desc.getDataFile();
-            final var size = desc.getSize();
-            var posn = desc.getPosn();
-            var length = desc.getLength();
-            var banChecksum = posn > 0 || length != -1; // No checksum possible on a range request!
-            InputStream in = null;
-            if (desc.isLocal() || !OPERATIONAL) {
-                if (!OPERATIONAL && (file.length() != size || !file.canRead())) {
-                    _log.warn("RandomInputStream for: {}", file.getAbsolutePath());
-                    in = new RandomInputStream(length == -1 ? size - posn : length);
-                    banChecksum = true; // No checksum should be processed (irrelevant on random data)
-                    length = 0; // No length required here, the random input stream has the exact size
-                    posn = 0; // Same as for the length
-                } else {
-                    _log.debug("Source found locally: {} ({} bytes)", file.getAbsolutePath(), size);
-                    final var inputFilter = desc.getInputFilter();
-                    if (banChecksum && StreamManagerImp.isFiltered(inputFilter)) {
-                        // When using a range there is no filter allowed!
-                        throw new IOException("Range not supported with filters");
-                    }
-                    // If required the skip will be done at the end of this method
-                    in = StreamManagerImp.getFilters(file.getInputStream(), inputFilter, 0);
-                }
-            } else {
-                _log.warn("Source not found locally");
-                String message = null;
-                Throwable throwable = null;
-                try {
-                    final var hostsForSource = desc.getHostsForSource();
-                    if (hostsForSource != null && hostsForSource.length > 0) {
-                        in = new ECtransInputStream(hostsForSource, dataFile, posn);
-                        if (in instanceof final ECtransInputStream ectransIn)
-                            desc.setSelectedSourceHost(ectransIn.getHost());
-                        posn = 0; // No skip required here, will be processed in the ECtransInputStream
-                    }
-                } catch (final SourceNotAvailableException s) {
-                    throwable = s.getCause();
-                    message = s.getMessage();
-                } catch (final Throwable t) {
-                    throwable = t;
-                    _log.debug("Looking for a remote source", t);
-                } finally {
-                    if (in == null) {
-                        _log.warn("Source not found remotely");
-                        // The source is not available anywhere, locally or remotely!
-                        final var fnfe = new FileNotFoundException(
-                                isNotEmpty(message) ? message : "Source not available");
-                        fnfe.initCause(throwable);
-                        throw fnfe;
-                    }
-                }
-            }
-            // Are we supposed to skip data?
-            if (posn > 0) {
-                // If we skip data then obviously we can't do the checksum on
-                // the fly!
-                final long result;
-                if ((result = in.skip(posn)) != posn) {
-                    StreamPlugThread.closeQuietly(in);
-                    throw new IOException("Error skipping bytes (" + result + ")");
-                }
-            } else if (!banChecksum) {
-                // We don't skip data and we get all the bytes (no range), so we can process the
-                // Checksum!
-                final var checksumValue = dataFile.getChecksum();
-                if (isNotEmpty(checksumValue)) {
-                    // There is a Checksum defined!
-                    final var filter = desc.getFilter();
-                    if (isNotEmpty(filter)) {
-                        // The transmission is based on a filtered file so do we
-                        // have the Checksum for this filtering method?
-                        final var searchString = "/" + filter + "=";
-                        final var index = checksumValue.indexOf(searchString);
-                        if (index != -1) {
-                            final var checksumForFilter = checksumValue.substring(index + searchString.length());
-                            final var fileSize = dataFile.getFilterSize();
-                            if (size == fileSize) {
-                                _log.debug("Checking against {} hash ({}={})", _algorithm.getName(), filter,
-                                        checksumForFilter);
-                                try {
-                                    return Checksum.getChecksum(checksumForFilter, _algorithm, in).getInputStream();
-                                } catch (final Throwable t) {
-                                    _log.warn("Cannot init {}", _algorithm.getName(), t);
-                                }
-                            } else {
-                                // Should NEVER happen but it is better to check
-                                // just in case!
-                                _log.warn(
-                                        "Checksum control disabled for DataFile-{}: file size inconsistency (filter={},length={},size={})",
-                                        dataFile.getId(), filter, size, fileSize);
-                            }
-                        } else {
-                            // We don't have any Checksum for this filter!
-                            _log.warn("Checksum control disabled for DataFile-{}: no Checksum found for {}",
-                                    dataFile.getId(), filter);
-                        }
-                    } else {
-                        // The transmission is based on a standard file (the
-                        // filtering might occur but on the fly)!
-                        final var fileSize = dataFile.getSize();
-                        if (size == fileSize) {
-                            // We could have to remove the filtered Checksum
-                            // which might have been appended!
-                            final var index = checksumValue.indexOf("/");
-                            final var checksumForPlain = index != -1 ? checksumValue.substring(0, index)
-                                    : checksumValue;
-                            _log.debug("Checking against {} hash ({})", _algorithm.getName(), checksumForPlain);
-                            try {
-                                return Checksum.getChecksum(checksumForPlain, _algorithm, in).getInputStream();
-                            } catch (final Throwable t) {
-                                _log.warn("Cannot init {}", _algorithm.getName(), t);
-                            }
-                        } else {
-                            // Should NEVER happen but it is better to check
-                            // just in case!
-                            _log.warn(
-                                    "Checksum control disabled for DataFile-{}: file size inconsistency (length={},size={})",
-                                    dataFile.getId(), size, fileSize);
-                        }
-                    }
-                } else {
-                    // We have no Checksum set on the DataFile!
-                    _log.warn("No Checksum available for DataFile-{}", dataFile.getId());
-                }
-            }
-            if (length > 0) {
-                // We only send the length requested (this is a range request)!
-                return new BoundedInputStream(in, length);
-            }
-            return in;
-        }
-
-        /**
-         * Gets the data output stream.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data output stream
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public OutputStream getDataOutputStream(final Object ticket) throws IOException {
-            final var desc = (FileDescriptor) ticket;
-            final var file = desc.getFile(true);
-            final var posn = desc.getPosn();
-            if (posn > 0 && file.length() != posn) {
-                throw new IOException("Incorrect posn for append (posn!=size)");
-            }
-            return file.getOutputStream(posn > 0);
-        }
-
-        /**
-         * Gets the data input file.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data input file
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public File getDataInputFile(final Object ticket) throws IOException {
-            final var desc = (FileDescriptor) ticket;
-            return desc.getFile(true).getFile();
-        }
-
-        /**
-         * Gets the data output file.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data output file
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public File getDataOutputFile(final Object ticket) throws IOException {
-            final var desc = (FileDescriptor) ticket;
-            return desc.getFile(true).getFile();
-        }
-
-        /**
-         * Gets the original filename.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the original filename
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public String getOriginalFilename(final Object ticket) throws IOException {
-            final var desc = (FileDescriptor) ticket;
-            return desc.getDataFile().getOriginal();
-        }
-    }
-
-    /**
-     * The Class LocalRepository.
-     */
-    private final class LocalRepository extends MoverRepository {
-        /** The _host. */
-        private final Host _host;
-
-        /**
-         * Instantiates a new local repository.
-         *
-         * @param host
-         *            the host
-         */
-        private LocalRepository(final Host host) {
-            _host = host;
-        }
-
-        /**
-         * Gets the host.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the host
-         */
-        @Override
-        public Host getHost(final String name) {
-            return _host;
-        }
-
-        /**
-         * Gets the EC user.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the EC user
-         */
-        @Override
-        public ECUser getECUser(final String name) {
-            return _host.getECUser();
-        }
-
-        /**
-         * Gets the ectrans module.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the ectrans module
-         */
-        @Override
-        public ECtransModule getECtransModule(final String name) {
-            return _host.getTransferMethod().getECtransModule();
-        }
-
-        /**
-         * Gets the transfer method.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the transfer method
-         */
-        @Override
-        public TransferMethod getTransferMethod(final String name) {
-            return _host.getTransferMethod();
-        }
-    }
-
-    /**
-     * The Class ECproxyRepository.
-     */
-    private static final class ECproxyRepository implements GenericRepository, ECpdsProxy {
-        /** The _host. */
-        private final Host _host;
-
-        /** The _in. */
-        private InputStream _in = null;
-
-        /** The _out. */
-        private OutputStream _out = null;
-
-        /**
-         * Instantiates a new ecproxy repository.
-         *
-         * @param host
-         *            the host
-         */
-        private ECproxyRepository(final Host host) {
-            _host = host;
-        }
-
-        /**
-         * Gets the host.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the host
-         */
-        @Override
-        public Host getHost(final String name) {
-            return _host;
-        }
-
-        /**
-         * Gets the EC user.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the EC user
-         */
-        @Override
-        public ECUser getECUser(final String name) {
-            return _host.getECUser();
-        }
-
-        /**
-         * Gets the ectrans module.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the ectrans module
-         */
-        @Override
-        public ECtransModule getECtransModule(final String name) {
-            return _host.getTransferMethod().getECtransModule();
-        }
-
-        /**
-         * Gets the transfer method.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the transfer method
-         */
-        @Override
-        public TransferMethod getTransferMethod(final String name) {
-            return _host.getTransferMethod();
-        }
-
-        /**
-         * Gets the data input stream.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data input stream
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public synchronized InputStream getDataInputStream(final Object ticket) throws IOException {
-            if (_in == null) {
-                try {
-                    wait(1 * Timer.ONE_MINUTE);
-                } catch (final InterruptedException e) {
-                    _log.debug("Wakeup");
-                }
-            }
-            if (_in == null) {
-                throw new IOException("InputStream not set");
-            }
-            return _in;
-        }
-
-        /**
-         * Gets the data output stream.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data output stream
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public synchronized OutputStream getDataOutputStream(final Object ticket) throws IOException {
-            if (_out == null) {
-                try {
-                    wait(1 * Timer.ONE_MINUTE);
-                } catch (final InterruptedException e) {
-                    _log.debug("Wakeup");
-                }
-            }
-            if (_out == null) {
-                throw new IOException("OutputStream not set");
-            }
-            return _out;
-        }
-
-        /**
-         * Gets the data input file.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data input file
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public File getDataInputFile(final Object ticket) throws IOException {
-            throw new IOException("Not supported with ECproxy");
-        }
-
-        /**
-         * Gets the data output file.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data output file
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public File getDataOutputFile(final Object ticket) throws IOException {
-            throw new IOException("Not supported with ECproxy");
-        }
-
-        /**
-         * Gets the original filename.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the original filename
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public String getOriginalFilename(final Object ticket) throws IOException {
-            throw new IOException("Not supported with ECproxy");
-        }
-
-        /**
-         * Sets the output stream.
-         *
-         * @param out
-         *            the new output stream
-         */
-        @Override
-        public synchronized void setOutputStream(final OutputStream out) {
-            _out = out;
-            notifyAll();
-        }
-
-        /**
-         * Sets the input stream.
-         *
-         * @param in
-         *            the new input stream
-         */
-        @Override
-        public synchronized void setInputStream(final InputStream in) {
-            _in = in;
-            notifyAll();
-        }
-    }
-
-    /**
-     * The Class StreamRepository. Allow bypassing the ECproxy when loading files from the current data-mover.
-     */
-    private static final class StreamRepository implements GenericRepository {
-        /** The _host. */
-        private final Host _host;
-
-        /** The _in. */
-        private final InputStream _in;
-
-        /** The _out. */
-        private final OutputStream _out;
-
-        /**
-         * Instantiates a new stream repository.
-         *
-         * @param host
-         *            the host
-         * @param out
-         *            the output stream
-         */
-        private StreamRepository(final Host host, final OutputStream out) {
-            _host = host;
-            _out = out;
-            _in = null;
-        }
-
-        /**
-         * Instantiates a new stream repository.
-         *
-         * @param host
-         *            the host
-         * @param in
-         *            the input stream
-         */
-        private StreamRepository(final Host host, final InputStream in) {
-            _host = host;
-            _out = null;
-            _in = in;
-        }
-
-        /**
-         * Gets the host.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the host
-         */
-        @Override
-        public Host getHost(final String name) {
-            return _host;
-        }
-
-        /**
-         * Gets the EC user.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the EC user
-         */
-        @Override
-        public ECUser getECUser(final String name) {
-            return _host.getECUser();
-        }
-
-        /**
-         * Gets the ectrans module.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the ectrans module
-         */
-        @Override
-        public ECtransModule getECtransModule(final String name) {
-            return _host.getTransferMethod().getECtransModule();
-        }
-
-        /**
-         * Gets the transfer method.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the transfer method
-         */
-        @Override
-        public TransferMethod getTransferMethod(final String name) {
-            return _host.getTransferMethod();
-        }
-
-        /**
-         * Gets the data input stream.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data input stream
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public InputStream getDataInputStream(final Object ticket) throws IOException {
-            return _in;
-        }
-
-        /**
-         * Gets the data output stream.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data output stream
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public OutputStream getDataOutputStream(final Object ticket) throws IOException {
-            return _out;
-        }
-
-        /**
-         * Gets the data input file.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data input file
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public File getDataInputFile(final Object ticket) throws IOException {
-            throw new IOException("Not supported with StreamRepository");
-        }
-
-        /**
-         * Gets the data output file.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the data output file
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public File getDataOutputFile(final Object ticket) throws IOException {
-            throw new IOException("Not supported with StreamRepository");
-        }
-
-        /**
-         * Gets the original filename.
-         *
-         * @param ticket
-         *            the ticket
-         *
-         * @return the original filename
-         *
-         * @throws IOException
-         *             Signals that an I/O exception has occurred.
-         */
-        @Override
-        public String getOriginalFilename(final Object ticket) throws IOException {
-            throw new IOException("Not supported with StreamRepository");
-        }
-    }
-
-    /**
-     * The Class TransferRepository.
-     */
-    private final class TransferRepository extends MBeanRepository<DataTransfer> {
-        /** The _list. */
-        private final List<DataTransfer> _list = new ArrayList<>();
-
-        /**
-         * Instantiates a new transfer repository.
-         *
-         * @param name
-         *            the name
-         */
-        private TransferRepository(final String name) {
-            super(name);
-            setComparator(new TransferComparator(false));
-            setDelay(Cnf.durationAt("Scheduler", "transferRepository", 5 * Timer.ONE_SECOND));
-            setJammedTimeout(Cnf.durationAt("Scheduler", "transferRepositoryJammedTimeout", 5 * Timer.ONE_MINUTE));
-        }
-
-        /**
-         * Gets the key.
-         *
-         * @param transfer
-         *            the transfer
-         *
-         * @return the key
-         */
-        @Override
-        public String getKey(final DataTransfer transfer) {
-            return Format.formatLong(transfer.getId(), 10, true);
-        }
-
-        /**
-         * Gets the data transfer.
-         *
-         * @param id
-         *            the id
-         *
-         * @return the data transfer
-         */
-        public DataTransfer getDataTransfer(final long id) {
-            return getValue(Format.formatLong(id, 10, true));
-        }
-
-        /**
-         * Gets the status.
-         *
-         * @param transfer
-         *            the transfer
-         *
-         * @return the status
-         */
-        @Override
-        public String getStatus(final DataTransfer transfer) {
-            final var fileSize = transfer.getDataFile().getSize();
-            final var duration = transfer.getDuration();
-            final var byteSent = transfer.getSent();
-            final var comment = byteSent >= fileSize ? Format.formatRate(fileSize, duration)
-                    : Format.formatPercentage(fileSize, byteSent) + " of " + Format.formatSize(fileSize);
-            return transfer.getStatusCode() + "(" + comment + " on " + transfer.getDestinationName() + "/"
-                    + transfer.getHostName() + ") ";
-        }
-
-        /**
-         * Clear.
-         */
-        @Override
-        public void clear() {
-            super.clear();
-            _list.clear();
-        }
-
-        /**
-         * Next step.
-         *
-         * @return the int
-         */
-        @Override
-        public int nextStep() {
-            if (masterManager != null && !masterManager.isConnected()) {
-                return NEXT_STEP_DELAY;
-            }
-            for (final DataTransfer transfer : getList()) {
-                if (!_list.contains(transfer)) {
-                    _list.add(transfer);
-                }
-            }
-            final var size = _list.size();
-            if (size > 0) {
-                final var array = _list.toArray(new DataTransfer[size]);
-                synchronized (transferRepository) {
-                    try {
-                        getMasterProxy().updateDataTransfers(array);
-                        _list.clear();
-                    } catch (final Exception e) {
-                        _log.warn("updateDataTransfers", e);
-                        return NEXT_STEP_DELAY;
-                    }
-                    for (final DataTransfer transfer : array) {
-                        delDataTransfer(false, transfer.getId());
-                    }
-                }
-            }
-            return NEXT_STEP_DELAY;
-        }
-
-        /**
-         * Del data transfer.
-         *
-         * @param force
-         *            the force
-         * @param id
-         *            the id
-         *
-         * @return true, if successful
-         */
-        public boolean delDataTransfer(final boolean force, final long id) {
-            var result = true;
-            try (final var mutex = dataTransferMutexProvider.getMutex(id)) {
-                synchronized (mutex.lock()) {
-                    final DataTransfer transfer;
-                    if ((transfer = getDataTransfer(id)) != null) {
-                        final var statusCode = transfer.getStatusCode();
-                        if (StatusFactory.DONE.equals(statusCode) || StatusFactory.RETR.equals(statusCode)) {
-                            _log.info("Remove transfer {} from data mover ({})", id, statusCode);
-                            removeValue(transfer);
-                        } else if (force) {
-                            _log.warn("Force removal of transfer {} from data mover ({})", id, statusCode);
-                            removeValue(transfer);
-                        } else {
-                            result = false;
-                        }
-                    }
-                }
-            }
-            return result;
-        }
-
-        /**
-         * Gets the host.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the host
-         */
-        public Host getHost(final String name) {
-            if (isNotEmpty(name)) {
-                for (final DataTransfer transfer : getList()) {
-                    if (name.equals(transfer.getHostName())) {
-                        return transfer.getHost();
-                    }
-                }
-            }
-            return null;
-        }
-
-        /**
-         * Gets the EC user.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the ECuser
-         */
-        public ECUser getECUser(final String name) {
-            if (isNotEmpty(name)) {
-                for (final DataTransfer transfer : getList()) {
-                    final var host = transfer.getHost();
-                    if (name.equals(host.getECUserName())) {
-                        return host.getECUser();
-                    }
-                }
-            }
-            return null;
-        }
-
-        /**
-         * Gets the ectrans module.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the ectrans module
-         */
-        public ECtransModule getECtransModule(final String name) {
-            if (isNotEmpty(name)) {
-                for (final DataTransfer transfer : getList()) {
-                    final var method = transfer.getHost().getTransferMethod();
-                    if (name.equals(method.getECtransModuleName())) {
-                        return method.getECtransModule();
-                    }
-                }
-            }
-            return null;
-        }
-
-        /**
-         * Gets the transfer method.
-         *
-         * @param name
-         *            the name
-         *
-         * @return the transfer method
-         */
-        public TransferMethod getTransferMethod(final String name) {
-            if (isNotEmpty(name)) {
-                for (final DataTransfer transfer : getList()) {
-                    final var host = transfer.getHost();
-                    if (name.equals(host.getTransferMethodName())) {
-                        return host.getTransferMethod();
-                    }
-                }
-            }
-            return null;
-        }
-    }
-
-    /**
      * The Class DownloadRepository.
      */
     public final class DownloadRepository extends MBeanRepository<DownloadProgress> {
@@ -6383,307 +3853,4 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         }
     }
 
-    private final class WeatherNegotiationScheduler extends ecmwf.common.ecaccess.MBeanScheduler {
-        private final ecmwf.ecpds.master.weather.WeatherSourceSigner signer = new ecmwf.ecpds.master.weather.WeatherSourceSigner(
-                getRoot());
-        private volatile boolean closed;
-        private final ecmwf.ecpds.master.weather.WeatherNegotiation negotiation = new ecmwf.ecpds.master.weather.WeatherNegotiation(
-                getRoot());
-        private final ecmwf.ecpds.master.weather.WeatherOutbox outbox = new ecmwf.ecpds.master.weather.WeatherOutbox();
-        private final ecmwf.ecpds.master.weather.WeatherCapture capture = new ecmwf.ecpds.master.weather.WeatherCapture(
-                getRoot(), negotiation, outbox, signer.epoch());
-        private final ecmwf.ecpds.master.weather.WeatherProbeRunner probes = new ecmwf.ecpds.master.weather.WeatherProbeRunner(
-                getRoot(), signer.epoch());
-        private ecmwf.ecpds.master.weather.WeatherSelection lastSelection;
-        private int failures;
-        private volatile String state;
-
-        WeatherNegotiationScheduler() {
-            super("WeatherNegotiationScheduler");
-            setPriority(Thread.MIN_PRIORITY);
-            setDelay(30 * Timer.ONE_SECOND);
-            setJammedTimeout(5 * Timer.ONE_MINUTE);
-        }
-
-        @Override
-        public String getActivity() {
-            final var lease = negotiation.current();
-            return (state == null ? "Not negotiated" : state)
-                    + (lease == null ? "; no valid control lease"
-                            : "; ingress=" + lease.capabilities().observationIngress() + "; collection="
-                                    + lease.capabilities().selection().enabled())
-                    + "; capture=" + capture.status() + "; probes=" + probes.status();
-        }
-
-        @Override
-        public int nextStep() {
-            try {
-                final long sentAtMs = System.currentTimeMillis();
-                final long sentAtNanos = System.nanoTime();
-                final var previous = lastSelection;
-                final var capabilities = getMasterProxy().getWeatherCapabilities(getRoot());
-                negotiation.update(capabilities, sentAtMs, sentAtNanos);
-                if (previous == null || !capabilities.selection().enabled()
-                        || !previous.masterEpoch().equals(capabilities.selection().masterEpoch())
-                        || previous.revision() != capabilities.selection().revision()) {
-                    outbox.clear();
-                }
-                lastSelection = capabilities.selection();
-                if (!capabilities.selection().enabled()) {
-                    probes.cancel();
-                }
-                final var lease = negotiation.current();
-                probes.reconcile(lease);
-                if (lease != null && capabilities.selection().enabled()) {
-                    for (final var job : capabilities.probeJobs()) {
-                        probes.offer(job, lease);
-                    }
-                    final var results = probes.results();
-                    if (!results.isEmpty()) {
-                        final var report = signer.sign(new ecmwf.ecpds.master.weather.WeatherBatch(1,
-                                java.util.UUID.randomUUID(), capabilities.selection().masterEpoch(), getRoot(),
-                                java.util.List.of(), "", 0, results));
-                        final var receipt = getMasterProxy().deliverWeatherObservations(report);
-                        receipt.validateFor(report);
-                        probes.acknowledge(receipt.probeReceipts());
-                    }
-                }
-                ecmwf.ecpds.master.weather.WeatherDelivery.deliver(negotiation, outbox, signer,
-                        batch -> getMasterProxy().deliverWeatherObservations(batch));
-                failures = 0;
-                setDelay((capabilities.selection().enabled() ? 10 : 30) * Timer.ONE_SECOND);
-                if (!"AVAILABLE".equals(state)) {
-                    _log.info("Network Weather control negotiated; observation ingress={}, collection={}",
-                            capabilities.observationIngress(), capabilities.selection().enabled());
-                }
-                state = "AVAILABLE";
-            } catch (final ecmwf.ecpds.master.weather.WeatherUnsupportedException e) {
-                negotiation.invalidate();
-                probes.cancel();
-                outbox.clear();
-                setDelay(5 * Timer.ONE_MINUTE);
-                if (!"UNSUPPORTED".equals(state)) {
-                    _log.warn("Network Weather negotiation unsupported; will retry in five minutes", e);
-                }
-                state = "UNSUPPORTED";
-            } catch (final Exception e) {
-                negotiation.invalidate();
-                probes.cancel();
-                failures = Math.min(failures + 1, 4);
-                setDelay(Math.min(30 * Timer.ONE_SECOND * (1L << failures), 5 * Timer.ONE_MINUTE));
-                _log.warn("Network Weather negotiation failed; cached permission invalidated, will retry", e);
-                state = "FAILED";
-            }
-            return NEXT_STEP_DELAY;
-        }
-    }
-
-    private final class TrafficAccountingScheduler extends ecmwf.common.ecaccess.MBeanScheduler {
-        private Map<String, String> acknowledged = Map.of();
-
-        TrafficAccountingScheduler() {
-            super("TrafficAccountingScheduler");
-            final var delay = Cnf.durationAt("Scheduler", "trafficAccounting", 10 * Timer.ONE_SECOND);
-            if (delay < Timer.ONE_SECOND)
-                throw new IllegalArgumentException("trafficAccounting must be at least 1 second");
-            setDelay(delay);
-            setJammedTimeout(Cnf.durationAt("Scheduler", "trafficAccountingJammedTimeout", 5 * Timer.ONE_MINUTE));
-        }
-
-        @Override
-        public int nextStep() {
-            try {
-                final var snapshot = trafficAccounting.checkpoint(trafficAccountingPath);
-                if (masterManager != null && !masterManager.isConnected()) {
-                    return NEXT_STEP_DELAY;
-                }
-                if (masterManager == null && (restProvider == null || !Cnf.has("MoverProxy"))) {
-                    return NEXT_STEP_DELAY;
-                }
-                final var changes = ecmwf.ecpds.master.TrafficAccounting.changedBuckets(snapshot, acknowledged);
-                if (!changes.isEmpty()) {
-                    getMasterProxy().updateTrafficAccounting(getRoot() + ":" + trafficAccounting.getSourceId(),
-                            changes);
-                    acknowledged = snapshot;
-                }
-            } catch (final Exception e) {
-                _log.warn("Traffic accounting checkpoint/delivery failed; will retry", e);
-            }
-            return NEXT_STEP_DELAY;
-        }
-    }
-
-    /**
-     * Batches live globe samples per transfer; this viewer-driven stream is independent of Network Weather.
-     */
-    private final class LiveStatsRepository extends MBeanRepository<LiveTransferSample> {
-
-        /** Pending samples, coalesced by transfer id. */
-        private final ecmwf.ecpds.master.LiveTransferEvents _pending = new ecmwf.ecpds.master.LiveTransferEvents(60_000,
-                60_000, 20_000);
-
-        /** Cached result of the last {@link MasterProxy#isLiveTransferMonitoringEnabled()} poll. */
-        private volatile boolean _masterWantsLiveStats = false;
-
-        /** Last time {@link MasterProxy#isLiveTransferMonitoringEnabled()} was polled. */
-        private volatile long _lastEnabledCheck = -1;
-        private long _lastDeliveryWarning = -1;
-
-        private void warnDeliveryFailure(final String message, final Exception error) {
-            final var now = System.currentTimeMillis();
-            if (_lastDeliveryWarning < 0 || now - _lastDeliveryWarning >= Timer.ONE_MINUTE) {
-                _log.warn(message, error);
-                _lastDeliveryWarning = now;
-            } else {
-                _log.debug(message, error);
-            }
-        }
-
-        /**
-         * Instantiates a new live stats repository.
-         *
-         * @param name
-         *            the name
-         */
-        private LiveStatsRepository(final String name) {
-            super(name);
-            setDelay(Cnf.durationAt("Scheduler", "liveStatsRepository", 2 * Timer.ONE_SECOND));
-            setJammedTimeout(Cnf.durationAt("Scheduler", "liveStatsRepositoryJammedTimeout", 5 * Timer.ONE_MINUTE));
-        }
-
-        /**
-         * Whether the MasterServer currently wants live transfer statistics. Cached and refreshed at most every
-         * {@link #getDelay()} to keep the check cheap when called from the hot path (e.g. {@code update()} on every
-         * active transfer).
-         *
-         * @return true, if enabled
-         */
-        boolean isMasterEnabled() {
-            return _masterWantsLiveStats;
-        }
-
-        /**
-         * Offer a fresh sample, replacing any not-yet-pushed sample for the same transfer.
-         *
-         * @param sample
-         *            the sample
-         */
-        void offer(final LiveTransferSample sample) {
-            if (sample != null) {
-                _pending.offer(sample);
-            }
-        }
-
-        /**
-         * Gets the key.
-         *
-         * @param sample
-         *            the sample
-         *
-         * @return the key
-         */
-        @Override
-        public String getKey(final LiveTransferSample sample) {
-            return sample.getEventKey();
-        }
-
-        /**
-         * Gets the status.
-         *
-         * @param sample
-         *            the sample
-         *
-         * @return the status
-         */
-        @Override
-        public String getStatus(final LiveTransferSample sample) {
-            return sample.getStatus() + "(" + Format.formatSize(sample.getByteSent()) + " on "
-                    + sample.getDestinationName() + "/" + sample.getHostName() + ")";
-        }
-
-        /**
-         * Next step.
-         *
-         * @return the int
-         */
-        @Override
-        public int nextStep() {
-            if (masterManager != null && !masterManager.isConnected()) {
-                return NEXT_STEP_DELAY;
-            }
-            final var now = System.currentTimeMillis();
-            if (now - _lastEnabledCheck >= getDelay()) {
-                _lastEnabledCheck = now;
-                try {
-                    _masterWantsLiveStats = getMasterProxy().isLiveTransferMonitoringEnabled();
-                } catch (final Exception e) {
-                    warnDeliveryFailure("Cannot refresh globe interest; retaining recent events for retry", e);
-                    return NEXT_STEP_DELAY;
-                }
-            }
-            if (!_masterWantsLiveStats) {
-                // Nobody is watching, so let's not bother pushing anything (and drop what accumulated meanwhile)!
-                _pending.clear();
-                return NEXT_STEP_DELAY;
-            }
-            final var batch = _pending.snapshot();
-            if (batch.isEmpty())
-                return NEXT_STEP_DELAY;
-            final var array = batch.toArray(new LiveTransferSample[0]);
-            try {
-                getMasterProxy().updateLiveTransferStatistics(array);
-                _pending.acknowledge(batch);
-            } catch (final Exception e) {
-                warnDeliveryFailure("Live transfer event delivery failed; retaining recent events for retry", e);
-            }
-            return NEXT_STEP_DELAY;
-        }
-    }
-
-    /**
-     * The Class MasterManager.
-     */
-    private final class MasterManager extends MasterConnection {
-        /** The _started. */
-        boolean _started = false;
-
-        /**
-         * Instantiates a new master manager.
-         *
-         * @param host
-         *            the host
-         * @param port
-         *            the port
-         * @param access
-         *            the access
-         *
-         * @throws ConnectionException
-         *             the connection exception
-         */
-        private MasterManager(final String host, final short port, final MoverInterface access)
-                throws ConnectionException {
-            super(host, port, access);
-        }
-
-        /**
-         * Sets the started.
-         *
-         * @param started
-         *            the new started
-         */
-        void setStarted(final boolean started) {
-            _started = started;
-        }
-
-        /**
-         * Disconnected.
-         */
-        @Override
-        public void disconnected() {
-            super.disconnected();
-            if (_started) {
-                resetDataMover();
-            }
-        }
-    }
 }
