@@ -44,7 +44,9 @@ Expired events are unavailable to replay even if background deletion has not
 yet removed them from disk. History operations contend over a shared database
 row; Galera can abort conflicting writes, which are retried a limited number
 of times. Measure throughput and database contention for your load.
-The Aviso API does not expose server-managed checkpoints.
+The Aviso API does not expose server-managed subscription checkpoints.
+The optional [Aviso acquisition receiver](aviso-acquisition.md) maintains its own
+durable acquisition progress on the receiving Master.
 
 Events use the transfer notification trigger: `incoming.event` or
 `acquisition.event` must be enabled. The Master

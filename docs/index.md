@@ -7,8 +7,11 @@
 > Inspired by operational excellence. Powered by open-source innovation. Acquire from
 > anywhere. Deliver everywhere. Connect with confidence. Share without limits.
 
-OpenECPDS is a multi-purpose data repository — the **Data Store** — that delivers three
-strategic data-related services:
+OpenECPDS is a multi-purpose data repository — the **Data Store**.
+
+**[Watch the introduction on YouTube ▶](https://www.youtube.com/watch?v=GQj0Q0Nd9to)**
+
+It delivers three strategic data-related services:
 
 - **Data Acquisition** — the automatic discovery and retrieval of data from data providers.
 - **Data Dissemination** — the automatic distribution of data products to remote sites.

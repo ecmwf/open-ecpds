@@ -802,6 +802,24 @@ Allow handling Basic authentication by creating a cache and associating it with 
 ### http.authheader
 Allow creating a Basic Authentication header. This header is commonly used for HTTP Basic Authentication, where the user-name and password are Base64-encoded and sent in the HTTP request headers to authenticate the client.
 
+### http.avisoDestination
+Remote ECPDS destination to replicate. The source must enable notification.aviso and transfer events. Required in Aviso mode.
+
+### http.avisoMaxEvents
+Maximum replayed events accepted in one acquisition cycle. Remaining events are replayed in subsequent scheduled cycles. This does not truncate inventory; listMaxFiles and listMaxDirs are hard inventory limits whose violation fails discovery without advancing the checkpoint.
+
+### http.avisoMode
+Enable bounded one-way ECPDS acquisition using an initial recursive inventory and native Aviso replay. Requires HTTPS, http.sslValidation=yes, http.strict=yes, http.ftpLike=yes, http.mqttMode=no, acquisition.useSymlink=yes, acquisition.action=queue, acquisition.noretrieval=no and acquisition.deleteoriginal=no. Progress is durably stored in the receiving Master's ACQUISITION_CHECKPOINT table after queue registration. The Host Directory is the remote destination's portal root ("/destination/" or "/" for an account whose default destination is that destination). Nested target paths are preserved. No deletions are propagated. See docs/notifications/aviso-acquisition.md.
+
+### http.avisoReconcile
+Maximum interval between complete inventory reconciliations, in addition to immediate inventory on first use or expired notification history. Inventory is not an archive; overwritten/deleted historical versions may be unavailable.
+
+### http.avisoSourceId
+Stable logical source installation identity used to deduplicate file versions across source Movers. Defaults to avisoUrl. Keep unchanged across failover; use a new identity after restoring/resetting the source database sequence.
+
+### http.avisoUrl
+Remote Aviso base URL, ending in "/", for example "https://source.example/ecpds/aviso/". Required in Aviso mode. Inventory and version-pinned downloads use the sibling "data" API on the same origin. Use a read-only Data Portal account restricted to the source destination.
+
 ### http.credentials
 When enabled, this feature configures the credentials for HTTP client authentication, using the provided user-name and password credentials to authenticate requests.
 

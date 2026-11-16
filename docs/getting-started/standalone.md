@@ -254,7 +254,7 @@ curl -k https://localhost:8443/ecpds/v1/version
 ```
 
 ```json
-{ "status": "ok", "version": "8.3.0-04112026" }
+{ "status": "ok", "version": "8.3.0-16112026" }
 ```
 
 ```bash

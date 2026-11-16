@@ -7,6 +7,13 @@
 
 The **Directory** field holds the URL (or MQTT topic). Choose the mode that matches how the remote server exposes its data.
 
+### OpenECPDS destination replication with Aviso
+
+Use `http.avisoMode=yes` for native inventory plus bounded Aviso replay, with
+Master-owned durable progress and version-pinned HTTPS downloads. See
+[one-way Aviso replication](../notifications/aviso-acquisition.md) for account
+permissions and complete Host configuration.
+
 ### HTML directory listing
 
 URL returns an HTML page. OpenECPDS fetches it and extracts links using a CSS selector (Jsoup). Sub-directories are optionally followed recursively.

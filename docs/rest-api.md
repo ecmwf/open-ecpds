@@ -192,7 +192,7 @@ Returns the current OpenECPDS version. No authentication required.
 
 **Response:**
 ```json
-{ "status": "ok", "version": "8.3.0-04112026" }
+{ "status": "ok", "version": "8.3.0-16112026" }
 ```
 
 **Service name:** *(none — open to all)*

@@ -5,8 +5,9 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.2.1-201020
 
 ---
 
-## open-ecpds 8.3.0-04112026
+## open-ecpds 8.3.0-16112026
 
+- **One-way destination replication**: An HTTP acquisition Host can replicate a remote OpenECPDS destination using Aviso inventory and replay, durable checkpoints and version-pinned HTTPS downloads. Replication is opt-in and additive; it does not propagate deletions. See [One-way destination replication with Aviso](notifications/aviso-acquisition.md).
 - **Standalone Aviso demo**: Adds an `aviso_demo` upload destination accessible to the `test` Data Portal user, with strict notification capture and standby storage, independent of MQTT. Includes a [watch, upload and replay walkthrough](getting-started/standalone.md#try-aviso-watch-and-replay).
 - **MQTT notifications and event history**: Adds structured `mqttEventJson` script bindings, optional Base64 inline content up to 16 KiB, and a standalone upload-notification demo. Native CloudEvents have bounded MariaDB history, authorized Aviso watch/replay at `/ecpds/aviso/api/v1` with destination `notification.aviso` opt-in, and independent durable MQTT delivery through `mqtt.cloudEvents` (QoS 1, retries; duplicates possible). History and revision fencing are enabled globally by default; capture remains asynchronous unless `notification.captureMode="strict"` requests atomic transfer/event persistence. See [MQTT notifications](notifications/mqtt-dissemination.md) and [Notification history and replay](notifications/history.md).
 - **Optional DissFTPd shared-key authentication**: The FTP module supports per-account HMAC-SHA256 challenge-response through the secured `ftp.sharedKey` option, in addition to the account password. Existing password-only accounts remain unchanged; configuring a key requires it for login with no password-only fallback. Requires the updated DissFTPd server from ECaccess-J. See [FTP shared-key authentication](transfer-modules/ftp.md#dissftpd-shared-key-authentication).

@@ -53,6 +53,8 @@ automated acquisition triggered by real-time notifications from remote providers
 
 ## Related
 
+- [One-way destination replication with Aviso](../notifications/aviso-acquisition.md)
+
 - [Dissemination](dissemination.md)
 - [Acquisition Directory](../host-directory/acquisition.md)
 - [RET event fields](../event-logging/ret-fields.md) — retrieval records
