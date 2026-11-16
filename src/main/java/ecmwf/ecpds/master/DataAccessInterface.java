@@ -129,6 +129,12 @@ public interface DataAccessInterface extends Remote {
     ProxySocket getProxySocketInput(String destinationNameOrType, String source, long offset, long length)
             throws MasterException, IOException;
 
+    /** Open an existing stored generation without falling back to its potentially changed upstream source. */
+    default ProxySocket getStoredProxySocketInput(final String destinationName, final String source, final long offset,
+            final long length) throws MasterException, IOException {
+        throw new IOException("Stored-only retrieval is not supported by this data service");
+    }
+
     /**
      * Gets the proxy socket output.
      *

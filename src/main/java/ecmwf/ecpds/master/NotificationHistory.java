@@ -17,6 +17,7 @@
  */
 package ecmwf.ecpds.master;
 
+import java.io.File;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -34,6 +35,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.DataBase;
+import ecmwf.common.database.DataFile;
+import ecmwf.common.database.DataFileVersion;
 import ecmwf.common.database.Destination;
 import ecmwf.common.database.NotificationHistoryStore;
 import ecmwf.common.database.NotificationOutboxStore;
@@ -42,6 +45,7 @@ import ecmwf.common.ectrans.ECtransGroups;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.text.Format;
+import ecmwf.ecpds.master.transfer.DestinationOption;
 
 /** Optional durable history of the existing transfer notification trigger. */
 public final class NotificationHistory implements AutoCloseable {
@@ -153,6 +157,15 @@ public final class NotificationHistory implements AutoCloseable {
         data.put("destination", destination);
         data.put("target", target);
         data.put("dataTransferId", transfer.getId());
+        final var file = (DataFile) transfer.getDataFile().clone();
+        data.put("dataFileId", file.getId());
+        data.put("fileInstance", file.getFileInstance() == null ? 0 : file.getFileInstance());
+        data.put("etag", DataFileVersion.etag(file));
+        data.put("portalPath",
+                transfer.getDestination().getGroupByDate()
+                        ? DestinationOption.formatDate(transfer.getDestination(), transfer.getScheduledTime().getTime())
+                                + "/" + new File(target).getName()
+                        : target);
         data.put("size", transfer.getSize());
         data.put("status", transfer.getStatusCode());
         final var payload = JSON.writeValueAsString(event);

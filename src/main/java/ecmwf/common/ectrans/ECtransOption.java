@@ -82,6 +82,8 @@ public class ECtransOption<T> implements ECtransOptionDefinition {
     /** The secured. */
     private final boolean secured;
 
+    private final List<ECtransOptionValidation.Requirement> requirements;
+
     static {
         try (final var inputStream = ECtransOption.class.getResourceAsStream("ectrans-options.properties")) {
             if (inputStream != null) {
@@ -162,6 +164,7 @@ public class ECtransOption<T> implements ECtransOptionDefinition {
                 .append(metadata.getProperty(getParameter() + ".tips", "").replace("'", "\"")).toString().trim(), 80);
         this.visible = Boolean.parseBoolean(metadata.getProperty(getParameter() + ".visible", "true"));
         this.secured = Boolean.parseBoolean(metadata.getProperty(getParameter() + ".secured", "false"));
+        this.requirements = ECtransOptionValidation.parse(metadata.getProperty(getParameter() + ".requires"));
     }
 
     @Override
@@ -339,6 +342,10 @@ public class ECtransOption<T> implements ECtransOptionDefinition {
      */
     public boolean isSecured() {
         return secured;
+    }
+
+    public List<ECtransOptionValidation.Requirement> getRequirements() {
+        return requirements;
     }
 
     /**

@@ -929,6 +929,12 @@ oninput="validateMailInput(this); toggleMailRows()" />
         return getAnnotationsWith(aceEditor, row, getTransferModuleName());
     }
 
+	function getPropertyDependencyAnnotations(aceEditor) {
+		if (aceEditor !== editorProperties) return [];
+		return checkOptionDependencies(aceEditor.getValue(), completions,
+			typeof editorJavascript === 'undefined' ? '' : editorJavascript.getValue(), getTransferModuleName());
+	}
+
 	function getAnnotationsWith(aceEditor, row, transferModuleName) {
     	const pattern = /^[^\s.]+\.[^\s.]+\s*=(.*)$/;
   		var currentLine = aceEditor.session.getLine(row).replace(/^\t+/, '');
@@ -1020,6 +1026,9 @@ oninput="validateMailInput(this); toggleMailRows()" />
 	
 	var editorJavascript = getEditorProperties(false, false, "javascript", "javascript");
 	editorJavascript.setOptions({minLines: 10, maxLines: 20});
+	editorJavascript.getSession().on("change", function() {
+		checkEachLine(editorProperties, 'hostAccPropertiesBtn');
+	});
 
 	document.getElementById('hostAccProperties').addEventListener('shown.bs.collapse', function() {
 		editorProperties.resize(true);

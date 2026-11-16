@@ -73,7 +73,9 @@ public record AcquisitionNotification(String profile, String messageId, String i
     /** A complete version identity; neither mirror URLs nor broker message IDs affect deduplication. */
     public String uniqueName() throws IOException {
         try {
-            final var version = JSON.writeValueAsBytes(new Object[] { profile, identity, publicationTime, integrity });
+            final var version = JSON
+                    .writeValueAsBytes("aviso".equals(profile) ? new Object[] { profile, identity, integrity }
+                            : new Object[] { profile, identity, publicationTime, integrity });
             return "notification:" + HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(version));
         } catch (final NoSuchAlgorithmException e) {
             throw new IOException("Cannot compute notification identity", e);

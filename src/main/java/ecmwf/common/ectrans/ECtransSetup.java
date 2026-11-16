@@ -512,6 +512,11 @@ public final class ECtransSetup implements Serializable {
         return get(option.getModule(), option.getName(), defaultValue);
     }
 
+    /** Reads properties/global defaults without evaluating placeholder expressions. */
+    public String getUnresolved(final ECtransOptionDefinition option) {
+        return get(option.getModule(), option.getName(), option.getDefaultString(), false);
+    }
+
     /**
      * Gets the.
      *

@@ -615,8 +615,11 @@ JavaScript
         	return [];
    		}
     	
-    	// Call the function to process each line
-    	checkEachLine(editorProperties, 'hostViewAccPropertiesBtn');
+		function getPropertyDependencyAnnotations(aceEditor) {
+			if (aceEditor !== editorProperties) return [];
+			return checkOptionDependencies(aceEditor.getValue(), completions,
+				editorJavascript.getValue(), transferModuleName);
+		}
     	
 		// Add a click event listener to the properties editor
     	editorProperties.addEventListener("changeSelection", function (event) {
@@ -630,6 +633,7 @@ JavaScript
 
 		var editorJavascript = getEditorProperties(true, false, "javascript", "javascript");
 		editorJavascript.setOptions({minLines: 10, maxLines: 20});
+		checkEachLine(editorProperties, 'hostViewAccPropertiesBtn');
 
 		document.getElementById('hostViewAccProperties').addEventListener('shown.bs.collapse', function() {
 			editorProperties.resize(true);

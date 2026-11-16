@@ -1653,6 +1653,18 @@ CREATE TABLE `NOTIFICATION_HISTORY` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `ACQUISITION_CHECKPOINT`
+--
+
+DROP TABLE IF EXISTS `ACQUISITION_CHECKPOINT`;
+CREATE TABLE `ACQUISITION_CHECKPOINT` (
+  `ACP_KEY` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `ACP_SEQUENCE` bigint NOT NULL,
+  `ACP_INVENTORY_AT` bigint NOT NULL,
+  PRIMARY KEY (`ACP_KEY`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+--
 -- Table structure for table `NOTIFICATION_CHECKPOINT`
 --
 

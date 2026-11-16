@@ -1066,6 +1066,12 @@ public final class TransferScheduler extends MBeanScheduler {
      */
     public static ProxySocket get(final DataTransfer transfer, final long remotePosn, final long length)
             throws DataBaseException, MasterException, TransferServerException {
+        return get(transfer, remotePosn, length, true);
+    }
+
+    /** Version-pinned portal retrieval excludes the unversioned original-source fallback. */
+    public static ProxySocket get(final DataTransfer transfer, final long remotePosn, final long length,
+            final boolean allowOriginalSource) throws DataBaseException, MasterException, TransferServerException {
         final var dataFile = transfer.getDataFile();
         final var provider = new TransferServerProvider("get", dataFile.getTransferGroupName(),
                 transfer.getDestinationName(), dataFile.getSize(), transfer.getTransferServer(),
@@ -1081,7 +1087,8 @@ public final class TransferScheduler extends MBeanScheduler {
             transfer.setTransferServerName(current);
             // If we are at the end of the list of DataMovers then we also push the
             // HostForSource to download the file on the fly from its source!
-            final var useHostForSource = i == count - 1 || transfer.getOriginalTransferServer() == null;
+            final var useHostForSource = allowOriginalSource
+                    && (i == count - 1 || transfer.getOriginalTransferServer() == null);
             _log.debug("Trying DataTransfer-" + transfer.getId() + " on DataMover " + current
                     + (useHostForSource ? " (include source host)" : ""));
             try {

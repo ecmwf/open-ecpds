@@ -1430,6 +1430,14 @@ public enum ECtransOptions implements ECtransOptionDefinition {
     /** The host http mqtt mode. */
     HOST_HTTP_MQTT_MODE("mqttMode", Boolean.class, false),
 
+    HOST_HTTP_AVISO_MODE("avisoMode", Boolean.class, false), HOST_HTTP_AVISO_URL("avisoUrl", String.class, STRING_NONE),
+    HOST_HTTP_AVISO_DESTINATION("avisoDestination", String.class, STRING_NONE),
+    HOST_HTTP_AVISO_SOURCE_ID("avisoSourceId", String.class, STRING_NONE),
+    HOST_HTTP_AVISO_RECONCILE("avisoReconcile", Duration.class, Duration.ofDays(1)),
+    HOST_HTTP_AVISO_MAX_EVENTS("avisoMaxEvents", Integer.class, 1000),
+    HOST_HTTP_AVISO_CURSOR("avisoCursor", String.class, ""),
+    HOST_HTTP_AVISO_INVENTORY_AT("avisoInventoryAt", String.class, "0"),
+
     /** The host http list max waiting. */
     HOST_HTTP_LIST_MAX_WAITING("listMaxWaiting", Integer.class, 100),
 
@@ -2569,7 +2577,28 @@ public enum ECtransOptions implements ECtransOptionDefinition {
                 + option.getChoices().stream().map(s -> quote(s.toString())).collect(Collectors.joining(","))
                 + "], subOptions: ["
                 + option.getSubOptions().stream().map(ECtransOptions::toString).collect(Collectors.joining(","))
-                + "], freeForm: " + option.hasFreeFormSubOptions() + ", tips: " + quote(option.getTips()) + " }";
+                + "], freeForm: " + option.hasFreeFormSubOptions() + ", tips: " + quote(option.getTips())
+                + (option.getRequirements().isEmpty() ? ""
+                        : ", defaultValue: " + nullableQuote(ECtransOptionValidation.defaultValue(option))
+                                + ", emptyDefault: " + nullableQuote(option.getDefaultString()) + ", requirements: ["
+                                + option.getRequirements().stream()
+                                        .map(requirement -> toString(option.getGroup(), requirement))
+                                        .collect(Collectors.joining(","))
+                                + "]")
+                + " }";
+    }
+
+    private static String toString(final ECtransGroups group, final ECtransOptionValidation.Requirement requirement) {
+        final var target = ECtransOptionValidation.find(group, requirement.parameter());
+        return "{ when: " + quote(requirement.when()) + ", parameter: " + quote(requirement.parameter()) + ", check: "
+                + quote(requirement.check().name()) + ", value: " + nullableQuote(requirement.value()) + ", expected: "
+                + quote(requirement.expected()) + ", type: " + quote(target.getClazz().getSimpleName())
+                + ", defaultValue: " + nullableQuote(ECtransOptionValidation.defaultValue(target)) + ", emptyDefault: "
+                + nullableQuote(target.getDefaultString()) + " }";
+    }
+
+    private static String nullableQuote(final String value) {
+        return value == null ? "null" : quote(value);
     }
 
     /**

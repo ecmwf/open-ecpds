@@ -92,6 +92,7 @@ import javax.management.MBeanOperationInfo;
 import javax.management.timer.Timer;
 import javax.script.ScriptException;
 import ecmwf.common.database.DataBaseException;
+import ecmwf.common.database.AcquisitionCheckpointStore;
 import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.Destination;
 import ecmwf.common.database.ECpdsBase;
@@ -100,6 +101,7 @@ import ecmwf.common.ecaccess.MBeanScheduler;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.ectrans.notification.AcquisitionListing;
 import ecmwf.common.ectrans.notification.AcquisitionNotification;
+import ecmwf.common.ectrans.notification.AvisoDiscovery;
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ftp.FtpParser;
 import ecmwf.common.ftp.FtpParser.FileEntry;
@@ -1097,7 +1099,9 @@ public final class AcquisitionScheduler extends MBeanScheduler {
                     } else {
                         // It is a valid data/time or we didn't check!
                         try {
-                            if ("".equals(namePattern) || entry.name.matches(namePattern)) {
+                            final var matchName = notification != null && "aviso".equals(notification.profile())
+                                    ? entry.link : entry.name;
+                            if ("".equals(namePattern) || matchName.matches(namePattern)) {
                                 // It does match the required pattern!
                                 outcome = _processValidEntry(base, ar, copy, currentPath, destination, entry, symlink,
                                         body, message, notification);
@@ -1116,6 +1120,14 @@ public final class AcquisitionScheduler extends MBeanScheduler {
             }
             // Display the current line
             _add((outcome.startsWith("selected") ? "log:" : "err:") + entry.line + " (" + outcome + ")");
+            if (notification != null && "aviso".equals(notification.profile()) && !outcome.startsWith("selected:")
+                    && !outcome.startsWith("not-selected: exists DatafileId=")
+                    && !outcome.startsWith("not-selected: already exist")
+                    && !outcome.startsWith("not-selected: wrong pattern")
+                    && !outcome.startsWith("not-selected: wrong age")
+                    && !outcome.startsWith("not-selected: wrong size/age")) {
+                throw new IOException("Aviso entry was not durably accepted: " + outcome);
+            }
         }
 
         /**
@@ -1212,7 +1224,7 @@ public final class AcquisitionScheduler extends MBeanScheduler {
             }
             // Let's check the size and age options. We obviously only check
             // the time if it is valid!
-            if ((symlink || _checkSize(entry.size))
+            if ((symlink && (notification == null || !"aviso".equals(notification.profile())) || _checkSize(entry.size))
                     && (entry.time == -1 || _checkAge(System.currentTimeMillis() - entry.time))) {
                 // Match the size or age option. What should we do with this
                 // selection?
@@ -1248,7 +1260,7 @@ public final class AcquisitionScheduler extends MBeanScheduler {
                                 _desName);
                         final var found = transfers.length > 0;
                         var force = false;
-                        if (found) {
+                        if (found && (notification == null || !"aviso".equals(notification.profile()))) {
                             // The datafile is already in the database so
                             // let's find the time and size and check if it
                             // should be requeued or not?
@@ -1611,6 +1623,35 @@ public final class AcquisitionScheduler extends MBeanScheduler {
                     // Configure the host for the data mover
                     final var copy = (Host) _host.clone();
                     copy.setDir("");
+                    final var http = new ECtransSetup("http", copy.getData());
+                    final var aviso = http.getBoolean(ECtransOptions.HOST_HTTP_AVISO_MODE);
+                    final var checkpoints = aviso ? new AcquisitionCheckpointStore(base) : null;
+                    final String checkpointKey;
+                    final AcquisitionCheckpointStore.State previous;
+                    if (aviso) {
+                        if (!_getBoolean(HOST_ACQUISITION_USE_SYMLINK)
+                                || !"queue".equalsIgnoreCase(_getString(HOST_ACQUISITION_ACTION))
+                                || _getBoolean(HOST_ACQUISITION_NORETRIEVAL)
+                                || _getBoolean(HOST_ACQUISITION_DELETEORIGINAL)) {
+                            throw new IOException("Aviso requires acquisition.useSymlink=yes, action=queue, "
+                                    + "noRetrieval=no and deleteOriginal=no");
+                        }
+                        checkpointKey = AcquisitionCheckpointStore.key(_host.getName(), _desName,
+                                http.get(ECtransOptions.HOST_HTTP_AVISO_SOURCE_ID,
+                                        http.getString(ECtransOptions.HOST_HTTP_AVISO_URL)),
+                                http.getString(ECtransOptions.HOST_HTTP_AVISO_DESTINATION), path, namePattern,
+                                regexPattern, _getString(HOST_ACQUISITION_TARGET), _getString(HOST_ACQUISITION_FILEAGE),
+                                _getString(HOST_ACQUISITION_FILESIZE),
+                                Boolean.toString(_getBoolean(HOST_ACQUISITION_STANDBY)));
+                        previous = checkpoints.read(checkpointKey);
+                        http.set(ECtransOptions.HOST_HTTP_AVISO_CURSOR,
+                                previous.sequence() < 0 ? "" : Long.toString(previous.sequence()));
+                        http.set(ECtransOptions.HOST_HTTP_AVISO_INVENTORY_AT, Long.toString(previous.inventoryAt()));
+                        copy.setData(http.getData());
+                    } else {
+                        checkpointKey = null;
+                        previous = null;
+                    }
                     progress.setLength(0);
                     final var ar = TransferScheduler.acquisition(this, _desName, copy, path,
                             regexPattern.length() > 0 ? regexPattern : null,
@@ -1621,8 +1662,9 @@ public final class AcquisitionScheduler extends MBeanScheduler {
                         scanner = new Scanner(ar.in);
                         scanner.useDelimiter("\n");
                         var filesCount = 0;
+                        AcquisitionCheckpointStore.State acknowledged = null;
                         // Create the ListManager if required!
-                        manager = _setup.getBoolean(HOST_ACQUISITION_LIST_PARALLEL)
+                        manager = !aviso && _setup.getBoolean(HOST_ACQUISITION_LIST_PARALLEL)
                                 ? new ExecutorManager<>(_setup.getInteger(HOST_ACQUISITION_LIST_MAX_WAITING),
                                         _setup.getInteger(HOST_ACQUISITION_LIST_MAX_THREADS))
                                 : null;
@@ -1631,6 +1673,26 @@ public final class AcquisitionScheduler extends MBeanScheduler {
                             // We don't process the list of files at once as it might be huge and would
                             // consume a lot of memory!
                             final var entry = scanner.next();
+                            if (aviso) {
+                                if (acknowledged != null)
+                                    throw new IOException("Unexpected entry after Aviso checkpoint");
+                                if (entry.startsWith(AvisoDiscovery.CHECKPOINT)) {
+                                    final var fields = entry.substring(AvisoDiscovery.CHECKPOINT.length()).split(":",
+                                            -1);
+                                    if (fields.length != 2)
+                                        throw new IOException("Invalid Aviso checkpoint");
+                                    acknowledged = new AcquisitionCheckpointStore.State(Long.parseLong(fields[0]),
+                                            Long.parseLong(fields[1]));
+                                    continue;
+                                }
+                                if (entry.startsWith(AvisoDiscovery.WARNING)) {
+                                    MasterServer._log.warn(entry);
+                                    _add(entry);
+                                    continue;
+                                }
+                                if (entry.startsWith("err:"))
+                                    throw new IOException(entry);
+                            }
                             if (entry.startsWith("err:")) {
                                 // This was an error so we just report it!
                                 _add(entry);
@@ -1639,10 +1701,15 @@ public final class AcquisitionScheduler extends MBeanScheduler {
                                 try {
                                     listing = AcquisitionListing.parse(entry);
                                 } catch (final IOException e) {
+                                    if (aviso)
+                                        throw e;
                                     _add("err:Invalid acquisition notification metadata");
                                     MasterServer._log.warn("Invalid acquisition notification metadata", e);
                                     continue;
                                 }
+                                if (aviso && (listing.notification() == null
+                                        || !"aviso".equals(listing.notification().profile())))
+                                    throw new IOException("Missing Aviso acquisition metadata");
                                 final var entries = FtpParser.parseDir(_getString(HOST_ACQUISITION_REGEX_FORMAT),
                                         _getString(HOST_ACQUISITION_SYSTEM_KEY).toUpperCase(),
                                         _getString(HOST_ACQUISITION_DEFAULT_DATE_FORMAT),
@@ -1653,6 +1720,8 @@ public final class AcquisitionScheduler extends MBeanScheduler {
                                         new String[] { listing.line() });
                                 // Did we find anything?
                                 if (entries.length == 0) {
+                                    if (aviso)
+                                        throw new IOException("Invalid Aviso acquisition listing");
                                     continue;
                                 }
                                 if (manager != null) {
@@ -1671,6 +1740,11 @@ public final class AcquisitionScheduler extends MBeanScheduler {
                                 filesCount++;
                             }
                         }
+                        if (aviso) {
+                            if (!_running || interrupted() || scanner.ioException() != null || acknowledged == null)
+                                throw new IOException("Incomplete Aviso discovery; checkpoint unchanged");
+                            checkpoints.acknowledge(checkpointKey, previous, acknowledged);
+                        }
                         if (manager != null) {
                             // We don't want to take more jobs!
                             manager.stopRun();
@@ -1681,7 +1755,7 @@ public final class AcquisitionScheduler extends MBeanScheduler {
                             }
                         }
                         // If we have no entries then we print a message!
-                        if (filesCount == 0) {
+                        if (filesCount == 0 && !aviso) {
                             _add("err:(empty)");
                         }
                         _add(LINE_SEPARATOR);

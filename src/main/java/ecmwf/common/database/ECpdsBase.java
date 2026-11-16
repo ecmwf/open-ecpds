@@ -166,9 +166,6 @@ public final class ECpdsBase extends DataBase {
                 new String[] { "owner=" + operationalEventHex(owner), "id=" + operationalEventHex(id) });
     }
 
-    public record OperationalEventStatistics(long pendingCount, Long oldestAdmissionAt) {
-    }
-
     /** Explicit operator discard, scoped to one Master journal owner. */
     public long discardOperationalEvents(final String owner) throws SQLException, IOException {
         return executeUpdate("ECpdsBase", "discardOperationalEvents",
@@ -187,19 +184,6 @@ public final class ECpdsBase extends DataBase {
             }
             final var oldest = rs.getTimestamp("OLDEST_ADMISSION");
             return new OperationalEventAdmissionStatistics(rs.getLong("PENDING_COUNT"), rs.getLong("PAYLOAD_BYTES"),
-                    oldest == null ? null : oldest.getTime());
-        }
-    }
-
-    public OperationalEventStatistics getOperationalEventStatistics(final String owner)
-            throws SQLException, IOException {
-        try (var rs = executeSelect("ECpdsBase", "getOperationalEventStatistics",
-                new String[] { "owner=" + operationalEventHex(owner) })) {
-            if (!rs.next()) {
-                throw new SQLException("Operational event statistics query returned no result");
-            }
-            final var oldest = rs.getTimestamp("OLDEST_ADMISSION");
-            return new OperationalEventStatistics(rs.getLong("PENDING_COUNT"),
                     oldest == null ? null : oldest.getTime());
         }
     }
@@ -4027,6 +4011,7 @@ public final class ECpdsBase extends DataBase {
                     transfer.setTarget(rs.getString("DAT_TARGET"));
                     transfer.setScheduledTime(rs.getTimestamp("DAT_SCHEDULED_TIME"));
                     transfer.setQueueTime(rs.getTimestamp("DAT_QUEUE_TIME"));
+                    setListingDataFile(transfer, rs);
                 } catch (final SQLException e) {
                     _log.warn("getDataTransfersByDestinationAndTargetOnDateIterator2", e);
                 }
@@ -4174,6 +4159,7 @@ public final class ECpdsBase extends DataBase {
                     transfer.setSize(rs.getString("DAT_SIZE"));
                     transfer.setTarget(rs.getString("DAT_TARGET"));
                     transfer.setScheduledTime(rs.getTimestamp("DAT_SCHEDULED_TIME"));
+                    setListingDataFile(transfer, rs);
                 } catch (final SQLException e) {
                     _log.warn("getDataTransfersByDestinationAndTargetIterator2", e);
                 }
@@ -4187,6 +4173,15 @@ public final class ECpdsBase extends DataBase {
                 }
             }
         };
+    }
+
+    private static void setListingDataFile(final DataTransfer transfer, final DBResultSet rs) throws SQLException {
+        final var id = rs.getLong("FILE_VERSION_ID");
+        if (!rs.wasNull()) {
+            final var file = new DataFile(id);
+            file.setFileInstance(rs.getInteger("DAF_FILE_INSTANCE"));
+            transfer.setDataFile(file);
+        }
     }
 
     /**

@@ -371,6 +371,12 @@ public abstract class UserSession {
     public abstract ProxySocket getProxySocketInput(String source, long offset, long length)
             throws EccmdException, IOException;
 
+    /** Open retained bytes only; version-pinned HTTP retrieval must not refetch an unversioned original. */
+    public ProxySocket getStoredProxySocketInput(final String source, final long offset, final long length)
+            throws EccmdException, IOException {
+        throw new IOException("Stored-only retrieval is not supported by this session");
+    }
+
     /**
      * Gets the proxy socket output.
      *

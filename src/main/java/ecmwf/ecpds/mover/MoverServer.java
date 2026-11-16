@@ -53,6 +53,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.rmi.RemoteException;
 import java.security.DigestInputStream;
@@ -392,7 +393,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     continue;
                 }
                 final var path = java.nio.file.Paths.get(directory.getAbsolutePath()).toRealPath();
-                final var mount = findMount(path);
+                final var mount = findMount(path, Path.of("/proc/self/mountinfo"));
                 result.add(new StorageVolumeInfo(volume, path.toString(), mount.device(), mount.mountPoint(),
                         directory.getFileSystemId()));
             } catch (final IOException e) {
@@ -405,10 +406,16 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     private record MountInfo(String device, String mountPoint) {
     }
 
-    private static MountInfo findMount(final java.nio.file.Path path) throws IOException {
+    private static MountInfo findMount(final java.nio.file.Path path, final Path mountInfoFile) throws IOException {
+        final List<String> lines;
+        try {
+            lines = Files.readAllLines(mountInfoFile);
+        } catch (final NoSuchFileException e) {
+            return new MountInfo("", "");
+        }
         java.nio.file.Path bestMount = null;
         var bestDevice = "";
-        for (final var line : Files.readAllLines(java.nio.file.Path.of("/proc/self/mountinfo"))) {
+        for (final var line : lines) {
             final var sections = line.split(" - ", 2);
             if (sections.length != 2) {
                 continue;

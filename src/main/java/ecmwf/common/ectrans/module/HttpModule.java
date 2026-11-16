@@ -216,10 +216,12 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.NodeTraversor;
 import org.jsoup.select.NodeVisitor;
 
+import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.TransferModule;
 import ecmwf.common.ectrans.notification.AcquisitionListing;
 import ecmwf.common.ectrans.notification.AcquisitionNotification;
+import ecmwf.common.ectrans.notification.AvisoDiscovery;
 import ecmwf.common.ectrans.notification.NotificationProfiles;
 import ecmwf.common.parser.core.ParserConfig;
 import ecmwf.common.parser.core.RemoteListingEngine;
@@ -805,7 +807,9 @@ public final class HttpModule extends TransferModule {
             throw new IOException("Resume not supported by the " + getSetup().getModuleName() + " module");
         }
         final var pr = new PrepareRequest(name);
-        final HttpUriRequestBase request = new HttpGet(encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
+        final HttpUriRequestBase request = new HttpGet(encodePath(
+                getSetup().getBoolean(HOST_HTTP_ENCODE_URL)
+                        && !getSetup().getBoolean(ECtransOptions.HOST_HTTP_AVISO_MODE),
                 getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath()));
         ClassicHttpResponse response = null;
         try {
@@ -853,7 +857,9 @@ public final class HttpModule extends TransferModule {
         _log.debug("Size {}", name);
         setStatus("SIZE");
         final var pr = new PrepareRequest(name);
-        final var uri = encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
+        final var uri = encodePath(
+                getSetup().getBoolean(HOST_HTTP_ENCODE_URL)
+                        && !getSetup().getBoolean(ECtransOptions.HOST_HTTP_AVISO_MODE),
                 getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath());
         final var useHead = getSetup().getBoolean(HOST_HTTP_USE_HEAD);
         var request = useHead ? new HttpHead(uri) : new HttpGet(uri);
@@ -1222,7 +1228,9 @@ public final class HttpModule extends TransferModule {
             throws IOException {
         final var pr = new PrepareRequest(name);
         final var path = pr.getPath();
-        final var fullName = encodePath(getSetup().getBoolean(HOST_HTTP_ENCODE_URL),
+        final var fullName = encodePath(
+                getSetup().getBoolean(HOST_HTTP_ENCODE_URL)
+                        && !getSetup().getBoolean(ECtransOptions.HOST_HTTP_AVISO_MODE),
                 getFullName(directory, getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath()));
         final var useHead = getSetup().getBoolean(HOST_HTTP_USE_HEAD);
         var request = useHead ? new HttpHead(fullName) : new HttpGet(fullName);
@@ -1934,6 +1942,10 @@ public final class HttpModule extends TransferModule {
         var directory = targetDirectory;
         var listSize = 0;
         final var counter = new AtomicInteger(0);
+        if (getSetup().getBoolean(ECtransOptions.HOST_HTTP_AVISO_MODE)) {
+            listAviso(resultList, targetDirectory, pattern);
+            return;
+        }
         if (getSetup().getBoolean(HOST_HTTP_MQTT_MODE)) {
             // This is an MQTT server so we are going to subscribe to get the list of data
             // file references!
@@ -2463,6 +2475,49 @@ public final class HttpModule extends TransferModule {
         public boolean isRedirectAllowed(final HttpHost currentTarget, final HttpHost newTarget,
                 final HttpRequest request, final HttpContext context) {
             return true;
+        }
+    }
+
+    private void listAviso(final ProcessEntry output, final String directory, final String pattern) throws IOException {
+        final var setup = getSetup();
+        if (setup.getBoolean(HOST_HTTP_MQTT_MODE) || !setup.getBoolean(HOST_HTTP_FTP_LIKE))
+            throw new IOException("Aviso acquisition requires http.ftpLike=yes and http.mqttMode=no");
+        try {
+            final var base = URI.create(setup.getString(ECtransOptions.HOST_HTTP_AVISO_URL));
+            if (!"https".equals(base.getScheme()) || !setup.getBoolean(HOST_HTTP_SSL_VALIDATION)
+                    || !setup.getBoolean(HOST_HTTP_STRICT))
+                throw new IOException("Aviso acquisition requires HTTPS, http.sslValidation=yes and http.strict=yes");
+            final var after = setup.getString(ECtransOptions.HOST_HTTP_AVISO_CURSOR);
+            final var config = new AvisoDiscovery.Config(base,
+                    setup.getString(ECtransOptions.HOST_HTTP_AVISO_DESTINATION),
+                    setup.get(ECtransOptions.HOST_HTTP_AVISO_SOURCE_ID, base.toString()), directory,
+                    after.isEmpty() ? -1 : Long.parseLong(after),
+                    Long.parseLong(setup.getString(ECtransOptions.HOST_HTTP_AVISO_INVENTORY_AT)),
+                    setup.getDuration(ECtransOptions.HOST_HTTP_AVISO_RECONCILE).toMillis(),
+                    setup.getInteger(ECtransOptions.HOST_HTTP_AVISO_MAX_EVENTS),
+                    setup.getInteger(HOST_HTTP_LIST_MAX_FILES), setup.getInteger(HOST_HTTP_LIST_MAX_DIRS), pattern);
+            new AvisoDiscovery(config, (uri, body) -> {
+                final var prepared = new PrepareRequest(uri.toString());
+                final HttpUriRequestBase request;
+                if (body == null) {
+                    request = new HttpGet(prepared.getPath());
+                    request.setHeader("Accept", "application/json");
+                } else {
+                    final var post = new HttpPost(prepared.getPath());
+                    post.setEntity(
+                            new org.apache.hc.core5.http.io.entity.StringEntity(body, ContentType.APPLICATION_JSON));
+                    request = post;
+                    request.setHeader("Accept", "text/event-stream");
+                }
+                final var response = execute(prepared.getHttpHost(), request, 200, 410);
+                return new AvisoDiscovery.Response(response.getCode(),
+                        response.getEntity() == null ? null : response.getEntity().getContent(), () -> {
+                            request.cancel();
+                            response.close();
+                        });
+            }, output::add).discover();
+        } catch (final IllegalArgumentException e) {
+            throw new IOException("Invalid Aviso acquisition settings", e);
         }
     }
 

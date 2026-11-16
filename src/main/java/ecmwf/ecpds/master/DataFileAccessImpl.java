@@ -67,6 +67,8 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.callback.CallBackObject;
 import ecmwf.common.database.DataBaseException;
+import ecmwf.common.database.DataFile;
+import ecmwf.common.database.DataFileVersion;
 import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.Destination;
 import ecmwf.common.database.ECpdsBase;
@@ -407,15 +409,28 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     @Override
     public ProxySocket getProxySocketInput(final String destinationName, final String source, final long offset,
             final long length) throws MasterException, IOException {
+        return openProxySocketInput(destinationName, source, offset, length, false);
+    }
+
+    @Override
+    public ProxySocket getStoredProxySocketInput(final String destinationName, final String source, final long offset,
+            final long length) throws MasterException, IOException {
+        return openProxySocketInput(destinationName, source, offset, length, true);
+    }
+
+    private ProxySocket openProxySocketInput(final String destinationName, final String source, final long offset,
+            final long length, final boolean storedOnly) throws MasterException, IOException {
         final var monitor = new MonitorCall(
                 "getProxySocketInput(" + destinationName + "," + source + "," + offset + "," + length + ")");
         final var destination = getDestination(destinationName);
-        final var transfer = getDataTransfer(destination, source);
+        final var original = getDataTransfer(destination, source);
+        final var transfer = original == null ? null : (DataTransfer) original.clone();
         if (transfer == null) {
             throw new MasterException("DataTransfer not found");
         }
+        transfer.setDataFile((DataFile) transfer.getDataFile().clone());
         try {
-            final var proxy = TransferScheduler.get(transfer, offset, length);
+            final var proxy = TransferScheduler.get(transfer, offset, length, !storedOnly);
             final var setup = DESTINATION_INCOMING.getECtransSetup(destination.getData());
             proxy.addObject(DataTransfer.class.getName(), transfer);
             setup.getOptionalByteSize(DESTINATION_INCOMING_MAX_BYTES_PER_SEC_FOR_INPUT)
@@ -655,6 +670,12 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     private static FileListElement getFileListElement(final Destination destination, final DataTransfer transfer,
             final String target) {
         final var element = new FileListElement();
+        final var dataFile = transfer.getDataFile();
+        if (dataFile != null) {
+            final var file = (DataFile) dataFile.clone();
+            element.setFileVersion(destination.getName(), transfer.getTarget(), file.getId(),
+                    file.getFileInstance() == null ? 0 : file.getFileInstance(), DataFileVersion.etag(file));
+        }
         element.setComment(String.valueOf(transfer.getId()));
         element.setGroup(destination.getCountryIso());
         element.setName(target);

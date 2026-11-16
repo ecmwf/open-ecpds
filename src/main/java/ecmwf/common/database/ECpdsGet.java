@@ -3101,13 +3101,4 @@ final class ECpdsGet {
         return _database.executeQuery("ECpdsBase", "getDestinationMetaValuesByDestination", resultClass,
                 new String[] { "destinationName=" + destinationName });
     }
-
-    /**
-     * Gets all metadata values for a given field ID.
-     */
-    <T extends DataBaseObject> DBIterator<T> getDestinationMetaValuesByFieldId(final int fieldId,
-            final Class<T> resultClass) throws SQLException, IOException {
-        return _database.executeQuery("ECpdsBase", "getDestinationMetaValuesByFieldId", resultClass,
-                new String[] { "fieldId=" + fieldId });
-    }
 }

@@ -447,14 +447,7 @@ public final class TransferManagement {
      * @return the string
      */
     public static String getETag(final DataFile dataFile) {
-        final var buffer = ByteBuffer.allocate(12);
-        buffer.putLong(dataFile.getId());
-        final var fileInstance = dataFile.getFileInstance();
-        buffer.putInt(fileInstance != null ? fileInstance : 0);
-        buffer.position(0);
-        final var mostSignificantBits = buffer.getLong();
-        final var leastSignificantBits = buffer.getInt();
-        return new UUID(mostSignificantBits, leastSignificantBits).toString();
+        return ecmwf.common.database.DataFileVersion.etag(dataFile);
     }
 
     /**

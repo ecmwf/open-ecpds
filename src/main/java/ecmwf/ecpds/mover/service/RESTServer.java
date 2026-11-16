@@ -85,6 +85,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import ecmwf.common.database.DataFile;
 import ecmwf.common.database.DataTransfer;
+import ecmwf.common.database.DataFileVersion;
 import ecmwf.common.database.PortalTraffic;
 import ecmwf.common.database.ExistingStorageDirectory;
 import ecmwf.common.database.Host;
@@ -275,6 +276,25 @@ public final class RESTServer {
             Long toTime) {
     }
 
+    @GET
+    @Path("aviso/api/v1/cursor/{destination}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response avisoCursor(@Context final UriInfo ui, @HeaderParam("authorization") final String authString,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
+            @PathParam("destination") final String destination) {
+        checkIsControlChannel(ui);
+        final var session = getUserSession(authString, request, response);
+        try {
+            return Response.ok(Map.of("sequence",
+                    mover.getMasterInterface().currentAvisoNotificationSequence(session.getUser(), destination)))
+                    .build();
+        } catch (final Exception e) {
+            throw newException(e, 503, "Aviso cursor unavailable");
+        } finally {
+            session.close(true);
+        }
+    }
+
     private static NotificationHistory.Replay liveStart(final long sequence) {
         return new NotificationHistory.Replay(sequence, 0, 0, sequence, false, false, List.of());
     }
@@ -323,16 +343,20 @@ public final class RESTServer {
         if (node == null || node.isNull()) {
             return null;
         }
+        if (node.isIntegralNumber() && node.canConvertToLong() && node.longValue() > 0) {
+            return node.longValue();
+        }
         if (!node.isTextual()) {
             throw newException(400, "Invalid Aviso " + field);
         }
-        final var value = node.asText();
+        final var supplied = node.asText();
         final var prefix = "file_available@";
-        if (!value.startsWith(prefix) || !value.substring(prefix.length()).matches("[0-9]+")) {
+        final var value = supplied.startsWith(prefix) ? supplied.substring(prefix.length()) : supplied;
+        if (value.length() > 19 || !value.matches("[0-9]+")) {
             throw newException(400, "Invalid Aviso " + field);
         }
         try {
-            final var sequence = Long.parseLong(value.substring(prefix.length()));
+            final var sequence = Long.parseLong(value);
             if (sequence < 1) {
                 throw newException(400, "Invalid Aviso " + field);
             }
@@ -2591,6 +2615,8 @@ public final class RESTServer {
 
         /** The size. */
         final long size;
+        final String etag;
+        final boolean pinned;
 
         /**
          * Instantiates a new media request.
@@ -2604,11 +2630,14 @@ public final class RESTServer {
          * @param size
          *            the size
          */
-        MediaRequest(final String remoteAddress, final String contentType, final String name, final long size) {
+        MediaRequest(final String remoteAddress, final String contentType, final String name, final long size,
+                final String etag, final boolean pinned) {
             this.remoteAddr = remoteAddress;
             this.contentType = contentType;
             this.name = name;
             this.size = size;
+            this.etag = etag;
+            this.pinned = pinned;
         }
     }
 
@@ -2644,6 +2673,13 @@ public final class RESTServer {
         // Are we required to check the ETag?
         final var ifNoneMatch = request.getHeader(IF_NONE_MATCH);
         final var etag = getETag(element.getComment());
+        final var expected = request.getParameter("etag");
+        final var ifMatch = request.getHeader("If-Match");
+        if (expected != null && !etag.equals(expected)
+                || ifMatch != null && !"*".equals(ifMatch) && !java.util.Arrays.stream(ifMatch.split(","))
+                        .anyMatch(value -> etag.equals(value.trim()) || ("\"" + etag + "\"").equals(value.trim()))) {
+            throw newException(412, "Requested file version is no longer available");
+        }
         // Are we required to check against the last modified time?
         final var lastModified = element.getTime();
         final var ifModifiedSince = request.getDateHeader(IF_MODIFIED_SINCE);
@@ -2694,7 +2730,8 @@ public final class RESTServer {
             builder.header(ETAG, etag);
             builder.lastModified(new Date(lastModified));
         }
-        return new MediaRequest(request.getRemoteAddr(), contentType, name, Long.parseLong(element.getSize()));
+        return new MediaRequest(request.getRemoteAddr(), contentType, name, Long.parseLong(element.getSize()), etag,
+                expected != null || ifMatch != null && !"*".equals(ifMatch));
     }
 
     /**
@@ -2934,6 +2971,14 @@ public final class RESTServer {
             item.put("size", e.isDirectory() ? null : Long.parseLong(e.getSize().trim()));
             item.put("time", Instant.ofEpochMilli(e.getTime()).toString());
             item.put("directory", e.isDirectory());
+            if (!e.isDirectory() && e.getETag() != null) {
+                item.put("destination", e.getDestination());
+                item.put("target", e.getTarget());
+                item.put("dataTransferId", Long.parseLong(e.getComment()));
+                item.put("dataFileId", e.getDataFileId());
+                item.put("fileInstance", e.getFileInstance());
+                item.put("etag", e.getETag());
+            }
             items.add(item);
         }
         return Response.ok(new ObjectMapper().writeValueAsString(items), MediaType.APPLICATION_JSON)
@@ -3165,7 +3210,19 @@ public final class RESTServer {
      */
     private static ProxySocket _openProxySocket(final UserSession session, final MediaRequest mediaRequest,
             final long posn, final long length) throws FileNotFoundException, EccmdException, IOException {
-        return session.getProxySocketInput(mediaRequest.name, posn, length);
+        final var proxy = mediaRequest.pinned ? session.getStoredProxySocketInput(mediaRequest.name, posn, length)
+                : session.getProxySocketInput(mediaRequest.name, posn, length);
+        return validateProxyVersion(proxy, mediaRequest.etag);
+    }
+
+    static ProxySocket validateProxyVersion(final ProxySocket proxy, final String etag) {
+        final var object = proxy.getObject(DataTransfer.class.getName());
+        if (!(object instanceof final DataTransfer transfer)
+                || !etag.equals(DataFileVersion.etag(transfer.getDataFile()))) {
+            StreamPlugThread.closeQuietly(proxy);
+            throw newException(412, "File version changed while opening the stream");
+        }
+        return proxy;
     }
 
     /**

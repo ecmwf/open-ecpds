@@ -174,7 +174,8 @@ final class NotificationStream {
                     return;
                 }
             }
-            sendReplayControl(out, "replay_completed", null, null, null, null, 0, requestId);
+            send(out, "replay-control", Map.of("type", "replay_completed", "topic", TOPIC, "timestamp",
+                    Instant.now().toString(), "last_sequence", cursor));
         } else {
             cursor = initial.ceiling();
         }

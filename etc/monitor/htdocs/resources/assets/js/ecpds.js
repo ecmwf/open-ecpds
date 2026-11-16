@@ -267,37 +267,115 @@ function getAnnotations(aceEditor, row) {
 	return [];
 }
 
+// Rules and effective global/built-in defaults come from the option catalogue, not from help text.
+function checkOptionDependencies(text, options, script, transferModule) {
+	var properties = Object.create(null);
+	const pattern = /^[\t ]*([^#\s=]+)[\t ]*=[\t ]*"([^"]*)"[ \t]*\r?$/gm;
+	text = text.split('###### END-OF-PROPERTIES ######')[0];
+	var match;
+	while ((match = pattern.exec(text)) !== null) {
+		properties[match[1]] = {
+			value: match[2],
+			row: text.substring(0, match.index).split('\n').length - 1
+		};
+	}
+	function read(name, metadata) {
+		var value = properties[name] ? properties[name].value : metadata.defaultValue;
+		return value != null && value.trim().length === 0 && metadata.type !== 'String'
+			? metadata.emptyDefault : value;
+	}
+	function normalize(value, type) {
+		if (value != null && type === 'Boolean') {
+			if (/^(yes|true)$/i.test(value)) return 'yes';
+			if (/^(no|false)$/i.test(value)) return 'no';
+		}
+		return value;
+	}
+	function dynamic(name, value) {
+		const parts = name.split('.');
+		return (value != null && value.indexOf('$') !== -1)
+			|| new RegExp('\\b' + parts[0] + '\\s*:\\s*\\{[^}]*\\b' + parts[1] + '\\b\\s*:').test(script || '');
+	}
+	function httpsUrl(value) {
+		if (!value || !value.startsWith('https://') || !value.endsWith('/')
+			|| /[\s\\?#]/.test(value) || /%(?![0-9a-f]{2})/i.test(value)
+			|| value.substring(8).split('/')[0].indexOf('@') !== -1)
+			return false;
+		try {
+			const url = new URL(value);
+			const host = value.substring(8).split('/')[0].split(':')[0];
+			if (!host.startsWith('[')) {
+				const labels = host.replace(/\.$/, '').split('.');
+				if (labels.some(label => !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i.test(label)))
+					return false;
+				if (labels.length > 1 && !/^[a-z]/i.test(labels[labels.length - 1])
+					&& !(labels.length === 4 && labels.every(label => /^\d+$/.test(label) && Number(label) <= 255)))
+					return false;
+			}
+			return url.hostname.length > 0;
+		} catch (e) {
+			return false;
+		}
+	}
+	var annotations = [];
+	function add(source, parameter, message, deferred) {
+		var property = properties[parameter] || properties[source.caption];
+		annotations.push({
+			row: property ? property.row : 0,
+			column: 0,
+			text: message,
+			type: deferred ? 'warning' : 'error'
+		});
+	}
+	options.forEach(function(source) {
+		if (!source.requirements || (transferModule && transferModule !== 'ecaccess'
+			&& source.caption.split('.')[0] !== transferModule))
+			return;
+		const enabled = read(source.caption, source);
+		if (dynamic(source.caption, enabled)) {
+			add(source, source.caption, 'Cannot verify requirements for ' + source.caption
+				+ ': its value is supplied by a script or placeholder. Checked at runtime.', true);
+			return;
+		}
+		source.requirements.forEach(function(requirement) {
+			if (normalize(enabled, source.type) !== normalize(requirement.when, source.type))
+				return;
+			const actual = read(requirement.parameter, requirement);
+			const deferred = dynamic(requirement.parameter, actual);
+			var valid = false;
+			if (actual != null) {
+				if (requirement.check === 'EQUALS')
+					valid = normalize(actual, requirement.type) === normalize(requirement.value, requirement.type);
+				else if (requirement.check === 'NON_BLANK')
+					valid = actual.trim().length > 0;
+				else if (requirement.check === 'HTTPS_URL')
+					valid = httpsUrl(actual);
+			}
+			if (deferred || !valid) {
+				add(source, requirement.parameter, deferred
+					? 'Cannot verify ' + requirement.parameter + ' required by ' + source.caption
+						+ ': its value is supplied by a script or placeholder. Checked at runtime.'
+					: source.caption + '="' + requirement.when + '" requires ' + requirement.parameter
+						+ ' to be ' + requirement.expected + '.', deferred);
+			}
+		});
+	});
+	return annotations;
+}
+
 function checkEachLine(aceEditor, accordionBtnId) {
 	var session = aceEditor.session;
-	// Remove all existing validation markers in one pass
-	var markers = session.getMarkers();
-	for (var markerId in markers) {
-		var m = markers[markerId];
-		if (m.clazz === "custom-ace-marker-error" || m.clazz === "custom-ace-marker-warning")
-			session.removeMarker(markerId);
-	}
-	var errorCount = 0, warningCount = 0;
 	var allAnnotations = [];
 	for (var i = 0; i < session.getLength(); i++) {
 		var annotations = getAnnotations(aceEditor, i);
 		if (annotations && annotations.length > 0) {
 			allAnnotations = allAnnotations.concat(annotations);
-			if (annotations[0].type === "error") {
-				session.addMarker(new Range(i, 0, i, Number.MAX_VALUE), "custom-ace-marker-error", "fullLine");
-				errorCount++;
-			} else if (annotations[0].type === "warning") {
-				session.addMarker(new Range(i, 0, i, Number.MAX_VALUE), "custom-ace-marker-warning", "fullLine");
-				warningCount++;
-			}
 		}
 	}
-	// Push all annotations to ACE (drives gutter icons for the current cursor row)
+	if (typeof getPropertyDependencyAnnotations === 'function')
+		allAnnotations = allAnnotations.concat(getPropertyDependencyAnnotations(aceEditor));
 	session.setAnnotations(allAnnotations);
-	// Update the accordion button badge if an ID was provided
-	if (accordionBtnId) {
-		updateAccordionErrorBadge(accordionBtnId, errorCount, warningCount);
-	}
-	return { errors: errorCount, warnings: warningCount };
+	return applyAnnotationMarkers(aceEditor, accordionBtnId);
 }
 
 function updateAccordionErrorBadge(btnId, errorCount, warningCount) {
@@ -363,6 +441,7 @@ function applyAnnotationMarkers(aceEditor, accordionBtnId) {
 	if (accordionBtnId) {
 		updateAccordionErrorBadge(accordionBtnId, errorCount, warningCount);
 	}
+	return { errors: errorCount, warnings: warningCount };
 }
 
 // Checks Python syntax using Skulpt (loaded lazily on first use).

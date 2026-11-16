@@ -2,8 +2,6 @@
 
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
 <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
 style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left:4px solid #0d6efd;">
@@ -103,9 +101,7 @@ style="background:rgba(13,110,253,0.06); color:var(--bs-body-color); border-left
                     </td>
                     <td class="small text-muted" style="white-space:nowrap">
                         <c:if test="${not empty server.lastUpdateDate}">
-                            <fmt:formatDate value="${server.lastUpdateDate}" pattern="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-                                timeZone="UTC" var="lastUpdateUtc"/>
-                            <span title="${lastUpdateUtc}">${server.lastUpdateDuration}</span>
+                            <span title="${server.lastUpdateDate.toInstant()}">${server.lastUpdateDuration}</span>
                         </c:if>
                     </td>
                     <td class="text-center" style="min-width:110px">

@@ -66,6 +66,41 @@ public final class FileListElement implements Serializable, Cloneable {
     /** The dir. */
     private Boolean dir = null;
 
+    private String etag;
+    private String destination;
+    private String target;
+    private Long dataFileId;
+    private Integer fileInstance;
+
+    public void setFileVersion(final String destination, final String target, final long dataFileId,
+            final int fileInstance, final String etag) {
+        this.destination = destination;
+        this.target = target;
+        this.dataFileId = dataFileId;
+        this.fileInstance = fileInstance;
+        this.etag = etag;
+    }
+
+    public String getETag() {
+        return etag;
+    }
+
+    public String getDestination() {
+        return destination;
+    }
+
+    public String getTarget() {
+        return target;
+    }
+
+    public Long getDataFileId() {
+        return dataFileId;
+    }
+
+    public Integer getFileInstance() {
+        return fileInstance;
+    }
+
     /**
      * Gets the group.
      *

@@ -59,6 +59,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ecmwf.common.database.DataBaseCursor;
 import ecmwf.common.ectrans.ECtransGroups;
 import ecmwf.common.ectrans.ECtransOptionRegistry;
+import ecmwf.common.ectrans.ECtransOptionValidation;
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.SubOption;
 import ecmwf.common.technical.ByteSize;
@@ -140,7 +141,7 @@ public class GetHostListJsonAction extends PDSAction {
         try {
             final var data = host.getData();
             if (data == null || data.isBlank()) {
-                return false;
+                return hasDependencyErrors(host, "");
             }
             // Only look at the properties section (before the separator)
             final var normalized = Format.windowsToUnix(data);
@@ -176,9 +177,21 @@ public class GetHostListJsonAction extends PDSAction {
             if (!sb.isEmpty() && checkLineHasError(sb.toString())) {
                 return true;
             }
+            return hasDependencyErrors(host, normalized);
         } catch (final Exception ignored) {
         }
         return false;
+    }
+
+    private static boolean hasDependencyErrors(final Host host, final String data) throws TransferException {
+        final var problems = ECtransOptionValidation.validate(ECtransGroups.HOST, data, null).stream()
+                .filter(problem -> !problem.deferred()).toList();
+        if (problems.isEmpty())
+            return false;
+        final var method = host.getTransferMethod();
+        final var module = method == null ? null : method.getEcTransModuleName();
+        return problems.stream().anyMatch(problem -> module == null || "ecaccess".equals(module)
+                || ECtransOptionValidation.find(ECtransGroups.HOST, problem.option()).getModule().equals(module));
     }
 
     private static boolean checkLineHasError(final String line) {

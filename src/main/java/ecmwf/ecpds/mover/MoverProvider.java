@@ -1361,6 +1361,15 @@ public final class MoverProvider extends NativeAuthenticationProvider {
             return result;
         }
 
+        @Override
+        public ProxySocket getStoredProxySocketInput(final String source, final long offset, final long length)
+                throws EccmdException, IOException {
+            _profile.checkPermission("get", source);
+            final var result = _getFileElement(source, true).getStoredProxySocketInput(offset, length);
+            result.setSocketConfig(new SocketConfig("ECproxyPlugin"));
+            return result;
+        }
+
         /**
          * Gets the proxy socket output.
          *
@@ -1806,6 +1815,21 @@ public final class MoverProvider extends NativeAuthenticationProvider {
                 return proxy;
             }
 
+            @Override
+            public ProxySocket getStoredProxySocketInput(final long offset, final long length)
+                    throws EccmdException, IOException {
+                final ProxySocket proxy;
+                try {
+                    proxy = _mover.getDataFileAccessInterface().getStoredProxySocketInput(_destination.getName(),
+                            getDataTransferIdOrPath(), offset, length);
+                } catch (final MasterException e) {
+                    throw new EccmdException(e.getMessage());
+                }
+                proxy.addObject(FileElement.class.getName(), this);
+                proxy.addObject(IncomingProfile.class.getName(), _profile);
+                return proxy;
+            }
+
             /**
              * Gets the proxy socket output.
              *
@@ -2096,6 +2120,11 @@ public final class MoverProvider extends NativeAuthenticationProvider {
          *             Signals that an I/O exception has occurred.
          */
         public abstract ProxySocket getProxySocketInput(long offset, long length) throws EccmdException, IOException;
+
+        public ProxySocket getStoredProxySocketInput(final long offset, final long length)
+                throws EccmdException, IOException {
+            throw new IOException("Stored-only retrieval is not supported for this file type");
+        }
 
         /**
          * Gets the file last modified.
