@@ -4,6 +4,18 @@
 > Inspired by operational excellence. Powered by open-source innovation.  
 > Acquire from anywhere. Deliver everywhere. Connect with confidence. Share without limits.
 
+## OpenECPDS — Your data, connected
+
+**Built at ECMWF. Open to the world.**
+
+Discover how OpenECPDS connects data providers, platforms and people around the globe.
+One open-source platform to acquire, distribute and share your data—across systems,
+organisations and borders.
+
+[![Watch the OpenECPDS introduction on YouTube](https://img.youtube.com/vi/GQj0Q0Nd9to/maxresdefault.jpg)](https://www.youtube.com/watch?v=GQj0Q0Nd9to)
+
+**[Watch the introduction on YouTube](https://www.youtube.com/watch?v=GQj0Q0Nd9to)**
+
 ---
 
 OpenECPDS is a mature, production-grade data management platform developed at [ECMWF](https://www.ecmwf.int/) and distributed as open-source software to encourage collaboration.
