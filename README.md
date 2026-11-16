@@ -12,9 +12,7 @@ Discover how OpenECPDS connects data providers, platforms and people around the 
 One open-source platform to acquire, distribute and share your data—across systems,
 organisations and borders.
 
-[![Watch the OpenECPDS introduction on YouTube](https://img.youtube.com/vi/GQj0Q0Nd9to/maxresdefault.jpg)](https://www.youtube.com/watch?v=GQj0Q0Nd9to)
-
-**[Watch the introduction on YouTube](https://www.youtube.com/watch?v=GQj0Q0Nd9to)**
+**[Watch the introduction on YouTube ▶](https://www.youtube.com/watch?v=GQj0Q0Nd9to)**
 
 ---
 
