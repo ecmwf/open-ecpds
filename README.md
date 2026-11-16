@@ -4,19 +4,11 @@
 > Inspired by operational excellence. Powered by open-source innovation.  
 > Acquire from anywhere. Deliver everywhere. Connect with confidence. Share without limits.
 
-## OpenECPDS — Your data, connected
-
-**Built at ECMWF. Open to the world.**
-
-Discover how OpenECPDS connects data providers, platforms and people around the globe.
-One open-source platform to acquire, distribute and share your data—across systems,
-organisations and borders.
-
-**[Watch the introduction on YouTube ▶](https://www.youtube.com/watch?v=GQj0Q0Nd9to)**
-
 ---
 
 OpenECPDS is a mature, production-grade data management platform developed at [ECMWF](https://www.ecmwf.int/) and distributed as open-source software to encourage collaboration.
+
+**[Watch the introduction on YouTube ▶](https://www.youtube.com/watch?v=GQj0Q0Nd9to)**
 
 **Built for demanding meteorological operations, designed for any data domain.** OpenECPDS is **domain-agnostic**, not a meteorology-specific platform: its core transfers, stores and distributes files without requiring a particular scientific format or subject matter. Research, industry, public services and enterprise teams can use it to automate provider ingestion, distribute datasets to partners, and offer self-service data access across on-premises and cloud environments.
 
