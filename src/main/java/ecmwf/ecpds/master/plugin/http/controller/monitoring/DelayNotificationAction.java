@@ -56,7 +56,8 @@ import ecmwf.web.model.users.User;
  * by a delay, then inform of the (partial) resolution, update, cancel or delete it. Messages can be opened in Outlook
  * or queued through the Master mail service; this action works out the recipients and keeps the register of the notices
  * in the database. Outlook messages await operator confirmation, while messages queued directly are acknowledged
- * automatically. The recipients are always recomputed here, never taken from the browser.
+ * automatically. Destination Bcc recipients are always recomputed here; optional To overrides are validated and
+ * recorded with each message.
  *
  * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  *
@@ -183,13 +184,37 @@ public class DelayNotificationAction extends PDSAction {
         return value == null || value.isBlank() ? defaultValue : value;
     }
 
+    private static String defaultTo() throws Exception {
+        return productMessageSetting(ProductStatusMessages.TO_ADDRESS_NAME, ProductStatusMessages.DEFAULT_TO_ADDRESS);
+    }
+
+    private static String alternativeTo(final Map<String, Object> notice) {
+        if (!Boolean.TRUE.equals(notice.get("overrideTo"))) {
+            return "";
+        }
+        final var to = normalizeAddresses(text(notice, "to"));
+        if (to.isEmpty()) {
+            throw new IllegalArgumentException("Enter at least one alternative To address");
+        }
+        return to;
+    }
+
+    private static String noticeTo(final Map<String, Object> notice) throws Exception {
+        final var to = alternativeTo(notice);
+        return to.isEmpty() ? defaultTo() : to;
+    }
+
     private static void queueEmail(final String to, final String cc, final String bcc, final String subject,
             final String body, final boolean markdown) throws Exception {
         final var recipients = normalizeAddresses(to);
         if (recipients.isEmpty()) {
             throw new IllegalArgumentException("The To address is not configured");
         }
-        MasterManager.getMI().sendNotificationEmail(recipients.split(",", 2)[0], recipients, normalizeAddresses(cc),
+        final var sender = normalizeAddresses(defaultTo());
+        if (sender.isEmpty()) {
+            throw new IllegalArgumentException("The sender address is not configured");
+        }
+        MasterManager.getMI().sendNotificationEmail(sender.split(",", 2)[0], recipients, normalizeAddresses(cc),
                 normalizeAddresses(bcc), subject, markdown ? MarkdownUtil.toEmailHtml(body) : body);
     }
 
@@ -237,9 +262,7 @@ public class DelayNotificationAction extends PDSAction {
         } else {
             bcc.add("ecpds-product-" + label + "@ecmwf.int");
         }
-        queueEmail(
-                productMessageSetting(ProductStatusMessages.TO_ADDRESS_NAME, ProductStatusMessages.DEFAULT_TO_ADDRESS),
-                "", String.join(",", bcc), subject, messageBody, markdownEnabled());
+        queueEmail(defaultTo(), "", String.join(",", bcc), subject, messageBody, markdownEnabled());
         _log.info("Product {} email for {} queued directly by {}", kind, label, who);
         out.put("sentDirectly", true);
     }
@@ -267,17 +290,18 @@ public class DelayNotificationAction extends PDSAction {
         if (emails != null) {
             bcc.addAll(emails);
         }
-        bcc.add(str(entry.get("bcc")));
+        if (!str(entry.get("bcc")).isEmpty()) {
+            bcc.add(str(entry.get("bcc")));
+        }
         return String.join(",", bcc);
     }
 
     private static void sendNoticeEmail(final String ref, final Map<String, Object> entry) throws Exception {
         final var kind = str(entry.get("kind"));
         final var updatePrefix = "update".equals(kind) ? "UPDATE - " : "";
-        queueEmail(
-                productMessageSetting(ProductStatusMessages.TO_ADDRESS_NAME, ProductStatusMessages.DEFAULT_TO_ADDRESS),
-                str(entry.get("cc")), noticeBcc(entry), "[" + ref + "] " + updatePrefix + str(entry.get("subject")),
-                str(entry.get("body")), !Boolean.FALSE.equals(entry.get("markdown")));
+        queueEmail(str(entry.get("to")).isEmpty() ? defaultTo() : str(entry.get("to")), str(entry.get("cc")),
+                noticeBcc(entry), "[" + ref + "] " + updatePrefix + str(entry.get("subject")), str(entry.get("body")),
+                !Boolean.FALSE.equals(entry.get("markdown")));
     }
 
     private void deliverDirectly(final String ref, final int index, final String who, final Map<String, Object> out) {
@@ -459,6 +483,8 @@ public class DelayNotificationAction extends PDSAction {
 
     /** Copies the editable content of the request into the notice. */
     private static void fill(final Map<String, Object> notice, final Map<String, Object> body) {
+        notice.put("to", alternativeTo(body));
+        notice.put("overrideTo", Boolean.TRUE.equals(body.get("overrideTo")));
         for (final var k : new String[] { "reason", "eta", "delay", "note", "cc", "bcc", "subject", "body" }) {
             notice.put(k, text(body, k));
         }
@@ -472,7 +498,7 @@ public class DelayNotificationAction extends PDSAction {
      * sent it, and keeps its content so that it can be opened again in Outlook.
      */
     private static Map<String, Object> message(final String kind, final String by, final Map<String, Object> body,
-            final Collection<String> emails) {
+            final Collection<String> emails, final String to) {
         final var h = new LinkedHashMap<String, Object>();
         h.put("kind", kind);
         h.put("at", now());
@@ -480,6 +506,7 @@ public class DelayNotificationAction extends PDSAction {
         h.put("subject", text(body, "subject"));
         h.put("body", text(body, "body"));
         h.put("markdown", markdownEnabled());
+        h.put("to", to);
         h.put("cc", "true".equals(String.valueOf(body.get("includeCc"))) ? text(body, "cc") : "");
         h.put("bcc", "true".equals(String.valueOf(body.get("includeBcc"))) ? text(body, "bcc") : "");
         h.put("emails", new ArrayList<>(emails));
@@ -512,13 +539,14 @@ public class DelayNotificationAction extends PDSAction {
         notice.put("cells", cells);
         notice.put("destinations", new ArrayList<>(r.destinations().keySet()));
         notice.put("emails", new ArrayList<>(r.emails()));
-        final var h = message("delay", who, body, r.emails());
+        final var h = message("delay", who, body, r.emails(), noticeTo(notice));
         list(notice, "history").add(h);
         final var ref = DelayNotices.create(notice, "active", who);
         _log.info("Delay notice {} registered by {}", ref, who);
         out.put("ref", ref);
         out.put("index", 0);
         out.put("emails", r.emails());
+        out.put("to", h.get("to"));
         if (Boolean.TRUE.equals(body.get("direct"))) {
             deliverDirectly(ref, 0, who, out);
         }
@@ -575,7 +603,7 @@ public class DelayNotificationAction extends PDSAction {
             n.put("status", "active");
             n.put("destinations", new ArrayList<>(destinations));
             n.put("emails", new ArrayList<>(all));
-            final var h = message("update", who, body, all);
+            final var h = message("update", who, body, all, noticeTo(n));
             h.put("addedEmails", new ArrayList<>(added));
             list(n, "history").add(h);
         });
@@ -584,6 +612,7 @@ public class DelayNotificationAction extends PDSAction {
         out.put("index", list(notice, "history").size() - 1);
         out.put("emails", all);
         out.put("addedEmails", added);
+        out.put("to", list(notice, "history").get((Integer) out.get("index")).get("to"));
         if (Boolean.TRUE.equals(body.get("direct"))) {
             deliverDirectly(str(notice.get("ref")), (Integer) out.get("index"), who, out);
         }
@@ -629,7 +658,7 @@ public class DelayNotificationAction extends PDSAction {
                 n.put("resolvedAt", now());
                 n.put("resolvedBy", who);
             }
-            final var h = message("resolution", who, body, emails);
+            final var h = message("resolution", who, body, emails, noticeTo(n));
             h.put("cc", allowCc && Boolean.TRUE.equals(n.get("includeCc")) ? str(n.get("cc")) : "");
             h.put("bcc", allowBcc && Boolean.TRUE.equals(n.get("includeBcc")) ? str(n.get("bcc")) : "");
             h.put("cells", resolvedNow);
@@ -640,6 +669,7 @@ public class DelayNotificationAction extends PDSAction {
         out.put("index", list(notice, "history").size() - 1);
         out.put("emails", emails);
         out.put("status", notice.get("status"));
+        out.put("to", list(notice, "history").get((Integer) out.get("index")).get("to"));
         out.put("allowNoticeCc", allowCc);
         out.put("allowNoticeBcc", allowBcc);
         if (Boolean.TRUE.equals(body.get("direct"))) {

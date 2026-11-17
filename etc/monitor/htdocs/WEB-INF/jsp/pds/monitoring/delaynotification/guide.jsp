@@ -60,13 +60,13 @@
           <table class="table table-sm table-bordered small mb-0">
             <thead class="table-light"><tr><th>Field</th><th>Content</th></tr></thead>
             <tbody>
-              <tr><td>To</td><td>The From/To address (default <code>operators@ecmwf.int</code>).</td></tr>
+              <tr><td>To</td><td>The configured default is <code>operators@ecmwf.int</code>. Select <em>Use an alternative To</em> to supply one or more addresses separated by semicolons. This changes only To: the sender and destination Bcc recipients are unchanged, so this is not a test-send mode. The override is retained for updates and resolutions; each message records its To address for reopening and direct sending. New notices start without an override.</td></tr>
               <tr><td>Bcc</td><td>The selected recipients, additional Bcc recipients, and the always-in-Bcc list (default <code>op_delay_ecmwf@lists.ecmwf.int</code>), so they do not see each other. Additional Bcc recipients are available when enabled in <a href="/do/admin/productmessages">Product Messages</a>; separate addresses by semicolons and they are validated before saving or sending. The disk button saves them as the default. If the list is too long for an Outlook link, the product distribution lists are used; <em>Copy BCC emails</em> gives the explicit recipients.</td></tr>
               <tr><td>Cc</td><td>Cc recipients are available when enabled in <a href="/do/admin/productmessages">Product Messages</a>. Separate addresses by semicolons; they are validated before saving or sending. The disk button saves them as the default; untick the box to send without Cc.</td></tr>
             </tbody>
           </table>
         </div>
-        <p class="small text-muted mb-0">The To and Bcc addresses are set in <a href="/do/admin/productmessages">Product Messages</a>.</p>
+        <p class="small text-muted mb-0">The default To and always-in-Bcc addresses are set in <a href="/do/admin/productmessages">Product Messages</a>. A notice's alternative To does not change those defaults.</p>
       </div>
 
       <div class="tab-pane fade" id="dng-msg" role="tabpanel">

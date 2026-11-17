@@ -144,7 +144,19 @@
    <div class="card-body">
     <div class="mb-2">
      <div class="d-flex align-items-center flex-wrap gap-2">
-      <label class="form-label small mb-0">To</label>
+      <label class="form-label small mb-0" for="dnTo">To</label>
+      <span class="small text-break" id="dnDefaultTo"></span>
+     </div>
+     <div class="form-check"><input class="form-check-input" type="checkbox" id="dnToOn" onchange="dnToggleTo()"><label class="form-check-label small" for="dnToOn">Use an alternative To</label></div>
+     <div id="dnToOption" class="d-none">
+      <input type="text" id="dnTo" class="form-control form-control-sm" placeholder="a@example.org; b@example.org" maxlength="8000" oninput="dnValidateTo()" disabled>
+      <div class="invalid-feedback" id="dnToError">Enter at least one valid email address, separated by semicolons.</div>
+     </div>
+     <div class="form-text">Changes To only. Affected destinations still receive the notice via Bcc; the sender is unchanged.</div>
+    </div>
+    <div class="mb-2">
+     <div class="d-flex align-items-center flex-wrap gap-2">
+      <span class="small">Affected destinations (Bcc)</span>
       <span class="badge rounded-pill text-bg-primary dn-pill" id="dnToPill" onclick="dnToggleDest()" title="Show the destinations affected">(0) Destinations</span>
       <span class="badge rounded-pill text-bg-secondary" id="dnEmailPill">0 emails</span>
       <button class="btn btn-link btn-sm" id="dnCopyBccBtn" type="button" onclick="dnCopyBcc()" title="Copy BCC email addresses" aria-label="Copy BCC email addresses" disabled><i class="bi bi-clipboard"></i></button>
@@ -801,6 +813,37 @@ window.dnUpdateCopyBcc = function() {
   $('dnCopyBccBtn').disabled = S.emails.length === 0
     && (!$('dnBccOn').checked || addressList($('dnBcc').value).length === 0);
 };
+function currentTo() {
+  return $('dnToOn').checked ? $('dnTo').value.trim() : TO_ADDRESS;
+}
+function noticeTo(notice) {
+  return notice.overrideTo && notice.to ? notice.to : TO_ADDRESS;
+}
+window.dnToggleTo = function() {
+  var enabled = $('dnToOn').checked;
+  $('dnToOption').classList.toggle('d-none', !enabled);
+  $('dnDefaultTo').classList.toggle('d-none', enabled);
+  $('dnTo').disabled = !enabled;
+  $('dnTo').required = enabled;
+  if (!enabled) {
+    $('dnTo').classList.remove('is-invalid');
+    $('dnToError').style.display = 'none';
+  }
+};
+window.dnValidateTo = function() {
+  var value = $('dnTo').value.trim();
+  var valid = !$('dnToOn').checked || !!value && value.split(/[;,]/).every(function(address) {
+    return /^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+$/i.test(address.trim());
+  });
+  $('dnTo').classList.toggle('is-invalid', !valid);
+  $('dnToError').style.display = valid ? 'none' : 'block';
+  return valid;
+};
+function resetTo() {
+  $('dnToOn').checked = false;
+  $('dnTo').value = '';
+  dnToggleTo();
+}
 function ccIsValid() {
   var value = $('dnCc').value.trim();
   return !value || value.split(';').every(function(address) {
@@ -853,11 +896,11 @@ function openOutlookWindow() {
 function closeOutlookWindow(popup) {
   if (popup && !popup.closed) { popup.close(); }
 }
-function outlook(subject, body, emails, cells, ccText, bccText, markdown, popup) {
+function outlook(subject, body, emails, cells, ccText, bccText, markdown, popup, to) {
   if (markdown) {
     // Outlook links can only carry plain text: use the plain-text rendering of the Markdown message.
     post('markdown', {markdown: body}).then(function(d) {
-      outlook(subject, d.text, emails, cells, ccText, bccText, false, popup);
+      outlook(subject, d.text, emails, cells, ccText, bccText, false, popup, to);
     }).catch(function(e) { closeOutlookWindow(popup); fail(e); });
     return;
   }
@@ -865,7 +908,7 @@ function outlook(subject, body, emails, cells, ccText, bccText, markdown, popup)
   var additionalBcc = addressList(bccText);
   function url(bcc) {
     return 'https://outlook.office365.com/mail/deeplink/compose?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body)
-      + '&from=' + encodeURIComponent(TO_ADDRESS) + '&to=' + encodeURIComponent(TO_ADDRESS) + (cc ? '&cc=' + encodeURIComponent(cc) : '') + '&bcc=' + encodeURIComponent(bcc.join(','));
+      + '&from=' + encodeURIComponent(TO_ADDRESS) + '&to=' + encodeURIComponent((to || TO_ADDRESS).replace(/;/g, ',')) + (cc ? '&cc=' + encodeURIComponent(cc) : '') + '&bcc=' + encodeURIComponent(bcc.join(','));
   }
   var u = url([BCC_LIST].concat(emails, additionalBcc));
   if (u.length > MAX_URL) {
@@ -885,7 +928,8 @@ function payload() {
   if ($('dnCompactEmptyLines').checked) {
     $('dnBody').value = compactEmptyLines($('dnBody').value);
   }
-  return {cells: cellList(), includeNonMonitored: $('dnNonMon').checked, includeCc: $('dnCcOn').checked, cc: $('dnCc').value,
+  return {cells: cellList(), overrideTo: $('dnToOn').checked, to: $('dnToOn').checked ? $('dnTo').value : '',
+    includeNonMonitored: $('dnNonMon').checked, includeCc: $('dnCcOn').checked, cc: $('dnCc').value,
     includeBcc: $('dnBccOn').checked, bcc: $('dnBcc').value,
     reason: reasonValue(), eta: $('dnEta').value, delay: $('dnDelay').value, note: $('dnNoteOn').checked ? $('dnNote').value : '',
     subject: $('dnSubject').value, body: $('dnBody').value};
@@ -901,7 +945,7 @@ function askConfirm(ref, index, m) {
   $('dnConfYes').onclick = function() { confirmSent(ref, index); };
   $('dnConfAgain').onclick = function() {
     var popup = openOutlookWindow();
-    if (popup) { outlook(m.subject, m.body, m.emails, m.cells, m.cc, m.bcc, m.markdown, popup); }
+    if (popup) { outlook(m.subject, m.body, m.emails, m.cells, m.cc, m.bcc, m.markdown, popup, m.to); }
   };
   $('dnConfLater').onclick = function() { box.innerHTML = ''; };
 }
@@ -909,6 +953,7 @@ function confirmSent(ref, index) {
   post('confirm', {ref: ref, index: index}).then(function() { alertMsg('Sending of ' + ref + ' confirmed', 'success'); load(); }).catch(fail);
 }
 window.dnPreview = function() {
+  if (!dnValidateTo()) { $('dnTo').focus(); return; }
   if ($('dnCcOn').checked && !dnValidateCc()) { $('dnCc').focus(); return; }
   if ($('dnBccOn').checked && !dnValidateBcc()) { $('dnBcc').focus(); return; }
   if ($('dnCompactEmptyLines').checked) {
@@ -919,7 +964,7 @@ window.dnPreview = function() {
   var ref = S.update ? S.update.ref : 'DLY-yyyy-nnnn (assigned when sent)';
   var subj = '[' + ref + '] ' + (S.update ? 'UPDATE - ' : '') + $('dnSubject').value;
   $('dnPreviewHead').innerHTML = '<div><strong>Subject:</strong> ' + esc(subj) + '</div>'
-    + '<div><strong>To:</strong> ' + esc(TO_ADDRESS) + '</div>'
+    + '<div><strong>To:</strong> ' + esc(currentTo()) + '</div>'
     + '<div><strong>Cc:</strong> ' + (cc.length ? esc(cc.join(', ')) : '<span class="text-muted">none</span>') + '</div>'
     + '<div><strong>Bcc:</strong> ' + (S.emails || []).length + ' recipient email(s) in ' + Object.keys(S.dests || {}).length + ' destination(s)'
     + (bcc.length ? ' + ' + bcc.length + ' additional (' + esc(bcc.join(', ')) + ')' : '') + '</div>';
@@ -950,6 +995,7 @@ function showPreviewMode() {
 }
 window.dnPreviewToggle = function() { S.previewPlain = !S.previewPlain; showPreviewMode(); };
 window.dnSend = function(direct) {
+  if (!dnValidateTo()) { $('dnTo').focus(); return; }
   if ($('dnCcOn').checked && !dnValidateCc()) { $('dnCc').focus(); return; }
   if ($('dnBccOn').checked && !dnValidateBcc()) { $('dnBcc').focus(); return; }
   var p = payload();
@@ -966,8 +1012,9 @@ window.dnSend = function(direct) {
     var ref = upd ? upd.ref : d.ref;
     var cc = p.includeCc ? p.cc : '';
     var bcc = p.includeBcc ? p.bcc : '';
-    var message = {subject: '[' + ref + '] ' + (upd ? 'UPDATE - ' : '') + p.subject, body: p.body, emails: d.emails, cells: p.cells, cc: cc, bcc: bcc, markdown: S.markdown};
+    var message = {subject: '[' + ref + '] ' + (upd ? 'UPDATE - ' : '') + p.subject, body: p.body, emails: d.emails, cells: p.cells, cc: cc, bcc: bcc, markdown: S.markdown, to: d.to};
     S.sel = {}; S.update = null; setUpdateMode(false); S.bodyEdited = false;
+    resetTo();
     afterSelection(); load();
     if (direct && d.sentDirectly) {
       alertMsg('Message queued through the Master mail service and acknowledged', 'success');
@@ -976,7 +1023,7 @@ window.dnSend = function(direct) {
         alertMsg('Direct sending failed: ' + d.deliveryError + '. Outlook was opened instead.', 'warning');
       }
       outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc, message.markdown,
-        outlookWindow);
+        outlookWindow, message.to);
       askConfirm(ref, d.index, message);
     }
   }).catch(function(e) {
@@ -992,7 +1039,7 @@ function setUpdateMode(on, ref) {
   $('dnDirectLbl').textContent = on ? 'Send update directly' : 'Send notice directly';
   $('dnTabComposeLbl').textContent = on ? 'Update ' + ref : 'Send delay notification';
 }
-window.dnLeaveUpdate = function() { S.update = null; setUpdateMode(false); S.sel = {}; S.bodyEdited = false; afterSelection(); };
+window.dnLeaveUpdate = function() { S.update = null; setUpdateMode(false); resetTo(); S.sel = {}; S.bodyEdited = false; afterSelection(); };
 
 function statusBadge(s) {
   var c = {active: 'danger', partial: 'warning', resolved: 'success', cancelled: 'secondary'}[s] || 'secondary';
@@ -1057,19 +1104,18 @@ window.dnGenerateReport = function() {
     notices.forEach(function(n) {
       var cells = n.cells || [];
       var destinations = (n.destinations || []).join('; ');
-      var emails = (n.emails || []).join('; ');
       var hasAddresses = includeAddresses;
       if (!cells.length) { cells = [{product: '', time: ''}]; }
       cells.forEach(function(c) {
         rows.push(['Affected product/cycle', n.createdAt, n.ref, n.status, n.createdBy, n.reason, c.product, c.time,
-          destinations, (n.emails || []).length, hasAddresses ? emails : '', hasAddresses && n.includeCc ? n.cc : '',
-          hasAddresses && n.includeBcc ? n.bcc : '', '', '', '', '', '']);
+          destinations, (n.emails || []).length, hasAddresses ? noticeTo(n) : '', hasAddresses && n.includeCc ? n.cc : '',
+          hasAddresses ? [BCC_LIST].concat(n.emails || [], n.includeBcc ? addressList(n.bcc) : []).join('; ') : '', '', '', '', '', '']);
       });
       if (includeHistory) {
         (n.history || []).forEach(function(h) {
           rows.push(['Message history', n.createdAt, n.ref, n.status, n.createdBy, n.reason, '', '', destinations,
-            (h.emails || []).length, hasAddresses ? (h.emails || []).join('; ') : '',
-            hasAddresses ? h.cc : '', hasAddresses ? h.bcc : '', h.kind, h.at, h.by, h.subject,
+            (h.emails || []).length, hasAddresses && h.subject ? h.to || TO_ADDRESS : '',
+            hasAddresses ? h.cc : '', hasAddresses && h.subject ? [BCC_LIST].concat(h.emails || [], addressList(h.bcc)).join('; ') : '', h.kind, h.at, h.by, h.subject,
             h.confirmed === false ? 'No' : h.confirmed === true ? 'Yes' : 'Not recorded']);
         });
       }
@@ -1108,6 +1154,7 @@ function sentDetails(n, i) {
   }).join('');
   var hist = (n.history || []).map(function(x, k) {
     return '<div class="py-1">' + esc(x.at) + ' ' + esc(x.kind) + ' by ' + esc(x.by) + (x.addedEmails && x.addedEmails.length ? ' (+' + x.addedEmails.length + ' recipients)' : '')
+      + (x.subject ? '<div class="text-break"><strong>To:</strong> ' + esc(x.to || TO_ADDRESS) + '</div>' : '')
       + (x.confirmed === false ? ' <span class="badge text-bg-warning">not confirmed as sent</span> '
           + '<button class="btn btn-sm btn-outline-success py-0" data-a="confirm" data-i="' + i + '" data-k="' + k + '">I have sent it</button> '
           + '<button class="btn btn-sm btn-outline-danger py-0" data-a="direct" data-i="' + i + '" data-k="' + k + '">Send directly</button> '
@@ -1233,7 +1280,7 @@ function sentAction(a, n, i, k) {
     if (popup) {
       outlook('[' + n.ref + '] ' + (m.kind === 'update' ? 'UPDATE - ' : '') + m.subject, m.body, m.emails || [],
         m.cells ? m.cells.map(function(c) { var j = c.lastIndexOf('@'); return {product: c.substring(0, j), time: c.substring(j + 1)}; }) : (n.cells || []),
-        m.cc, m.bcc, m.markdown !== false, popup);
+        m.cc, m.bcc, m.markdown !== false, popup, m.to);
     }
     return;
   }
@@ -1266,6 +1313,7 @@ function startUpdate(n) {
   S.update = n; S.sel = {};
   (n.cells || []).forEach(function(c) { if (!c.resolved) { S.sel[c.product + '@' + c.time] = c.level; } });
   $('dnNonMon').checked = !!n.includeNonMonitored;
+  $('dnToOn').checked = !!n.overrideTo; $('dnTo').value = n.to || ''; dnToggleTo();
   $('dnCcOn').checked = S.allowNoticeCc && !!n.includeCc; $('dnCc').value = n.cc || '';
   $('dnBccOn').checked = S.allowNoticeBcc && !!n.includeBcc; $('dnBcc').value = n.bcc || '';
   dnUpdateCopyBcc();
@@ -1300,6 +1348,7 @@ function openResolve(n, i) {
   }
   row.innerHTML = '<div class="p-2 border rounded mb-2"><div class="small mb-1">Cells to resolve:</div>'
     + openCells.map(function(c) { return '<label class="me-3 small"><input type="checkbox" class="form-check-input me-1" checked value="' + esc(c.product + '@' + c.time) + '">' + esc(c.product + ' ' + c.time) + '</label>'; }).join('')
+    + '<div class="small text-break mt-2"><strong>To:</strong> ' + esc(noticeTo(n)) + '</div>'
     + '<textarea class="form-control my-2 rs-subj" rows="2" aria-label="Resolution subject">' + esc(resolutionSubject(openCells)) + '</textarea>'
     + '<textarea class="form-control form-control-sm mb-2 rs-body" rows="6">' + esc(resolutionBody(openCells)) + '</textarea>'
     + '<button class="btn btn-sm btn-outline-secondary rs-regen me-2"><i class="bi bi-arrow-clockwise me-1"></i>Regenerate</button><button class="btn btn-sm btn-outline-primary rs-preview me-2"><i class="bi bi-eye me-1"></i>Preview</button><button class="btn btn-sm btn-success rs-go me-2">Register and open Outlook</button><button class="btn btn-sm btn-outline-success rs-direct">Send directly</button></div>';
@@ -1346,7 +1395,7 @@ function openResolve(n, i) {
       var cells = picked.map(function(k) { var j = k.lastIndexOf('@'); return {product: k.substring(0, j), time: k.substring(j + 1)}; });
       var cc = d.allowNoticeCc && S.allowNoticeCc && n.includeCc ? n.cc : '';
       var bcc = d.allowNoticeBcc && S.allowNoticeBcc && n.includeBcc ? n.bcc : '';
-      var message = {subject: '[' + n.ref + '] ' + subject, body: body, emails: d.emails, cells: cells, cc: cc, bcc: bcc, markdown: S.markdown};
+      var message = {subject: '[' + n.ref + '] ' + subject, body: body, emails: d.emails, cells: cells, cc: cc, bcc: bcc, markdown: S.markdown, to: d.to};
       load();
       if (direct && d.sentDirectly) {
         alertMsg('Resolution message queued through the Master mail service and acknowledged', 'success');
@@ -1355,7 +1404,7 @@ function openResolve(n, i) {
           alertMsg('Direct sending failed: ' + d.deliveryError + '. Outlook was opened instead.', 'warning');
         }
         outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc, message.markdown,
-          outlookWindow);
+          outlookWindow, message.to);
         askConfirm(n.ref, d.index, message);
       }
     }).catch(function(e) {
@@ -1367,7 +1416,7 @@ function openResolve(n, i) {
     var cc = S.allowNoticeCc && n.includeCc ? addressList((n.cc || '').replace(/,/g, ';')) : [];
     var bcc = S.allowNoticeBcc && n.includeBcc ? addressList(n.bcc) : [];
     $('dnPreviewHead').innerHTML = '<div><strong>Subject:</strong> ' + esc('[' + n.ref + '] ' + subjectField.value) + '</div>'
-      + '<div><strong>To:</strong> ' + esc(TO_ADDRESS) + '</div>'
+      + '<div><strong>To:</strong> ' + esc(noticeTo(n)) + '</div>'
       + '<div><strong>Cc:</strong> ' + (cc.length ? esc(cc.join(', ')) : '<span class="text-muted">none</span>') + '</div>'
       + '<div><strong>Bcc:</strong> ' + (n.emails || []).length + ' recipient email(s) in ' + (n.destinations || []).length + ' destination(s)'
       + (bcc.length ? ' + ' + bcc.length + ' additional (' + esc(bcc.join(', ')) + ')' : '') + '</div>';
@@ -1405,6 +1454,7 @@ function load() {
     if (!S.allowNoticeCc) $('dnCcOn').checked = false;
     if (!S.allowNoticeBcc) $('dnBccOn').checked = false;
     if (d.toAddress) { TO_ADDRESS = d.toAddress; } if (d.bccAddress) { BCC_LIST = d.bccAddress; }
+    $('dnDefaultTo').textContent = TO_ADDRESS;
     S.compactCycles = d.compactCycles; S.delayTemplate = d.delayTemplate; S.resumedTemplate = d.resumedTemplate; S.descriptions = d.descriptions;
     if (!$('dnCc').value && !S.update) { $('dnCc').value = d.defaultCc || ''; }
     if (!$('dnBcc').value && !S.update) { $('dnBcc').value = d.defaultBcc || ''; }
