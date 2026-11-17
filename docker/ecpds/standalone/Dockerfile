@@ -21,6 +21,7 @@ ENV LOG_ROLLOVER_DATE_KEEP=5d
 # Evaluation-only credentials for local JMX and Hawtio access.
 ENV JOLOKIA_USER=jolokia
 ENV JOLOKIA_PASSWORD=jolokia2021
+ENV JOLOKIA_POLICY_LOCATION=file:/etc/ecpds/jolokia-access.xml
 ENV HAWTIO_USER=hawtio
 ENV HAWTIO_PASSWORD=hawtio2021
 ENV HAWTIO_GATEWAY_PORT=8080
@@ -156,6 +157,7 @@ COPY ecpds.sql /ecpds-init.sql
 COPY hawtio/lib /opt/hawtio/lib
 COPY hawtio/HawtioLauncher.java /opt/hawtio/HawtioLauncher.java
 COPY hawtio/entrypoint.sh /entrypoint.sh
+COPY jolokia-access.xml /etc/ecpds/jolokia-access.xml
 RUN mkdir -p /opt/hawtio/classes && \
     javac -d /opt/hawtio/classes -cp "/opt/hawtio/lib/*" /opt/hawtio/HawtioLauncher.java && \
     rm /opt/hawtio/HawtioLauncher.java && \

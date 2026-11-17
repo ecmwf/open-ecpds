@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hawtio terminates HTTPS before proxying to the authenticated loopback agents.
+     Retain their default origin access while permitting this scheme change. -->
+<restrict>
+  <cors>
+    <allow-origin>*</allow-origin>
+    <ignore-scheme/>
+  </cors>
+</restrict>
