@@ -145,8 +145,8 @@
 			</div>
 		</div>
 		<div class="card-body pb-2 pt-2">
-			<div id="moverStorageVolumeStatus" class="mb-3"></div>
 			<div id="moverDiskUsageSummary" class="d-flex flex-wrap gap-3 mb-2" style="font-size:0.82rem"></div>
+			<div class="text-muted small mb-2">Select a volume to view its device, paths and controls.</div>
 			<div id="moverDiskUsageWrap">
 				<div class="text-muted small fst-italic">Loading&hellip;</div>
 			</div>
@@ -157,11 +157,12 @@
 	<script>
 	(function() {
 		var moverName  = '${transferserver.name}';
-		var chartInst  = null;
 		var fetchedAt  = null;
 		var currentVols = [];
-		var _obsTheme  = null;
 		var storageVolumeCsrf = null;
+		var volumeRows = new Map();
+		var volumeUpdates = new Set();
+		var volumeRevision = 0;
 
 		function htmlText(value) {
 			var el = document.createElement('span');
@@ -169,43 +170,108 @@
 			return el.innerHTML;
 		}
 
-		function renderStorageVolumes(volumes) {
-			var target = document.getElementById('moverStorageVolumeStatus');
-			if (!target) return;
-			if (!volumes || volumes.length === 0) {
-				target.innerHTML = '<div class="text-muted small">'
-					+ htmlText(currentVols.storageInfoError || 'Filesystem device and mount details are unavailable.')
-					+ '</div>';
+		function setText(el, value) {
+			if (el.textContent !== value) el.textContent = value;
+		}
+
+		function renderStorageVolumes() {
+			var wrap = document.getElementById('moverDiskUsageWrap');
+			var volumes = new Map();
+			currentVols.forEach(function(v) { volumes.set(String(v.volume), { usage: v }); });
+			(currentVols.storageInfo || []).forEach(function(v) {
+				var key = String(v.volume);
+				if (!volumes.has(key)) volumes.set(key, {});
+				volumes.get(key).info = v;
+			});
+			if (!volumes.size) {
+				volumeRows.clear();
+				wrap.innerHTML = '<div class="text-muted small fst-italic py-1">No disk usage snapshot available. Check that the Data Mover is connected and enabled, its transfer group is active, and background polling is running.</div>';
 				return;
 			}
-			var html = '<div class="table-responsive"><table class="table table-sm align-middle mb-0">'
-				+ '<thead><tr><th>Volume</th><th>Device</th><th>Mount point</th><th>Storage path</th><th>Status</th><th></th></tr></thead><tbody>';
-			volumes.forEach(function(v) {
-				var disabled = v.disabled === true;
-				html += '<tr>'
-					+ '<td>Vol ' + v.volume + '</td>'
-					+ '<td class="font-monospace">' + htmlText(v.device) + '</td>'
-					+ '<td class="font-monospace">' + htmlText(v.mountPoint) + '</td>'
-					+ '<td class="font-monospace text-break">' + htmlText(v.volumePath) + '</td>'
-					+ '<td>' + (disabled
-						? '<span class="badge rounded-pill border fw-normal bg-warning-subtle text-warning-emphasis border-warning-subtle">Disabled</span>'
-						: '<span class="badge rounded-pill border fw-normal bg-success-subtle text-success-emphasis border-success-subtle">Enabled</span>') + '</td>'
-					+ '<td>' + (storageVolumeCsrf
-						? '<button type="button" class="btn btn-sm ' + (disabled ? 'btn-outline-success' : 'btn-outline-danger')
-							+ '" data-volume="' + v.volume + '" data-disabled="' + (!disabled) + '">'
-							+ (disabled ? 'Re-enable' : 'Disable') + '</button>'
-						: '') + '</td></tr>';
+			if (!volumeRows.size) {
+				wrap.innerHTML = '<div class="table-responsive"><table class="table table-sm align-middle mb-0">'
+					+ '<thead><tr><th>Volume</th><th style="min-width:140px">Usage</th><th>Used</th><th>Free</th><th>Total</th><th>Status</th></tr></thead><tbody></tbody></table></div>';
+			}
+			var tbody = wrap.querySelector('tbody');
+			volumeRows.forEach(function(rows, key) {
+				if (!volumes.has(key)) {
+					rows.main.remove();
+					rows.detail.remove();
+					volumeRows.delete(key);
+				}
 			});
-			target.innerHTML = html + '</tbody></table></div>';
+			volumes.forEach(function(v, key) {
+				var rows = volumeRows.get(key);
+				if (!rows) {
+					var main = document.createElement('tr');
+					main.innerHTML = '<td><button type="button" class="btn btn-link btn-sm p-0 text-nowrap" data-volume-toggle aria-expanded="false">'
+						+ '<i class="bi bi-chevron-right me-1" aria-hidden="true"></i>Vol ' + htmlText(key) + '</button></td>'
+						+ '<td><div class="progress" style="height:18px"><div class="progress-bar" role="progressbar" aria-label="Disk space used" aria-valuemin="0" aria-valuemax="100"></div></div></td>'
+						+ '<td data-used></td><td data-free></td><td data-total></td><td><span data-status></span></td>';
+					var detail = document.createElement('tr');
+					detail.id = 'moverVolumeDetails-' + key;
+					detail.hidden = true;
+					detail.innerHTML = '<td colspan="6"><div class="card bg-body-tertiary border-0 my-1"><div class="card-body py-2">'
+						+ '<div class="field-grid">'
+						+ '<div class="field-row"><div class="field-label">Device</div><div class="field-value font-monospace text-break" data-device></div></div>'
+						+ '<div class="field-row"><div class="field-label">Mount point</div><div class="field-value font-monospace text-break" data-mount></div></div>'
+						+ '<div class="field-row"><div class="field-label">Storage path</div><div class="field-value font-monospace text-break" data-path></div></div>'
+						+ '</div><div class="small text-muted my-2" data-info-error></div>'
+						+ '<button type="button" class="btn btn-sm" data-volume-action hidden></button>'
+						+ '</div></div></td>';
+					var toggle = main.querySelector('button');
+					toggle.setAttribute('aria-controls', detail.id);
+					toggle.addEventListener('click', function() {
+						detail.hidden = !detail.hidden;
+						toggle.setAttribute('aria-expanded', String(!detail.hidden));
+						toggle.querySelector('i').className = 'bi me-1 bi-chevron-' + (detail.hidden ? 'right' : 'down');
+					});
+					detail.querySelector('button').setAttribute('data-volume', key);
+					tbody.appendChild(main);
+					tbody.appendChild(detail);
+					rows = { main: main, detail: detail };
+					volumeRows.set(key, rows);
+				}
+				var usage = v.usage, info = v.info;
+				var bar = rows.main.querySelector('.progress-bar');
+				bar.style.width = (usage ? usage.pct : 0) + '%';
+				bar.style.backgroundColor = pctColor(usage ? usage.pct : 0);
+				bar.setAttribute('aria-valuenow', usage ? usage.pct : 0);
+				setText(bar, usage ? usage.pct + '%' : '');
+				setText(rows.main.querySelector('[data-used]'), usage ? fmtBytes(usage.used) : '?');
+				setText(rows.main.querySelector('[data-free]'), usage ? fmtBytes(usage.free) : '?');
+				setText(rows.main.querySelector('[data-total]'), usage ? fmtBytes(usage.total) : '?');
+				var disabled = info && info.disabled === true;
+				var status = rows.main.querySelector('[data-status]');
+				status.className = 'badge rounded-pill border fw-normal ' + (!info
+					? 'bg-secondary-subtle text-secondary-emphasis'
+					: disabled ? 'bg-warning-subtle text-warning-emphasis' : 'bg-success-subtle text-success-emphasis');
+				setText(status, info ? (disabled ? 'Disabled' : 'Enabled') : 'Unavailable');
+				setText(rows.detail.querySelector('[data-device]'), info && info.device || 'Unavailable');
+				setText(rows.detail.querySelector('[data-mount]'), info && info.mountPoint || 'Unavailable');
+				setText(rows.detail.querySelector('[data-path]'), info && info.volumePath || 'Unavailable');
+				setText(rows.detail.querySelector('[data-info-error]'), currentVols.storageInfoError
+					|| (!info ? 'Filesystem device and mount details are unavailable.' : ''));
+				var button = rows.detail.querySelector('button');
+				button.hidden = !storageVolumeCsrf || !info;
+				button.disabled = volumeUpdates.has(key);
+				button.className = 'btn btn-sm ' + (disabled ? 'btn-outline-success' : 'btn-outline-danger');
+				button.setAttribute('data-disabled', String(!disabled));
+				setText(button, disabled ? 'Re-enable' : 'Disable');
+			});
 		}
 
 		$.getJSON('/do/datafile/movervolume').done(function(data) {
 			storageVolumeCsrf = data.csrf || null;
-			if (currentVols.length) renderStorageVolumes(currentVols.storageInfo || []);
+			renderStorageVolumes();
 		});
 
-		$(document).on('click', '#moverStorageVolumeStatus button[data-volume]', function() {
+		$('#moverDiskUsageWrap').on('click', 'button[data-volume-action]', function() {
 			var button = $(this);
+			var volume = button.attr('data-volume');
+			if (volumeUpdates.has(volume)) return;
+			volumeUpdates.add(volume);
+			volumeRevision++;
 			button.prop('disabled', true);
 			$.ajax({
 				url: '/do/datafile/movervolume',
@@ -214,15 +280,17 @@
 				data: {
 					csrf: storageVolumeCsrf,
 					mover: moverName,
-					volume: button.attr('data-volume'),
+					volume: volume,
 					disabled: button.attr('data-disabled')
 				}
-			}).done(function() {
-				refresh();
 			}).fail(function(xhr) {
 				var message = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'Storage volume update failed.';
 				ecpdsAlert('Storage volume update failed', message);
+			}).always(function() {
+				volumeUpdates.delete(volume);
+				volumeRevision++;
 				button.prop('disabled', false);
+				refresh();
 			});
 		});
 
@@ -241,86 +309,18 @@
 			return '#0d6efd';
 		}
 
-		function getThemeColors() {
-			var s = getComputedStyle(document.documentElement);
-			return {
-				bodyColor:   (s.getPropertyValue('--bs-body-color')      || '').trim() || '#212529',
-				borderColor: (s.getPropertyValue('--bs-border-color')    || '').trim() || '#dee2e6',
-				secondaryBg: (s.getPropertyValue('--bs-secondary-bg')    || '').trim() || '#e9ecef',
-				mutedColor:  (s.getPropertyValue('--bs-secondary-color') || '').trim() || '#6c757d'
-			};
-		}
-
-		var pctLabelPlugin = {
-			id: 'pctLabels',
-			afterDatasetsDraw: function(chart) {
-				var meta = chart.getDatasetMeta(0);
-				var c = chart.ctx;
-				meta.data.forEach(function(bar, i) {
-					if (i >= currentVols.length) return;
-					var pct = currentVols[i].pct;
-					var barWidth = Math.abs(bar.x - bar.base);
-					if (barWidth < 28) return;
-					c.save();
-					c.fillStyle = '#fff';
-					c.font = 'bold 11px sans-serif';
-					c.textAlign = 'center';
-					c.textBaseline = 'middle';
-					c.fillText(pct + '%', (bar.x + bar.base) / 2, bar.y);
-					c.restore();
-				});
-			}
-		};
-
-		/* Draws a dashed vertical line at the maximum used value so each bar
-		   can be visually compared against the highest usage in the set. */
-		var maxRefPlugin = {
-			id: 'maxRef',
-			afterDatasetsDraw: function(chart) {
-				if (!currentVols || currentVols.length < 2) return;
-				var usedVals = currentVols.map(function(v) { return v.used; });
-				var maxUsed  = Math.max.apply(null, usedVals);
-				var minUsed  = Math.min.apply(null, usedVals);
-				if (maxUsed === minUsed) return;
-				var theme   = getThemeColors();
-				var xPx     = chart.scales.x.getPixelForValue(maxUsed);
-				var yTop    = chart.chartArea.top;
-				var yBottom = chart.chartArea.bottom;
-				var c = chart.ctx;
-				c.save();
-				c.strokeStyle = theme.mutedColor;
-				c.lineWidth   = 1.5;
-				c.setLineDash([4, 3]);
-				c.beginPath();
-				c.moveTo(xPx, yTop);
-				c.lineTo(xPx, yBottom);
-				c.stroke();
-				c.setLineDash([]);
-				c.fillStyle = theme.mutedColor;
-				c.font      = '10px sans-serif';
-				c.textAlign = 'center';
-				c.textBaseline = 'bottom';
-				c.fillText('max', xPx, yTop - 1);
-				c.restore();
-			}
-		};
-
-		function buildChart(vols) {
+		function renderDiskUsage(vols) {
 			currentVols = vols || [];
-			var wrap = document.getElementById('moverDiskUsageWrap');
 			var summary = document.getElementById('moverDiskUsageSummary');
-			renderStorageVolumes(currentVols.storageInfo || []);
+			renderStorageVolumes();
 			if (!vols || vols.length === 0) {
-				if (chartInst) { chartInst.destroy(); chartInst = null; }
 				if (summary) summary.innerHTML = '';
-				wrap.innerHTML = '<div class="text-muted small fst-italic py-1">No disk usage snapshot available. Check that the Data Mover is connected and enabled, its transfer group is active, and background polling is running.</div>';
 				return;
 			}
 
 			/* Build summary badges */
 			if (summary) {
 				var totalUsed  = vols.reduce(function(s, v) { return s + v.used;  }, 0);
-				var totalFree  = vols.reduce(function(s, v) { return s + v.free;  }, 0);
 				var totalCap   = vols.reduce(function(s, v) { return s + v.total; }, 0);
 				var overallPct = totalCap > 0 ? Math.round(100 * totalUsed / totalCap) : 0;
 				var pctCls = overallPct >= 90 ? 'text-danger-emphasis bg-danger-subtle border-danger-subtle'
@@ -350,93 +350,6 @@
 				}
 				summary.innerHTML = html;
 			}
-
-			var theme    = getThemeColors();
-			var pcts     = vols.map(function(v) { return v.pct; });
-			var gMin = vols.length > 1 ? Math.min.apply(null, pcts) : null;
-			var gMax = vols.length > 1 ? Math.max.apply(null, pcts) : null;
-			var showMM = gMin !== null && gMin !== gMax;
-			var labels = vols.map(function(v) {
-				var lbl = 'Vol ' + v.volume;
-				if (showMM) {
-					if (v.pct === gMax) lbl += ' \u25B2';
-					else if (v.pct === gMin) lbl += ' \u25BC';
-				}
-				return lbl;
-			});
-			var usedData = vols.map(function(v) { return v.used; });
-			var freeData = vols.map(function(v) { return v.free; });
-			var bgColors = pcts.map(pctColor);
-
-			if (chartInst) {
-				chartInst.data.labels = labels;
-				chartInst.data.datasets[0].data = usedData;
-				chartInst.data.datasets[0].backgroundColor = bgColors;
-				chartInst.data.datasets[1].data = freeData;
-				chartInst.data.datasets[1].backgroundColor = theme.secondaryBg;
-				chartInst.update('none');
-				return;
-			}
-
-			var chartHeight = Math.max(260, vols.length * 32);
-		wrap.innerHTML = '<canvas id="moverDiskUsageChart" style="height:' + chartHeight + 'px"></canvas>';
-			var ctx = document.getElementById('moverDiskUsageChart').getContext('2d');
-			chartInst = new Chart(ctx, {
-				type: 'bar',
-				data: {
-					labels: labels,
-					datasets: [
-						{
-							label: 'Used',
-							data: usedData,
-							backgroundColor: bgColors,
-							stack: 'disk'
-						},
-						{
-							label: 'Free',
-							data: freeData,
-							backgroundColor: theme.secondaryBg,
-							stack: 'disk'
-						}
-					]
-				},
-				options: {
-					indexAxis: 'y',
-					responsive: true,
-					maintainAspectRatio: false,
-					animation: false,
-					plugins: {
-						legend: { display: false },
-						tooltip: {
-							callbacks: {
-								label: function(ctx) {
-									var v = currentVols[ctx.dataIndex];
-									if (ctx.datasetIndex === 0)
-										return ' Used: ' + fmtBytes(v.used) + ' (' + v.pct + '%)';
-									return ' Free: ' + fmtBytes(v.free);
-								},
-								title: function(items) {
-									var v = currentVols[items[0].dataIndex];
-									return 'Vol ' + v.volume + '  -  total: ' + fmtBytes(v.total);
-								}
-							}
-						}
-					},
-					scales: {
-						x: {
-							stacked: true,
-							ticks: { color: theme.bodyColor, callback: function(v) { return fmtBytes(v); } },
-							grid:  { color: theme.borderColor }
-						},
-						y: {
-							stacked: true,
-							ticks: { color: theme.bodyColor },
-							grid:  { color: theme.borderColor }
-						}
-					}
-				},
-				plugins: [pctLabelPlugin, maxRefPlugin]
-			});
 		}
 
 		function updateAge() {
@@ -446,16 +359,18 @@
 			el.textContent = '(sampled ' + sec + 's ago' + (sec > 120 ? ' \u2014 stale' : '') + ')';
 		}
 
-		var _tsBusy = false, _tsRefreshFailed = false, _tsRefIv, _tsAgeIv;
+		var _tsBusy = false, _tsRefreshRequested = false, _tsRefreshFailed = false, _tsRefIv, _tsAgeIv;
 		function refresh() {
-			if (_tsBusy) return;
+			if (_tsBusy) { _tsRefreshRequested = true; return; }
 			_tsBusy = true;
+			var revision = volumeRevision;
 			$.ajax({
 				url: '/do/datafile/moverdiskusage/' + encodeURIComponent(moverName),
 				dataType: 'json',
 				timeout: 12000
 			})
 				.done(function(data) {
+					if (revision !== volumeRevision || volumeUpdates.size) return;
 					_tsRefreshFailed = false;
 					var sampled = data.updated && data.updated[moverName];
 					fetchedAt = sampled ? Date.now() - Math.max(0, data.now - sampled) : null;
@@ -463,43 +378,34 @@
 					var vols = (data.movers && data.movers[moverName]) ? data.movers[moverName] : [];
 					vols.storageInfo = (data.details && data.details[moverName]) ? data.details[moverName] : [];
 					vols.storageInfoError = data.storageInfoError || null;
-					buildChart(vols);
+					renderDiskUsage(vols);
 					updateAge();
 				})
 				.fail(function(xhr) {
 					_tsRefreshFailed = true;
 					var expired = xhr.status === 401 || xhr.status === 403;
 					if (expired) {
+						_tsRefreshRequested = false;
 						clearInterval(_tsRefIv);
 						clearInterval(_tsAgeIv);
 					}
 					var el = document.getElementById('moverDiskUsageAge');
 					if (el) el.textContent = expired ? 'Session expired or access denied; reload to sign in.'
 						: 'Refresh unavailable; retrying. Any displayed snapshot may be stale.';
-					if (!currentVols.length) {
+					if (!volumeRows.size) {
 						document.getElementById('moverDiskUsageWrap').textContent =
 							'Disk usage could not be loaded.' + (expired ? '' : ' Retrying automatically.');
 					}
 				})
-				.always(function() { _tsBusy = false; });
+				.always(function() {
+					_tsBusy = false;
+					if (_tsRefreshRequested) { _tsRefreshRequested = false; refresh(); }
+				});
 		}
 
 		refresh();
 		_tsRefIv = setInterval(refresh, 5000);
 		_tsAgeIv = setInterval(updateAge, 1000);
-
-		new MutationObserver(function() {
-			var t = document.documentElement.getAttribute('data-bs-theme') || 'light';
-			if (t === _obsTheme) return;
-			_obsTheme = t;
-			if (chartInst) {
-				chartInst.destroy();
-				chartInst = null;
-				document.getElementById('moverDiskUsageWrap').innerHTML = '';
-				document.getElementById('moverDiskUsageSummary').innerHTML = '';
-			}
-			if (currentVols && currentVols.length > 0) buildChart(currentVols);
-		}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 	})();
 	</script>
 
