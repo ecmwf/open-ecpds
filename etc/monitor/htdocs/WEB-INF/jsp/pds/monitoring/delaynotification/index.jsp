@@ -144,15 +144,9 @@
    <div class="card-body">
     <div class="mb-2">
      <div class="d-flex align-items-center flex-wrap gap-2">
-      <label class="form-label small mb-0" for="dnTo">To</label>
+      <span class="small">To</span>
       <span class="small text-break" id="dnDefaultTo"></span>
      </div>
-     <div class="form-check"><input class="form-check-input" type="checkbox" id="dnToOn" onchange="dnToggleTo()"><label class="form-check-label small" for="dnToOn">Use an alternative To</label></div>
-     <div id="dnToOption" class="d-none">
-      <input type="text" id="dnTo" class="form-control form-control-sm" placeholder="a@example.org; b@example.org" maxlength="8000" oninput="dnValidateTo()" disabled>
-      <div class="invalid-feedback" id="dnToError">Enter at least one valid email address, separated by semicolons.</div>
-     </div>
-     <div class="form-text">Changes To only. Affected destinations still receive the notice via Bcc; the sender is unchanged.</div>
     </div>
     <div class="mb-2">
      <div class="d-flex align-items-center flex-wrap gap-2">
@@ -162,7 +156,9 @@
       <button class="btn btn-link btn-sm" id="dnCopyBccBtn" type="button" onclick="dnCopyBcc()" title="Copy BCC email addresses" aria-label="Copy BCC email addresses" disabled><i class="bi bi-clipboard"></i></button>
      </div>
      <div id="dnDestList" class="small border rounded p-2 mt-1 d-none" style="max-height:160px; overflow:auto"></div>
+     <div class="form-check form-switch mt-1"><input class="form-check-input" type="checkbox" id="dnMon" checked onchange="dnRecipients()"><label class="form-check-label small" for="dnMon">Include destinations showing in the monitor</label></div>
      <div class="form-check form-switch mt-1"><input class="form-check-input" type="checkbox" id="dnNonMon" onchange="dnRecipients()"><label class="form-check-label small" for="dnNonMon">Include destinations not showing in the monitor</label></div>
+     <div class="form-text">Uncheck both to exclude affected destination contacts. To and other configured recipients are unchanged.</div>
     </div>
     <div class="mb-2" id="dnBccOption">
      <div class="form-check"><input class="form-check-input" type="checkbox" id="dnBccOn" checked onchange="dnUpdateCopyBcc()"><label class="form-check-label small" for="dnBccOn">Bcc recipients (additional)</label></div>
@@ -780,10 +776,13 @@ window.dnNoteToggle = function() {
 window.dnEdited = function() { S.bodyEdited = true; };
 window.dnEditedReset = function() { S.bodyEdited = false; dnAuto(); };
 
+var recipientRequest = 0;
 window.dnRecipients = function() {
+  var request = ++recipientRequest;
   var cells = cellList();
-  if (!cells.length) { S.emails = []; S.dests = {}; renderRecipients(); return; }
-  post('recipients', {cells: cells, includeNonMonitored: $('dnNonMon').checked}).then(function(d) {
+  if (!cells.length || !$('dnMon').checked && !$('dnNonMon').checked) { S.emails = []; S.dests = {}; renderRecipients(); return; }
+  return post('recipients', {cells: cells, includeMonitored: $('dnMon').checked, includeNonMonitored: $('dnNonMon').checked}).then(function(d) {
+    if (request !== recipientRequest) { return; }
     S.emails = d.emails; S.dests = d.destinations; renderRecipients();
   }).catch(fail);
 };
@@ -813,36 +812,9 @@ window.dnUpdateCopyBcc = function() {
   $('dnCopyBccBtn').disabled = S.emails.length === 0
     && (!$('dnBccOn').checked || addressList($('dnBcc').value).length === 0);
 };
-function currentTo() {
-  return $('dnToOn').checked ? $('dnTo').value.trim() : TO_ADDRESS;
-}
-function noticeTo(notice) {
-  return notice.overrideTo && notice.to ? notice.to : TO_ADDRESS;
-}
-window.dnToggleTo = function() {
-  var enabled = $('dnToOn').checked;
-  $('dnToOption').classList.toggle('d-none', !enabled);
-  $('dnDefaultTo').classList.toggle('d-none', enabled);
-  $('dnTo').disabled = !enabled;
-  $('dnTo').required = enabled;
-  if (!enabled) {
-    $('dnTo').classList.remove('is-invalid');
-    $('dnToError').style.display = 'none';
-  }
-};
-window.dnValidateTo = function() {
-  var value = $('dnTo').value.trim();
-  var valid = !$('dnToOn').checked || !!value && value.split(/[;,]/).every(function(address) {
-    return /^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+$/i.test(address.trim());
-  });
-  $('dnTo').classList.toggle('is-invalid', !valid);
-  $('dnToError').style.display = valid ? 'none' : 'block';
-  return valid;
-};
-function resetTo() {
-  $('dnToOn').checked = false;
-  $('dnTo').value = '';
-  dnToggleTo();
+function resetDestinationGroups() {
+  $('dnMon').checked = true;
+  $('dnNonMon').checked = false;
 }
 function ccIsValid() {
   var value = $('dnCc').value.trim();
@@ -896,11 +868,11 @@ function openOutlookWindow() {
 function closeOutlookWindow(popup) {
   if (popup && !popup.closed) { popup.close(); }
 }
-function outlook(subject, body, emails, cells, ccText, bccText, markdown, popup, to) {
+function outlook(subject, body, emails, cells, ccText, bccText, markdown, popup, allowProductLists) {
   if (markdown) {
     // Outlook links can only carry plain text: use the plain-text rendering of the Markdown message.
     post('markdown', {markdown: body}).then(function(d) {
-      outlook(subject, d.text, emails, cells, ccText, bccText, false, popup, to);
+      outlook(subject, d.text, emails, cells, ccText, bccText, false, popup, allowProductLists);
     }).catch(function(e) { closeOutlookWindow(popup); fail(e); });
     return;
   }
@@ -908,14 +880,19 @@ function outlook(subject, body, emails, cells, ccText, bccText, markdown, popup,
   var additionalBcc = addressList(bccText);
   function url(bcc) {
     return 'https://outlook.office365.com/mail/deeplink/compose?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body)
-      + '&from=' + encodeURIComponent(TO_ADDRESS) + '&to=' + encodeURIComponent((to || TO_ADDRESS).replace(/;/g, ',')) + (cc ? '&cc=' + encodeURIComponent(cc) : '') + '&bcc=' + encodeURIComponent(bcc.join(','));
+      + '&from=' + encodeURIComponent(TO_ADDRESS) + '&to=' + encodeURIComponent(TO_ADDRESS.replace(/;/g, ',')) + (cc ? '&cc=' + encodeURIComponent(cc) : '') + '&bcc=' + encodeURIComponent(bcc.join(','));
   }
   var u = url([BCC_LIST].concat(emails, additionalBcc));
-  if (u.length > MAX_URL) {
-    // Too long for a link: use the distribution lists of each product/cycle, and offer the explicit emails to copy.
+  if (u.length > MAX_URL && allowProductLists && emails.length) {
+    // Product lists can only substitute recipients when neither destination group is excluded.
     var lists = {}; cells.forEach(function(c) { lists['ecpds-product-' + c.time + '-' + c.product + '@ecmwf.int'] = 1; });
     u = url([BCC_LIST].concat(Object.keys(lists), additionalBcc));
     alertMsg('The recipient list is too long for an Outlook link: the product distribution lists were used in BCC. Use "Copy BCC emails" for the explicit list.', 'warning');
+  }
+  if (u.length > MAX_URL) {
+    closeOutlookWindow(popup);
+    alertMsg('The message is too long for an Outlook link without changing its recipients. Use Send directly, or the direct-send action in Sent notices.', 'warning');
+    return false;
   }
   if (popup && !popup.closed) {
     popup.location.replace(u);
@@ -928,8 +905,8 @@ function payload() {
   if ($('dnCompactEmptyLines').checked) {
     $('dnBody').value = compactEmptyLines($('dnBody').value);
   }
-  return {cells: cellList(), overrideTo: $('dnToOn').checked, to: $('dnToOn').checked ? $('dnTo').value : '',
-    includeNonMonitored: $('dnNonMon').checked, includeCc: $('dnCcOn').checked, cc: $('dnCc').value,
+  return {cells: cellList(), includeMonitored: $('dnMon').checked, includeNonMonitored: $('dnNonMon').checked,
+    includeCc: $('dnCcOn').checked, cc: $('dnCc').value,
     includeBcc: $('dnBccOn').checked, bcc: $('dnBcc').value,
     reason: reasonValue(), eta: $('dnEta').value, delay: $('dnDelay').value, note: $('dnNoteOn').checked ? $('dnNote').value : '',
     subject: $('dnSubject').value, body: $('dnBody').value};
@@ -945,7 +922,7 @@ function askConfirm(ref, index, m) {
   $('dnConfYes').onclick = function() { confirmSent(ref, index); };
   $('dnConfAgain').onclick = function() {
     var popup = openOutlookWindow();
-    if (popup) { outlook(m.subject, m.body, m.emails, m.cells, m.cc, m.bcc, m.markdown, popup, m.to); }
+    if (popup) { outlook(m.subject, m.body, m.emails, m.cells, m.cc, m.bcc, m.markdown, popup, m.allowProductLists); }
   };
   $('dnConfLater').onclick = function() { box.innerHTML = ''; };
 }
@@ -953,7 +930,6 @@ function confirmSent(ref, index) {
   post('confirm', {ref: ref, index: index}).then(function() { alertMsg('Sending of ' + ref + ' confirmed', 'success'); load(); }).catch(fail);
 }
 window.dnPreview = function() {
-  if (!dnValidateTo()) { $('dnTo').focus(); return; }
   if ($('dnCcOn').checked && !dnValidateCc()) { $('dnCc').focus(); return; }
   if ($('dnBccOn').checked && !dnValidateBcc()) { $('dnBcc').focus(); return; }
   if ($('dnCompactEmptyLines').checked) {
@@ -964,7 +940,7 @@ window.dnPreview = function() {
   var ref = S.update ? S.update.ref : 'DLY-yyyy-nnnn (assigned when sent)';
   var subj = '[' + ref + '] ' + (S.update ? 'UPDATE - ' : '') + $('dnSubject').value;
   $('dnPreviewHead').innerHTML = '<div><strong>Subject:</strong> ' + esc(subj) + '</div>'
-    + '<div><strong>To:</strong> ' + esc(currentTo()) + '</div>'
+    + '<div><strong>To:</strong> ' + esc(TO_ADDRESS) + '</div>'
     + '<div><strong>Cc:</strong> ' + (cc.length ? esc(cc.join(', ')) : '<span class="text-muted">none</span>') + '</div>'
     + '<div><strong>Bcc:</strong> ' + (S.emails || []).length + ' recipient email(s) in ' + Object.keys(S.dests || {}).length + ' destination(s)'
     + (bcc.length ? ' + ' + bcc.length + ' additional (' + esc(bcc.join(', ')) + ')' : '') + '</div>';
@@ -995,7 +971,6 @@ function showPreviewMode() {
 }
 window.dnPreviewToggle = function() { S.previewPlain = !S.previewPlain; showPreviewMode(); };
 window.dnSend = function(direct) {
-  if (!dnValidateTo()) { $('dnTo').focus(); return; }
   if ($('dnCcOn').checked && !dnValidateCc()) { $('dnCc').focus(); return; }
   if ($('dnBccOn').checked && !dnValidateBcc()) { $('dnBcc').focus(); return; }
   var p = payload();
@@ -1012,9 +987,9 @@ window.dnSend = function(direct) {
     var ref = upd ? upd.ref : d.ref;
     var cc = p.includeCc ? p.cc : '';
     var bcc = p.includeBcc ? p.bcc : '';
-    var message = {subject: '[' + ref + '] ' + (upd ? 'UPDATE - ' : '') + p.subject, body: p.body, emails: d.emails, cells: p.cells, cc: cc, bcc: bcc, markdown: S.markdown, to: d.to};
+    var message = {subject: '[' + ref + '] ' + (upd ? 'UPDATE - ' : '') + p.subject, body: p.body, emails: d.emails, cells: p.cells, cc: cc, bcc: bcc, markdown: S.markdown, allowProductLists: p.includeMonitored && p.includeNonMonitored};
     S.sel = {}; S.update = null; setUpdateMode(false); S.bodyEdited = false;
-    resetTo();
+    resetDestinationGroups();
     afterSelection(); load();
     if (direct && d.sentDirectly) {
       alertMsg('Message queued through the Master mail service and acknowledged', 'success');
@@ -1022,9 +997,8 @@ window.dnSend = function(direct) {
       if (direct && d.deliveryError) {
         alertMsg('Direct sending failed: ' + d.deliveryError + '. Outlook was opened instead.', 'warning');
       }
-      outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc, message.markdown,
-        outlookWindow, message.to);
-      askConfirm(ref, d.index, message);
+      if (outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc, message.markdown,
+        outlookWindow, message.allowProductLists) !== false) { askConfirm(ref, d.index, message); }
     }
   }).catch(function(e) {
     closeOutlookWindow(outlookWindow);
@@ -1039,7 +1013,7 @@ function setUpdateMode(on, ref) {
   $('dnDirectLbl').textContent = on ? 'Send update directly' : 'Send notice directly';
   $('dnTabComposeLbl').textContent = on ? 'Update ' + ref : 'Send delay notification';
 }
-window.dnLeaveUpdate = function() { S.update = null; setUpdateMode(false); resetTo(); S.sel = {}; S.bodyEdited = false; afterSelection(); };
+window.dnLeaveUpdate = function() { S.update = null; setUpdateMode(false); resetDestinationGroups(); S.sel = {}; S.bodyEdited = false; afterSelection(); };
 
 function statusBadge(s) {
   var c = {active: 'danger', partial: 'warning', resolved: 'success', cancelled: 'secondary'}[s] || 'secondary';
@@ -1108,7 +1082,7 @@ window.dnGenerateReport = function() {
       if (!cells.length) { cells = [{product: '', time: ''}]; }
       cells.forEach(function(c) {
         rows.push(['Affected product/cycle', n.createdAt, n.ref, n.status, n.createdBy, n.reason, c.product, c.time,
-          destinations, (n.emails || []).length, hasAddresses ? noticeTo(n) : '', hasAddresses && n.includeCc ? n.cc : '',
+          destinations, (n.emails || []).length, hasAddresses ? TO_ADDRESS : '', hasAddresses && n.includeCc ? n.cc : '',
           hasAddresses ? [BCC_LIST].concat(n.emails || [], n.includeBcc ? addressList(n.bcc) : []).join('; ') : '', '', '', '', '', '']);
       });
       if (includeHistory) {
@@ -1280,7 +1254,7 @@ function sentAction(a, n, i, k) {
     if (popup) {
       outlook('[' + n.ref + '] ' + (m.kind === 'update' ? 'UPDATE - ' : '') + m.subject, m.body, m.emails || [],
         m.cells ? m.cells.map(function(c) { var j = c.lastIndexOf('@'); return {product: c.substring(0, j), time: c.substring(j + 1)}; }) : (n.cells || []),
-        m.cc, m.bcc, m.markdown !== false, popup, m.to);
+        m.cc, m.bcc, m.markdown !== false, popup, m.includeMonitored !== false && !!m.includeNonMonitored);
     }
     return;
   }
@@ -1313,7 +1287,7 @@ function startUpdate(n) {
   S.update = n; S.sel = {};
   (n.cells || []).forEach(function(c) { if (!c.resolved) { S.sel[c.product + '@' + c.time] = c.level; } });
   $('dnNonMon').checked = !!n.includeNonMonitored;
-  $('dnToOn').checked = !!n.overrideTo; $('dnTo').value = n.to || ''; dnToggleTo();
+  $('dnMon').checked = n.includeMonitored !== false;
   $('dnCcOn').checked = S.allowNoticeCc && !!n.includeCc; $('dnCc').value = n.cc || '';
   $('dnBccOn').checked = S.allowNoticeBcc && !!n.includeBcc; $('dnBcc').value = n.bcc || '';
   dnUpdateCopyBcc();
@@ -1348,7 +1322,7 @@ function openResolve(n, i) {
   }
   row.innerHTML = '<div class="p-2 border rounded mb-2"><div class="small mb-1">Cells to resolve:</div>'
     + openCells.map(function(c) { return '<label class="me-3 small"><input type="checkbox" class="form-check-input me-1" checked value="' + esc(c.product + '@' + c.time) + '">' + esc(c.product + ' ' + c.time) + '</label>'; }).join('')
-    + '<div class="small text-break mt-2"><strong>To:</strong> ' + esc(noticeTo(n)) + '</div>'
+    + '<div class="small text-break mt-2"><strong>To:</strong> ' + esc(TO_ADDRESS) + '</div>'
     + '<textarea class="form-control my-2 rs-subj" rows="2" aria-label="Resolution subject">' + esc(resolutionSubject(openCells)) + '</textarea>'
     + '<textarea class="form-control form-control-sm mb-2 rs-body" rows="6">' + esc(resolutionBody(openCells)) + '</textarea>'
     + '<button class="btn btn-sm btn-outline-secondary rs-regen me-2"><i class="bi bi-arrow-clockwise me-1"></i>Regenerate</button><button class="btn btn-sm btn-outline-primary rs-preview me-2"><i class="bi bi-eye me-1"></i>Preview</button><button class="btn btn-sm btn-success rs-go me-2">Register and open Outlook</button><button class="btn btn-sm btn-outline-success rs-direct">Send directly</button></div>';
@@ -1395,7 +1369,7 @@ function openResolve(n, i) {
       var cells = picked.map(function(k) { var j = k.lastIndexOf('@'); return {product: k.substring(0, j), time: k.substring(j + 1)}; });
       var cc = d.allowNoticeCc && S.allowNoticeCc && n.includeCc ? n.cc : '';
       var bcc = d.allowNoticeBcc && S.allowNoticeBcc && n.includeBcc ? n.bcc : '';
-      var message = {subject: '[' + n.ref + '] ' + subject, body: body, emails: d.emails, cells: cells, cc: cc, bcc: bcc, markdown: S.markdown, to: d.to};
+      var message = {subject: '[' + n.ref + '] ' + subject, body: body, emails: d.emails, cells: cells, cc: cc, bcc: bcc, markdown: S.markdown, allowProductLists: n.includeMonitored !== false && !!n.includeNonMonitored};
       load();
       if (direct && d.sentDirectly) {
         alertMsg('Resolution message queued through the Master mail service and acknowledged', 'success');
@@ -1403,9 +1377,8 @@ function openResolve(n, i) {
         if (direct && d.deliveryError) {
           alertMsg('Direct sending failed: ' + d.deliveryError + '. Outlook was opened instead.', 'warning');
         }
-        outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc, message.markdown,
-          outlookWindow, message.to);
-        askConfirm(n.ref, d.index, message);
+        if (outlook(message.subject, message.body, message.emails, message.cells, message.cc, message.bcc, message.markdown,
+          outlookWindow, message.allowProductLists) !== false) { askConfirm(n.ref, d.index, message); }
       }
     }).catch(function(e) {
       closeOutlookWindow(outlookWindow);
@@ -1416,7 +1389,7 @@ function openResolve(n, i) {
     var cc = S.allowNoticeCc && n.includeCc ? addressList((n.cc || '').replace(/,/g, ';')) : [];
     var bcc = S.allowNoticeBcc && n.includeBcc ? addressList(n.bcc) : [];
     $('dnPreviewHead').innerHTML = '<div><strong>Subject:</strong> ' + esc('[' + n.ref + '] ' + subjectField.value) + '</div>'
-      + '<div><strong>To:</strong> ' + esc(noticeTo(n)) + '</div>'
+      + '<div><strong>To:</strong> ' + esc(TO_ADDRESS) + '</div>'
       + '<div><strong>Cc:</strong> ' + (cc.length ? esc(cc.join(', ')) : '<span class="text-muted">none</span>') + '</div>'
       + '<div><strong>Bcc:</strong> ' + (n.emails || []).length + ' recipient email(s) in ' + (n.destinations || []).length + ' destination(s)'
       + (bcc.length ? ' + ' + bcc.length + ' additional (' + esc(bcc.join(', ')) + ')' : '') + '</div>';

@@ -54,19 +54,19 @@
         <ul class="small mb-3 ps-3">
           <li>For each selected product and cycle, ECPDS finds the destinations receiving it (the same data as the destinations table at the bottom of <code>/do/monitoring</code>) and takes the contact emails registered for them.</li>
           <li>Emails are <strong>de-duplicated</strong> (case-insensitive) across all destinations and products: a person receives the notice only once. The <em>(n) Destinations</em> pill lists the destinations concerned and the other pill gives the number of unique emails.</li>
-          <li>By default only destinations showing in the monitor are used; the switch adds the others. A destination without contact is listed but adds no email.</li>
+          <li>The two independent switches include destinations <strong>showing in the monitor</strong> (on by default) and <strong>not showing in the monitor</strong> (off by default). Select either group, both, or neither. With neither selected, no affected destination contacts receive the email; the configured To, Cc, additional Bcc and always-in-Bcc list are unchanged. A destination without contact is listed but adds no email.</li>
         </ul>
         <div class="table-responsive mb-3">
           <table class="table table-sm table-bordered small mb-0">
             <thead class="table-light"><tr><th>Field</th><th>Content</th></tr></thead>
             <tbody>
-              <tr><td>To</td><td>The configured default is <code>operators@ecmwf.int</code>. Select <em>Use an alternative To</em> to supply one or more addresses separated by semicolons. This changes only To: the sender and destination Bcc recipients are unchanged, so this is not a test-send mode. The override is retained for updates and resolutions; each message records its To address for reopening and direct sending. New notices start without an override.</td></tr>
-              <tr><td>Bcc</td><td>The selected recipients, additional Bcc recipients, and the always-in-Bcc list (default <code>op_delay_ecmwf@lists.ecmwf.int</code>), so they do not see each other. Additional Bcc recipients are available when enabled in <a href="/do/admin/productmessages">Product Messages</a>; separate addresses by semicolons and they are validated before saving or sending. The disk button saves them as the default. If the list is too long for an Outlook link, the product distribution lists are used; <em>Copy BCC emails</em> gives the explicit recipients.</td></tr>
+              <tr><td>To</td><td>The configured address (default <code>operators@ecmwf.int</code>); it cannot be overridden per notice.</td></tr>
+              <tr><td>Bcc</td><td>The selected recipients, additional Bcc recipients, and the always-in-Bcc list (default <code>op_delay_ecmwf@lists.ecmwf.int</code>), so they do not see each other. Additional Bcc recipients are available when enabled in <a href="/do/admin/productmessages">Product Messages</a>; separate addresses by semicolons and they are validated before saving or sending. The disk button saves them as the default. If an Outlook link is too long, product distribution lists can only be substituted when both destination groups are included; otherwise use direct sending so excluded groups stay excluded. <em>Copy BCC emails</em> gives the explicit recipients.</td></tr>
               <tr><td>Cc</td><td>Cc recipients are available when enabled in <a href="/do/admin/productmessages">Product Messages</a>. Separate addresses by semicolons; they are validated before saving or sending. The disk button saves them as the default; untick the box to send without Cc.</td></tr>
             </tbody>
           </table>
         </div>
-        <p class="small text-muted mb-0">The default To and always-in-Bcc addresses are set in <a href="/do/admin/productmessages">Product Messages</a>. A notice's alternative To does not change those defaults.</p>
+        <p class="small text-muted mb-0">The To and always-in-Bcc addresses are set in <a href="/do/admin/productmessages">Product Messages</a>. Destination group choices are retained for updates and resolutions; changing them on an update removes the excluded groups from that update and subsequent resolutions.</p>
       </div>
 
       <div class="tab-pane fade" id="dng-msg" role="tabpanel">

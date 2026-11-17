@@ -235,29 +235,36 @@ public final class DelayRecipients {
      *
      * @param cells
      *            the cells, as "product@time" keys
+     * @param includeMonitored
+     *            include the destinations showing in the monitor
      * @param includeNonMonitored
-     *            also include the destinations not showing in the monitor
+     *            include the destinations not showing in the monitor
      *
      * @return the destinations and emails
      *
      * @throws Exception
      *             if the data cannot be read
      */
-    public static Result resolve(final Collection<String> cells, final boolean includeNonMonitored) throws Exception {
+    public static Result resolve(final Collection<String> cells, final boolean includeMonitored,
+            final boolean includeNonMonitored) throws Exception {
+        final var destinations = new TreeMap<String, String>();
+        final var emails = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        if (!includeMonitored && !includeNonMonitored) {
+            return new Result(destinations, emails);
+        }
         final var monitored = new TreeSet<String>();
         for (final var d : DestinationHome.findAllShowingInMonitor()) {
             monitored.add(d.getName());
         }
         final var contacts = MasterManager.getMI().getContacts();
-        final var destinations = new TreeMap<String, String>();
-        final var emails = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
         final var wanted = new TreeSet<>(cells);
         for (final var dps : DestinationProductStatusHome.findFromMemory().values()) {
             if (dps == null || !dps.isPresent() || !wanted.contains(dps.getProduct() + "@" + dps.getTime())) {
                 continue;
             }
             final var name = dps.getDestinationName();
-            if (!includeNonMonitored && !monitored.contains(name) || destinations.containsKey(name)) {
+            if (!(monitored.contains(name) ? includeMonitored : includeNonMonitored)
+                    || destinations.containsKey(name)) {
                 continue;
             }
             final var found = contacts == null ? null : contacts.get(name);

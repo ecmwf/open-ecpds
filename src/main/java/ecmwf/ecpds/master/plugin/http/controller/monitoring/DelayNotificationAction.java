@@ -56,8 +56,7 @@ import ecmwf.web.model.users.User;
  * by a delay, then inform of the (partial) resolution, update, cancel or delete it. Messages can be opened in Outlook
  * or queued through the Master mail service; this action works out the recipients and keeps the register of the notices
  * in the database. Outlook messages await operator confirmation, while messages queued directly are acknowledged
- * automatically. Destination Bcc recipients are always recomputed here; optional To overrides are validated and
- * recorded with each message.
+ * automatically. Destination Bcc recipients are recomputed here using the selected monitored and non-monitored groups.
  *
  * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
  *
@@ -188,22 +187,6 @@ public class DelayNotificationAction extends PDSAction {
         return productMessageSetting(ProductStatusMessages.TO_ADDRESS_NAME, ProductStatusMessages.DEFAULT_TO_ADDRESS);
     }
 
-    private static String alternativeTo(final Map<String, Object> notice) {
-        if (!Boolean.TRUE.equals(notice.get("overrideTo"))) {
-            return "";
-        }
-        final var to = normalizeAddresses(text(notice, "to"));
-        if (to.isEmpty()) {
-            throw new IllegalArgumentException("Enter at least one alternative To address");
-        }
-        return to;
-    }
-
-    private static String noticeTo(final Map<String, Object> notice) throws Exception {
-        final var to = alternativeTo(notice);
-        return to.isEmpty() ? defaultTo() : to;
-    }
-
     private static void queueEmail(final String to, final String cc, final String bcc, final String subject,
             final String body, final boolean markdown) throws Exception {
         final var recipients = normalizeAddresses(to);
@@ -299,8 +282,8 @@ public class DelayNotificationAction extends PDSAction {
     private static void sendNoticeEmail(final String ref, final Map<String, Object> entry) throws Exception {
         final var kind = str(entry.get("kind"));
         final var updatePrefix = "update".equals(kind) ? "UPDATE - " : "";
-        queueEmail(str(entry.get("to")).isEmpty() ? defaultTo() : str(entry.get("to")), str(entry.get("cc")),
-                noticeBcc(entry), "[" + ref + "] " + updatePrefix + str(entry.get("subject")), str(entry.get("body")),
+        queueEmail(defaultTo(), str(entry.get("cc")), noticeBcc(entry),
+                "[" + ref + "] " + updatePrefix + str(entry.get("subject")), str(entry.get("body")),
                 !Boolean.FALSE.equals(entry.get("markdown")));
     }
 
@@ -476,18 +459,29 @@ public class DelayNotificationAction extends PDSAction {
     }
 
     private void recipients(final Map<String, Object> body, final Map<String, Object> out) throws Exception {
-        final var r = DelayRecipients.resolve(keys(cells(body)), Boolean.TRUE.equals(body.get("includeNonMonitored")));
+        final var r = resolveRecipients(keys(cells(body)), body);
         out.put("destinations", r.destinations());
         out.put("emails", r.emails());
     }
 
+    private static boolean includeMonitored(final Map<String, Object> notice) {
+        return !Boolean.FALSE.equals(notice.get("includeMonitored"));
+    }
+
+    private static DelayRecipients.Result resolveRecipients(final Collection<String> cells,
+            final Map<String, Object> notice) throws Exception {
+        return DelayRecipients.resolve(cells, includeMonitored(notice),
+                Boolean.TRUE.equals(notice.get("includeNonMonitored")));
+    }
+
     /** Copies the editable content of the request into the notice. */
     private static void fill(final Map<String, Object> notice, final Map<String, Object> body) {
-        notice.put("to", alternativeTo(body));
-        notice.put("overrideTo", Boolean.TRUE.equals(body.get("overrideTo")));
+        notice.remove("to");
+        notice.remove("overrideTo");
         for (final var k : new String[] { "reason", "eta", "delay", "note", "cc", "bcc", "subject", "body" }) {
             notice.put(k, text(body, k));
         }
+        notice.put("includeMonitored", includeMonitored(body));
         notice.put("includeNonMonitored", Boolean.TRUE.equals(body.get("includeNonMonitored")));
         notice.put("includeCc", Boolean.TRUE.equals(body.get("includeCc")));
         notice.put("includeBcc", Boolean.TRUE.equals(body.get("includeBcc")));
@@ -498,7 +492,7 @@ public class DelayNotificationAction extends PDSAction {
      * sent it, and keeps its content so that it can be opened again in Outlook.
      */
     private static Map<String, Object> message(final String kind, final String by, final Map<String, Object> body,
-            final Collection<String> emails, final String to) {
+            final Collection<String> emails) throws Exception {
         final var h = new LinkedHashMap<String, Object>();
         h.put("kind", kind);
         h.put("at", now());
@@ -506,7 +500,9 @@ public class DelayNotificationAction extends PDSAction {
         h.put("subject", text(body, "subject"));
         h.put("body", text(body, "body"));
         h.put("markdown", markdownEnabled());
-        h.put("to", to);
+        h.put("to", defaultTo());
+        h.put("includeMonitored", includeMonitored(body));
+        h.put("includeNonMonitored", Boolean.TRUE.equals(body.get("includeNonMonitored")));
         h.put("cc", "true".equals(String.valueOf(body.get("includeCc"))) ? text(body, "cc") : "");
         h.put("bcc", "true".equals(String.valueOf(body.get("includeBcc"))) ? text(body, "bcc") : "");
         h.put("emails", new ArrayList<>(emails));
@@ -531,7 +527,7 @@ public class DelayNotificationAction extends PDSAction {
         }
         final var cells = cells(body);
         requireLevels(cells);
-        final var r = DelayRecipients.resolve(keys(cells), Boolean.TRUE.equals(body.get("includeNonMonitored")));
+        final var r = resolveRecipients(keys(cells), body);
         final var notice = new LinkedHashMap<String, Object>();
         notice.put("status", "active");
         notice.put("createdBy", who);
@@ -539,7 +535,7 @@ public class DelayNotificationAction extends PDSAction {
         notice.put("cells", cells);
         notice.put("destinations", new ArrayList<>(r.destinations().keySet()));
         notice.put("emails", new ArrayList<>(r.emails()));
-        final var h = message("delay", who, body, r.emails(), noticeTo(notice));
+        final var h = message("delay", who, body, r.emails());
         list(notice, "history").add(h);
         final var ref = DelayNotices.create(notice, "active", who);
         _log.info("Delay notice {} registered by {}", ref, who);
@@ -587,23 +583,33 @@ public class DelayNotificationAction extends PDSAction {
                     selected.add(p);
                 }
             }
-            final var r = DelayRecipients.resolve(keys(selected), Boolean.TRUE.equals(body.get("includeNonMonitored")));
+            final var r = resolveRecipients(keys(selected), body);
             all.clear();
             added.clear();
-            all.addAll((List<String>) n.get("emails"));
+            final var previous = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+            previous.addAll((List<String>) n.get("emails"));
+            final var sameGroups = includeMonitored(n) == includeMonitored(body) && Boolean.TRUE
+                    .equals(n.get("includeNonMonitored")) == Boolean.TRUE.equals(body.get("includeNonMonitored"));
+            if (sameGroups) {
+                all.addAll(previous);
+            }
             for (final var e : r.emails()) {
-                if (all.add(e)) {
+                all.add(e);
+                if (!previous.contains(e)) {
                     added.add(e);
                 }
             }
-            final var destinations = new TreeSet<String>((List<String>) n.get("destinations"));
+            final var destinations = new TreeSet<String>();
+            if (sameGroups) {
+                destinations.addAll((List<String>) n.get("destinations"));
+            }
             destinations.addAll(r.destinations().keySet());
             fill(n, body);
             n.put("cells", selected);
             n.put("status", "active");
             n.put("destinations", new ArrayList<>(destinations));
             n.put("emails", new ArrayList<>(all));
-            final var h = message("update", who, body, all, noticeTo(n));
+            final var h = message("update", who, body, all);
             h.put("addedEmails", new ArrayList<>(added));
             list(n, "history").add(h);
         });
@@ -649,8 +655,7 @@ public class DelayNotificationAction extends PDSAction {
             if (stillOpen == 0) {
                 emails.addAll((List<String>) n.get("emails"));
             } else {
-                emails.addAll(DelayRecipients.resolve(resolvedNow, Boolean.TRUE.equals(n.get("includeNonMonitored")))
-                        .emails());
+                emails.addAll(resolveRecipients(resolvedNow, n).emails());
                 emails.retainAll((List<String>) n.get("emails"));
             }
             n.put("status", stillOpen == 0 ? "resolved" : "partial");
@@ -658,7 +663,9 @@ public class DelayNotificationAction extends PDSAction {
                 n.put("resolvedAt", now());
                 n.put("resolvedBy", who);
             }
-            final var h = message("resolution", who, body, emails, noticeTo(n));
+            final var h = message("resolution", who, body, emails);
+            h.put("includeMonitored", includeMonitored(n));
+            h.put("includeNonMonitored", Boolean.TRUE.equals(n.get("includeNonMonitored")));
             h.put("cc", allowCc && Boolean.TRUE.equals(n.get("includeCc")) ? str(n.get("cc")) : "");
             h.put("bcc", allowBcc && Boolean.TRUE.equals(n.get("includeBcc")) ? str(n.get("bcc")) : "");
             h.put("cells", resolvedNow);
