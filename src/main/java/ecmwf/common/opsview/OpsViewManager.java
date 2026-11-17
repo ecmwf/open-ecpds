@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -76,6 +77,8 @@ public final class OpsViewManager {
 
     /** Shared JSON mapper. */
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    private static final int MAX_RESPONSE_MESSAGE_LENGTH = 2048;
 
     /** The Constant ACTIVATED. */
     private static final boolean ACTIVATED = Cnf.at("OpsViewManager", "activated", true);
@@ -313,8 +316,8 @@ public final class OpsViewManager {
                     Map.of("hostname", hostname, "servicename", service), request)) {
                 final var code = response.getStatusCode();
                 if (code != 200) {
-                    _log.warn("URL: {}, Code: {}, Message: {}, Request: {}", URL_DETAIL, code, response.getMessage(),
-                            request);
+                    _log.warn("URL: {}, Code: {}, Message: {}, Hostname: {}, Service: {}, Request: {}", URL_DETAIL,
+                            code, response.getMessage(), hostname, service, request);
                     if (code == 401) {
                         throw new OpsViewAuthException("Detail request failed (unauthorized)");
                     }
@@ -685,12 +688,63 @@ public final class OpsViewManager {
         }
 
         /**
-         * Returns the HTTP status message of the response.
+         * Returns a bounded, single-line diagnostic from the response body, with credentials redacted.
          *
-         * @return the status message
+         * @return the response diagnostic
          */
         public String getMessage() {
-            return String.valueOf(response.statusCode());
+            final var body = response.body();
+            if (body == null || body.isBlank()) {
+                return "(empty response body)";
+            }
+            var message = body;
+            try {
+                final var json = OBJECT_MAPPER.readTree(body);
+                if (json != null) {
+                    redactCredentials(json);
+                    final var details = new ArrayList<String>();
+                    for (final var field : List.of("message", "error", "errors", "detail", "reason")) {
+                        final var value = json.get(field);
+                        if (value != null && !value.isNull() && !value.asText().isBlank()) {
+                            details.add(field + "=" + value.asText());
+                        } else if (value != null && value.isContainerNode() && !value.isEmpty()) {
+                            details.add(field + "=" + value);
+                        }
+                    }
+                    message = details.isEmpty() ? json.toString() : String.join("; ", details);
+                }
+            } catch (final IOException ignored) {
+                // Gateways can return plain text or HTML instead of an Opsview JSON error.
+            }
+            if (!PASSWORD.isEmpty()) {
+                message = message.replace(PASSWORD, "[redacted]");
+            }
+            synchronized (OpsViewManager.class) {
+                if (!_token.isEmpty()) {
+                    message = message.replace(_token.toString(), "[redacted]");
+                }
+            }
+            message = message.replaceAll("[\\p{Cntrl}\\p{Zl}\\p{Zp}\\s]+", " ").strip();
+            return message.length() > MAX_RESPONSE_MESSAGE_LENGTH
+                    ? message.substring(0, MAX_RESPONSE_MESSAGE_LENGTH) + "... [truncated]" : message;
+        }
+
+        private static void redactCredentials(final JsonNode json) {
+            if (json instanceof ObjectNode object) {
+                for (final var entry : object.properties()) {
+                    final var name = entry.getKey().toLowerCase(Locale.ROOT);
+                    if (name.contains("password") || name.contains("token") || name.contains("secret")
+                            || name.contains("authorization")) {
+                        object.put(entry.getKey(), "[redacted]");
+                    } else {
+                        redactCredentials(entry.getValue());
+                    }
+                }
+            } else if (json.isArray()) {
+                for (final var value : json) {
+                    redactCredentials(value);
+                }
+            }
         }
 
         /**
