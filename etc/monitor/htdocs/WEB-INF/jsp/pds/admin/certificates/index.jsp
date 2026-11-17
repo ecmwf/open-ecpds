@@ -25,6 +25,7 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
     final String successMessageTarget = (String) request.getAttribute("successMessageTarget");
     final boolean isSelfSigned  = Boolean.TRUE.equals(selfSigned);
     final boolean hasCert       = (monitorCert != null);
+    final boolean pendingTlsKey = Boolean.TRUE.equals(request.getAttribute("pendingTlsKey"));
 %>
 
 <%-- ============================================================
@@ -49,6 +50,12 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
             data-bs-toggle="modal" data-bs-target="#csrModal">
       <i class="bi bi-file-earmark-text me-1"></i>Generate CSR
     </button>
+    <% if (!pendingTlsKey) { %>
+    <button type="button" class="btn btn-sm btn-outline-primary"
+            data-bs-toggle="modal" data-bs-target="#newKeyCsrModal">
+      <i class="bi bi-key me-1"></i>New Key + CSR
+    </button>
+    <% } %>
     <% } else { %>
     <button class="btn btn-sm btn-outline-secondary" disabled title="No certificate loaded">
       <i class="bi bi-file-earmark-text me-1"></i>Generate CSR
@@ -96,6 +103,7 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
     <ul class="mb-1 ps-3">
       <li><strong>Generate Self-Signed</strong> &mdash; creates a new self-signed certificate suitable for evaluation and testing. Not recommended for production.</li>
       <li><strong>Generate CSR</strong> &mdash; creates a Certificate Signing Request to submit to a Certificate Authority (CA).</li>
+      <li><strong>New Key + CSR</strong> &mdash; creates a separate pending private key and CSR; the active certificate remains unchanged until the signed certificate is imported.</li>
       <li><strong>Import</strong> &mdash; replaces the current certificate with a PEM, PKCS#12, or JKS file.</li>
       <li><strong>Download</strong> &mdash; exports the public certificate (PEM) for installation in browsers or MQTT clients.</li>
       <li><strong>Reload from Disk</strong> &mdash; hot-reloads the certificate on <strong>this Monitor only</strong> from the keystore file currently on disk. Use this after replacing the keystore file manually (e.g. via automation or a secrets manager) to activate the new certificate without restarting the daemon. To reload on other Monitors or Data Movers, use the <em>Reload from Disk</em> actions in the tables below.</li>
@@ -113,6 +121,23 @@ style="background:rgba(108,117,125,0.06); color:var(--bs-body-color); border-lef
     <p class="mb-0">A mismatch between the certificate's SAN list and the hostname used by a client will cause TLS handshake failures. When in doubt, generate a CSR and request a multi-SAN certificate from your CA, or use a wildcard certificate covering your domain.</p>
   </div>
 </div>
+
+<% if (pendingTlsKey) { %>
+<div class="alert alert-info d-flex flex-wrap align-items-center gap-2 mb-0 rounded-0 border-start-0 border-end-0 border-top-0" role="status">
+  <i class="bi bi-key-fill flex-shrink-0 ms-3"></i>
+  <span class="flex-grow-1">A new private key and CSR are pending on this Monitor. Upload the CA-signed PEM certificate chain to complete the rotation, or discard this pending request.</span>
+  <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#activatePendingModal">Import signed certificate</button>
+  <form method="post" action="/do/admin/certificates" id="discardPendingForm" style="display:contents">
+    <input type="hidden" name="action" value="discardPending"/>
+    <button type="button" class="btn btn-sm btn-outline-secondary me-3" onclick="confirmationDialog({
+      title: 'Discard Pending TLS Key',
+      message: 'Discard the pending private key? The current active certificate will not change. Any CSR generated from this key will no longer be usable.',
+      confirmText: 'Discard',
+      onConfirm: function(){ document.getElementById('discardPendingForm').submit(); }
+    })">Discard</button>
+  </form>
+</div>
+<% } %>
 
 <% if (successMessage != null && successMessageTarget == null) { %>
 <div id="certSuccessAlert" class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 mb-0 rounded-0 border-start-0 border-end-0 border-top-0" role="alert" style="margin-top:0">
@@ -606,6 +631,47 @@ $(document).ready(function() {
 </div>
 
 <%-- ============================================================
+     Generate New-Key CSR Modal
+     ============================================================ --%>
+<div class="modal fade" id="newKeyCsrModal" tabindex="-1" aria-labelledby="newKeyCsrModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" action="/do/admin/certificates">
+        <input type="hidden" name="action" value="newKeyCsr"/>
+        <div class="modal-header">
+          <h5 class="modal-title" id="newKeyCsrModalLabel"><i class="bi bi-key me-2"></i>Generate CSR with a New Key</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning">A new RSA-2048 private key will be stored securely on this Monitor in a separate pending keystore. The active certificate will not change. Only one pending request is allowed at a time.</div>
+          <div class="mb-3">
+            <label for="newKeyHostname" class="form-label">Common Name</label>
+            <input type="text" class="form-control" id="newKeyHostname" name="newKeyHostname" required
+                   placeholder="e.g. ecpds.example.com"/>
+          </div>
+          <div class="mb-3">
+            <label for="dnsSans" class="form-label">DNS Subject Alternative Names</label>
+            <textarea class="form-control" id="dnsSans" name="dnsSans" rows="3"
+                      placeholder="monitor.example.com&#10;mover.example.com"></textarea>
+            <div class="form-text">The Common Name is included automatically. Add other DNS names one per line or comma-separated. Wildcards such as *.example.com are supported.</div>
+          </div>
+          <div class="mb-3">
+            <label for="ipSans" class="form-label">IP Subject Alternative Names (optional)</label>
+            <textarea class="form-control" id="ipSans" name="ipSans" rows="2"
+                      placeholder="192.0.2.10&#10;2001:db8::10"></textarea>
+            <div class="form-text">The Common Name is included automatically if it is an IP address. Add other IPv4 or IPv6 addresses one per line or comma-separated.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-download me-2"></i>Generate and Download CSR</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%-- ============================================================
      Generate Self-Signed Modal
      ============================================================ --%>
 <div class="modal fade" id="generateModal" tabindex="-1" aria-labelledby="generateModalLabel" aria-hidden="true">
@@ -673,6 +739,35 @@ $(document).ready(function() {
           <button type="submit" class="btn btn-primary">
             <i class="bi bi-upload me-2"></i>Import &amp; Activate
           </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%-- ============================================================
+     Import CA Certificate for Pending Key Modal
+     ============================================================ --%>
+<div class="modal fade" id="activatePendingModal" tabindex="-1" aria-labelledby="activatePendingModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="/do/admin/certificates" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="activatePending"/>
+        <div class="modal-header">
+          <h5 class="modal-title" id="activatePendingModalLabel"><i class="bi bi-upload me-2"></i>Activate CA-Signed Certificate</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Upload the CA-signed PEM leaf certificate followed by any intermediate certificates in the same file. The Monitor verifies the leaf matches the pending private key before replacing the active keystore.</p>
+          <div class="mb-3">
+            <label for="pendingCertFile" class="form-label">CA-Signed PEM Certificate Chain</label>
+            <input type="file" class="form-control" id="pendingCertFile" name="certFile" accept=".pem,.crt,.cer" required/>
+          </div>
+          <div class="form-text">A certificate for a different key, expired certificate, or one missing a requested SAN will be rejected. Activation hot-reloads this Monitor; deploy to other components separately if required.</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-shield-check me-2"></i>Import &amp; Activate</button>
         </div>
       </form>
     </div>

@@ -115,6 +115,14 @@ Replaces the current Monitor certificate with a new self-signed RSA-2048 / SHA-2
 
 Generates a PKCS#10 Certificate Signing Request (CSR) using the private key currently stored in the Monitor keystore, and downloads it as a PEM file (`ecpds-monitor.csr`). Submit this CSR to your Certificate Authority to obtain a CA-signed certificate.
 
+### Generate CSR with a New Key
+
+Use **New Key + CSR** when rotating the private key. Enter the Common Name and any additional DNS/IP Subject Alternative Names, then download the CSR. The Common Name is automatically included as a SAN. OpenECPDS stores the new private key in a separate password-protected pending keystore beside the active keystore; it does not change the active certificate. Only one pending request can exist at a time.
+
+After the CA returns the signed PEM certificate and any intermediate certificates, select **Import signed certificate** and upload a PEM file with the leaf certificate first, followed by its intermediate chain. OpenECPDS checks certificate validity, chain ordering/signatures where supplied, requested SAN coverage, and that the leaf public key matches the pending private key before replacing the active keystore and hot-reloading this Monitor. The pending key is retained if validation or reload fails. You can discard an unused request without affecting the active certificate.
+
+The generated pending keystore uses the configured Monitor keystore password and file permissions. Keep the pending request on the same Monitor until activation or discard; the private key is not included in the downloaded CSR. Once activated, use **Deploy to All Movers** and/or **Deploy to All Monitors** if appropriate and if the requested SANs cover those hosts.
+
 ### Import Certificate
 
 Imports a certificate from an uploaded file. Supported formats:

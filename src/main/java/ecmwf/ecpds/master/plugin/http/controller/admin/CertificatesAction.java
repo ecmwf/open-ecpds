@@ -65,7 +65,10 @@ import ecmwf.web.model.users.User;
  * <ul>
  * <li>{@code generate} – generate a new self-signed certificate and optionally deploy to movers</li>
  * <li>{@code csr} – generate a CSR and stream it as a PEM download</li>
+ * <li>{@code newKeyCsr} – generate a CSR with a separately stored pending private key</li>
  * <li>{@code import} – import a PEM / PKCS#12 / JKS certificate from an uploaded file</li>
+ * <li>{@code activatePending} – pair a CA-signed PEM chain with the pending key and activate it</li>
+ * <li>{@code discardPending} – discard a pending private key and CSR request</li>
  * <li>{@code download} – stream the current public certificate as a PEM download</li>
  * <li>{@code deploy} – push the current Monitor certificate to all Data Movers</li>
  * </ul>
@@ -106,8 +109,14 @@ public class CertificatesAction extends PDSAction {
                     return handleGenerate(mapping, request, response, user, httpPlugin);
                 case "csr":
                     return handleCsr(request, response, httpPlugin);
+                case "newKeyCsr":
+                    return handleNewKeyCsr(request, response, user, httpPlugin);
                 case "import":
                     return handleImport(mapping, request, response, user, httpPlugin, caf);
+                case "activatePending":
+                    return handleActivatePending(mapping, request, response, user, httpPlugin, caf);
+                case "discardPending":
+                    return handleDiscardPending(mapping, request, user, httpPlugin);
                 case "download":
                     return handleDownload(request, response, httpPlugin);
                 case "deploy":
@@ -235,6 +244,29 @@ public class CertificatesAction extends PDSAction {
         return null; // response already committed
     }
 
+    private ActionForward handleNewKeyCsr(final HttpServletRequest request, final HttpServletResponse response,
+            final User user, final HttpPlugin httpPlugin) throws Exception {
+        final var path = httpPlugin.getActiveKeystorePath();
+        final var password = httpPlugin.getActiveKeystorePassword();
+        if (path == null || password == null) {
+            throw new ECMWFException("HttpPlugin is not running or has no keystore configured");
+        }
+        final var hostname = request.getParameter("newKeyHostname");
+        if (hostname == null || hostname.isBlank()) {
+            throw new ECMWFException("A Common Name is required");
+        }
+        final var pem = CertificateManager.generateNewKeyCsr(path, password, hostname.trim(),
+                splitSanEntries(request.getParameter("dnsSans")), splitSanEntries(request.getParameter("ipSans")));
+        _log.info("Generated new TLS private key and CSR for Monitor by user {}", user.getName());
+        response.setContentType("application/pkcs10");
+        response.setHeader("Content-Disposition", "attachment; filename=\"ecpds-monitor-new-key.csr\"");
+        final var bytes = pem.getBytes(StandardCharsets.UTF_8);
+        response.setContentLength(bytes.length);
+        response.getOutputStream().write(bytes);
+        response.flushBuffer();
+        return null;
+    }
+
     private ActionForward handleImport(final ActionMapping mapping, final HttpServletRequest request,
             final HttpServletResponse response, final User user, final HttpPlugin httpPlugin,
             final CertificatesActionForm caf) throws Exception {
@@ -257,6 +289,39 @@ public class CertificatesAction extends PDSAction {
         httpPlugin.reloadCertificate();
         _log.info("Imported certificate for Monitor by user {}", user.getName());
         request.setAttribute("successMessage", "Certificate imported and activated successfully.");
+        populateCertificateInfo(request, httpPlugin, user);
+        return mapping.findForward("success");
+    }
+
+    private ActionForward handleActivatePending(final ActionMapping mapping, final HttpServletRequest request,
+            final HttpServletResponse response, final User user, final HttpPlugin httpPlugin,
+            final CertificatesActionForm caf) throws Exception {
+        final var path = httpPlugin.getActiveKeystorePath();
+        final var password = httpPlugin.getActiveKeystorePassword();
+        if (path == null || password == null) {
+            throw new ECMWFException("HttpPlugin is not running or has no keystore configured");
+        }
+        if (caf == null || caf.getCertFile() == null || caf.getCertFile().getFileSize() == 0) {
+            throw new ECMWFException("No CA-signed certificate file was uploaded");
+        }
+        CertificateManager.activatePendingKey(path, password, caf.getCertFile().getFileData());
+        httpPlugin.reloadCertificate();
+        CertificateManager.discardPendingKey(path);
+        _log.info("Activated CA-signed certificate for pending key by user {}", user.getName());
+        request.setAttribute("successMessage", "New-key certificate imported and activated successfully.");
+        populateCertificateInfo(request, httpPlugin, user);
+        return mapping.findForward("success");
+    }
+
+    private ActionForward handleDiscardPending(final ActionMapping mapping, final HttpServletRequest request,
+            final User user, final HttpPlugin httpPlugin) throws Exception {
+        final var path = httpPlugin.getActiveKeystorePath();
+        if (path == null) {
+            throw new ECMWFException("HttpPlugin is not running or has no keystore configured");
+        }
+        CertificateManager.discardPendingKey(path);
+        _log.info("Discarded pending TLS key by user {}", user.getName());
+        request.setAttribute("successMessage", "Pending TLS key and CSR request discarded.");
         populateCertificateInfo(request, httpPlugin, user);
         return mapping.findForward("success");
     }
@@ -373,6 +438,19 @@ public class CertificatesAction extends PDSAction {
         return (HttpPlugin) request.getServletContext().getAttribute("ecpds.HttpPlugin");
     }
 
+    private static List<String> splitSanEntries(final String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        final var entries = new ArrayList<String>();
+        for (final var entry : value.split("[,\\r\\n]+")) {
+            if (!entry.isBlank()) {
+                entries.add(entry.trim());
+            }
+        }
+        return entries;
+    }
+
     /**
      * Populates request attributes used by the certificates JSP: the Monitor's own certificate info plus the per-mover
      * certificate snapshots.
@@ -388,6 +466,7 @@ public class CertificatesAction extends PDSAction {
                 request.setAttribute("monitorKeystorePath", httpPlugin.getActiveKeystorePath());
                 request.setAttribute("monitorCertSans", info.sans());
             }
+            request.setAttribute("pendingTlsKey", CertificateManager.hasPendingKey(httpPlugin.getActiveKeystorePath()));
         }
         // Per-mover certificate snapshots
         try {

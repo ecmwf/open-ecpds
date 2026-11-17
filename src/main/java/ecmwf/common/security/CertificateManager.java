@@ -27,6 +27,7 @@ package ecmwf.common.security;
  *   <li>Reading certificate metadata from an existing keystore</li>
  *   <li>Detecting whether the active certificate is self-signed</li>
  *   <li>Generating a Certificate Signing Request (CSR) in PEM format</li>
+ *   <li>Generating a CSR with a separately stored pending private key for safe key rotation</li>
  *   <li>Importing PEM, PKCS#12 (PFX), or Java KeyStore (JKS) certificates</li>
  *   <li>Exporting the public certificate as PEM</li>
  * </ul>
@@ -45,6 +46,7 @@ import java.io.StringWriter;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -54,13 +56,16 @@ import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.Signature;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -76,9 +81,12 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.SafeBag;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -110,6 +118,9 @@ public final class CertificateManager {
 
     /** RSA key size for generated certificates. */
     private static final int KEY_SIZE = 2048;
+
+    private static final Pattern DNS_NAME_PATTERN = Pattern.compile(
+            "(?i)^(?:\\*\\.)?(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$");
 
     static {
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
@@ -346,6 +357,185 @@ public final class CertificateManager {
             pw.writeObject(csr);
         }
         return sw.toString();
+    }
+
+    /**
+     * Generates a CSR with a new RSA key pair and stores that key in a separate, password-protected pending keystore.
+     * The active keystore and certificate are not changed.
+     *
+     * @param keystorePath
+     *            active keystore path; the pending keystore is stored beside it
+     * @param keystorePassword
+     *            password protecting both keystores
+     * @param hostname
+     *            CSR Common Name
+     * @param dnsNames
+     *            DNS Subject Alternative Names
+     * @param ipAddresses
+     *            IP Subject Alternative Names
+     *
+     * @return PEM-encoded CSR
+     *
+     * @throws Exception
+     *             if generation or writing fails, or a pending key already exists
+     */
+    public static synchronized String generateNewKeyCsr(final String keystorePath, final String keystorePassword,
+            final String hostname, final List<String> dnsNames, final List<String> ipAddresses) throws Exception {
+        if (keystorePath == null || keystorePassword == null || keystorePassword.isEmpty()) {
+            throw new IllegalArgumentException("An active keystore path and password are required");
+        }
+        final var pendingPath = pendingKeystorePath(keystorePath);
+        if (Files.exists(pendingPath)) {
+            throw new IllegalStateException(
+                    "A pending TLS key already exists; activate or discard it before generating another");
+        }
+        final var commonName = hostname == null ? "" : hostname.trim();
+        if (commonName.length() > 253
+                || (!isValidDnsName(commonName) && !org.bouncycastle.util.IPAddress.isValid(commonName))) {
+            throw new IllegalArgumentException("Invalid certificate Common Name");
+        }
+        final var dnsInput = dnsNames == null ? List.<String> of() : dnsNames;
+        final var ipInput = ipAddresses == null ? List.<String> of() : ipAddresses;
+        if (dnsInput.size() + ipInput.size() > 100) {
+            throw new IllegalArgumentException("No more than 100 Subject Alternative Names may be requested");
+        }
+
+        final var dnsSanValues = new LinkedHashSet<String>();
+        final var ipSanValues = new LinkedHashSet<String>();
+        if (org.bouncycastle.util.IPAddress.isValid(commonName)) {
+            ipSanValues.add(commonName);
+        } else {
+            dnsSanValues.add(commonName);
+        }
+        for (final var dnsName : dnsInput) {
+            if (!isValidDnsName(dnsName)) {
+                throw new IllegalArgumentException("Invalid DNS Subject Alternative Name: " + dnsName);
+            }
+            dnsSanValues.add(dnsName.trim());
+        }
+        for (final var ipAddress : ipInput) {
+            if (ipAddress == null || !org.bouncycastle.util.IPAddress.isValid(ipAddress.trim())) {
+                throw new IllegalArgumentException("Invalid IP Subject Alternative Name: " + ipAddress);
+            }
+            ipSanValues.add(ipAddress.trim());
+        }
+        final var sans = new ArrayList<GeneralName>();
+        for (final var dnsName : dnsSanValues) {
+            sans.add(new GeneralName(GeneralName.dNSName, dnsName));
+        }
+        for (final var ipAddress : ipSanValues) {
+            sans.add(new GeneralName(GeneralName.iPAddress, ipAddress));
+        }
+
+        final var keyPairGenerator = KeyPairGenerator.getInstance("RSA", BouncyCastleProvider.PROVIDER_NAME);
+        keyPairGenerator.initialize(KEY_SIZE, new SecureRandom());
+        final var keyPair = keyPairGenerator.generateKeyPair();
+        final var subject = new X500NameBuilder(BCStyle.INSTANCE).addRDN(BCStyle.CN, commonName).build();
+        final var generalNames = new GeneralNames(sans.toArray(GeneralName[]::new));
+
+        final var csrBuilder = new JcaPKCS10CertificationRequestBuilder(subject, keyPair.getPublic());
+        final var extensions = new ExtensionsGenerator();
+        extensions.addExtension(Extension.subjectAlternativeName, false, generalNames);
+        csrBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extensions.generate());
+        final var signer = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .build(keyPair.getPrivate());
+        final var csr = csrBuilder.build(signer);
+
+        final var now = new Date();
+        final var placeholderBuilder = new JcaX509v3CertificateBuilder(subject,
+                BigInteger.valueOf(System.currentTimeMillis()), now,
+                new Date(now.getTime() + (long) SELF_SIGNED_VALIDITY_DAYS * 86_400_000L), subject, keyPair.getPublic());
+        placeholderBuilder.addExtension(Extension.basicConstraints, false, new BasicConstraints(false));
+        placeholderBuilder.addExtension(Extension.subjectAlternativeName, false, generalNames);
+        final var placeholderSigner = new JcaContentSignerBuilder("SHA256withRSA")
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME).build(keyPair.getPrivate());
+        final var placeholderCertificate = new JcaX509CertificateConverter()
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .getCertificate(placeholderBuilder.build(placeholderSigner));
+
+        final var sw = new StringWriter();
+        try (final var pemWriter = new JcaPEMWriter(sw)) {
+            pemWriter.writeObject(csr);
+        }
+
+        final var pendingKeystore = KeyStore.getInstance("PKCS12");
+        pendingKeystore.load(null, null);
+        final var password = keystorePassword.toCharArray();
+        try {
+            pendingKeystore.setKeyEntry(ALIAS, keyPair.getPrivate(), password,
+                    new java.security.cert.Certificate[] { placeholderCertificate });
+            writeKeystore(pendingPath.toString(), keystorePassword, pendingKeystore);
+        } finally {
+            Arrays.fill(password, '\0');
+        }
+        return sw.toString();
+    }
+
+    /**
+     * Returns whether a pending new-key request exists for the active keystore.
+     */
+    public static boolean hasPendingKey(final String keystorePath) {
+        return keystorePath != null && !keystorePath.isBlank()
+                && Files.isRegularFile(pendingKeystorePath(keystorePath));
+    }
+
+    /**
+     * Uses the pending private key to create a replacement active PKCS#12 keystore from a CA-signed PEM certificate
+     * chain. The first certificate must be the leaf certificate matching the pending key.
+     */
+    public static synchronized void activatePendingKey(final String keystorePath, final String keystorePassword,
+            final byte[] certificatePem) throws Exception {
+        final var pendingPath = pendingKeystorePath(keystorePath);
+        if (!Files.isRegularFile(pendingPath)) {
+            throw new IllegalStateException("No pending TLS key is available");
+        }
+        final var certificates = readPemCertificates(certificatePem);
+        final var leaf = certificates.get(0);
+        leaf.checkValidity();
+        validateCertificateChain(certificates);
+
+        final var pendingKeystore = openKeystore(pendingPath.toFile(), keystorePassword, "PKCS12");
+        final PrivateKey privateKey;
+        final X509Certificate requestedCertificate;
+        final var password = keystorePassword.toCharArray();
+        try {
+            final var pendingKey = pendingKeystore.getKey(ALIAS, password);
+            if (!(pendingKey instanceof PrivateKey key)) {
+                throw new IllegalStateException("Pending TLS keystore does not contain a private key");
+            }
+            privateKey = key;
+            final var cert = pendingKeystore.getCertificate(ALIAS);
+            if (!(cert instanceof X509Certificate x509Certificate)) {
+                throw new IllegalStateException("Pending TLS keystore does not contain its request certificate");
+            }
+            requestedCertificate = x509Certificate;
+        } finally {
+            Arrays.fill(password, '\0');
+        }
+        verifyKeyMatchesCertificate(privateKey, leaf);
+        final var requestedSans = subjectAltNames(requestedCertificate);
+        if (!containsSubjectAltNames(subjectAltNames(leaf), requestedSans)) {
+            throw new IllegalArgumentException(
+                    "The CA certificate is missing one or more requested Subject Alternative Names");
+        }
+
+        final var replacement = KeyStore.getInstance("PKCS12");
+        replacement.load(null, null);
+        final var targetPassword = keystorePassword.toCharArray();
+        try {
+            replacement.setKeyEntry(ALIAS, privateKey, targetPassword,
+                    certificates.toArray(java.security.cert.Certificate[]::new));
+            writeKeystore(keystorePath, keystorePassword, replacement);
+        } finally {
+            Arrays.fill(targetPassword, '\0');
+        }
+    }
+
+    /**
+     * Deletes the pending key after successful activation or when an administrator cancels a request.
+     */
+    public static synchronized void discardPendingKey(final String keystorePath) throws Exception {
+        Files.deleteIfExists(pendingKeystorePath(keystorePath));
     }
 
     // -------------------------------------------------------------------------
@@ -662,27 +852,51 @@ public final class CertificateManager {
         // Expiring within 30 days
         final boolean expiringSoon = !expired
                 && cert.getNotAfter().getTime() - System.currentTimeMillis() < 30L * 86_400_000L;
-        // Extract Subject Alternative Names
         final var sans = new ArrayList<String>();
         try {
-            final var sanCollection = cert.getSubjectAlternativeNames();
-            if (sanCollection != null) {
-                for (final var sanEntry : sanCollection) {
-                    final int type = (Integer) sanEntry.get(0);
-                    final Object value = sanEntry.get(1);
-                    if (type == 2) { // dNSName
-                        sans.add("DNS:" + value);
-                    } else if (type == 7) { // iPAddress
-                        sans.add("IP:" + value);
-                    }
-                }
-            }
+            sans.addAll(subjectAltNames(cert));
         } catch (final Exception ignored) {
         }
         return new CertificateInfo(cert.getSubjectX500Principal().getName(), cert.getIssuerX500Principal().getName(),
                 cert.getSerialNumber().toString(16).toUpperCase(), cert.getNotBefore(), cert.getNotAfter(),
                 sha256Fingerprint(cert), cert.getPublicKey().getAlgorithm(), keySize(cert), selfSigned, expired,
                 expiringSoon, java.util.Collections.unmodifiableList(sans));
+    }
+
+    private static List<String> subjectAltNames(final X509Certificate certificate) throws Exception {
+        final var sans = new ArrayList<String>();
+        final var sanCollection = certificate.getSubjectAlternativeNames();
+        if (sanCollection != null) {
+            for (final var sanEntry : sanCollection) {
+                final int type = (Integer) sanEntry.get(0);
+                final Object value = sanEntry.get(1);
+                if (type == 2) {
+                    sans.add("DNS:" + value);
+                } else if (type == 7) {
+                    final var ip = value instanceof byte[] bytes
+                            ? java.net.InetAddress.getByAddress(bytes).getHostAddress() : value.toString();
+                    sans.add("IP:" + ip);
+                }
+            }
+        }
+        return sans;
+    }
+
+    private static boolean containsSubjectAltNames(final List<String> certificateSans,
+            final List<String> requestedSans) {
+        for (final var requested : requestedSans) {
+            var found = false;
+            for (final var actual : certificateSans) {
+                if (requested.startsWith("DNS:") ? requested.equalsIgnoreCase(actual) : requested.equals(actual)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static String sha256Fingerprint(final X509Certificate cert) throws Exception {
@@ -717,6 +931,71 @@ public final class CertificateManager {
     private static boolean isPem(final byte[] bytes) {
         final var s = new String(bytes, 0, Math.min(30, bytes.length), StandardCharsets.US_ASCII);
         return s.startsWith("-----BEGIN");
+    }
+
+    private static Path pendingKeystorePath(final String keystorePath) {
+        return Path.of(keystorePath + ".pending");
+    }
+
+    private static boolean isValidDnsName(final String name) {
+        return name != null && name.trim().length() <= 253 && DNS_NAME_PATTERN.matcher(name.trim()).matches();
+    }
+
+    private static List<X509Certificate> readPemCertificates(final byte[] pemBytes) throws Exception {
+        if (pemBytes == null || pemBytes.length == 0) {
+            throw new IllegalArgumentException("No certificate data was uploaded");
+        }
+        final var certificates = new ArrayList<X509Certificate>();
+        try (final var reader = new PEMParser(
+                new InputStreamReader(new ByteArrayInputStream(pemBytes), StandardCharsets.UTF_8))) {
+            Object object;
+            while ((object = reader.readObject()) != null) {
+                if (object instanceof X509CertificateHolder holder) {
+                    certificates.add(new JcaX509CertificateConverter().setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                            .getCertificate(holder));
+                } else {
+                    throw new IllegalArgumentException("Only X.509 certificates are accepted in the PEM chain");
+                }
+            }
+        }
+        if (certificates.isEmpty()) {
+            throw new IllegalArgumentException("No X.509 certificate found in PEM input");
+        }
+        return certificates;
+    }
+
+    private static void validateCertificateChain(final List<X509Certificate> certificates) throws Exception {
+        for (var i = 0; i < certificates.size(); i++) {
+            final var certificate = certificates.get(i);
+            certificate.checkValidity();
+            if (i + 1 < certificates.size()) {
+                final var issuer = certificates.get(i + 1);
+                if (!certificate.getIssuerX500Principal().equals(issuer.getSubjectX500Principal())) {
+                    throw new IllegalArgumentException("Uploaded PEM certificates are not ordered leaf-to-root");
+                }
+                certificate.verify(issuer.getPublicKey());
+            }
+        }
+    }
+
+    private static void verifyKeyMatchesCertificate(final PrivateKey privateKey, final X509Certificate certificate)
+            throws Exception {
+        if (!"RSA".equalsIgnoreCase(privateKey.getAlgorithm())
+                || !"RSA".equalsIgnoreCase(certificate.getPublicKey().getAlgorithm())) {
+            throw new IllegalArgumentException("The pending key and certificate must both use RSA");
+        }
+        final var challenge = new byte[32];
+        new SecureRandom().nextBytes(challenge);
+        final var signer = Signature.getInstance("SHA256withRSA");
+        signer.initSign(privateKey);
+        signer.update(challenge);
+        final var signature = signer.sign();
+        final var verifier = Signature.getInstance("SHA256withRSA");
+        verifier.initVerify(certificate.getPublicKey());
+        verifier.update(challenge);
+        if (!verifier.verify(signature)) {
+            throw new IllegalArgumentException("The CA certificate does not match the pending private key");
+        }
     }
 
     private static void importFromPem(final KeyStore targetKs, final byte[] pemBytes, final String password,
