@@ -90,6 +90,7 @@ custom MQTT notifications, S3 access and the Monitor UI.
 
 ## Quick links
 
+- **Looking for a topic?** Use the [Documentation guide](documentation-guide.md) to find the right section or jump to a common task.
 - **New here?** Try the [Standalone container](getting-started/standalone.md) — no build needed, up and running in minutes.
 - **Full setup:** [System Requirements](getting-started/requirements.md) → [Installation](getting-started/installation.md) → [First Run](getting-started/first-run.md).
 - **Understand the system:** [Architecture Overview](architecture/overview.md) and

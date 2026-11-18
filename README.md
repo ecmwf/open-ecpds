@@ -285,32 +285,18 @@ docker exec standalone tail -f /data/log/monitor/monitor.log
 
 ## 📖 Documentation
 
-Full documentation is published at **[ecmwf.github.io/open-ecpds](https://ecmwf.github.io/open-ecpds/)**.
+Browse the **[Documentation guide](https://ecmwf.github.io/open-ecpds/documentation-guide/)** for a map of all sections, search the [full documentation](https://ecmwf.github.io/open-ecpds/), or jump straight to a common task:
 
-| Section | Description |
+| I want to… | Start here |
 |---|---|
-| [Home](https://ecmwf.github.io/open-ecpds/) | Platform overview, core capabilities and quick links |
-| [Why OpenECPDS](https://ecmwf.github.io/open-ecpds/why-openecpds/) | Benefits, domain-agnostic use cases and comparison with Managed File Transfer platforms |
-| [Getting Started](https://ecmwf.github.io/open-ecpds/getting-started/requirements/) | Requirements, standalone container, installation, first run, IDE setup, ECPDS CLI |
-| [Architecture](https://ecmwf.github.io/open-ecpds/architecture/overview/) | Overview, centralised vs. federated, data ownership & catalogue, components, failover, data transfer lifecycle, continental data movers, data mover allocation & load balancing, database, Java dependencies |
-| [Deployment](https://ecmwf.github.io/open-ecpds/deployment/kubernetes/) | Kubernetes, physical infrastructure, container registry, releasing |
-| [Concepts](https://ecmwf.github.io/open-ecpds/concepts/entities/) | Entities, host types, protocols, plugin infrastructure, object storage, destination/host/web-user options, additional features |
-| [Monitor UI](https://ecmwf.github.io/open-ecpds/monitor-ui/overview/) | Monitoring, destinations, hosts, transfer history, data files, transfer methods & modules, users, administration |
-| [Administration](https://ecmwf.github.io/open-ecpds/administration/certificates/) | Service configuration, TLS certificates, mover control-channel security, TOTP, OpenID Connect, ECaccess identity, critical action password, purge, storage lifecycle policies, product descriptions & status messages, system messages, login page content, destination metadata |
-| [Service Configuration](https://ecmwf.github.io/open-ecpds/configuration/master/) | Master, Monitor and Data Mover `ecmwf.properties` reference (under Administration) |
-| [Use Cases](https://ecmwf.github.io/open-ecpds/use-cases/ecpds-cli/) | CLI tool, data portal, data users, web users, data user options, acquisition, acquisition options, dissemination |
-| [Transfer Modules](https://ecmwf.github.io/open-ecpds/transfer-modules/) | ECtrans common options, FTP, FTPS, SFTP, HTTP/S, WebDAV, S3, GCS, Azure Blob, ECauth, optional ECaccess gateways, Portal, Test |
-| [Host Directory](https://ecmwf.github.io/open-ecpds/host-directory/) | Acquisition, dissemination, replication, source, backup, proxy scripts |
-| [Notifications (MQTT)](https://ecmwf.github.io/open-ecpds/notifications/mqtt-overview/) | Real-time dissemination notifications, automated MQTT acquisition, optional WMO WIS2 integration, implementation details |
-| [Monitoring](https://ecmwf.github.io/open-ecpds/monitoring/transfer-statistics/) | Transfer network statistics, TCP socket metrics, JMX with Hawtio & Prometheus, delay notifications |
-| [Event Logging](https://ecmwf.github.io/open-ecpds/event-logging/overview/) | PRS, RET, UPH, INH, ERR, CPY, DEA event categories and field reference |
-| [REST API](https://ecmwf.github.io/open-ecpds/rest-api/) | REST API reference (v1) |
-| [API Reference](https://ecmwf.github.io/open-ecpds/api-reference/) | JavaDocs |
-| [Global Reach](https://ecmwf.github.io/open-ecpds/global-reach/) | 1,000+ destinations across 80+ countries |
-| [Support](https://ecmwf.github.io/open-ecpds/support/) | Support materials and resources |
-| [Glossary](https://ecmwf.github.io/open-ecpds/glossary/) | Key terms and concepts |
-| [Changelog](https://ecmwf.github.io/open-ecpds/changelog/) | Release notes |
-| [Contributing](https://ecmwf.github.io/open-ecpds/contributing/) | How to contribute |
+| Try OpenECPDS or understand how it works | [Standalone container](https://ecmwf.github.io/open-ecpds/getting-started/standalone/) · [Architecture overview](https://ecmwf.github.io/open-ecpds/architecture/overview/) |
+| Install and configure a deployment | [Installation](https://ecmwf.github.io/open-ecpds/getting-started/installation/) · [Kubernetes](https://ecmwf.github.io/open-ecpds/deployment/kubernetes/) · Service configuration: [Master](https://ecmwf.github.io/open-ecpds/configuration/master/), [Monitor](https://ecmwf.github.io/open-ecpds/configuration/monitor/), [Data Mover](https://ecmwf.github.io/open-ecpds/configuration/mover/) |
+| Set up data exchange | [Acquisition](https://ecmwf.github.io/open-ecpds/use-cases/acquisition/) · [Dissemination](https://ecmwf.github.io/open-ecpds/use-cases/dissemination/) · [Data Portal](https://ecmwf.github.io/open-ecpds/use-cases/data-portal/) · [Transfer modules](https://ecmwf.github.io/open-ecpds/transfer-modules/) · [Host Directory](https://ecmwf.github.io/open-ecpds/host-directory/) |
+| Notify consumers, replay events, or replicate a destination | [MQTT notifications](https://ecmwf.github.io/open-ecpds/notifications/mqtt-overview/) · [Notification history and Aviso replay](https://ecmwf.github.io/open-ecpds/notifications/history/) · [One-way replication with Aviso](https://ecmwf.github.io/open-ecpds/notifications/aviso-acquisition/) |
+| Operate, secure, or troubleshoot the service | [Monitor UI](https://ecmwf.github.io/open-ecpds/monitor-ui/overview/) · [TLS certificates](https://ecmwf.github.io/open-ecpds/administration/certificates/) · [Transfer statistics](https://ecmwf.github.io/open-ecpds/monitoring/transfer-statistics/) · [JMX and Prometheus](https://ecmwf.github.io/open-ecpds/monitoring/jmx-export/) · [Event logging](https://ecmwf.github.io/open-ecpds/event-logging/overview/) |
+| Automate, integrate, or contribute | [ECPDS CLI](https://ecmwf.github.io/open-ecpds/getting-started/ecpds-cli/) · [REST API](https://ecmwf.github.io/open-ecpds/rest-api/) · [Java API reference](https://ecmwf.github.io/open-ecpds/api-reference/) · [Contributing](https://ecmwf.github.io/open-ecpds/contributing/) |
+
+[Changelog](https://ecmwf.github.io/open-ecpds/changelog/) · [Glossary](https://ecmwf.github.io/open-ecpds/glossary/) · [Support](https://ecmwf.github.io/open-ecpds/support/)
 
 ---
 
