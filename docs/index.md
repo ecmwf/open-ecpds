@@ -87,6 +87,7 @@ custom MQTT notifications, S3 access and the Monitor UI.
 </div>
 
 [Why OpenECPDS? →](why-openecpds.md){ .md-button }
+[Documentation Guide →](documentation-guide.md){ .md-button }
 
 ## Quick links
 
