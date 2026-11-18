@@ -369,8 +369,16 @@ public final class FtpModule extends TransferModule {
             }
             if (ftp == null || !ftp.commandIsOpen()) {
                 ftp = client;
-                ftp.connect(host, port);
-                ftp.login(user, loginPassword, loginSharedKey);
+                try {
+                    ftp.connect(host, port);
+                } catch (final SocketTimeoutException e) {
+                    throw timeout("FTP connection setup timed out", e);
+                }
+                try {
+                    ftp.login(user, loginPassword, loginSharedKey);
+                } catch (final SocketTimeoutException e) {
+                    throw timeout("FTP login timed out", e);
+                }
             } else {
                 _log.debug("Found cached ftp connection ({})", key);
                 fromCache = true;
@@ -409,7 +417,7 @@ public final class FtpModule extends TransferModule {
         } catch (final Exception e) {
             _log.error("Connection failed to ftp host {}:{}", host, port, e);
             final var message = e.getMessage();
-            throw new IOException(isNotEmpty(message) ? message : "connection failed to host " + host + ":" + port);
+            throw new IOException(isNotEmpty(message) ? message : "connection failed to host " + host + ":" + port, e);
         } finally {
             if (!connected) {
                 setStatus("ERROR");
@@ -678,7 +686,8 @@ public final class FtpModule extends TransferModule {
                 _log.debug("Reply code: {}", code);
             } catch (final SocketTimeoutException e) {
                 if (error || !retryAfterTimeoutOnCheck) {
-                    throw e;
+                    final var operation = putName != null ? "upload" : "download";
+                    throw timeout("FTP " + operation + " unconfirmed: final reply timed out", e);
                 }
                 _log.debug("Retry to login after timeout", e);
                 ftp.retryLogin();
@@ -715,8 +724,7 @@ public final class FtpModule extends TransferModule {
         }
         final long size;
         if (!ignoreCheck && sent != (size = size(remoteName))) {
-            throw new IOException("Remote file size is " + Format.formatPercentage(size, sent)
-                    + " of original file size (sent=" + sent + "/size=" + size + ")");
+            throw new IOException("FTP size mismatch: expected " + sent + " bytes, remote " + size + " bytes");
         }
         closeStreams();
         if (putName != null && usetmp) {
@@ -730,31 +738,39 @@ public final class FtpModule extends TransferModule {
                 } catch (final IOException _) {
                 }
             }
-            if (checksum != null && !md5sum) {
-                OutputStream output = null;
-                var success = false;
-                try {
-                    ftp.getResponseString();
-                    final var bytes = checksum.getBytes();
-                    output = ftp.put(remoteName + md5Ext, 0, bytes.length, false, 0);
-                    ftp.getResponseString();
-                    _log.debug("Write checksum: {}", checksum);
-                    output.write(bytes);
-                    output.close();
-                    success = true;
-                } finally {
-                    if (!success) {
-                        StreamPlugThread.closeQuietly(output);
-                    }
-                }
-            } else {
-                md5sum = false;
-                ftp.dumpChecksum(checksum, remoteName + md5Ext);
+            try {
+                writeChecksum(remoteName + md5Ext, checksum);
+            } catch (final SocketTimeoutException e) {
+                throw timeout("FTP data file sent; checksum write timed out", e);
             }
         }
         setAttribute("remote.fileName", remoteName);
         if (!(checked = ftp.commandIsOpen())) {
             throw new IOException("Transfer aborted (connection closed)");
+        }
+    }
+
+    private void writeChecksum(final String name, final String checksum) throws IOException {
+        if (checksum == null || md5sum) {
+            md5sum = false;
+            ftp.dumpChecksum(checksum, name);
+            return;
+        }
+        OutputStream output = null;
+        var success = false;
+        try {
+            ftp.getResponseString();
+            final var bytes = checksum.getBytes();
+            output = ftp.put(name, 0, bytes.length, false, 0);
+            ftp.getResponseString();
+            _log.debug("Write checksum: {}", checksum);
+            output.write(bytes);
+            output.close();
+            success = true;
+        } finally {
+            if (!success) {
+                StreamPlugThread.closeQuietly(output);
+            }
         }
     }
 
@@ -1158,7 +1174,7 @@ public final class FtpModule extends TransferModule {
             ftp.rename(source, target);
             return ftp.getResponseString();
         } catch (final SocketTimeoutException e) {
-            throw new SocketTimeoutException("Ftp timeout on RNFR");
+            throw timeout("FTP rename unconfirmed: reply timed out", e);
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
         }
@@ -1280,8 +1296,8 @@ public final class FtpModule extends TransferModule {
             ftp.getResponseString();
             ftp.size(name);
             return ftp.getResponseString();
-        } catch (final SocketTimeoutException _) {
-            throw new SocketTimeoutException("Ftp timeout on SIZE");
+        } catch (final SocketTimeoutException e) {
+            throw timeout("FTP size check timed out", e);
         } catch (final IOException e) {
             throw new IOException(getExceptionMessage(e));
         }
@@ -1403,6 +1419,12 @@ public final class FtpModule extends TransferModule {
             message = message.substring(0, length - 1);
         }
         return message.equals(response) ? response : response + ": " + message;
+    }
+
+    private static SocketTimeoutException timeout(final String message, final SocketTimeoutException cause) {
+        final var timeout = new SocketTimeoutException(message);
+        timeout.initCause(cause);
+        return timeout;
     }
 
     /**
