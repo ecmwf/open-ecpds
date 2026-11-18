@@ -6,15 +6,22 @@ This page lists the key third-party Java libraries bundled with OpenECPDS, group
 
 | Requirement | Version | Purpose |
 |---|---|---|
-| [GraalVM Community Edition](https://www.graalvm.org/) | 25.4.4.1.1 (Java 25) | Java runtime used by the OpenECPDS container images; Java 25 is required to run all components |
+| [Oracle GraalVM](https://www.graalvm.org/) | 25.0.5.1 (Java 25.0.5.1+4) | Java runtime used by the OpenECPDS container images; Java 25 is required to run all components |
 
-Development and application-image builds read SDKMAN Java `25.4.4.1+1-graalce`
+Development and application-image builds read SDKMAN Java `25.0.5.1-graal`
 from `.devcontainer/java-version.env`, matching the Polyglot/Truffle libraries
 selected by `graalvm.version` in `pom.xml`. Keep these versions aligned: the
 embedded Graal compiler depends on Truffle runtime internals. Build the Java base
 and application images for each target architecture.
 Standalone builds evaluate JavaScript against the installed libraries to detect
 an incompatible compiler/runtime before the image is created.
+
+Oracle GraalVM is distributed under the
+[GraalVM Free Terms and Conditions (GFTC)](https://www.oracle.com/downloads/licenses/graal-free-license.html),
+not Community Edition's GPLv2 with the Classpath Exception. Review the GFTC
+conditions for production use and redistribution, including the restriction on
+charging fees associated with redistribution. The Polyglot library licenses below
+are separate from the JDK distribution license.
 
 ---
 
@@ -139,9 +146,9 @@ an incompatible compiler/runtime before the image is created.
 
 | Library | Version | License | Purpose |
 |---|---|---|---|
-| [GraalVM Polyglot](https://www.graalvm.org/) | 25.4.4.1.1 | UPL 1.0 | Polyglot scripting host for user-defined JavaScript/Python scripts |
-| [GraalVM JavaScript](https://www.graalvm.org/) | 25.4.4.1.1 | UPL 1.0 | JavaScript engine (metadata transformation scripts, rule evaluation) |
-| [GraalVM Python](https://www.graalvm.org/) | 25.4.4.1.1 | UPL 1.0 | Python engine (user-defined data processing scripts) |
+| [GraalVM Polyglot](https://www.graalvm.org/) | 25.0.5.1 | UPL 1.0 | Polyglot scripting host for user-defined JavaScript/Python scripts |
+| [GraalVM JavaScript](https://www.graalvm.org/) | 25.0.5.1 | UPL 1.0 | JavaScript engine (metadata transformation scripts, rule evaluation) |
+| [GraalVM Python](https://www.graalvm.org/) | 25.0.5.1 | UPL 1.0 | Python engine (user-defined data processing scripts) |
 
 ---
 

@@ -5,7 +5,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.2.1-201020
 
 ---
 
-## open-ecpds 8.3.0-16112026
+## open-ecpds 8.3.0-17112026
 
 - **One-way destination replication**: An HTTP acquisition Host can replicate a remote OpenECPDS destination using Aviso inventory and replay, durable checkpoints and version-pinned HTTPS downloads. Replication is opt-in and additive; it does not propagate deletions. See [One-way destination replication with Aviso](notifications/aviso-acquisition.md).
 - **Standalone Aviso demo**: Adds an `aviso_demo` upload destination accessible to the `test` Data Portal user, with strict notification capture and standby storage, independent of MQTT. Includes a [watch, upload and replay walkthrough](getting-started/standalone.md#try-aviso-watch-and-replay).
@@ -14,6 +14,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.2.1-201020
 - **OpenTelemetry Journal admission**: Defaults to 4,096 events / 16 MiB in memory and 50,000 events / 128 MiB per database owner. The new `journalMaxEventBytes` independently limits a serialized event to 64 KiB by default; the Monitor displays the effective limit. See [Durable database journal](event-logging/overview.md#durable-database-journal).
 - **MQTT notification event reference**: Documents NTF fields and matching Splunk and OpenTelemetry examples. See [NTF fields](event-logging/ntf-fields.md).
 - **Opt-in WIS2 acquisition profiles**: Adds a versioned notification-profile SPI and bundled `wis2` profile, selected with `http.mqttProfile="wis2"`; the default `script` profile selects generic MQTT script extraction. File versions use full data identity, normalized publication time and advertised integrity. Notification attribution persists in existing file metadata and appears in the Monitor's **Acquisition Notification** card. Advertised SHA-256, SHA-384 and SHA-512 digests are verified before scheduled retrieval completes, complementing OpenECPDS integrity controls; invalid digests reject notifications and mismatches fail retrieval. The WIS2 profile uses shared MQTT inline-content ingestion to interpret WIS2 `properties.content` directly (Base64, up to 16 KiB decoded), with profile-specific validation, explicit support for empty inline files and direct submission of the inline file bytes. See [WIS2 acquisition profile](notifications/wmo-wis2.md#optional-wis2-acquisition-profile) and [Notification profiles](concepts/plugin-infrastructure.md#notification-profiles).
+- **Build JDK**: Switches to Oracle GraalVM JDK 25.0.5.1.
 
 ---
 
