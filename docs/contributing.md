@@ -45,6 +45,88 @@ make down     # stop the application
 make clean    # clean logs and data
 ```
 
+### Credential rotation checks
+
+Use the focused regression runners from the repository root:
+
+```bash
+bash scripts/tests/rotation-protocols.sh
+bash scripts/tests/rotation-database.sh
+```
+
+The protocol runner uses authenticated loopback TLS endpoints and synthetic
+credentials. The database runner creates disposable MariaDB resources and
+covers configuration binding, authorization, draining, activation and
+retirement. Neither runner uses live cloud accounts or shared services.
+
+For the standalone OpenBao lifecycle, package the Java core and build matching
+standalone/OpenBao images, then run:
+
+```bash
+STANDALONE_TEST_IMAGE=<your-local-standalone-tag> \
+  OPENBAO_TEST_IMAGE=open-ecpds/openbao:2.7.2 \
+  python3 -u scripts/tests/standalone-openbao-lifecycle-test.py
+```
+
+This runner covers vault initialization/unseal, scoped token permissions,
+persistence across restart, startup with empty and populated data volumes, and vault/SQL retirement
+recovery. Its minimal Hibernate fixture disables notification revision fencing
+only inside its disposable environment. These are component and integration
+regressions; complete service-deployment acceptance also needs the actual
+Monitor, Master and final Movers, including direct and Continental routing.
+Keep application validation separate from changes to shared running services.
+
+## Database requests
+
+Keep application SQL in `etc/master/conf/sql` and execute it through
+`ECpdsBase`/`DataBase` and Broker. Existing `$parameter` templates remain
+supported; migrate them incrementally rather than rewriting unrelated requests.
+
+For new value parameters, keep the normal prompt declaration, add its binding
+type, and use an **unquoted** `:name` placeholder:
+
+```sql
+#menu "ECpdsBase"
+#name "lockHostPasswordActive"
+#group "select"
+#timeout "5"
+#prompt "host;Host identifier;;"
+#bind "host;LONG"
+SELECT 1 FROM HOST_PASSWORD_ACTIVE WHERE HOS_NAME=:host FOR UPDATE
+```
+
+`#prompt` remains available to existing request-discovery and prompting tools.
+`#bind` opts the request into JDBC value binding. Names can repeat in SQL and
+are matched by name, not Java argument order. Placeholders inside SQL quoted
+strings, identifiers and ordinary comments are left alone.
+
+Supported binding types are `STRING`, `LONG`, `INTEGER`, `BOOLEAN`, `DECIMAL`,
+`TIMESTAMP`, `DATE` and `TIME`. Types are checked before execution; boolean text
+accepts `true`, `false`, `1` and `0`. Typed-map callers can supply Java `null` for
+SQL `NULL`; the string `"null"` is not a null marker.
+
+Database-layer methods can use the normal `executeSelect`, `executeQuery` and
+`executeUpdate` APIs with a map of raw values, for example
+`Map.of("host", hostId)`. Existing `String[]` arguments such as
+`new String[] { "host=" + hostId }` also work. Do not SQL-escape bound values.
+Legacy requests retain their existing escaping and substitution behavior.
+
+For dependent operations, use `DataBase.scriptTransaction` and its named-map
+`prepare`/`executeBatch` operations so all statements share one Broker
+transaction. A standalone `FOR UPDATE` request does **not** make a later,
+separate request atomic with it.
+
+SQL identifiers, sort directions and fragments cannot be bound as values.
+If a bound request also needs `$parameter` structural substitution, declare
+explicit `#prompt` choices and keep those choices in the SQL file; other values
+are rejected. Existing conditional directives still work, and bindings in an
+inactive branch do not require values.
+
+Bound requests contain one SQL statement; they do not use the legacy
+semicolon-splitting, `LOOP`, `CHUNK`, or executable-comment mechanisms. Use an
+explicit count request for bound pagination when found-row emulation is enabled.
+Native MariaDB `SQL_CALC_FOUND_ROWS` and legacy pagination remain supported.
+
 ## Suggested contribution workflow
 
 *To be completed with the project's confirmed process.* A typical open-source workflow is:

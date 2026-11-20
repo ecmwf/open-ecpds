@@ -67,6 +67,13 @@ ENV MYSQL_ROOT_PASSWORD=ecpds2020!
 RUN dnf -y install mariadb-server lbzip2 zstd nmap mtr supervisor nginx openssl && \
     dnf clean all
 
+# The base image's SDKMAN installation is below /root and cannot be traversed
+# by the isolated service identities. Keep the same JDK in an accessible path.
+RUN mkdir -p /opt/ecpds-java && cp -a "$JAVA_HOME"/. /opt/ecpds-java/ && \
+    chmod -R a+rX /opt/ecpds-java
+ENV JAVA_HOME=/opt/ecpds-java
+ENV PATH=/opt/ecpds-java/bin:${PATH}
+
 # ── Install OpenECPDS RPMs ─────────────────────────────────────────────────────
 COPY rpms/ /tmp/rpms/
 RUN yum install -d1 -y \
@@ -112,6 +119,7 @@ RUN sed -i \
 # instance — in a multi-service container all three Java processes match.
 # Replace with service-specific pgrep wrappers that key on a unique JVM flag.
 RUN mkdir -p /etc/ecpds/default /usr/local/ecpds/standalone && \
+    find /usr/local/ecpds -type d -exec chmod 0755 {} + && \
     printf '#!/bin/sh\npgrep -f "Dmaster.log"\n' > /usr/local/ecpds/standalone/pidof-master.sh && \
     printf '#!/bin/sh\npgrep -f "Dmover.log"\n'  > /usr/local/ecpds/standalone/pidof-mover.sh  && \
     printf '#!/bin/sh\npgrep -f "Dmonitor.log"\n' > /usr/local/ecpds/standalone/pidof-monitor.sh && \
@@ -139,6 +147,13 @@ RUN sed -i 's/^ftp=ecmwf\.common\.ftpd\.FtpPlugin/#ftp=ecmwf.common.ftpd.FtpPlug
         /usr/local/ecpds/master/conf/ecmwf.properties \
         /usr/local/ecpds/mover/conf/ecmwf.properties
 
+# Keep the vault client disabled by default even if the packaged Master
+# configuration predates the OpenBao section.
+RUN if ! grep -q '^\[OpenBao\]$' /usr/local/ecpds/master/conf/ecmwf.properties; then \
+        printf '\n[OpenBao]\nenabled=no\naddress=https://openbao:8200\nmount=ecpds\ntokenFile=/run/ecpds/openbao/token\n' \
+            >> /usr/local/ecpds/master/conf/ecmwf.properties; \
+    fi
+
 # ── Mover: bind service ports on all interfaces (not loopback only) ───────────
 # Plugin listen addresses default to ${Login[externalAddress]} = 'ecpds-mover'
 # which resolves to the loopback interface inside the container. Replace with
@@ -152,6 +167,16 @@ RUN mkdir -p /etc/my.cnf.d && \
     printf '[mysqld]\ndatadir=/data/db\nsocket=/run/mysqld/mysqld.sock\ncharacter_set_server=utf8mb4\ncollation_server=utf8mb4_unicode_ci\n\n[client]\nsocket=/run/mysqld/mysqld.sock\ndefault_character_set=utf8mb4\n' \
         > /etc/my.cnf.d/zz-ecpds-standalone.cnf
 
+# ── Isolate service processes ──────────────────────────────────────────────────
+# A single container normally runs all services as root. The optional OpenBao
+# integration needs the Master token to be readable by the Master and nobody else.
+RUN groupadd --system --gid 12001 ecpds-master && \
+    groupadd --system --gid 12002 ecpds-mover && \
+    groupadd --system --gid 12003 ecpds-monitor && \
+    useradd --system --uid 12001 --gid ecpds-master --no-create-home --shell /sbin/nologin ecpds-master && \
+    useradd --system --uid 12002 --gid ecpds-mover --no-create-home --shell /sbin/nologin ecpds-mover && \
+    useradd --system --uid 12003 --gid ecpds-monitor --no-create-home --shell /sbin/nologin ecpds-monitor
+
 # ── Configuration and startup scripts ─────────────────────────────────────────
 COPY ecpds.sql /ecpds-init.sql
 COPY hawtio/lib /opt/hawtio/lib
@@ -161,11 +186,16 @@ COPY jolokia-access.xml /etc/ecpds/jolokia-access.xml
 RUN mkdir -p /opt/hawtio/classes && \
     javac -d /opt/hawtio/classes -cp "/opt/hawtio/lib/*" /opt/hawtio/HawtioLauncher.java && \
     rm /opt/hawtio/HawtioLauncher.java && \
+    sed -i -e '/^user nginx;$/d' \
+        -e 's#error_log /dev/stderr;#error_log /run/hawtio/nginx-error.log;#' /entrypoint.sh && \
     chmod 0755 /entrypoint.sh
 COPY supervisord.conf /etc/supervisord.conf
 COPY entrypoint.sh start-master.sh start-mover.sh start-monitor.sh start-hawtio.sh \
      /usr/local/ecpds/standalone/
-RUN chmod +x /usr/local/ecpds/standalone/*.sh
+RUN chmod +x /usr/local/ecpds/standalone/*.sh && \
+    mkdir -p /run/ecpds/openbao /etc/pki/ca-trust/source/anchors && \
+    chown ecpds-master:ecpds-master /run/ecpds/openbao && \
+    chmod 0700 /run/ecpds/openbao
 
 # ── Single persistent volume ───────────────────────────────────────────────────
 # Mount /data to persist all service data, logs, and the database across restarts

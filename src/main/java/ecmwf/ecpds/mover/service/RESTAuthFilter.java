@@ -91,22 +91,27 @@ public final class RESTAuthFilter implements ContainerRequestFilter {
             return;
         }
         final byte[] body;
-        if (path.startsWith("master/weatherObservations") || path.startsWith("master/exportTransferSpans")) {
+        if (path.startsWith("master/weatherObservations") || path.startsWith("master/exportTransferSpans")
+                || path.startsWith("mover/passwordProbe/") || path.startsWith("mover/pinnedPassword/")
+                || path.startsWith("mover/legacyPasswordFence/")) {
             try {
-                final var limit = path.startsWith("master/exportTransferSpans")
-                        ? ecmwf.common.telemetry.TransferSpan.MAX_BATCH_BYTES
-                        : ecmwf.ecpds.master.weather.WeatherBatch.MAX_BYTES;
+                final var limit = path.startsWith("mover/legacyPasswordFence/") ? 16 * 1024
+                        : path.startsWith("mover/pinnedPassword/") ? RESTClient.PINNED_PASSWORD_BODY_LIMIT
+                                : path.startsWith("mover/passwordProbe/")
+                                        ? ecmwf.ecpds.mover.MoverPasswordEnvelope.MAX_ENVELOPE
+                                        : path.startsWith("master/exportTransferSpans")
+                                                ? ecmwf.common.telemetry.TransferSpan.MAX_BATCH_BYTES
+                                                : ecmwf.ecpds.master.weather.WeatherBatch.MAX_BYTES;
                 final var input = requestContext.getEntityStream();
                 body = input == null ? new byte[0] : input.readNBytes(limit + 1);
                 if (body.length > limit) {
-                    _log.warn("Rejecting oversized telemetry control-channel batch");
-                    requestContext.abortWith(Response.status(413).entity("Telemetry batch exceeds size limit").build());
+                    requestContext
+                            .abortWith(Response.status(413).entity("Control-channel body exceeds size limit").build());
                     return;
                 }
                 requestContext.setEntityStream(new ByteArrayInputStream(body));
             } catch (final java.io.IOException e) {
-                _log.warn("Cannot read telemetry batch for signature verification", e);
-                reject(requestContext, "Cannot read telemetry batch");
+                reject(requestContext, "Cannot read control-channel body");
                 return;
             }
         } else {

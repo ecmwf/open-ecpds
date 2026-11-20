@@ -97,7 +97,13 @@ public class DBIterator<E extends DataBaseObject> implements Iterator<E>, Closea
     }
 
     DBIterator(final Broker broker, final Class<E> target, final String sql, final int timeout) throws BrokerException {
-        this.iterator = broker.getIterator(target, sql, timeout);
+        this(broker, target, sql, timeout, new Object[0]);
+    }
+
+    DBIterator(final Broker broker, final Class<E> target, final String sql, final int timeout,
+            final Object[] parameters) throws BrokerException {
+        this.iterator = parameters.length == 0 ? broker.getIterator(target, sql, timeout)
+                : broker.getIterator(target, sql, timeout, parameters);
         this.broker = broker;
         TRACKER.onOpen();
     }

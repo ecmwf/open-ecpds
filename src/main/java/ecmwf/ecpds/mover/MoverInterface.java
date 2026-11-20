@@ -49,6 +49,43 @@ import ecmwf.common.technical.ProxySocket;
  */
 public interface MoverInterface extends ClientInterface {
 
+    MoverPasswordDrain.Challenge beginLegacyPasswordFence(long host) throws RemoteException;
+
+    String fenceLegacyPassword(long host, java.util.UUID cutover, MoverPasswordDrain.Challenge challenge,
+            String command) throws RemoteException;
+
+    MoverPasswordDrain.Challenge beginContinentalLegacyPasswordFence(long proxy, long host) throws RemoteException;
+
+    String fenceContinentalLegacyPassword(long proxy, long host, java.util.UUID cutover,
+            MoverPasswordDrain.Challenge challenge, String command) throws RemoteException;
+
+    java.util.UUID beginPasswordProbe(long host) throws RemoteException;
+
+    MoverPasswordEnvelope.ProbeReceipt runPasswordProbe(long host, java.util.UUID nonce, String envelope)
+            throws RemoteException;
+
+    java.util.UUID beginContinentalPasswordProbe(long proxyHost, long host) throws RemoteException;
+
+    MoverPasswordEnvelope.ProbeReceipt runContinentalPasswordProbe(long proxyHost, long host, java.util.UUID nonce,
+            String ciphertext) throws RemoteException;
+
+    java.util.UUID beginPinnedPassword(long host, MoverPasswordEnvelope.Delivery delivery) throws RemoteException;
+
+    long sizePinnedPassword(long host, java.util.UUID nonce, MoverPasswordEnvelope.Delivery delivery, String ciphertext,
+            DataTransfer transfer) throws RemoteException;
+
+    DataTransfer putPinnedPassword(long host, java.util.UUID nonce, MoverPasswordEnvelope.Delivery delivery,
+            String ciphertext, Host[] hostsForSource, DataTransfer transfer) throws RemoteException;
+
+    java.util.UUID beginContinentalPinnedPassword(long proxy, long host, MoverPasswordEnvelope.Delivery delivery)
+            throws RemoteException;
+
+    long sizeContinentalPinnedPassword(long proxy, long host, java.util.UUID nonce,
+            MoverPasswordEnvelope.Delivery delivery, String ciphertext, DataTransfer transfer) throws RemoteException;
+
+    DataTransfer putContinentalPinnedPassword(long proxy, long host, java.util.UUID nonce,
+            MoverPasswordEnvelope.Delivery delivery, String ciphertext, DataTransfer transfer) throws RemoteException;
+
     /** Returns local replica bytes, -1 if absent, or -2 if in use/unverifiable. */
     long inspectStorageReplica(DataFile file) throws RemoteException;
 

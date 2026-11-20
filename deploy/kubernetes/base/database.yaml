@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecpds-database
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: ecpds-database
+spec:
+  selector:
+    app.kubernetes.io/name: ecpds-database
+  ports:
+  - name: mysql
+    port: 3309
+    targetPort: 3309
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecpds-database-pods
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: ecpds-database
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: ecpds-database
+  ports:
+  - name: mysql
+    port: 3309
+    targetPort: 3309
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ecpds-database
+  labels: &id001
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: ecpds-database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ecpds-database
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: ecpds-database
+        image: open-ecpds/database:latest
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecpds-database-credentials
+              key: MYSQL_ROOT_PASSWORD
+        ports:
+        - name: mysql
+          containerPort: 3309
+        volumeMounts:
+        - name: var-lib-ecpds-database
+          mountPath: /var/lib/mysql
+        - name: etc-ecpds-database
+          mountPath: /etc/mysql/conf.d
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        startupProbe:
+          exec: &id002
+            command:
+            - healthcheck.sh
+            - --connect
+            - --innodb_initialized
+          timeoutSeconds: 5
+          periodSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          exec: *id002
+          timeoutSeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: var-lib-ecpds-database
+        persistentVolumeClaim:
+          claimName: var-lib-ecpds-database
+      - name: etc-ecpds-database
+        persistentVolumeClaim:
+          claimName: etc-ecpds-database
+  serviceName: ecpds-database-pods

@@ -361,6 +361,121 @@ public final class RESTClient implements RESTInterface {
     }
 
     @Override
+    public java.util.UUID beginPasswordProbe(final long host) throws RestException {
+        return passwordProbeRequest(host, "challenge", "GET", null, java.util.UUID.class);
+    }
+
+    @Override
+    public ecmwf.ecpds.mover.MoverPasswordEnvelope.ProbeReceipt runPasswordProbe(final long host,
+            final java.util.UUID nonce, final String ciphertext) throws RestException {
+        if (nonce == null || ciphertext == null
+                || ciphertext.length() > ecmwf.ecpds.mover.MoverPasswordEnvelope.MAX_ENVELOPE
+                || !ciphertext.matches("[A-Za-z0-9_.-]+")) {
+            throw new RestException("Invalid Continental password probe request");
+        }
+        return passwordProbeRequest(host, nonce.toString(), "POST", new ProbeCiphertext(ciphertext),
+                ecmwf.ecpds.mover.MoverPasswordEnvelope.ProbeReceipt.class);
+    }
+
+    private record ProbeCiphertext(String value) {
+    }
+
+    static final int PINNED_PASSWORD_BODY_LIMIT = 256 * 1024;
+
+    record PinnedPasswordRequest(java.util.UUID nonce, ecmwf.ecpds.mover.MoverPasswordEnvelope.Delivery delivery,
+            String ciphertext, DataTransfer transfer) {
+        @Override
+        public String toString() {
+            return "PinnedPasswordRequest";
+        }
+    }
+
+    @Override
+    public java.util.UUID beginPinnedPassword(final long host,
+            final ecmwf.ecpds.mover.MoverPasswordEnvelope.Delivery delivery) throws RestException {
+        return credentialRequest("pinnedPassword", host, "challenge", "POST", delivery, java.util.UUID.class);
+    }
+
+    @Override
+    public long sizePinnedPassword(final long host, final java.util.UUID nonce,
+            final ecmwf.ecpds.mover.MoverPasswordEnvelope.Delivery delivery, final String ciphertext,
+            final DataTransfer transfer) throws RestException {
+        return credentialRequest("pinnedPassword", host, "size", "POST",
+                pinnedRequest(nonce, delivery, ciphertext, transfer), Long.class);
+    }
+
+    @Override
+    public String putPinnedPassword(final long host, final java.util.UUID nonce,
+            final ecmwf.ecpds.mover.MoverPasswordEnvelope.Delivery delivery, final String ciphertext,
+            final DataTransfer transfer) throws RestException {
+        return credentialRequest("pinnedPassword", host, "put", "POST",
+                pinnedRequest(nonce, delivery, ciphertext, transfer), String.class);
+    }
+
+    static PinnedPasswordRequest pinnedRequest(final java.util.UUID nonce,
+            final ecmwf.ecpds.mover.MoverPasswordEnvelope.Delivery delivery, final String ciphertext,
+            final DataTransfer transfer) {
+        final var copy = getPutRequest(transfer, delivery.target(), delivery.localOffset(), delivery.remoteOffset(),
+                false).transfer;
+        copy.setConnectOptions(transfer.getConnectOptions());
+        return new PinnedPasswordRequest(nonce, delivery, ciphertext, copy);
+    }
+
+    record LegacyFenceRequest(java.util.UUID cutover, ecmwf.ecpds.mover.MoverPasswordDrain.Challenge challenge,
+            String command) {
+    }
+
+    @Override
+    public ecmwf.ecpds.mover.MoverPasswordDrain.Challenge beginLegacyPasswordFence(final long host)
+            throws RestException {
+        return credentialRequest("legacyPasswordFence", host, "challenge", "GET", null,
+                ecmwf.ecpds.mover.MoverPasswordDrain.Challenge.class);
+    }
+
+    @Override
+    public String fenceLegacyPassword(final long host, final java.util.UUID cutover,
+            final ecmwf.ecpds.mover.MoverPasswordDrain.Challenge challenge, final String command) throws RestException {
+        if (command == null || command.length() > ecmwf.ecpds.mover.MoverPasswordDrain.MAX_MESSAGE) {
+            throw new RestException("Invalid legacy session fence request");
+        }
+        return credentialRequest("legacyPasswordFence", host, "fence", "POST",
+                new LegacyFenceRequest(cutover, challenge, command), String.class);
+    }
+
+    private <T> T passwordProbeRequest(final long host, final String operation, final String method,
+            final ProbeCiphertext body, final Class<T> resultType) throws RestException {
+        return credentialRequest("passwordProbe", host, operation, method, body, resultType);
+    }
+
+    private <T> T credentialRequest(final String resource, final long host, final String operation, final String method,
+            final Object body, final Class<T> resultType) throws RestException {
+        if (!RESTSignature.ENABLED || TRUST_ALL_CERTS || host <= 0 || httpMoverList.size() != 1) {
+            throw new RestException("Continental credential requests require verified HTTPS and request signing");
+        }
+        try {
+            final var origin = URI.create(httpMoverList.getFirst());
+            if (!"https".equalsIgnoreCase(origin.getScheme()) || origin.getHost() == null
+                    || origin.getRawUserInfo() != null || origin.getRawQuery() != null
+                    || origin.getRawFragment() != null
+                    || !(origin.getRawPath().isEmpty() || "/".equals(origin.getRawPath()))) {
+                throw new RestException("Invalid Continental credential request origin");
+            }
+            final var url = origin.resolve("/ecpds/mover/" + resource + "/" + host + "/" + operation).toString();
+            try (final var response = send(httpProxy, url, 3000, 40_000, 4096, method, body, Map.of())) {
+                if (response.getStatusCode() == 200) {
+                    final var result = parse(response, resultType);
+                    if (result != null) {
+                        return result;
+                    }
+                }
+            }
+        } catch (final RestException | IllegalArgumentException _) {
+            // Do not surface response bodies or control-channel diagnostics.
+        }
+        throw new RestException("Continental credential request failed");
+    }
+
+    @Override
     public ecmwf.ecpds.master.weather.WeatherSourceIdentity getWeatherSourceIdentity(java.util.UUID challenge)
             throws Exception {
         if (challenge == null) {
@@ -564,11 +679,13 @@ public final class RESTClient implements RESTInterface {
      */
     public static PutRequest getPutRequest(final DataTransfer transfer, final String fileName, final Long localPosn,
             final Long remotePosn) {
+        return getPutRequest(transfer, fileName, localPosn, remotePosn, true);
+    }
+
+    private static PutRequest getPutRequest(final DataTransfer transfer, final String fileName, final Long localPosn,
+            final Long remotePosn, final boolean legacyPassword) {
         final var file = transfer.getDataFile();
         final var host = transfer.getHost();
-        final var l = new HostLocation();
-        l.setId(host.getHostLocationId());
-        l.setIp(host.getHostLocation().getIp());
         final var h = new Host();
         h.setName(host.getName());
         h.setECUserName(host.getECUserName());
@@ -578,12 +695,17 @@ public final class RESTClient implements RESTInterface {
         h.setTransferMethod(host.getTransferMethod());
         h.setDir(host.getDir());
         h.setHost(host.getHost());
-        h.setHostLocation(l);
         h.setData(host.getData());
         h.setActive(host.getActive());
         h.setComment(host.getComment());
         h.setLogin(host.getLogin());
-        h.setPasswd(host.getPasswd());
+        if (legacyPassword) {
+            final var l = new HostLocation();
+            l.setId(host.getHostLocationId());
+            l.setIp(host.getHostLocation().getIp());
+            h.setHostLocation(l);
+            h.setPasswd(host.getPasswd());
+        }
         h.setNickname(host.getNickname());
         h.setType(host.getType());
         final var proxy = transfer.getProxyHost();
@@ -706,6 +828,10 @@ public final class RESTClient implements RESTInterface {
             if (body == null) {
                 sign(builder, method, uri, EMPTY_BODY);
                 request = builder.method(method, HttpRequest.BodyPublishers.noBody()).build();
+            } else if (body instanceof final ProbeCiphertext probe) {
+                sign(builder, method, uri, probe.value().getBytes(StandardCharsets.US_ASCII));
+                request = builder.header("Content-Type", "text/plain")
+                        .method(method, HttpRequest.BodyPublishers.ofString(probe.value())).build();
             } else {
                 final var json = OBJECT_MAPPER.writeValueAsString(body);
                 sign(builder, method, uri, json.getBytes(StandardCharsets.UTF_8));

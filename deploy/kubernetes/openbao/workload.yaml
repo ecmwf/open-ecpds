@@ -1,0 +1,108 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: openbao
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: openbao
+  ports:
+    - name: https
+      port: 8200
+      targetPort: https
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: openbao
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  replicas: 1
+  serviceName: openbao
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: openbao
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: openbao
+        app.kubernetes.io/part-of: open-ecpds
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: ecpds-master
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: openbao
+          image: open-ecpds/openbao:2.7.2
+          env:
+            - name: BAO_API_ADDR
+              value: https://openbao:8200
+          ports:
+            - name: https
+              containerPort: 8200
+          startupProbe:
+            tcpSocket:
+              port: https
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /v1/sys/health
+              port: https
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: tls
+              mountPath: /openbao/tls
+              readOnly: true
+            - name: data
+              mountPath: /openbao/file
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tls
+          secret:
+            secretName: openbao-tls
+            defaultMode: 0440
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app.kubernetes.io/part-of: open-ecpds
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 1Gi

@@ -1,0 +1,6 @@
+/openbao/tls/*
+!/openbao/tls/.gitkeep
+/openbao/secrets/*
+!/openbao/secrets/.gitkeep
+/openbao/operator/*
+!/openbao/operator/.gitkeep

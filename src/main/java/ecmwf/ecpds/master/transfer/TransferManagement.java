@@ -39,6 +39,7 @@ import java.rmi.RemoteException;
 import java.rmi.UnmarshalException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -53,6 +54,7 @@ import ecmwf.common.database.DataFile;
 import ecmwf.common.database.DataTransfer;
 import ecmwf.common.database.ECpdsBase;
 import ecmwf.common.database.Host;
+import ecmwf.common.database.HostPasswordRotationStore;
 import ecmwf.common.database.MetadataValue;
 import ecmwf.common.ecaccess.ECaccessServer;
 import ecmwf.common.ecaccess.StarterServer;
@@ -75,6 +77,75 @@ public final class TransferManagement {
     /** The Constant _dataBase. */
     private static final ECpdsBase dataBase = StarterServer.getInstance(ECaccessServer.class)
             .getDataBase(ECpdsBase.class);
+    private static final HostPasswordRotationStore passwordRotations = dataBase.getHostPasswordRotationStore();
+
+    private static long legacyHostId(final Host host) {
+        if (host == null || host.getName() == null) {
+            return 0;
+        }
+        try {
+            return Long.parseLong(host.getName());
+        } catch (final NumberFormatException _) {
+            return 0; // A transient Host has no numeric database identity.
+        }
+    }
+
+    private static void requireLegacyDispatchAllowed(final Host host) throws IOException {
+        final var id = legacyHostId(host);
+        if (id > 0) {
+            passwordRotations.requireLegacyDispatchAllowed(id, allowUnmigratedRotationSchema());
+        }
+    }
+
+    private static boolean allowUnmigratedRotationSchema() {
+        return !Cnf.at("HostPasswordRotation", "deliveryEnabled", false)
+                && !Cnf.at("HostPasswordRotation", "monitorEnabled", false);
+    }
+
+    @FunctionalInterface
+    private interface LegacyCall<T> {
+        T run() throws ECtransException, IOException;
+    }
+
+    private static <T> T dispatchSynchronousLegacy(final Host host, final String mover, final String operation,
+            final LegacyCall<T> call) throws ECtransException, IOException {
+        final var admission = admitLegacy(host, mover, 0, operation);
+        // An exception is not evidence that the remote operation has ended.
+        final var result = call.run();
+        finishLegacy(admission);
+        return result;
+    }
+
+    private static ecmwf.common.database.HostPasswordRotationStore.LegacyAdmission admitLegacy(final Host host,
+            final String mover, final long proxy, final String operation) throws IOException {
+        final var id = legacyHostId(host);
+        if (id <= 0
+                || !(Cnf.at("HostPasswordRotation", "trackSynchronousLegacyAdmissions", false)
+                        || Cnf.at("HostPasswordRotation", "drainEnabled", false))
+                || Cnf.at("PasswordProbeHosts", Long.toString(id), "").isBlank()) {
+            requireLegacyDispatchAllowed(host);
+            return null;
+        }
+        ecmwf.ecpds.master.HostPasswordLegacyDrain.requireLegacyRoute(id, mover, proxy);
+        return passwordRotations.admitLegacy(id, mover, operation);
+    }
+
+    private static void finishLegacy(final ecmwf.common.database.HostPasswordRotationStore.LegacyAdmission admission) {
+        if (admission == null) {
+            return;
+        }
+        try {
+            passwordRotations.finishLegacy(admission);
+        } catch (final IOException _) {
+            _log.warn("Could not clear completed legacy admission {} for Host {}", admission.id(), admission.host());
+        }
+    }
+
+    public static void requireLegacySourcesAllowed(final Host[] sources) throws IOException {
+        for (final var source : sources) {
+            requireLegacyDispatchAllowed(source);
+        }
+    }
 
     /**
      * Instantiates a new transfer management.
@@ -207,6 +278,12 @@ public final class TransferManagement {
     public static String getTargetName(final DataTransfer transfer, final String template, final String message,
             final String moverName, final Collection<MetadataValue> metadataValues)
             throws DirectoryException, DataBaseException {
+        return getTargetName(transfer, template, message, moverName, metadataValues, true);
+    }
+
+    private static String getTargetName(final DataTransfer transfer, final String template, final String message,
+            final String moverName, final Collection<MetadataValue> metadataValues, final boolean legacyPassword)
+            throws DirectoryException, DataBaseException {
         if (template == null || template.trim().isEmpty()) {
             return transfer.getTarget();
         }
@@ -262,7 +339,11 @@ public final class TransferManagement {
         Format.replaceAll(sb, "$host[data]", host.getData());
         Format.replaceAll(sb, "$host[host]", host.getHost());
         Format.replaceAll(sb, "$host[login]", host.getLogin());
-        Format.replaceAll(sb, "$host[passwd]", host.getPasswd());
+        if (legacyPassword) {
+            Format.replaceAll(sb, "$host[passwd]", host.getPasswd());
+        } else if (sb.indexOf("$host[passwd]") >= 0) {
+            throw new DirectoryException("Vault-backed password does not allow password placeholders in the target");
+        }
         Format.replaceAll(sb, "$host[userMail]", host.getUserMail());
         Format.replaceAll(sb, "$host[networkCode]", host.getNetworkCode());
         Format.replaceAll(sb, "$host[networkName]", host.getNetworkName());
@@ -497,26 +578,36 @@ public final class TransferManagement {
     public static DataTransfer put(final String moverName, final MoverInterface mover, final Host[] hostsForSource,
             final DataTransfer transfer)
             throws DirectoryException, DataBaseException, SourceNotAvailableException, ECtransException, IOException {
-        final List<MetadataValue> metadataValues = new ArrayList<>();
-        final var targetName = getTargetName(transfer, transfer.getHost().getDir(), "(none)", moverName,
-                metadataValues);
+        final var template = transfer.getHost().getDir();
+        if (template != null && !template.trim().isEmpty()) {
+            // Templates can use the configured password and execute scripts before admission.
+            requireLegacyDispatchAllowed(transfer.getHost());
+        }
+        requireLegacyDispatchAllowed(transfer.getProxyHost());
+        requireLegacySourcesAllowed(hostsForSource);
+        final var prepared = preparePut(moverName, transfer, template, true);
         final var opt = new DestinationOption(transfer.getDestination());
-        // The string in the host data and event script is parsed to find out if we
-        // should resolve metadata or not?
-        transfer.setConnectOptions(getConnectOptions(transfer, targetName, moverName, metadataValues));
         var posn = 0L;
+        final var proxy = transfer.getProxyHost();
+        final var admission = admitLegacy(transfer.getHost(), moverName, proxy == null ? 0 : legacyHostId(proxy),
+                "PUT");
+        transfer.setConnectOptions(prepared.connectOptions());
+        final var targetName = prepared.targetName();
         try {
             if (opt.ifTargetExistResume()) {
                 try {
                     posn = mover.size(transfer, targetName);
                 } catch (final IOException e) {
                 }
+
                 final var originalSize = transfer.getDataFile().getSize();
                 if (posn > originalSize) {
                     posn = originalSize;
                 }
             }
-            return mover.put(hostsForSource, transfer, targetName, posn, posn);
+            final var result = mover.put(hostsForSource, transfer, targetName, posn, posn);
+            finishLegacy(admission);
+            return result;
         } catch (final RemoteException e) {
             if (e.getCause() instanceof NoSuchObjectException || e.getCause() instanceof ConnectException
                     || e.getCause() instanceof ConnectIOException || e.getCause() instanceof UnmarshalException) {
@@ -527,6 +618,27 @@ public final class TransferManagement {
                 throw e;
             }
         }
+    }
+
+    public static String preparePinnedPut(final String moverName, final DataTransfer transfer)
+            throws IOException, DataBaseException {
+        try {
+            final var prepared = preparePut(moverName, transfer, transfer.getHost().getDir(), false);
+            transfer.setConnectOptions(prepared.connectOptions());
+            return prepared.targetName();
+        } catch (final DirectoryException e) {
+            throw new IOException("Cannot resolve vault-backed password target", e);
+        }
+    }
+
+    private record PreparedPut(String targetName, String connectOptions) {
+    }
+
+    private static PreparedPut preparePut(final String moverName, final DataTransfer transfer, final String template,
+            final boolean legacyPassword) throws DirectoryException, DataBaseException {
+        final List<MetadataValue> metadataValues = new ArrayList<>();
+        final var targetName = getTargetName(transfer, template, "(none)", moverName, metadataValues, legacyPassword);
+        return new PreparedPut(targetName, getConnectOptions(transfer, targetName, moverName, metadataValues));
     }
 
     /**
@@ -554,8 +666,12 @@ public final class TransferManagement {
      */
     public static ProxySocket put(final String moverName, final MoverInterface mover, final Host host,
             final String target, final long remotePosn, final long size) throws ECtransException, IOException {
+        requireLegacyDispatchAllowed(host);
+        final var admission = admitLegacy(host, moverName, 0, "STREAM_PUT");
         try {
-            return mover.put(host, target, remotePosn, size);
+            final var result = mover.put(host, target, remotePosn, size);
+            finishLegacy(admission);
+            return result;
         } catch (final RemoteException e) {
             _log.warn("Connection issue with {}", moverName, e);
             if (e.getCause() instanceof NoSuchObjectException || e.getCause() instanceof ConnectException
@@ -592,8 +708,12 @@ public final class TransferManagement {
     public static ProxySocket get(final String moverName, final MoverInterface mover, final Host host,
             final String source, final long remotePosn, final boolean removeOriginal)
             throws ECtransException, IOException {
+        requireLegacyDispatchAllowed(host);
+        final var admission = admitLegacy(host, moverName, 0, "STREAM_GET");
         try {
-            return mover.get(host, source, remotePosn, removeOriginal);
+            final var result = mover.get(host, source, remotePosn, removeOriginal);
+            finishLegacy(admission);
+            return result;
         } catch (final RemoteException e) {
             _log.warn("Connection issue with {}", moverName, e);
             if (e.getCause() instanceof NoSuchObjectException || e.getCause() instanceof ConnectException
@@ -630,8 +750,14 @@ public final class TransferManagement {
     public static ProxySocket get(final String moverName, final MoverInterface mover, final Host[] hostsForSource,
             final DataFile dataFile, final long remotePosn, final long length)
             throws SourceNotAvailableException, IOException {
+        final var hostIds = Arrays.stream(hostsForSource).map(TransferManagement::legacyHostId).filter(id -> id > 0)
+                .distinct().toList();
+        final var blocked = passwordRotations.blockedLegacyDispatchHosts(hostIds, allowUnmigratedRotationSchema());
+        // The Mover can still serve a local copy with some or all fallbacks removed.
+        final var sources = blocked.isEmpty() ? hostsForSource : Arrays.stream(hostsForSource)
+                .filter(host -> !blocked.contains(legacyHostId(host))).toArray(Host[]::new);
         try {
-            return mover.get(dataFile, hostsForSource, remotePosn, length);
+            return mover.get(dataFile, sources, remotePosn, length);
         } catch (final RemoteException e) {
             _log.warn("Connection issue with {}", moverName, e);
             if (e.getCause() instanceof NoSuchObjectException || e.getCause() instanceof ConnectException
@@ -664,7 +790,7 @@ public final class TransferManagement {
     public static long size(final String moverName, final MoverInterface mover, final Host host, final String source)
             throws ECtransException, IOException {
         try {
-            return mover.size(host, source);
+            return dispatchSynchronousLegacy(host, moverName, "SIZE", () -> mover.size(host, source));
         } catch (final RemoteException e) {
             _log.warn("Connection issue with {}", moverName, e);
             if (e.getCause() instanceof NoSuchObjectException || e.getCause() instanceof ConnectException
@@ -699,7 +825,8 @@ public final class TransferManagement {
     public static String[] list(final String moverName, final MoverInterface mover, final Host host,
             final String source, final String pattern) throws ECtransException, IOException {
         try {
-            return mover.listAsStringArray(host, source, pattern);
+            return dispatchSynchronousLegacy(host, moverName, "LIST",
+                    () -> mover.listAsStringArray(host, source, pattern));
         } catch (final RemoteException e) {
             _log.warn("Connection issue with {}", moverName, e);
             if (e.getCause() instanceof NoSuchObjectException || e.getCause() instanceof ConnectException
@@ -730,7 +857,10 @@ public final class TransferManagement {
     public static void del(final String moverName, final MoverInterface mover, final Host host, final String source)
             throws ECtransException, IOException {
         try {
-            mover.del(host, source);
+            dispatchSynchronousLegacy(host, moverName, "DELETE", () -> {
+                mover.del(host, source);
+                return null;
+            });
         } catch (final RemoteException e) {
             _log.warn("Connection issue with {}", moverName, e);
             if (e.getCause() instanceof NoSuchObjectException || e.getCause() instanceof ConnectException
@@ -761,7 +891,10 @@ public final class TransferManagement {
     public static void mkdir(final String moverName, final MoverInterface mover, final Host host, final String dir)
             throws ECtransException, IOException {
         try {
-            mover.mkdir(host, dir);
+            dispatchSynchronousLegacy(host, moverName, "MKDIR", () -> {
+                mover.mkdir(host, dir);
+                return null;
+            });
         } catch (final RemoteException e) {
             _log.warn("Connection issue with {}", moverName, e);
             if (e.getCause() instanceof NoSuchObjectException || e.getCause() instanceof ConnectException
@@ -792,7 +925,10 @@ public final class TransferManagement {
     public static void rmdir(final String moverName, final MoverInterface mover, final Host host, final String dir)
             throws ECtransException, IOException {
         try {
-            mover.rmdir(host, dir);
+            dispatchSynchronousLegacy(host, moverName, "RMDIR", () -> {
+                mover.rmdir(host, dir);
+                return null;
+            });
         } catch (final RemoteException e) {
             _log.warn("Connection issue with {}", moverName, e);
             if (e.getCause() instanceof NoSuchObjectException || e.getCause() instanceof ConnectException
@@ -825,7 +961,10 @@ public final class TransferManagement {
     public static void move(final String moverName, final MoverInterface mover, final Host host, final String source,
             final String target) throws ECtransException, IOException {
         try {
-            mover.move(host, source, target);
+            dispatchSynchronousLegacy(host, moverName, "MOVE", () -> {
+                mover.move(host, source, target);
+                return null;
+            });
         } catch (final RemoteException e) {
             _log.warn("Connection issue with {}", moverName, e);
             if (e.getCause() instanceof NoSuchObjectException || e.getCause() instanceof ConnectException

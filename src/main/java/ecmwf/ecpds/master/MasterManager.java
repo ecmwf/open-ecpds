@@ -189,6 +189,19 @@ public final class MasterManager {
         }
     }
 
+    public static ManagementInterface getPasswordRotationMI() throws MasterException {
+        try {
+            final var mi = getECaccessInterface().getManagementInterface();
+            if (ecmwf.common.rmi.RmiStubTransport
+                    .inspect(mi) == ecmwf.common.rmi.RmiStubTransport.Kind.MUTUAL_TLS_FACTORY) {
+                return mi;
+            }
+        } catch (final RemoteException _) {
+            throw new MasterException("Pending password management connection is unavailable");
+        }
+        throw new MasterException("Pending password operations require strict mutual TLS");
+    }
+
     /**
      * Gets the ai.
      *

@@ -192,6 +192,97 @@ import ecmwf.common.text.Format;
  * The Class AmazonS3Module.
  */
 public final class AmazonS3Module extends TransferModule {
+    private boolean rotatingCredential;
+    private volatile boolean rotationClosed;
+
+    @Override
+    public java.util.Optional<ecmwf.common.ectrans.PasswordRotation> passwordRotation() {
+        return java.util.Optional.of(new ecmwf.common.ectrans.FileCredentialRotation<AmazonS3Module>("s3",
+                AmazonS3Module::new, java.util.Set.of(ecmwf.common.ectrans.FileCredentialRotation.STANDARD_METHOD),
+                java.util.Set.of("s3.port", "s3.scheme", "s3.url", "s3.region", "s3.bucketName", "s3.prefix",
+                        "s3.strict", "s3.sslValidation", "s3.enablePathStyleAccess"),
+                java.util.Set.of("bucket", "region", "prefix")) {
+            @Override
+            protected void validate(final ResourceEndpoint endpoint) {
+                if (!endpoint.option("bucket").matches("[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]")
+                        || !endpoint.option("region").matches("[a-z0-9-]{1,63}")) {
+                    throw new IllegalArgumentException("Invalid approved S3 resource");
+                }
+            }
+
+            @Override
+            protected void connect(final AmazonS3Module module, final ResourceEndpoint endpoint, final String directory,
+                    final String credential) throws Exception {
+                final var bundle = object(credential);
+                final var key = text(bundle, "accessKeyId");
+                final var secret = text(bundle, "secretAccessKey");
+                final software.amazon.awssdk.auth.credentials.AwsCredentials credentials = bundle.has("sessionToken")
+                        ? software.amazon.awssdk.auth.credentials.AwsSessionCredentials.create(key, secret,
+                                text(bundle, "sessionToken"))
+                        : software.amazon.awssdk.auth.credentials.AwsBasicCredentials.create(key, secret);
+                module.rotatingCredential = true;
+                module.rotationClosed = false;
+                module.currentSetup = setup();
+                module.bucketName = endpoint.option("bucket");
+                module.s3prefix = endpoint.options().getOrDefault("prefix", "");
+                if (!module.s3prefix.isEmpty() && !module.s3prefix.endsWith("/")) {
+                    module.s3prefix += "/";
+                }
+                module.partSize = module.currentSetup.getInteger(HOST_S3_PART_SIZE);
+                module.numUploadThreads = 1;
+                module.queueCapacity = 1;
+                final var sockets = new SocketConfig(null, "RotatedS3");
+                final var tls = new TcpTunedSslSocketFactory(SSLContext.getDefault(), sockets);
+                final var plain = new TcpTunedPlainSocketFactory(sockets);
+                final var registry = RegistryBuilder.<ConnectionSocketFactory> create().register("https", tls).build();
+                final var manager = new PoolingHttpClientConnectionManager(registry);
+                final var http = new TrackingApacheSdkHttpClient(
+                        HttpClients.custom().setConnectionManager(manager).disableRedirectHandling()
+                                .setDefaultRequestConfig(RequestConfig.custom().setConnectTimeout(30000)
+                                        .setSocketTimeout(60000).setConnectionRequestTimeout(30000).build())
+                                .build());
+                try {
+                    final var client = S3Client.builder().httpClient(http).endpointOverride(endpoint.origin())
+                            .region(Region.of(endpoint.option("region")))
+                            .credentialsProvider(software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+                                    .create(credentials))
+                            .crossRegionAccessEnabled(false)
+                            .requestChecksumCalculation(
+                                    software.amazon.awssdk.core.checksums.RequestChecksumCalculation.WHEN_REQUIRED)
+                            .responseChecksumValidation(
+                                    software.amazon.awssdk.core.checksums.ResponseChecksumValidation.WHEN_REQUIRED)
+                            .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true)
+                                    .chunkedEncodingEnabled(false).build())
+                            .overrideConfiguration(configuration -> configuration
+                                    .retryPolicy(software.amazon.awssdk.core.retry.RetryPolicy.none())
+                                    .addExecutionInterceptor(
+                                            new software.amazon.awssdk.core.interceptor.ExecutionInterceptor() {
+                                                @Override
+                                                public void beforeTransmission(
+                                                        final software.amazon.awssdk.core.interceptor.Context.BeforeTransmission context,
+                                                        final software.amazon.awssdk.core.interceptor.ExecutionAttributes attributes) {
+                                                    final var request = context.httpRequest();
+                                                    if (!endpoint.matchesOrigin(request.protocol(), request.host(),
+                                                            request.port())) {
+                                                        throw software.amazon.awssdk.core.exception.SdkClientException
+                                                                .create("Approved S3 origin changed");
+                                                    }
+                                                }
+                                            }))
+                            .build();
+                    module.s3 = new Session(client, tls, plain, http);
+                } catch (final Exception failure) {
+                    http.close();
+                    throw failure;
+                }
+            }
+        });
+    }
+
+    @Override
+    public boolean isSessionClosureConfirmed() {
+        return rotationClosed;
+    }
 
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(AmazonS3Module.class);
@@ -664,6 +755,9 @@ public final class AmazonS3Module extends TransferModule {
             return s3.getS3Client().headObject(HeadObjectRequest.builder().bucket(bnk[0]).key(bnk[1]).build())
                     .contentLength();
         } catch (final S3Exception e) {
+            if (rotatingCredential && e.statusCode() == 404) {
+                return -1;
+            }
             _log.debug("headObject", e);
             throw new IOException("Getting size of " + name + ": " + formatS3Exception(e));
         } catch (final Exception e) {
@@ -1032,6 +1126,11 @@ public final class AmazonS3Module extends TransferModule {
     @Override
     public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
+            if (rotatingCredential || hasTransferSession()) {
+                closeSessionResources(s3input, s3 == null ? null : s3::close);
+                rotationClosed = true;
+                return;
+            }
             _log.debug("Close connection");
             currentStatus = "CLOSE";
             StreamPlugThread.closeQuietly(s3input);
@@ -1665,9 +1764,12 @@ public final class AmazonS3Module extends TransferModule {
          * {@code .httpClient()}, the SDK does not close it on {@code S3Client.close()}, so we do it explicitly.
          */
         void close() {
-            s3Client.close();
-            if (httpClient != null) {
-                httpClient.close();
+            try {
+                s3Client.close();
+            } finally {
+                if (httpClient != null) {
+                    httpClient.close();
+                }
             }
         }
 

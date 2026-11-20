@@ -1,0 +1,16 @@
+#menu "ECpdsBase"
+#name "insertHostPasswordLegacyReconciliation"
+#group "update"
+#timeout "5"
+#prompt "reconciliationId;Reconciliation id;;"
+#bind "reconciliationId;STRING"
+#prompt "host;Host;;"
+#bind "host;LONG"
+#prompt "cutover;Cutover;;"
+#bind "cutover;STRING"
+#prompt "admissions;Admissions;;"
+#bind "admissions;STRING"
+#prompt "receipts;Receipts;;"
+#bind "receipts;STRING"
+INSERT INTO HOST_PASSWORD_LEGACY_RECONCILIATION
+  (HRC_ID,HOS_NAME,HLC_ID,HRC_ADMISSIONS,HRC_RECEIPTS) VALUES (:reconciliationId,:host,:cutover,:admissions,:receipts)

@@ -104,6 +104,7 @@ import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ecaccess.TicketRepository;
 import ecmwf.common.ectrans.DefaultCallback;
 import ecmwf.common.ectrans.ECtransContainer;
+import ecmwf.common.ectrans.PasswordRotation.Approved;
 import ecmwf.common.ectrans.ECtransDel;
 import ecmwf.common.ectrans.ECtransException;
 import ecmwf.common.ectrans.ECtransGet;
@@ -187,6 +188,259 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                             "traffic-accounting.json").toString()));
     private final transient TrafficAccountingScheduler trafficAccountingScheduler;
     final transient WeatherNegotiationScheduler weatherNegotiationScheduler;
+    private final transient MoverPasswordProbe passwordProbe;
+    private final transient MoverPasswordDelivery passwordDelivery;
+    final transient MoverLegacySessions legacySessions;
+    private final transient MoverPasswordDrain passwordDrain;
+
+    @Override
+    public MoverPasswordDrain.Challenge beginLegacyPasswordFence(final long host) throws RemoteException {
+        return beginLegacyPasswordFence(MoverPasswordEnvelope.Route.DIRECT_RMI, host);
+    }
+
+    public MoverPasswordDrain.Challenge beginLegacyPasswordFence(final MoverPasswordEnvelope.Route route,
+            final long host) throws RemoteException {
+        try {
+            requirePasswordProbe(route);
+            if (passwordDrain == null) {
+                throw new IOException("Session tracking is disabled");
+            }
+            return passwordDrain.challenge(route, host);
+        } catch (final IOException _) {
+            throw new RemoteException("Legacy session fence unavailable");
+        }
+    }
+
+    @Override
+    public String fenceLegacyPassword(final long host, final java.util.UUID cutover,
+            final MoverPasswordDrain.Challenge challenge, final String command) throws RemoteException {
+        return fenceLegacyPassword(MoverPasswordEnvelope.Route.DIRECT_RMI, host, cutover, challenge, command);
+    }
+
+    public String fenceLegacyPassword(final MoverPasswordEnvelope.Route route, final long host,
+            final java.util.UUID cutover, final MoverPasswordDrain.Challenge challenge, final String command)
+            throws RemoteException {
+        try {
+            requirePasswordProbe(route);
+            if (passwordDrain == null) {
+                throw new IOException("Session tracking is disabled");
+            }
+            return passwordDrain.fence(route, host, cutover, challenge, command);
+        } catch (final IOException | RuntimeException _) {
+            throw new RemoteException("Legacy session fence unavailable");
+        }
+    }
+
+    @Override
+    public MoverPasswordDrain.Challenge beginContinentalLegacyPasswordFence(final long proxy, final long host)
+            throws RemoteException {
+        try {
+            return passwordProbeRelay(proxy).beginLegacyPasswordFence(host);
+        } catch (final Exception _) {
+            throw new RemoteException("Continental legacy session fence unavailable");
+        }
+    }
+
+    @Override
+    public String fenceContinentalLegacyPassword(final long proxy, final long host, final java.util.UUID cutover,
+            final MoverPasswordDrain.Challenge challenge, final String command) throws RemoteException {
+        try {
+            return passwordProbeRelay(proxy).fenceLegacyPassword(host, cutover, challenge, command);
+        } catch (final Exception _) {
+            throw new RemoteException("Continental legacy session fence unavailable");
+        }
+    }
+
+    private record PinnedPassword(Approved endpoint, java.util.concurrent.atomic.AtomicReference<String> secret,
+            long host, java.util.UUID nonce, MoverPasswordEnvelope.Delivery delivery) {
+        String consume() {
+            return secret.getAndSet(null);
+        }
+
+        @Override
+        public String toString() {
+            return "PinnedPassword";
+        }
+    }
+
+    @Override
+    public java.util.UUID beginPinnedPassword(final long host, final MoverPasswordEnvelope.Delivery delivery)
+            throws RemoteException {
+        return beginPinnedPassword(MoverPasswordEnvelope.Route.DIRECT_RMI, host, delivery);
+    }
+
+    public java.util.UUID beginPinnedPassword(final MoverPasswordEnvelope.Route route, final long host,
+            final MoverPasswordEnvelope.Delivery delivery) throws RemoteException {
+        try {
+            return requirePasswordDelivery(route).challenge(route, host, delivery);
+        } catch (final IOException _) {
+            throw new RemoteException("Vault-backed password delivery not permitted");
+        }
+    }
+
+    @Override
+    public long sizePinnedPassword(final long host, final java.util.UUID nonce,
+            final MoverPasswordEnvelope.Delivery delivery, final String ciphertext, final DataTransfer transfer)
+            throws RemoteException {
+        return sizePinnedPassword(MoverPasswordEnvelope.Route.DIRECT_RMI, host, nonce, delivery, ciphertext, transfer);
+    }
+
+    public long sizePinnedPassword(final MoverPasswordEnvelope.Route route, final long host, final java.util.UUID nonce,
+            final MoverPasswordEnvelope.Delivery delivery, final String ciphertext, final DataTransfer transfer)
+            throws RemoteException {
+        final var pinned = receivePinnedPassword(route, host, nonce, delivery, ciphertext, transfer,
+                MoverPasswordEnvelope.Operation.SIZE);
+        try {
+            return size(transfer, delivery.target(), pinned);
+        } finally {
+            pinned.consume();
+        }
+    }
+
+    @Override
+    public DataTransfer putPinnedPassword(final long host, final java.util.UUID nonce,
+            final MoverPasswordEnvelope.Delivery delivery, final String ciphertext, final Host[] hostsForSource,
+            final DataTransfer transfer) throws RemoteException {
+        return putPinnedPassword(MoverPasswordEnvelope.Route.DIRECT_RMI, host, nonce, delivery, ciphertext,
+                hostsForSource, transfer);
+    }
+
+    public DataTransfer putPinnedPassword(final MoverPasswordEnvelope.Route route, final long host,
+            final java.util.UUID nonce, final MoverPasswordEnvelope.Delivery delivery, final String ciphertext,
+            final Host[] hostsForSource, final DataTransfer transfer) throws RemoteException {
+        final var pinned = receivePinnedPassword(route, host, nonce, delivery, ciphertext, transfer,
+                MoverPasswordEnvelope.Operation.PUT);
+        try {
+            return put(hostsForSource, transfer, delivery.target(), delivery.localOffset(), delivery.remoteOffset(),
+                    pinned);
+        } catch (final RemoteException | RuntimeException e) {
+            pinned.consume();
+            throw e;
+        }
+    }
+
+    @Override
+    public java.util.UUID beginContinentalPinnedPassword(final long proxy, final long host,
+            final MoverPasswordEnvelope.Delivery delivery) throws RemoteException {
+        try {
+            return passwordProbeRelay(proxy).beginPinnedPassword(host, delivery);
+        } catch (final Exception _) {
+            throw new RemoteException("Continental vault-backed password delivery unavailable");
+        }
+    }
+
+    @Override
+    public long sizeContinentalPinnedPassword(final long proxy, final long host, final java.util.UUID nonce,
+            final MoverPasswordEnvelope.Delivery delivery, final String ciphertext, final DataTransfer transfer)
+            throws RemoteException {
+        try {
+            requirePinnedRelayTransfer(proxy, transfer);
+            return passwordProbeRelay(proxy).sizePinnedPassword(host, nonce, delivery, ciphertext, transfer);
+        } catch (final Exception _) {
+            throw new RemoteException("Continental vault-backed password size unavailable");
+        }
+    }
+
+    @Override
+    public DataTransfer putContinentalPinnedPassword(final long proxy, final long host, final java.util.UUID nonce,
+            final MoverPasswordEnvelope.Delivery delivery, final String ciphertext, final DataTransfer transfer)
+            throws RemoteException {
+        try {
+            requirePinnedRelayTransfer(proxy, transfer);
+            transfer.setMoverName(
+                    passwordProbeRelay(proxy).putPinnedPassword(host, nonce, delivery, ciphertext, transfer));
+            return transfer;
+        } catch (final Exception _) {
+            throw new RemoteException("Continental vault-backed password dispatch could not be confirmed");
+        }
+    }
+
+    private static void requirePinnedRelayTransfer(final long proxy, final DataTransfer transfer) throws IOException {
+        final var host = transfer.getProxyHost();
+        if (host == null || !host.getActive() || !HostOption.PROXY.equals(host.getType())
+                || !Long.toString(proxy).equals(host.getName())
+                || !host.getName().equals(transfer.getProxyHostName())) {
+            throw new IOException("Unexpected Continental password relay");
+        }
+    }
+
+    private MoverECtransProvider pinnedProvider(final Host host) {
+        return new MoverECtransProvider(this, new LocalRepository(this, host), false, true);
+    }
+
+    private MoverPasswordDelivery requirePasswordDelivery(final MoverPasswordEnvelope.Route route) throws IOException {
+        if (passwordDelivery == null) {
+            throw new IOException("Vault-backed password delivery disabled");
+        }
+        requirePasswordProbe(route);
+        return passwordDelivery;
+    }
+
+    private PinnedPassword receivePinnedPassword(final MoverPasswordEnvelope.Route route, final long hostId,
+            final java.util.UUID nonce, final MoverPasswordEnvelope.Delivery delivery, final String ciphertext,
+            final DataTransfer transfer, final MoverPasswordEnvelope.Operation operation) throws RemoteException {
+        try {
+            final var receiver = requirePasswordDelivery(route);
+            final var endpoint = receiver.endpoint(route, hostId, delivery);
+            final var host = transfer.getHost();
+            final var file = transfer.getDataFile();
+            final var hostConfig = ecmwf.common.database.HostPasswordRotationStore.ProbeHost
+                    .of(transfer.getDestinationName(), host);
+            if (delivery.credentialReference() == null || delivery.operation() != operation
+                    || delivery.transferId() != transfer.getId() || delivery.fileId() != file.getId()
+                    || delivery.fileSize() != file.getSize()
+                    || !delivery.destination().equals(transfer.getDestinationName())
+                    || !Long.toString(hostId).equals(host.getName()) || !host.getName().equals(transfer.getHostName())
+                    || !HostOption.DISSEMINATION.equals(host.getType()) || !host.getActive()
+                    || host.getAutomaticLocation() || !endpoint.matches(hostConfig.moduleClass(), hostConfig.archive())
+                    || !endpoint.capability().supports(hostConfig.methodValue(), hostConfig.hostData(), endpoint.port())
+                    || !endpoint.host().equals(host.getHost()) || !endpoint.login().equals(host.getLogin())
+                    || !delivery.hostConfiguration().equals(hostConfig.fingerprint())) {
+                throw new IOException("Vault-backed password transfer context changed");
+            }
+            return new PinnedPassword(endpoint, new java.util.concurrent.atomic.AtomicReference<>(
+                    receiver.open(route, hostId, nonce, delivery, ciphertext)), hostId, nonce, delivery);
+        } catch (final IOException | RuntimeException _) {
+            throw new RemoteException("Vault-backed password delivery not permitted");
+        }
+    }
+
+    @Override
+    public java.util.UUID beginPasswordProbe(final long host) throws RemoteException {
+        return beginPasswordProbe(MoverPasswordEnvelope.Route.DIRECT_RMI, host);
+    }
+
+    @Override
+    public MoverPasswordEnvelope.ProbeReceipt runPasswordProbe(final long host, final java.util.UUID nonce,
+            final String envelope) throws RemoteException {
+        return runPasswordProbe(MoverPasswordEnvelope.Route.DIRECT_RMI, host, nonce, envelope);
+    }
+
+    public java.util.UUID beginPasswordProbe(final MoverPasswordEnvelope.Route route, final long host)
+            throws RemoteException {
+        try {
+            return requirePasswordProbe(route).challenge(route, host);
+        } catch (final IOException _) {
+            throw new RemoteException("Password probe not permitted");
+        }
+    }
+
+    public MoverPasswordEnvelope.ProbeReceipt runPasswordProbe(final MoverPasswordEnvelope.Route route, final long host,
+            final java.util.UUID nonce, final String envelope) throws RemoteException {
+        try {
+            return requirePasswordProbe(route).probe(route, host, nonce, envelope);
+        } catch (final IOException _) {
+            throw new RemoteException("Password probe not permitted");
+        }
+    }
+
+    private MoverPasswordProbe requirePasswordProbe(final MoverPasswordEnvelope.Route route) throws IOException {
+        if (passwordProbe == null
+                || route == MoverPasswordEnvelope.Route.DIRECT_RMI && !Cnf.at("CallBack", "requireMutualTls", false)) {
+            throw new IOException("Password probe transport is disabled");
+        }
+        return passwordProbe;
+    }
 
     @Override
     public ecmwf.ecpds.master.weather.WeatherSourceIdentity getWeatherSourceIdentity(java.util.UUID challenge)
@@ -221,6 +475,37 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         } catch (final Exception e) {
             throw Format.getRemoteException("Network Weather Continental source identity", e);
         }
+    }
+
+    @Override
+    public java.util.UUID beginContinentalPasswordProbe(final long proxyHost, final long host) throws RemoteException {
+        try {
+            return passwordProbeRelay(proxyHost).beginPasswordProbe(host);
+        } catch (final Exception _) {
+            throw new RemoteException("Continental password probe unavailable");
+        }
+    }
+
+    @Override
+    public MoverPasswordEnvelope.ProbeReceipt runContinentalPasswordProbe(final long proxyHost, final long host,
+            final java.util.UUID nonce, final String ciphertext) throws RemoteException {
+        try {
+            return passwordProbeRelay(proxyHost).runPasswordProbe(host, nonce, ciphertext);
+        } catch (final Exception _) {
+            throw new RemoteException("Continental password probe unavailable");
+        }
+    }
+
+    private RESTInterface passwordProbeRelay(final long proxyHost) throws Exception {
+        if (masterManager == null || !Cnf.at("PasswordProbe", "relayEnabled", false)
+                || !Cnf.at("CallBack", "requireMutualTls", false) || proxyHost <= 0) {
+            throw new IOException("Continental password probe relay disabled");
+        }
+        final var origin = Cnf.at("PasswordProbeRelayOrigins", Long.toString(proxyHost), "");
+        if (origin.isBlank()) {
+            throw new IOException("Continental password probe relay not approved");
+        }
+        return getRESTInterface(null, origin, 3000);
     }
 
     /** The ticketRepository. */
@@ -631,6 +916,15 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             throws IOException, InstanceAlreadyExistsException, MBeanRegistrationException, NotCompliantMBeanException,
             MalformedObjectNameException, InstanceNotFoundException, ConnectionException {
         super(starter);
+        legacySessions = MoverLegacySessions.configured();
+        passwordProbe = MoverPasswordProbe.configured(getRoot(), Cnf.has("MasterServer")
+                ? MoverPasswordEnvelope.Route.DIRECT_RMI : MoverPasswordEnvelope.Route.CONTINENTAL_HTTPS);
+        passwordDelivery = passwordProbe != null && Cnf.at("PasswordDelivery", "enabled", false)
+                ? passwordProbe.delivery() : null;
+        if (legacySessions != null && passwordProbe == null) {
+            throw new IOException("Legacy session tracking requires configured password probe identity keys");
+        }
+        passwordDrain = legacySessions == null ? null : passwordProbe.drain(legacySessions);
         MoverTracing.start(spans -> getMasterProxy().exportTransferSpans(spans), getRoot());
         trafficAccounting.load(trafficAccountingPath);
         _log.info("MoverServer-version: {}", (Supplier<Object>) Version::getFullVersion);
@@ -1279,6 +1573,11 @@ public final class MoverServer extends StarterServer implements MoverInterface {
      */
     @Override
     public long size(final DataTransfer transfer, final String fileName) throws RemoteException {
+        return size(transfer, fileName, null);
+    }
+
+    private long size(final DataTransfer transfer, final String fileName, final PinnedPassword pinned)
+            throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(transfer, "size"));
         try {
             _checkInProgress(transfer);
@@ -1286,9 +1585,15 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             final var size = new ECtransSize(fileName);
             transferRepository.put(transfer);
             try {
-                ectrans.syncExec(size, _getCookie(transfer, null), host.getECUserName(),
-                        host.getName() + "@" + host.getTransferMethodName(), null,
-                        new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData())), true);
+                final var association = host.getName() + "@" + host.getTransferMethodName();
+                final var callback = new DefaultCallback(HOST_ECTRANS.getECtransSetup(host.getData()));
+                if (pinned == null) {
+                    ectrans.syncExec(size, _getCookie(transfer, null), host.getECUserName(), association, null,
+                            callback, true);
+                } else {
+                    ectrans.pinnedPasswordSize(pinnedProvider(host), size, host.getECUserName(), association, callback,
+                            pinned.endpoint(), pinned::consume);
+                }
             } finally {
                 transferRepository.removeValue(transfer);
             }
@@ -2435,6 +2740,11 @@ public final class MoverServer extends StarterServer implements MoverInterface {
     @Override
     public DataTransfer put(final Host[] hostsForSource, final DataTransfer transfer, final String targetName,
             final long localPosn, final long remotePosn) throws RemoteException {
+        return put(hostsForSource, transfer, targetName, localPosn, remotePosn, null);
+    }
+
+    private DataTransfer put(final Host[] hostsForSource, final DataTransfer transfer, final String targetName,
+            final long localPosn, final long remotePosn, final PinnedPassword pinned) throws RemoteException {
         final var cookieSet = ThreadService.setCookieIfNotAlreadySet(_getCookie(transfer, "put"));
         MoverCallback callBack = null;
         final var trace = MoverTracing.execution(transfer);
@@ -2442,7 +2752,7 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         try {
             _checkInProgress(transfer);
             final var proxyHost = transfer.getProxyHost();
-            if (masterManager != null && proxyHost != null) {
+            if (pinned == null && masterManager != null && proxyHost != null) {
                 if (proxyHost.getActive()) {
                     // The DataTransfer was transmitted to a ProxyHost so we
                     // have to check if we cannot send the DataTransfer from
@@ -2496,6 +2806,17 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                     : new FileChecker(GenericFile.getGenericFile(getRepository(), getPath(dataFile)));
             var size = dataFile.getSize();
             callBack = new MoverCallback(MoverServer.this, transfer, targetName, trace);
+            if (pinned != null) {
+                transfer.setPasswordDeliveryReceipt(null);
+                callBack.setConfirmedPasswordDelivery(successful -> {
+                    try {
+                        transfer.setPasswordDeliveryReceipt(passwordDelivery.successful(pinned.host(), pinned.nonce(),
+                                pinned.delivery(), successful));
+                    } catch (final IOException _) {
+                        _log.warn("Could not certify password delivery for transfer {}", transfer.getId());
+                    }
+                });
+            }
             final var setup = HOST_ECTRANS.getECtransSetup(host.getData());
             // Do we have to compress the file?
             final String filter;
@@ -2582,10 +2903,16 @@ public final class MoverServer extends StarterServer implements MoverInterface {
                 _log.debug("ConnectOptions for {}: {}", targetName, connectOptions);
                 // If connectOptions is empty let's add "ectransAction=put" to allow the
                 // transfer module to set the socket statistics if requested
-                ectrans.asyncExec(new ECtransPut(targetName, descriptor, remotePosn, size, toFilter, callBack),
-                        _getCookie(transfer, null), host.getECUserName(),
-                        host.getName() + "@" + host.getTransferMethodName(), null,
-                        new Options(connectOptions != null ? connectOptions : "ectransAction=put", ";\n"), callBack);
+                final var action = new ECtransPut(targetName, descriptor, remotePosn, size, toFilter, callBack);
+                final var association = host.getName() + "@" + host.getTransferMethodName();
+                final var options = new Options(connectOptions != null ? connectOptions : "ectransAction=put", ";\n");
+                if (pinned == null) {
+                    ectrans.asyncExec(action, _getCookie(transfer, null), host.getECUserName(), association, null,
+                            options, callBack);
+                } else {
+                    ectrans.asyncPinnedPasswordPut(pinnedProvider(host), action, host.getECUserName(), association,
+                            options, callBack, pinned.endpoint(), pinned::consume);
+                }
                 transfer.setMoverName(getRoot());
                 transfer.setComment("Trying from " + (masterManager != null ? "DataMover=" + getRoot() : "Proxy Host="
                         + transfer.getProxyHostName() + " (" + transfer.getProxyHost().getNickname() + ")"));

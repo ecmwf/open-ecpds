@@ -150,7 +150,7 @@ build-dev-image = cd .devcontainer && $(DOCKER) build --platform linux/$(ARCH) -
 # Conditional targets based on the environment
 .PHONY: help dev dev-pull .dev-cntnr .run login rm-dev \
         get-geodb get-licenses build build-sa build-cli cr-login push push-dev push-sa push-cli push-native push-sa-native push-cli-native manifest sa-manifest cli-manifest release-tools \
-        start-db stop-db start-ai stop-ai start-hawtio stop-hawtio start-otel stop-otel logs-otel start-backend stop-backend \
+        start-db stop-db start-openbao stop-openbao start-ai stop-ai start-hawtio stop-hawtio start-otel stop-otel logs-otel start-backend stop-backend \
         docs docs-embed docs-screenshots docs-preview docs-publish \
         clean info
 
@@ -349,6 +349,17 @@ start-db: ## Build and start the database service (~)
 stop-db: ## Stop the database service (~)
 	@$(call check-docker)
 	@cd run/bin/ecpds && $(MAKE) down svc=database
+
+start-openbao: ## Build and start the local TLS OpenBao service (~)
+	@$(call check-docker)
+	@$(MAKE) -C docker build-openbao
+	@OPENBAO_CONTAINER_ENGINE="$(notdir $(DOCKER))" bash docker/ecpds/standalone/openbao/standalone-openbao-make-cert.sh \
+		--allow-missing-ca run/etc/ecpds/openbao/tls run/etc/ecpds/openbao/operator
+	@$(MAKE) -C run/bin/ecpds up svc=openbao
+
+stop-openbao: ## Stop local OpenBao without removing vault data (~)
+	@$(call check-docker)
+	@$(MAKE) -C run/bin/ecpds down svc=openbao
 
 start-otel: ## Start the local OpenTelemetry test Collector (OTLP HTTP on localhost:4318) (~)
 	@$(call check-docker)

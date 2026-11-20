@@ -207,8 +207,9 @@ final class BrokerHibernate implements Broker {
         }
 
         @Override
-        public Broker.PreparedQuery prepare(final String sql, final Object... parameters) throws SQLException {
-            final var statement = prepareStatement(connection, sql, parameters);
+        public Broker.PreparedQuery prepare(final String sql, final Object[] parameters, final int timeout)
+                throws SQLException {
+            final var statement = prepareStatement(connection, sql, parameters, timeout);
             return new Broker.PreparedQuery() {
                 @Override
                 public ResultSet executeQuery() throws SQLException {
@@ -218,6 +219,18 @@ final class BrokerHibernate implements Broker {
                 @Override
                 public int executeUpdate() throws SQLException {
                     return statement.executeUpdate();
+                }
+
+                @Override
+                public int[] executeBatch(final List<Object[]> parameters) throws SQLException {
+                    for (final var row : parameters) {
+                        statement.clearParameters();
+                        for (var i = 0; i < row.length; i++) {
+                            statement.setObject(i + 1, row[i]);
+                        }
+                        statement.addBatch();
+                    }
+                    return statement.executeBatch();
                 }
 
                 @Override
@@ -267,9 +280,14 @@ final class BrokerHibernate implements Broker {
 
     private static PreparedStatement prepareStatement(final Connection connection, final String sql,
             final Object... parameters) throws SQLException {
+        return prepareStatement(connection, sql, parameters, 5);
+    }
+
+    private static PreparedStatement prepareStatement(final Connection connection, final String sql,
+            final Object[] parameters, final int timeout) throws SQLException {
         final var statement = connection.prepareStatement(sql);
         try {
-            statement.setQueryTimeout(5);
+            statement.setQueryTimeout(timeout < 0 ? 5 : timeout);
             for (var i = 0; i < parameters.length; i++) {
                 statement.setObject(i + 1, parameters[i]);
             }
@@ -507,6 +525,12 @@ final class BrokerHibernate implements Broker {
     @Override
     public CloseableResultSetWrapper executeQuery(final boolean release, final String sql, final int timeout)
             throws BrokerException, SQLException {
+        return executeQuery(release, sql, timeout, new Object[0]);
+    }
+
+    @Override
+    public CloseableResultSetWrapper executeQuery(final boolean release, final String sql, final int timeout,
+            final Object[] parameters) throws BrokerException, SQLException {
         validateSqlEncoding(sql);
         setReadOnly(true);
         session.setDefaultReadOnly(true);
@@ -517,6 +541,9 @@ final class BrokerHibernate implements Broker {
                 final var trimmedSql = sql.trim();
                 final var lower = trimmedSql.toLowerCase(Locale.ROOT);
                 if (lower.startsWith("set session") && lower.contains("for select")) {
+                    if (parameters.length != 0) {
+                        throw new SQLException("Bound selects require a single statement; use #timeout instead");
+                    }
                     final var forIndex = lower.indexOf("for select");
                     final var setStmt = trimmedSql.substring(0, forIndex).trim();
                     final var selectStmt = trimmedSql.substring(forIndex + "for ".length()).trim();
@@ -526,9 +553,9 @@ final class BrokerHibernate implements Broker {
                             setStatement.setQueryTimeout(timeout);
                         setStatement.execute(setStmt);
                     }
-                    return createStreamingResultSet(connection, selectStmt, timeout);
+                    return createStreamingResultSet(connection, selectStmt, timeout, parameters);
                 } else {
-                    return createStreamingResultSet(connection, sql, timeout);
+                    return createStreamingResultSet(connection, sql, timeout, parameters);
                 }
             });
         } catch (final Exception e) {
@@ -551,14 +578,20 @@ final class BrokerHibernate implements Broker {
      *             the SQL exception
      */
     private CloseableResultSetWrapper createStreamingResultSet(final Connection connection, final String sql,
-            final int timeout) throws SQLException {
-        if (ENABLE_STREAMING_FETCH) {
+            final int timeout, final Object[] parameters) throws SQLException {
+        if (ENABLE_STREAMING_FETCH || parameters.length != 0) {
             PreparedStatement ps = null;
             try {
                 ps = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-                ps.setFetchSize(Integer.MIN_VALUE);
+                // MySQL's streaming sentinel is not accepted by MariaDB or other JDBC drivers.
+                ps.setFetchSize(ENABLE_STREAMING_FETCH
+                        && connection.getMetaData().getDriverName().toLowerCase(Locale.ROOT).contains("mysql")
+                                ? Integer.MIN_VALUE : FETCH_SIZE);
                 if (timeout >= 0)
                     ps.setQueryTimeout(timeout);
+                for (var i = 0; i < parameters.length; i++) {
+                    ps.setObject(i + 1, parameters[i]);
+                }
                 return new CloseableResultSetWrapper(ps, ps.executeQuery());
             } catch (final Exception ex) {
                 if (ps != null) {
@@ -605,6 +638,12 @@ final class BrokerHibernate implements Broker {
      */
     @Override
     public int executeUpdate(final String sql, final int timeout) throws BrokerException, SQLException {
+        return executeUpdate(sql, timeout, new Object[0]);
+    }
+
+    @Override
+    public int executeUpdate(final String sql, final int timeout, final Object[] parameters)
+            throws BrokerException, SQLException {
         validateSqlEncoding(sql);
         setReadOnly(false);
         final var affectedRows = new int[1]; // or use AtomicInteger
@@ -615,10 +654,16 @@ final class BrokerHibernate implements Broker {
                 session.beginTransaction();
             }
             session.doWork(connection -> {
-                try (var statement = connection.createStatement()) {
-                    if (timeout >= 0)
-                        statement.setQueryTimeout(timeout);
-                    affectedRows[0] = statement.executeUpdate(sql);
+                if (parameters.length != 0) {
+                    try (var statement = prepareStatement(connection, sql, parameters, timeout < 0 ? 0 : timeout)) {
+                        affectedRows[0] = statement.executeUpdate();
+                    }
+                } else {
+                    try (var statement = connection.createStatement()) {
+                        if (timeout >= 0)
+                            statement.setQueryTimeout(timeout);
+                        affectedRows[0] = statement.executeUpdate(sql);
+                    }
                 }
             });
             if (startTransaction) {
@@ -751,12 +796,21 @@ final class BrokerHibernate implements Broker {
     @Override
     public <T extends DataBaseObject> CloseableIterator<T> getIterator(final Class<T> target, final String sql,
             final int timeout) throws BrokerException {
+        return getIterator(target, sql, timeout, new Object[0]);
+    }
+
+    @Override
+    public <T extends DataBaseObject> CloseableIterator<T> getIterator(final Class<T> target, final String sql,
+            final int timeout, final Object[] parameters) throws BrokerException {
         validateSqlEncoding(sql);
         setReadOnly(true);
         session.setDefaultReadOnly(true);
         ScrollableResults<T> results = null;
         try {
             final NativeQuery<T> query = session.createNativeQuery(sql, target);
+            for (var i = 0; i < parameters.length; i++) {
+                query.setParameter(i + 1, parameters[i]);
+            }
             if (timeout >= 0)
                 query.setTimeout(timeout);
             query.setFetchSize(FETCH_SIZE);

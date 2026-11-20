@@ -1,0 +1,265 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecpds-mover
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: ecpds-mover
+spec:
+  selector:
+    app.kubernetes.io/name: ecpds-mover
+  ports:
+  - name: http
+    port: 4080
+    targetPort: 4080
+  - name: https
+    port: 4443
+    targetPort: 4443
+  - name: mqtt
+    port: 4183
+    targetPort: 4183
+  - name: mqtts
+    port: 4883
+    targetPort: 4883
+  - name: ftp
+    port: 4021
+    targetPort: 4021
+  - name: pasv-60010
+    port: 60010
+    targetPort: 60010
+  - name: pasv-60011
+    port: 60011
+    targetPort: 60011
+  - name: pasv-60012
+    port: 60012
+    targetPort: 60012
+  - name: pasv-60013
+    port: 60013
+    targetPort: 60013
+  - name: pasv-60014
+    port: 60014
+    targetPort: 60014
+  - name: pasv-60015
+    port: 60015
+    targetPort: 60015
+  - name: pasv-60016
+    port: 60016
+    targetPort: 60016
+  - name: pasv-60017
+    port: 60017
+    targetPort: 60017
+  - name: pasv-60018
+    port: 60018
+    targetPort: 60018
+  - name: pasv-60019
+    port: 60019
+    targetPort: 60019
+  - name: sftp
+    port: 4022
+    targetPort: 4022
+  - name: ecproxy
+    port: 4640
+    targetPort: 4640
+  - name: rmi
+    port: 4600
+    targetPort: 4600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecpds-mover-pods
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: ecpds-mover
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: ecpds-mover
+  ports:
+  - name: rmi
+    port: 4600
+    targetPort: 4600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecpds-mover-jolokia
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: ecpds-mover
+spec:
+  selector:
+    app.kubernetes.io/name: ecpds-mover
+  ports:
+  - name: jolokia
+    port: 4062
+    targetPort: jolokia
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ecpds-mover
+  labels: &id001
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: ecpds-mover
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ecpds-mover
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: ecpds-mover
+        image: open-ecpds/mover:latest
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: ALLOCATED_MEMORY
+          value: 1G
+        - name: EXTERNAL_ADDRESS
+          value: $(POD_IP)
+        - name: INTERNAL_ADDRESS
+          value: $(POD_NAME).ecpds-mover-pods
+        - name: PORT_CALLBACK
+          value: '4600'
+        - name: PORT_HTTP
+          value: '4080'
+        - name: PORT_HTTPS
+          value: '4443'
+        - name: PORT_MQTT
+          value: '4183'
+        - name: PORT_MQTTS
+          value: '4883'
+        - name: PORT_FTP
+          value: '4021'
+        - name: PORT_SSH
+          value: '4022'
+        - name: PORT_ECPROXY
+          value: '4640'
+        - name: JOLOKIA_PORT
+          value: '4062'
+        - name: JOLOKIA_HOST
+          value: 0.0.0.0
+        - name: JOLOKIA_USER
+          valueFrom:
+            secretKeyRef:
+              name: ecpds-mover-credentials
+              key: JOLOKIA_USER
+        - name: JOLOKIA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecpds-mover-credentials
+              key: JOLOKIA_PASSWORD
+        - name: MASTER_ADDRESS
+          value: ecpds-master
+        - name: PORT_MASTER
+          value: '2600'
+        - name: LOG_ROLLOVER_SIZE_MAX
+          value: 100MB
+        - name: LOG_ROLLOVER_SIZE_KEEP
+          value: '20'
+        - name: LOG_LEVEL
+          value: debug
+        - name: KEYSTORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecpds-mover-credentials
+              key: KEYSTORE_PASSWORD
+        - name: RCC_SHARED_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: ecpds-mover-credentials
+              key: RCC_SHARED_SECRET
+        - name: MOVER_TITLE
+          value: Personal Data Store (PDS)
+        - name: MOVER_COLOR
+          value: '#0079d3'
+        - name: OPERATION
+          value: 'yes'
+        ports:
+        - name: http
+          containerPort: 4080
+        - name: https
+          containerPort: 4443
+        - name: mqtt
+          containerPort: 4183
+        - name: mqtts
+          containerPort: 4883
+        - name: ftp
+          containerPort: 4021
+        - name: pasv-60010
+          containerPort: 60010
+        - name: pasv-60011
+          containerPort: 60011
+        - name: pasv-60012
+          containerPort: 60012
+        - name: pasv-60013
+          containerPort: 60013
+        - name: pasv-60014
+          containerPort: 60014
+        - name: pasv-60015
+          containerPort: 60015
+        - name: pasv-60016
+          containerPort: 60016
+        - name: pasv-60017
+          containerPort: 60017
+        - name: pasv-60018
+          containerPort: 60018
+        - name: pasv-60019
+          containerPort: 60019
+        - name: sftp
+          containerPort: 4022
+        - name: ecproxy
+          containerPort: 4640
+        - name: rmi
+          containerPort: 4600
+        - name: jolokia
+          containerPort: 4062
+        volumeMounts:
+        - name: var-log-ecpds-mover
+          mountPath: /var/log/ecpds/mover
+        - name: var-tmp-ecpds-mover
+          mountPath: /var/tmp/ecpds/mover
+        - name: var-lib-ecpds-mover
+          mountPath: /var/lib/ecpds/mover
+        - name: etc-ecpds-mover
+          mountPath: /etc/ecpds
+        resources:
+          requests:
+            cpu: 100m
+            memory: 1536Mi
+        startupProbe:
+          tcpSocket: &id002
+            port: https
+          timeoutSeconds: 3
+          periodSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          tcpSocket: *id002
+          timeoutSeconds: 3
+          periodSeconds: 10
+      volumes:
+      - name: var-log-ecpds-mover
+        persistentVolumeClaim:
+          claimName: var-log-ecpds-mover
+      - name: var-tmp-ecpds-mover
+        persistentVolumeClaim:
+          claimName: var-tmp-ecpds-mover
+      - name: var-lib-ecpds-mover
+        persistentVolumeClaim:
+          claimName: var-lib-ecpds-mover
+      - name: etc-ecpds-mover
+        persistentVolumeClaim:
+          claimName: etc-ecpds-mover
+  serviceName: ecpds-mover-pods

@@ -454,6 +454,28 @@ final class ManagementProxy implements ManagementInterface {
         return managementInterface.completeInteractiveLogin(state, binding, code, host, agent);
     }
 
+    @Override
+    public HostPasswordRotationStatus pendingHostPassword(final ECpdsSession session, final String destination,
+            final long host, final HostPasswordRotationStatus.Operation operation, final java.util.UUID reference,
+            final String password, final long retirementGraceSeconds) throws MasterException, RemoteException {
+        if (ecmwf.common.rmi.RmiStubTransport
+                .inspect(managementInterface) != ecmwf.common.rmi.RmiStubTransport.Kind.MUTUAL_TLS_FACTORY) {
+            throw new MasterException("Pending password operations require strict mutual TLS");
+        }
+        return managementInterface.pendingHostPassword(session, destination, host, operation, reference, password,
+                retirementGraceSeconds);
+    }
+
+    @Override
+    public HostPasswordActivation activateHostPassword(final ECpdsSession session, final String destination,
+            final long host, final HostPasswordActivation.Request request) throws MasterException, RemoteException {
+        if (ecmwf.common.rmi.RmiStubTransport
+                .inspect(managementInterface) != ecmwf.common.rmi.RmiStubTransport.Kind.MUTUAL_TLS_FACTORY) {
+            throw new MasterException("Password activation requires strict mutual TLS");
+        }
+        return managementInterface.activateHostPassword(session, destination, host, request);
+    }
+
     /**
      * Sets the anonymous session. Set the anonymous session if not already set!
      *

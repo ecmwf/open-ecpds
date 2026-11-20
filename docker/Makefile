@@ -16,6 +16,7 @@ SHELL=/bin/bash
 VERSION=$(shell grep '<revision>' ../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
 BUILD=$(shell grep '<build.number>' ../pom.xml | head -n 1 | sed 's/.*>\(.*\)<.*/\1/')
 TAG="$(VERSION)-$(BUILD)"
+OPENBAO_IMAGE ?= open-ecpds/openbao:2.7.2
 
 # Use the same JDK as development builds, not the container's stale environment.
 include ../.devcontainer/java-version.env
@@ -55,7 +56,7 @@ HTTPS_ACCESS := $(shell curl -s --max-time 2 -I https://google.com | sed 's/^[^ 
 
 # Output the help for each task
 .PHONY: help all get-rpms get-licenses build-db build-ai build-backend build build-sa get-sa get-cli build-cli get-hawtio build-hawtio images bk-images rm-images clean .clean login push push-dev push-sa push-cli push-native push-sa-native push-cli-native manifest sa-manifest cli-manifest info
-.PHONY: build-java .checkcr .check-docker-release .check-native-release .push .push-native .manifest .build .get-rpm .https-access
+.PHONY: build-java build-openbao .checkcr .check-docker-release .check-native-release .push .push-native .manifest .build .get-rpm .https-access
 
 # Display help by default
 .DEFAULT_GOAL := help
@@ -103,6 +104,9 @@ get-licenses: ## Get the licenses for the java image
 
 build-db: .https-access ## Build database image for VS Code and Eclipse debugging/running
 	@$(MAKE) .build app=database tag=$(TAG)
+
+build-openbao: ## Build the optional OpenBao credential vault image
+	$(DOCKER) build --platform linux/$(ARCH) -t $(OPENBAO_IMAGE) ecpds/openbao
 
 build-ai: .https-access ## Build AI images for VS Code and Eclipse debugging/running
 	@$(MAKE) .build app=ai tag=$(TAG)

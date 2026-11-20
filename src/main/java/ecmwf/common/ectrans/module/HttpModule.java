@@ -245,6 +245,54 @@ import ecmwf.common.version.Version;
  * The Class HttpModule.
  */
 public final class HttpModule extends TransferModule {
+    private boolean rotatingCredential;
+    private volatile boolean rotationClosed;
+
+    @Override
+    public java.util.Optional<ecmwf.common.ectrans.PasswordRotation> passwordRotation() {
+        return java.util.Optional
+                .of(new ecmwf.common.ectrans.FileCredentialRotation<HttpModule>("http", HttpModule::new,
+                        java.util.Set.of(ecmwf.common.ectrans.FileCredentialRotation.STANDARD_METHOD), java.util.Set
+                                .of("http.port", "http.scheme", "http.useHead", "http.sslValidation", "http.strict"),
+                        java.util.Set.of("authentication")) {
+                    @Override
+                    protected void validate(final ResourceEndpoint endpoint) {
+                        if (!java.util.Set.of("basic", "bearer")
+                                .contains(endpoint.options().getOrDefault("authentication", "basic"))) {
+                            throw new IllegalArgumentException("Invalid approved authentication");
+                        }
+                    }
+
+                    @Override
+                    protected void connect(final HttpModule module, final ResourceEndpoint endpoint,
+                            final String directory, final String credential) throws IOException {
+                        final var setup = setup();
+                        setup.set(HOST_HTTP_PORT, endpoint.port());
+                        setup.set(HOST_HTTP_SCHEME, "https");
+                        setup.set(HOST_HTTP_SSL_VALIDATION, true);
+                        setup.set(HOST_HTTP_STRICT, true);
+                        setup.set(HOST_HTTP_AUTHHEADER, false);
+                        final var bearer = "bearer".equals(endpoint.options().get("authentication"));
+                        setup.set(HOST_HTTP_AUTHHEADER, !bearer);
+                        if (bearer && !credential.matches("[\\x21-\\x7e]+")) {
+                            throw new IOException("Invalid bearer credential");
+                        }
+                        setup.set(HOST_HTTP_CREDENTIALS, !bearer);
+                        setup.set(HOST_HTTP_AUTHCACHE, false);
+                        setup.set(HOST_HTTP_USE_HEAD, true);
+                        module.connect(endpoint.host(), endpoint.login(), credential, setup, true);
+                        if (bearer) {
+                            module.headersList.put("Authorization", "Bearer " + credential);
+                        }
+                    }
+                });
+    }
+
+    @Override
+    public boolean isSessionClosureConfirmed() {
+        return rotationClosed;
+    }
+
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(HttpModule.class);
 
@@ -398,6 +446,18 @@ public final class HttpModule extends TransferModule {
             // Ignore dir (not used)
             host = host.substring(0, pos);
         }
+        connect(host, username, password, setup, false);
+    }
+
+    private void connect(final String endpointHost, final String username, final String password,
+            final ECtransSetup setup, final boolean rotation) throws IOException {
+        currentSetup = setup;
+        this.host = endpointHost;
+        this.username = username;
+        this.password = password;
+        rotatingCredential = rotation;
+        rotationClosed = false;
+        setStatus("CONNECT");
         // Add the minimum required headers!
         headersList.put("User-Agent", "ecpds/" + Version.getFullVersion());
         headersList.put("Accept", "*/*");
@@ -421,7 +481,7 @@ public final class HttpModule extends TransferModule {
         }
         final var builder = HttpClients.custom();
         // ----- Redirects (built-in) -----
-        final var requestConfig = RequestConfig.custom().setRedirectsEnabled(true)
+        final var requestConfig = RequestConfig.custom().setRedirectsEnabled(!rotatingCredential)
                 .setCircularRedirectsAllowed(getSetup().getBoolean(HOST_HTTP_ALLOW_CIRCULAR_REDIRECTS))
                 .setMaxRedirects(getSetup().getInteger(HOST_HTTP_MAX_REDIRECTS)).build();
         builder.setDefaultRequestConfig(requestConfig);
@@ -489,8 +549,8 @@ public final class HttpModule extends TransferModule {
             if (!username.isEmpty()) {
                 if (getSetup().getBoolean(HOST_HTTP_AUTHHEADER)) {
                     final var auth = username + ":" + password;
-                    final var encodedAuth = Base64.getEncoder()
-                            .encodeToString(auth.getBytes(StandardCharsets.US_ASCII));
+                    final var encodedAuth = Base64.getEncoder().encodeToString(
+                            auth.getBytes(rotatingCredential ? StandardCharsets.UTF_8 : StandardCharsets.US_ASCII));
                     headersList.put(HttpHeaders.AUTHORIZATION, "Basic " + encodedAuth);
                 } else // Doing authentication with user/password
                 if (getSetup().getBoolean(HOST_HTTP_CREDENTIALS)) {
@@ -667,9 +727,10 @@ public final class HttpModule extends TransferModule {
                 getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath()));
         ClassicHttpResponse delResponse = null;
         try {
-            delResponse = execute(pr.getHttpHost(), request, 200);
+            delResponse = execute(pr.getHttpHost(), request,
+                    rotatingCredential ? new Integer[] { 200, 204 } : new Integer[] { 200 });
             final var entity = delResponse.getEntity();
-            if (entity == null) {
+            if (entity == null && !rotatingCredential) {
                 throw new IOException("Couldn't delete file: " + request.getRequestUri());
             }
             if (getDebug()) {
@@ -866,8 +927,12 @@ public final class HttpModule extends TransferModule {
         ClassicHttpResponse sizeResponse = null;
         try {
             // See getElement() for why a HEAD request's redirect sometimes needs a GET fallback.
-            sizeResponse = useHead ? execute(pr.getHttpHost(), request, 200, 301, 302, 303, 307, 308)
-                    : execute(pr.getHttpHost(), request, 200);
+            sizeResponse = rotatingCredential ? execute(pr.getHttpHost(), request, 200, 404)
+                    : useHead ? execute(pr.getHttpHost(), request, 200, 301, 302, 303, 307, 308)
+                            : execute(pr.getHttpHost(), request, 200);
+            if (rotatingCredential && sizeResponse.getCode() == 404) {
+                return -1;
+            }
             if (useHead && sizeResponse.getCode() != 200) {
                 closeResponse(sizeResponse);
                 request = new HttpGet(uri);
@@ -1139,7 +1204,10 @@ public final class HttpModule extends TransferModule {
          * @param name
          *            the name
          */
-        PrepareRequest(final String name) {
+        PrepareRequest(final String name) throws IOException {
+            if (rotatingCredential && (name.startsWith("//") || name.matches("(?is)^[a-z][a-z0-9+.-]*:.*"))) {
+                throw new IOException("Vault-backed HTTPS requests require a file path");
+            }
             if (isURL(path = name)) {
                 // This is a full URL!
                 if (getDebug()) {
@@ -1168,6 +1236,11 @@ public final class HttpModule extends TransferModule {
                     if (_log.isDebugEnabled() && getDebug()) {
                         _log.debug("Target host: {}", targetHost.toURI());
                     }
+                }
+                if (rotatingCredential && (!"https".equalsIgnoreCase(targetHost.getSchemeName())
+                        || !host.equalsIgnoreCase(targetHost.getHostName())
+                        || targetHost.getPort() != targetHttpHost.getPort())) {
+                    throw new IOException("Vault-backed credential target changed");
                 }
             }
         }
@@ -2894,6 +2967,14 @@ public final class HttpModule extends TransferModule {
     @Override
     public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
+            if ((rotatingCredential || hasTransferSession()) && manager == null && mqttSubscriber == null) {
+                currentStatus = "CLOSE";
+                closeSessionResources(httpInput, httpClient, poolManager);
+                password = null;
+                headersList.clear();
+                rotationClosed = true;
+                return;
+            }
             _log.debug("Closing module");
             currentStatus = "CLOSE";
             if (manager != null) {

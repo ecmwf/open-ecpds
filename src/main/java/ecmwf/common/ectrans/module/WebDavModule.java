@@ -132,6 +132,46 @@ import ecmwf.common.technical.ThreadService.ConfigurableRunnable;
  * WebDAV transfer module.
  */
 public final class WebDavModule extends TransferModule {
+    private boolean rotatingCredential;
+    private volatile boolean rotationClosed;
+
+    @Override
+    public java.util.Optional<ecmwf.common.ectrans.PasswordRotation> passwordRotation() {
+        return java.util.Optional
+                .of(new ecmwf.common.ectrans.FileCredentialRotation<WebDavModule>("webdav", WebDavModule::new,
+                        java.util.Set.of(ecmwf.common.ectrans.FileCredentialRotation.STANDARD_METHOD, "$msuser[host]"),
+                        java.util.Set.of("webdav.port", "webdav.scheme", "webdav.path", "webdav.sslValidation",
+                                "webdav.username", "webdav.password"),
+                        java.util.Set.of("path")) {
+                    @Override
+                    protected void validate(final ResourceEndpoint endpoint) {
+                        final var path = endpoint.options().getOrDefault("path", "/");
+                        if (!path.startsWith("/") || path.chars().anyMatch(c -> c < 32) || java.util.Arrays
+                                .stream(path.split("/")).anyMatch(p -> ".".equals(p) || "..".equals(p))) {
+                            throw new IllegalArgumentException("Invalid approved WebDAV path");
+                        }
+                    }
+
+                    @Override
+                    protected void connect(final WebDavModule module, final ResourceEndpoint endpoint,
+                            final String directory, final String credential) throws IOException {
+                        final var setup = setup();
+                        setup.set(HOST_WEBDAV_PORT, endpoint.port());
+                        setup.set(HOST_WEBDAV_SCHEME, "https");
+                        setup.set(HOST_WEBDAV_SSL_VALIDATION, true);
+                        setup.set(HOST_WEBDAV_PATH, endpoint.options().getOrDefault("path", "/"));
+                        setup.set(HOST_WEBDAV_MKDIRS, false);
+                        setup.set(HOST_WEBDAV_USE_LOCK, false);
+                        module.connect(endpoint.host(), endpoint.login(), credential, setup, true);
+                    }
+                });
+    }
+
+    @Override
+    public boolean isSessionClosureConfirmed() {
+        return rotationClosed;
+    }
+
     /** The logger. */
     private static final Logger _log = LogManager.getLogger(WebDavModule.class);
 
@@ -179,7 +219,15 @@ public final class WebDavModule extends TransferModule {
 
     @Override
     public void connect(final String location, final ECtransSetup setup) throws IOException {
-        host = normalizeHost(location);
+        connect(normalizeHost(location), setup.getString(HOST_WEBDAV_USERNAME), setup.getString(HOST_WEBDAV_PASSWORD),
+                setup, false);
+    }
+
+    private void connect(final String host, final String username, final String password, final ECtransSetup setup,
+            final boolean rotation) throws IOException {
+        this.host = host;
+        rotatingCredential = rotation;
+        rotationClosed = false;
         scheme = setup.getString(HOST_WEBDAV_SCHEME);
         port = getPort(setup);
         basePath = normalizePath(setup.getString(HOST_WEBDAV_PATH));
@@ -187,8 +235,6 @@ public final class WebDavModule extends TransferModule {
         mkdirs = setup.getBoolean(HOST_WEBDAV_MKDIRS);
         lockTimeout = setup.getLong(HOST_WEBDAV_LOCK_TIMEOUT);
         lockOwner = setup.getString(HOST_WEBDAV_LOCK_OWNER);
-        final var username = setup.getString(HOST_WEBDAV_USERNAME);
-        final var password = setup.getString(HOST_WEBDAV_PASSWORD);
         final ClientSocketStatistics statistics;
         if (setup.getBoolean(HOST_ECTRANS_SOCKET_STATISTICS) && getAttribute("connectOptions") != null) {
             _log.debug("Activating Socket Statistics");
@@ -230,6 +276,9 @@ public final class WebDavModule extends TransferModule {
                 .setResponseTimeout(Timeout.ofMilliseconds(setup.getDuration(HOST_WEBDAV_SOCKET_TIMEOUT).toMillis()))
                 .build();
         final var builder = HttpClients.custom().setConnectionManager(cm).setDefaultRequestConfig(requestConfig);
+        if (rotatingCredential) {
+            builder.disableRedirectHandling();
+        }
         if (isNotEmpty(username)) {
             final var creds = new BasicCredentialsProvider();
             creds.setCredentials(new AuthScope(null, -1),
@@ -364,7 +413,12 @@ public final class WebDavModule extends TransferModule {
         final var request = new HttpPropfind(buildUri(name));
         request.setHeader("Depth", "0");
         request.setEntity(new StringEntity(PROPFIND_SIZE, ContentType.APPLICATION_XML));
-        try (var response = execute(request, HttpStatus.SC_MULTI_STATUS)) {
+        try (var response = execute(request,
+                rotatingCredential ? new int[] { HttpStatus.SC_MULTI_STATUS, HttpStatus.SC_NOT_FOUND }
+                        : new int[] { HttpStatus.SC_MULTI_STATUS })) {
+            if (response.getCode() == HttpStatus.SC_NOT_FOUND) {
+                return -1;
+            }
             final var document = parseXml(EntityUtils.toString(response.getEntity()));
             final var lengths = document.getElementsByTagNameNS("DAV:", "getcontentlength");
             if (lengths.getLength() == 0) {
@@ -441,6 +495,7 @@ public final class WebDavModule extends TransferModule {
             httpClient.close();
             httpClient = null;
         }
+        rotationClosed = true;
     }
 
     private void tryPut(final String name, final InputStream input, final long size) throws IOException {

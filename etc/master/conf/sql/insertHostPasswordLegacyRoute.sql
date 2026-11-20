@@ -1,0 +1,21 @@
+#menu "ECpdsBase"
+#name "insertHostPasswordLegacyRoute"
+#group "update"
+#timeout "5"
+#prompt "host;Host;;"
+#bind "host;LONG"
+#prompt "routeId;Route id;;"
+#bind "routeId;STRING"
+#prompt "relay;Relay;;"
+#bind "relay;STRING"
+#prompt "proxy;Proxy;;"
+#bind "proxy;LONG"
+#prompt "mover;Mover;;"
+#bind "mover;STRING"
+#prompt "key;Key;;"
+#bind "key;STRING"
+#prompt "incarnation;Incarnation;;"
+#bind "incarnation;STRING"
+INSERT INTO HOST_PASSWORD_LEGACY_ROUTE
+  (HOS_NAME,HLR_ID,HLR_RELAY,HLR_PROXY,HLR_MOVER,HLR_KEY,HLR_INCARNATION)
+VALUES (:host,:routeId,:relay,:proxy,:mover,:key,:incarnation)

@@ -121,8 +121,8 @@ public class StoragePoliciesAction extends PDSAction {
             load(db, request);
         } catch (final Exception e) {
             LOG.warn("Cannot load storage policies", e);
-            request.setAttribute("spError", "Unable to load policies; check storage-policy.sql and "
-                    + "storage-lifecycle-runtime.sql: " + e.getMessage());
+            request.setAttribute("spError",
+                    "Unable to load policies; check the storage lifecycle schema: " + e.getMessage());
         }
         try {
             final var management = MasterManager.getMI();

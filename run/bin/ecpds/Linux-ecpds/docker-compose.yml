@@ -13,7 +13,29 @@
 # (c) Copyright ECMWF 2019-2024 - Laurent Gougeon (syi@ecmwf.int)
 #
 
+volumes:
+  openbao-data:
+
 services:
+  openbao:
+    profiles: ["openbao"]
+    image: ${OPENBAO_IMAGE:-open-ecpds/openbao:2.7.2}
+    environment:
+      BAO_API_ADDR: https://localhost:8200
+    ports:
+      - "127.0.0.1:8200:8200"
+    volumes:
+      - type: bind
+        source: ${ECPDS_ROOT_PATH:-}/etc/ecpds/openbao/tls
+        target: /openbao/tls
+        read_only: true
+        bind:
+          create_host_path: false
+      - openbao-data:/openbao/file
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
   # Local development sink only; decoded telemetry is printed, not durably archived.
   otel:
     profiles: ["otel"]

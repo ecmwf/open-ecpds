@@ -90,6 +90,7 @@ import static ecmwf.common.text.Util.isNotEmpty;
 import static ecmwf.common.text.Util.isEmpty;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -97,13 +98,20 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.script.ScriptException;
@@ -114,6 +122,8 @@ import org.apache.logging.log4j.Logger;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.ChannelSftp.LsEntry;
+import com.jcraft.jsch.HostKey;
+import com.jcraft.jsch.HostKeyRepository;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
@@ -124,6 +134,9 @@ import com.jcraft.jsch.UIKeyboardInteractive;
 import com.jcraft.jsch.UserInfo;
 
 import ecmwf.common.ectrans.AllocateInterface;
+import ecmwf.common.ectrans.CredentialProbe;
+import ecmwf.common.ectrans.PasswordRotation;
+import ecmwf.common.ectrans.CredentialProbe.Result;
 import ecmwf.common.ectrans.ECtransConstants;
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.ectrans.TransferModule;
@@ -150,6 +163,7 @@ public class JSftpModule extends TransferModule {
 
     /** The session. */
     private Session session = null;
+    private boolean pinnedConnection;
 
     /** The sftp. */
     private ChannelSftp sftp = null;
@@ -288,6 +302,198 @@ public class JSftpModule extends TransferModule {
         return socketFactory != null ? socketFactory.getLastRemoteAddress() : null;
     }
 
+    public record PasswordProbeEndpoint(String host, int port, String login, String pin, String directory)
+            implements PasswordRotation.Endpoint {
+        public PasswordProbeEndpoint {
+            if (host == null || !host.matches("[A-Za-z0-9.:-]{1,253}") || port < 1 || port > 65535 || login == null
+                    || !login.matches("[!-~]{1,255}") || pin == null || !pin.matches("SHA256:[A-Za-z0-9+/]{43}")
+                    || directory == null || directory.length() > 1024 || !directory.matches("(?:/[A-Za-z0-9_.-]+)+")
+                    || directory.matches(".*/\\.{1,2}(?:/.*)?")) {
+                throw new IllegalArgumentException("Invalid SFTP password probe endpoint");
+            }
+        }
+
+        @Override
+        public String fingerprint() {
+            final var canonical = "ecpds-sftp-probe-endpoint-v1 " + host + " " + port + " " + login + " " + pin + " "
+                    + directory;
+            try {
+                return HexFormat.of().formatHex(
+                        MessageDigest.getInstance("SHA-256").digest(canonical.getBytes(StandardCharsets.US_ASCII)));
+            } catch (final NoSuchAlgorithmException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+    }
+
+    public static final CredentialProbe<PasswordProbeEndpoint, String> PASSWORD_PROBE = new CredentialProbe<>() {
+        @Override
+        public PasswordProbeEndpoint parseEndpoint(final String approvedConfiguration) {
+            final var fields = approvedConfiguration.strip().split("\\s+");
+            if (fields.length != 5) {
+                throw new IllegalArgumentException("Invalid SFTP password probe endpoint");
+            }
+            return new PasswordProbeEndpoint(fields[0], Integer.parseInt(fields[1]), fields[2], fields[3], fields[4]);
+        }
+
+        @Override
+        public Result probe(final PasswordProbeEndpoint endpoint, final String password) {
+            return probePassword(endpoint, password);
+        }
+    };
+
+    @Override
+    public Optional<CredentialProbe<?, ?>> credentialProbe() {
+        return Optional.of(PASSWORD_PROBE);
+    }
+
+    private static final PasswordRotation PASSWORD_ROTATION = new PasswordRotation() {
+        @Override
+        public PasswordProbeEndpoint parseEndpoint(final String configuration) {
+            return PASSWORD_PROBE.parseEndpoint(configuration);
+        }
+
+        @Override
+        public Result probe(final Endpoint endpoint, final String password) throws IOException {
+            return PASSWORD_PROBE.probe((PasswordProbeEndpoint) endpoint, password);
+        }
+
+        @Override
+        public boolean supports(final String method, final String hostData, final int port) {
+            return port == 22 && (hostData == null || hostData.isBlank())
+                    && "$msuser[login]:$msuser[passwd]@$msuser[host]/$msuser[dir]$target".equals(method);
+        }
+
+        @Override
+        public void connect(final TransferModule module, final Endpoint endpoint, final String directory,
+                final ECtransSetup setup, final String password) throws IOException {
+            ((JSftpModule) module).connectPinned((PasswordProbeEndpoint) endpoint, directory, setup, password);
+        }
+    };
+
+    @Override
+    public Optional<PasswordRotation> passwordRotation() {
+        return Optional.of(PASSWORD_ROTATION);
+    }
+
+    /**
+     * Tests a password against an operator-pinned SSH key in a dedicated, pre-existing SFTP directory. The caller must
+     * supply the approved endpoint and directory from trusted configuration, not from the rotation request.
+     */
+    private static Result probePassword(final PasswordProbeEndpoint endpoint, final String password) {
+        if (password == null || password.isEmpty() || password.length() > 4096) {
+            throw new IllegalArgumentException("Invalid SFTP probe password");
+        }
+        final var client = pinnedClient(endpoint);
+        Session probeSession = null;
+        ChannelSftp channel = null;
+        try {
+            probeSession = client.getSession(endpoint.login(), endpoint.host(), endpoint.port());
+            configurePinnedSession(probeSession, password);
+            probeSession.setTimeout(10_000);
+            probeSession.connect(10_000);
+            channel = (ChannelSftp) probeSession.openChannel("sftp");
+            channel.connect(10_000);
+            return writePasswordProbe(channel, endpoint.directory());
+        } catch (final JSchException _) {
+            return Result.CONNECTION_OR_AUTH_FAILED;
+        } finally {
+            if (channel != null) {
+                channel.disconnect();
+            }
+            if (probeSession != null) {
+                probeSession.disconnect();
+            }
+        }
+    }
+
+    private static JSch pinnedClient(final PasswordProbeEndpoint endpoint) {
+        final var client = new JSch();
+        final var pin = Base64.getDecoder().decode(endpoint.pin().substring("SHA256:".length()));
+        client.setHostKeyRepository(new ProbeHostKeyRepository(pin));
+        return client;
+    }
+
+    private static void configurePinnedSession(final Session pinned, final String password) {
+        pinned.setConfig("StrictHostKeyChecking", "yes");
+        pinned.setConfig("PreferredAuthentications", "password");
+        pinned.setConfig("NumberOfPasswordPrompts", "1");
+        pinned.setPassword(password);
+    }
+
+    private static Result writePasswordProbe(final ChannelSftp channel, final String directory) {
+        final var reservation = directory + "/.ecpds-probe-" + UUID.randomUUID();
+        final var path = reservation + "/probe";
+        try {
+            // Reserve a new directory atomically so a collision cannot overwrite an existing file.
+            channel.mkdir(reservation);
+        } catch (final SftpException _) {
+            return Result.WRITE_FAILED;
+        }
+        var result = Result.PASSED;
+        try {
+            channel.put(new ByteArrayInputStream(new byte[] { 1 }), path);
+        } catch (final SftpException _) {
+            result = Result.WRITE_FAILED;
+        } finally {
+            try {
+                channel.rm(path);
+            } catch (final SftpException e) {
+                if (e.id != ChannelSftp.SSH_FX_NO_SUCH_FILE) {
+                    result = Result.CLEANUP_FAILED;
+                }
+            }
+            try {
+                channel.rmdir(reservation);
+            } catch (final SftpException _) {
+                result = Result.CLEANUP_FAILED;
+            }
+        }
+        return result;
+    }
+
+    private record ProbeHostKeyRepository(byte[] fingerprint) implements HostKeyRepository {
+        @Override
+        public int check(final String host, final byte[] key) {
+            try {
+                return MessageDigest.isEqual(fingerprint, MessageDigest.getInstance("SHA-256").digest(key)) ? OK
+                        : CHANGED;
+            } catch (final NoSuchAlgorithmException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        @Override
+        public void add(final HostKey hostKey, final UserInfo userInfo) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void remove(final String host, final String type) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void remove(final String host, final String type, final byte[] key) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getKnownHostsRepositoryID() {
+            return "ECPDS SFTP password probe";
+        }
+
+        @Override
+        public HostKey[] getHostKey() {
+            return new HostKey[0];
+        }
+
+        @Override
+        public HostKey[] getHostKey(final String host, final String type) {
+            return getHostKey();
+        }
+    }
+
     /**
      * {@inheritDoc}
      *
@@ -304,7 +510,6 @@ public class JSftpModule extends TransferModule {
     @Override
     public void connect(final String location, final ECtransSetup setup) throws IOException {
         // The location is: user:password@host/dir
-        currentSetup = setup;
         setStatus("CONNECT");
         String host;
         String dir = null;
@@ -360,10 +565,27 @@ public class JSftpModule extends TransferModule {
                     throw new IOException("Processing allocate (received: " + get + ")");
             }
         }
-        if (isNotEmpty(dir)) {
-            dir = dir + File.separator;
+        connect(host, getPort(setup), setup.get(HOST_SFTP_CWD, directoryWithSeparator(dir)), setup, password, null);
+    }
+
+    public void connectPinned(final PasswordProbeEndpoint endpoint, final String directory, final ECtransSetup setup,
+            final String password) throws IOException {
+        if (session != null || endpoint == null || password == null || password.isEmpty() || password.length() > 4096) {
+            throw new IOException("Invalid vault-backed password connection");
         }
-        dir = setup.get(HOST_SFTP_CWD, dir);
+        setStatus("CONNECT");
+        user = endpoint.login();
+        connect(endpoint.host(), endpoint.port(), directoryWithSeparator(directory), setup, password, endpoint);
+    }
+
+    private static String directoryWithSeparator(final String directory) {
+        return isNotEmpty(directory) ? directory + File.separator : directory;
+    }
+
+    private void connect(final String host, final int port, final String dir, final ECtransSetup setup,
+            final String password, final PasswordProbeEndpoint pinned) throws IOException {
+        currentSetup = setup;
+        pinnedConnection = pinned != null;
         usecleanpath = setup.getBoolean(HOST_SFTP_USECLEANPATH);
         usetmp = setup.getBoolean(HOST_SFTP_USETMP);
         mkdirs = setup.getBoolean(HOST_SFTP_MKDIRS);
@@ -455,16 +677,15 @@ public class JSftpModule extends TransferModule {
         } else if (prefix.isEmpty() && suffix.isEmpty()) {
             suffix = ".tmp";
         }
-        final var port = getPort(getSetup());
         setAttribute("remote.hostName", host);
         _log.debug("Open sftp connection on {}:{} ({})", host, port, user);
         var connected = false;
         try {
-            final var jsch = new JSch();
+            final var jsch = pinned == null ? new JSch() : pinnedClient(pinned);
             if (getDebug()) {
                 jsch.setInstanceLogger(new JSftpLogger());
             }
-            if (isNotEmpty(privateKeyFile)) {
+            if (pinned == null && isNotEmpty(privateKeyFile)) {
                 final var file = new File(privateKeyFile);
                 final var fileName = file.getCanonicalPath();
                 if (!file.canRead()) {
@@ -472,7 +693,7 @@ public class JSftpModule extends TransferModule {
                 }
                 _log.debug("Loading certificate from file");
                 jsch.addIdentity(fileName, passPhrase);
-            } else if (isNotEmpty(privateKey)) {
+            } else if (pinned == null && isNotEmpty(privateKey)) {
                 _log.debug("Using private key");
                 jsch.addIdentity(setup.getModuleName(), privateKey.getBytes(), null,
                         passPhrase != null ? passPhrase.getBytes() : null);
@@ -485,7 +706,11 @@ public class JSftpModule extends TransferModule {
                 session.setClientVersion(clientVersion);
             }
             session.setConfig(config);
-            session.setUserInfo(new JSftpUserInfo(password, passPhrase, fingerPrint));
+            if (pinned == null) {
+                session.setUserInfo(new JSftpUserInfo(password, passPhrase, fingerPrint));
+            } else {
+                configurePinnedSession(session, password);
+            }
             if (serverAliveCountMax > 0) {
                 session.setServerAliveCountMax(serverAliveCountMax);
             }
@@ -530,7 +755,13 @@ public class JSftpModule extends TransferModule {
                             time -> socketConfig.setTCPLinger(enable, time)));
             socketFactory = new JschSocketFactory(socketConfig);
             session.setSocketFactory(socketFactory);
-            session.connect(connectTimeOut);
+            try {
+                session.connect(connectTimeOut);
+            } finally {
+                if (pinned != null) {
+                    session.setPassword(new byte[0]);
+                }
+            }
             _log.debug("RemoteServer: {}", session.getServerVersion());
             sftp = (ChannelSftp) session.openChannel("sftp");
             try {
@@ -558,6 +789,9 @@ public class JSftpModule extends TransferModule {
             }
             connected = true;
         } catch (final Throwable t) {
+            if (pinned != null) {
+                throw new IOException("Vault-backed password connection failed");
+            }
             _log.error("Can't connect to {}:{} (user={})", host, port, user, t);
             throwIOException(t, "connect to " + host + ":" + port);
         } finally {
@@ -722,6 +956,9 @@ public class JSftpModule extends TransferModule {
         try {
             return sftp.lstat(name).getSize();
         } catch (final SftpException e) {
+            if (pinnedConnection && e.id == ChannelSftp.SSH_FX_NO_SUCH_FILE) {
+                return -1;
+            }
             _log.debug("lstat", e);
             throwIOException(e, "lstat " + name);
         }
@@ -1440,6 +1677,7 @@ public class JSftpModule extends TransferModule {
     @Override
     public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
+            var confirmed = true;
             _log.debug("Close connection");
             currentStatus = "CLOSE";
             StreamPlugThread.closeQuietly(sftpOutput);
@@ -1454,7 +1692,9 @@ public class JSftpModule extends TransferModule {
                 }
                 try {
                     sftp.disconnect();
+                    confirmed &= !sftp.isConnected();
                 } catch (final Exception e) {
+                    confirmed = false;
                     _log.debug("disconnect", e);
                 } finally {
                     sftp = null;
@@ -1463,16 +1703,26 @@ public class JSftpModule extends TransferModule {
             if (session != null && session.isConnected()) {
                 try {
                     session.disconnect();
+                    confirmed &= !session.isConnected();
                 } catch (final Exception e) {
+                    confirmed = false;
                     _log.debug("disconnect", e);
                 } finally {
                     session = null;
                 }
             }
+            sessionClosureConfirmed = confirmed;
             _log.debug("Close completed");
         } else {
             _log.debug("Already closed");
         }
+    }
+
+    private volatile boolean sessionClosureConfirmed;
+
+    @Override
+    public boolean isSessionClosureConfirmed() {
+        return sessionClosureConfirmed;
     }
 
     /**

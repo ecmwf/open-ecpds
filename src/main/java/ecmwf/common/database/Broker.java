@@ -47,7 +47,11 @@ interface Broker extends AutoCloseable {
 
     /** Operations sharing one connection and commit; none commits independently. */
     interface Transaction {
-        PreparedQuery prepare(String sql, Object... parameters) throws SQLException;
+        default PreparedQuery prepare(String sql, Object... parameters) throws SQLException {
+            return prepare(sql, parameters, 5);
+        }
+
+        PreparedQuery prepare(String sql, Object[] parameters, int timeout) throws SQLException;
 
         /** Read current state without consulting or populating the shared entity cache. */
         <T extends DataBaseObject> T get(T object);
@@ -67,6 +71,8 @@ interface Broker extends AutoCloseable {
         ResultSet executeQuery() throws SQLException;
 
         int executeUpdate() throws SQLException;
+
+        int[] executeBatch(List<Object[]> parameters) throws SQLException;
 
         @Override
         void close() throws SQLException;
@@ -132,6 +138,14 @@ interface Broker extends AutoCloseable {
     CloseableResultSetWrapper executeQuery(boolean release, String sql, int timeout)
             throws BrokerException, SQLException;
 
+    default CloseableResultSetWrapper executeQuery(boolean release, String sql, int timeout, Object[] parameters)
+            throws BrokerException, SQLException {
+        if (parameters.length == 0) {
+            return executeQuery(release, sql, timeout);
+        }
+        throw new java.sql.SQLFeatureNotSupportedException("Bound select requests are not supported");
+    }
+
     /**
      * Execute update.
      *
@@ -150,6 +164,13 @@ interface Broker extends AutoCloseable {
     }
 
     int executeUpdate(String sql, int timeout) throws BrokerException, SQLException;
+
+    default int executeUpdate(String sql, int timeout, Object[] parameters) throws BrokerException, SQLException {
+        if (parameters.length == 0) {
+            return executeUpdate(sql, timeout);
+        }
+        throw new java.sql.SQLFeatureNotSupportedException("Bound update requests are not supported");
+    }
 
     /**
      * Gets the.
@@ -200,6 +221,14 @@ interface Broker extends AutoCloseable {
 
     <T extends DataBaseObject> CloseableIterator<T> getIterator(Class<T> target, String sql, int timeout)
             throws BrokerException;
+
+    default <T extends DataBaseObject> CloseableIterator<T> getIterator(Class<T> target, String sql, int timeout,
+            Object[] parameters) throws BrokerException {
+        if (parameters.length == 0) {
+            return getIterator(target, sql, timeout);
+        }
+        throw new BrokerException("Bound entity requests are not supported");
+    }
 
     /**
      * Gets the primary key values.

@@ -40,6 +40,8 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -119,7 +121,63 @@ public abstract class ScriptFile {
         return result.toString();
     }
 
-    private record Request(String sql, int timeout) {
+    private record Request(String sql, int timeout, List<Object> parameters, boolean bound) {
+    }
+
+    final Set<String> bindingNames(final String menu, final String group, final String name) throws IOException {
+        return SQLBindings.declarations(getScriptContent(menu, group, name)).keySet();
+    }
+
+    private String transactionScript(final String menu, final String name) throws IOException {
+        final var groups = allMenus.get(menu);
+        String script = null;
+        if (groups != null) {
+            for (final var entries : groups.values()) {
+                final var candidate = entries.get(name);
+                if (candidate != null) {
+                    if (script != null) {
+                        throw new IOException("Ambiguous SQL request: " + name);
+                    }
+                    script = candidate;
+                }
+            }
+        }
+        if (script == null) {
+            throw new FileNotFoundException(menu + "->" + name);
+        }
+        return script;
+    }
+
+    final Broker.PreparedQuery prepare(final Broker.Transaction transaction, final String menu, final String name,
+            final Map<String, ?> values) throws SQLException, IOException {
+        final var request = executeRequest(values, transactionScript(menu, name));
+        if (request == null) {
+            throw new SQLException("Database script was not approved: " + name);
+        }
+        return transaction.prepare(request.sql(), request.parameters().toArray(), request.timeout());
+    }
+
+    final int[] executeBatch(final Broker.Transaction transaction, final String menu, final String name,
+            final List<? extends Map<String, ?>> rows) throws SQLException, IOException {
+        if (rows.isEmpty()) {
+            return new int[0];
+        }
+        final var script = transactionScript(menu, name);
+        final var parameters = new ArrayList<Object[]>(rows.size());
+        Request first = null;
+        for (final var values : rows) {
+            final var request = executeRequest(values, script);
+            if (request == null || first != null && !first.sql().equals(request.sql())) {
+                throw new IOException("Batch SQL requests must have the same approved statement");
+            }
+            if (first == null) {
+                first = request;
+            }
+            parameters.add(request.parameters().toArray());
+        }
+        try (final var query = transaction.prepare(first.sql(), new Object[0], first.timeout())) {
+            return query.executeBatch(parameters);
+        }
     }
 
     /**
@@ -234,11 +292,12 @@ public abstract class ScriptFile {
      *
      * @return the string
      */
-    private final String getValue(final Map<String, String> values, final String name, final String comment,
+    private final String getValue(final Map<String, ?> values, final String name, final String comment,
             final String[] possibleValues, final String defaultValue) {
         final var value = getValue(name, comment, possibleValues, defaultValue);
         if (value == null && values != null) {
-            return values.get(name);
+            final var supplied = values.get(name);
+            return supplied == null ? null : supplied.toString();
         }
         return value;
     }
@@ -333,7 +392,12 @@ public abstract class ScriptFile {
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    private final Request executeRequest(Map<String, String> values, final String request) throws IOException {
+    private final Request executeRequest(final Map<String, ?> supplied, final String request) throws IOException {
+        final var declarations = SQLBindings.declarations(request);
+        final Map<String, Object> values = new HashMap<>();
+        if (supplied != null) {
+            values.putAll(supplied);
+        }
         final Map<String, String> params = new HashMap<>();
         final List<String> keys = new ArrayList<>();
         final Map<String, String> resolved = new HashMap<>();
@@ -347,9 +411,6 @@ public abstract class ScriptFile {
         int timeout = -1;
         boolean timeoutSpecified = false;
         // Introduce default parameters
-        if (values == null) {
-            values = new HashMap<>();
-        }
         final var now = System.currentTimeMillis();
         final var currentTimeMillis = values.get("currentTimeMillis");
         if (currentTimeMillis == null) {
@@ -434,9 +495,20 @@ public abstract class ScriptFile {
         } finally {
             dis.close();
         }
+        for (final var binding : declarations.keySet()) {
+            if (Collections.frequency(keys, binding) != 1) {
+                throw new IOException("A bound parameter needs exactly one #prompt: " + binding);
+            }
+            if (Pattern.compile("\\$" + Pattern.quote(binding) + "\\b").matcher(sql).find()) {
+                throw new IOException("Use :" + binding + " for a bound value, not template substitution");
+            }
+        }
         if (sql.length() > 0) {
             // Parameters to prompt?
             for (final String parameter : keys) {
+                if (declarations.containsKey(parameter)) {
+                    continue;
+                }
                 if (sql.indexOf("$" + parameter) == -1) {
                     continue;
                 }
@@ -447,13 +519,23 @@ public abstract class ScriptFile {
                         question = evalString(question, "$" + key, value);
                     }
                 }
-                final Object value;
-                if ((value = options.containsKey(parameter)
-                        ? getValue(values, parameter, question, options.get(parameter), options.get(parameter)[0])
-                        : getValue(values, parameter, question, null, contents.get(parameter))) == null) {
+                if (!declarations.isEmpty() && !options.containsKey(parameter)) {
+                    throw new IOException("SQL structure parameters require explicit choices: " + parameter);
+                }
+                final Object value = !declarations.isEmpty() && supplied != null
+                        ? values.getOrDefault(parameter, options.get(parameter)[0])
+                        : options.containsKey(parameter)
+                                ? getValue(values, parameter, question, options.get(parameter),
+                                        options.get(parameter)[0])
+                                : getValue(values, parameter, question, null, contents.get(parameter));
+                if (value == null) {
                     return null;
                 }
                 resolved.put(parameter, value.toString());
+                if (!declarations.isEmpty()
+                        && !java.util.Arrays.asList(options.get(parameter)).contains(value.toString())) {
+                    throw new IOException("Invalid SQL structure choice: " + parameter);
+                }
             }
             // process sql - #if - #else - #fi
             final var eval = evalQuery(substituteParameters(sql.toString(), resolved));
@@ -465,7 +547,33 @@ public abstract class ScriptFile {
             if (confirm != null && !getConfirmation(menu + " -> " + name, confirm)) {
                 return null;
             }
-            return new Request(sql.toString(), timeout);
+            if (declarations.isEmpty()) {
+                return new Request(sql.toString(), timeout, List.of(), false);
+            }
+            final var query = SQLBindings.compile(sql.toString(), declarations);
+            final Map<String, Object> bound = new HashMap<>();
+            for (final var parameter : query.names()) {
+                if (bound.containsKey(parameter)) {
+                    continue;
+                }
+                if (values.containsKey(parameter)) {
+                    bound.put(parameter, values.get(parameter));
+                    continue;
+                }
+                final var choices = options.get(parameter);
+                final var fallback = choices == null ? contents.get(parameter) : choices[0];
+                final var value = getValue(parameter, params.get(parameter), choices, fallback);
+                if (value == null) {
+                    if (supplied == null) {
+                        return null;
+                    }
+                    if (fallback == null) {
+                        throw new IOException("Missing bound SQL parameter: " + parameter);
+                    }
+                }
+                bound.put(parameter, value == null ? fallback : value);
+            }
+            return new Request(query.sql(), timeout, query.arguments(declarations, bound), true);
         }
         return null;
     }
@@ -490,9 +598,11 @@ public abstract class ScriptFile {
      *             Signals that an I/O exception has occurred.
      */
     public DBResultSet executeQuery(final String menu, final String group, final String name,
-            final Map<String, String> values) throws SQLException, IOException {
+            final Map<String, ?> values) throws SQLException, IOException {
         final var request = executeRequest(values, getScriptContent(menu, group, name));
-        return request == null ? null : executeQuery(request.sql(), request.timeout());
+        return request == null ? null
+                : request.bound() ? executeQuery(request.sql(), request.timeout(), request.parameters())
+                        : executeQuery(request.sql(), request.timeout());
     }
 
     /**
@@ -519,10 +629,12 @@ public abstract class ScriptFile {
      *             Signals that an I/O exception has occurred.
      */
     public <T extends DataBaseObject> DBIterator<T> executeQuery(final String menu, final String group,
-            final String name, final Class<T> resultClass, final Map<String, String> values)
+            final String name, final Class<T> resultClass, final Map<String, ?> values)
             throws SQLException, IOException {
         final var request = executeRequest(values, getScriptContent(menu, group, name));
-        return request == null ? null : executeQuery(resultClass, request.sql(), request.timeout());
+        return request == null ? null
+                : request.bound() ? executeQuery(resultClass, request.sql(), request.timeout(), request.parameters())
+                        : executeQuery(resultClass, request.sql(), request.timeout());
     }
 
     /**
@@ -590,6 +702,11 @@ public abstract class ScriptFile {
 
     public abstract DBResultSet executeQuery(String sql, int timeout) throws SQLException;
 
+    protected DBResultSet executeQuery(final String sql, final int timeout, final List<Object> parameters)
+            throws SQLException {
+        throw new java.sql.SQLFeatureNotSupportedException("Bound select requests are not supported by this executor");
+    }
+
     /**
      * Execute query.
      *
@@ -612,6 +729,11 @@ public abstract class ScriptFile {
     public abstract <T extends DataBaseObject> DBIterator<T> executeQuery(Class<T> resultClass, String sql, int timeout)
             throws SQLException;
 
+    protected <T extends DataBaseObject> DBIterator<T> executeQuery(final Class<T> resultClass, final String sql,
+            final int timeout, final List<Object> parameters) throws SQLException {
+        throw new java.sql.SQLFeatureNotSupportedException("Bound entity requests are not supported by this executor");
+    }
+
     /**
      * Execute update.
      *
@@ -631,10 +753,12 @@ public abstract class ScriptFile {
      * @throws java.io.IOException
      *             Signals that an I/O exception has occurred.
      */
-    public int executeUpdate(final String menu, final String group, final String name, final Map<String, String> values)
+    public int executeUpdate(final String menu, final String group, final String name, final Map<String, ?> values)
             throws SQLException, IOException {
         final var request = executeRequest(values, getScriptContent(menu, group, name));
-        return request == null ? 0 : executeUpdate(request.sql(), request.timeout());
+        return request == null ? 0
+                : request.bound() ? executeUpdate(request.sql(), request.timeout(), request.parameters())
+                        : executeUpdate(request.sql(), request.timeout());
     }
 
     /**
@@ -677,6 +801,11 @@ public abstract class ScriptFile {
     }
 
     public abstract int executeUpdate(String sql, int timeout) throws SQLException, IOException;
+
+    protected int executeUpdate(final String sql, final int timeout, final List<Object> parameters)
+            throws SQLException {
+        throw new java.sql.SQLFeatureNotSupportedException("Bound update requests are not supported by this executor");
+    }
 
     /**
      * Gets the value.

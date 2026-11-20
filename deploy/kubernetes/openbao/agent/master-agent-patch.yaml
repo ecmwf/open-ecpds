@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ecpds-master
+spec:
+  template:
+    spec:
+      serviceAccountName: ecpds-master-openbao
+      automountServiceAccountToken: false
+      containers:
+        - name: ecpds-master
+          volumeMounts:
+            - name: openbao-token
+              mountPath: /run/ecpds/openbao
+              readOnly: true
+        - name: openbao-agent
+          image: docker.io/openbao/openbao:2.7.2@sha256:5046911075e137e154ce49ab051502f4ec7cf367d484ae4a4dce665d9b90561f
+          command: ["/usr/bin/bao"]
+          args: ["agent", "-config=/etc/openbao-agent/agent.hcl"]
+          env:
+            - name: BAO_DISABLE_REDIRECTS
+              value: "true"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 100
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: openbao-agent
+              mountPath: /etc/openbao-agent
+              readOnly: true
+            - name: openbao-ca
+              mountPath: /etc/openbao-ca
+              readOnly: true
+            - name: openbao-identity
+              mountPath: /var/run/openbao-identity
+              readOnly: true
+            - name: openbao-token
+              mountPath: /run/ecpds/openbao
+      volumes:
+        - name: openbao-agent
+          configMap:
+            name: ecpds-master-openbao-agent
+        - name: openbao-ca
+          configMap:
+            name: openbao-ca
+        - name: openbao-identity
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: openbao
+                  expirationSeconds: 600
+                  path: token
+        - name: openbao-token
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi

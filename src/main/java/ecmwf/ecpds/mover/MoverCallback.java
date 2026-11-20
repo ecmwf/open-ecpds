@@ -83,6 +83,12 @@ final class MoverCallback implements ProgressHandler, ECtransCallback {
      * address (Live ECPDS Earth - Phase 0).
      */
     private volatile TransferModule _module = null;
+    private java.util.function.Consumer<Boolean> confirmedPasswordDelivery;
+
+    void setConfirmedPasswordDelivery(final java.util.function.Consumer<Boolean> confirmed) {
+        confirmedPasswordDelivery = confirmed;
+        _setup.set(ecmwf.common.ectrans.ECtransOptions.HOST_ECTRANS_CLOSE_ASYNCHRONOUS, false);
+    }
 
     /** The _closed. */
     private final AtomicBoolean _closed = new AtomicBoolean(false);
@@ -149,6 +155,10 @@ final class MoverCallback implements ProgressHandler, ECtransCallback {
     public void executionFinished(final TransferModule module, final boolean successful) {
         try {
             captureWeather(module, successful);
+            if (confirmedPasswordDelivery != null && module != null && module.isSessionClosureConfirmed()
+                    && module.isSessionDispositionCertain() && !module.getAvailable()) {
+                confirmedPasswordDelivery.accept(successful && !_closed.get());
+            }
         } finally {
             trace.finish(_transfer, successful && !_closed.get());
         }

@@ -1,0 +1,3 @@
+# Keep the directory in Git without tracking Mover data.
+*
+!.gitignore

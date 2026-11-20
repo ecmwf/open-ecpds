@@ -83,6 +83,7 @@ import ecmwf.common.technical.ProxySocket;
 import ecmwf.common.technical.ByteSize;
 import ecmwf.common.text.Format;
 import ecmwf.common.ecaccess.FileListElement;
+import ecmwf.common.ecaccess.UserSession.DownloadRange;
 import ecmwf.common.telemetry.TransferTracing;
 import ecmwf.ecpds.master.plugin.ecpds.ECpdsClient;
 import ecmwf.ecpds.master.transfer.AliasesParser;
@@ -418,6 +419,35 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
         return openProxySocketInput(destinationName, source, offset, length, true);
     }
 
+    @Override
+    public List<ProxySocket> getDownloadProxies(final String destinationName, final String transferId,
+            final String etag, final List<DownloadRange> ranges, final boolean storedOnly) throws MasterException {
+        final var destination = getDestination(destinationName);
+        final var transfer = (DataTransfer) getDataTransfer(transferId).clone();
+        if (!destinationName.equals(transfer.getDestinationName())) {
+            throw new MasterException("DataTransfer not found in destination: " + destinationName);
+        }
+        final var file = (DataFile) transfer.getDataFile().clone();
+        if (!DataFileVersion.etag(file).equals(etag)) {
+            throw new MasterException("File version changed while opening the stream");
+        }
+        transfer.setDataFile(file);
+        final var setup = DESTINATION_INCOMING.getECtransSetup(destination.getData());
+        checkDownloadQuota(destinationName, setup);
+        final var rate = setup.getOptionalByteSize(DESTINATION_INCOMING_MAX_BYTES_PER_SEC_FOR_INPUT);
+        try {
+            final var proxies = TransferScheduler.get(transfer, ranges, !storedOnly);
+            rate.ifPresent(limit -> proxies.forEach(proxy -> proxy.setMaxBytesPerSec(limit.size())));
+            return proxies;
+        } catch (final DataBaseException e) {
+            _log.warn(transferId, e);
+            throw new MasterException("DataBase error");
+        } catch (final TransferServerException e) {
+            _log.warn(transferId, e);
+            throw new MasterException("Master error");
+        }
+    }
+
     private ProxySocket openProxySocketInput(final String destinationName, final String source, final long offset,
             final long length, final boolean storedOnly) throws MasterException, IOException {
         final var monitor = new MonitorCall(
@@ -435,19 +465,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
             proxy.addObject(DataTransfer.class.getName(), transfer);
             setup.getOptionalByteSize(DESTINATION_INCOMING_MAX_BYTES_PER_SEC_FOR_INPUT)
                     .ifPresent(maxBytesPerSec -> proxy.setMaxBytesPerSec(maxBytesPerSec.size()));
-            // Check destination download quota
-            final var maxDownloadBytes = setup.getByteSize(DESTINATION_INCOMING_MAX_DOWNLOAD_BYTES).size();
-            final var downloadPeriod = setup.getOptionalDuration(DESTINATION_INCOMING_DOWNLOAD_PERIOD);
-            final var downloadPeriodMs = downloadPeriod.map(Duration::toMillis).orElse(0L);
-            if (maxDownloadBytes > 0 && downloadPeriodMs > 0) {
-                final var used = MasterServer._sumDestinationBytes(destinationName, false, downloadPeriodMs);
-                if (used >= maxDownloadBytes) {
-                    throw new MasterException("Download quota exceeded for destination " + destinationName + " ("
-                            + ByteSize.of(used).toApproximateSize() + " of "
-                            + ByteSize.of(maxDownloadBytes).toApproximateSize() + " in the last "
-                            + Format.formatDuration(downloadPeriodMs) + ")");
-                }
-            }
+            checkDownloadQuota(destinationName, setup);
             return monitor.done(proxy);
         } catch (final DataBaseException e) {
             _log.warn(source, e);
@@ -458,6 +476,22 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
         } catch (final MasterException e) {
             _log.warn(source, e);
             throw e;
+        }
+    }
+
+    private static void checkDownloadQuota(final String destinationName, final ECtransSetup setup)
+            throws MasterException {
+        final var maxDownloadBytes = setup.getByteSize(DESTINATION_INCOMING_MAX_DOWNLOAD_BYTES).size();
+        final var downloadPeriodMs = setup.getOptionalDuration(DESTINATION_INCOMING_DOWNLOAD_PERIOD)
+                .map(Duration::toMillis).orElse(0L);
+        if (maxDownloadBytes > 0 && downloadPeriodMs > 0) {
+            final var used = MasterServer._sumDestinationBytes(destinationName, false, downloadPeriodMs);
+            if (used >= maxDownloadBytes) {
+                throw new MasterException("Download quota exceeded for destination " + destinationName + " ("
+                        + ByteSize.of(used).toApproximateSize() + " of "
+                        + ByteSize.of(maxDownloadBytes).toApproximateSize() + " in the last "
+                        + Format.formatDuration(downloadPeriodMs) + ")");
+            }
         }
     }
 

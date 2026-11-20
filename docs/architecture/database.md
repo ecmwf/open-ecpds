@@ -9,6 +9,9 @@ The catalog reflects the schema defined in
 [`docker/ecpds/database/ecpds.sql`](https://github.com/ecmwf/open-ecpds/blob/master/docker/ecpds/database/ecpds.sql).
 Deployments with site-specific changes may have additional or different tables.
 
+Use `ecpds.sql` to initialize a new MariaDB database. It includes the
+operational event, storage lifecycle and credential rotation tables.
+
 ## Transfers, files and products
 
 | Table | Purpose |
@@ -24,7 +27,7 @@ Deployments with site-specific changes may have additional or different tables.
 | `MONITORING_VALUE` | Timing values used to monitor expected, earliest, latest and predicted product arrival. |
 | `PRODUCT_STATUS` | Current status and timing information for monitored products and cycles. |
 | `PUBLICATION` | Scheduled publication or notification work associated with a transfer. |
-| `MQTT_ACTIVITY` | Master-scoped MQTT publication outcomes and per-Mover broker results for the Activity dashboard, with configurable entry, byte and age limits (24 hours by default) and asynchronous persistence; stored expiry times also govern regular database purge cleanup. |
+| `MQTT_ACTIVITY` | MQTT publication outcomes and per-Mover broker results for the Activity dashboard. |
 | `METADATA_ATTRIBUTE` | Names of metadata attributes that can be attached to data files. |
 | `METADATA_VALUE` | Metadata attribute values associated with individual data files. |
 | `PRODUCT_METADATA` | Product descriptions and tips, optionally scoped by product type. |
@@ -40,6 +43,7 @@ and durable MQTT CloudEvents delivery.
 | `NOTIFICATION_HISTORY_STATE` | Shared history sequence allocation, payload-byte accounting and timestamp state. |
 | `NOTIFICATION_HISTORY_STREAM` | Per-destination sequence counters and removed-history boundaries used for replay gap detection. |
 | `NOTIFICATION_CHECKPOINT` | Named consumer replay positions and acknowledgement timestamps per Data Portal user and destination. |
+| `ACQUISITION_CHECKPOINT` | Replay positions and last inventory times for acquisition Hosts that replicate destinations via Aviso. |
 | `NOTIFICATION_OUTBOX` | MQTT topics and CloudEvents payloads awaiting delivery to Data Mover brokers. |
 | `NOTIFICATION_OUTBOX_STATE` | Shared pending-delivery payload-byte accounting and concurrency state for outbox capacity enforcement. |
 | `NOTIFICATION_OUTBOX_TARGET` | Per-Mover pending deliveries, retry schedules, attempt counts and delivery-claim leases. |
@@ -66,6 +70,23 @@ and durable MQTT CloudEvents delivery.
 | `TRANSFER_SERVER` | Transfer server or Data Mover registrations and their group assignments. |
 | `SCHEDULER_VALUE` | Scheduler-maintained host counters and runtime state. |
 | `COUNTRY` | Country codes and display names used by destination and host records. |
+
+## Host credential rotation
+
+| Table | Purpose |
+|---|---|
+| `HOST_PASSWORD_ROTATION` | Pending vault credential references, staging state and probe results per Host. |
+| `HOST_PASSWORD_PROBE_ATTEMPT` | Credential probe attempt timestamps used to enforce per-Host rate limits. |
+| `HOST_PASSWORD_ACTIVATION` | Credential activation history, including the operator, endpoint and first confirmed delivery. |
+| `HOST_PASSWORD_ACTIVE` | Active and previous vault credential references per Host. |
+| `HOST_PASSWORD_ROTATION_GRANT` | Credential rotation permissions granted to Monitor users for specific destinations. |
+| `HOST_PASSWORD_LEGACY_FENCE` | Per-Host blocks on new configured-credential operations and their drain status. |
+| `HOST_PASSWORD_LEGACY_ADMISSION` | Configured-credential operations admitted before cutover and not yet confirmed closed. |
+| `HOST_PASSWORD_LEGACY_CUTOVER` | Per-Host cutover records linking the staged credential to the approved endpoint and configuration. |
+| `HOST_PASSWORD_LEGACY_ROUTE` | Mover routes enrolled in a cutover and their signed drain receipts. |
+| `HOST_PASSWORD_LEGACY_RECONCILIATION` | Audit records for resolving uncertain cutovers using admission records and drain receipts. |
+| `HOST_PASSWORD_DELIVERY` | Vault-backed transfer dispatches, their assigned Movers and delivery outcomes. |
+| `HOST_PASSWORD_RETIREMENT` | Destruction status of superseded vault credential versions and references to their replacements. |
 
 ## Users, access and API clients
 

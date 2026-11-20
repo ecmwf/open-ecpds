@@ -1,0 +1,23 @@
+#menu "ECpdsBase"
+#name "insertHostPasswordDelivery"
+#group "update"
+#timeout "5"
+#prompt "attemptId;Attempt id;;"
+#bind "attemptId;STRING"
+#prompt "host;Host;;"
+#bind "host;LONG"
+#prompt "reference;Reference;;"
+#bind "reference;STRING"
+#prompt "transfer;Transfer;;"
+#bind "transfer;LONG"
+#prompt "mover;Mover;;"
+#bind "mover;STRING"
+#prompt "key;Key;;"
+#bind "key;STRING"
+#prompt "route;Route;;"
+#bind "route;STRING"
+#prompt "context;Context;;"
+#bind "context;STRING"
+INSERT INTO HOST_PASSWORD_DELIVERY
+  (HPD_ID,HOS_NAME,HPD_REFERENCE,HPD_TRANSFER,HPD_MOVER,HPD_KEY,HPD_ROUTE,HPD_CONTEXT)
+VALUES (:attemptId,:host,:reference,:transfer,:mover,:key,:route,:context)

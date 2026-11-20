@@ -51,6 +51,13 @@ import ecmwf.common.technical.Cnf;
  * The Class RemoteProvider.
  */
 public abstract class RemoteProvider {
+    /**
+     * Optional session admission, retained until the module has actually closed. A tracked session is never pooled.
+     */
+    public java.io.Closeable openTransferSession(final MSUser msuser) throws IOException {
+        return null;
+    }
+
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(RemoteProvider.class);
 

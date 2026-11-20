@@ -1,0 +1,10 @@
+#menu "ECpdsBase"
+#name "getHostPasswordApprovedActive"
+#group "select"
+#timeout "5"
+#prompt "host;Host;;"
+#bind "host;LONG"
+SELECT P.HPA_ACTIVE_REF,A.DES_NAME,A.HPA_ENDPOINT,A.HPA_HOST_CONFIG
+FROM HOST_PASSWORD_ACTIVE P LEFT JOIN HOST_PASSWORD_ACTIVATION A
+  ON A.HPA_REF=P.HPA_ACTIVE_REF AND A.HOS_NAME=P.HOS_NAME
+WHERE P.HOS_NAME=:host FOR UPDATE

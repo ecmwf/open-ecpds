@@ -241,6 +241,16 @@ public class DataTransfer extends DataBaseObject {
     private String traceParent;
     private String traceState;
     private String traceAttemptId;
+    private String passwordDeliveryReceipt;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getPasswordDeliveryReceipt() {
+        return passwordDeliveryReceipt;
+    }
+
+    public synchronized void setPasswordDeliveryReceipt(final String value) {
+        passwordDeliveryReceipt = value;
+    }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getTraceParent() {

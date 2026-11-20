@@ -1,0 +1,7 @@
+*
+!Dockerfile
+!openbao.hcl
+!master-policy.hcl
+!ecpds-openbao-bootstrap.sh
+!ecpds-openbao-issue-token.sh
+!ecpds-openbao-revoke-root.sh

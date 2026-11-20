@@ -1,0 +1,3 @@
+# Never include operator keys, generated TLS material, or application tokens in images.
+openbao/
+compose.openbao.yml

@@ -106,6 +106,47 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
     /** The brokerFactory. */
     private BrokerFactory brokerFactory = null;
 
+    @FunctionalInterface
+    interface ScriptWork<T> {
+        T run(ScriptTransaction transaction) throws SQLException;
+    }
+
+    static final class ScriptTransaction {
+        private final Broker.Transaction transaction;
+        private final ScriptFile scripts;
+        private final String menu;
+
+        ScriptTransaction(final Broker.Transaction transaction, final ScriptFile scripts, final String menu) {
+            this.transaction = transaction;
+            this.scripts = scripts;
+            this.menu = menu;
+        }
+
+        Broker.PreparedQuery prepare(final String name) throws SQLException {
+            return prepare(name, Map.of());
+        }
+
+        Broker.PreparedQuery prepare(final String name, final Map<String, ?> parameters) throws SQLException {
+            try {
+                return scripts.prepare(transaction, menu, name, parameters);
+            } catch (final IOException failure) {
+                throw new SQLException("Database script unavailable: " + name, failure);
+            }
+        }
+
+        int[] executeBatch(final String name, final List<? extends Map<String, ?>> rows) throws SQLException {
+            try {
+                return scripts.executeBatch(transaction, menu, name, rows);
+            } catch (final IOException failure) {
+                throw new SQLException("Database script unavailable: " + name, failure);
+            }
+        }
+    }
+
+    <T> T scriptTransaction(final String menu, final ScriptWork<T> work) {
+        return transaction(current -> work.run(new ScriptTransaction(current, dataFile, menu)));
+    }
+
     /** Database-only work may be retried after a transaction conflict. */
     <T> T transaction(final Broker.TransactionWork<T> work) {
         if (brokerFactory == null) {
@@ -375,6 +416,10 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      * @return the hashtable
      */
     private static Map<String, String> stringArrayToMapWithEscapedSQLValues(final String[] values) {
+        return stringArrayToMap(values, true);
+    }
+
+    private static Map<String, String> stringArrayToMap(final String[] values, final boolean escape) {
         final Map<String, String> hash = new HashMap<>();
         for (final String value : values) {
             final var index = value.indexOf("=");
@@ -382,13 +427,28 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
                 final var key = value.substring(0, index);
                 final var sql = value.substring(index + 1);
                 if (!key.endsWith("-")) {
-                    hash.put(key, escapeSql(sql));
+                    hash.put(key, escape ? escapeSql(sql) : sql);
                 } else {
                     hash.put(value.substring(0, index - 1), sql);
                 }
             }
         }
         return hash;
+    }
+
+    private Map<String, String> scriptValues(final String menu, final String group, final String name,
+            final String[] values) throws IOException {
+        return stringArrayToMap(values, dataFile.bindingNames(menu, group, name).isEmpty());
+    }
+
+    private Map<String, ?> scriptValues(final String menu, final String group, final String name,
+            final Map<String, ?> values) throws IOException {
+        if (!dataFile.bindingNames(menu, group, name).isEmpty()) {
+            return values;
+        }
+        final Map<String, Object> escaped = new HashMap<>();
+        values.forEach((key, value) -> escaped.put(key, value == null ? null : escapeSql(value.toString())));
+        return escaped;
     }
 
     /**
@@ -820,7 +880,12 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      */
     protected DBResultSet executeSelect(final String menu, final String name, final String[] values)
             throws SQLException, IOException {
-        return dataFile.executeQuery(menu, "select", name, stringArrayToMapWithEscapedSQLValues(values));
+        return dataFile.executeQuery(menu, "select", name, scriptValues(menu, "select", name, values));
+    }
+
+    protected DBResultSet executeSelect(final String menu, final String name, final Map<String, ?> values)
+            throws SQLException, IOException {
+        return dataFile.executeQuery(menu, "select", name, scriptValues(menu, "select", name, values));
     }
 
     /**
@@ -872,7 +937,12 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
 
     protected <T extends DataBaseObject> DBIterator<T> executeQuery(final String menu, final String name,
             final Class<T> resultClass, final String[] values) throws SQLException, IOException {
-        return dataFile.executeQuery(menu, "query", name, resultClass, stringArrayToMapWithEscapedSQLValues(values));
+        return dataFile.executeQuery(menu, "query", name, resultClass, scriptValues(menu, "query", name, values));
+    }
+
+    protected <T extends DataBaseObject> DBIterator<T> executeQuery(final String menu, final String name,
+            final Class<T> resultClass, final Map<String, ?> values) throws SQLException, IOException {
+        return dataFile.executeQuery(menu, "query", name, resultClass, scriptValues(menu, "query", name, values));
     }
 
     /**
@@ -915,7 +985,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      */
     protected int executeCountAsInt(final String menu, final String name, final String[] values)
             throws SQLException, IOException {
-        try (var rs = dataFile.executeQuery(menu, "count", name, stringArrayToMapWithEscapedSQLValues(values))) {
+        try (var rs = dataFile.executeQuery(menu, "count", name, scriptValues(menu, "count", name, values))) {
             return rs.next() ? rs.getInt(1) : -1;
         }
     }
@@ -960,7 +1030,7 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      */
     protected long executeCountAsLong(final String menu, final String name, final String[] values)
             throws SQLException, IOException {
-        try (var rs = dataFile.executeQuery(menu, "count", name, stringArrayToMapWithEscapedSQLValues(values))) {
+        try (var rs = dataFile.executeQuery(menu, "count", name, scriptValues(menu, "count", name, values))) {
             return rs.next() ? rs.getLong(1) : -1;
         }
     }
@@ -1003,7 +1073,12 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
      */
     protected int executeUpdate(final String menu, final String name, final String[] values)
             throws SQLException, IOException {
-        return dataFile.executeUpdate(menu, "update", name, stringArrayToMapWithEscapedSQLValues(values));
+        return dataFile.executeUpdate(menu, "update", name, scriptValues(menu, "update", name, values));
+    }
+
+    protected int executeUpdate(final String menu, final String name, final Map<String, ?> values)
+            throws SQLException, IOException {
+        return dataFile.executeUpdate(menu, "update", name, scriptValues(menu, "update", name, values));
     }
 
     /**
@@ -1640,6 +1715,23 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
             return executeSelect(sql, timeout);
         }
 
+        @Override
+        protected DBResultSet executeQuery(final String sql, final int timeout, final List<Object> parameters)
+                throws SQLException {
+            try (var broker = brokerFactory.getBroker()) {
+                final var start = System.currentTimeMillis();
+                final var result = new DBResultSet(broker, sql, timeout, parameters.toArray());
+                logSqlRequest(sql, start, System.currentTimeMillis(), result.getFoundRows());
+                return result;
+            } catch (final SQLException failure) {
+                error("executeQuery", sql, failure);
+                throw failure;
+            } catch (final Exception failure) {
+                error("executeQuery", sql, failure);
+                throw new SQLException("Database not available");
+            }
+        }
+
         /**
          * Execute query.
          *
@@ -1668,6 +1760,37 @@ public class DataBase extends DataGet implements MBeanService, Closeable {
                 return result;
             } catch (final Exception e) {
                 error("executeQuery", sql, e);
+                throw new SQLException("Database not available");
+            }
+        }
+
+        @Override
+        protected <T extends DataBaseObject> DBIterator<T> executeQuery(final Class<T> resultClass, final String sql,
+                final int timeout, final List<Object> parameters) throws SQLException {
+            try (var broker = brokerFactory.getBroker()) {
+                final var start = System.currentTimeMillis();
+                final var result = new DBIterator<>(broker, resultClass, sql, timeout, parameters.toArray());
+                logSqlRequest(sql, start, System.currentTimeMillis(), -1);
+                return result;
+            } catch (final Exception failure) {
+                error("executeQuery", sql, failure);
+                throw new SQLException("Database not available");
+            }
+        }
+
+        @Override
+        protected int executeUpdate(final String sql, final int timeout, final List<Object> parameters)
+                throws SQLException {
+            try (var broker = brokerFactory.getBroker()) {
+                final var start = System.currentTimeMillis();
+                final var changed = broker.executeUpdate(sql, timeout, parameters.toArray());
+                logSqlRequest(sql, start, System.currentTimeMillis(), changed);
+                return changed;
+            } catch (final SQLException failure) {
+                error("executeUpdate", sql, failure);
+                throw failure;
+            } catch (final Exception failure) {
+                error("executeUpdate", sql, failure);
                 throw new SQLException("Database not available");
             }
         }

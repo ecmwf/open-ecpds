@@ -35,8 +35,116 @@ docker run -d \
   ghcr.io/ecmwf/open-ecpds/standalone:latest
 ```
 
-The database initialises automatically on first start. The `/data` volume persists
-everything across restarts. Wait about 30 seconds for all services to become available.
+Start with an empty `/data` volume to initialise the database. Standalone does not
+migrate existing databases. The volume persists everything across ordinary
+restarts. Wait about 30 seconds for all services to become available.
+
+## Optional OpenBao credential rotation
+
+Standalone uses configured Host credentials by default and does not require OpenBao.
+Enable OpenBao if you want to use self-service credential rotation.
+It uses a separate OpenBao container with persistent Raft storage and
+TLS; OpenBao has no published host port and is reachable only over the Compose
+network. The standalone Master runs under its own Linux identity. Mover and
+Monitor use separate identities; Hawtio shares Monitor's identity to access its
+TLS keystore. None can read the Master token or inspect
+the Master process environment/file descriptors. The root-owned supervisor and
+container administrator remain trusted.
+
+The standalone authentication flow uses local-password reauthentication only;
+standalone does not provide the identity-provider MFA option. Enabling this
+backend does **not** enable credential rotation by itself. Configure the
+[rotation prerequisites and feature settings](../deployment/kubernetes.md#credential-rotation-enablement)
+on the Master, Monitor and participating Movers before enabling the action.
+
+1. Build the optional OpenBao image and standalone image. From the repository's
+   `docker` directory, stage the normal standalone inputs and build
+   `open-ecpds/openbao:2.7.2` and the desired standalone image tag:
+
+   ```bash
+   make get-rpms
+   make build-openbao ARCH=amd64
+   make build-sa ARCH=amd64
+   ```
+
+   Use the local standalone tag produced by `build-sa` in `STANDALONE_IMAGE`,
+   or select the matching GHCR tag. Use a Java 25 base image when building
+   the standalone image from the OpenECPDS RPMs.
+2. From `docker/ecpds/standalone`, start the vault with the local launcher:
+
+   ```bash
+   bash openbao/standalone-openbao-start.sh
+   ```
+
+   The launcher uses OpenSSL to generate the development CA and server certificate
+   on first use and may prompt for `sudo` to set the server key's ownership.
+   It reuses existing `tls.crt`, `tls.key`, and `ca.crt` in `openbao/tls/` without
+   replacing them. Keep `openbao/operator/ca.key` offline and out of the
+   containers. For a shared environment, supply a certificate issued by the site's
+   trusted CA and grant the vault's UID 100 read access to the private key.
+3. Initialize the vault once. Protect the initialization output
+   as recovery material; split and store the five key shares separately offline.
+   Never put these keys or the initial root token in Compose environment variables,
+   command-line arguments, image layers, or the Raft volume.
+
+   ```bash
+   umask 077
+   ./openbao/standalone-openbao-control.sh init > openbao/operator/init-response.json
+   ```
+
+   Enter three distinct shares when prompted by `unseal` (run it three times):
+
+   ```bash
+   ./openbao/standalone-openbao-control.sh unseal
+   ```
+
+4. Configure the KV v2 mount and Master policy, then issue a 30-day,
+   non-renewable Master token. Both commands prompt for the root token without
+   echoing it. Store the generated application token with the protected helper:
+
+   ```bash
+   ./openbao/standalone-openbao-control.sh bootstrap
+   ./openbao/standalone-openbao-control.sh issue-token
+   ./openbao/standalone-openbao-save-token.sh
+   ./openbao/standalone-openbao-control.sh revoke-root
+   ```
+
+   The token file is created mode `0600`; keep it outside version control and
+   replace it before expiry. Revoking the initial root token leaves only the
+   least-privilege application token for runtime access. After separately storing
+   the unseal shares, remove the local initialization response. To replace the
+   application token, first use the recovery shares to generate a temporary root
+   token, issue the replacement, and revoke that root token. Remove the old token
+   file, use the helper to save its replacement, then recreate the container to
+   remount the new file and copy it into the Master-only `/run` path:
+
+   ```bash
+   docker compose -f compose.openbao.yml up -d --force-recreate standalone
+   ```
+5. Start the standalone service using the opt-in Compose file:
+
+   ```bash
+   STANDALONE_IMAGE=ghcr.io/ecmwf/open-ecpds/standalone:latest \
+     docker compose -f compose.openbao.yml up -d standalone
+   ```
+
+The entrypoint installs only the public CA certificate into the Java trust store
+and copies the protected token to a `0600` runtime file owned by the Master.
+Ordinary `docker run` startup does not require OpenBao. OpenBao data survives restarts
+and `docker compose down`; do not use `down -v` unless you intend to erase it.
+After a host/container restart, OpenBao remains sealed and requires the operator
+to enter the threshold of offline shares again. There is deliberately no
+auto-unseal key stored beside the encrypted Raft data.
+
+If the initial root token is lost while the recovery shares remain available,
+use OpenBao's `operator generate-root` workflow inside the vault container with
+the required offline shares. If the shares are lost, restore both an encrypted
+Raft backup and its separately protected recovery material; the data volume
+alone is not a recovery backup. Revoke expired/replaced application tokens
+through OpenBao after confirming the Master is using the replacement.
+
+For automated regression commands, see
+[Credential rotation checks](../contributing.md#credential-rotation-checks).
 
 !!! note "Self-signed certificate"
     The container uses a self-signed TLS certificate. Accept the browser security
@@ -441,22 +549,33 @@ Monitor** so uploaded files are available in HOLD without outbound dissemination
 In one terminal, connect before uploading:
 
 ```bash
-curl --fail-with-body -k -N --user test \
+curl --fail-with-body -k -N -i --user test \
   -H 'Content-Type: application/json' \
   -d '{"event_type":"file_available","identifier":{"destination":"aviso_demo"}}' \
   https://localhost:7443/ecpds/aviso/api/v1/watch
 ```
 
-Enter the standalone Data Portal password `test2021`. Wait for the
-`connection_established` message before proceeding. A watch without a cursor
+Enter the standalone Data Portal password `test2021`. The `-i` flag shows the
+response headers. Once you see **HTTP 200** with `Content-Type: text/event-stream`,
+leave the watch running and continue to the upload. The stream normally starts
+with a `live-notification` frame whose JSON `type` is `connection_established`,
+but you don't need to wait for that housekeeping message. If file notifications
+are already arriving, the watch is working even if you don't see it.
+
+If you see neither response headers nor events, don't assume the watch is
+connected. Try the standalone endpoint directly if you're going through a
+reverse proxy, or continue with the upload and use `from_date` in step 3 to
+verify it by replay instead. A watch without a cursor
 receives new events only. `-k` is for the evaluation container's self-signed
 certificate; use a trusted certificate in production.
 
 ### 2. Upload a file
 
-In another terminal:
+In another terminal, note the UTC timestamp printed before uploading. You can
+use it for replay if you don't receive a live event.
 
 ```bash
+date -u +%Y-%m-%dT%H:%M:%SZ
 printf 'Hello from the standalone Aviso demo!\n' > aviso-demo.txt
 sftp -P 7022 test@localhost
 ```
@@ -491,9 +610,10 @@ curl --fail-with-body -k -N --user test \
 ```
 
 Replay includes the starting event, emits `replay` frames, and closes when
-complete. If the watch was not connected during upload, use a `from_date` UTC
-timestamp preceding the upload instead of `from_id`. Access uses the Data Portal
-user's destination and file permissions, not MQTT topic permissions.
+complete. If you didn't receive a live event ID, replace the `from_id` field
+with `from_date` and use the UTC timestamp you noted before uploading, in
+`YYYY-MM-DDTHH:MM:SSZ` format. Access uses the Data Portal user's destination
+and file permissions, not MQTT topic permissions.
 
 Replace `localhost` with the standalone host reachable from your terminal; from
 the development container this may be `ecpds-mover`. New database initializations

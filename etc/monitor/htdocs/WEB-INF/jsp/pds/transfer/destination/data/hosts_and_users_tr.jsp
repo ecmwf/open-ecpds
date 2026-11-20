@@ -1,6 +1,15 @@
 <%@ taglib uri="/WEB-INF/tld/bean-search.tld" prefix="content"%>
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
+<%@ page import="ecmwf.common.technical.Cnf" %>
+
+<c:if test='<%= request.isSecure() && Cnf.at("HostPasswordRotation", "monitorEnabled", false) %>'>
+	<auth:if basePathKey="destination.basepath" paths="/operations/${destinationDetailActionForm.id}/">
+		<auth:then>
+			<c:set var="ecpdsCanOpenPendingPassword" value="true" scope="page" />
+		</auth:then>
+	</auth:if>
+</c:if>
 
 <auth:if basePathKey="destination.basepath"
 	paths="/operations/${destinationDetailActionForm.id}/activateHost/">
@@ -93,6 +102,11 @@
 							</c:if>
 							<c:set var="connectionLimitHost" value="${disseminationHost.name}" />
 							<%@ include file="host_connection_limit.jsp" %>
+							<c:if test="${ecpdsCanOpenPendingPassword && disseminationHost.name.active}">
+								<button type="button" class="btn btn-sm btn-outline-secondary py-0"
+									data-bs-toggle="modal" data-bs-target="#pendingHostPasswordModal"
+									data-rotation-host="<c:out value="${disseminationHost.name.name}" />">Pending password</button>
+							</c:if>
 						</div>
 						<c:if test="${not empty disseminationHost.name.host}"><div class="host-addr">${disseminationHost.name.host}</div></c:if>
 						<div class="host-pills host-live-status"></div>
@@ -129,6 +143,9 @@
 			</c:forEach>
 			</tbody>
 		</table>
+		<c:if test="${ecpdsCanOpenPendingPassword}">
+			<%@ include file="pending_host_password.jsp" %>
+		</c:if>
 		<script>
 		$(document).ready(function() {
 			$('#disseminationHostsTable').DataTable({

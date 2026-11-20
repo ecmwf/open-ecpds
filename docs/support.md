@@ -38,7 +38,6 @@ via Maven. The versions used include:
 | Oracle GraalVM | 25.0.5.1 |
 | Maven | 3.9.9 |
 | Docker | 29.2.1 |
-| Kompose | 1.37.0 |
 | Kubectl | 1.37.2 |
 | GeoIP | GeoLite2-City |
 

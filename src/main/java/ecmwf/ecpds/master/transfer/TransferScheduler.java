@@ -85,6 +85,7 @@ import ecmwf.common.database.Host;
 import ecmwf.common.database.SchedulerValue;
 import ecmwf.common.database.TransferServer;
 import ecmwf.common.ecaccess.ECaccessServer;
+import ecmwf.common.ecaccess.UserSession.DownloadRange;
 import ecmwf.common.ecaccess.MBeanRepository;
 import ecmwf.common.ecaccess.MBeanScheduler;
 import ecmwf.common.ecaccess.StarterServer;
@@ -952,9 +953,14 @@ public final class TransferScheduler extends MBeanScheduler {
                     throw new MasterException("DataMover " + moverName + " not available");
                 }
                 // Execute the put on the data mover!
-                final var result = TransferManagement.put(moverName, mover, hostsForSource, transfer);
+                final var pinned = MASTER.putPinnedPasswordIfActive(moverName, mover, hostsForSource, transfer);
+                final var result = pinned != null ? pinned
+                        : TransferManagement.put(moverName, mover, hostsForSource, transfer);
                 // Update the MoverName on the local DataTransfer!
                 transfer.setMoverName(result.getMoverName());
+            } catch (final MasterServer.PinnedPasswordDispatchUnconfirmed e) {
+                trace.failed();
+                throw e;
             } catch (SourceNotAvailableException | MasterException | ECtransException | DirectoryException
                     | DataBaseException | IOException e) {
                 _log.warn("Transfering DataTransfer {}: {}", transfer.getId(), e.getMessage());
@@ -1072,12 +1078,41 @@ public final class TransferScheduler extends MBeanScheduler {
     /** Version-pinned portal retrieval excludes the unversioned original-source fallback. */
     public static ProxySocket get(final DataTransfer transfer, final long remotePosn, final long length,
             final boolean allowOriginalSource) throws DataBaseException, MasterException, TransferServerException {
+        return get(transfer, remotePosn, length, allowOriginalSource, retrievalOrder(transfer));
+    }
+
+    private static List<TransferServer> retrievalOrder(final DataTransfer transfer)
+            throws DataBaseException, TransferServerException {
         final var dataFile = transfer.getDataFile();
         final var provider = new TransferServerProvider("get", dataFile.getTransferGroupName(),
                 transfer.getDestinationName(), dataFile.getSize(), transfer.getTransferServer(),
                 dataFile.getFileSystem());
-        final var servers = MASTER.getStorageLifecycle().retrievalOrder(transfer,
-                provider.getTransferServersByLeastActivity());
+        return MASTER.getStorageLifecycle().retrievalOrder(transfer, provider.getTransferServersByLeastActivity());
+    }
+
+    public static List<ProxySocket> get(final DataTransfer transfer, final List<DownloadRange> ranges,
+            final boolean allowOriginalSource) throws DataBaseException, MasterException, TransferServerException {
+        final var servers = retrievalOrder(transfer);
+        final var proxies = new ArrayList<ProxySocket>(ranges.size());
+        try {
+            for (final var range : ranges) {
+                // Routing can mutate the transfer; each range must start with the same original state.
+                final var routed = (DataTransfer) transfer.clone();
+                final var proxy = get(routed, range.offset(), range.length(), allowOriginalSource, servers);
+                proxies.add(proxy);
+                proxy.addObject(DataTransfer.class.getName(), routed);
+            }
+            return proxies;
+        } catch (final DataBaseException | MasterException | TransferServerException | RuntimeException e) {
+            proxies.forEach(ProxySocket::close);
+            throw e;
+        }
+    }
+
+    private static ProxySocket get(final DataTransfer transfer, final long remotePosn, final long length,
+            final boolean allowOriginalSource, final List<TransferServer> servers)
+            throws DataBaseException, MasterException, TransferServerException {
+        final var dataFile = transfer.getDataFile();
         final var count = servers.size();
         MasterException exception = null;
         for (var i = 0; i < count; i++) {

@@ -165,6 +165,32 @@ require the local password or TOTP code. Enforce required MFA at the identity
 provider. Existing local/TOTP/certificate login methods remain available; this
 feature does not implement an SSO-only access policy.
 
+## Credential rotation and fresh MFA
+
+On the Master, `[HostPasswordRotation] reauthentication` selects the
+activation policy; it does not enable credential rotation by itself.
+Configure the [feature prerequisites](../deployment/kubernetes.md#credential-rotation-enablement)
+separately. `LOCAL_PASSWORD` (the default, including for
+standalone) requires re-entry of an existing local Monitor password from an
+origin allowed by `Server.allowPasswordOn`, without an identity provider.
+`FRESH_MFA` opts in to fresh identity-provider MFA and never falls back to
+local-password-only rotation if MFA fails or is unavailable. An unrecognized
+policy prevents rotation reauthentication.
+
+The OIDC step-up uses a separate HTTPS callback (`freshMfaRedirectUri`)
+and requires an exact identity-provider MFA assurance value (`freshMfaAcr`).
+Register that exact callback URI with the identity provider. The issuer must
+guarantee that this assurance value means a fresh MFA ceremony when the
+client requests `prompt=login` and `max_age=0`; setting a different
+authentication timestamp without rerunning MFA does not meet the activation
+requirements. Configure explicit issuer/subject mappings for accounts using rotation;
+the dynamic user-ID claim does not authorize rotation. An active Monitor
+account without a local password can use fresh identity-provider MFA without
+creating one. Accounts with a local password must also re-enter it. Both
+policies require an active account, Destination Operations access, the separate
+rotation grant for the destination, and a fresh successful probe of the
+pending credential before activation.
+
 ## Browser flow and session behavior
 
 The login page adds a button only when the Master reports an active interactive

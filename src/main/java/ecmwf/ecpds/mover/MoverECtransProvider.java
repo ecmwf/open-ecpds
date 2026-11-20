@@ -59,6 +59,7 @@ final class MoverECtransProvider extends ECtransProvider {
 
     /** The _set dir. */
     private final boolean _setDir;
+    private final boolean pinnedPassword;
 
     /**
      * Instantiates a new mover provider.
@@ -79,11 +80,15 @@ final class MoverECtransProvider extends ECtransProvider {
      *            the set dir
      */
     MoverECtransProvider(final MoverServer _mover, final GenericRepository repository, final boolean setDir) {
-        this._mover = _mover;
-        super();
+        this(_mover, repository, setDir, false);
+    }
 
+    MoverECtransProvider(final MoverServer _mover, final GenericRepository repository, final boolean setDir,
+            final boolean pinnedPassword) {
+        this._mover = _mover;
         _repository = repository;
         _setDir = setDir;
+        this.pinnedPassword = pinnedPassword;
     }
 
     /**
@@ -94,6 +99,11 @@ final class MoverECtransProvider extends ECtransProvider {
     @Override
     public String getRoot() {
         return _mover.getRoot();
+    }
+
+    @Override
+    public java.io.Closeable openTransferSession(final MSUser msuser) throws IOException {
+        return pinnedPassword || _mover.legacySessions == null ? null : _mover.legacySessions.admit(msuser.getName());
     }
 
     /**
@@ -249,7 +259,7 @@ final class MoverECtransProvider extends ECtransProvider {
         var hostName = host.getHost();
         // Do we have a host selector to find an alternative host-name/IP?
         final var hostSelector = setup.getString(HOST_ECTRANS_HOST_SELECTOR);
-        if (isNotEmpty(hostSelector)) {
+        if (!pinnedPassword && isNotEmpty(hostSelector)) {
             try {
                 final var sb = new StringBuilder(hostSelector);
                 Format.replaceAll(sb, "$mover", getRoot());
@@ -264,7 +274,8 @@ final class MoverECtransProvider extends ECtransProvider {
                 throw new ECtransException("Could not resolve host field (" + e.getMessage() + ")");
             }
         }
-        if (!setup.getBoolean(HOST_ECTRANS_USEDNSNAME) && hostName != null && hostName.indexOf("$") == -1) {
+        if (!pinnedPassword && !setup.getBoolean(HOST_ECTRANS_USEDNSNAME) && hostName != null
+                && hostName.indexOf("$") == -1) {
             // The host name is static (not using parameters) so we can
             // process its IP address
             final var hostLocation = host.getHostLocation();
@@ -318,7 +329,9 @@ final class MoverECtransProvider extends ECtransProvider {
         msuser.setECUser(host.getECUser());
         msuser.setHost(hostName);
         msuser.setLogin(host.getLogin());
-        msuser.setPasswd(host.getPasswd());
+        if (!pinnedPassword) {
+            msuser.setPasswd(host.getPasswd());
+        }
         return msuser;
     }
 

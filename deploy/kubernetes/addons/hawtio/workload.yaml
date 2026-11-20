@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hawtio
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: hawtio
+spec:
+  selector:
+    app.kubernetes.io/name: hawtio
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hawtio
+  labels: &id001
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: hawtio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hawtio
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: ecpds-hawtio
+        image: open-ecpds/hawtio:latest
+        env:
+        - name: HAWTIO_USER
+          valueFrom:
+            secretKeyRef:
+              name: hawtio-credentials
+              key: HAWTIO_USER
+        - name: HAWTIO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hawtio-credentials
+              key: HAWTIO_PASSWORD
+        - name: HAWTIO_PRESET_CONNECTIONS
+          value: master=http://ecpds-master-jolokia:2062/jolokia, mover=http://ecpds-mover-jolokia:4062/jolokia,
+            monitor=http://ecpds-monitor-jolokia:3062/jolokia
+        - name: JAVA_OPTS
+          value: -Dhawtio.proxyAllowlist=ecpds-master-jolokia,ecpds-monitor-jolokia,ecpds-mover-jolokia
+        ports:
+        - name: http
+          containerPort: 8080
+        volumeMounts:
+        - name: etc-ecpds-hawtio
+          mountPath: /etc/ecpds
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        startupProbe:
+          tcpSocket:
+            port: http
+          timeoutSeconds: 3
+          periodSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          tcpSocket:
+            port: http
+          timeoutSeconds: 3
+          periodSeconds: 10
+      volumes:
+      - name: etc-ecpds-hawtio
+        persistentVolumeClaim:
+          claimName: etc-ecpds-hawtio
+  strategy:
+    type: Recreate

@@ -159,7 +159,7 @@ public final class StorageLifecycleScheduler extends MBeanScheduler {
         } catch (final Exception e) {
             ready = false;
             errors.incrementAndGet();
-            error = "Storage lifecycle suspended; check storage-lifecycle-runtime.sql: " + e.getMessage();
+            error = "Storage lifecycle suspended; check the storage lifecycle schema: " + e.getMessage();
             LOG.error(error, e);
         }
         return NEXT_STEP_DELAY;

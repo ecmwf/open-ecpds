@@ -1,0 +1,16 @@
+#menu "ECpdsBase"
+#name "lockHostPasswordDueRetirement"
+#group "select"
+#timeout "5"
+#prompt "host;Host;;"
+#bind "host;LONG"
+#prompt "successor;Successor;;"
+#bind "successor;STRING"
+#prompt "reference;Reference;;"
+#bind "reference;STRING"
+SELECT A.HOS_NAME FROM HOST_PASSWORD_ACTIVE A
+JOIN HOST_PASSWORD_ACTIVATION S ON S.HPA_REF=A.HPA_ACTIVE_REF
+WHERE A.HOS_NAME=:host AND A.HPA_ACTIVE_REF=:successor AND A.HPA_PREVIOUS_REF=:reference
+  AND S.HPA_FIRST_SUCCESS_AT IS NOT NULL AND S.HPA_RETIRE_GRACE_SECONDS BETWEEN 3600 AND 2592000
+  AND TIMESTAMPADD(SECOND,S.HPA_RETIRE_GRACE_SECONDS,S.HPA_FIRST_SUCCESS_AT)<=CURRENT_TIMESTAMP(6)
+FOR UPDATE

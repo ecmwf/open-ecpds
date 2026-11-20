@@ -1,0 +1,21 @@
+#menu "ECpdsBase"
+#name "updateHostPasswordLegacyEvidence"
+#group "update"
+#timeout "5"
+#prompt "nonce;Nonce;;"
+#bind "nonce;STRING"
+#prompt "receipt;Receipt;;"
+#bind "receipt;STRING"
+#prompt "sessions;Sessions;;"
+#bind "sessions;INTEGER"
+#prompt "host;Host;;"
+#bind "host;LONG"
+#prompt "routeId;Route id;;"
+#bind "routeId;STRING"
+#prompt "incarnation;Incarnation;;"
+#bind "incarnation;STRING"
+#prompt "key;Key;;"
+#bind "key;STRING"
+UPDATE HOST_PASSWORD_LEGACY_ROUTE SET HLR_NONCE=:nonce,HLR_RECEIPT=:receipt,HLR_SESSIONS=:sessions,
+  HLR_SEEN_AT=CURRENT_TIMESTAMP(6)
+WHERE HOS_NAME=:host AND HLR_ID=:routeId AND HLR_INCARNATION=:incarnation AND HLR_KEY=:key

@@ -1138,14 +1138,18 @@ public final class MoverProvider extends NativeAuthenticationProvider {
          */
         private FileListElement _getFileListElement(final FtpURL url, final String path)
                 throws EccmdException, IOException {
-            var fileListElement = _fileListElementCache.retrieve(path);
+            return _getFileListElement(url, path, true);
+        }
+
+        private FileListElement _getFileListElement(final FtpURL url, final String path, final boolean cache)
+                throws EccmdException, IOException {
+            var fileListElement = cache ? _fileListElementCache.retrieve(path) : null;
             if (fileListElement != null) {
                 return fileListElement;
             }
             fileListElement = new FileListElement();
             fileListElement.setRight("drwxr-x---");
             String rootdir = null;
-            var cache = true;
             switch (url.getType()) {
             case FtpURL.TYPE_BY_DATA:
                 switch (url.countTokens()) {
@@ -1171,6 +1175,31 @@ public final class MoverProvider extends NativeAuthenticationProvider {
                 _fileListElementCache.put(path, fileListElement, _cacheTimeout);
             }
             return fileListElement;
+        }
+
+        @Override
+        public DownloadFile prepareDownload(final String source) throws EccmdException, IOException {
+            final var element = _getFileListElement(new FtpURL(_defaultDestination, source), source, false);
+            if (element.isDirectory()) {
+                return new DownloadFile(element, null);
+            }
+            _profile.checkPermission("get", source);
+            final var url = new FtpURL(_defaultDestination, source);
+            final var file = _getDataElement(url.nextElement(), url.nextElements(), "");
+            final var destination = file._destination.getName();
+            return new DownloadFile(element, (ranges, storedOnly) -> {
+                try {
+                    final var proxies = _mover.getDataFileAccessInterface().getDownloadProxies(destination,
+                            element.getComment(), element.getETag(), ranges, storedOnly);
+                    for (final var proxy : proxies) {
+                        proxy.addObject(FileElement.class.getName(), file);
+                        proxy.addObject(IncomingProfile.class.getName(), _profile);
+                    }
+                    return proxies;
+                } catch (final MasterException e) {
+                    throw new EccmdException(e.getMessage());
+                }
+            });
         }
 
         /**
@@ -1663,6 +1692,13 @@ public final class MoverProvider extends NativeAuthenticationProvider {
             @Override
             public FileListElement set(final FileListElement element) throws EccmdException, IOException {
                 final var fle = super.set(_element = element);
+                if (fle == null) {
+                    return null;
+                }
+                if (fle.getETag() != null) {
+                    element.setFileVersion(fle.getDestination(), fle.getTarget(), fle.getDataFileId(),
+                            fle.getFileInstance(), fle.getETag());
+                }
                 // If the name is given by its DataTransferId then lets replace it by its real
                 // name returned from the Master Server
                 element.setName(_getDestinationRootDir(_destination) + "/"

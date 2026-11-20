@@ -1,0 +1,231 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecpds-master
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: ecpds-master
+spec:
+  selector:
+    app.kubernetes.io/name: ecpds-master
+  ports:
+  - name: ftp
+    port: 2021
+    targetPort: 2021
+  - name: pasv-60000
+    port: 60000
+    targetPort: 60000
+  - name: pasv-60001
+    port: 60001
+    targetPort: 60001
+  - name: pasv-60002
+    port: 60002
+    targetPort: 60002
+  - name: pasv-60003
+    port: 60003
+    targetPort: 60003
+  - name: pasv-60004
+    port: 60004
+    targetPort: 60004
+  - name: pasv-60005
+    port: 60005
+    targetPort: 60005
+  - name: pasv-60006
+    port: 60006
+    targetPort: 60006
+  - name: pasv-60007
+    port: 60007
+    targetPort: 60007
+  - name: pasv-60008
+    port: 60008
+    targetPort: 60008
+  - name: pasv-60009
+    port: 60009
+    targetPort: 60009
+  - name: cli
+    port: 2640
+    targetPort: 2640
+  - name: rmi
+    port: 2600
+    targetPort: 2600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecpds-master-pods
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: ecpds-master
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: ecpds-master
+  ports:
+  - name: rmi
+    port: 2600
+    targetPort: 2600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecpds-master-jolokia
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: ecpds-master
+spec:
+  selector:
+    app.kubernetes.io/name: ecpds-master
+  ports:
+  - name: jolokia
+    port: 2062
+    targetPort: jolokia
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ecpds-master
+  labels: &id001
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: ecpds-master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ecpds-master
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: ecpds-master
+        image: open-ecpds/master:latest
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: ALLOCATED_MEMORY
+          value: 1G
+        - name: EXTERNAL_ADDRESS
+          value: 0.0.0.0
+        - name: INTERNAL_ADDRESS
+          value: $(POD_NAME).ecpds-master-pods
+        - name: PORT_CALLBACK
+          value: '2600'
+        - name: PORT_ECPDS
+          value: '2640'
+        - name: PORT_FTP
+          value: '2021'
+        - name: JOLOKIA_PORT
+          value: '2062'
+        - name: JOLOKIA_HOST
+          value: 0.0.0.0
+        - name: JOLOKIA_USER
+          valueFrom:
+            secretKeyRef:
+              name: ecpds-master-credentials
+              key: JOLOKIA_USER
+        - name: JOLOKIA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecpds-master-credentials
+              key: JOLOKIA_PASSWORD
+        - name: CLI_SHARED_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: ecpds-master-credentials
+              key: CLI_SHARED_SECRET
+        - name: DATABASE_ALIAS
+          value: sequential://ecpds-database:3309/ecpds
+        - name: DATABASE_MIN_SPOOL_SIZE
+          value: '5'
+        - name: DATABASE_MAX_SPOOL_SIZE
+          value: '50'
+        - name: LOG_ROLLOVER_SIZE_MAX
+          value: 100MB
+        - name: LOG_ROLLOVER_SIZE_KEEP
+          value: '20'
+        - name: LOG_ROLLOVER_DATE_PATTERN
+          value: dd-MM-yyyy
+        - name: LOG_ROLLOVER_DATE_KEEP
+          value: 10d
+        - name: LOG_LEVEL
+          value: debug
+        - name: METADATA_MISSING_CONTACTS_MAIL
+          value: ''
+        - name: SMTP_HOST
+          value: ''
+        - name: SMTP_FROM
+          value: ''
+        - name: OPSVIEW_HOST
+          value: ''
+        - name: RETRIEVAL_MAX_SPOOL_SIZE
+          value: '50'
+        ports:
+        - name: ftp
+          containerPort: 2021
+        - name: pasv-60000
+          containerPort: 60000
+        - name: pasv-60001
+          containerPort: 60001
+        - name: pasv-60002
+          containerPort: 60002
+        - name: pasv-60003
+          containerPort: 60003
+        - name: pasv-60004
+          containerPort: 60004
+        - name: pasv-60005
+          containerPort: 60005
+        - name: pasv-60006
+          containerPort: 60006
+        - name: pasv-60007
+          containerPort: 60007
+        - name: pasv-60008
+          containerPort: 60008
+        - name: pasv-60009
+          containerPort: 60009
+        - name: cli
+          containerPort: 2640
+        - name: rmi
+          containerPort: 2600
+        - name: jolokia
+          containerPort: 2062
+        volumeMounts:
+        - name: var-log-ecpds-master
+          mountPath: /var/log/ecpds/master
+        - name: var-tmp-ecpds-master
+          mountPath: /var/tmp/ecpds/master
+        - name: var-lib-ecpds-master
+          mountPath: /var/lib/ecpds/master
+        - name: etc-ecpds-master
+          mountPath: /etc/ecpds
+        resources:
+          requests:
+            cpu: 100m
+            memory: 1536Mi
+        startupProbe:
+          tcpSocket: &id002
+            port: rmi
+          timeoutSeconds: 3
+          periodSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          tcpSocket: *id002
+          timeoutSeconds: 3
+          periodSeconds: 10
+      volumes:
+      - name: var-log-ecpds-master
+        persistentVolumeClaim:
+          claimName: var-log-ecpds-master
+      - name: var-tmp-ecpds-master
+        persistentVolumeClaim:
+          claimName: var-tmp-ecpds-master
+      - name: var-lib-ecpds-master
+        persistentVolumeClaim:
+          claimName: var-lib-ecpds-master
+      - name: etc-ecpds-master
+        persistentVolumeClaim:
+          claimName: etc-ecpds-master
+  serviceName: ecpds-master-pods

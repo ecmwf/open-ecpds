@@ -27,9 +27,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -54,7 +56,27 @@ public final class InteractiveLogins implements AutoCloseable {
         private static final long serialVersionUID = 1L;
     }
 
-    private record Attempt(String binding, String origin, String nonce, String verifier, long expires) {
+    public enum RotationPolicy {
+        LOCAL_PASSWORD, FRESH_MFA
+    }
+
+    private record Attempt(String binding, String origin, String nonce, String verifier, Instant started,
+            RotationActivation rotation, RotationPolicy policy) {
+    }
+
+    public record RotationActivation(String user, long host, String destination, UUID reference, String endpoint,
+            String configuration) {
+        public RotationActivation(final String user, final long host, final String destination, final UUID reference) {
+            this(user, host, destination, reference, null, null);
+        }
+
+        public RotationActivation {
+            if (user == null || user.isBlank() || host <= 0 || destination == null || destination.isBlank()
+                    || reference == null || (endpoint == null) != (configuration == null) || endpoint != null
+                            && (!endpoint.matches("[0-9a-f]{64}") || !configuration.matches("[0-9a-f]{64}"))) {
+                throw new IllegalArgumentException("Invalid rotation activation");
+            }
+        }
     }
 
     public static InteractiveLogins load(final String root, final Map<String, String> options,
@@ -113,20 +135,43 @@ public final class InteractiveLogins implements AutoCloseable {
     }
 
     public Challenge begin(final String binding, final String origin) throws IOException {
-        if (provider == null || binding == null || !binding.matches("[A-Za-z0-9_-]{43,128}")) {
+        return begin(binding, origin, null, null);
+    }
+
+    public Challenge beginRotation(final String binding, final String origin, final RotationActivation activation,
+            final RotationPolicy policy) throws IOException {
+        if (activation == null || policy == null || origin == null || origin.isBlank()) {
+            throw new IOException("Invalid rotation activation");
+        }
+        if (policy == RotationPolicy.FRESH_MFA && !users.containsValue(activation.user())) {
+            throw new IOException("Fresh MFA requires an explicit identity mapping");
+        }
+        return begin(binding, origin, activation, policy);
+    }
+
+    private Challenge begin(final String binding, final String origin, final RotationActivation rotation,
+            final RotationPolicy policy) throws IOException {
+        final var local = policy == RotationPolicy.LOCAL_PASSWORD;
+        if ((!local && provider == null) || binding == null || !binding.matches("[A-Za-z0-9_-]{43,128}")) {
             throw new IOException("Interactive login unavailable");
         }
         final var state = random();
-        final var attempt = new Attempt(binding, origin, random(), random(), clock.millis() + LIFETIME);
+        final var attempt = new Attempt(binding, origin, local ? null : random(), local ? null : random(),
+                clock.instant(), rotation, policy);
         synchronized (pending) {
-            pending.values().removeIf(value -> value.expires() <= clock.millis());
+            pending.values().removeIf(this::expired);
             if (pending.size() >= CAPACITY) {
                 throw new IOException("Too many pending interactive logins");
             }
             pending.put(state, attempt);
         }
+        if (local) {
+            return new Challenge(state, null);
+        }
         try {
-            final var uri = provider.authorizationUri(state, attempt.nonce(), challenge(attempt.verifier()));
+            final var pkce = challenge(attempt.verifier());
+            final var uri = rotation == null ? provider.authorizationUri(state, attempt.nonce(), pkce)
+                    : provider.freshMfaAuthorizationUri(state, attempt.nonce(), pkce);
             requireHttps(uri);
             return new Challenge(state, uri.toASCIIString());
         } catch (IOException | RuntimeException e) {
@@ -139,20 +184,8 @@ public final class InteractiveLogins implements AutoCloseable {
 
     public String complete(final String state, final String binding, final String origin, final String code)
             throws IOException {
-        final Attempt attempt;
-        synchronized (pending) {
-            attempt = pending.get(state);
-            if (attempt == null || attempt.expires() <= clock.millis()
-                    || !java.util.Objects.equals(attempt.origin(), origin) || binding == null
-                    || !MessageDigest.isEqual(attempt.binding().getBytes(StandardCharsets.UTF_8),
-                            binding.getBytes(StandardCharsets.UTF_8))) {
-                throw new IOException("Invalid or expired interactive login");
-            }
-            pending.remove(state);
-        }
-        if (code == null || code.isBlank() || code.length() > 8192) {
-            throw new IOException("Invalid interactive login response");
-        }
+        final var attempt = consume(state, binding, origin, null, null);
+        requireCode(code);
         final var identity = provider.authenticate(code, attempt.nonce(), attempt.verifier());
         final var mappedUser = users.get(new ExternalIdentity(identity.issuer(), identity.subject()));
         final var user = mappedUser == null ? identity.userId() : mappedUser;
@@ -160,6 +193,58 @@ public final class InteractiveLogins implements AutoCloseable {
             throw new IOException("External identity is not mapped to a local account");
         }
         return user;
+    }
+
+    /**
+     * Consumes the matching activation challenge and verifies fresh MFA when required. The caller must verify the
+     * account, local password policy, and delegation before promoting the credential in the same request.
+     */
+    public void completeRotation(final String state, final String binding, final String origin, final String code,
+            final RotationActivation activation, final RotationPolicy policy) throws IOException {
+        if (activation == null || policy == null) {
+            throw new IOException("Invalid rotation activation");
+        }
+        final var attempt = consume(state, binding, origin, activation, policy);
+        if (policy == RotationPolicy.LOCAL_PASSWORD) {
+            if (code != null) {
+                throw new IOException("Unexpected authorization code");
+            }
+            return;
+        }
+        requireCode(code);
+        final var identity = provider.authenticateFreshMfa(code, attempt.nonce(), attempt.verifier(),
+                attempt.started());
+        if (expired(attempt) || !attempt.rotation().user()
+                .equals(users.get(new ExternalIdentity(identity.issuer(), identity.subject())))) {
+            throw new IOException("Fresh MFA does not match the current account");
+        }
+    }
+
+    private boolean expired(final Attempt attempt) {
+        return attempt.started().plusMillis(LIFETIME).compareTo(clock.instant()) <= 0;
+    }
+
+    private Attempt consume(final String state, final String binding, final String origin,
+            final RotationActivation rotation, final RotationPolicy policy) throws IOException {
+        final Attempt attempt;
+        synchronized (pending) {
+            attempt = pending.get(state);
+            if (attempt == null || expired(attempt) || attempt.policy() != policy
+                    || !java.util.Objects.equals(attempt.rotation(), rotation)
+                    || !java.util.Objects.equals(attempt.origin(), origin) || binding == null
+                    || !MessageDigest.isEqual(attempt.binding().getBytes(StandardCharsets.UTF_8),
+                            binding.getBytes(StandardCharsets.UTF_8))) {
+                throw new IOException("Invalid or expired interactive login");
+            }
+            pending.remove(state);
+        }
+        return attempt;
+    }
+
+    private static void requireCode(final String code) throws IOException {
+        if (code == null || code.isBlank() || code.length() > 8192) {
+            throw new IOException("Invalid interactive login response");
+        }
     }
 
     public void clear() {

@@ -178,6 +178,9 @@ import ecmwf.common.text.Format;
 import ecmwf.common.version.Version;
 import ecmwf.ecpds.extension.AuthenticationProvider;
 import ecmwf.ecpds.extension.IdentityExtensions;
+import ecmwf.ecpds.extension.InteractiveLogins.Challenge;
+import ecmwf.ecpds.extension.InteractiveLogins.RotationActivation;
+import ecmwf.ecpds.extension.InteractiveLogins.RotationPolicy;
 import ecmwf.ecpds.extension.RemoteServices;
 import ecmwf.ecpds.master.scheduler.PortalTrafficScheduler;
 import ecmwf.ecpds.master.scheduler.PortalBytesScheduler;
@@ -405,6 +408,9 @@ public final class MasterServer extends ECaccessProvider
     private final transient WeatherAutomationScheduler weatherAutomationScheduler;
 
     private transient volatile ecmwf.ecpds.master.location.PhysicalLocationService physicalLocations;
+    private transient HostPasswordStaging hostPasswordStaging;
+    private final transient RotationMonitorSessions rotationMonitorSessions = new RotationMonitorSessions(
+            java.time.Clock.systemUTC());
     private transient MBeanScheduler physicalLocationScheduler;
 
     public Map<String, Object> getSystemPhysicalLocation(final String component) {
@@ -635,6 +641,9 @@ public final class MasterServer extends ECaccessProvider
     private final transient String allowedPasswordOn = Cnf.at("Server", "allowPasswordOn",
             "(" + getRoot() + "|" + Format.getHostAddress(getRoot()) + ")");
 
+    private final transient String rotationReauthentication = Cnf.at("HostPasswordRotation", "reauthentication",
+            "LOCAL_PASSWORD");
+
     /**
      * Optional password that must be supplied (in addition to the phrase confirmation) when triggering "Purge All Data"
      * from the monitoring interface. Null or empty means no extra password is required.
@@ -696,6 +705,10 @@ public final class MasterServer extends ECaccessProvider
                 Cnf.at("UserDirectoryExtension", Map.of()), Cnf.at("InteractiveLoginExtension", Map.of()),
                 Cnf.at("InteractiveLoginMapping", Map.of()));
         try {
+            final var openBaoPasswordStore = OpenBaoPasswordStore.configured();
+            if (openBaoPasswordStore != null) {
+                hostPasswordStaging = new HostPasswordStaging(getDataBase(ECpdsBase.class), openBaoPasswordStore);
+            }
             remoteServices = RemoteServices.load(getRoot(), Cnf.at("RemoteServiceExtensions", Map.of()),
                     section -> Cnf.at(section, Map.of()));
             _log.info("MasterServer-version: {}", Version.getFullVersion());
@@ -988,6 +1001,9 @@ public final class MasterServer extends ECaccessProvider
             startupThread.setDaemon(true);
             startupThread.start();
         } catch (Exception | LinkageError e) {
+            if (hostPasswordStaging != null) {
+                hostPasswordStaging.close();
+            }
             if (remoteServices != null) {
                 remoteServices.close();
             }
@@ -4380,6 +4396,13 @@ public final class MasterServer extends ECaccessProvider
      *            the logical root name identifying the TransferServer
      */
     private void handleDataMoverRegistration(final ClientInterface access, final String host, final String root) {
+        final var transport = ecmwf.common.rmi.RmiStubTransport.inspect(access);
+        switch (transport) {
+        case NON_TLS_FACTORY -> _log.warn("DataMover {} registered an RMI callback without a TLS socket factory", root);
+        case UNKNOWN -> _log.warn("Cannot identify the RMI callback socket factory for DataMover {}", root);
+        case TLS_FACTORY, MUTUAL_TLS_FACTORY -> _log
+                .debug("DataMover {} registered an RMI callback with a recognized TLS socket factory", root);
+        }
         final var base = getDataBase();
         final var server = base.getTransferServerObject(root);
         if (server == null) {
@@ -4963,6 +4986,7 @@ public final class MasterServer extends ECaccessProvider
         try {
             for (DataTransfer transfer : transfers) {
                 final var id = transfer.getId();
+                HostPasswordDeliveryDispatch.recordSuccess(getDataBase(ECpdsBase.class), transfer);
                 if (TransferTracing.isStale(getDataTransferFromCache(id), transfer)) {
                     _log.warn("Ignoring outdated transfer {} update from trace attempt {}", id,
                             transfer.getTraceAttemptId());
@@ -6322,7 +6346,129 @@ public final class MasterServer extends ECaccessProvider
         webUser.setLastLogin(new Timestamp(System.currentTimeMillis()));
         webUser.setLastLoginHost(host);
         base.update(webUser);
-        return new ECpdsSession(webUser, root, activity);
+        final var token = activity != null && rotationMonitorEnabled()
+                ? rotationMonitorSessions.issue(webUser.getId(), root) : null;
+        return new ECpdsSession(webUser, root, activity, token);
+    }
+
+    private static boolean rotationMonitorEnabled() {
+        return Cnf.at("HostPasswordRotation", "monitorEnabled", false) && Cnf.at("CallBack", "requireMutualTls", false);
+    }
+
+    HostPasswordActivation activateHostPassword(final ECpdsSession session, final String origin,
+            final String destination, final long host, final HostPasswordActivation.Request request)
+            throws MasterException {
+        if (!rotationMonitorEnabled() || hostPasswordStaging == null
+                || !Cnf.at("HostPasswordRotation", "activationEnabled", false)
+                || !Cnf.at("HostPasswordRotation", "drainEnabled", false)
+                || !Cnf.at("HostPasswordRotation", "retirementEnabled", false)
+                || !Cnf.at("HostPasswordRotation", "deliveryEnabled", false)) {
+            throw new MasterException("Password activation is disabled");
+        }
+        final var user = rotationMonitorSessions.verify(session, origin);
+        try {
+            checkLoginOrigin(user, origin);
+            if (destination == null || destination.isBlank() || destination.length() > 32
+                    || destination.indexOf('/') >= 0 || host <= 0 || request == null || request.reference() == null
+                    || request.state() != null && !request.state().matches("[A-Za-z0-9_-]{43,128}")
+                    || request.code() != null && request.code().length() > 8192
+                    || request.localPassword() != null && request.localPassword().length() > 4096) {
+                throw new IllegalArgumentException();
+            }
+            final var endpoint = HostPasswordStaging.approvedEndpoint(host);
+            final var access = new ecmwf.common.database.HostPasswordRotationStore.Access(host, destination, user,
+                    endpoint.host(), endpoint.port(), endpoint.login());
+            final var journal = getDataBase(ECpdsBase.class).getHostPasswordRotationStore();
+            final var snapshot = journal.activationSnapshot(access, request.reference(), endpoint.fingerprint());
+            final var activation = new RotationActivation(user, host, destination, request.reference(),
+                    endpoint.fingerprint(), snapshot.fingerprint());
+            if (request.state() == null) {
+                if (request.code() != null || request.localPassword() != null) {
+                    throw new IllegalArgumentException();
+                }
+                final var challenge = beginRotationReauthentication(session.rotationToken(), origin, activation);
+                final var account = getDataBase().getWebUserObject(user);
+                return new HostPasswordActivation(challenge.state(), challenge.authorizationUri(),
+                        account != null && account.getPassword() != null && !account.getPassword().isEmpty(), false);
+            }
+            verifyRotationReauthentication(request.state(), session.rotationToken(), origin, request.code(), activation,
+                    request.localPassword());
+            // Confirm the immutable vault version still exists; do not promote an unconfirmed reference.
+            hostPasswordStaging.vault().read(request.reference());
+            final var active = journal.findActiveForDelivery(host, destination, endpoint.fingerprint(), endpoint.host(),
+                    endpoint.port(), endpoint.login());
+            ecmwf.common.database.HostPasswordRotationStore.LegacyCutover enrolled = null;
+            if (active.isEmpty()) {
+                if (!HostPasswordLegacyDrain.drain(this, access, request.reference()).ready()) {
+                    throw new IOException("Online drain is not yet complete");
+                }
+                enrolled = journal.findLegacyCutover(access).orElseThrow();
+            }
+            journal.activateTested(access, request.reference(), endpoint.fingerprint(), snapshot.fingerprint(),
+                    enrolled);
+            _log.info("Host password activation completed: Host={}, account={}, reference={}", host, user,
+                    request.reference());
+            return new HostPasswordActivation(null, null, false, true);
+        } catch (final IOException | MasterException | RuntimeException _) {
+            throw new MasterException("Password activation was denied or could not be confirmed; refresh its status");
+        }
+    }
+
+    HostPasswordRotationStatus pendingHostPassword(final ECpdsSession session, final String origin,
+            final String destination, final long host, final HostPasswordRotationStatus.Operation operation,
+            final java.util.UUID reference, final String password, final long retirementGraceSeconds)
+            throws MasterException {
+        if (!rotationMonitorEnabled() || hostPasswordStaging == null) {
+            throw new MasterException("Pending password workflow is disabled");
+        }
+        final var user = rotationMonitorSessions.verify(session, origin);
+        try {
+            checkLoginOrigin(user, origin);
+            if (destination == null || destination.isBlank() || destination.length() > 32
+                    || destination.indexOf('/') >= 0 || host <= 0 || operation == null
+                    || (operation == HostPasswordRotationStatus.Operation.STAGE) != (password != null)
+                    || (operation != HostPasswordRotationStatus.Operation.STATUS
+                            && operation != HostPasswordRotationStatus.Operation.STAGE) != (reference != null)) {
+                throw new IllegalArgumentException();
+            }
+            final var endpoint = HostPasswordStaging.approvedEndpoint(host);
+            final var access = new ecmwf.common.database.HostPasswordRotationStore.Access(host, destination, user,
+                    endpoint.host(), endpoint.port(), endpoint.login());
+            ecmwf.common.ectrans.CredentialProbe.Result result = null;
+            java.util.UUID expectedReference = null;
+            switch (operation) {
+            case STATUS -> {
+            }
+            case STAGE -> expectedReference = hostPasswordStaging.stage(access, password, retirementGraceSeconds);
+            case DISCARD -> hostPasswordStaging.discard(access, reference);
+            case RECONCILE -> hostPasswordStaging.reconcile(access, reference);
+            case DRAIN -> {
+                HostPasswordLegacyDrain.drain(this, access, reference);
+                expectedReference = reference;
+            }
+            case PROBE -> {
+                final var key = Long.toString(host);
+                final var moverName = Cnf.at("PasswordProbeDispatchMovers", key, "");
+                final var proxy = Long.parseLong(Cnf.at("PasswordProbeDispatchProxyHosts", key, "0"));
+                final var recipient = proxy == 0 ? moverName
+                        : Cnf.at("PasswordDeliveryRelayMovers", Long.toString(proxy), "");
+                if (moverName.isBlank() || proxy < 0 || recipient.isBlank()) {
+                    throw new IOException("Password probe route is unavailable");
+                }
+                result = hostPasswordStaging.probe(access, reference, endpoint, getDataMoverInterface(moverName),
+                        recipient, proxy);
+                expectedReference = reference;
+            }
+            }
+            final var status = hostPasswordStaging.status(access, expectedReference, result);
+            if (operation != HostPasswordRotationStatus.Operation.STATUS) {
+                _log.info("Pending password operation completed: operation={}, Host={}, account={}", operation, host,
+                        user);
+            }
+            return status;
+        } catch (final IOException | MasterException | RuntimeException _) {
+            throw new MasterException("Pending password operation was denied or could not be completed");
+        }
     }
 
     String getInteractiveLoginName() {
@@ -6358,6 +6504,62 @@ public final class MasterServer extends ECaccessProvider
             throw new MasterException("Interactive login requires an existing active local account");
         }
         return createWebSession(webUser, origin, host, agent, "Interactive login");
+    }
+
+    Challenge beginRotationReauthentication(final String binding, final String origin,
+            final RotationActivation activation) throws MasterException {
+        try {
+            checkLoginOrigin(activation.user(), origin);
+            return identityExtensions.interactive().beginRotation(binding, origin, activation,
+                    RotationPolicy.valueOf(rotationReauthentication));
+        } catch (final IOException | MasterException | RuntimeException _) {
+            throw new MasterException("Cannot start rotation reauthentication");
+        }
+    }
+
+    public DataTransfer putPinnedPasswordIfActive(final String moverName, final MoverInterface mover,
+            final Host[] sources, final DataTransfer transfer) throws IOException, DataBaseException {
+        return HostPasswordDeliveryDispatch.putIfActive(getDataBase(ECpdsBase.class), moverName, mover, sources,
+                transfer, hostPasswordStaging == null ? null : hostPasswordStaging.vault());
+    }
+
+    public static final class PinnedPasswordDispatchUnconfirmed extends RuntimeException {
+        PinnedPasswordDispatchUnconfirmed() {
+            super("Vault-backed password dispatch could not be confirmed; reconcile before retrying");
+        }
+    }
+
+    void verifyRotationReauthentication(final String state, final String binding, final String origin,
+            final String code, final RotationActivation activation, final String localPassword) throws MasterException {
+        try {
+            final var policy = RotationPolicy.valueOf(rotationReauthentication);
+            identityExtensions.interactive().completeRotation(state, binding, origin, code, activation, policy);
+            final var user = activation.user();
+            checkLoginOrigin(user, origin);
+            final var base = getDataBase();
+            final var webUser = base.getWebUserObject(user);
+            if (base.getECUserObject(user) == null || webUser == null || !webUser.getActive()
+                    || Cnf.at("Server", "anonymousUser", "anonymous").equals(user)
+                    || !meetsRotationLocalPasswordRequirement(webUser.getPassword(), localPassword, origin,
+                            allowedPasswordOn, policy)) {
+                throw new IOException("Rotation account or local password verification failed");
+            }
+        } catch (final IOException | MasterException | RuntimeException _) {
+            throw new MasterException("Rotation reauthentication failed");
+        }
+    }
+
+    static boolean meetsRotationLocalPasswordRequirement(final String stored, final String submitted,
+            final String origin, final String allowedPasswordOn, final RotationPolicy policy) {
+        if (origin == null || origin.isBlank()) {
+            return false;
+        }
+        if (stored == null || stored.isEmpty()) {
+            return policy == RotationPolicy.FRESH_MFA;
+        }
+        return origin.matches(allowedPasswordOn) && submitted != null && submitted.length() <= 4096
+                && java.security.MessageDigest.isEqual(stored.getBytes(StandardCharsets.UTF_8),
+                        submitted.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -7302,6 +7504,7 @@ public final class MasterServer extends ECaccessProvider
      *            the expired
      */
     void closeECpdsSession(final ECpdsSession session, final boolean expired) {
+        rotationMonitorSessions.close(session);
         newEvent(session.getActivity(), "login", expired ? "Session expired" : null, false);
     }
 
@@ -7452,6 +7655,9 @@ public final class MasterServer extends ECaccessProvider
      */
     @Override
     public void shutdown() {
+        if (hostPasswordStaging != null) {
+            hostPasswordStaging.close();
+        }
         moverStorageMonitor.close();
         if (notificationHistory != null) {
             notificationHistory.close();

@@ -42,6 +42,24 @@ import ecmwf.ecpds.mover.service.RESTClient.UpdateDataRequest;
  */
 public interface RESTInterface {
 
+    java.util.UUID beginPasswordProbe(long host) throws Exception;
+
+    MoverPasswordDrain.Challenge beginLegacyPasswordFence(long host) throws Exception;
+
+    String fenceLegacyPassword(long host, java.util.UUID cutover, MoverPasswordDrain.Challenge challenge,
+            String command) throws Exception;
+
+    java.util.UUID beginPinnedPassword(long host, MoverPasswordEnvelope.Delivery delivery) throws Exception;
+
+    long sizePinnedPassword(long host, java.util.UUID nonce, MoverPasswordEnvelope.Delivery delivery, String ciphertext,
+            DataTransfer transfer) throws Exception;
+
+    String putPinnedPassword(long host, java.util.UUID nonce, MoverPasswordEnvelope.Delivery delivery,
+            String ciphertext, DataTransfer transfer) throws Exception;
+
+    MoverPasswordEnvelope.ProbeReceipt runPasswordProbe(long host, java.util.UUID nonce, String ciphertext)
+            throws Exception;
+
     void exportTransferSpans(java.util.List<ecmwf.common.telemetry.TransferSpan> spans) throws Exception;
 
     ecmwf.ecpds.master.weather.WeatherSourceIdentity getWeatherSourceIdentity(java.util.UUID challenge)

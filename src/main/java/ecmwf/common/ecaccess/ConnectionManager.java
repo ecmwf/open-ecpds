@@ -43,6 +43,8 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.callback.RemoteEngineThread;
 import ecmwf.common.rmi.RMIClientSocketFactory;
+import ecmwf.common.rmi.StrictRmiTlsSocketFactory;
+import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ThreadService.ConfigurableLoopRunnable;
 import ecmwf.common.text.Format;
 
@@ -185,7 +187,8 @@ public class ConnectionManager {
     protected synchronized void connect(final String host)
             throws RemoteException, ServerNotActiveException, NotBoundException, ConnectionException {
         _log.info("Connecting to {} at {}:{}", className, host, rmiPort);
-        registry = LocateRegistry.getRegistry(host, rmiPort, new RMIClientSocketFactory());
+        registry = LocateRegistry.getRegistry(host, rmiPort, Cnf.at("CallBack", "requireMutualTls", false)
+                ? new StrictRmiTlsSocketFactory() : new RMIClientSocketFactory());
         if (_log.isDebugEnabled()) {
             for (final String name : registry.list()) {
                 _log.debug("Bound in the registry: {}", name);

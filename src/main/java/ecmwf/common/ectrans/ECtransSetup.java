@@ -2006,6 +2006,11 @@ public final class ECtransSetup implements Serializable {
                 : Cnf.valuesOf(dataContent);
     }
 
+    /** Returns explicitly configured names without resolving or exposing their values. */
+    public java.util.Set<String> getConfiguredParameterNames() {
+        return java.util.Set.copyOf(dataContent.keySet());
+    }
+
     /**
      * Gets the script if the engine exists.
      *

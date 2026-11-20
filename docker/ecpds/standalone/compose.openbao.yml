@@ -1,0 +1,64 @@
+services:
+  openbao:
+    container_name: standalone-openbao-vault
+    image: ${OPENBAO_IMAGE:-open-ecpds/openbao:2.7.2}
+    restart: unless-stopped
+    environment:
+      BAO_ADDR: https://openbao:8200
+      BAO_CACERT: /openbao/tls/ca.crt
+    volumes:
+      - type: bind
+        source: ./openbao/tls
+        target: /openbao/tls
+        read_only: true
+        bind:
+          create_host_path: false
+      - standalone-openbao-data:/openbao/file
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks:
+      - standalone-openbao
+
+  standalone:
+    container_name: standalone-openbao-app
+    image: ${STANDALONE_IMAGE:-ghcr.io/ecmwf/open-ecpds/standalone:latest}
+    restart: unless-stopped
+    environment:
+      ECPDS_OPENBAO_ENABLED: "true"
+    volumes:
+      - standalone-data:/data
+      - type: bind
+        source: ./openbao/tls/ca.crt
+        target: /etc/pki/ca-trust/source/anchors/openbao.crt
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./openbao/secrets/master-token
+        target: /run/ecpds/openbao/token-source
+        read_only: true
+        bind:
+          create_host_path: false
+    ports:
+      - "7443:7443"
+      - "7022:7022"
+      - "8443:8443"
+      - "8883:8883"
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:9404:9404"
+      - "127.0.0.1:9405:9405"
+      - "127.0.0.1:9406:9406"
+    depends_on:
+      - openbao
+    networks:
+      - standalone-openbao
+
+networks:
+  standalone-openbao:
+
+volumes:
+  standalone-data:
+  standalone-openbao-data:

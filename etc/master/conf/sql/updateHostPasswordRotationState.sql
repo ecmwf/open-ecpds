@@ -1,0 +1,13 @@
+#menu "ECpdsBase"
+#name "updateHostPasswordRotationState"
+#group "update"
+#timeout "5"
+#prompt "state;State;;"
+#bind "state;STRING"
+#prompt "host;Host;;"
+#bind "host;LONG"
+#prompt "reference;Reference;;"
+#bind "reference;STRING"
+#prompt "expectedState;Expected state;;"
+#bind "expectedState;STRING"
+UPDATE HOST_PASSWORD_ROTATION SET HPR_STATE=:state WHERE HOS_NAME=:host AND HPR_REF=:reference AND HPR_STATE=:expectedState

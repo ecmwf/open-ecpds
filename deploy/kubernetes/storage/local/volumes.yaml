@@ -1,0 +1,551 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: data-openbao-0
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/data-openbao-0
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [ecpds-local-node]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-openbao-0
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: data-openbao-0
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: etc-ecpds-database
+spec:
+  capacity:
+    storage: 50Mi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ''
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/etc-ecpds-database
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ecpds-local-node
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: etc-ecpds-database
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Mi
+  storageClassName: ''
+  volumeName: etc-ecpds-database
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: etc-ecpds-hawtio
+spec:
+  capacity:
+    storage: 50Mi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ''
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/etc-ecpds-hawtio
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ecpds-local-node
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: etc-ecpds-hawtio
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Mi
+  storageClassName: ''
+  volumeName: etc-ecpds-hawtio
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: etc-ecpds-master
+spec:
+  capacity:
+    storage: 50Mi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ''
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/etc-ecpds-master
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ecpds-local-node
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: etc-ecpds-master
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Mi
+  storageClassName: ''
+  volumeName: etc-ecpds-master
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: etc-ecpds-monitor
+spec:
+  capacity:
+    storage: 50Mi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ''
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/etc-ecpds-monitor
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ecpds-local-node
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: etc-ecpds-monitor
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Mi
+  storageClassName: ''
+  volumeName: etc-ecpds-monitor
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: etc-ecpds-mover
+spec:
+  capacity:
+    storage: 50Mi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ''
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/etc-ecpds-mover
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ecpds-local-node
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: etc-ecpds-mover
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Mi
+  storageClassName: ''
+  volumeName: etc-ecpds-mover
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: var-lib-ecpds-database
+spec:
+  capacity:
+    storage: 8Gi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ''
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/var-lib-ecpds-database
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ecpds-local-node
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: var-lib-ecpds-database
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 8Gi
+  storageClassName: ''
+  volumeName: var-lib-ecpds-database
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: var-lib-ecpds-master
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ''
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/var-lib-ecpds-master
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ecpds-local-node
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: var-lib-ecpds-master
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: ''
+  volumeName: var-lib-ecpds-master
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: var-lib-ecpds-mover
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ''
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/var-lib-ecpds-mover
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ecpds-local-node
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: var-lib-ecpds-mover
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: ''
+  volumeName: var-lib-ecpds-mover
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: var-log-ecpds-master
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ''
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/var-log-ecpds-master
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ecpds-local-node
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: var-log-ecpds-master
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: ''
+  volumeName: var-log-ecpds-master
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: var-log-ecpds-monitor
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ''
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/var-log-ecpds-monitor
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ecpds-local-node
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: var-log-ecpds-monitor
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: ''
+  volumeName: var-log-ecpds-monitor
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: var-log-ecpds-mover
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ''
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/var-log-ecpds-mover
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ecpds-local-node
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: var-log-ecpds-mover
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: ''
+  volumeName: var-log-ecpds-mover
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: var-tmp-ecpds-master
+spec:
+  capacity:
+    storage: 50Mi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ''
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/var-tmp-ecpds-master
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ecpds-local-node
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: var-tmp-ecpds-master
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Mi
+  storageClassName: ''
+  volumeName: var-tmp-ecpds-master
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: var-tmp-ecpds-monitor
+spec:
+  capacity:
+    storage: 50Mi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ''
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/var-tmp-ecpds-monitor
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ecpds-local-node
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: var-tmp-ecpds-monitor
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Mi
+  storageClassName: ''
+  volumeName: var-tmp-ecpds-monitor
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: var-tmp-ecpds-mover
+spec:
+  capacity:
+    storage: 50Mi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ''
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/var-tmp-ecpds-mover
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ecpds-local-node
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: var-tmp-ecpds-mover
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Mi
+  storageClassName: ''
+  volumeName: var-tmp-ecpds-mover

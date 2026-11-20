@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
@@ -45,6 +46,15 @@ import ecmwf.common.database.MSUser;
  * The Class TransferModule.
  */
 public abstract class TransferModule implements Closeable {
+    /** Full rotation also requires accurate session-closure confirmation from this module. */
+    public Optional<PasswordRotation> passwordRotation() {
+        return Optional.empty();
+    }
+
+    public Optional<CredentialProbe<?, ?>> credentialProbe() {
+        return Optional.empty();
+    }
+
     /**
      * Whether bytes consumed by put represent actual traffic rather than publication or simulation.
      *
@@ -86,6 +96,51 @@ public abstract class TransferModule implements Closeable {
 
     /** The available (not sent). */
     private boolean available = false;
+    private Closeable transferSession;
+    private volatile boolean transferSessionUncertain;
+
+    void setTransferSession(final Closeable transferSession) {
+        this.transferSession = transferSession;
+    }
+
+    protected final boolean hasTransferSession() {
+        return transferSession != null;
+    }
+
+    void transferSessionClosed() throws IOException {
+        if (transferSession != null && !transferSessionUncertain && isSessionClosureConfirmed()) {
+            transferSession.close();
+        }
+    }
+
+    /** A normal return from close is not sufficient when a module suppresses disconnect failures. */
+    public boolean isSessionClosureConfirmed() {
+        return false;
+    }
+
+    protected static void closeSessionResources(final AutoCloseable... resources) throws IOException {
+        boolean failed = false;
+        for (final var resource : resources) {
+            if (resource != null) {
+                try {
+                    resource.close();
+                } catch (final Exception failure) {
+                    failed = true;
+                }
+            }
+        }
+        if (failed) {
+            throw new IOException("Unable to confirm transfer session closure");
+        }
+    }
+
+    public boolean isSessionDispositionCertain() {
+        return !transferSessionUncertain;
+    }
+
+    void retainTransferSession() {
+        transferSessionUncertain = true;
+    }
 
     /**
      * Sets the remote provider.

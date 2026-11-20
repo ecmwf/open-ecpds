@@ -96,10 +96,20 @@ final class DBResultSet implements AutoCloseable {
     }
 
     DBResultSet(final Broker broker, final String sql, final int timeout) throws BrokerException, SQLException {
+        this(broker, sql, timeout, new Object[0]);
+    }
+
+    DBResultSet(final Broker broker, final String sql, final int timeout, final Object[] parameters)
+            throws BrokerException, SQLException {
         this.timeout = timeout;
         hasCalcFoundRows = Pattern.compile("(?i)^\\s*SELECT\\s+SQL_CALC_FOUND_ROWS\\s+").matcher(sql).find();
+        if (hasCalcFoundRows && EMULATE_CALC_FOUND_ROWS && parameters.length != 0) {
+            throw new java.sql.SQLFeatureNotSupportedException(
+                    "Bound paginated queries require an explicit count request when found-row emulation is enabled");
+        }
         sqlQuery = hasCalcFoundRows && EMULATE_CALC_FOUND_ROWS ? getInitialSQL(sql) : sql;
-        wrapper = broker.executeQuery(true, sqlQuery, timeout);
+        wrapper = parameters.length == 0 ? broker.executeQuery(true, sqlQuery, timeout)
+                : broker.executeQuery(true, sqlQuery, timeout, parameters);
         resultSet = wrapper.getResultSet();
         this.broker = broker;
         TRACKER.onOpen();

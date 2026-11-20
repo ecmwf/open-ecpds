@@ -139,6 +139,10 @@ final class RESTProvider {
      * @return the jackson provider
      */
     public static JacksonProvider getJacksonProvider() {
+        return new JacksonProvider(controlMapper());
+    }
+
+    static ObjectMapper controlMapper() {
         final var mapper = new ObjectMapper();
         mapper.addMixIn(DataTransfer.class, DataTransferMixIn.class);
         mapper.addMixIn(DataFile.class, DataFileMixIn.class);
@@ -147,7 +151,7 @@ final class RESTProvider {
         mapper.addMixIn(Host.class, HostMixIn.class);
         mapper.addMixIn(TransferMethod.class, TransferMethodMixIn.class);
         mapper.addMixIn(ECtransModule.class, ECtransModuleMixIn.class);
-        return new JacksonProvider(mapper);
+        return mapper;
     }
 
     /**

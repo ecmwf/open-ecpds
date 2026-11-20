@@ -46,6 +46,7 @@ public final class ECpdsSession implements Serializable {
 
     /** The _activity. */
     private final Activity _activity;
+    private final String rotationToken;
 
     /**
      * Instantiates a new ecpds session.
@@ -57,10 +58,11 @@ public final class ECpdsSession implements Serializable {
      * @param activity
      *            the activity
      */
-    ECpdsSession(final WebUser webuser, final String root, final Activity activity) {
+    ECpdsSession(final WebUser webuser, final String root, final Activity activity, final String rotationToken) {
         _webuser = webuser;
         _root = root;
         _activity = activity;
+        this.rotationToken = rotationToken;
     }
 
     /**
@@ -88,5 +90,9 @@ public final class ECpdsSession implements Serializable {
      */
     Activity getActivity() {
         return _activity;
+    }
+
+    String rotationToken() {
+        return rotationToken;
     }
 }

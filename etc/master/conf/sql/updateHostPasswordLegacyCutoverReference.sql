@@ -1,0 +1,11 @@
+#menu "ECpdsBase"
+#name "updateHostPasswordLegacyCutoverReference"
+#group "update"
+#timeout "5"
+#prompt "reference;Reference;;"
+#bind "reference;STRING"
+#prompt "host;Host;;"
+#bind "host;LONG"
+#prompt "cutover;Cutover;;"
+#bind "cutover;STRING"
+UPDATE HOST_PASSWORD_LEGACY_CUTOVER SET HLC_REFERENCE=:reference WHERE HOS_NAME=:host AND HLC_ID=:cutover

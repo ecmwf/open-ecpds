@@ -11,4 +11,5 @@ export MASTER_ADDRESS=localhost
 export LOG_LEVEL=debug
 
 echo "[monitor] Starting..."
+umask 007
 exec /usr/local/ecpds/monitor/sh/monitor start

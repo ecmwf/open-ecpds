@@ -22,6 +22,9 @@ the WSL 2 backend and the host networking option enabled.
 
 ## Kubernetes (optional)
 
+The Kubernetes manifests are maintained directly and rendered with Kustomize
+through `kubectl`. The deployment Makefile also needs Python 3 and PyYAML.
+
 To test the deployment of OpenECPDS containers to a Kubernetes cluster, Kubernetes must
 be enabled in Docker:
 

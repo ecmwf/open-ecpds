@@ -57,6 +57,8 @@ public class OidcLoginProvider implements InteractiveLoginProvider {
     private URI authorizationEndpoint;
     private URI tokenEndpoint;
     private URI redirectUri;
+    private URI freshMfaRedirectUri;
+    private String freshMfaAcr;
     private DefaultJWTProcessor<SecurityContext> processor;
     private AutoCloseable keys;
 
@@ -72,6 +74,15 @@ public class OidcLoginProvider implements InteractiveLoginProvider {
         authorizationEndpoint = endpoint(required(context, "authorizationEndpoint"));
         tokenEndpoint = endpoint(required(context, "tokenEndpoint"));
         redirectUri = endpoint(required(context, "redirectUri"));
+        final var mfaRedirect = context.option("freshMfaRedirectUri");
+        freshMfaAcr = context.option("freshMfaAcr");
+        if (mfaRedirect != null || freshMfaAcr != null) {
+            freshMfaRedirectUri = endpoint(required(context, "freshMfaRedirectUri"));
+            if (freshMfaRedirectUri.equals(redirectUri) || freshMfaAcr == null
+                    || !freshMfaAcr.matches("[!-~]{1,255}")) {
+                throw new IOException("Fresh MFA requires a separate callback and a single MFA ACR value");
+            }
+        }
         final var jwks = endpoint(required(context, "jwksUri"));
         clientId = required(context, "clientId");
         userIdClaim = context.option("userIdClaim");
@@ -117,18 +128,52 @@ public class OidcLoginProvider implements InteractiveLoginProvider {
 
     @Override
     public URI authorizationUri(final String state, final String nonce, final String codeChallenge) {
+        return authorizationUri(state, nonce, codeChallenge, redirectUri, "");
+    }
+
+    @Override
+    public URI freshMfaAuthorizationUri(final String state, final String nonce, final String codeChallenge)
+            throws IOException {
+        requireFreshMfa();
+        return authorizationUri(state, nonce, codeChallenge, freshMfaRedirectUri,
+                "&prompt=login&max_age=0&acr_values=" + encode(freshMfaAcr));
+    }
+
+    private URI authorizationUri(final String state, final String nonce, final String codeChallenge, final URI callback,
+            final String extra) {
         return URI.create(authorizationEndpoint + "?response_type=code&scope=openid&client_id=" + encode(clientId)
-                + "&redirect_uri=" + encode(redirectUri.toString()) + "&state=" + encode(state) + "&nonce="
-                + encode(nonce) + "&code_challenge_method=S256&code_challenge=" + encode(codeChallenge)
-                + "&response_mode=query");
+                + "&redirect_uri=" + encode(callback.toString()) + "&state=" + encode(state) + "&nonce=" + encode(nonce)
+                + "&code_challenge_method=S256&code_challenge=" + encode(codeChallenge) + "&response_mode=query"
+                + extra);
     }
 
     @Override
     public ExternalIdentity authenticate(final String code, final String nonce, final String codeVerifier)
             throws IOException {
+        return authenticate(code, nonce, codeVerifier, redirectUri, null);
+    }
+
+    @Override
+    public ExternalIdentity authenticateFreshMfa(final String code, final String nonce, final String codeVerifier,
+            final Instant requestedAt) throws IOException {
+        requireFreshMfa();
+        if (requestedAt == null) {
+            throw new IOException("Fresh MFA requires a challenge timestamp");
+        }
+        return authenticate(code, nonce, codeVerifier, freshMfaRedirectUri, requestedAt);
+    }
+
+    private void requireFreshMfa() throws IOException {
+        if (freshMfaRedirectUri == null) {
+            throw new IOException("Fresh MFA is not configured");
+        }
+    }
+
+    private ExternalIdentity authenticate(final String code, final String nonce, final String codeVerifier,
+            final URI callback, final Instant requestedAt) throws IOException {
         try {
             var form = "grant_type=authorization_code&code=" + encode(code) + "&redirect_uri="
-                    + encode(redirectUri.toString()) + "&client_id=" + encode(clientId) + "&code_verifier="
+                    + encode(callback.toString()) + "&client_id=" + encode(clientId) + "&code_verifier="
                     + encode(codeVerifier);
             if ("post".equals(clientAuthentication)) {
                 form += "&client_secret=" + encode(secret);
@@ -137,14 +182,15 @@ public class OidcLoginProvider implements InteractiveLoginProvider {
             if (response == null || response.has("error") || !response.path("id_token").isTextual()) {
                 throw new IOException("OIDC token exchange failed");
             }
-            return validate(response.path("id_token").textValue(), nonce);
+            return validate(response.path("id_token").textValue(), nonce, requestedAt);
         } catch (IOException | RuntimeException e) {
             // Provider responses and transport exceptions may contain codes, tokens or credentials.
             throw new IOException("OIDC authentication failed");
         }
     }
 
-    private ExternalIdentity validate(final String token, final String nonce) throws IOException {
+    private ExternalIdentity validate(final String token, final String nonce, final Instant requestedAt)
+            throws IOException {
         try {
             final var claims = processor.process(token, null);
             final var azp = claims.getStringClaim("azp");
@@ -155,6 +201,9 @@ public class OidcLoginProvider implements InteractiveLoginProvider {
                     || (claims.getAudience().size() > 1 || azp != null) && !clientId.equals(azp)) {
                 throw new IOException("Invalid OIDC identity claims");
             }
+            if (requestedAt != null) {
+                verifyFreshMfaClaims(claims, freshMfaAcr, requestedAt, Instant.now());
+            }
             final String userId;
             if (userIdClaim == null) {
                 userId = null;
@@ -162,10 +211,21 @@ public class OidcLoginProvider implements InteractiveLoginProvider {
                 final var claim = claims.getClaim(userIdClaim);
                 userId = claim instanceof String value && !value.isBlank() && value.length() <= 255 ? value : null;
             }
+
             return new ExternalIdentity(claims.getIssuer(), claims.getSubject(), userId);
         } catch (com.nimbusds.jose.JOSEException | com.nimbusds.jose.proc.BadJOSEException | ParseException
                 | RuntimeException e) {
             throw new IOException("Invalid OIDC ID token");
+        }
+    }
+
+    static void verifyFreshMfaClaims(final JWTClaimsSet claims, final String acr, final Instant requestedAt,
+            final Instant now) throws IOException, ParseException {
+        final var authenticationTime = claims.getDateClaim("auth_time");
+        if (!acr.equals(claims.getStringClaim("acr")) || authenticationTime == null
+                || authenticationTime.toInstant().getEpochSecond() < requestedAt.getEpochSecond()
+                || authenticationTime.toInstant().isAfter(now) || authenticationTime.after(claims.getIssueTime())) {
+            throw new IOException("Invalid fresh MFA claims");
         }
     }
 

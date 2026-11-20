@@ -118,6 +118,117 @@ import ecmwf.common.text.Format;
  * The Class GCSModule.
  */
 public final class GcsModule extends TransferModule {
+    private boolean rotatingCredential;
+    private volatile boolean rotationClosed;
+    private HttpTransport rotationApiTransport;
+    private HttpTransport rotationTokenTransport;
+
+    @Override
+    public java.util.Optional<ecmwf.common.ectrans.PasswordRotation> passwordRotation() {
+        return java.util.Optional.of(new ecmwf.common.ectrans.FileCredentialRotation<GcsModule>("gcs", GcsModule::new,
+                java.util.Set.of(ecmwf.common.ectrans.FileCredentialRotation.STANDARD_METHOD),
+                java.util.Set.of("gcs.port", "gcs.scheme", "gcs.url", "gcs.bucketName", "gcs.prefix", "gcs.projectId",
+                        "gcs.clientId", "gcs.clientEmail", "gcs.sslValidation", "gcs.privateKey", "gcs.privateKeyId"),
+                java.util.Set.of("bucket", "project", "account", "tokenEndpoint", "prefix")) {
+            @Override
+            protected void validate(final ResourceEndpoint endpoint) {
+                if (!endpoint.option("bucket").matches("[a-z0-9][a-z0-9._-]{1,220}[a-z0-9]")
+                        || !endpoint.option("project").matches("[a-zA-Z0-9-]{1,63}")) {
+                    throw new IllegalArgumentException("Invalid approved GCS resource");
+                }
+                final var token = java.net.URI.create(
+                        endpoint.options().getOrDefault("tokenEndpoint", "https://oauth2.googleapis.com/token"));
+                if (!"https".equals(token.getScheme()) || token.getHost() == null || token.getUserInfo() != null
+                        || token.getQuery() != null || token.getFragment() != null) {
+                    throw new IllegalArgumentException("Invalid approved token endpoint");
+                }
+            }
+
+            @Override
+            protected void connect(final GcsModule module, final ResourceEndpoint endpoint, final String directory,
+                    final String credential) throws Exception {
+                final var bundle = object(credential);
+                module.rotatingCredential = true;
+                module.rotationClosed = false;
+                module.currentSetup = setup();
+                module.currentSetup.set(HOST_GCS_PARALLEL_UPLOAD, false);
+                module.scheme = "https";
+                module.projectId = endpoint.option("project");
+                module.bucketName = endpoint.option("bucket");
+                module.gcsprefix = endpoint.options().getOrDefault("prefix", "");
+                if (!module.gcsprefix.isEmpty() && !module.gcsprefix.endsWith("/")) {
+                    module.gcsprefix += "/";
+                }
+                final com.google.auth.oauth2.GoogleCredentials credentials;
+                if ("access_token".equals(text(bundle, "type"))) {
+                    final var expires = java.time.Instant.parse(text(bundle, "expiresAt"));
+                    if (!expires.isAfter(java.time.Instant.now().plusSeconds(60))) {
+                        throw new IOException("Credential expires too soon");
+                    }
+                    credentials = com.google.auth.oauth2.GoogleCredentials
+                            .create(new com.google.auth.oauth2.AccessToken(text(bundle, "accessToken"),
+                                    java.util.Date.from(expires)));
+                } else if ("service_account".equals(text(bundle, "type"))) {
+                    final var tokenEndpoint = java.net.URI.create(
+                            endpoint.options().getOrDefault("tokenEndpoint", "https://oauth2.googleapis.com/token"));
+                    if (!endpoint.login().equals(text(bundle, "client_id"))
+                            || !module.projectId.equals(text(bundle, "project_id"))
+                            || !endpoint.option("account").equals(text(bundle, "client_email"))
+                            || bundle.has("token_uri") && !tokenEndpoint.toString().equals(text(bundle, "token_uri"))) {
+                        throw new IOException("Credential identity changed");
+                    }
+                    module.rotationTokenTransport = rotationTransport(tokenEndpoint);
+                    credentials = ServiceAccountCredentials.newBuilder().setClientId(text(bundle, "client_id"))
+                            .setClientEmail(text(bundle, "client_email"))
+                            .setPrivateKeyString(text(bundle, "private_key"))
+                            .setPrivateKeyId(text(bundle, "private_key_id")).setProjectId(module.projectId)
+                            .setTokenServerUri(tokenEndpoint)
+                            .setHttpTransportFactory(() -> module.rotationTokenTransport)
+                            .setScopes(java.util.List.of("https://www.googleapis.com/auth/devstorage.read_write"))
+                            .build();
+                } else {
+                    throw new IOException("Unsupported GCS credential bundle");
+                }
+                module.rotationApiTransport = rotationTransport(endpoint.origin());
+                module.gcs = StorageOptions.newBuilder().setProjectId(module.projectId)
+                        .setRetrySettings(com.google.cloud.ServiceOptions.getNoRetrySettings())
+                        .setHost(endpoint.origin().toString()).setCredentials(credentials)
+                        .setTransportOptions(HttpTransportOptions.newBuilder()
+                                .setHttpTransportFactory(() -> module.rotationApiTransport).build())
+                        .setBlobWriteSessionConfig(getBlobWriteSessionConfig(module.currentSetup)).build().getService();
+            }
+        });
+    }
+
+    private static HttpTransport rotationTransport(final java.net.URI origin) throws Exception {
+        final var tls = new org.apache.http.conn.ssl.SSLConnectionSocketFactory(javax.net.ssl.SSLContext.getDefault());
+        final var registry = org.apache.http.config.RegistryBuilder.<org.apache.http.conn.socket.ConnectionSocketFactory> create()
+                .register("https", tls).build();
+        final var manager = new org.apache.http.impl.conn.PoolingHttpClientConnectionManager(registry);
+        final var client = org.apache.http.impl.client.HttpClients.custom().setConnectionManager(manager)
+                .disableRedirectHandling().disableAutomaticRetries()
+                .setDefaultRequestConfig(org.apache.http.client.config.RequestConfig.custom().setConnectTimeout(30000)
+                        .setSocketTimeout(60000).build())
+                .addInterceptorFirst(
+                        (org.apache.http.HttpRequest request, org.apache.http.protocol.HttpContext context) -> {
+                            final var target = (org.apache.http.HttpHost) context
+                                    .getAttribute(org.apache.http.protocol.HttpCoreContext.HTTP_TARGET_HOST);
+                            if (target == null || !"https".equalsIgnoreCase(target.getSchemeName())
+                                    || !origin.getHost().replace("[", "").replace("]", "")
+                                            .equalsIgnoreCase(target.getHostName().replace("[", "").replace("]", ""))
+                                    || (origin.getPort() < 0 ? 443 : origin.getPort()) != (target.getPort() < 0 ? 443
+                                            : target.getPort())) {
+                                throw new IOException("Approved GCS origin changed");
+                            }
+                        })
+                .build();
+        return new com.google.api.client.http.apache.v2.ApacheHttpTransport(client);
+    }
+
+    @Override
+    public boolean isSessionClosureConfirmed() {
+        return rotationClosed;
+    }
 
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(GcsModule.class);
@@ -301,15 +412,22 @@ public final class GcsModule extends TransferModule {
         final var clientEmail = setup.getString(HOST_GCS_CLIENT_EMAIL);
 
         try {
-            credentials = ServiceAccountCredentials.newBuilder().setClientId(clientId).setClientEmail(clientEmail)
-                    .setPrivateKeyString(privateKey).setPrivateKeyId(privateKeyId).setProjectId(projectId).build();
+            final var credentialsBuilder = ServiceAccountCredentials.newBuilder().setClientId(clientId)
+                    .setClientEmail(clientEmail).setPrivateKeyString(privateKey).setPrivateKeyId(privateKeyId)
+                    .setProjectId(projectId);
+            if (hasTransferSession() && "https".equals(scheme) && setup.getBoolean(HOST_GCS_SSL_VALIDATION)) {
+                rotationApiTransport = rotationTransport(java.net.URI.create("https://storage.googleapis.com"));
+                rotationTokenTransport = rotationTransport(java.net.URI.create("https://oauth2.googleapis.com/token"));
+                credentialsBuilder.setHttpTransportFactory(() -> rotationTokenTransport);
+            }
+            credentials = credentialsBuilder.build();
 
             socketFactory = socketConfig.getSSLSocketFactory(setup.getString(HOST_GCS_PROTOCOL),
                     setup.getBoolean(HOST_GCS_SSL_VALIDATION));
 
             // Create the custom HTTP transport with the custom SSLSocketFactory
-            final HttpTransport httpTransport = new NetHttpTransport.Builder().setSslSocketFactory(socketFactory)
-                    .build();
+            final HttpTransport httpTransport = rotationApiTransport != null ? rotationApiTransport
+                    : new NetHttpTransport.Builder().setSslSocketFactory(socketFactory).build();
 
             gcs = StorageOptions.newBuilder().setProjectId(projectId).setCredentials(credentials)
                     .setTransportOptions(
@@ -819,8 +937,12 @@ public final class GcsModule extends TransferModule {
         final var bucketNameAndObject = getBucketNameAndObjectName(name);
         try {
             // content length of the data in bytes
-            return gcs.get(bucketNameAndObject[0], bucketNameAndObject[1],
-                    Storage.BlobGetOption.fields(Storage.BlobField.SIZE)).getSize();
+            final var object = gcs.get(bucketNameAndObject[0], bucketNameAndObject[1],
+                    Storage.BlobGetOption.fields(Storage.BlobField.SIZE));
+            if (rotatingCredential && object == null) {
+                return -1;
+            }
+            return object.getSize();
         } catch (final Exception e) {
             _log.debug("getObject", e);
             throw new IOException("Getting object " + name + ": " + Format.getMessage(e));
@@ -1157,6 +1279,17 @@ public final class GcsModule extends TransferModule {
     @Override
     public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
+            if (rotatingCredential || hasTransferSession() && (gcs == null || rotationApiTransport != null)) {
+                try {
+                    closeSessionResources(gcsInput, gcs,
+                            rotationApiTransport == null ? null : rotationApiTransport::shutdown,
+                            rotationTokenTransport == null ? null : rotationTokenTransport::shutdown);
+                    rotationClosed = true;
+                    return;
+                } catch (final Exception failure) {
+                    throw new IOException("Unable to confirm GCS session closure");
+                }
+            }
             _log.debug("Close connection");
             currentStatus = "CLOSE";
             StreamPlugThread.closeQuietly(gcsInput);

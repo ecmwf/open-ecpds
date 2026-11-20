@@ -94,6 +94,8 @@ import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.common.ecaccess.NativeAuthenticationProvider;
 import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ecaccess.UserSession;
+import ecmwf.common.ecaccess.UserSession.DownloadFile;
+import ecmwf.common.ecaccess.UserSession.DownloadRange;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.MonitoredInputStream;
@@ -846,6 +848,132 @@ public final class RESTServer {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Path("mover/passwordProbe/{host}/challenge")
+    public Response passwordProbeChallenge(@Context final jakarta.ws.rs.core.SecurityContext security,
+            @PathParam("host") final long host) {
+        requirePasswordProbeChannel(security);
+        try {
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("challenge",
+                    mover.beginPasswordProbe(ecmwf.ecpds.mover.MoverPasswordEnvelope.Route.CONTINENTAL_HTTPS, host)
+                            .toString());
+            return Response.fromResponse(message.getResponse()).header("Cache-Control", "no-store").build();
+        } catch (final IOException _) {
+            throw new WebApplicationException("Password probe not permitted", Response.Status.FORBIDDEN);
+        }
+    }
+
+    @POST
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("mover/passwordProbe/{host}/{challenge}")
+    public Response passwordProbe(@Context final jakarta.ws.rs.core.SecurityContext security,
+            @PathParam("host") final long host, @PathParam("challenge") final String challenge,
+            final InputStream body) {
+        requirePasswordProbeChannel(security);
+        try {
+            final var nonce = java.util.UUID.fromString(challenge);
+            final var limit = ecmwf.ecpds.mover.MoverPasswordEnvelope.MAX_ENVELOPE;
+            final var bytes = body.readNBytes(limit + 1);
+            if (!nonce.toString().equals(challenge) || bytes.length > limit) {
+                throw new IllegalArgumentException();
+            }
+            final var result = mover.runPasswordProbe(ecmwf.ecpds.mover.MoverPasswordEnvelope.Route.CONTINENTAL_HTTPS,
+                    host, nonce, new String(bytes, StandardCharsets.US_ASCII));
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("receipt", result);
+            return Response.fromResponse(message.getResponse()).header("Cache-Control", "no-store").build();
+        } catch (final IOException | IllegalArgumentException _) {
+            throw new WebApplicationException("Password probe not permitted", Response.Status.FORBIDDEN);
+        }
+    }
+
+    private static void requirePasswordProbeChannel(final jakarta.ws.rs.core.SecurityContext security) {
+        if (security == null || !security.isSecure() || !RESTSignature.ENABLED) {
+            throw new WebApplicationException("Password probe requires signed HTTPS", Response.Status.FORBIDDEN);
+        }
+    }
+
+    private static final ObjectMapper PINNED_PASSWORD_MAPPER = RESTProvider.controlMapper();
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("mover/legacyPasswordFence/{host}/challenge")
+    public Response legacyPasswordFenceChallenge(@Context final jakarta.ws.rs.core.SecurityContext security,
+            @PathParam("host") final long host) {
+        requirePasswordProbeChannel(security);
+        try {
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("result", mover
+                    .beginLegacyPasswordFence(ecmwf.ecpds.mover.MoverPasswordEnvelope.Route.CONTINENTAL_HTTPS, host));
+            return Response.fromResponse(message.getResponse()).header("Cache-Control", "no-store").build();
+        } catch (final IOException _) {
+            throw new WebApplicationException("Legacy session fence rejected", Response.Status.FORBIDDEN);
+        }
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("mover/legacyPasswordFence/{host}/fence")
+    public Response legacyPasswordFence(@Context final jakarta.ws.rs.core.SecurityContext security,
+            @PathParam("host") final long host, final InputStream body) {
+        requirePasswordProbeChannel(security);
+        try {
+            final var bytes = body.readNBytes(16 * 1024 + 1);
+            if (bytes.length > 16 * 1024) {
+                throw new IOException("Legacy session fence request too large");
+            }
+            final var request = PINNED_PASSWORD_MAPPER.readValue(bytes, RESTClient.LegacyFenceRequest.class);
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("result",
+                    mover.fenceLegacyPassword(ecmwf.ecpds.mover.MoverPasswordEnvelope.Route.CONTINENTAL_HTTPS, host,
+                            request.cutover(), request.challenge(), request.command()));
+            return Response.fromResponse(message.getResponse()).header("Cache-Control", "no-store").build();
+        } catch (final IOException | RuntimeException _) {
+            throw new WebApplicationException("Legacy session fence rejected", Response.Status.FORBIDDEN);
+        }
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("mover/pinnedPassword/{host}/{operation:challenge|size|put}")
+    public Response pinnedPassword(@Context final jakarta.ws.rs.core.SecurityContext security,
+            @PathParam("host") final long host, @PathParam("operation") final String operation,
+            final InputStream body) {
+        requirePasswordProbeChannel(security);
+        final var route = ecmwf.ecpds.mover.MoverPasswordEnvelope.Route.CONTINENTAL_HTTPS;
+        try {
+            final var bytes = body.readNBytes(RESTClient.PINNED_PASSWORD_BODY_LIMIT + 1);
+            if (bytes.length > RESTClient.PINNED_PASSWORD_BODY_LIMIT) {
+                throw new IOException("Vault-backed password request too large");
+            }
+            final Object result;
+            if ("challenge".equals(operation)) {
+                final var context = PINNED_PASSWORD_MAPPER.readValue(bytes,
+                        ecmwf.ecpds.mover.MoverPasswordEnvelope.Delivery.class);
+                result = mover.beginPinnedPassword(route, host, context).toString();
+            } else {
+                final var request = PINNED_PASSWORD_MAPPER.readValue(bytes, RESTClient.PinnedPasswordRequest.class);
+                result = switch (operation) {
+                case "size" -> mover.sizePinnedPassword(route, host, request.nonce(), request.delivery(),
+                        request.ciphertext(), request.transfer());
+                case "put" -> mover.putPinnedPassword(route, host, request.nonce(), request.delivery(),
+                        request.ciphertext(), new Host[0], request.transfer()).getMoverName();
+                default -> throw new IOException("Invalid vault-backed password request");
+                };
+            }
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("result", result);
+            return Response.fromResponse(message.getResponse()).header("Cache-Control", "no-store").build();
+        } catch (final IOException | RuntimeException _) {
+            throw new WebApplicationException("Vault-backed password request rejected", Response.Status.FORBIDDEN);
+        }
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
     @Path("mover/weatherSourceIdentity")
     public Response weatherSourceIdentity(@Context UriInfo ui, @QueryParam("challenge") String challenge) {
         checkIsControlChannel(ui);
@@ -1452,10 +1580,10 @@ public final class RESTServer {
         try {
             final var path = getFilename(session, filename);
             // Check if this is a list or get request?
-            final var list = session.getFileListElement(path);
-            if (!list.isDirectory()) {
+            final var download = session.prepareDownload(path);
+            if (!download.element().isDirectory()) {
                 sessionTransferred = true;
-                return serveDataFile(session, request, filename);
+                return serveDataFile(session, request, filename, download);
             }
             // Let's treat it as a list request!
             final var setup = session.getECtransSetup();
@@ -1485,11 +1613,7 @@ public final class RESTServer {
             throw _toBrowserError(request, newException(e, 404, "Not Found: " + e.getMessage()));
         } catch (final EccmdException e) {
             _log.warn("fileGet", e);
-            final var message = e.getMessage();
-            if (message.contains("File not found") || message.contains("Destination not found")) {
-                throw _toBrowserError(request, newException(e, 404, "Not Found: " + message));
-            }
-            throw _toBrowserError(request, newException(e, 500, message));
+            throw _toBrowserError(request, _mapEccmdException(e));
         } catch (final Throwable t) {
             _log.warn("fileGet", t);
             throw _toBrowserError(request, newException(t, 500, "Internal server error"));
@@ -1668,7 +1792,7 @@ public final class RESTServer {
         final var session = getUserSession(authString, request, response);
         // serveDataFile owns the session lifecycle: closes on failure, transfers to
         // streamer on success.
-        return serveDataFile(session, request, filename);
+        return serveDataFile(session, request, filename, null);
     }
 
     /**
@@ -2664,15 +2788,24 @@ public final class RESTServer {
      */
     private static MediaRequest processGet(final UserSession session, final HttpServletRequest request,
             final ResponseBuilder builder, final String filename) throws EccmdException, IOException {
+        return processGet(session, request, builder, filename, null);
+    }
+
+    private static MediaRequest processGet(final UserSession session, final HttpServletRequest request,
+            final ResponseBuilder builder, final String filename, final DownloadFile download)
+            throws EccmdException, IOException {
         final var name = getFilename(session, filename);
-        final var element = session.getFileListElement(name);
+        final var element = download != null ? download.element() : session.getFileListElement(name);
         if (element.isDirectory() || element.getSize() == null || element.getComment() == null) {
             throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).type(MediaType.TEXT_PLAIN)
                     .entity(filename + ": Not a regular file").build());
         }
         // Are we required to check the ETag?
         final var ifNoneMatch = request.getHeader(IF_NONE_MATCH);
-        final var etag = getETag(element.getComment());
+        final var etag = download != null ? element.getETag() : getETag(element.getComment());
+        if (etag == null) {
+            throw new IOException("Cannot process ETag");
+        }
         final var expected = request.getParameter("etag");
         final var ifMatch = request.getHeader("If-Match");
         if (expected != null && !etag.equals(expected)
@@ -3091,12 +3224,14 @@ public final class RESTServer {
      *
      * @return the JAX-RS streaming response
      */
-    private Response serveDataFile(final UserSession session, final HttpServletRequest request, final String filename) {
+    private Response serveDataFile(final UserSession session, final HttpServletRequest request, final String filename,
+            final DownloadFile prepared) {
         var success = false;
         try {
             checkParameter("filename", filename);
             final var builder = Response.ok();
-            final var mediaRequest = processGet(session, request, builder, filename);
+            final var download = prepared != null ? prepared : session.prepareDownload(getFilename(session, filename));
+            final var mediaRequest = processGet(session, request, builder, filename, download);
             final var fullRange = new Range(0, mediaRequest.size - 1, mediaRequest.size);
             // Is it a bytes range request?
             final var rangeHeader = request.getHeader(RANGE);
@@ -3104,7 +3239,7 @@ public final class RESTServer {
             if (rangeHeader == null) {
                 // Full file — open proxy socket eagerly so any retrieval error is reported
                 // before the 200 OK headers are committed.
-                final var proxy = _openProxySocket(session, mediaRequest, 0, -1);
+                final var proxy = _openProxySocket(download, mediaRequest, 0, -1);
                 builder.header(CONTENT_LENGTH, fullRange.length);
                 streamer = new SingleStreamer(session, proxy, mediaRequest, -1, -1);
             } else {
@@ -3113,7 +3248,7 @@ public final class RESTServer {
                 final var ranges = getRanges(rangeHeader, fullRange, filename, mediaRequest.size, request);
                 if (ranges.isEmpty() || ranges.get(0) == fullRange) {
                     // Return full file via range request — also open eagerly
-                    final var proxy = _openProxySocket(session, mediaRequest, 0, -1);
+                    final var proxy = _openProxySocket(download, mediaRequest, 0, -1);
                     builder.header(CONTENT_RANGE,
                             "bytes " + fullRange.start + "-" + fullRange.end + "/" + fullRange.total);
                     builder.header(CONTENT_LENGTH, fullRange.length);
@@ -3121,7 +3256,7 @@ public final class RESTServer {
                 } else if (ranges.size() == 1) {
                     // Only one range requested — open eagerly
                     final var singleRange = ranges.get(0);
-                    final var proxy = _openProxySocket(session, mediaRequest, singleRange.start, singleRange.length);
+                    final var proxy = _openProxySocket(download, mediaRequest, singleRange.start, singleRange.length);
                     builder.header(CONTENT_RANGE,
                             "bytes " + singleRange.start + "-" + singleRange.end + "/" + singleRange.total);
                     builder.header(CONTENT_LENGTH, singleRange.length);
@@ -3134,18 +3269,8 @@ public final class RESTServer {
                             && rangeSize > setup.getByteSize(ECtransOptions.USER_PORTAL_MAX_RANGES_ALLOWED).size()) {
                         throw newException(429, "Too Many Requests: Max ranges allowed exceeded (" + rangeSize + ")");
                     }
-                    final var proxies = new java.util.ArrayList<ProxySocket>(rangeSize);
-                    try {
-                        for (final var range : ranges) {
-                            proxies.add(_openProxySocket(session, mediaRequest, range.start, range.length));
-                        }
-                    } catch (final Exception e) {
-                        // Close any already-opened proxy sockets to avoid resource leaks
-                        for (final var p : proxies) {
-                            StreamPlugThread.closeQuietly(p);
-                        }
-                        throw e;
-                    }
+                    final var proxies = openDownload(download, mediaRequest.etag, mediaRequest.pinned,
+                            ranges.stream().map(range -> new DownloadRange(range.start, range.length)).toList());
                     // Remove any Content-Type set by processGet (e.g. from portal.headerRegistry for
                     // *.grib2 files) before setting the multipart boundary type. Without this,
                     // Jersey throws HeaderValueException("Too many Content-Type header values") when
@@ -3190,8 +3315,8 @@ public final class RESTServer {
      * This must be called <em>before</em> the HTTP response headers are committed so that the caller can still set the
      * correct status code.
      *
-     * @param session
-     *            the authenticated user session
+     * @param download
+     *            the prepared download
      * @param mediaRequest
      *            the resolved file name / content-type descriptor
      * @param posn
@@ -3208,11 +3333,27 @@ public final class RESTServer {
      * @throws IOException
      *             for low-level I/O errors
      */
-    private static ProxySocket _openProxySocket(final UserSession session, final MediaRequest mediaRequest,
+    private static ProxySocket _openProxySocket(final DownloadFile download, final MediaRequest mediaRequest,
             final long posn, final long length) throws FileNotFoundException, EccmdException, IOException {
-        final var proxy = mediaRequest.pinned ? session.getStoredProxySocketInput(mediaRequest.name, posn, length)
-                : session.getProxySocketInput(mediaRequest.name, posn, length);
-        return validateProxyVersion(proxy, mediaRequest.etag);
+        return openDownload(download, mediaRequest.etag, mediaRequest.pinned, List.of(new DownloadRange(posn, length)))
+                .getFirst();
+    }
+
+    static List<ProxySocket> openDownload(final DownloadFile download, final String etag, final boolean storedOnly,
+            final List<DownloadRange> ranges) throws EccmdException, IOException {
+        final var proxies = download.opener().open(ranges, storedOnly);
+        try {
+            if (proxies.size() != ranges.size()) {
+                throw new IOException("Unexpected number of download tickets");
+            }
+            for (final var proxy : proxies) {
+                validateProxyVersion(proxy, etag);
+            }
+            return proxies;
+        } catch (final IOException | RuntimeException e) {
+            proxies.forEach(ProxySocket::close);
+            throw e;
+        }
     }
 
     static ProxySocket validateProxyVersion(final ProxySocket proxy, final String etag) {
@@ -3253,6 +3394,9 @@ public final class RESTServer {
         }
         if (message.contains("Download quota exceeded")) {
             return newException(e, 429, "Too Many Requests: " + message);
+        }
+        if (message.equals("File version changed while opening the stream")) {
+            return newException(e, 412, message);
         }
         if (message.contains("Not retrieved") || message.contains("not available")
                 || message.contains("No TransferServer available")) {

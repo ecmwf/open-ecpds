@@ -354,6 +354,13 @@ public interface ManagementInterface extends Remote {
     ECpdsSession completeInteractiveLogin(String state, String binding, String code, String host, String agent)
             throws MasterException, DataBaseException, RemoteException;
 
+    HostPasswordRotationStatus pendingHostPassword(ECpdsSession session, String destination, long host,
+            HostPasswordRotationStatus.Operation operation, java.util.UUID reference, String password,
+            long retirementGraceSeconds) throws MasterException, RemoteException;
+
+    HostPasswordActivation activateHostPassword(ECpdsSession session, String destination, long host,
+            HostPasswordActivation.Request request) throws MasterException, RemoteException;
+
     /**
      * Creates the web user.
      *

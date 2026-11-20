@@ -114,6 +114,118 @@ import reactor.core.scheduler.Schedulers;
  * The Class AzureModule.
  */
 public final class AzureModule extends TransferModule {
+    private boolean rotatingCredential;
+    private boolean legacyCredentialSession;
+    private volatile boolean rotationClosed;
+    private reactor.netty.resources.ConnectionProvider rotationConnections;
+    private reactor.netty.resources.LoopResources rotationLoops;
+
+    @Override
+    public java.util.Optional<ecmwf.common.ectrans.PasswordRotation> passwordRotation() {
+        return java.util.Optional.of(new ecmwf.common.ectrans.FileCredentialRotation<AzureModule>("azure",
+                AzureModule::new, java.util.Set.of(ecmwf.common.ectrans.FileCredentialRotation.STANDARD_METHOD),
+                java.util.Set.of("azure.port", "azure.scheme", "azure.url", "azure.containerName", "azure.sasUrl",
+                        "azure.sasSubscriptionKey"),
+                java.util.Set.of("container", "account")) {
+            @Override
+            protected void validate(final ResourceEndpoint endpoint) {
+                if (!endpoint.option("container").matches("[a-z0-9][a-z0-9-]{1,61}[a-z0-9]")
+                        || !endpoint.option("account").matches("[a-z0-9]{3,24}")) {
+                    throw new IllegalArgumentException("Invalid approved Azure resource");
+                }
+            }
+
+            @Override
+            protected void connect(final AzureModule module, final ResourceEndpoint endpoint, final String directory,
+                    final String credential) throws Exception {
+                final var bundle = object(credential);
+                module.rotatingCredential = true;
+                module.rotationClosed = false;
+                module.currentSetup = setup();
+                module.containerName = endpoint.option("container");
+                module.rotationConnections = reactor.netty.resources.ConnectionProvider
+                        .builder("credential-" + java.util.UUID.randomUUID()).maxConnections(4).build();
+                module.rotationLoops = reactor.netty.resources.LoopResources.create("credential-azure", 1, true);
+                final var tls = io.netty.handler.ssl.SslContextBuilder.forClient()
+                        .sslProvider(io.netty.handler.ssl.SslProvider.JDK).build();
+                final var netty = reactor.netty.http.client.HttpClient.create(module.rotationConnections)
+                        .runOn(module.rotationLoops, false).followRedirect(false)
+                        .secure(spec -> spec.sslContext(tls).handlerConfigurator(handler -> {
+                            final var parameters = handler.engine().getSSLParameters();
+                            parameters.setEndpointIdentificationAlgorithm("HTTPS");
+                            handler.engine().setSSLParameters(parameters);
+                        })).doOnRequest((request, connection) -> {
+                            final var actual = java.net.URI.create(request.resourceUrl());
+                            if (!endpoint.matchesOrigin(actual.getScheme(), actual.getHost(), actual.getPort())) {
+                                throw new IllegalStateException("Approved Azure origin changed");
+                            }
+                        });
+                final var builder = new BlobServiceClientBuilder().endpoint(endpoint.origin().toString())
+                        .retryOptions(new com.azure.storage.common.policy.RequestRetryOptions(
+                                com.azure.storage.common.policy.RetryPolicyType.FIXED, 1, 60, 1L, 1L, null))
+                        .httpLogOptions(new com.azure.core.http.policy.HttpLogOptions()
+                                .setLogLevel(com.azure.core.http.policy.HttpLogDetailLevel.NONE))
+                        .httpClient(
+                                new NettyAsyncHttpClientBuilder(netty).connectTimeout(java.time.Duration.ofSeconds(30))
+                                        .readTimeout(java.time.Duration.ofSeconds(60))
+                                        .responseTimeout(java.time.Duration.ofSeconds(60)).build());
+                if ("shared_key".equals(text(bundle, "type"))) {
+                    if (!endpoint.option("account").equals(text(bundle, "accountName"))) {
+                        throw new IOException("Credential account changed");
+                    }
+                    builder.credential(
+                            new StorageSharedKeyCredential(text(bundle, "accountName"), text(bundle, "accountKey")));
+                } else if ("access_token".equals(text(bundle, "type"))) {
+                    final var expires = java.time.OffsetDateTime.parse(text(bundle, "expiresAt"));
+                    if (!expires.isAfter(java.time.OffsetDateTime.now().plusSeconds(60))) {
+                        throw new IOException("Credential expires too soon");
+                    }
+                    final var token = new com.azure.core.credential.AccessToken(text(bundle, "accessToken"), expires);
+                    builder.credential(
+                            (com.azure.core.credential.TokenCredential) request -> reactor.core.publisher.Mono
+                                    .just(token));
+                } else if ("sas".equals(text(bundle, "type"))) {
+                    builder.sasToken(module.legacyCredentialSession ? text(bundle, "sasToken")
+                            : validateRotatedSas(text(bundle, "sasToken")));
+                } else {
+                    throw new IOException("Unsupported Azure credential bundle");
+                }
+                module.service = new BlobServiceClientCache("isolated-credential-" + java.util.UUID.randomUUID(),
+                        builder, new java.util.concurrent.atomic.AtomicReference<>());
+            }
+        });
+    }
+
+    @Override
+    public boolean isSessionClosureConfirmed() {
+        return rotationClosed;
+    }
+
+    private static String validateRotatedSas(final String value) throws Exception {
+        final var token = value.startsWith("?") ? value.substring(1) : value;
+        final var uri = java.net.URI.create("https://credential.invalid/?" + token);
+        final var fields = new java.util.HashMap<String, String>();
+        if (uri.getFragment() != null) {
+            throw new IOException("Invalid SAS credential");
+        }
+        for (final var part : token.split("&")) {
+            final var pair = part.split("=", 2);
+            if (pair.length != 2 || !pair[0].matches("[a-z]{2,6}") || fields.putIfAbsent(pair[0],
+                    java.net.URLDecoder.decode(pair[1], java.nio.charset.StandardCharsets.UTF_8)) != null) {
+                throw new IOException("Invalid SAS credential");
+            }
+        }
+        if (!"https".equals(fields.get("spr")) || !fields.containsKey("se") || !fields.containsKey("sig")
+                || !java.time.Instant.parse(fields.get("se")).isAfter(java.time.Instant.now().plusSeconds(60))
+                || java.util.Base64.getDecoder().decode(fields.get("sig")).length != 32) {
+            throw new IOException("Expected an unexpired HTTPS-only SAS credential");
+        }
+        return token;
+    }
+
+    private Exception reportableFailure(final Exception failure) {
+        return rotatingCredential ? new IOException("Azure credential-backed request failed") : failure;
+    }
 
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(AzureModule.class);
@@ -227,6 +339,24 @@ public final class AzureModule extends TransferModule {
         var connected = false;
         final var theUrl = new URI(url).toURL();
         setAttribute("remote.hostName", theUrl.getHost());
+        final var capability = passwordRotation().orElseThrow();
+        final var sasUrl = setup.getString(HOST_AZURE_SAS_URL);
+        final var sasKey = setup.getString(HOST_AZURE_SAS_SUBSCRIPTION_KEY);
+        if (hasTransferSession() && "https".equals(theUrl.getProtocol())
+                && (isNotEmpty(user) && isNotEmpty(password) || isNotEmpty(sasUrl) && isNotEmpty(sasKey)) && capability
+                        .supports(ecmwf.common.ectrans.FileCredentialRotation.STANDARD_METHOD, setup.getData(), port)) {
+            final var account = isNotEmpty(user) ? user : "legacy";
+            final var endpoint = new ecmwf.common.ectrans.FileCredentialRotation.ResourceEndpoint(theUrl.getHost(),
+                    theUrl.getPort() < 0 ? 443 : theUrl.getPort(), account, "/probe",
+                    java.util.Map.of("account", account, "container", containerName));
+            final var bundle = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .writeValueAsString(isNotEmpty(user) && isNotEmpty(password)
+                            ? java.util.Map.of("type", "shared_key", "accountName", user, "accountKey", password)
+                            : java.util.Map.of("type", "sas", "sasToken", getSasToken(sasUrl, sasKey)));
+            legacyCredentialSession = true;
+            capability.connect(this, endpoint, "/", setup, bundle);
+            return;
+        }
         try {
             service = BlobServiceClientCache.getBlobServiceClientCache(getSetup().getString(HOST_AZURE_SAS_URL),
                     getSetup().getString(HOST_AZURE_SAS_SUBSCRIPTION_KEY), user, password,
@@ -298,8 +428,8 @@ public final class AzureModule extends TransferModule {
         try {
             service.getBlobContainerClient(cnb[0]).getBlobClient(cnb[1]).delete();
         } catch (final Exception e) {
-            _log.debug("deleteBlob", e);
-            throw new IOException(e.getMessage());
+            _log.debug("deleteBlob", reportableFailure(e));
+            throw new IOException(reportableFailure(e).getMessage());
         }
     }
 
@@ -434,8 +564,8 @@ public final class AzureModule extends TransferModule {
                 // then call upload with this options object
                 blobClient.uploadWithResponse(uploadOptions).block();
             } catch (final Exception e) {
-                _log.debug("upload", e);
-                throw new IOException(e.getMessage());
+                _log.debug("upload", reportableFailure(e));
+                throw new IOException(reportableFailure(e).getMessage());
             }
         } else {
             // Standard synchronous upload
@@ -460,8 +590,8 @@ public final class AzureModule extends TransferModule {
                 blobClient.upload(getMarkSupportedInputStream(getMD5InputStream(in)), size,
                         getSetup().getBoolean(HOST_AZURE_OVERWRITE));
             } catch (final Exception e) {
-                _log.debug("upload", e);
-                throw new IOException(e.getMessage());
+                _log.debug("upload", reportableFailure(e));
+                throw new IOException(reportableFailure(e).getMessage());
             }
         }
         return true;
@@ -531,7 +661,7 @@ public final class AzureModule extends TransferModule {
                         blobClient.uploadWithResponse(uploadOptions).block();
                         _log.debug("File uploaded");
                     } catch (final Exception e) {
-                        _log.debug("File NOT uploaded", e);
+                        _log.debug("File NOT uploaded", reportableFailure(e));
                     } finally {
                         StreamPlugThread.closeQuietly(input);
                     }
@@ -540,8 +670,8 @@ public final class AzureModule extends TransferModule {
             runnable.execute();
             return output;
         } catch (final Exception e) {
-            _log.debug("upload", e);
-            throw new IOException(e.getMessage());
+            _log.debug("upload", reportableFailure(e));
+            throw new IOException(reportableFailure(e).getMessage());
         }
     }
 
@@ -570,8 +700,8 @@ public final class AzureModule extends TransferModule {
             // Open input stream directly from the blob client
             return service.getBlobContainerClient(cnb[0]).getBlobClient(cnb[1]).openInputStream();
         } catch (final Exception e) {
-            _log.debug("download", e);
-            throw new IOException(e.getMessage());
+            _log.debug("download", reportableFailure(e));
+            throw new IOException(reportableFailure(e).getMessage());
         }
     }
 
@@ -698,8 +828,8 @@ public final class AzureModule extends TransferModule {
         try {
             return service.getBlobContainerClient(cnb[0]).getBlobClient(cnb[1]).getProperties();
         } catch (final Exception e) {
-            _log.debug("getBlobProperties", e);
-            throw new IOException(e.getMessage());
+            _log.debug("getBlobProperties", reportableFailure(e));
+            throw new IOException(reportableFailure(e).getMessage());
         }
     }
 
@@ -729,8 +859,8 @@ public final class AzureModule extends TransferModule {
             try {
                 service.getBlobContainerClient(token.nextToken()).create();
             } catch (final Exception e) {
-                _log.debug("createContainer", e);
-                throw new IOException(e.getMessage());
+                _log.debug("createContainer", reportableFailure(e));
+                throw new IOException(reportableFailure(e).getMessage());
             }
         } else {
             throw new IOException("Subdirectories not allowed in Container");
@@ -763,8 +893,8 @@ public final class AzureModule extends TransferModule {
             try {
                 service.getBlobContainerClient(token.nextToken()).delete();
             } catch (final Exception e) {
-                _log.debug("deleteContainer", e);
-                throw new IOException(e.getMessage());
+                _log.debug("deleteContainer", reportableFailure(e));
+                throw new IOException(reportableFailure(e).getMessage());
             }
         } else {
             throw new IOException("Subdirectories not allowed in Blob");
@@ -833,8 +963,8 @@ public final class AzureModule extends TransferModule {
                 listObjects(output, container, token.nextToken("\0").substring(1), pattern);
             }
         } catch (final Exception e) {
-            _log.debug("list", e);
-            throw new IOException(e.getMessage());
+            _log.debug("list", reportableFailure(e));
+            throw new IOException(reportableFailure(e).getMessage());
         }
     }
 
@@ -1005,11 +1135,33 @@ public final class AzureModule extends TransferModule {
     @Override
     public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
+            if (rotatingCredential) {
+                try {
+                    closeSessionResources(azureInput, () -> {
+                        if (rotationConnections != null) {
+                            rotationConnections.disposeLater().block(java.time.Duration.ofSeconds(10));
+                        }
+                    }, () -> {
+                        if (rotationLoops != null) {
+                            rotationLoops.disposeLater(java.time.Duration.ZERO, java.time.Duration.ofSeconds(10))
+                                    .block(java.time.Duration.ofSeconds(15));
+                        }
+                    });
+                    rotationClosed = (rotationConnections == null || rotationConnections.isDisposed())
+                            && (rotationLoops == null || rotationLoops.isDisposed());
+                    service = null;
+                    return;
+                } catch (final Exception failure) {
+                    throw new IOException("Unable to confirm Azure session closure");
+                }
+            }
             _log.debug("Close connection");
             currentStatus = "CLOSE";
             StreamPlugThread.closeQuietly(azureInput);
             if (service != null) {
                 service.shutdown();
+            } else if (hasTransferSession()) {
+                rotationClosed = true;
             }
             _log.debug("Close completed");
         } else {

@@ -168,8 +168,9 @@ abstract class ECtransAction {
     protected void close(final TransferModule module, final long timeout, final boolean asynchronous)
             throws IOException {
         if (_container != null) {
-            _container.close(_provider, getCookie() == null ? module : null, getECtransHistory(), timeout,
-                    asynchronous);
+            _container.close(_provider,
+                    getCookie() == null || module != null && module.hasTransferSession() ? module : null,
+                    getECtransHistory(), timeout, asynchronous);
         }
     }
 }

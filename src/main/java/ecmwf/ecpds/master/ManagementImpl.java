@@ -532,6 +532,20 @@ final class ManagementImpl extends CallBackObject implements ManagementInterface
         return master.completeInteractiveLogin(state, binding, code, interactiveOrigin(), host, agent);
     }
 
+    @Override
+    public HostPasswordRotationStatus pendingHostPassword(final ECpdsSession session, final String destination,
+            final long host, final HostPasswordRotationStatus.Operation operation, final java.util.UUID reference,
+            final String password, final long retirementGraceSeconds) throws MasterException {
+        return master.pendingHostPassword(session, interactiveOrigin(), destination, host, operation, reference,
+                password, retirementGraceSeconds);
+    }
+
+    @Override
+    public HostPasswordActivation activateHostPassword(final ECpdsSession session, final String destination,
+            final long host, final HostPasswordActivation.Request request) throws MasterException {
+        return master.activateHostPassword(session, interactiveOrigin(), destination, host, request);
+    }
+
     /**
      * Save web user.
      *

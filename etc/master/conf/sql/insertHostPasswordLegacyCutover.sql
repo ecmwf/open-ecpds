@@ -1,0 +1,16 @@
+#menu "ECpdsBase"
+#name "insertHostPasswordLegacyCutover"
+#group "update"
+#timeout "5"
+#prompt "host;Host;;"
+#bind "host;LONG"
+#prompt "cutover;Cutover;;"
+#bind "cutover;STRING"
+#prompt "reference;Reference;;"
+#bind "reference;STRING"
+#prompt "endpoint;Endpoint;;"
+#bind "endpoint;STRING"
+#prompt "configuration;Configuration;;"
+#bind "configuration;STRING"
+INSERT INTO HOST_PASSWORD_LEGACY_CUTOVER
+  (HOS_NAME,HLC_ID,HLC_REFERENCE,HLC_ENDPOINT,HLC_CONFIGURATION) VALUES (:host,:cutover,:reference,:endpoint,:configuration)

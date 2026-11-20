@@ -108,6 +108,57 @@ import it.sauronsoftware.ftp4j.FTPDataTransferListener;
  * The Class FtpsModule.
  */
 public final class FtpsModule extends TransferModule {
+    private boolean rotatingCredential;
+    private volatile boolean rotationClosed;
+    private java.util.concurrent.CompletableFuture<Void> pendingCredentialUpload;
+
+    @Override
+    public java.util.Optional<ecmwf.common.ectrans.PasswordRotation> passwordRotation() {
+        return java.util.Optional.of(new ecmwf.common.ectrans.FileCredentialRotation<FtpsModule>("ftps",
+                FtpsModule::new, java.util.Set.of(ecmwf.common.ectrans.FileCredentialRotation.STANDARD_METHOD),
+                java.util.Set.of("ftps.port", "ftps.connectionType", "ftps.strict", "ftps.passive"),
+                java.util.Set.of("mode")) {
+            @Override
+            protected void validate(final ResourceEndpoint endpoint) {
+                if (!java.util.Set.of("explicit", "implicit").contains(endpoint.option("mode"))) {
+                    throw new IllegalArgumentException("Expected encrypted FTP mode");
+                }
+            }
+
+            @Override
+            protected void connect(final FtpsModule module, final ResourceEndpoint endpoint, final String directory,
+                    final String credential) throws Exception {
+                module.rotatingCredential = true;
+                module.rotationClosed = false;
+                module.currentSetup = setup();
+                module.currentStatus = "CONNECT";
+                module.keepAlive = 0;
+                module.usetmp = false;
+                module.ignoreDelete = true;
+                module.ftp = new FTPClient();
+                module.ftp.setSecurity("implicit".equals(endpoint.option("mode")) ? FTPClient.SECURITY_FTPS
+                        : FTPClient.SECURITY_FTPES);
+                module.ftp.setSSLSocketFactory(strictTlsFactory(endpoint.host()));
+                module.ftp.setPassive(true);
+                module.ftp.setAutoNoopTimeout(0);
+                module.ftp.getConnector().setConnectionTimeout(30000);
+                module.ftp.getConnector().setReadTimeout(60000);
+                module.ftp.getConnector().setCloseTimeout(10000);
+                module.ftp.connect(endpoint.host(), endpoint.port());
+                module.ftp.login(endpoint.login(), credential);
+                module.ftp.setType(FTPClient.TYPE_BINARY);
+                if (directory != null && !directory.isBlank()) {
+                    module.ftp.changeDirectory(directory);
+                }
+            }
+        });
+    }
+
+    @Override
+    public boolean isSessionClosureConfirmed() {
+        return rotationClosed;
+    }
+
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(FtpsModule.class);
 
@@ -292,6 +343,9 @@ public final class FtpsModule extends TransferModule {
         preMkdirsCmd = setup.getString(HOST_FTPS_PRE_MKDIRS_CMD);
         postMkdirsCmd = setup.getString(HOST_FTPS_POST_MKDIRS_CMD);
         keepAlive = setup.getDuration(HOST_FTPS_KEEP_ALIVE).toMillis();
+        if (hasTransferSession()) {
+            keepAlive = 0;
+        }
         useNoop = (int) setup.getDuration(HOST_FTPS_USE_NOOP).toMillis();
         ignoreCheck = setup.getBoolean(HOST_FTPS_IGNORE_CHECK);
         ignoreDelete = setup.getBoolean(HOST_FTPS_IGNORE_DELETE);
@@ -665,6 +719,7 @@ public final class FtpsModule extends TransferModule {
      */
     @Override
     public void check(final long sent, final String checksum, final boolean error) throws IOException {
+        awaitCredentialUpload();
         _log.debug("Check file");
         setStatus("CHECK");
         if (putName == null && getName == null) {
@@ -814,6 +869,20 @@ public final class FtpsModule extends TransferModule {
     @Override
     public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
+            if (rotatingCredential || hasTransferSession()) {
+                closeSessionResources(ftpsInput, ftpsOutput, this::awaitCredentialUpload, () -> {
+                    if (ftp != null && ftp.isConnected()) {
+                        try {
+                            ftp.disconnect(true);
+                        } catch (final Exception failure) {
+                            ftp.abruptlyCloseCommunication();
+                            throw new IOException("Unable to confirm encrypted FTP session closure");
+                        }
+                    }
+                });
+                rotationClosed = ftp == null || !ftp.isConnected();
+                return;
+            }
             _log.debug("Close connection");
             currentStatus = "CLOSE";
             closeStreams();
@@ -1105,6 +1174,9 @@ public final class FtpsModule extends TransferModule {
         }
         final var in = new PipedInputStream();
         ftpsOutput = new PipedOutputStream(in);
+        final var completion = rotatingCredential || hasTransferSession()
+                ? new java.util.concurrent.CompletableFuture<Void>() : null;
+        pendingCredentialUpload = completion;
         new ConfigurableRunnable() {
             @Override
             public void configurableRun() {
@@ -1125,10 +1197,29 @@ public final class FtpsModule extends TransferModule {
                             transferError = Format.getMessage(t);
                         }
                     }
+                    if (completion != null) {
+                        completion.complete(null);
+                    }
                 }
             }
         }.execute();
 
+    }
+
+    private void awaitCredentialUpload() throws IOException {
+        if (pendingCredentialUpload != null) {
+            if (ftpsOutput != null) {
+                ftpsOutput.close();
+            }
+            try {
+                pendingCredentialUpload.get(65, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (final InterruptedException failure) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Encrypted FTP transfer interrupted");
+            } catch (final Exception failure) {
+                throw new IOException("Encrypted FTP transfer completion unconfirmed");
+            }
+        }
     }
 
     /**

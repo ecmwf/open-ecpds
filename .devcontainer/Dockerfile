@@ -54,18 +54,15 @@ RUN java -Xshare:dump
 # Re-enable disabled algorithms to allow connecting to low security sites
 COPY java.security $JAVA_HOME/conf/security/
 
-# Install Kompose and kubectl
-ENV KOMPOSE_VERSION=1.37.0
+# Install kubectl (includes Kustomize)
 ENV KUBECTL_VERSION=1.37.2
 
 RUN if [ "$(uname -m)" = "aarch64" ]; then \
-        curl -s -L https://github.com/kubernetes/kompose/releases/download/v${KOMPOSE_VERSION}/kompose-linux-arm64 -o /usr/local/bin/kompose; \
-        curl -s -L https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/arm64/kubectl -o /usr/local/bin/kubectl; \
+        curl -fsSL https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/arm64/kubectl -o /usr/local/bin/kubectl; \
     else \
-        curl -s -L https://github.com/kubernetes/kompose/releases/download/v${KOMPOSE_VERSION}/kompose-linux-amd64 -o /usr/local/bin/kompose; \
-        curl -s -L https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl; \
+        curl -fsSL https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl; \
     fi && \
-    chmod +x /usr/local/bin/kompose /usr/local/bin/kubectl
+    chmod +x /usr/local/bin/kubectl
 
 # Set VS Code dev container environment variable
 ENV IN_DEV_CONTAINER=true

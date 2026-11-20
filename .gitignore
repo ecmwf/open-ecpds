@@ -5,7 +5,7 @@
 /docker/ecpds/standalone/etc/
 /docker/ecpds/standalone/hawtio/
 /docker/ecpds/standalone/ecpds.sql
-/docker/ecpds/tools/rpms/
+/docker/ecpds/tools/
 /docker/ecpds/cli/rpms/
 /docker/ecpds/hawtio/lib/
 /ecpds-core/src/test/
@@ -14,6 +14,7 @@
 /docs/javadoc/
 /etc/monitor/htdocs/docs/
 /lib/
+/scripts/tests/
 /site/
 
 # Maven build output (all modules)
@@ -29,6 +30,8 @@ bin/
 # Auto-generated TLS keystores (created at startup if missing, never commit)
 **/*.pfx
 **/*.p12
+/run/etc/ecpds/openbao/tls/
+/run/etc/ecpds/openbao/operator/
 
 # flatten-maven-plugin: resolved POM generated during build, removed by mvn clean
 **/.flattened-pom.xml

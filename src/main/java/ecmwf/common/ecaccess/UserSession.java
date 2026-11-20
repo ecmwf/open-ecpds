@@ -27,6 +27,8 @@ package ecmwf.common.ecaccess;
  */
 
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.List;
 
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.technical.ProxySocket;
@@ -35,6 +37,22 @@ import ecmwf.common.technical.ProxySocket;
  * The Class UserSession.
  */
 public abstract class UserSession {
+    public record DownloadRange(long offset, long length) implements Serializable {
+    }
+
+    @FunctionalInterface
+    public interface DownloadOpener {
+        List<ProxySocket> open(List<DownloadRange> ranges, boolean storedOnly) throws EccmdException, IOException;
+    }
+
+    /** File metadata and its request-scoped download operation. */
+    public record DownloadFile(FileListElement element, DownloadOpener opener) {
+    }
+
+    public DownloadFile prepareDownload(final String source) throws EccmdException, IOException {
+        throw new IOException("Prepared downloads are not supported by this data service");
+    }
+
     /** The _user. */
     private final String _user;
 

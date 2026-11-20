@@ -28,8 +28,10 @@ package ecmwf.ecpds.master;
 
 import java.io.IOException;
 import java.rmi.Remote;
+import java.util.List;
 
 import ecmwf.common.ecaccess.FileListElement;
+import ecmwf.common.ecaccess.UserSession.DownloadRange;
 import ecmwf.common.technical.ProxySocket;
 
 /**
@@ -133,6 +135,12 @@ public interface DataAccessInterface extends Remote {
     default ProxySocket getStoredProxySocketInput(final String destinationName, final String source, final long offset,
             final long length) throws MasterException, IOException {
         throw new IOException("Stored-only retrieval is not supported by this data service");
+    }
+
+    default List<ProxySocket> getDownloadProxies(final String destinationName, final String transferId,
+            final String etag, final List<DownloadRange> ranges, final boolean storedOnly)
+            throws MasterException, IOException {
+        throw new IOException("Prepared downloads are not supported by this data service");
     }
 
     /**

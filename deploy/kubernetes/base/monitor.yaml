@@ -1,0 +1,169 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecpds-monitor
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: ecpds-monitor
+spec:
+  selector:
+    app.kubernetes.io/name: ecpds-monitor
+  ports:
+  - name: https
+    port: 3443
+    targetPort: 3443
+  - name: rmi
+    port: 3600
+    targetPort: 3600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecpds-monitor-pods
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: ecpds-monitor
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: ecpds-monitor
+  ports:
+  - name: rmi
+    port: 3600
+    targetPort: 3600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecpds-monitor-jolokia
+  labels:
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: ecpds-monitor
+spec:
+  selector:
+    app.kubernetes.io/name: ecpds-monitor
+  ports:
+  - name: jolokia
+    port: 3062
+    targetPort: jolokia
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ecpds-monitor
+  labels: &id001
+    app.kubernetes.io/part-of: open-ecpds
+    app.kubernetes.io/name: ecpds-monitor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ecpds-monitor
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: ecpds-monitor
+        image: open-ecpds/monitor:latest
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: ALLOCATED_MEMORY
+          value: 1G
+        - name: EXTERNAL_ADDRESS
+          value: $(POD_IP)
+        - name: INTERNAL_ADDRESS
+          value: $(POD_NAME).ecpds-monitor-pods
+        - name: PORT_CALLBACK
+          value: '3600'
+        - name: PORT_HTTPS
+          value: '3443'
+        - name: JOLOKIA_PORT
+          value: '3062'
+        - name: JOLOKIA_HOST
+          value: 0.0.0.0
+        - name: JOLOKIA_USER
+          valueFrom:
+            secretKeyRef:
+              name: ecpds-monitor-credentials
+              key: JOLOKIA_USER
+        - name: JOLOKIA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecpds-monitor-credentials
+              key: JOLOKIA_PASSWORD
+        - name: MASTER_ADDRESS
+          value: ecpds-master
+        - name: PORT_MASTER
+          value: '2600'
+        - name: LOG_ROLLOVER_SIZE_MAX
+          value: 100MB
+        - name: LOG_ROLLOVER_SIZE_KEEP
+          value: '20'
+        - name: LOG_LEVEL
+          value: debug
+        - name: KEYSTORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecpds-monitor-credentials
+              key: KEYSTORE_PASSWORD
+        - name: MONITOR_NICKNAME
+          value: PDS
+        - name: MONITOR_TITLE
+          value: Personal Data Store
+        - name: MONITOR_COLOR
+          value: '#0079d3'
+        - name: USE_CACHE
+          value: 'no'
+        - name: MASTER_URL_LIST
+          value: ''
+        - name: DEFAULT_SOURCE_HOST_ID
+          value: ''
+        ports:
+        - name: https
+          containerPort: 3443
+        - name: rmi
+          containerPort: 3600
+        - name: jolokia
+          containerPort: 3062
+        volumeMounts:
+        - name: var-log-ecpds-monitor
+          mountPath: /var/log/ecpds/monitor
+        - name: var-tmp-ecpds-monitor
+          mountPath: /var/tmp/ecpds/monitor
+        - name: etc-ecpds-monitor
+          mountPath: /etc/ecpds
+        resources:
+          requests:
+            cpu: 100m
+            memory: 1536Mi
+        startupProbe:
+          tcpSocket: &id002
+            port: https
+          timeoutSeconds: 3
+          periodSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          tcpSocket: *id002
+          timeoutSeconds: 3
+          periodSeconds: 10
+      volumes:
+      - name: var-log-ecpds-monitor
+        persistentVolumeClaim:
+          claimName: var-log-ecpds-monitor
+      - name: var-tmp-ecpds-monitor
+        persistentVolumeClaim:
+          claimName: var-tmp-ecpds-monitor
+      - name: etc-ecpds-monitor
+        persistentVolumeClaim:
+          claimName: etc-ecpds-monitor
+  serviceName: ecpds-monitor-pods

@@ -1,0 +1,11 @@
+#menu "ECpdsBase"
+#name "updateHostPasswordRetirementGrace"
+#group "update"
+#timeout "5"
+#prompt "graceSeconds;Grace seconds;;"
+#bind "graceSeconds;LONG"
+#prompt "host;Host;;"
+#bind "host;LONG"
+#prompt "reference;Reference;;"
+#bind "reference;STRING"
+UPDATE HOST_PASSWORD_ROTATION SET HPR_RETIRE_GRACE_SECONDS=:graceSeconds WHERE HOS_NAME=:host AND HPR_REF=:reference

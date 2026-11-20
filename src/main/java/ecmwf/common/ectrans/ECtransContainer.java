@@ -69,6 +69,7 @@ import ecmwf.common.database.ECtransDestination;
 import ecmwf.common.database.ECtransHistory;
 import ecmwf.common.database.MSUser;
 import ecmwf.common.ecaccess.MBeanRepository;
+import ecmwf.common.ectrans.PasswordRotation.Approved;
 import ecmwf.common.mbean.MBeanManager;
 import ecmwf.common.mbean.MBeanService;
 import ecmwf.common.starter.Starter;
@@ -545,6 +546,28 @@ public final class ECtransContainer implements MBeanService {
         r.execute(true);
     }
 
+    @FunctionalInterface
+    public interface TransferPassword {
+        String consume() throws IOException;
+    }
+
+    private record PinnedPassword(Approved endpoint, TransferPassword credential) {
+    }
+
+    public void asyncPinnedPasswordPut(final ECtransProvider associations, final ECtransPut action, final String ecuser,
+            final String remote, final Options connectOptions, final ECtransCallback callback, final Approved endpoint,
+            final TransferPassword credential) throws ECtransException {
+        final var finder = new LocalFinder(ecuser, remote, new PinnedPassword(endpoint, credential), associations);
+        new ECtransThread(finder, action, null, null, connectOptions, callback, false).execute(true);
+    }
+
+    public void pinnedPasswordSize(final ECtransProvider associations, final ECtransSize action, final String ecuser,
+            final String remote, final ECtransCallback callback, final Approved endpoint,
+            final TransferPassword credential) throws ECtransException, IOException {
+        final var finder = new LocalFinder(ecuser, remote, new PinnedPassword(endpoint, credential), associations);
+        new ECtransThread(finder, action, null, null, null, callback, true).exec();
+    }
+
     /**
      * Async exec.
      *
@@ -677,6 +700,12 @@ public final class ECtransContainer implements MBeanService {
      */
     public TransferURL getTransferURL(final RemoteProvider provider, final ECtransHistory history, final String ecuser,
             final String remote, final String location, final boolean hidePassword) throws ECtransException {
+        return lookupTransferURL(defaultProvider, provider, history, ecuser, remote, location, hidePassword, true);
+    }
+
+    private TransferURL lookupTransferURL(final ECtransProvider associations, final RemoteProvider provider,
+            final ECtransHistory history, final String ecuser, final String remote, final String location,
+            final boolean hidePassword, final boolean includeUrl) throws ECtransException {
         String user;
         String target;
         int ind;
@@ -691,7 +720,7 @@ public final class ECtransContainer implements MBeanService {
             _log.warn("Password set but not used");
             user = user.substring(0, ind);
         }
-        final var msuser = defaultProvider.getMSUser(ecuser, user);
+        final var msuser = associations.getMSUser(ecuser, user);
         if (msuser == null) {
             throw new ECtransException("Association " + user + " not found");
         }
@@ -704,11 +733,11 @@ public final class ECtransContainer implements MBeanService {
             history.setLocation(location);
             history.setRemote(remote);
         }
-        final var ecUser = defaultProvider.getECUser(ecuser);
+        final var ecUser = associations.getECUser(ecuser);
         if (ecUser == null) {
             throw new ECtransException("ECMWF user " + ecuser + " not found");
         }
-        final var destination = defaultProvider.getECtransDestination(target);
+        final var destination = associations.getECtransDestination(target);
         if (destination == null) {
             throw new ECtransException("destination " + target + " not found");
         }
@@ -719,7 +748,7 @@ public final class ECtransContainer implements MBeanService {
         if (!msuser.getActive()) {
             throw new ECtransException("Association " + user + " not active");
         }
-        if (!msuser.getECUserName().equals(ecuser) && !defaultProvider.isGranted(ecUser, msuser)) {
+        if (!msuser.getECUserName().equals(ecuser) && !associations.isGranted(ecUser, msuser)) {
             throw new ECtransException("user not granted by " + msuser.getECUserName() + " for " + msuser.getName());
         }
         if (!destination.getActive()) {
@@ -728,13 +757,14 @@ public final class ECtransContainer implements MBeanService {
         if (!destination.getResolve() && location != null && location.indexOf("..") != -1) {
             throw new ECtransException("destination " + target + " refuse '..' as a path element");
         }
-        if (!defaultProvider.isGranted(msuser, destination)) {
+        if (!associations.isGranted(msuser, destination)) {
             throw new ECtransException("Association " + user + " not granted for destination " + target);
         }
-        if (history != null) {
+        if (history != null && includeUrl) {
             history.setUrl(getInitSequence(provider, msuser, ecUser, destination, location, true));
         }
-        return new TransferURL(getInitSequence(provider, msuser, ecUser, destination, location, hidePassword),
+        return new TransferURL(
+                includeUrl ? getInitSequence(provider, msuser, ecUser, destination, location, hidePassword) : null,
                 destination, msuser, ecUser);
     }
 
@@ -1064,6 +1094,8 @@ public final class ECtransContainer implements MBeanService {
         /** The setup. */
         private final ECtransSetup setup;
 
+        private final PinnedPassword pinned;
+
         /**
          * Instantiates a new remote finder.
          *
@@ -1081,6 +1113,11 @@ public final class ECtransContainer implements MBeanService {
          */
         private RemoteFinder(final RemoteProvider provider, final ECUser ecuser, final MSUser msuser,
                 final ECtransDestination destination) throws ECtransException {
+            this(provider, ecuser, msuser, destination, null);
+        }
+
+        private RemoteFinder(final RemoteProvider provider, final ECUser ecuser, final MSUser msuser,
+                final ECtransDestination destination, final PinnedPassword pinned) throws ECtransException {
             this.destination = destination.getActive() ? destination
                     : provider.getECtransDestination(destination.getName());
             if (this.destination == null) {
@@ -1089,6 +1126,7 @@ public final class ECtransContainer implements MBeanService {
             this.provider = provider;
             this.ecuser = ecuser;
             this.msuser = msuser;
+            this.pinned = pinned;
             setup = new ECtransSetup(this.destination.getECtransModuleName(), provider.decrypt(msuser.getData()));
         }
 
@@ -1127,11 +1165,15 @@ public final class ECtransContainer implements MBeanService {
                 history.setECtransDestinationName(destination.getName());
                 history.setLocation(location);
                 history.setRemote(msuser.getName() + "@" + destination.getName());
-                history.setUrl(getInitSequence(provider, msuser, ecuser, destination, location, true));
+                if (pinned == null) {
+                    history.setUrl(getInitSequence(provider, msuser, ecuser, destination, location, true));
+                }
             }
             TransferModule module = null;
-            if (cookie != null && cookieRepository != null && (module = cookieRepository.get(provider, ecuser.getName(),
-                    msuser.getName() + "@" + destination.getName(), location, cookie)) != null) {
+            final var session = pinned == null ? provider.openTransferSession(msuser) : null;
+            if (session == null && cookie != null && cookieRepository != null
+                    && (module = cookieRepository.get(provider, ecuser.getName(),
+                            msuser.getName() + "@" + destination.getName(), location, cookie)) != null) {
                 _log.debug("TransferModule restored from cookie {}", cookie);
                 return module;
             }
@@ -1144,17 +1186,31 @@ public final class ECtransContainer implements MBeanService {
                 final var initialData = msuser.getData();
                 final var initial = msuser.toString();
                 module = provider.loadTransferModule(ectrans);
+                module.setTransferSession(session);
                 module.setRemoteProvider(provider);
                 module.setMSUser(msuser);
                 module.setECUser(ecuser);
                 module.setECtransModule(ectrans);
                 module.setECtransDestination(destination);
-                module.setCookie(cookie);
+                module.setCookie(session == null ? cookie : null);
                 module.setDebug(setup.getBoolean(HOST_ECTRANS_DEBUG));
-                module.setClearPassword(provider.decrypt(msuser.getPasswd()));
                 if (isNotEmpty(connectOptions)) {
                     module.setAttribute("connectOptions", connectOptions);
                 }
+                if (pinned != null) {
+                    final var rotation = module.passwordRotation()
+                            .orElseThrow(() -> new IOException("Transfer module does not support password rotation"));
+                    if (cookie != null || !pinned.endpoint().matches(module.getClass().getName(), ectrans.getArchive())
+                            || !pinned.endpoint().host().equals(msuser.getHost())
+                            || !pinned.endpoint().login().equals(msuser.getLogin())) {
+                        throw new IOException("Vault-backed password association changed");
+                    }
+                    rotation.connect(module, pinned.endpoint().endpoint(), msuser.getDir(), setup,
+                            pinned.credential().consume());
+                    success = true;
+                    return module;
+                }
+                module.setClearPassword(provider.decrypt(msuser.getPasswd()));
                 final var url = getInitSequence(provider, msuser, ecuser, destination, location, false);
                 log(module, "connect", true);
                 synchronized (module) {
@@ -1176,7 +1232,7 @@ public final class ECtransContainer implements MBeanService {
                     _log.debug("Update destination {} for {}", destination.getName(), msuser.getName());
                     provider.updateMSUser(msuser);
                 }
-                if (cookie != null && cookieRepository != null) {
+                if (session == null && cookie != null && cookieRepository != null) {
                     cookieRepository.add(provider, ecuser.getName(), msuser.getName() + "@" + destination.getName(),
                             location, cookie, module);
                 }
@@ -1195,7 +1251,11 @@ public final class ECtransContainer implements MBeanService {
                 throw new ECtransException("module " + ectrans.getName() + " error", t);
             } finally {
                 if (!success) {
-                    close(provider, module, history, closeTimeout, asynchronous);
+                    if (module == null && session != null) {
+                        session.close();
+                    } else {
+                        close(provider, module, history, closeTimeout, asynchronous);
+                    }
                 }
             }
         }
@@ -1235,6 +1295,7 @@ public final class ECtransContainer implements MBeanService {
      * The Class LocalFinder.
      */
     private final class LocalFinder implements ModuleFinder {
+        private final ECtransProvider associations;
         /** The ecuser. */
         private final String ecuser;
 
@@ -1243,6 +1304,8 @@ public final class ECtransContainer implements MBeanService {
 
         /** The setup. */
         private final ECtransSetup setup;
+
+        private final PinnedPassword pinned;
 
         /**
          * Instantiates a new local finder.
@@ -1256,11 +1319,19 @@ public final class ECtransContainer implements MBeanService {
          *             the ectrans exception
          */
         private LocalFinder(final String ecuser, final String remote) throws ECtransException {
+            this(ecuser, remote, null, defaultProvider);
+        }
+
+        private LocalFinder(final String ecuser, final String remote, final PinnedPassword pinned,
+                final ECtransProvider associations) throws ECtransException {
             this.ecuser = ecuser;
             this.remote = remote;
-            final var url = getTransferURL(defaultProvider, null, ecuser, remote, null, false);
+            this.pinned = pinned;
+            this.associations = associations;
+            final var url = lookupTransferURL(associations, associations, null, ecuser, remote, null, false,
+                    pinned == null);
             setup = new ECtransSetup(url.getECtransDestination().getECtransModuleName(),
-                    defaultProvider.decrypt(url.getMSUser().getData()));
+                    associations.decrypt(url.getMSUser().getData()));
         }
 
         /**
@@ -1290,19 +1361,20 @@ public final class ECtransContainer implements MBeanService {
         public TransferModule getTransferModule(final ECtransHistory history, final String cookie,
                 final String location, final Options connectOptions, final long closeTimeout,
                 final boolean asynchronous) throws IOException, ECtransException {
-            if ("deploy".equals(ecuser)) {
+            if (pinned == null && "deploy".equals(ecuser)) {
                 return new StarterUpdate(defaultProvider);
             }
-            final var url = getTransferURL(defaultProvider, history, ecuser, remote, location, false);
+            final var url = lookupTransferURL(associations, associations, history, ecuser, remote, location, false,
+                    pinned == null);
             final var protocol = url.getECtransDestination().getECtransModuleName();
-            final var ectrans = defaultProvider.getECtransModule(protocol);
+            final var ectrans = associations.getECtransModule(protocol);
             if (ectrans == null) {
                 throw new ECtransException("module " + protocol + " not found");
             }
             if (!ectrans.getActive()) {
                 throw new ECtransException("module " + protocol + " not active");
             }
-            return new RemoteFinder(defaultProvider, url.getECUser(), url.getMSUser(), url.getECtransDestination())
+            return new RemoteFinder(associations, url.getECUser(), url.getMSUser(), url.getECtransDestination(), pinned)
                     .getTransferModule(history, cookie, location, connectOptions, closeTimeout, asynchronous);
         }
 
@@ -1323,7 +1395,7 @@ public final class ECtransContainer implements MBeanService {
          */
         @Override
         public RemoteProvider getRemoteProvider() {
-            return defaultProvider;
+            return associations;
         }
 
         /**
@@ -1511,7 +1583,8 @@ public final class ECtransContainer implements MBeanService {
                 }
             });
             closeTimeout = setup.getDuration(HOST_ECTRANS_CLOSE_TIME_OUT).toMillis();
-            retryCount = setup.getInteger(HOST_ECTRANS_RETRY_COUNT) + 1;
+            retryCount = finder instanceof LocalFinder local && local.pinned != null ? 1
+                    : setup.getInteger(HOST_ECTRANS_RETRY_COUNT) + 1;
             retryFrequency = setup.getDuration(HOST_ECTRANS_RETRY_FREQUENCY).toMillis();
             asynchronous = setup.getBoolean(HOST_ECTRANS_CLOSE_ASYNCHRONOUS);
             _log.debug(getLogMessage(action.getName(), cookie, finder.getECUserName(), location));
@@ -1770,6 +1843,9 @@ public final class ECtransContainer implements MBeanService {
                 log(module, action.getName(), false);
                 completed = true;
             } catch (final TimeoutException | InterruptedException e) {
+                if (module != null) {
+                    module.retainTransferSession();
+                }
                 comment = setAndGetError("timeout occured on " + action.getName() + " request");
                 _log.warn("Processing {} request: {}", action.getName(), comment);
                 throw new ECtransException("ECtrans " + action.getName() + " timeout", e);
@@ -1947,6 +2023,7 @@ public final class ECtransContainer implements MBeanService {
             log(module, "close", true);
             try {
                 module.close();
+                module.transferSessionClosed();
             } finally {
                 provider.unloadTransferModule(module);
                 log(module, "close", false);

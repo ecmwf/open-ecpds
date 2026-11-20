@@ -304,6 +304,10 @@ Browse the **[Documentation guide](https://ecmwf.github.io/open-ecpds/documentat
 
 To build the platform from source and develop against it, you need **Docker** (with the default socket enabled). Tested on Linux, macOS (Intel/Apple Silicon), and Windows WSL 2.
 
+The development container includes Oracle GraalVM JDK `25.0.5.1` and `kubectl`
+with Kustomize for rendering the native Kubernetes manifests. See the [tooling versions](https://ecmwf.github.io/open-ecpds/support/#tooling-dependencies)
+for the full list.
+
 > Run `make help` at any time to list all available targets.
 
 ### 1 — Outside the development container
@@ -345,6 +349,20 @@ Local images use the `open-ecpds/*` namespace. Containers use short names such a
 `master`, `mover`, `monitor` and `standalone`.
 Use service keys in Makefile commands, for example `make logs svc=master`.
 Registry images are published under `ghcr.io/ecmwf/open-ecpds/*`.
+
+For local OpenBao testing, run `make start-openbao`. On first use it generates
+a development CA and a server certificate for `localhost`, `127.0.0.1`, and
+`openbao` using OpenSSL. It may prompt for `sudo` to make the server key
+readable by the vault's UID 100 without making it world-readable. Existing
+`tls.crt` and `tls.key` in `run/etc/ecpds/openbao/tls/` are reused, not replaced.
+Use `run/etc/ecpds/openbao/tls/ca.crt` to verify the generated certificate and
+keep the CA private key in `run/etc/ecpds/openbao/operator/` offline.
+
+The HTTPS port is published on host loopback only. `make stop-openbao` preserves
+vault data. Initialize and unseal the vault separately as described in the
+[Kubernetes guide](https://ecmwf.github.io/open-ecpds/deployment/kubernetes/#openbao-credential-vault).
+For the single-container application setup, see
+[Standalone OpenBao](https://ecmwf.github.io/open-ecpds/getting-started/standalone/#optional-openbao-credential-rotation).
 
 For optional local OpenTelemetry testing, run `make start-otel` from the
 repository root, then `make logs-otel` to inspect decoded logs, traces and

@@ -111,7 +111,7 @@ for successful replica removals.
 
 The database must contain `STORAGE_POLICY`, `STORAGE_LIFECYCLE` and
 `STORAGE_POLICY_METRIC`. The supplied installation schema includes these tables.
-No schema changes are performed automatically by the running service.
+The scheduler does not modify the schema.
 
 ```ini
 [StoragePolicy]

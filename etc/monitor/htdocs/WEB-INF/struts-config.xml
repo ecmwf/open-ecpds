@@ -84,6 +84,8 @@
 			type="ecmwf.ecpds.master.plugin.http.controller.login.InteractiveLoginAction" />
 		<action path="/interactiveCallback"
 			type="ecmwf.ecpds.master.plugin.http.controller.login.InteractiveLoginAction" />
+		<action path="/passwordRotationCallback"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.HostPasswordMfaCallbackAction" />
 
 		<action path="/login"
 			type="ecmwf.ecpds.master.plugin.http.controller.login.LoginAction">
@@ -606,6 +608,9 @@
 			<forward name="cancel" path="/do/transfer/destination/{1}"
 				redirect="true" />
 		</action>
+		<action path="/transfer/destination/passwordRotation/*/*"
+			parameter="{1}|{2}"
+			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.PendingHostPasswordAction" />
 		<action path="/transfer/destination/operations/*/*"
 			parameter="{1}|{2}"
 			type="ecmwf.ecpds.master.plugin.http.controller.transfer.destination.OperationsAction"

@@ -106,6 +106,17 @@ public final class ECpdsBase extends DataBase {
     /** The ecpds. */
     private final ECpdsGet ecpds = new ECpdsGet(this);
 
+    private final HostPasswordRotationStore hostPasswordRotations = new HostPasswordRotationStore(this);
+    private final HostPasswordRetirementStore hostPasswordRetirements = new HostPasswordRetirementStore(this);
+
+    public HostPasswordRotationStore getHostPasswordRotationStore() {
+        return hostPasswordRotations;
+    }
+
+    public HostPasswordRetirementStore getHostPasswordRetirementStore() {
+        return hostPasswordRetirements;
+    }
+
     /** Load bounded MQTT dashboard metadata, newest first; independent of publication processing. */
     public List<String> getMQTTActivity(final String owner, final int limit, final long maxBytes)
             throws SQLException, IOException {

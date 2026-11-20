@@ -62,6 +62,15 @@ public abstract class CallBackObject extends UnicastRemoteObject {
     /** The Constant serverSocketFactory. */
     private static final transient RMIServerSocketFactory serverSocketFactory = getRMIServerSocketFactory(socketConfig);
 
+    static {
+        if (Cnf.at("CallBack", "requireMutualTls", false)
+                && !(clientSocketFactory instanceof ecmwf.common.rmi.StrictRmiTlsSocketFactory
+                        && serverSocketFactory instanceof ecmwf.common.rmi.StrictRmiTlsSocketFactory)) {
+            throw new IllegalStateException(
+                    "CallBack.requireMutualTls requires strict TLS client and server factories");
+        }
+    }
+
     /** The Constant isLocal. */
     private final transient AtomicBoolean isLocal = new AtomicBoolean(false);
 
@@ -186,6 +195,9 @@ public abstract class CallBackObject extends UnicastRemoteObject {
             registry = LocateRegistry.createRegistry(PORT, clientSocketFactory, serverSocketFactory);
             _log.debug("Registry created on port: {}", PORT);
         } catch (final RemoteException e) {
+            if (Cnf.at("CallBack", "requireMutualTls", false)) {
+                throw e;
+            }
             registry = LocateRegistry.getRegistry(PORT);
             _log.debug("Registry retrieved on port: {}", PORT);
         }

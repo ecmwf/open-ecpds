@@ -20,6 +20,7 @@ package ecmwf.ecpds.extension;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Instant;
 
 /**
  * Browser login protocol adapter. The core owns state, PKCE secrets and local account mapping. Implementations must be
@@ -31,6 +32,16 @@ public interface InteractiveLoginProvider extends Extension {
     URI authorizationUri(String state, String nonce, String codeChallenge) throws IOException;
 
     ExternalIdentity authenticate(String code, String nonce, String codeVerifier) throws IOException;
+
+    default URI freshMfaAuthorizationUri(final String state, final String nonce, final String codeChallenge)
+            throws IOException {
+        throw new IOException("Fresh MFA is not configured");
+    }
+
+    default ExternalIdentity authenticateFreshMfa(final String code, final String nonce, final String codeVerifier,
+            final Instant requestedAt) throws IOException {
+        throw new IOException("Fresh MFA is not configured");
+    }
 
     record ExternalIdentity(String issuer, String subject, String userId) {
         public ExternalIdentity(final String issuer, final String subject) {
