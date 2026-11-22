@@ -11,4 +11,24 @@ if [[ "$branch" == master ]]; then
 fi
 
 head="$(git rev-parse --verify HEAD)"
-gh pr merge "$branch" --auto --merge --match-head-commit "$head"
+auto_merge="$(gh api 'repos/{owner}/{repo}' --jq '.allow_auto_merge')" || {
+  printf 'Error: Cannot determine whether the repository permits auto-merge.\n' >&2
+  exit 1
+}
+
+case "$auto_merge" in
+  true)
+    gh pr merge "$branch" --auto --merge --match-head-commit "$head"
+    ;;
+  false)
+    printf 'Auto-merge is disabled; attempting a normal merge without bypassing protections.\n'
+    if ! gh pr merge "$branch" --merge --match-head-commit "$head"; then
+      printf 'Merge not completed. Resolve required reviews and checks, then retry; alternatively, enable auto-merge in repository settings.\n' >&2
+      exit 1
+    fi
+    ;;
+  *)
+    printf 'Error: Unexpected auto-merge setting: %s\n' "$auto_merge" >&2
+    exit 1
+    ;;
+esac
