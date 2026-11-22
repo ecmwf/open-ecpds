@@ -82,6 +82,7 @@ nav:
   - Getting Started:
       - System Requirements: getting-started/requirements.md
       - Standalone Container: getting-started/standalone.md
+      - Standalone TLS Guidance: getting-started/standalone-security.md
       - SFTP Host Keys: getting-started/sftp-host-keys.md
       - Installation: getting-started/installation.md
       - First Run: getting-started/first-run.md

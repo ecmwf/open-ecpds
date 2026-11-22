@@ -95,4 +95,4 @@ else
   gh pr create --repo "$repo" --base master --head "$branch" --fill
 fi
 printf 'Pull request was not merged. Review its checks and approvals before merging.\n'
-printf 'Tip: run make git-merge to merge now or enable auto-merge when requirements are met.\n'
+printf 'Tip: run make git-merge to merge, or enable auto-merge if the repository permits it.\n'

@@ -81,9 +81,10 @@ account; S3 has a separate generated secret. In the Monitor, open **Transmission
 → Destinations**, select `hourly_aq` and click **Start Destination** to acquire
 sample data. This requires outbound Internet access.
 
-> The initial TLS certificates are self-signed. For connections beyond a trusted
-> test environment, configure clients to verify a trusted certificate and
-> hostname. See [HTTPS certificate guidance](https://ecmwf.github.io/open-ecpds/getting-started/standalone/#trusting-or-replacing-the-https-certificate)
+> The initial TLS certificates are self-signed, so your browser will show a
+> warning. For connections beyond a trusted test environment, configure clients
+> to verify a trusted certificate and hostname. See
+> [HTTPS certificate guidance](https://ecmwf.github.io/open-ecpds/getting-started/standalone-security/#trusting-or-replacing-the-https-certificate)
 > and [SFTP host-key verification](https://ecmwf.github.io/open-ecpds/getting-started/sftp-host-keys/).
 
 The command publishes the portal, SFTP, Monitor and MQTT ports on all host
@@ -92,8 +93,93 @@ metrics ports are bound to localhost; keep them off untrusted networks. CLI
 connections are unencrypted: use an encrypted tunnel for remote access. See the
 [CLI guide](https://ecmwf.github.io/open-ecpds/getting-started/ecpds-cli/#using-the-cli-against-the-standalone-container).
 
-For protocol examples, MQTT notifications, logs and troubleshooting, continue to
-the **[standalone guide](https://ecmwf.github.io/open-ecpds/getting-started/standalone/)**.
+### Try the protocols
+
+Use the generated `test` password from `initial-accounts` when prompted. These
+examples assume the container is running locally. The `-k` and
+`--no-verify-ssl` options bypass certificate verification **only for a trusted
+local evaluation**; use verified TLS for other connections.
+
+**HTTPS and WebDAV** — list destinations or browse the portal at
+[`https://localhost:7443`](https://localhost:7443):
+
+```bash
+curl -k -u test -H "Accept: application/json" \
+  https://localhost:7443/ecpds/data/list/
+curl -k -u test -X PROPFIND https://localhost:7443/webdav/
+```
+
+**SFTP** — [verify the SSH host key](https://ecmwf.github.io/open-ecpds/getting-started/sftp-host-keys/),
+then connect and list the sample destination:
+
+```bash
+sftp -P 7022 test@localhost
+```
+
+At the SFTP prompt, enter `ls /hourly_aq` and `bye`. Files appear after the
+destination has acquired data.
+
+**S3** — with the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html),
+configure a separate profile with access key `test` and the generated `test_s3`
+secret, then list the portal:
+
+```bash
+aws configure --profile openecpds-demo
+aws --profile openecpds-demo s3 ls s3:// \
+  --endpoint-url https://localhost:7443/s3 --no-verify-ssl
+```
+
+AWS CLI stores the profile credentials locally; protect that file and remove
+the profile when no longer needed.
+
+### Try MQTT upload notifications
+
+The `mqtt_demo` destination demonstrates notifications without an external
+provider. **Leave it stopped** in the Monitor: uploads remain available in
+HOLD and trigger notification publication.
+
+In one terminal, subscribe with [mqttx CLI](https://mqttx.app/cli). Enter the
+generated `test` password when prompted:
+
+```bash
+read -rs -p 'Test password: ' TEST_PASSWORD; echo
+mqttx sub -h localhost -p 8883 -l mqtts \
+  -u test -P "$TEST_PASSWORD" --insecure -t 'openecpds/demo/#'
+```
+
+Wait for the subscription to connect and leave it running. The password may
+still be visible in the process arguments; use this only on a trusted host.
+`--insecure` is for the self-signed certificate in this local evaluation.
+
+In another terminal, create and upload a file:
+
+```bash
+printf 'Hello from the standalone MQTT demo!\n' > mqtt-demo.txt
+sftp -P 7022 test@localhost
+```
+
+After entering the password and verifying the host key, run at the SFTP prompt:
+
+```text
+put mqtt-demo.txt /mqtt_demo/mqtt-demo.txt
+bye
+```
+
+Allow roughly a minute for asynchronous publication. The subscriber receives a
+JSON notification with download links. Check the file over HTTPS:
+
+```bash
+curl --fail -k -u test \
+  https://localhost:7443/ecpds/data/file/mqtt_demo/mqtt-demo.txt
+```
+
+In the Monitor, **Operations → MQTT Activity** shows publication outcomes.
+See the [full MQTT walkthrough](https://ecmwf.github.io/open-ecpds/getting-started/standalone/#try-mqtt-upload-notifications)
+for troubleshooting and remote access.
+
+Explore more in the **[standalone guide](https://ecmwf.github.io/open-ecpds/getting-started/standalone/)**:
+REST API and Aviso examples, logs, backup and recovery. To submit files from
+the command line, see the [ECPDS CLI guide](https://ecmwf.github.io/open-ecpds/getting-started/ecpds-cli/#using-the-cli-against-the-standalone-container).
 
 ---
 
