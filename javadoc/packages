@@ -81,7 +81,6 @@ ecmwf.common.parser.parsers
 ecmwf.common.parser.core
 ecmwf.common.parser.discovery
 ecmwf.common.parser.format
-ecmwf.common.parser
 ecmwf.common.ectrans
 ecmwf.common.ectrans.notification
 ecmwf.common.ectrans.notification.wis2
