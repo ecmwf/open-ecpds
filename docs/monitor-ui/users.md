@@ -98,11 +98,17 @@ Resources map URL path patterns to access-control entries. They are assigned to 
 
 ## TOTP Authentication
 
-OpenECPDS supports **Time-based One-time Password (TOTP)** authentication for both Web Users and Data Users, delegating credential validation to an external TOTP-compatible server (e.g. Keycloak).
+OpenECPDS can delegate Web User and Data User credential validation to a configured
+Master authentication provider. The bundled ECMWF provider supports passwords and
+Time-based One-time Password (TOTP) passcodes.
 
-- **Web Users** — TOTP is a global switch (`TOTP.active`). When enabled, the locally stored password is ignored for all Web Users; all logins go through the TOTP endpoint.
-- **Data Users** — TOTP is controlled per-user via the **TOTP Authentication** toggle on the user edit page, in combination with the global `TOTP.active` setting.
+- **Web Users** — a configured provider validates credentials for all users;
+  local passwords are not a login fallback.
+- **Data Users** — enable **External authentication** per user to use the provider.
+  Without a configured provider, that user's login fails.
 
-OpenECPDS auto-detects whether the supplied credential is a **one-time passcode** (exactly 6 or 8 digits) or a **password** and routes to the appropriate TOTP client.
+The ECMWF provider detects a **one-time passcode** (exactly 6 or 8 digits) or
+a **password** and routes it to the appropriate endpoint client. Other providers
+may use different rules.
 
 For full configuration details and a behaviour reference table, see the [TOTP Authentication](../administration/totp.md) administration page.

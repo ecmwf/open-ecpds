@@ -525,7 +525,7 @@ public class S3ProxyHandler {
                     }
                 }
 
-                if (!constantTimeEquals(expectedSignature, authHeader.signature)) {
+                if (expectedSignature == null || !constantTimeEquals(expectedSignature, authHeader.signature)) {
                     throw new S3Exception(S3ErrorCode.SIGNATURE_DOES_NOT_MATCH);
                 }
             } // end authenticated block

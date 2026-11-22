@@ -27,8 +27,13 @@ See [notification history](history.md).
 Use a dedicated **read-only Data Portal account** with list/get access restricted
 to the source destination and required paths. Configure its credentials on the
 receiving HTTP Host; never put credentials in the URL. The source endpoint must
-be a directly connected, authenticated HTTPS Mover, with a certificate trusted
-by the receiver.
+be a directly connected, authenticated HTTPS Mover. Use a certificate trusted
+by the receiver and enable `http.sslValidation`.
+
+Aviso history and cursor control requests can be relayed via a delegate Mover
+when `[Security] rccSharedSecret` is configured on every hop. This relay does
+not add Data Portal authentication or file access to REST-only Movers, so it
+does not replace the directly connected source endpoint requirement above.
 
 ## Receiving acquisition Host
 
@@ -59,6 +64,19 @@ acquisition.noretrieval = "no"
 acquisition.deleteoriginal = "no"
 acquisition.target = "$target"
 ```
+
+For a test endpoint with an untrusted certificate, `http.sslValidation = "no"`
+disables certificate chain validation. This is insecure: an attacker can
+impersonate the source and intercept credentials or alter files. Prefer installing
+the source certificate in the receiver's trust store. `http.strict = "yes"`
+still verifies the hostname and remains required. In Aviso mode, certificate
+validation defaults to enabled when `http.sslValidation` is not configured;
+an explicit Host or global setting is honored.
+
+Aviso selects the `Accept` header for each API request; a custom
+`http.headers` entry is not needed for it. HTTP content compression can remain
+enabled. File size checks request identity encoding so the reported size refers
+to the original file, while discovery and downloads can use compression.
 
 The Host Properties editor reports missing or conflicting Aviso prerequisites on
 both the view and edit pages, with the same errors reflected in Host badges and
@@ -109,8 +127,8 @@ The Master acknowledges a complete discovery only after all selected entries
 have been durably queued or recognized as duplicates, or deliberately excluded
 by selection filters. Malformed metadata, failed registration, interruption and
 incomplete replay leave the checkpoint unchanged. A crash after queueing but
-before acknowledgment causes duplicate-safe replay. Concurrent Masters use
-compare-and-set checkpoint updates; stale results cannot roll progress backward.
+before acknowledgment causes duplicate-safe replay. Compare-and-set checkpoint
+updates prevent stale discovery results from rolling progress backward.
 Acknowledgment means **queued**, not successfully downloaded.
 
 `listMaxFiles` and `listMaxDirs` are hard inventory limits. Exceeding them fails

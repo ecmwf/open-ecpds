@@ -218,37 +218,13 @@ It includes correlation IDs, topic, QoS, retain flag, payload byte count and sta
 but never payload content. No configured Movers produces one failed event with an
 empty Mover name.
 
-Once a destination is configured, test the subscription with
-[mqttx](https://mqttx.app/cli) (recommended — supports `--insecure` without a CA file):
+Once a destination is configured, subscribe with an MQTT client using an account
+authorized for its topic. Configure the client to verify the broker's certificate
+and hostname using a trusted CA. Obtaining a certificate directly from the
+connection does not establish trust unless its fingerprint is independently verified.
 
-```bash
-mqttx sub \
-  -h localhost -p 8883 \
-  -l mqtts \
-  -u test -P test2021 \
-  --insecure \
-  -t '#'
-```
-
-Or with [Mosquitto](https://mosquitto.org/download/) (requires extracting the cert first):
-
-```bash
-# Fetch the broker's self-signed certificate directly
-openssl s_client -connect localhost:8883 </dev/null 2>/dev/null \
-  | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /tmp/ecpds.pem
-
-mosquitto_sub \
-  --host localhost --port 8883 \
-  --username test --pw test2021 \
-  --cafile /tmp/ecpds.pem \
-  --insecure \
-  --topic '#' -v
-```
-
-!!! note
-    Port `8883` is MQTTS (MQTT over TLS). The `--insecure` flag skips hostname
-    verification for self-signed certificates. In production, use a properly signed
-    certificate and remove `--insecure`.
+For an evaluation example using the standalone container's generated credentials,
+see [Try MQTT upload notifications](../getting-started/standalone.md#try-mqtt-upload-notifications).
 
 ## Monitoring publication activity
 
@@ -295,11 +271,12 @@ Charts and totals describe the latest
 known outcome of retained publications, not a complete historical counter or audit log.
 
 `[MQTTActivity] owner` identifies the logical Master in this table. It defaults to
-`[Login] root`, then `[Login] hostName` (finally `master`). Keep it stable and run
-only **one active Master per owner**. A failover Master with the same database and
-owner can recover history without the former Master's filesystem. Database
-backup/replication policies cover persisted MQTT activity. Owner scoping is
-independent of `[OperationalEvents] journalOwner`.
+`[Login] root`, then `[Login] hostName` (finally `master`). Keep it stable. A
+failover Master with the same database and owner can recover history without the
+former Master's filesystem after the former Master has stopped. Run only one
+active Master per database, regardless of owner. Database backup/replication
+policies cover persisted MQTT activity. Owner scoping is independent of
+`[OperationalEvents] journalOwner`.
 
 Persistence failures are displayed on the dashboard; the bounded cache continues
 to update and the worker retries database writes. These retries **do not republish

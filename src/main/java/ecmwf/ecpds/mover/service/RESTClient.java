@@ -80,6 +80,14 @@ import ecmwf.ecpds.mover.RESTInterface;
  * The Class RESTClient.
  */
 public final class RESTClient implements RESTInterface {
+    private static final int AVISO_REPLAY_PAGE_SIZE = 100;
+    // Each event is capped at 64 KiB before JSON escaping; the page must fit after escaping.
+    private static final int AVISO_REPLAY_RESPONSE_BYTES = 48 * 1024 * 1024;
+
+    private record AvisoReplayRequest(String user, String destination, String target, long after, Long upper,
+            Long fromTime, Long toTime, int limit) {
+    }
+
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(RESTClient.class);
 
@@ -361,6 +369,31 @@ public final class RESTClient implements RESTInterface {
     }
 
     @Override
+    public ecmwf.ecpds.master.NotificationHistory.Replay replayAvisoNotificationHistory(final String user,
+            final String destination, final String target, final long after, final Long upper, final Long fromTime,
+            final Long toTime, final int limit) throws Exception {
+        final var replay = weatherRequest("master/", "replayAvisoNotificationHistory", "POST",
+                new AvisoReplayRequest(user, destination, target, after, upper, fromTime, toTime,
+                        Math.min(limit, AVISO_REPLAY_PAGE_SIZE)),
+                Map.of(), null, new TypeReference<ecmwf.ecpds.master.NotificationHistory.Replay>() {
+                }, AVISO_REPLAY_RESPONSE_BYTES);
+        if (replay == null) {
+            throw new RestException("Missing Aviso replay response");
+        }
+        return replay;
+    }
+
+    @Override
+    public long currentAvisoNotificationSequence(final String user, final String destination) throws Exception {
+        final var sequence = weatherRequest("currentAvisoNotificationSequence", "GET", null,
+                Map.of("user", user, "destination", destination), Long.class);
+        if (sequence == null) {
+            throw new RestException("Missing Aviso notification sequence");
+        }
+        return sequence;
+    }
+
+    @Override
     public java.util.UUID beginPasswordProbe(final long host) throws RestException {
         return passwordProbeRequest(host, "challenge", "GET", null, java.util.UUID.class);
     }
@@ -510,6 +543,13 @@ public final class RESTClient implements RESTInterface {
 
     private <T> T weatherRequest(String namespace, String operation, String method, Object body,
             Map<String, String> query, Class<T> responseType) throws Exception {
+        return weatherRequest(namespace, operation, method, body, query, responseType, null,
+                ecmwf.ecpds.master.weather.WeatherLimits.controlResponseBytes());
+    }
+
+    private <T> T weatherRequest(String namespace, String operation, String method, Object body,
+            Map<String, String> query, Class<T> responseType, TypeReference<T> responseTypeRef, int maxResponseBytes)
+            throws Exception {
         if (!RESTSignature.ENABLED) {
             throw new RestException("Network Weather requires authenticated REST control-channel signing");
         }
@@ -526,8 +566,7 @@ public final class RESTClient implements RESTInterface {
             }
             final int requestTimeout = (int) Math.min(remainingMs, connectionTimeout);
             try (final var response = send(httpProxy, dataMover + "/ecpds/" + namespace + operation, connectionTimeout,
-                    requestTimeout, ecmwf.ecpds.master.weather.WeatherLimits.controlResponseBytes(), method, body,
-                    query)) {
+                    requestTimeout, maxResponseBytes, method, body, query)) {
                 final int code = response.getStatusCode();
                 if (code == 404 || code == 405 || code == 501) {
                     unsupported = new ecmwf.ecpds.master.weather.WeatherUnsupportedException(
@@ -537,7 +576,7 @@ public final class RESTClient implements RESTInterface {
                 if (code != 200) {
                     throw new RestException("Network Weather " + operation + " returned HTTP " + code);
                 }
-                return parse(response, responseType);
+                return parse(response.getEntity(String.class), responseType, responseTypeRef);
             } catch (final RestException e) {
                 failure = e;
             }

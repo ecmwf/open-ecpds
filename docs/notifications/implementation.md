@@ -32,9 +32,11 @@ A few key points about the MQTT Broker and Client:
 
 ## Connecting to the broker (default setup)
 
-In the default development setup, the embedded MQTT Broker is available at
-`mqtt://127.0.0.1:4883` with the credentials `test/test2021` (see
-[First Run](../getting-started/first-run.md)).
+In the multi-container development setup, the embedded MQTT Broker is available
+at `mqtt://127.0.0.1:4883` with the evaluation credentials documented in
+[First Run](../getting-started/first-run.md). The standalone container instead
+uses [generated credentials](../getting-started/standalone.md#access) and MQTTS
+on port `8883`.
 
 ## Related
 

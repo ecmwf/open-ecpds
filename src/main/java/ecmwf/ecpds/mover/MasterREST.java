@@ -257,6 +257,18 @@ final class MasterREST implements MasterProxy {
     }
 
     @Override
+    public ecmwf.ecpds.master.NotificationHistory.Replay replayAvisoNotificationHistory(final String user,
+            final String destination, final String target, final long after, final Long upper, final Long fromTime,
+            final Long toTime, final int limit) throws Exception {
+        return _rest.replayAvisoNotificationHistory(user, destination, target, after, upper, fromTime, toTime, limit);
+    }
+
+    @Override
+    public long currentAvisoNotificationSequence(final String user, final String destination) throws Exception {
+        return _rest.currentAvisoNotificationSequence(user, destination);
+    }
+
+    @Override
     public boolean isSubscriberActive(final long psbId) throws Exception {
         throw new UnsupportedOperationException("Not implemented");
     }

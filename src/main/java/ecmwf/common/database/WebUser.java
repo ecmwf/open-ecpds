@@ -53,7 +53,11 @@ public class WebUser extends DataBaseObject {
     protected String WEU_NAME;
 
     /** The weu name. */
-    protected String WEU_PASSWORD;
+    protected transient String WEU_PASSWORD;
+    protected transient String WEU_PASSWORD_HASH;
+
+    private String newPassword;
+    private boolean passwordSet;
 
     /**
      * Instantiates a new web user.
@@ -201,7 +205,7 @@ public class WebUser extends DataBaseObject {
      * @return the password
      */
     public String getPassword() {
-        return WEU_PASSWORD;
+        return newPassword;
     }
 
     /**
@@ -211,7 +215,28 @@ public class WebUser extends DataBaseObject {
      *            the new password
      */
     public void setPassword(final String param) {
-        WEU_PASSWORD = param;
+        newPassword = param;
+    }
+
+    public String legacyPassword() {
+        return WEU_PASSWORD;
+    }
+
+    public String passwordHash() {
+        return WEU_PASSWORD_HASH;
+    }
+
+    public boolean hasPassword() {
+        return passwordSet || WEU_PASSWORD_HASH != null || WEU_PASSWORD != null && !WEU_PASSWORD.isEmpty();
+    }
+
+    public WebUser withoutCredentials() {
+        final var copy = (WebUser) clone();
+        copy.passwordSet = hasPassword();
+        copy.WEU_PASSWORD = null;
+        copy.WEU_PASSWORD_HASH = null;
+        copy.newPassword = null;
+        return copy;
     }
 
     /**

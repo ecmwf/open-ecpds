@@ -6,6 +6,10 @@ not necessarily store data physically in its persistent repository — instead i
 like a search engine, crawling and indexing metadata from data providers, while
 optionally caching content in its **Data Store**.
 
+Run only one active Master Server against a database at a time. Multiple active
+Masters sharing a database are not supported. A replacement Master may use the
+same database after the previous Master has stopped.
+
 ## High-level design
 
 ![Example of OpenECPDS Deployment](../img/Figure06.svg){ width="650" }

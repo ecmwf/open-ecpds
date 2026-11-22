@@ -57,8 +57,9 @@ such as TOTP (Time-Based One-Time Password).
 | **Not found** | The requested data user does not exist or is no longer available. May be due to an incorrect user identifier or a deleted data user. |
 | **Geolocation restriction** | Access to the requested resource is blocked based on the user's geographical location. May be enforced due to compliance, licensing agreements, or security policies that limit access to specific regions or countries. |
 | **Disabled** | The data user account has been deactivated, due to administrative action or security reasons. |
-| **TOTP authentication failed** | The provided Time-Based One-Time Password (TOTP) code is incorrect or has expired. Typically happens when a user enters an invalid 2FA code or if there is a time synchronisation issue. |
+| **External authentication failed** | The configured authentication provider rejected the credentials or was unavailable. |
 | **Password authentication failed** | The provided password is incorrect — due to a typo or an attempted unauthorised access. |
+| **Subscriber password authentication failed** | No active Self-Service subscriber matched the provided password. |
 | **Password not set** | The administrator has not set a password for the data user, preventing password-based login. May occur when an account is newly created but not yet configured. |
 | **Maximum number of connections exceeded** | The number of simultaneous connections has reached the system-defined limit. Additional connection attempts are denied until existing connections are closed or the limit is increased. Often used to prevent server overload. |
 | **No associated Destinations** | The data user does not have any configured destinations. May indicate a misconfiguration or an incomplete setup. |

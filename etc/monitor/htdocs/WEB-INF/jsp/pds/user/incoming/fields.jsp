@@ -73,7 +73,7 @@
             <li><strong>Comment</strong> &mdash; a free-text label to identify the account (e.g. organisation or contact name).</li>
             <li><strong>Country</strong> &mdash; country associated with this user, used to display the corresponding flag in the UI.</li>
             <li><strong>External authentication</strong> &mdash; when enabled, this user authenticates through the configured Master authentication provider. The local password is ignored. The provider must be active or the user cannot log in.</li>
-            <li><strong>Or password</strong> &mdash; local password used for authentication when TOTP is disabled for this user. Use <em>Generate</em> to create a secure random password.</li>
+            <li><strong>Or password</strong> &mdash; local password used when external authentication is disabled for this user. Use <em>Generate</em> to create a secure random password.</li>
             <li><strong>Enabled</strong> &mdash; when disabled, the user cannot connect regardless of authentication mode.</li>
           </ul>
         </div>
@@ -152,7 +152,7 @@
                 <label class="form-label form-label-sm fw-semibold text-muted mb-1">External authentication
                   <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em"
                      data-bs-toggle="popover" data-bs-placement="top"
-                     data-bs-content="Enable Time-based One-Time Password (TOTP) authentication. When enabled, the password field is not used."
+                     data-bs-content="Use the configured Master authentication provider instead of the local password."
                      tabindex="0"></i>
                 </label>
                 <div class="form-check form-switch mb-0"><html:checkbox property="isSynchronized" styleId="isSynchronized" onclick="handleTOTPClick(this)" styleClass="form-check-input" /></div>
@@ -167,12 +167,12 @@
                 <label class="form-label form-label-sm fw-semibold text-muted mb-1">Or password
                   <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em"
                      data-bs-toggle="popover" data-bs-placement="top"
-                     data-bs-content="Password for authentication when TOTP is disabled. Use 'Generate' to create a secure random password."
+                     data-bs-content="Local password used when external authentication is disabled. Use 'Generate' to create a secure random password."
                      tabindex="0"></i>
                 </label>
                 <div class="d-flex align-items-center gap-2">
                   <input type="password" id="password" name="password" class="form-control form-control-sm"
-                    value="${incomingUserActionForm.password}" />
+                    autocomplete="new-password" maxlength="4096" />
                   <button type="button" id="buttonPassword" name="buttonPassword"
                     class="btn btn-sm btn-outline-secondary" onclick="generatePassword(); return false">Generate</button>
                 </div>
@@ -236,17 +236,32 @@
             </div>
           </div>
           <div class="row g-2 align-items-center" id="passwordRow">
-            <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Or password <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Password for authentication when TOTP is disabled. Use 'Generate' to create a secure random password." tabindex="0"></i></label></div>
+            <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Or password <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="Local password used when external authentication is disabled. Use 'Generate' to create a secure random password." tabindex="0"></i></label></div>
             <div class="col-sm-8">
               <div class="d-flex align-items-center gap-2">
                 <input type="password" id="password" name="password" class="form-control form-control-sm"
-                  value="${incomingUserActionForm.password}" />
+                  autocomplete="new-password" maxlength="4096" />
                 <button type="button" id="buttonPassword" name="buttonPassword"
                   class="btn btn-sm btn-outline-secondary" onclick="generatePassword(); return false">Generate</button>
               </div>
+              <div class="form-text">${incomingUserActionForm.passwordSet ? 'Password set.' : 'No password set.'} Leave blank to keep it unchanged.</div>
             </div>
           </div>
           </div><%-- /standardLoginFields (edit) --%>
+          <div class="row g-2 align-items-center">
+            <div class="col-sm-4"><label for="s3Action" class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">S3 signing secret</label></div>
+            <div class="col-sm-8">
+              <select id="s3Action" name="s3Action" class="form-select form-select-sm"
+                      onchange="var field = document.getElementById('s3Secret'); field.hidden = field.disabled = this.value !== 'replace'; field.required = !field.disabled;">
+                <option value="">Leave unchanged</option>
+                <option value="replace">Set separate S3 secret</option>
+                <option value="disable">Disable signed S3 access</option>
+              </select>
+              <input id="s3Secret" name="s3Secret" type="password" class="form-control form-control-sm mt-2"
+                     aria-label="New S3 signing secret" autocomplete="new-password" maxlength="128" hidden disabled />
+              <div class="form-text"><c:out value="${incomingUserActionForm.s3CredentialStatus}" />. Replacing or disabling this secret retires the legacy S3 credential.</div>
+            </div>
+          </div>
           <div class="row g-2 align-items-center">
             <div class="col-sm-4"><label class="col-form-label col-form-label-sm fw-semibold text-muted mb-0">Enabled <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em" data-bs-toggle="popover" data-bs-placement="right" data-bs-content="When disabled, this user cannot connect." tabindex="0"></i></label></div>
             <div class="col-sm-8"><div class="form-check form-switch mb-0"><html:checkbox property="active" styleClass="form-check-input" /></div></div>

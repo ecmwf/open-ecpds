@@ -42,7 +42,7 @@
               <tr>
                 <td><span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle fw-normal"><i class="bi bi-lock-fill me-1"></i>Standard Login</span></td>
                 <td>Authorised individuals</td>
-                <td><i class="bi bi-check-circle-fill text-success"></i> Yes — admin-set password</td>
+                <td><i class="bi bi-check-circle-fill text-success"></i> Yes — local or external credentials</td>
                 <td><i class="bi bi-check-circle-fill text-success"></i> Supported</td>
                 <td>Known partners, automated systems, internal teams</td>
               </tr>
@@ -88,24 +88,23 @@
         <div class="alert alert-secondary py-2 px-3 mb-3 small d-flex align-items-start gap-2">
           <i class="bi bi-lock-fill flex-shrink-0 mt-1"></i>
           <div><strong>Standard Login</strong> is the default mode. Visitors must authenticate with a
-          username/password pair that is set by an administrator directly in the Data User record.
-          Optionally, a second factor (TOTP) can be required.</div>
+          Data Login and either a local password or credentials validated by the configured
+          external authentication provider.</div>
         </div>
 
         <p class="small fw-semibold mb-1"><i class="bi bi-key text-primary me-1"></i>Authentication</p>
         <ul class="small ps-3 mb-3">
           <li>The visitor logs in with the <strong>Data Login</strong> name (e.g. <code>test</code>) as the username.</li>
-          <li>The password is the value stored in the <strong>Password</strong> field of this Data User.</li>
+          <li>For local authentication, use the login password set by an administrator. It cannot be displayed again in the Monitor. A separate S3 signing secret does not work for portal login.</li>
           <li>HTTP Basic Auth is used; credentials are cached in the browser for the session.</li>
           <li>The portal login page is shown when the browser does not yet have credentials.</li>
         </ul>
 
-        <p class="small fw-semibold mb-1"><i class="bi bi-shield-lock text-primary me-1"></i>TOTP (Time-based One-Time Password)</p>
+        <p class="small fw-semibold mb-1"><i class="bi bi-shield-lock text-primary me-1"></i>External authentication</p>
         <ul class="small ps-3 mb-3">
           <li>Enable the <strong>External authentication</strong> toggle in the edit form to use the configured credential provider.</li>
-          <li>The portal login page shows a numeric keypad where the visitor enters the 6-digit code.</li>
-          <li>TOTP secrets are managed externally (via the authorised keys / ECAUTH module).</li>
-          <li>When TOTP is active, <em>Standard Login</em> with the password alone is rejected.</li>
+          <li>The configured provider determines which credentials it accepts. The bundled ECMWF provider accepts passwords or TOTP passcodes.</li>
+          <li>The local password is not a fallback when external authentication is enabled. Login fails if no provider is configured.</li>
         </ul>
 
         <p class="small fw-semibold mb-1"><i class="bi bi-person-badge text-primary me-1"></i>Session management</p>

@@ -164,7 +164,8 @@ final class AwsSignature {
 
         // Sign string
         try {
-            return BaseEncoding.base64().encode(getS3AuthorizationSignature(identity, "", stringToSign, "HmacSHA1"));
+            final var signature = getS3AuthorizationSignature(identity, "", stringToSign, "HmacSHA1");
+            return signature == null ? null : BaseEncoding.base64().encode(signature);
         } catch (RemoteException | ConnectionException e) {
             throw new RuntimeException(e);
         }
@@ -425,6 +426,9 @@ final class AwsSignature {
         final var canonicalRequest = createCanonicalRequest(request, uri, payload, authHeader.hashAlgorithm);
         final var algorithm = authHeader.hmacAlgorithm;
         final var dateKey = getS3AuthorizationSignature(identity, "AWS4", authHeader.date, algorithm);
+        if (dateKey == null) {
+            return null;
+        }
         final var dateRegionKey = signMessage(authHeader.region.getBytes(StandardCharsets.UTF_8), dateKey, algorithm);
         final var dateRegionServiceKey = signMessage(authHeader.service.getBytes(StandardCharsets.UTF_8), dateRegionKey,
                 algorithm);

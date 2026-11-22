@@ -119,6 +119,10 @@ import ecmwf.ecpds.mover.service.RESTClient.UpdateDataRequest;
  */
 @Path("")
 public final class RESTServer {
+    private record AvisoReplayProxyRequest(String user, String destination, String target, long after, Long upper,
+            Long fromTime, Long toTime, int limit) {
+    }
+
     /** The Constant _log. */
     private static final Logger _log = LogManager.getLogger(RESTServer.class);
 
@@ -287,8 +291,9 @@ public final class RESTServer {
         checkIsControlChannel(ui);
         final var session = getUserSession(authString, request, response);
         try {
-            return Response.ok(Map.of("sequence",
-                    mover.getMasterInterface().currentAvisoNotificationSequence(session.getUser(), destination)))
+            return Response
+                    .ok(Map.of("sequence",
+                            mover.getMasterProxy().currentAvisoNotificationSequence(session.getUser(), destination)))
                     .build();
         } catch (final Exception e) {
             throw newException(e, 503, "Aviso cursor unavailable");
@@ -415,7 +420,7 @@ public final class RESTServer {
         var transferred = false;
         try {
             final var user = session.getUser();
-            final var master = mover.getMasterInterface();
+            final var master = mover.getMasterProxy();
             final NotificationStream.Reader reader = (cursor, upper, fromTime, toTime) -> master
                     .replayAvisoNotificationHistory(user, aviso.destination(), aviso.target(), cursor, upper, fromTime,
                             toTime, 100);
@@ -676,6 +681,64 @@ public final class RESTServer {
         } catch (final Throwable t) {
             _log.warn("getECauthToken", t);
             return RESTMessage.getErrorMessage(t).getResponse();
+        }
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("master/replayAvisoNotificationHistory")
+    public Response replayAvisoNotificationHistory(@Context final UriInfo ui, final AvisoReplayProxyRequest request) {
+        checkIsControlChannel(ui);
+        requireAvisoRelaySigning();
+        checkParameter("request", request);
+        checkParameter("user", request.user());
+        checkParameter("destination", request.destination());
+        if (request.limit() < 1 || request.limit() > 100) {
+            throw new WebApplicationException("Invalid Aviso relay page size", Response.Status.BAD_REQUEST);
+        }
+        try {
+            final var replay = mover.getMasterProxy().replayAvisoNotificationHistory(request.user(),
+                    request.destination(), request.target(), request.after(), request.upper(), request.fromTime(),
+                    request.toTime(), request.limit());
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("replay", replay);
+            return message.getResponse();
+        } catch (final WebApplicationException w) {
+            _log.warn("replayAvisoNotificationHistory - {}", describe(w));
+            throw w;
+        } catch (final Throwable t) {
+            _log.warn("replayAvisoNotificationHistory", t);
+            return RESTMessage.getErrorMessage(t).getResponse();
+        }
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("master/currentAvisoNotificationSequence")
+    public Response currentAvisoNotificationSequence(@Context final UriInfo ui, @QueryParam("user") final String user,
+            @QueryParam("destination") final String destination) {
+        checkIsControlChannel(ui);
+        requireAvisoRelaySigning();
+        checkParameter("user", user);
+        checkParameter("destination", destination);
+        try {
+            final var message = RESTMessage.getSuccessMessage();
+            message.put("sequence", mover.getMasterProxy().currentAvisoNotificationSequence(user, destination));
+            return message.getResponse();
+        } catch (final WebApplicationException w) {
+            _log.warn("currentAvisoNotificationSequence - {}", describe(w));
+            throw w;
+        } catch (final Throwable t) {
+            _log.warn("currentAvisoNotificationSequence", t);
+            return RESTMessage.getErrorMessage(t).getResponse();
+        }
+    }
+
+    private static void requireAvisoRelaySigning() {
+        if (!RESTSignature.ENABLED) {
+            throw new WebApplicationException("Aviso relay requires authenticated control-channel signing",
+                    Response.Status.FORBIDDEN);
         }
     }
 

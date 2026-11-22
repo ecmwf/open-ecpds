@@ -4,13 +4,14 @@ The OpenECPDS Monitor is a web-based management interface for operators and admi
 It provides real-time visibility into destinations, hosts, data files, transfer history,
 and system health, as well as management of users and configuration.
 
-Three accounts are pre-configured in the standalone container:
+Three accounts are pre-configured in the standalone container with generated
+passwords. Retrieve them using the [standalone access instructions](../getting-started/standalone.md#access).
 
-| Account | Password | Role |
-|---|---|---|
-| `admin` | `admin2021` | Full administrator — all destinations, all management operations |
-| `monitor` | `monitor2021` | Restricted user — limited destinations, read-only monitoring |
-| `operator` | `operator2021` | Operator — all destinations, operational views, no administration |
+| Account | Role |
+|---|---|
+| `admin` | Full administrator — all destinations, all management operations |
+| `monitor` | Restricted user — limited destinations, read-only monitoring |
+| `operator` | Operator — all destinations, operational views, no administration |
 
 These accounts demonstrate the three typical access profiles. Access is controlled by
 *categories* assigned to each web user (see **Access Control**), so any real deployment can

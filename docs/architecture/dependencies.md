@@ -1,6 +1,8 @@
 # Java Dependencies
 
-This page lists the key third-party Java libraries bundled with OpenECPDS, grouped by functional area. Only **direct** runtime dependencies are shown; transitive dependencies pulled in by these libraries are not listed.
+This page lists key third-party Java libraries bundled with OpenECPDS, grouped by
+functional area. It includes direct runtime dependencies and selected transitive
+components where noted.
 
 ## Runtime Platform
 
@@ -83,7 +85,6 @@ are separate from the JDK distribution license.
 | [Apache MINA SSHD (SFTP)](https://mina.apache.org/sshd-project/) | 2.19.x | Apache 2.0 | Embedded SFTP server for the Data Portal |
 | [Apache MINA SSHD (SCP)](https://mina.apache.org/sshd-project/) | 2.19.x | Apache 2.0 | SCP transfer module support |
 | [JSch (mwiede fork)](https://github.com/mwiede/jsch) | 2.27.x | BSD | SSH/SFTP client used for outbound SFTP transfers to remote hosts |
-| [EdDSA (ed25519)](https://github.com/str4d/ed25519-java) | 0.3.0 | CC0 | Ed25519 key support for SSH authentication |
 
 ---
 
@@ -189,13 +190,13 @@ are separate from the JDK distribution license.
 | [Google Guava](https://github.com/google/guava) | (BOM) | Apache 2.0 | General-purpose utility library (collections, I/O, hashing) |
 | [Jackson Databind (Codehaus)](https://github.com/codehaus/jackson) | 1.9.11 | Apache 2.0 | Jackson 1.x JSON binding used by S3 and OpsView modules |
 | [Apache Commons IO](https://commons.apache.org/proper/commons-io/) | 2.20.x | Apache 2.0 | File and stream I/O utilities |
-| [Apache Commons Lang](https://commons.apache.org/proper/commons-lang/) | 2.6 | Apache 2.0 | String and object utilities |
+| [Apache Commons Lang](https://commons.apache.org/proper/commons-lang/) | 3.18.x | Apache 2.0 | String and object utilities |
 | [Apache Commons Compress](https://commons.apache.org/proper/commons-compress/) | 1.27.x | Apache 2.0 | Archive and compression formats (tar, gz, bz2, zstd) |
 | [Apache Commons CSV](https://commons.apache.org/proper/commons-csv/) | 1.14.x | Apache 2.0 | CSV parsing and formatting |
 | [Apache Commons Collections](https://commons.apache.org/proper/commons-collections/) | 3.2.2 | Apache 2.0 | Extended Java collections framework |
 | [Apache Commons Net](https://commons.apache.org/proper/commons-net/) | 3.11.x | Apache 2.0 | FTP, SMTP and other network protocol clients |
-| [Apache HttpClient 5](https://hc.apache.org/httpcomponents-client-5.3.x/) | 5.3.x | Apache 2.0 | HTTP client used for outbound REST/web service calls |
-| [Jsoup](https://jsoup.org/) | 1.20.x | MIT | HTML parsing and sanitisation |
+| [Apache HttpClient 5](https://hc.apache.org/httpcomponents-client-5.6.x/) | 5.6.x | Apache 2.0 | HTTP client used for outbound REST/web service calls |
+| [Jsoup](https://jsoup.org/) | 1.23.x | MIT | HTML parsing and sanitisation |
 | [Java Diff Utils](https://github.com/java-diff-utils/java-diff-utils) | 4.12 | Apache 2.0 | Diff / patch computation for configuration change tracking |
 | [MaxMind GeoIP2](https://github.com/maxmind/GeoIP2-java) | 4.2.x | Apache 2.0 | IP geolocation for country/region resolution |
 | [JavaMail (Sun)](https://javaee.github.io/javamail/) | 1.6.2 | CDDL 1.1 | E-mail notification delivery |

@@ -2237,8 +2237,7 @@ final class DataBaseProxy implements DataBaseInterface {
         if (isEmpty(user) || isEmpty(id)) {
             throw new DataBaseException("Invalid parameter(s) for webUserAdd");
         }
-        final var monitor = new MonitorCall(
-                "webUserAdd(" + user + "," + id + "," + password + "," + name + "," + active + ")");
+        final var monitor = new MonitorCall("webUserAdd(" + id + ")");
         dataBaseInterface.webUserAdd(user, id, password, name, active);
         monitor.done();
     }
@@ -2254,8 +2253,10 @@ final class DataBaseProxy implements DataBaseInterface {
         if (isEmpty(user) || isEmpty(id)) {
             throw new DataBaseException("Invalid parameter(s) for webUserAdd2");
         }
-        final var monitor = new MonitorCall("webUserAdd2(" + user + "," + id + "," + name + "," + active + ")");
-        return monitor.done(dataBaseInterface.webUserAdd2(user, id, name, active));
+        final var monitor = new MonitorCall("webUserAdd2(" + id + ")");
+        final var password = dataBaseInterface.webUserAdd2(user, id, name, active);
+        monitor.done();
+        return password;
     }
 
     /**
@@ -2269,7 +2270,7 @@ final class DataBaseProxy implements DataBaseInterface {
         if (isEmpty(user)) {
             throw new DataBaseException("Invalid parameter(s) for webUserList");
         }
-        final var monitor = new MonitorCall("webUserList(" + user + "," + category + ")");
+        final var monitor = new MonitorCall("webUserList");
         return monitor.done(dataBaseInterface.webUserList(user, category));
     }
 
@@ -2300,8 +2301,7 @@ final class DataBaseProxy implements DataBaseInterface {
         if (isEmpty(user) || isEmpty(id)) {
             throw new DataBaseException("Invalid parameter(s) for incomingUserAdd");
         }
-        final var monitor = new MonitorCall("incomingUserAdd(" + user + "," + id + "," + password + "," + email + ","
-                + iso + "," + portalService + "," + active + ")");
+        final var monitor = new MonitorCall("incomingUserAdd(" + id + ")");
         dataBaseInterface.incomingUserAdd(user, id, password, email, iso, portalService, active);
         monitor.done();
     }
@@ -2349,9 +2349,10 @@ final class DataBaseProxy implements DataBaseInterface {
         if (isEmpty(user) || isEmpty(id) || isEmpty(email) || isEmpty(iso)) {
             throw new DataBaseException("Invalid parameter(s) for incomingUserAdd2");
         }
-        final var monitor = new MonitorCall("incomingUserAdd2(" + user + "," + id + "," + email + "," + iso + ","
-                + portalService + "," + active + ")");
-        return monitor.done(dataBaseInterface.incomingUserAdd2(user, id, email, iso, portalService, active));
+        final var monitor = new MonitorCall("incomingUserAdd2(" + id + ")");
+        final var password = dataBaseInterface.incomingUserAdd2(user, id, email, iso, portalService, active);
+        monitor.done();
+        return password;
     }
 
     /**
@@ -2365,7 +2366,7 @@ final class DataBaseProxy implements DataBaseInterface {
         if (isEmpty(user)) {
             throw new DataBaseException("Invalid parameter(s) for incomingUserList");
         }
-        final var monitor = new MonitorCall("incomingUserList(" + user + "," + destination + ")");
+        final var monitor = new MonitorCall("incomingUserList");
         return monitor.done(dataBaseInterface.incomingUserList(user, destination));
     }
 

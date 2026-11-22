@@ -1921,6 +1921,13 @@ int main(int argc, char *argv[]) {
     goto clean;
   }
 
+  if (!success) {
+    error("Transmission failed to each Data Mover");
+    goto clean;
+  }
+  fprintf(stdout, "%s\n", message);
+  res = 0;
+
   /**
    * Check if the source file should be removed.
    * If the remove flag is set, mark the file for deletion.

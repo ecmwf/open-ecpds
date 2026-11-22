@@ -16,7 +16,8 @@ access to the [Data Portal](data-portal.md). Data Users are independent of Web U
 | **Data Login** | Unique identifier used as the username when connecting (e.g. `myorg_data`) |
 | **Portal Service** | How visitors authenticate — see [Portal Service modes](#portal-service-modes) below |
 | **Enabled** | Whether the account is active. Disabled users cannot connect |
-| **Password / TOTP** | Credentials (Standard Login mode only) |
+| **Password / external authentication** | Login credentials or configured authentication provider (Standard Login mode only) |
+| **S3 signing secret** | Separate secret for signed S3 access |
 | **Comment** | Free-text description shown in the monitoring interface |
 | **Country** | Country flag shown in the user list |
 | **Properties** | Fine-grained `portal.*` ECtrans options — see [Data User Options](data-portal-user-options.md) |
@@ -142,8 +143,9 @@ Open Access which is fully anonymous.
 
 ### Listing users (`/do/user/incoming`)
 
-The user list shows all Data Users with their Portal Service badge, Enabled status, TOTP
-status (shown as N/A for non-Standard-Login users), country flag, and active session count.
+The user list shows all Data Users with their Portal Service badge, Enabled status,
+external-authentication status (labelled **TOTP**, or N/A for non-Standard-Login
+users), country flag, and active session count.
 
 The **Filter** button opens a query builder with the following criteria:
 
@@ -167,14 +169,16 @@ Navigate to `/do/user/incoming` and click **Create**. The minimum required field
 
 1. **Data Login** — unique, alphanumeric + `_` and `.` only
 2. **Portal Service** — choose the appropriate mode
-3. **Password** (Standard Login only) — use *Generate* for a secure random password
+3. **Password** (local Standard Login) — use *Generate* for a secure random password,
+   or enable external authentication for the user
 4. At least one **Destination** or **Data Policy** association
 
 ### Editing a user
 
 Navigate to `/do/user/incoming/edit/update_form/<login>`. Changes are saved immediately
-on clicking **Save**. The TOTP and password fields are automatically hidden when the
-Portal Service is set to Open Access or Self-Service.
+on clicking **Save**. The external-authentication and password fields are hidden
+when the Portal Service is set to Open Access or Self-Service. An existing
+password cannot be displayed; leave the field blank to keep it unchanged.
 
 ### Viewing a user
 
@@ -187,16 +191,17 @@ active sessions, associated Destinations and Policies, and recent connection his
 
 ### Password authentication
 
-When Portal Service is **Standard Login** and TOTP is disabled, the standard
-username + password combination is used across all supported protocols (FTP, SFTP, SCP,
-WebDAV, HTTPS, S3).
+When Portal Service is **Standard Login** and external authentication is disabled
+for the user, the username and local password authenticate supported password-based
+protocols such as FTP, SFTP, WebDAV and HTTPS. Signed S3 uses a separate secret.
 
 ### TOTP (Two-Factor Authentication)
 
-When **TOTP authentication** is enabled, the password field is ignored and the user must
-provide a valid TOTP passcode (6 or 8 digits, RFC 6238). The shared secret is
-provisioned by the administrator. Authenticator apps such as Google Authenticator, Authy,
-or any RFC 6238-compatible app can be used.
+When **External authentication** is enabled, the configured Master authentication
+provider validates the user's credentials instead of the local password. The bundled
+ECMWF provider accepts passwords or TOTP passcodes; other providers may behave
+differently. If no provider is configured, login fails without a local-password
+fallback. See [TOTP Authentication](../administration/totp.md).
 
 ### SSH public-key authentication (SFTP)
 
@@ -206,9 +211,12 @@ OpenSSH format.
 
 ### S3 authentication
 
-For S3 connections, the **Data Login** is used as the `AccessKeyId` and the password (or
-TOTP passcode) as the `SecretAccessKey`. Open Access users can connect to the S3 endpoint
-without any credentials.
+For signed S3 connections, use the **Data Login** as the `AccessKeyId` and a
+separate S3 signing secret as the `SecretAccessKey`. Set or disable that secret
+on the user edit page; it cannot be displayed afterwards. Signed S3 is not
+available for externally authenticated or Self-Service users. Open Access users
+can connect without credentials. See [S3 signing secrets](../administration/local-passwords.md#s3-signing-secrets)
+for configuration and existing credentials.
 
 ---
 

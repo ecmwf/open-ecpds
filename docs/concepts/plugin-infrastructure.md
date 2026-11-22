@@ -154,8 +154,8 @@ The optional `ecpds-ecaccess` module implements ECCMD directory
 lookup without copying `MasterServer`. It is built only with the
 `ecaccess-extension` Maven profile and a separately extracted client-contract jar.
 See [ECaccess directory](../administration/ecaccess-identity.md) for build
-and configuration. Credentials remain with core TOTP authentication; this adapter
-does not validate passwords or passcodes.
+and configuration. Credential checks remain with the configured authentication
+provider or local authentication; this adapter does not validate passwords or passcodes.
 The same optional jar supplies [ECaccess gateway transfers](../transfer-modules/ecaccess.md)
 through the independent remote-service SPI below. Gateway operations and ECCMD
 wire types remain entirely in that jar; the identity SPI does not dispatch them.

@@ -164,6 +164,8 @@ import ecmwf.common.monitor.MonitorException;
 import ecmwf.common.plugin.PluginContainer;
 import ecmwf.common.plugin.PluginEvent;
 import ecmwf.common.security.LoginManagement;
+import ecmwf.common.security.LocalPassword;
+import ecmwf.common.security.S3SigningSecret;
 import ecmwf.common.security.Tools;
 import ecmwf.common.starter.Starter;
 import ecmwf.common.technical.ByteSize;
@@ -1130,7 +1132,9 @@ public final class MasterServer extends ECaccessProvider
     @Override
     public String getIncomingUserHash(final String incomingUser) {
         try {
-            return _getIncomingUserHash(getECpdsBase().getIncomingUser(incomingUser));
+            final var user = getECpdsBase().getIncomingUser(incomingUser);
+            return user.passwordHash() == null && LocalPassword.isSet(user.legacyPassword())
+                    ? _getIncomingUserHash(user) : null;
         } catch (final DataBaseException e) {
             return null;
         }
@@ -1229,7 +1233,7 @@ public final class MasterServer extends ECaccessProvider
      * @return the string
      */
     private static String _getIncomingUserHash(final IncomingUser user) {
-        return Format.getHash((user.getId() + ":" + user.getPassword()).getBytes(StandardCharsets.UTF_8));
+        return Format.getHash((user.getId() + ":" + user.legacyPassword()).getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -1251,9 +1255,30 @@ public final class MasterServer extends ECaccessProvider
             final String algorithm) {
         try {
             final var user = getECpdsBase().getIncomingUser(incomingUser);
-            final var mac = Mac.getInstance(algorithm);
-            mac.init(new SecretKeySpec((prefix + user.getPassword()).getBytes(StandardCharsets.UTF_8), algorithm));
-            return mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            if (!user.getActive() || "".equals(user.encryptedS3Secret())
+                    || !"open-access".equals(user.getPortalService())
+                            && (user.getSynchronized() || "self-service".equals(user.getPortalService()))) {
+                return null;
+            }
+            final byte[] secret;
+            if (user.encryptedS3Secret() != null) {
+                secret = S3SigningSecret.decrypt(user.getId(), user.encryptedS3Secret());
+            } else if (LocalPassword.isSet(user.legacyPassword())) {
+                secret = user.legacyPassword().getBytes(StandardCharsets.UTF_8);
+            } else {
+                return null;
+            }
+            final var prefixBytes = prefix.getBytes(StandardCharsets.UTF_8);
+            final var key = Arrays.copyOf(prefixBytes, prefixBytes.length + secret.length);
+            System.arraycopy(secret, 0, key, prefixBytes.length, secret.length);
+            Arrays.fill(secret, (byte) 0);
+            try {
+                final var mac = Mac.getInstance(algorithm);
+                mac.init(new SecretKeySpec(key, algorithm));
+                return mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            } finally {
+                Arrays.fill(key, (byte) 0);
+            }
         } catch (final Throwable t) {
             _log.warn("getS3AuthorizationSignature", t);
             return null;
@@ -1306,6 +1331,16 @@ public final class MasterServer extends ECaccessProvider
     @Override
     public IncomingProfile getIncomingProfile(final String incomingUser, final String incomingPassword,
             final String from) throws RemoteException {
+        return getIncomingProfile(incomingUser, incomingPassword, from, false);
+    }
+
+    @Override
+    public IncomingProfile getSignedS3Profile(final String incomingUser, final String from) throws RemoteException {
+        return getIncomingProfile(incomingUser, null, from, true);
+    }
+
+    private IncomingProfile getIncomingProfile(final String incomingUser, final String incomingPassword,
+            final String from, final boolean signedS3) throws RemoteException {
         final var _t0 = System.currentTimeMillis();
         try {
             // Is it a valid user?
@@ -1350,7 +1385,14 @@ public final class MasterServer extends ECaccessProvider
                 recordPortalAccessDenial(incomingUser, "Disabled", from);
                 throw new MasterException("Login failed");
             }
-            if ("open-access".equals(user.getPortalService())) {
+            if (signedS3) {
+                if ("".equals(user.encryptedS3Secret())
+                        || user.encryptedS3Secret() == null && !LocalPassword.isSet(user.legacyPassword())
+                        || !"open-access".equals(user.getPortalService())
+                                && (user.getSynchronized() || "self-service".equals(user.getPortalService()))) {
+                    throw new MasterException("Login failed");
+                }
+            } else if ("open-access".equals(user.getPortalService())) {
                 // This is an open-access user so no authentication required!
             } else if (incomingPassword != null) {
                 final var selfService = "self-service".equals(user.getPortalService());
@@ -1384,14 +1426,18 @@ public final class MasterServer extends ECaccessProvider
                                 incomingUser);
                     } else {
                         // Standard login: check the IncomingUser's own password
-                        final var localPassword = user.getPassword();
-                        if (localPassword == null) {
+                        final var legacy = user.legacyPassword();
+                        if (!user.hasPassword()) {
                             recordPortalAccessDenial(incomingUser, "Password not set", from);
                             _log.debug("Password not set for IncomingUser {}", incomingUser);
                             throw new MasterException("Login failed");
                         }
-                        if (!localPassword.equals(incomingPassword)
-                                && !_getIncomingUserHash(user).equals(incomingPassword)) {
+                        if (LocalPassword.matches(user.passwordHash(), legacy, incomingPassword)) {
+                            if (user.passwordHash() == null) {
+                                migrateLocalPassword(base, user.getId(), legacy, true);
+                            }
+                        } else if (user.passwordHash() != null || !LocalPassword.isSet(legacy)
+                                || !LocalPassword.equal(_getIncomingUserHash(user), incomingPassword)) {
                             recordPortalAccessDenial(incomingUser, "Password authentication failed", from);
                             throw new MasterException("Login failed");
                         }
@@ -1500,7 +1546,7 @@ public final class MasterServer extends ECaccessProvider
             if (elapsed > 100)
                 _log.warn("getIncomingProfile for {} took {}ms (confirmed={} from={})", incomingUser, elapsed,
                         _getIncomingConnectionCountFor(incomingUser), from);
-            return new IncomingProfile(user, permissions, destinations);
+            return new IncomingProfile(user.withoutCredentials(), permissions, destinations);
         } catch (final Throwable t) {
             throw Format.getRemoteException("MasterServer=" + getRoot(), t);
         }
@@ -1538,7 +1584,7 @@ public final class MasterServer extends ECaccessProvider
             final var permissions = base.getIncomingPermissionsForIncomingUser(incomingUser);
             // Pass merged policy data to the profile (same as full auth path)
             user.setData(setup.getData());
-            return new IncomingProfile(user, permissions, destinations);
+            return new IncomingProfile(user.withoutCredentials(), permissions, destinations);
         } catch (final Throwable t) {
             throw Format.getRemoteException("MasterServer=" + getRoot(), t);
         }
@@ -6348,7 +6394,7 @@ public final class MasterServer extends ECaccessProvider
         base.update(webUser);
         final var token = activity != null && rotationMonitorEnabled()
                 ? rotationMonitorSessions.issue(webUser.getId(), root) : null;
-        return new ECpdsSession(webUser, root, activity, token);
+        return new ECpdsSession(webUser.withoutCredentials(), root, activity, token);
     }
 
     private static boolean rotationMonitorEnabled() {
@@ -6389,7 +6435,7 @@ public final class MasterServer extends ECaccessProvider
                 final var challenge = beginRotationReauthentication(session.rotationToken(), origin, activation);
                 final var account = getDataBase().getWebUserObject(user);
                 return new HostPasswordActivation(challenge.state(), challenge.authorizationUri(),
-                        account != null && account.getPassword() != null && !account.getPassword().isEmpty(), false);
+                        account != null && account.hasPassword(), false);
             }
             verifyRotationReauthentication(request.state(), session.rotationToken(), origin, request.code(), activation,
                     request.localPassword());
@@ -6540,8 +6586,8 @@ public final class MasterServer extends ECaccessProvider
             final var webUser = base.getWebUserObject(user);
             if (base.getECUserObject(user) == null || webUser == null || !webUser.getActive()
                     || Cnf.at("Server", "anonymousUser", "anonymous").equals(user)
-                    || !meetsRotationLocalPasswordRequirement(webUser.getPassword(), localPassword, origin,
-                            allowedPasswordOn, policy)) {
+                    || !meetsRotationLocalPasswordRequirement(webUser.passwordHash(), webUser.legacyPassword(),
+                            localPassword, origin, allowedPasswordOn, policy)) {
                 throw new IOException("Rotation account or local password verification failed");
             }
         } catch (final IOException | MasterException | RuntimeException _) {
@@ -6551,15 +6597,18 @@ public final class MasterServer extends ECaccessProvider
 
     static boolean meetsRotationLocalPasswordRequirement(final String stored, final String submitted,
             final String origin, final String allowedPasswordOn, final RotationPolicy policy) {
+        return meetsRotationLocalPasswordRequirement(null, stored, submitted, origin, allowedPasswordOn, policy);
+    }
+
+    private static boolean meetsRotationLocalPasswordRequirement(final String hash, final String legacy,
+            final String submitted, final String origin, final String allowedPasswordOn, final RotationPolicy policy) {
         if (origin == null || origin.isBlank()) {
             return false;
         }
-        if (stored == null || stored.isEmpty()) {
+        if (hash == null && !LocalPassword.isSet(legacy)) {
             return policy == RotationPolicy.FRESH_MFA;
         }
-        return origin.matches(allowedPasswordOn) && submitted != null && submitted.length() <= 4096
-                && java.security.MessageDigest.isEqual(stored.getBytes(StandardCharsets.UTF_8),
-                        submitted.getBytes(StandardCharsets.UTF_8));
+        return origin.matches(allowedPasswordOn) && LocalPassword.matches(hash, legacy, submitted);
     }
 
     /**
@@ -7575,7 +7624,7 @@ public final class MasterServer extends ECaccessProvider
                     throw new MasterException("Authentication failed");
                 }
             } catch (final Exception e) {
-                _log.error("Certificate authentication failed: " + credentials, e);
+                _log.error("Certificate authentication failed for {}", user);
                 throw new MasterException("Authentication failed");
             }
         }
@@ -7599,13 +7648,27 @@ public final class MasterServer extends ECaccessProvider
                     throw new MasterException("Authentication failed");
                 }
             }
-        } else if (!credentials.equals(webUser.getPassword())) {
+        } else if (!LocalPassword.matches(webUser.passwordHash(), webUser.legacyPassword(), credentials)) {
             _log.error("Static authentication failed for " + user);
             throw new MasterException("Authentication failed");
         } else {
+            if (webUser.passwordHash() == null) {
+                migrateLocalPassword(getECpdsBase(), webUser.getId(), webUser.legacyPassword(), false);
+            }
             _log.debug("Static authentication successful for " + user + " (WebUser)");
         }
         return webUser;
+    }
+
+    private static void migrateLocalPassword(final ECpdsBase base, final String user, final String legacy,
+            final boolean incoming) {
+        if (Cnf.at("LocalPasswords", "hashWritesEnabled", true)) {
+            try {
+                base.migrateLocalPassword(user, legacy, LocalPassword.hash(legacy), incoming);
+            } catch (final Exception _) {
+                _log.warn("Could not migrate local password for {}", user);
+            }
+        }
     }
 
     /**

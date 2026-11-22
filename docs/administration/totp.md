@@ -95,7 +95,7 @@ Web Users are the operators and administrators who access the **Monitoring UI**.
 Data Users are the external users who access data through the **Data Portal**.
 
 External authentication for synchronized Data Users is controlled at the
-individual user level via the **TOTP Authentication** toggle
+individual user level via the **External authentication** toggle
 (`isSynchronized`). The selected Master authentication provider validates their
 credentials. Non-synchronized and self-service users retain their existing
 local-password/subscriber-password handling.
@@ -107,13 +107,15 @@ local-password/subscriber-password handling.
 | Not configured | Enabled ✓ | Login fails; database-password fallback is disabled |
 
 !!! danger "Per-user TOTP with global TOTP inactive"
-    If a Data User's **TOTP Authentication** toggle is enabled but no
+    If a Data User's **External authentication** toggle is enabled but no
     authentication provider is configured, login fails; the local password is
     not used as a fallback. The ECMWF provider is selected automatically when
     `TOTP.active=true`.
 
 !!! info "Self-Service users are exempt"
-    Data Users with the **Self-Service Registration** portal service mode bypass TOTP entirely and always authenticate against their database password, regardless of the per-user TOTP toggle.
+    Data Users with the **Self-Service Registration** portal service mode use active
+    subscriber passwords rather than the Data User's local password or the external
+    provider, regardless of the per-user toggle.
 
 ---
 

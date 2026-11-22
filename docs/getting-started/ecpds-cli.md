@@ -36,17 +36,29 @@ A minimal container image is published alongside the other OpenECPDS images:
 docker pull ghcr.io/ecmwf/open-ecpds/cli:latest
 ```
 
-Use it as a one-shot command (mount the files you want to submit):
+Use it as a one-shot command (mount the files you want to submit). If the
+deployment uses a CLI shared secret, obtain it securely from its administrator
+and export `CLI_SHARED_SECRET` before running:
 
 ```bash
+read -rs -p 'CLI shared secret: ' CLI_SHARED_SECRET; echo
+export CLI_SHARED_SECRET
+read -rs -p 'Data User password: ' DATA_PASSWORD; echo
 docker run --rm \
+  -e CLI_SHARED_SECRET \
   -v /path/to/data:/data \
   ghcr.io/ecmwf/open-ecpds/cli:latest \
   -echost master.example.com -ecport 9640 \
-  -user mylogin -pass mypassword \
+  -user mylogin -pass "$DATA_PASSWORD" \
   -destination MY_DESTINATION \
   -source /data/myfile.dat
+unset DATA_PASSWORD CLI_SHARED_SECRET
 ```
+
+For deployments without a shared secret, omit the secret prompt, export and
+`-e` option. Ensure the returned Mover hostname is resolvable and reachable
+inside the CLI container. Password arguments and container environment variables
+can be visible to local administrators or process-inspection tools.
 
 ### Option C — Extract from the standalone container
 
@@ -70,43 +82,61 @@ make release-tools   # produces release/ecpds-amd64 or release/ecpds-arm64
 
 ## Using the CLI against the standalone container
 
-If you are running the [standalone container](standalone.md), the Master Server listens
-on port **9640** for `ecpds` CLI connections. The default credentials are
-`test` / `test2021` and a destination named `TEST` is pre-configured.
+The [standalone `docker run` example](standalone.md#start) publishes the Master
+port **9640** and Mover port **7640** on the container host's localhost. A file upload
+connects to both: the Master returns the Mover address `ecpds-mover:7640`.
+On the machine running the native CLI, arrange for `ecpds-mover` to resolve to
+`127.0.0.1`, for example with `127.0.0.1 ecpds-mover` in its hosts file. This
+name is resolved by the client, not by the standalone container.
+
+The container administrator can retrieve the generated shared secret with
+`docker exec standalone cat /data/lib/master/standalone-secrets/cli` and the
+initial `test` user password from `/data/lib/standalone/initial-accounts`.
+If `CLI_SHARED_SECRET` was explicitly set for the container, use that value
+instead of the generated file. Transfer and store both credentials securely.
+On the CLI machine, enter them without echoing:
+
+```bash
+read -rs -p 'CLI shared secret: ' CLI_SHARED_SECRET; echo
+export CLI_SHARED_SECRET
+read -rs -p 'Test user password: ' TEST_PASSWORD; echo
+```
+
+For example, to submit a local file to the pre-configured `aviso_demo`
+destination:
 
 ```bash
 ecpds \
   -echost localhost -ecport 9640 \
-  -user test -pass test2021 \
-  -destination TEST \
+  -user test -pass "$TEST_PASSWORD" \
+  -destination aviso_demo \
   -source /path/to/myfile.dat
 ```
 
-Or using the CLI Docker image:
+The destination starts stopped; start it in the Monitor if the file should be
+delivered. The password passed with `-pass` can be visible in process listings.
+Unset `TEST_PASSWORD` and `CLI_SHARED_SECRET` when finished.
+
+### Connecting from another machine
+
+The CLI protocol is a plain socket: the shared-secret challenge authenticates
+the connection but does **not** encrypt credentials or file contents. Keep the
+ports bound to localhost and use an encrypted tunnel, for example:
 
 ```bash
-docker run --rm \
-  -v /path/to/myfile.dat:/myfile.dat \
-  ghcr.io/ecmwf/open-ecpds/cli:latest \
-  -echost host.docker.internal -ecport 9640 \
-  -user test -pass test2021 \
-  -destination TEST \
-  -source /myfile.dat
+ssh -N -L 9640:127.0.0.1:9640 -L 7640:127.0.0.1:7640 user@container-host
 ```
 
-!!! note
-    On Linux, use `--network host` instead of `host.docker.internal` to reach services
-    on the host machine from within a Docker container.
+Run the CLI on the remote machine as above, with `ecpds-mover` resolving to
+its own localhost. Keep the tunnel open during the upload. If the container
+already exists without these port mappings, recreate it with the same `/data`
+volume and image build; Docker cannot add mappings to an existing container.
 
-Or directly inside the container (no network configuration needed):
-
-```bash
-docker exec standalone ecpds \
-  -echost localhost -ecport 9640 \
-  -user test -pass test2021 \
-  -destination TEST \
-  -source /path/to/myfile.dat
-```
+For direct access instead, replace the localhost mappings with
+`-p HOST_IP:9640:9640` and `-p HOST_IP:7640:7640` when creating the container,
+and make `ecpds-mover` resolve to `HOST_IP` on the CLI machine. Use an
+encrypted, access-controlled network such as a VPN; do not expose the
+plain-socket ports to an untrusted network.
 
 ## Related
 

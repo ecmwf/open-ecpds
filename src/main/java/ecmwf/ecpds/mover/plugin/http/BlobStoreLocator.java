@@ -39,6 +39,7 @@ import ecmwf.common.ecaccess.NativeAuthenticationProvider;
 import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.ecpds.mover.MoverServer;
+import ecmwf.ecpds.mover.MoverProvider;
 
 /**
  * The Class BlobStoreLocator.
@@ -70,15 +71,7 @@ public class BlobStoreLocator {
     Map.Entry<String, BlobStore> locateBlobStore(final HttpServletRequest request, final HttpServletResponse response,
             final String identity, final String container, final String blob) {
         logger.debug("identity: " + identity + ", container: " + container + ", blob: " + blob);
-        final String incomingUserHash;
-        try {
-            incomingUserHash = _mover.getMasterInterface().getIncomingUserHash(identity);
-        } catch (final Throwable t) {
-            logger.warn("getUserSession", t);
-            return null;
-        }
-
-        return incomingUserHash != null ? new Map.Entry<>() {
+        return new Map.Entry<>() {
 
             BlobStore blobStore;
 
@@ -97,8 +90,8 @@ public class BlobStoreLocator {
                 // verifications are completed)
                 final var remoteAddr = request.getRemoteAddr();
                 try {
-                    final var userSession = NativeAuthenticationProvider.getInstance().getUserSession(remoteAddr,
-                            identity, incomingUserHash, "s3", (Closeable) () -> response
+                    final var userSession = ((MoverProvider) NativeAuthenticationProvider.getInstance())
+                            .getSignedS3Session(remoteAddr, identity, (Closeable) () -> response
                                     .sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Interrupted by server"));
                     final var s3UserAgent = request.getHeader("User-Agent");
                     if (s3UserAgent != null && !s3UserAgent.isBlank()) {
@@ -132,7 +125,7 @@ public class BlobStoreLocator {
                 // Should never be called
                 return blobStore = value;
             }
-        } : null;
+        };
     }
 
     /**

@@ -148,7 +148,7 @@ select-dev-container = \
 build-dev-image = cd .devcontainer && $(DOCKER) build --platform linux/$(ARCH) -f Dockerfile -t $(IMAGE_NAME) .
 
 # Conditional targets based on the environment
-.PHONY: help dev dev-pull .dev-cntnr .run login rm-dev \
+.PHONY: help dev dev-pull .dev-cntnr .run login rm-dev git-publish git-merge \
         get-geodb get-licenses build build-sa build-cli cr-login push push-dev push-sa push-cli push-native push-sa-native push-cli-native manifest sa-manifest cli-manifest release-tools \
         start-db stop-db start-openbao stop-openbao start-ai stop-ai start-hawtio stop-hawtio start-otel stop-otel logs-otel start-backend stop-backend \
         docs docs-embed docs-screenshots docs-preview docs-publish \
@@ -243,6 +243,15 @@ rm-dev: ## Stop the development container, then remove both its container and im
 			echo "Data directories kept. They will be reused if you run 'make dev' again."; \
 		fi \
 	fi
+
+# ─── GitHub ───────────────────────────────────────────────────────────────────
+git-publish: export GIT_PUBLISH_BRANCH = $(BRANCH)
+git-publish: export GIT_PUBLISH_MESSAGE = $(MESSAGE)
+git-publish: ## Commit all non-ignored changes, push and open a PR [BRANCH=name] [MESSAGE="commit"]
+	@bash scripts/git-publish.sh
+
+git-merge: ## Merge current branch's PR when GitHub requirements are met
+	@bash scripts/git-merge.sh
 
 # ─── Build ────────────────────────────────────────────────────────────────────
 get-geodb: ## Fetch latest GeoLite2-City (MaxMind.com) CDN files

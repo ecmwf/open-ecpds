@@ -48,7 +48,7 @@
 					<p class="mb-1">A <em>Web User</em> is an account that can log in to the <strong>OpenECPDS Monitoring UI</strong>. Access is controlled by the <strong>Web Categories</strong> assigned to the account.</p>
 					<ul class="mb-1 ps-3">
 						<li><strong>Web Login</strong> &mdash; the unique username used to log in.</li>
-						<li><strong>Password</strong> &mdash; the fallback password stored locally in the database. Used for authentication <em>only</em> when TOTP is <strong>not</strong> active globally. When TOTP is active, this password is ignored at login time but can still be pre-set as a safety fallback. The current TOTP state is always shown as a note below the password field.</li>
+						<li><strong>Password</strong> &mdash; used for local sign-in when no external authentication provider applies, and for operations that require local reauthentication. An existing password cannot be displayed.</li>
 						<li><strong>Comment</strong> &mdash; a free-text label to identify the account (e.g. full name or team).</li>
 						<li><strong>Enabled</strong> &mdash; when disabled, the user cannot log in regardless of authentication mode.</li>
 					</ul>
@@ -86,10 +86,13 @@
 						<div class="col-sm-8">
 							<div class="d-flex align-items-center gap-2">
 								<input id="password" name="password" type="password" class="form-control form-control-sm"
-									value="${userActionForm.password}">
+									autocomplete="new-password" maxlength="4096">
 								<button type="button" id="buttonPassword" name="buttonPassword"
 									class="btn btn-sm btn-outline-secondary" onclick="generatePassword(); return false">Generate</button>
 							</div>
+							<c:if test="${isInsert != 'true'}">
+								<div class="form-text">${userActionForm.passwordSet ? 'Password set.' : 'No password set.'} Leave blank to keep it unchanged.</div>
+							</c:if>
 							<c:if test="${authenticationProviderActive}">
 							<div class="d-flex align-items-start gap-2 mt-2 p-2 rounded" style="background:var(--bs-warning-bg-subtle,#fff3cd); border:1px solid var(--bs-warning-border-subtle,#ffc107); font-size:0.8rem;">
 								<i class="bi bi-exclamation-triangle-fill text-warning mt-1 flex-shrink-0"></i>

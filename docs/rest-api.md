@@ -70,74 +70,21 @@ If the `Authorization` header is missing or malformed, the API returns `401 Unau
 
 ## Permission Configuration
 
-!!! tip "Prefer the API Client web interface"
-    The recommended way to create and manage API clients is the **API Client Server Permissions** page
-    (`/do/user/api`) in the web interface, rather than editing the `[API]` section of the properties file
-    directly. When a client is created there, a random secret is generated and shown to you **once**; only
-    its hash is stored server-side, and it can be reset at any time without editing configuration files or
-    restarting the server. Permissions can also be toggled per-service from the same page. Setting plaintext
-    passwords directly in the properties file is supported for startup provisioning,
-    but is **not recommended** since the password is stored and distributed in clear
-    text wherever that configuration file is deployed.
+Create and manage API clients on the **API Client Server Permissions** page
+(`/do/user/api`). A random secret is shown once; only its hash is stored in the
+database. Permissions can be changed per service, and secrets reset without a
+server restart.
 
-API users and their allowed operations can also be defined in the OpenECPDS properties file under the `[API]`
-section — this is mainly useful for bootstrapping the first client(s) before the web interface is available, or
-for automated deployments that provision configuration files. Entries found here are imported into the
-database-backed API client store on startup (and then manageable from `/do/user/api` like any other client).
-The format is:
-
-```ini
-[API]
-<username>=<password>:<service-regex>
-```
-
-| Field | Description |
-|---|---|
-| `<username>` | The API username (matches the Basic auth username) |
-| `<password>` | The plaintext API password (matches the Basic auth password) |
-| `<service-regex>` | A Java regular expression matched against the **service name** of the operation being called |
+Configured `[API]` properties are imported on startup.
+After verifying that clients and permissions have been imported successfully,
+remove those entries from the deployed properties file: they contain plaintext
+secrets and can be used as a fallback if a database lookup fails. Rotate the
+imported secrets through the Monitor UI.
 
 **Service names** are the internal method names listed in each endpoint's description below.
 
-### Examples
-
-Allow a user to call all services:
-
-```ini
-[API]
-myuser=mysecret:.*
-```
-
-Allow a user only to read destination metadata (GET operations):
-
-```ini
-[API]
-readonly=readpass:getDestinationMetaFields|getDestinationMetaValuesByDestination
-```
-
-Allow a user to manage incoming users and associations, but nothing else:
-
-```ini
-[API]
-incomingmgr=pass123:incomingUser.*|incomingCategory.*|incomingAssociation.*
-```
-
-Allow a user to submit data files and manage destination backups:
-
-```ini
-[API]
-datapipeline=pipepass:datafilePut|datafileDel|datafileSize|destinationBackup.*
-```
-
-Allow a user to only read the product monitoring summary (e.g. an operator-facing tool or dashboard):
-
-```ini
-[API]
-ops=opspass:monitoringSummaryList
-```
-
 !!! note "No permissions = no access"
-    If a username is not listed in the `[API]` section, or the operation does not match the regex, the request is rejected with a `DataBaseException: User not authorized` error.
+    A disabled client or a request that does not match an allowed service pattern is rejected.
 
 !!! note "`showSensitiveInfo` — a special, non-gating permission"
     Unlike every other service name, `showSensitiveInfo` doesn't gate access to an endpoint - it controls
@@ -167,14 +114,13 @@ HTTP-level errors (auth failures, missing parameters) return standard HTTP statu
 ## Sensitive Fields
 
 Some objects returned by this API carry credentials or other sensitive values: a `Host`'s password
-(`GET /v1/destination/backup[/{name}]`), an incoming user's password (`GET /v1/incoming/user/list`), a
-web user's password (`GET /v1/web/user/list`), and any destination-metadata field configured with type
+(`GET /v1/destination/backup[/{name}]`) and any destination-metadata field configured with type
 `password` — both its stored value (`GET /v1/destination/{name}/metadata`) and its field-level
 `defaultValue` (`GET /v1/destination/metadata/fields`).
 
 By default, these values are omitted from the JSON response even when the client is otherwise permitted to
 call the endpoint. To include them, grant the client the `showSensitiveInfo` service permission (a checkbox
-in the **Data Visibility** group on `/do/user/api/{clientId}`, or `.*` in the `[API]` regex). This permission
+in the **Data Visibility** group on `/do/user/api/{clientId}`, or an existing `.*` permission). This permission
 is independent from — and does not replace — the permission needed to call the endpoint itself; it only
 changes what an already-successful response contains.
 
@@ -207,6 +153,12 @@ These endpoints manage incoming user accounts (data consumers/publishers) and th
 
 Creates a new incoming user with a password.
 
+!!! warning "Password in URL"
+    `pass` is a query parameter, not a request-body field. URLs can be recorded
+    in shell history, access logs, proxies and diagnostics. Do not put a real
+    or reusable password in a URL. For new users, prefer `incoming/user/add2`,
+    which generates a password without putting it in the request URL.
+
 **Query parameters:**
 
 | Parameter | Required | Description |
@@ -229,7 +181,8 @@ Creates a new incoming user with a password.
 
 #### `POST /v1/incoming/user/add2`
 
-Creates or updates an incoming user without a password (password set separately or via other means).
+Creates a new incoming user with a generated password. An existing user ID is
+rejected; this endpoint does not update users.
 
 **Query parameters:**
 
@@ -242,6 +195,13 @@ Creates or updates an incoming user without a password (password set separately 
 | `active` | ❌ | `true`/`false`. Whether the user is active. Defaults to `true` if omitted |
 
 **Service name:** `incomingUserAdd2`
+
+**Response:** JSON containing the generated password in `pass`. Treat the
+response as a credential: protect it from logging or unauthorized access.
+
+```json
+{ "success": "yes", "pass": "<generated-password>" }
+```
 
 ---
 
@@ -257,8 +217,7 @@ Lists all incoming users, optionally filtered by destination.
 
 **Service name:** `incomingUserList`
 
-Each user's `password` field is included only if the client also has the `showSensitiveInfo` permission
-(see [Sensitive Fields](#sensitive-fields)) — omitted otherwise.
+Passwords are never returned, even with the `showSensitiveInfo` permission.
 
 **Response:**
 ```json
@@ -313,9 +272,9 @@ Assigns one or more categories to an incoming user. The request body is a JSON a
 ```
 
 !!! warning "Activation required before associating a destination"
-    A newly created incoming user (via `incoming/user/add` or `incoming/user/add2`) is **inactive** by
-    default unless `active=true` is passed at creation time. Calling `incoming/association/add` on an
-    inactive user fails with `User <id> not found/active`.
+    A user created with `incoming/user/add` is **inactive** by default unless
+    `active=true` is passed. `incoming/user/add2` defaults to active. Calling
+    `incoming/association/add` on an inactive user fails with `User <id> not found/active`.
 
     The simplest way to activate a user is the `active` parameter on `incoming/user/add`/`add2` (see
     above), either at creation time or in a follow-up call to `incoming/user/add`.
@@ -454,8 +413,7 @@ Lists all active web users, optionally filtered by ACL category.
 
 **Service name:** `webUserList`
 
-Each user's `password` field is included only if the client also has the `showSensitiveInfo`
-permission (see [Sensitive Fields](#sensitive-fields)) — omitted otherwise.
+Passwords are never returned, even with the `showSensitiveInfo` permission.
 
 **Response:**
 ```json
@@ -1104,22 +1062,9 @@ Deletes a data file from the system by its internal ID.
 
 ## Complete Configuration Example
 
-The following shows a typical `[API]` section for a production configuration with multiple API users:
-
-```ini
-[API]
-# Full administrative access
-admin_api=Admin$ecret99:.*
-
-# Read-only metadata access
-metadata_reader=MdRead42:getDestinationMetaFields|getDestinationMetaValuesByDestination
-
-# Pipeline user: submit and delete files, read destination info
-pipeline=Pipe#pass88:datafilePut|datafileDel|datafileSize|destinationList|destination
-
-# Incoming user management (e.g. called from a provisioning system)
-provisioning=Prov&key77:incomingUser.*|incomingCategory.*|incomingAssociation.*
-```
+Create separate clients in the Monitor UI for administrative, metadata,
+pipeline and provisioning operations. Grant each client only the service
+patterns it needs.
 
 !!! tip "Regex tips"
     - Use `.*` to allow all services (full admin).

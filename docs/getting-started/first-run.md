@@ -29,9 +29,12 @@ It might take a few seconds for all the services to start. Once they are up, you
 access the following URLs (update them if you changed the configuration in the compose
 files):
 
-!!! warning
-    Certificate validation should be disabled when relevant, as the test environment
-    uses a self-signed certificate.
+!!! warning "Development environment"
+    The seed credentials below are for the multi-container development setup only;
+    do not use them in production. The standalone container instead generates
+    [per-installation credentials](standalone.md#access).
+    The test environment uses a self-signed certificate. Verify and trust a
+    certificate before connecting beyond a trusted test environment.
 
 | Interface | URL | Login Details |
 |-----------|-----|---------------|

@@ -79,6 +79,8 @@ import org.hibernate.query.Query;
 import ecmwf.common.technical.CloseableIterator;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ResourceTracker;
+import ecmwf.common.security.LocalPassword;
+import ecmwf.common.security.S3SigningSecret;
 import jakarta.persistence.criteria.CriteriaQuery;
 
 /**
@@ -244,7 +246,10 @@ final class BrokerHibernate implements Broker {
         @SuppressWarnings("unchecked")
         public <T extends DataBaseObject> T get(final T object) {
             session.setCacheMode(org.hibernate.CacheMode.IGNORE);
-            return (T) session.find(object.getClass(), getObjectIdentifier(object, session));
+            return (T) session.find(object.getClass(), getObjectIdentifier(object, session),
+                    java.util.Map.of("jakarta.persistence.cache.retrieveMode",
+                            jakarta.persistence.CacheRetrieveMode.BYPASS, "jakarta.persistence.cache.storeMode",
+                            jakarta.persistence.CacheStoreMode.BYPASS));
         }
 
         @Override
@@ -934,6 +939,63 @@ final class BrokerHibernate implements Broker {
         performTransaction(operation, object, verifyRevision, 0);
     }
 
+    private DataBaseObject accountCredentials(final DataBaseObject object, final boolean update) {
+        if (object instanceof final WebUser user) {
+            final var hashWrites = Cnf.at("LocalPasswords", "hashWritesEnabled", true);
+            final var copy = (WebUser) user.clone();
+            final var current = update ? session.find(WebUser.class, user.getId(), LockMode.PESSIMISTIC_WRITE) : null;
+            copy.WEU_PASSWORD = current != null ? current.WEU_PASSWORD : null;
+            copy.WEU_PASSWORD_HASH = current != null ? current.WEU_PASSWORD_HASH : null;
+            if (LocalPassword.isSet(user.getPassword())) {
+                if (hashWrites || copy.WEU_PASSWORD_HASH != null) {
+                    copy.WEU_PASSWORD_HASH = LocalPassword.hash(user.getPassword());
+                    copy.WEU_PASSWORD = null;
+                } else {
+                    copy.WEU_PASSWORD = user.getPassword();
+                }
+            }
+            copy.setPassword(null);
+            return copy;
+        }
+        if (object instanceof final IncomingUser user) {
+            final var hashWrites = Cnf.at("LocalPasswords", "hashWritesEnabled", true);
+            final var copy = (IncomingUser) user.clone();
+            final var current = update ? session.find(IncomingUser.class, user.getId(), LockMode.PESSIMISTIC_WRITE)
+                    : null;
+            copy.INU_PASSWORD = current != null ? current.INU_PASSWORD : null;
+            copy.INU_PASSWORD_HASH = current != null ? current.INU_PASSWORD_HASH : null;
+            copy.INU_S3_SECRET = current != null ? current.INU_S3_SECRET : null;
+            if (LocalPassword.isSet(user.getPassword())) {
+                if (hashWrites || copy.INU_PASSWORD_HASH != null || copy.INU_S3_SECRET != null) {
+                    copy.INU_PASSWORD_HASH = LocalPassword.hash(user.getPassword());
+                } else {
+                    copy.INU_PASSWORD = user.getPassword();
+                }
+            }
+            if (user.disableS3Secret() || user.newS3Secret() != null) {
+                if (!hashWrites || user.disableS3Secret() && user.newS3Secret() != null) {
+                    throw new IllegalArgumentException("Cannot apply the requested S3 credential change");
+                }
+                if (copy.INU_PASSWORD_HASH == null && LocalPassword.isSet(copy.INU_PASSWORD)) {
+                    copy.INU_PASSWORD_HASH = LocalPassword.hash(copy.INU_PASSWORD);
+                }
+                try {
+                    copy.INU_S3_SECRET = user.disableS3Secret() ? ""
+                            : S3SigningSecret.encrypt(user.getId(), user.newS3Secret());
+                } catch (final Exception _) {
+                    throw new IllegalArgumentException(
+                            "Cannot encrypt S3 secret: check the keystore and enter a valid secret");
+                }
+                copy.INU_PASSWORD = null;
+            }
+            copy.setPassword(null);
+            copy.setNewS3Secret(null);
+            copy.setDisableS3Secret(false);
+            return copy;
+        }
+        return object;
+    }
+
     private void performTransaction(final ExecuteOperation operation, final DataBaseObject object,
             final boolean verifyRevision, final int revisionRetries) {
         DataTransfer versionSource = null;
@@ -943,16 +1005,17 @@ final class BrokerHibernate implements Broker {
             DataTransfer versioned = null;
             switch (operation) {
             case SAVE:
-                session.persist(object);
+                session.persist(accountCredentials(object, false));
                 break;
             case UPDATE:
-                var updateObject = object;
+                var updateObject = accountCredentials(object, true);
                 if (verifyRevision && object instanceof final DataTransfer transfer
                         && transfer.notificationRevision > 0) {
                     versionSource = transfer;
                     synchronized (transfer) {
                         versionSnapshot = (DataTransfer) transfer.clone();
                     }
+
                     updateObject = versionSnapshot;
                 }
                 final var merged = session.merge(updateObject);

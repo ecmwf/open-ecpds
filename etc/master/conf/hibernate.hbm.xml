@@ -1057,7 +1057,6 @@
 
 	<class name="IncomingUser" table="INCOMING_USER"
 		dynamic-update="true">
-		<cache usage="read-write" />
 		<id name="INU_ID" type="java.lang.String">
 			<column name="INU_ID" length="128" />
 			<generator class="assigned" />
@@ -1068,6 +1067,8 @@
 		<property name="INU_PASSWORD" type="java.lang.String">
 			<column name="INU_PASSWORD" />
 		</property>
+		<property name="INU_PASSWORD_HASH" type="java.lang.String" />
+		<property name="INU_S3_SECRET" type="java.lang.String" />
 		<property name="INU_COMMENT" type="java.lang.String">
 			<column name="INU_COMMENT" />
 		</property>
@@ -1587,7 +1588,6 @@
 	</class>
 
 	<class name="WebUser" table="WEB_USER">
-		<cache usage="read-write" />
 		<id name="WEU_ID" type="java.lang.String">
 			<column name="WEU_ID" length="32" />
 			<generator class="assigned" />
@@ -1610,6 +1610,7 @@
 		<property name="WEU_PASSWORD" type="java.lang.String">
 			<column name="WEU_PASSWORD" />
 		</property>
+		<property name="WEU_PASSWORD_HASH" type="java.lang.String" />
 	</class>
 
 	<class name="WeuCat" table="WEU_CAT">

@@ -252,6 +252,19 @@ final class MasterRMI implements MasterProxy {
     }
 
     @Override
+    public ecmwf.ecpds.master.NotificationHistory.Replay replayAvisoNotificationHistory(final String user,
+            final String destination, final String target, final long after, final Long upper, final Long fromTime,
+            final Long toTime, final int limit) throws Exception {
+        return _mover.getMasterInterface().replayAvisoNotificationHistory(user, destination, target, after, upper,
+                fromTime, toTime, limit);
+    }
+
+    @Override
+    public long currentAvisoNotificationSequence(final String user, final String destination) throws Exception {
+        return _mover.getMasterInterface().currentAvisoNotificationSequence(user, destination);
+    }
+
+    @Override
     public boolean isSubscriberActive(final long psbId) throws Exception {
         return _mover.getMasterInterface().isSubscriberActive(psbId);
     }
