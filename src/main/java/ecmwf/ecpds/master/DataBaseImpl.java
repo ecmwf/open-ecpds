@@ -2446,7 +2446,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     @Override
     public IncomingUser getIncomingUser(final String name) throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getIncomingUser(" + name + ")");
-        return monitor.done(withIncomingConnections(ecpds.getIncomingUser(name)));
+        return monitor.done(withIncomingConnections(ecpds.getIncomingUser(name)).withoutCredentials());
     }
 
     /**
@@ -2462,7 +2462,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     @Override
     public IncomingUser[] getIncomingUserArray() throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getIncomingUserArray()");
-        return monitor.done(withIncomingConnections(ecpds.getIncomingUserArray()));
+        return monitor.done(java.util.Arrays.stream(withIncomingConnections(ecpds.getIncomingUserArray()))
+                .map(IncomingUser::withoutCredentials).toArray(IncomingUser[]::new));
     }
 
     @Override
@@ -2556,7 +2557,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     public IncomingUser[] getIncomingUsersForIncomingPolicy(final String policyId)
             throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getIncomingUsersForIncomingPolicy(" + policyId + ")");
-        return monitor.done(ecpds.getIncomingUsersForIncomingPolicy(policyId));
+        return monitor.done(java.util.Arrays.stream(ecpds.getIncomingUsersForIncomingPolicy(policyId))
+                .map(IncomingUser::withoutCredentials).toArray(IncomingUser[]::new));
     }
 
     /**
@@ -2568,7 +2570,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     public IncomingUser[] getIncomingUsersForDestination(final String destinationName)
             throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getIncomingUsersForDestination(" + destinationName + ")");
-        return monitor.done(ecpds.getIncomingUsersForDestination(destinationName));
+        return monitor.done(java.util.Arrays.stream(ecpds.getIncomingUsersForDestination(destinationName))
+                .map(IncomingUser::withoutCredentials).toArray(IncomingUser[]::new));
     }
 
     /**
@@ -3565,7 +3568,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     @Override
     public WebUser getWebUser(final String id) throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getWebUser(" + id + ")");
-        return monitor.done(ecpds.getWebUser(id));
+        return monitor.done(ecpds.getWebUser(id).withoutCredentials());
     }
 
     /**
@@ -3579,7 +3582,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     @Override
     public WebUser[] getWebUserArray() throws RemoteException {
         final var monitor = new MonitorCall("getWebUserArray()");
-        return monitor.done(ecpds.getWebUserArray());
+        return monitor.done(java.util.Arrays.stream(ecpds.getWebUserArray()).map(WebUser::withoutCredentials)
+                .toArray(WebUser[]::new));
     }
 
     /**
@@ -3620,7 +3624,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     public Collection<WebUser> getUsersPerCategoryId(final String categoryId)
             throws DataBaseException, RemoteException {
         final var monitor = new MonitorCall("getUsersPerCategoryId(" + categoryId + ")");
-        return monitor.done(ecpds.getUsersPerCategoryId(categoryId));
+        return monitor.done(ecpds.getUsersPerCategoryId(categoryId).stream().map(WebUser::withoutCredentials).toList());
     }
 
     /**
@@ -3674,8 +3678,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     public void webUserAdd(final String user, final String id, final String password, final String name,
             final String active) throws DataBaseException, RemoteException {
         checkUser(user, "webUserAdd");
-        final var monitor = new MonitorCall(
-                "webUserAdd(" + user + "," + id + "," + password + "," + name + "," + active + ")");
+        final var monitor = new MonitorCall("webUserAdd(" + id + ")");
         // Let's check if it is a valid user-id?
         if (!Format.isValidId(id, ".")) {
             throw new DataBaseException("Userid " + id + " not valid (only letters, digits and '.' are allowed)");
@@ -3736,7 +3739,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     public String webUserAdd2(final String user, final String id, final String name, final String active)
             throws DataBaseException, RemoteException {
         checkUser(user, "webUserAdd2");
-        final var monitor = new MonitorCall("webUserAdd2(" + user + "," + id + "," + name + "," + active + ")");
+        final var monitor = new MonitorCall("webUserAdd2(" + id + ")");
         // Let's check if it is a valid user-id?
         if (!Format.isValidId(id, ".")) {
             throw new DataBaseException("Userid " + id + " not valid (only letters, digits and '.' are allowed)");
@@ -3745,7 +3748,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             throw new DataBaseException("Id " + id + " already exists");
         }
         // We generate a password!
-        final var password = randomString(8);
+        final var password = ecmwf.common.security.LocalPassword.generate();
         final var webUser = new WebUser();
         webUser.setId(id);
         webUser.setPassword(password);
@@ -3758,7 +3761,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         } catch (final MasterException e) {
             throw new DataBaseException("saveWebUser", e);
         }
-        return monitor.done(password);
+        monitor.done();
+        return password;
     }
 
     /**
@@ -3780,13 +3784,13 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     public Collection<WebUser> webUserList(final String user, final String category)
             throws DataBaseException, RemoteException {
         checkUser(user, "webUserList");
-        final var monitor = new MonitorCall("webUserList(" + user + "," + category + ")");
+        final var monitor = new MonitorCall("webUserList");
         final Collection<WebUser> candidates = category != null && !category.isEmpty()
                 ? ecpds.getUsersPerCategoryId(category) : List.of(ecpds.getWebUserArray());
         final List<WebUser> result = new ArrayList<>();
         for (final WebUser webUser : candidates) {
             if (webUser != null && webUser.getActive()) {
-                result.add(webUser);
+                result.add(webUser.withoutCredentials());
             }
         }
         return monitor.done(result);
@@ -3998,8 +4002,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             final String iso, final String portalService, final String active)
             throws DataBaseException, RemoteException {
         checkUser(user, "incomingUserAdd");
-        final var monitor = new MonitorCall("incomingUserAdd(" + user + "," + id + "," + password + "," + email + ","
-                + iso + "," + portalService + "," + active + ")");
+        final var monitor = new MonitorCall("incomingUserAdd(" + id + ")");
         if (iso != null) {
             // Let's check if it is a valid country!
             final var country = ecpds.getCountryObject(iso);
@@ -4129,8 +4132,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     public String incomingUserAdd2(final String user, final String id, final String email, final String iso,
             final String portalService, final String active) throws DataBaseException, RemoteException {
         checkUser(user, "incomingUserAdd2");
-        final var monitor = new MonitorCall("incomingUserAdd2(" + user + "," + id + "," + email + "," + iso + ","
-                + portalService + "," + active + ")");
+        final var monitor = new MonitorCall("incomingUserAdd2(" + id + ")");
         // Let's check if it is a valid country!
         final var country = ecpds.getCountryObject(iso);
         if (country == null) {
@@ -4143,7 +4145,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         // Let's check if it is a valid portal service mode!
         checkPortalService(portalService);
         // We generate a password!
-        final var password = randomString(8);
+        final var password = ecmwf.common.security.LocalPassword.generate();
         var incomingUser = ecpds.getIncomingUserObject(id);
         if (incomingUser != null) {
             // The id is already registered!
@@ -4170,7 +4172,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         ecpds.insert(new IncomingPermission(incomingUser, ecpds.getOperation("get")), false);
         ecpds.insert(new IncomingPermission(incomingUser, ecpds.getOperation("mtime")), false);
         ecpds.insert(new IncomingPermission(incomingUser, ecpds.getOperation("size")), false);
-        return monitor.done(password);
+        monitor.done();
+        return password;
     }
 
     public String selfRegisterUser(final String id, final String name, final String email, final String iso)
@@ -4258,7 +4261,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     public Collection<IncomingUser> incomingUserList(final String user, final String destination)
             throws DataBaseException, RemoteException {
         checkUser(user, "incomingUserList");
-        final var monitor = new MonitorCall("incomingUserList(" + user + "," + destination + ")");
+        final var monitor = new MonitorCall("incomingUserList");
         final List<IncomingUser> result = new ArrayList<>();
         if (isNotEmpty(destination)) {
             // Let's check if it is a valid Destination!
@@ -4270,7 +4273,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
                 if (association.getDestinationName().equals(destination)) {
                     final var incomingUser = association.getIncomingUser();
                     if (incomingUser != null && incomingUser.getActive()) {
-                        result.add(incomingUser);
+                        result.add(incomingUser.withoutCredentials());
                     }
                 }
             }
@@ -4278,7 +4281,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
             // We take all the incoming users!
             for (final IncomingUser incomingUser : withIncomingConnections(ecpds.getIncomingUserArray())) {
                 if (incomingUser != null && incomingUser.getActive()) {
-                    result.add(incomingUser);
+                    result.add(incomingUser.withoutCredentials());
                 }
             }
         }

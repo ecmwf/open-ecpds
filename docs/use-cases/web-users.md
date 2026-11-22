@@ -11,7 +11,7 @@ A **Web User** (internally `ECUser`) is an account that grants access to the **M
 | Attribute | Purpose |
 |---|---|
 | **Web Login** | Unique identifier used as the username when logging in (e.g. `jsmith`) |
-| **Password** | Local password stored in the database. Used only when TOTP is **not** globally active |
+| **Password** | Local password used for sign-in when no external provider is active, and for operations requiring local reauthentication |
 | **Enabled** | Whether the account is active. Disabled users cannot log in |
 | **Comment** | Free-text description to identify the account (e.g. full name or team) |
 | **Categories** | Access-control groups that determine which Destinations and UI pages the user can access |
@@ -43,14 +43,14 @@ The user list shows all Web Users with their Enabled status, category membership
 Navigate to `/do/user/user` and click **Create**. The required fields are:
 
 1. **Web Login** — unique identifier
-2. **Password** — use the *Generate* button for a secure random password (only relevant when TOTP is inactive)
+2. **Password** — use the *Generate* button for a secure random local password
 3. At least one **Category** assignment
 
 ### Editing a user
 
 Navigate to `/do/user/user/edit/update_form/<login>`. Changes are saved on clicking **Save**. The page shows:
 
-- Current **TOTP state** note below the password field (see [TOTP Authentication](#totp-two-factor-authentication) below)
+- Current external-authentication state below the password field
 - **Category** assignment with a picker for adding/removing categories
 
 ### Viewing a user
@@ -63,29 +63,39 @@ The read-only view at `/do/user/user/<login>` shows the user's current configura
 
 ### Password authentication
 
-When `TOTP.active = false` (the default), Web Users authenticate with their **Web Login** and the **password** stored in the database.
+When no external authentication provider is configured, Web Users authenticate
+with their **Web Login** and local password. New and changed passwords are stored
+as salted hashes; see [Local account passwords](../administration/local-passwords.md).
 
-The password can be set manually or generated automatically using the *Generate* button in the editor.
+The password can be set manually or generated using the *Generate* button. An
+existing password cannot be displayed; leave the field blank to keep it unchanged.
 
 ### TOTP (Two-Factor Authentication)
 
-When `TOTP.active = true` in the MasterServer configuration, **all** Web Users authenticate through the external TOTP endpoint. The locally stored password is ignored at login time.
+When a Master authentication provider is configured, it validates credentials for
+**all** Web Users and local passwords are not a login fallback. With no explicit
+provider, `TOTP.active=true` selects the bundled ECMWF provider; an explicitly
+configured provider can be active regardless of that flag.
 
-OpenECPDS **auto-detects the credential type**:
+The bundled ECMWF provider **auto-detects the credential type**:
 
 - A credential of **exactly 6 or 8 digits** is treated as a **TOTP passcode** (one-time code from an authenticator app)
 - Any other credential is treated as a **password**
 
-| `TOTP.active` | Behaviour |
+| Configuration | Behaviour |
 |---|---|
-| `true` | All Web Users authenticate via the TOTP endpoint. Stored passwords are ignored |
-| `false` | All Web Users authenticate against the password stored in the database |
+| No provider, `TOTP.active=false` | Web Users use local passwords |
+| No explicit provider, `TOTP.active=true` | Web Users authenticate via the ECMWF provider |
+| Explicit provider configured | Web Users authenticate via that provider, regardless of `TOTP.active` |
 
 !!! warning "Global effect"
-    `TOTP.active` applies to **all** Web Users simultaneously. When enabled, every Web User must have a valid account on the TOTP server. Any user without a TOTP server account will be unable to log in.
+    A configured provider applies to **all** Web Users. Each user must be accepted
+    by the provider as well as have an active local Web User record and permissions.
 
-!!! info "Password field when TOTP is active"
-    When `TOTP.active = true`, the **Password** field and **Generate** button in the editor are still visible but have no effect at runtime. The stored password only becomes relevant again if the MasterServer is restarted with `TOTP.active = false`.
+!!! info "Local passwords with external authentication"
+    The **Password** field remains available and can be used for operations
+    requiring local reauthentication. It does not provide a login fallback while
+    the external provider is active.
 
 For configuration details, see the [TOTP Authentication](../administration/totp.md) administration page.
 

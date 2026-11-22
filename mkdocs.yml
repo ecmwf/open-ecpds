@@ -82,6 +82,7 @@ nav:
   - Getting Started:
       - System Requirements: getting-started/requirements.md
       - Standalone Container: getting-started/standalone.md
+      - SFTP Host Keys: getting-started/sftp-host-keys.md
       - Installation: getting-started/installation.md
       - First Run: getting-started/first-run.md
       - IDE Setup: getting-started/ide-setup.md
@@ -101,6 +102,8 @@ nav:
       - Kubernetes: deployment/kubernetes.md
       - Physical Infrastructure: deployment/infrastructure.md
       - Container Registry Release: deployment/release.md
+      - Standalone Vault Modes: deployment/standalone-vault.md
+      - Standalone OpenBao (Optional): deployment/standalone-openbao.md
   - Concepts:
       - OpenECPDS Entities: concepts/entities.md
       - Host Types: concepts/host-types.md
@@ -130,6 +133,7 @@ nav:
       - Securing the Mover Control Channel: administration/mover-control-channel-security.md
       - TOTP Authentication: administration/totp.md
       - OpenID Connect Login: administration/openid-connect.md
+      - Local Account Passwords: administration/local-passwords.md
       - ECaccess Identity: administration/ecaccess-identity.md
       - Critical Action Password: administration/critical-password.md
       - Purge All Data: administration/purge.md
@@ -168,10 +172,11 @@ nav:
       - Acquisition Directory: host-directory/acquisition.md
       - Dissemination Directory: host-directory/dissemination.md
       - Replication / Source / Backup / Proxy: host-directory/replication.md
-  - Notifications (MQTT):
+  - Notifications:
       - MQTT Overview: notifications/mqtt-overview.md
       - Real-Time Dissemination: notifications/mqtt-dissemination.md
       - Notification History: notifications/history.md
+      - Aviso Destination Replication: notifications/aviso-acquisition.md
       - Automated Acquisition: notifications/mqtt-acquisition.md
       - WMO WIS2 Integration: notifications/wmo-wis2.md
       - Implementation Details: notifications/implementation.md

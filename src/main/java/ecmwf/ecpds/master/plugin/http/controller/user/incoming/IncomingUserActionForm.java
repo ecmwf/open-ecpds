@@ -70,6 +70,26 @@ public class IncomingUserActionForm extends ECMWFActionForm {
 
     /** The password. */
     private String password = "";
+    private String s3Secret = "";
+    private String s3Action = "";
+
+    public void setS3Secret(final String secret) {
+        s3Secret = secret;
+    }
+
+    public void setS3Action(final String action) {
+        s3Action = action;
+    }
+
+    public boolean isPasswordSet() {
+        return user instanceof final ecmwf.ecpds.master.plugin.http.dao.transfer.IncomingUserBean bean
+                && ((ecmwf.common.database.IncomingUser) bean.getOjbImplementation()).hasPassword();
+    }
+
+    public String getS3CredentialStatus() {
+        return user instanceof final ecmwf.ecpds.master.plugin.http.dao.transfer.IncomingUserBean bean
+                ? ((ecmwf.common.database.IncomingUser) bean.getOjbImplementation()).s3CredentialStatus() : "Not set";
+    }
 
     /** The comment. */
     private String comment = "";
@@ -457,6 +477,10 @@ public class IncomingUserActionForm extends ECMWFActionForm {
         u.setCountryIso(getCountryIso());
         u.setId(getId());
         u.setPassword(getPassword());
+        final var record = (ecmwf.common.database.IncomingUser) ((ecmwf.ecpds.master.plugin.http.dao.transfer.IncomingUserBean) u)
+                .getOjbImplementation();
+        record.setNewS3Secret("replace".equals(s3Action) ? (s3Secret == null ? "" : s3Secret) : null);
+        record.setDisableS3Secret("disable".equals(s3Action));
         u.setComment(getComment());
         u.setActive("on".equalsIgnoreCase(active) || "true".equalsIgnoreCase(active));
         u.setIsSynchronized("on".equalsIgnoreCase(synchronised) || "true".equalsIgnoreCase(synchronised));
@@ -475,7 +499,9 @@ public class IncomingUserActionForm extends ECMWFActionForm {
         this.user = u;
         this.setCountryIso(u.getCountryIso());
         this.setId(u.getId());
-        this.setPassword(u.getPassword());
+        this.setPassword("");
+        s3Secret = "";
+        s3Action = "";
         this.setComment(u.getComment());
         this.setActive(u.getActive() ? "on" : "off");
         this.setSynchronized(u.getIsSynchronized() ? "on" : "off");

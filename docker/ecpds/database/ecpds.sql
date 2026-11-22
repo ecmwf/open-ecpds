@@ -1333,7 +1333,7 @@ DROP TABLE IF EXISTS `INCOMING_USER`;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `INCOMING_USER` (
   `INU_ID` varchar(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
-  `INU_PASSWORD` varchar(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+  `INU_PASSWORD` varchar(32) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,
   `INU_COMMENT` varchar(512) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,
   `INU_ACTIVE` smallint(6) NOT NULL DEFAULT 0,
   `INU_LAST_LOGIN` decimal(20,0) DEFAULT NULL,
@@ -1343,6 +1343,8 @@ CREATE TABLE `INCOMING_USER` (
   `INU_SYNCHRONIZED` smallint(6) NOT NULL DEFAULT 0,
   `INU_AUTHORIZED_KEYS` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `INU_PORTAL_SERVICE` varchar(16) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'standard-login',
+  `INU_PASSWORD_HASH` varchar(255) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
+  `INU_S3_SECRET` varchar(768) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
   PRIMARY KEY (`INU_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1375,7 +1377,7 @@ CREATE TABLE `PORTAL_SUBSCRIBER` (
 
 LOCK TABLES `INCOMING_USER` WRITE;
 /*!40000 ALTER TABLE `INCOMING_USER` DISABLE KEYS */;
-INSERT INTO `INCOMING_USER` VALUES
+INSERT INTO `INCOMING_USER` (`INU_ID`,`INU_PASSWORD`,`INU_COMMENT`,`INU_ACTIVE`,`INU_LAST_LOGIN`,`INU_LAST_LOGIN_HOST`,`COU_ISO`,`INU_DATA`,`INU_SYNCHRONIZED`,`INU_AUTHORIZED_KEYS`,`INU_PORTAL_SERVICE`) VALUES
 ('test','test2021','For accessing the test destinations',1,1759148604470,'Using sftp on DataMover=ecpds-mover from test@127.0.0.1','ew','portal.domain = \"data\"\r\nportal.color = \"dodgerblue\"\r\nportal.headerRegistry = \"\r\n(== {.*.grib2?$}) Content-Type=application/grib\r\n(== {.*.index$}) Content-Type=application/json\r\n\"\r\nportal.maxConnections = \"100\"\r\nportal.mqttPermission = \"#\"\r\nportal.order = \"asc\"\r\nportal.recordHistory = \"yes\"\r\nportal.recordSplunk = \"yes\"\r\nportal.simpleList = \"no\"\r\nportal.sort = \"target\"\r\nportal.triggerEvent = \"yes\"\r\nportal.triggerLastRangeOnly = \"yes\"\r\nportal.updateLastLoginInformation = \"no\"\r\nportal.welcome = \"\r\n***********************************************\r\nPDS Data Portal\r\n\r\nPlease note you can also access the Data Portal\r\nwith the same credentials through https/sftp.\r\n***********************************************\r\n\"',0,'','standard-login');
 /*!40000 ALTER TABLE `INCOMING_USER` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -2506,6 +2508,7 @@ CREATE TABLE `WEB_USER` (
   `WEU_ACTIVE` smallint(6) NOT NULL DEFAULT 0,
   `WEU_ENVIRONMENT` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `WEU_PASSWORD` varchar(64) DEFAULT NULL,
+  `WEU_PASSWORD_HASH` varchar(255) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
   PRIMARY KEY (`WEU_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -2516,7 +2519,7 @@ CREATE TABLE `WEB_USER` (
 
 LOCK TABLES `WEB_USER` WRITE;
 /*!40000 ALTER TABLE `WEB_USER` DISABLE KEYS */;
-INSERT INTO `WEB_USER` VALUES
+INSERT INTO `WEB_USER` (`WEU_ID`,`WEU_NAME`,`WEU_LAST_LOGIN`,`WEU_LAST_LOGIN_HOST`,`WEU_ACTIVE`,`WEU_ENVIRONMENT`,`WEU_PASSWORD`) VALUES
 ('admin','Administrator',1759157732142,'[0:0:0:0:0:0:0:1]',1,'','admin2021'),
 ('monitor','End User',NULL,NULL,1,'','monitor2021'),
 ('operator','Operator',NULL,NULL,1,'','operator2021');

@@ -202,7 +202,7 @@ enabled for the destination. With both native notification options off, native
 capture is skipped, including strict capture.
 The global history service and revision fencing are enabled by default.
 Strict capture requires `[NotificationHistory] revisionFencing=yes` on every
-Master sharing the database; see [Strict capture](../notifications/history.md#strict-capture).
+active or replacement Master; see [Strict capture](../notifications/history.md#strict-capture).
 MQTT publishing is optional and controlled separately by `mqtt.cloudEvents`;
 MQTT-only destinations retain internal history but do not allow Aviso access.
 

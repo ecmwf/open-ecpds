@@ -534,7 +534,8 @@ error, rather than silently bypassing persistence.
 **Keep `journalOwner` stable and unique to the logical Master.** If omitted, it
 defaults to `Login.root`, then `Login.hostName`, then `master`. Only that owner's
 records are replayed. A failover instance must use the same owner and database,
-with the previous instance stopped; run only one active Master per owner.
+with the previous instance stopped; run only one active Master per database,
+regardless of owner.
 Changing the owner leaves the previous owner's pending rows untouched.
 
 Persisted events are retained until export is acknowledged and are retried

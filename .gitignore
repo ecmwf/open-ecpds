@@ -9,6 +9,7 @@
 /docker/ecpds/cli/rpms/
 /docker/ecpds/hawtio/lib/
 /ecpds-core/src/test/
+/ecpds-data/
 /release/
 /etc/master/conf/GeoLite2-City.mmdb
 /docs/javadoc/

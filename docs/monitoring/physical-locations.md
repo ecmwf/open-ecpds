@@ -294,10 +294,8 @@ even before a new poll succeeds. Credential
 rotation does not. Older/duplicate poll timestamps cannot overwrite newer records.
 Disabling collection hides the metadata but retains database rows. Removed machine
 rows are not automatically purged; obsolete rows can be removed through normal
-database administration when no longer needed. Use deployment-unique machine
-identifiers if independent Masters share a database. Automatic IDs identify the
-same target across deployments; use separate databases if their location records
-must remain independent.
+database administration when no longer needed. Independent deployments must use
+separate databases; only one active Master may use a database at a time.
 
 ## Operations and checks
 

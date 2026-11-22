@@ -36,9 +36,9 @@ For acquisition, use the existing Host `acquisition.event=yes` trigger instead
 of the destination's `incoming.event`. A transfer must have its event trigger
 enabled as well as destination Aviso opt-in to generate Aviso history.
 
-Configure the same limits on Masters sharing a database. The default retention
-is seven days, and the default cap is 1 GiB of UTF-8 event payloads. At the cap,
-the oldest events are removed first, potentially shortening the replay window.
+The default retention is seven days, and the default cap is 1 GiB of UTF-8 event
+payloads. At the cap, the oldest events are removed first, potentially shortening
+the replay window.
 Indexes, table overhead and cluster replicas use additional database space.
 Expired events are unavailable to replay even if background deletion has not
 yet removed them from disk. History operations contend over a shared database
@@ -82,8 +82,7 @@ persisted records only; it does not publish or accept notifications.
 Capture is asynchronous by default. Set `notification.captureMode="strict"` on
 a destination to require the transfer update and native notification history/outbox
 to commit in one transaction before the originating Master acknowledges the update.
-Every Master sharing the database must run the same application build. The global
-settings supporting strict capture are enabled by default:
+The global settings supporting strict capture are enabled by default:
 
 ```ini
 [NotificationHistory]
@@ -92,8 +91,8 @@ revisionFencing=yes
 ```
 
 Revision fencing is validated at Master startup; an absent or incompatible
-revision column/trigger prevents startup. Revision fencing must be enabled on all
-Masters sharing the database when strict destinations are enabled.
+revision column/trigger prevents startup. Revision fencing must be enabled on the
+active Master when strict destinations are enabled, including after failover.
 The default `async` mode is nonblocking.
 An explicit `revisionFencing=no` disables fencing. Asynchronous capture still
 works, but a strict capture request fails with

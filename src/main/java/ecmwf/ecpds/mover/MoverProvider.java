@@ -551,6 +551,13 @@ public final class MoverProvider extends NativeAuthenticationProvider {
         return new UserDataSpace(incomingProfile, sessionToken, from, profile, host, closeable);
     }
 
+    public UserSession getSignedS3Session(final String host, final String user, final Closeable closeable)
+            throws Exception {
+        final var from = "Using s3 on DataMover=" + _mover.getRoot() + " from " + user + "@" + host;
+        final var profile = _mover.getMasterInterface().getSignedS3Profile(user, from);
+        return new UserDataSpace(profile, UUID.randomUUID().toString(), from, "s3", host, closeable);
+    }
+
     /**
      * {@inheritDoc}
      *

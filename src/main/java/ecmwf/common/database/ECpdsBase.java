@@ -59,6 +59,12 @@ import ecmwf.common.text.DateUtil;
  */
 public final class ECpdsBase extends DataBase {
 
+    public void migrateLocalPassword(final String user, final String legacy, final String hash, final boolean incoming)
+            throws SQLException, IOException {
+        executeUpdate("ECpdsBase", incoming ? "migrateIncomingUserPassword" : "migrateWebUserPassword",
+                Map.of("id", user, "legacy", legacy, "hash", hash));
+    }
+
     /** Serializes the allocation of the delay notice references. */
     private static final Object DELAY_NOTICE_LOCK = new Object();
 

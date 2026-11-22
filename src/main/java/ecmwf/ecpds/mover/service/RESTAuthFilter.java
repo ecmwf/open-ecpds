@@ -92,16 +92,17 @@ public final class RESTAuthFilter implements ContainerRequestFilter {
         }
         final byte[] body;
         if (path.startsWith("master/weatherObservations") || path.startsWith("master/exportTransferSpans")
-                || path.startsWith("mover/passwordProbe/") || path.startsWith("mover/pinnedPassword/")
-                || path.startsWith("mover/legacyPasswordFence/")) {
+                || path.startsWith("master/replayAvisoNotificationHistory") || path.startsWith("mover/passwordProbe/")
+                || path.startsWith("mover/pinnedPassword/") || path.startsWith("mover/legacyPasswordFence/")) {
             try {
-                final var limit = path.startsWith("mover/legacyPasswordFence/") ? 16 * 1024
-                        : path.startsWith("mover/pinnedPassword/") ? RESTClient.PINNED_PASSWORD_BODY_LIMIT
-                                : path.startsWith("mover/passwordProbe/")
-                                        ? ecmwf.ecpds.mover.MoverPasswordEnvelope.MAX_ENVELOPE
-                                        : path.startsWith("master/exportTransferSpans")
-                                                ? ecmwf.common.telemetry.TransferSpan.MAX_BATCH_BYTES
-                                                : ecmwf.ecpds.master.weather.WeatherBatch.MAX_BYTES;
+                final var limit = path.startsWith("master/replayAvisoNotificationHistory") ? 8 * 1024
+                        : path.startsWith("mover/legacyPasswordFence/") ? 16 * 1024
+                                : path.startsWith("mover/pinnedPassword/") ? RESTClient.PINNED_PASSWORD_BODY_LIMIT
+                                        : path.startsWith("mover/passwordProbe/")
+                                                ? ecmwf.ecpds.mover.MoverPasswordEnvelope.MAX_ENVELOPE
+                                                : path.startsWith("master/exportTransferSpans")
+                                                        ? ecmwf.common.telemetry.TransferSpan.MAX_BATCH_BYTES
+                                                        : ecmwf.ecpds.master.weather.WeatherBatch.MAX_BYTES;
                 final var input = requestContext.getEntityStream();
                 body = input == null ? new byte[0] : input.readNBytes(limit + 1);
                 if (body.length > limit) {

@@ -96,6 +96,11 @@ public interface MasterProxy {
     ecmwf.ecpds.master.weather.WeatherAcknowledgement deliverWeatherObservations(
             ecmwf.ecpds.master.weather.WeatherBatch batch) throws Exception;
 
+    ecmwf.ecpds.master.NotificationHistory.Replay replayAvisoNotificationHistory(String user, String destination,
+            String target, long after, Long upper, Long fromTime, Long toTime, int limit) throws Exception;
+
+    long currentAvisoNotificationSequence(String user, String destination) throws Exception;
+
     /**
      * Whether the MasterServer currently wants live transfer statistics.
      *

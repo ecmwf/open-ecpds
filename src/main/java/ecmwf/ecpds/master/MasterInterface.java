@@ -219,6 +219,8 @@ public interface MasterInterface extends ProviderInterface {
      */
     String getIncomingUserHash(String incomingUser) throws RemoteException;
 
+    IncomingProfile getSignedS3Profile(String incomingUser, String from) throws RemoteException;
+
     /**
      * Check whether an IncomingUser is configured for anonymous (password-free) access.
      *

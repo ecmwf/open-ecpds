@@ -235,11 +235,6 @@ public final class ECpdsRESTV1 {
         try {
             final var userNameAndPassword = _getUserNameAndPassword(authString, request);
             final var userList = MasterManager.getDB().incomingUserList(userNameAndPassword, destination);
-            if (!MasterManager.getDB().hasApiPermission(userNameAndPassword, SHOW_SENSITIVE_INFO_SERVICE)) {
-                for (final var incomingUser : userList) {
-                    incomingUser.setPassword(null);
-                }
-            }
             final var message = RESTMessage.getSuccessMessage();
             message.put("userList", userList);
             return message.getResponse();
@@ -366,9 +361,7 @@ public final class ECpdsRESTV1 {
     }
 
     /**
-     * Web user list. Lists all active web (admin console) users, optionally filtered by ACL category id. Each user's
-     * {@code password} field is included only if the client also has the {@link #SHOW_SENSITIVE_INFO_SERVICE}
-     * permission - omitted otherwise, same treatment as {@link #incomingUserList}.
+     * Web user list. Lists active web users, optionally filtered by ACL category id, without credentials.
      *
      * @param authString
      *            the auth string
@@ -388,11 +381,6 @@ public final class ECpdsRESTV1 {
         try {
             final var userNameAndPassword = _getUserNameAndPassword(authString, request);
             final var userList = MasterManager.getDB().webUserList(userNameAndPassword, category);
-            if (!MasterManager.getDB().hasApiPermission(userNameAndPassword, SHOW_SENSITIVE_INFO_SERVICE)) {
-                for (final var webUser : userList) {
-                    webUser.setPassword(null);
-                }
-            }
             final var message = RESTMessage.getSuccessMessage();
             message.put("userList", userList);
             return message.getResponse();

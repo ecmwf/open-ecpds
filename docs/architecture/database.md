@@ -8,6 +8,8 @@ database maintenance procedures.
 The catalog reflects the schema defined in
 [`docker/ecpds/database/ecpds.sql`](https://github.com/ecmwf/open-ecpds/blob/master/docker/ecpds/database/ecpds.sql).
 Deployments with site-specific changes may have additional or different tables.
+The standalone image build copies this schema into its build context; an existing
+local copy there may be stale until the build context is refreshed.
 
 Use `ecpds.sql` to initialize a new MariaDB database. It includes the
 operational event, storage lifecycle and credential rotation tables.
@@ -18,7 +20,7 @@ operational event, storage lifecycle and credential rotation tables.
 |---|---|
 | `DATA_FILE` | Registered data files, including their source, arrival details, size and file-level metadata. |
 | `DATA_TRANSFER` | Transfer requests and their current scheduling, delivery, retry and expiry state. |
-| `TRANSFER_HISTORY` | Historical transfer attempts and their outcomes. |
+| `TRANSFER_HISTORY` | Timestamped transfer status and event history, including host, comments and errors. |
 | `UPLOAD_HISTORY` | Records of completed data uploads and their transfer details. |
 | `INCOMING_HISTORY` | History of incoming-user and Data Portal file operations. |
 | `TRANSFER_STATISTICS` | Per-connection network statistics captured during a transfer. |
@@ -62,7 +64,7 @@ and durable MQTT CloudEvents delivery.
 | `HOS_ECU` | Associations between hosts and ECPDS users. |
 | `DES_ECU` | Associations between destinations and ECPDS users. |
 | `HOST_LOCATION` | Host IP and geographic location information. |
-| `HOST_OUTPUT` | The latest captured output from host checks or acquisition activity. |
+| `HOST_OUTPUT` | The latest captured output and timestamp from host acquisition activity. |
 | `HOST_STATS` | Host connection, transfer and check statistics. |
 | `TRANSFER_GROUP` | Groups of hosts and destinations with shared transfer and replication settings. |
 | `TRANSFER_METHOD` | Named transfer methods and their protocol-specific configuration. |
@@ -132,8 +134,8 @@ and durable MQTT CloudEvents delivery.
 | Table | Purpose |
 |---|---|
 | `BANDWIDTH` | Aggregated transfer volume, duration and file counts by destination and date. |
-| `PORTAL_TRAFFIC` | Per-user portal connection, byte and duration totals at minute-level intervals. |
-| `PORTAL_TRAFFIC_DAILY` | Daily aggregates of portal connections, bytes and duration per user. |
+| `PORTAL_TRAFFIC` | Portal connection, denial, byte and duration totals at minute-level intervals, keyed by user. |
+| `PORTAL_TRAFFIC_DAILY` | Daily aggregates of portal connections, denials, bytes and duration per user. |
 | `PORTAL_BYTES_SNAPSHOT` | Minute-level portal upload and download byte snapshots per user. |
 | `DESTINATION_BYTES_SNAPSHOT` | Minute-level upload and download byte snapshots per destination. |
 | `MOVER_AVAILABILITY_SNAPSHOT` | Minute-level availability history for Data Movers. |
@@ -159,7 +161,7 @@ The Master also caches the complete system-message list and destination metadata
 catalog (field definitions and type restrictions) for 30 seconds. Returned objects
 are copies, and message expiry is still evaluated against the current time on
 each request. Administrative saves/deletes invalidate the corresponding local
-snapshot; other Masters and external database changes become visible on refresh.
+snapshot; external database changes become visible on refresh.
 Database read failures are not cached. Destination-specific metadata values and
 transactional notification, outbox and lifecycle state are not added to these caches.
 

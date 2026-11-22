@@ -99,14 +99,8 @@ function toggle_in_place(event, layerName, toHide) {
 
 /* Function to generate a new password */
 function getPassword() {
-	var pass = '';
-	var str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$';
-	for (i = 1; i <= 8; i++) {
-		var char = Math.floor(Math.random()
-			* str.length + 1);
-		pass += str.charAt(char)
-	}
-	return pass;
+	const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$';
+	return Array.from(crypto.getRandomValues(new Uint8Array(24)), byte => alphabet[byte & 63]).join('');
 }
 
 // Wraps text onto multiple lines (joined with real newlines) so long messages remain readable in the

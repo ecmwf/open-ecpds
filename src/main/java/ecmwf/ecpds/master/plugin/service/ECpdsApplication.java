@@ -200,14 +200,8 @@ public final class ECpdsApplication extends Application {
 
     /**
      * The Interface IncomingUserMixIn.
-     *
-     * <p>
-     * {@code password} is deliberately not ignored here - it needs to reach the response object so that it can be
-     * included or redacted per request, based on the caller's {@code showSensitiveInfo} API permission (see
-     * {@code ECpdsRESTV1.incomingUserList}). A static, per-class Jackson mixin has no per-request context, so it can't
-     * make that decision itself.
      */
-    @JsonIgnoreProperties({ "collectionSize", "connections", "data", "active", "authorizedSSHKeys" })
+    @JsonIgnoreProperties({ "collectionSize", "connections", "data", "active", "authorizedSSHKeys", "password" })
     public interface IncomingUserMixIn {
 
         /**
@@ -272,14 +266,8 @@ public final class ECpdsApplication extends Application {
 
     /**
      * The Interface WebUserMixIn.
-     *
-     * <p>
-     * {@code password} is deliberately not ignored here, for the same reason as on {@link IncomingUserMixIn} - it needs
-     * to reach the response object so it can be included or redacted per request, based on the caller's
-     * {@code showSensitiveInfo} API permission (see {@code ECpdsRESTV1.webUserList}). {@code environment} is the
-     * internal ECtrans/web-monitor UI-state blob, not meant for API consumers.
      */
-    @JsonIgnoreProperties({ "collectionSize", "environment" })
+    @JsonIgnoreProperties({ "collectionSize", "environment", "password" })
     public interface WebUserMixIn {
 
         /**

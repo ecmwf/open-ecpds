@@ -916,14 +916,14 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             throws IOException, InstanceAlreadyExistsException, MBeanRegistrationException, NotCompliantMBeanException,
             MalformedObjectNameException, InstanceNotFoundException, ConnectionException {
         super(starter);
-        legacySessions = MoverLegacySessions.configured();
         passwordProbe = MoverPasswordProbe.configured(getRoot(), Cnf.has("MasterServer")
                 ? MoverPasswordEnvelope.Route.DIRECT_RMI : MoverPasswordEnvelope.Route.CONTINENTAL_HTTPS);
-        passwordDelivery = passwordProbe != null && Cnf.at("PasswordDelivery", "enabled", false)
-                ? passwordProbe.delivery() : null;
-        if (legacySessions != null && passwordProbe == null) {
+        if (Cnf.at("PasswordDelivery", "trackLegacySessions", false) && passwordProbe == null) {
             throw new IOException("Legacy session tracking requires configured password probe identity keys");
         }
+        legacySessions = MoverLegacySessions.configured();
+        passwordDelivery = passwordProbe != null && Cnf.at("PasswordDelivery", "enabled", false)
+                ? passwordProbe.delivery() : null;
         passwordDrain = legacySessions == null ? null : passwordProbe.drain(legacySessions);
         MoverTracing.start(spans -> getMasterProxy().exportTransferSpans(spans), getRoot());
         trafficAccounting.load(trafficAccountingPath);
@@ -3631,6 +3631,13 @@ public final class MoverServer extends StarterServer implements MoverInterface {
             masterProxy.shutdown();
         }
         MoverTracing.shutdown();
+        if (legacySessions != null) {
+            try {
+                legacySessions.close();
+            } catch (final IOException e) {
+                _log.warn("Legacy session tracking remains locked until process exit", e);
+            }
+        }
         super.shutdown();
     }
 

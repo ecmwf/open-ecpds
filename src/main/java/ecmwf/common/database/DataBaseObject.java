@@ -154,7 +154,7 @@ public abstract class DataBaseObject implements Serializable, Cloneable {
         final var result = new StringBuilder();
         for (final Field field : object.getClass().getDeclaredFields()) {
             final var fieldName = field.getName();
-            if (fieldName.indexOf("_") == 3) {
+            if (fieldName.indexOf("_") == 3 && !java.lang.reflect.Modifier.isTransient(field.getModifiers())) {
                 try {
                     var value = valueOf(field.get(object));
                     if ("HOS_DATA".equals(fieldName)) {
@@ -215,7 +215,7 @@ public abstract class DataBaseObject implements Serializable, Cloneable {
         final var result = new StringBuilder();
         for (final Field field : object1.getClass().getDeclaredFields()) {
             final var fieldName = field.getName();
-            if (fieldName.indexOf("_") == 3) {
+            if (fieldName.indexOf("_") == 3 && !java.lang.reflect.Modifier.isTransient(field.getModifiers())) {
                 try {
                     var value1 = valueOf(field.get(object1));
                     var value2 = valueOf(field.get(object2));

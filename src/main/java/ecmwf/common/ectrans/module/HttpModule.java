@@ -532,8 +532,20 @@ public final class HttpModule extends TransferModule {
         try {
             _log.debug("Setting Pool Manager");
             socketFactory = new ClientSocketFactory(socketConfig);
+            var validateCertificate = getSetup().getBoolean(HOST_HTTP_SSL_VALIDATION);
+            if (getSetup().getBoolean(ECtransOptions.HOST_HTTP_AVISO_MODE)) {
+                final var value = getSetup().get(HOST_HTTP_SSL_VALIDATION, (String) null);
+                if (value == null || value.isBlank() || "yes".equalsIgnoreCase(value)
+                        || "true".equalsIgnoreCase(value)) {
+                    validateCertificate = true;
+                } else if ("no".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
+                    validateCertificate = false;
+                } else {
+                    throw new IOException("Invalid http.sslValidation value for Aviso acquisition");
+                }
+            }
             sslSocketFactory = socketConfig.getSSLSocketFactory(getSetup().getString(HOST_HTTP_PROTOCOL),
-                    getSetup().getBoolean(HOST_HTTP_SSL_VALIDATION));
+                    validateCertificate);
             httpConnectionSocketFactory = new ConfigConnectionSocketFactory(socketFactory);
             trackingSslConnectionSocketFactory = new TrackingSslConnectionSocketFactory(sslSocketFactory,
                     getSetup().getStringList(HOST_HTTP_SUPPORTED_PROTOCOLS).toArray(new String[0]), null,
@@ -872,6 +884,9 @@ public final class HttpModule extends TransferModule {
                 getSetup().getBoolean(HOST_HTTP_ENCODE_URL)
                         && !getSetup().getBoolean(ECtransOptions.HOST_HTTP_AVISO_MODE),
                 getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath()));
+        if (getSetup().getBoolean(ECtransOptions.HOST_HTTP_AVISO_MODE)) {
+            request.setHeader("Accept", "application/octet-stream");
+        }
         ClassicHttpResponse response = null;
         try {
             response = execute(pr.getHttpHost(), request, 200);
@@ -924,6 +939,10 @@ public final class HttpModule extends TransferModule {
                 getSetup().getBoolean(HOST_HTTP_HAS_PARAMETERS) ? name : pr.getPath());
         final var useHead = getSetup().getBoolean(HOST_HTTP_USE_HEAD);
         var request = useHead ? new HttpHead(uri) : new HttpGet(uri);
+        if (getSetup().getBoolean(ECtransOptions.HOST_HTTP_AVISO_MODE)) {
+            request.setHeader("Accept", "application/octet-stream");
+            request.setHeader("Accept-Encoding", "identity");
+        }
         ClassicHttpResponse sizeResponse = null;
         try {
             // See getElement() for why a HEAD request's redirect sometimes needs a GET fallback.
@@ -936,6 +955,10 @@ public final class HttpModule extends TransferModule {
             if (useHead && sizeResponse.getCode() != 200) {
                 closeResponse(sizeResponse);
                 request = new HttpGet(uri);
+                if (getSetup().getBoolean(ECtransOptions.HOST_HTTP_AVISO_MODE)) {
+                    request.setHeader("Accept", "application/octet-stream");
+                    request.setHeader("Accept-Encoding", "identity");
+                }
                 sizeResponse = execute(pr.getHttpHost(), request, 200);
             }
             final var entity = sizeResponse.getEntity();
@@ -2557,9 +2580,8 @@ public final class HttpModule extends TransferModule {
             throw new IOException("Aviso acquisition requires http.ftpLike=yes and http.mqttMode=no");
         try {
             final var base = URI.create(setup.getString(ECtransOptions.HOST_HTTP_AVISO_URL));
-            if (!"https".equals(base.getScheme()) || !setup.getBoolean(HOST_HTTP_SSL_VALIDATION)
-                    || !setup.getBoolean(HOST_HTTP_STRICT))
-                throw new IOException("Aviso acquisition requires HTTPS, http.sslValidation=yes and http.strict=yes");
+            if (!"https".equals(base.getScheme()) || !setup.getBoolean(HOST_HTTP_STRICT))
+                throw new IOException("Aviso acquisition requires HTTPS and http.strict=yes");
             final var after = setup.getString(ECtransOptions.HOST_HTTP_AVISO_CURSOR);
             final var config = new AvisoDiscovery.Config(base,
                     setup.getString(ECtransOptions.HOST_HTTP_AVISO_DESTINATION),
@@ -2615,6 +2637,11 @@ public final class HttpModule extends TransferModule {
         try {
             for (final String key : headersList.keySet().toArray(new String[0])) {
                 final var value = headersList.get(key);
+                if (getSetup().getBoolean(ECtransOptions.HOST_HTTP_AVISO_MODE)
+                        && ("Accept".equalsIgnoreCase(key) || "Accept-Encoding".equalsIgnoreCase(key))
+                        && httpRequest.containsHeader(key)) {
+                    continue;
+                }
                 httpRequest.setHeader(key, value);
             }
             // Ensure absolute URI (deprecated overloads with target host are avoided)

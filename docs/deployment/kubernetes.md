@@ -68,7 +68,7 @@ an interrupted import, inspect its partial contents before retrying.
 Do not import local `run/` data over production storage.
 
 Create these Secrets using your normal secret-management mechanism. Keys
-are case-sensitive. Use the existing credential values when migrating.
+are case-sensitive and must match the configured services.
 
 | Secret | Required keys |
 |---|---|
@@ -309,25 +309,36 @@ legacySessionStateDirectory=/var/lib/ecpds/legacy-password-sessions
 Enable tracking from process startup for the explicit
 Host set. It requires the `[PasswordProbe]` identity keys and
 approved Hosts. Use an absolute, persistent, process-owned private directory.
+The directory must support shared file locks and belong to exactly one active
+Mover; a second process using it is refused. An empty directory cannot prove
+that sessions from a previous process have closed.
 Tracked sessions using configured credentials bypass connection pooling. Their
-admission remains open until actual disconnection is confirmed, including
-asynchronous close.
+admission is recorded durably before connecting and remains open until actual
+disconnection is confirmed, including asynchronous close. If a Mover restarts
+with outstanding admission evidence and no durable zero record, even before a
+cutover is enrolled, it refuses drain evidence for that Host. Unfenced
+transfers may continue, but closing new sessions does not clear uncertainty
+about the predecessor.
 Execution timeouts, failed close, and modules that cannot confirm
 disconnection retain uncertain admissions rather than reporting a false zero.
 Other Hosts retain their ordinary pooling behavior.
 
 A signed Master command can persist a per-Host fence that rejects subsequent
 connections using the configured credential on that Mover. The direct mutual-TLS
-RMI and signed, verified Continental HTTPS paths return Mover-signed receipts bound to the
-Host, route, cutover, one-use challenge, process incarnation, and session
-count. Retrying the same cutover requires a fresh challenge; a different
+RMI and signed, verified Continental HTTPS paths return Mover-signed receipts
+bound to the Host, route, cutover, one-use challenge, tracking incarnation, and
+session count. Retrying the same cutover requires a fresh challenge; a different
 cutover is rejected. There is deliberately no unfence API. Do not remove
-fenced Hosts from the tracking configuration or delete their marker files.
-Restart preserves fences but changes the incarnation: a new process reporting
-zero is not proof that its predecessor drained.
+Hosts with tracking evidence from the configuration or delete or replace the
+lock, admission, fence, or drain-evidence files. Once the fenced process has
+confirmed that all tracked sessions closed, it durably records zero-session
+evidence. A subsequent process holding the directory lock can retain that Host's
+tracking incarnation and issue fresh signed evidence. Without the durable zero
+record, the new process cannot prove that its predecessor drained: outstanding
+admission evidence blocks challenges, and otherwise the incarnation changes.
 
 The opt-in Master coordinator persists route coverage, approved keys and
-process incarnations before sending fences. Configure `[PasswordDrainFleet]`
+tracking incarnations before sending fences. Configure `[PasswordDrainFleet]`
 entries as `relay-root proxy-host-id final-mover-root`; direct routes use
 proxy `0` and the same root twice. Coverage conservatively includes **every**
 registered `TRANSFER_SERVER` and every Proxy Host, including inactive records.
@@ -345,11 +356,12 @@ outstanding Master dispatch acknowledgements only after every enrolled process
 is persistently fenced and confirms that no configured-credential sessions remain. It
 atomically retains the exact admission IDs and signed receipts in
 `HOST_PASSWORD_LEGACY_RECONCILIATION` before removing those admissions.
-Timeout alone never reconciles them. Changed keys, changed process
+Timeout alone never reconciles them. Changed keys, changed tracking
 incarnations and unreachable routes fail closed; an unknown session or a
-predecessor lost on restart still requires operator investigation.
+predecessor lost before recording a confirmed drain still requires operator
+investigation.
 
-An interrupted first cutover with an uncertain session or a changed Mover
+An interrupted first cutover with an uncertain session or a changed tracking
 incarnation has no supported force-clear operation. Restore any unavailable
 route and collect fresh evidence from the originally enrolled processes where
 possible. If predecessor evidence has been lost, keep the Host fenced and
@@ -363,10 +375,10 @@ per Host per rolling hour, even if a pending password is replaced.
 ### Credential rotation enablement
 
 Credential rotation is an opt-in feature. Deploy matching Master, Monitor and
-Mover versions, then complete these prerequisites:
+Mover components, then complete these prerequisites:
 
-1. Verify the rotation tables are present, configure Master-only OpenBao access, and establish
-   vault backup, unseal and application-token replacement procedures.
+1. Verify the rotation tables are present, configure Master-only OpenBao access,
+   and establish vault backup, unseal and application-token replacement procedures.
 2. Require mutual TLS between Monitor, Master and direct Movers. For Continental
    routes, additionally configure verified HTTPS and control-channel signing.
 3. Install distinct delivery keys for final Movers, the Master signing key, and

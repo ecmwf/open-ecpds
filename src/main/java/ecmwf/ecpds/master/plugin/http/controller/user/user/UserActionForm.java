@@ -281,9 +281,14 @@ public class UserActionForm extends ECMWFActionForm {
         this.setUid(u.getUid());
         this.setName(u.getCommonName());
         this.setUserData(u.getUserData().toString());
-        this.setPassword(u.getPassword());
+        this.setPassword("");
         if (u instanceof final WebUser webUser) {
             this.setActive(webUser.getActive() ? "on" : "off");
         }
+    }
+
+    public boolean isPasswordSet() {
+        return user instanceof final ecmwf.ecpds.master.plugin.http.dao.users.UserBean webUser
+                && ((ecmwf.common.database.WebUser) webUser.getOjbImplementation()).hasPassword();
     }
 }

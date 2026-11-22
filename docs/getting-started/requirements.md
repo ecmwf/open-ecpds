@@ -50,7 +50,7 @@ least 15 GB is essential for the development and application containers.
 ## Standalone image resources
 
 The standalone image is the quickest way to try OpenECPDS without building anything.
-It bundles three JVM services and MariaDB in a single container:
+It bundles three JVM services, MariaDB and OpenBao in a single container:
 
 | Component | Heap / typical RAM |
 |---|---|
@@ -58,6 +58,7 @@ It bundles three JVM services and MariaDB in a single container:
 | Data Mover | up to 1 GB (`-Xmx1G`) |
 | Monitor Server | up to 1 GB (`-Xmx1G`) |
 | MariaDB | ~200–300 MB |
+| OpenBao | Additional memory for the embedded vault |
 | OS + supervisord | ~200 MB |
 
 | Resource | Minimum | Recommended |

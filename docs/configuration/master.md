@@ -39,6 +39,19 @@ to JSON objects containing the verified external `issuer` and `subject`.
 See [OpenID Connect login](../administration/openid-connect.md) for the bundled
 provider, full configuration and account requirements.
 
+## Credential storage and rotation
+
+`[LocalPasswords] hashWritesEnabled` defaults to `yes` and controls hashed local
+password writes. `[DatabaseEncryption]`
+configures the external PKCS#12 key used for separate S3 signing secrets. See
+[Local account passwords](../administration/local-passwords.md) for the settings
+and key backup requirements.
+
+`[OpenBao]` configures the optional Master vault client. Host password rotation
+uses additional opt-in Master and Mover settings; enabling the vault alone does
+not enable rotation. See [Credential rotation enablement](../deployment/kubernetes.md#credential-rotation-enablement)
+and, for the evaluation container, [Standalone vault modes](../deployment/standalone-vault.md).
+
 ## File location and configuration layers
 
 The source template is
@@ -159,11 +172,9 @@ are linked below rather than conflated with service switches.
 
 ### [API]
 
-Template-defined configuration; see the reader links for its consuming component.
-
-| Option | Code fallback when absent | Shipped value | Reader |
-|--------|---------------------------|---------------|--------|
-| `api` | No direct literal reader; template entry | `Protected value/reference` | [Template:129](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L129) |
+No clients are shipped in this section. Configured entries are imported into
+the database on startup; manage clients in the Monitor UI and remove plaintext
+configuration entries after verifying the import.
 
 ### [CallBack]
 
@@ -172,10 +183,10 @@ Exported callback endpoint. `serverFactory` and `clientFactory` are Java socket-
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
 | `clientFactory` | `null` (no reader fallback) | `ecmwf.common.rmi.RMIClientSocketFactory` | [CallBackObject:150](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/callback/CallBackObject.java#L150) |
-| `keepAlive` | Inherits `[SocketConfig] keepAlive` | `yes` | [Template:261](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L261) |
-| `listenAddress` | Inherits `[SocketConfig] listenAddress` | `${Login[internalAddress]}` | [Template:256](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L256) |
+| `keepAlive` | Inherits `[SocketConfig] keepAlive` | `yes` | [Template:271](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L271) |
+| `listenAddress` | Inherits `[SocketConfig] listenAddress` | `${Login[internalAddress]}` | [Template:266](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L266) |
 | `port` | `9000` | `${Ports[callBack]}` | [CallBackObject:54](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/callback/CallBackObject.java#L54) |
-| `publicAddress` | Inherits `[SocketConfig] publicAddress` | `${Login[internalAddress]}` | [Template:257](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L257) |
+| `publicAddress` | Inherits `[SocketConfig] publicAddress` | `${Login[internalAddress]}` | [Template:267](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L267) |
 | `serverFactory` | `null` (no reader fallback) | `ecmwf.common.rmi.RMIServerSocketFactory` | [CallBackObject:116](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/callback/CallBackObject.java#L116) |
 
 ### [Command]
@@ -195,30 +206,30 @@ Database broker and JDBC configuration. `initSleep` is seconds; `purge` is hours
 |--------|---------------------------|---------------|--------|
 | `alias` | `null` (no reader fallback) | `${database.alias}` | [ECaccessServer:165](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessServer.java#L165) |
 | `alias` | `System.getProperty("database.alias", "")` | `${database.alias}` | [ManagementImpl:3326](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/ManagementImpl.java#L3326) |
-| `backup` | No direct literal reader; template entry | `${master.conf}/backup.sql` | [Template:228](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L228) |
+| `backup` | No direct literal reader; template entry | `${master.conf}/backup.sql` | [Template:227](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L227) |
 | `brokerFactory` | `ecmwf.common.database.BrokerFactoryOJB` | `ecmwf.common.database.BrokerFactoryHibernate` | [ECaccessServer:163](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessServer.java#L163) |
-| `debugCache` | `false` | - | [BrokerHibernate:110](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L110) |
-| `debugFrequency` | `10000` | - | [BrokerHibernate:116](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L116) |
-| `debugPool` | `false` | - | [BrokerHibernate:113](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L113) |
+| `debugCache` | `false` | - | [BrokerHibernate:112](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L112) |
+| `debugFrequency` | `10000` | - | [BrokerHibernate:118](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L118) |
+| `debugPool` | `false` | - | [BrokerHibernate:115](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L115) |
 | `debugSql` | `false` | `no` | [ECaccessServer:167](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessServer.java#L167) |
 | `driver` | `null` (no reader fallback) | `org.mariadb.jdbc.Driver` | [ECaccessServer:164](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessServer.java#L164) |
 | `emulateCalcFoundRows` | `"hsqldb".equalsIgnoreCase(Cnf.at("DataBase", "subProtocol", ""))` | - | [DBResultSet:55](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/DBResultSet.java#L55) |
-| `enableStreamingFetch` | `true` | `no` | [BrokerHibernate:95](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L95) |
-| `fetchSize` | `500` | - | [BrokerHibernate:92](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L92) |
+| `enableStreamingFetch` | `true` | `no` | [BrokerHibernate:97](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L97) |
+| `fetchSize` | `500` | - | [BrokerHibernate:94](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L94) |
 | `initCount` | `1` | - | [ECaccessServer:146](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessServer.java#L146) |
 | `initSleep` | `30` | - | [ECaccessServer:147](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessServer.java#L147) |
 | `logEvents` | `true` | `yes` | [ECaccessServer:167](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessServer.java#L167) |
-| `maxIdentityCount` | `7` | `7` | [MasterServer:2049](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L2049) |
-| `maxTransferLife` | `210` | `210` | [MasterServer:2050](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L2050) |
+| `maxIdentityCount` | `7` | `7` | [MasterServer:2095](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L2095) |
+| `maxTransferLife` | `210` | `210` | [MasterServer:2096](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L2096) |
 | `password` | `null` (no reader fallback) | `Protected value/reference` | [ECaccessServer:165](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessServer.java#L165) |
 | `protocol` | `null` (no reader fallback) | `jdbc` | [ECaccessServer:164](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessServer.java#L164) |
 | `purge` | `360` | `360` | [ECaccessServer:215](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessServer.java#L215) |
 | `repository` | `null` (no reader fallback) | `${master.conf}/sql` | [ECaccessServer:166](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessServer.java#L166) |
-| `retryTransactionCount` | `2` | - | [BrokerHibernate:104](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L104) |
-| `retryTransactionDelay` | `1000` | - | [BrokerHibernate:107](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L107) |
+| `retryTransactionCount` | `2` | - | [BrokerHibernate:106](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L106) |
+| `retryTransactionDelay` | `1000` | - | [BrokerHibernate:109](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L109) |
 | `server` | `null` (no reader fallback) | - | [ECaccessServer:166](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessServer.java#L166) |
-| `setAutoCommit` | `false` | - | [BrokerHibernate:98](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L98) |
-| `setReadOnly` | `false` | - | [BrokerHibernate:101](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L101) |
+| `setAutoCommit` | `false` | - | [BrokerHibernate:100](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L100) |
+| `setReadOnly` | `false` | - | [BrokerHibernate:103](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/BrokerHibernate.java#L103) |
 | `subProtocol` | Empty string | `mariadb` | [DBResultSet:56](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/DBResultSet.java#L56) |
 | `subProtocol` | `null` (no reader fallback) | `mariadb` | [ECaccessServer:164](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessServer.java#L164) |
 | `user` | `null` (no reader fallback) | `master` | [ECaccessServer:165](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessServer.java#L165) |
@@ -262,8 +273,8 @@ Database-facing cache refresh pause and expiry durations.
 
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
-| `cachePause` | `5000` ms (duration fallback) | - | [ECpdsBase:71](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/ECpdsBase.java#L71) |
-| `cacheTimeout` | `60000` ms (duration fallback) | - | [ECpdsBase:68](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/ECpdsBase.java#L68) |
+| `cachePause` | `5000` ms (duration fallback) | - | [ECpdsBase:77](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/ECpdsBase.java#L77) |
+| `cacheTimeout` | `60000` ms (duration fallback) | - | [ECpdsBase:74](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/database/ECpdsBase.java#L74) |
 
 ### [ECpdsClient]
 
@@ -286,12 +297,12 @@ Master ECpds listener and request-processing behaviour. `checkPort` requires a p
 | `forceStandby` | `false` | - | [ECpdsPlugin:136](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/plugin/ecpds/ECpdsPlugin.java#L136) |
 | `host` | `Cnf.at("Login", "hostName", "localhost")` | - | [ECpdsClient:83](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/plugin/ecpds/ECpdsClient.java#L83) |
 | `ignoreMissingScheduleTime` | `true` | - | [ECpdsPlugin:1654](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/plugin/ecpds/ECpdsPlugin.java#L1654) |
-| `listenAddress` | Inherits `[SocketConfig] listenAddress` | `${Login[externalAddress]}` | [Template:318](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L318) |
+| `listenAddress` | Inherits `[SocketConfig] listenAddress` | `${Login[externalAddress]}` | [Template:328](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L328) |
 | `maxSourceNameLength` | `255` | - | [ECpdsPlugin:151](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/plugin/ecpds/ECpdsPlugin.java#L151) |
 | `port` | `Cnf.at("Ports", "ecpds", 6640)` | `${Ports[ecpds]}` | [ECpdsClient:86](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/plugin/ecpds/ECpdsClient.java#L86) |
 | `port` | `null` (no reader fallback) | `${Ports[ecpds]}` | [ECpdsPlugin:466](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/plugin/ecpds/ECpdsPlugin.java#L466) |
 | `resetDataTransferSchedulesByGroup` | `false` | `yes` | [ECpdsPlugin:157](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/plugin/ecpds/ECpdsPlugin.java#L157) |
-| `soTimeOut` | Inherits `[SocketConfig] soTimeOut` | `600000` | [Template:320](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L320) |
+| `soTimeOut` | Inherits `[SocketConfig] soTimeOut` | `600000` | [Template:330](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L330) |
 | `transferGroup` | `null` (no reader fallback) | - | [ECpdsPlugin:293](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/plugin/ecpds/ECpdsPlugin.java#L293) |
 | `waitForInitialWait` | `25000` ms (duration fallback) | - | [ECpdsPlugin:147](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/plugin/ecpds/ECpdsPlugin.java#L147) |
 | `waitForRefreshInterval` | `15000` ms (duration fallback) | - | [ECpdsPlugin:143](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/plugin/ecpds/ECpdsPlugin.java#L143) |
@@ -337,7 +348,7 @@ FTP server active-data sockets. Accepts every named socket option below, in addi
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
 | `reuseAddress` | `true` | `yes` | [DataSocket:165](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/DataSocket.java#L165) |
-| `soTimeOut` | Inherits `[SocketConfig] soTimeOut` | `7200000` | [Template:364](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L364) |
+| `soTimeOut` | Inherits `[SocketConfig] soTimeOut` | `7200000` | [Template:374](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L374) |
 
 ### [FTPPassiveSocket]
 
@@ -347,10 +358,10 @@ FTP server passive-data sockets. `boundAddress` controls the address used for pa
 |--------|---------------------------|---------------|--------|
 | `backLog` | `1` | - | [DataSocket:80](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/DataSocket.java#L80) |
 | `boundAddress` | `boundAddress` | - | [DataSocket:99](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/DataSocket.java#L99) |
-| `maxPrivilegedPort` | Inherits `[SocketConfig] maxPrivilegedPort` | `60000` | [Template:359](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L359) |
-| `minPrivilegedPort` | Inherits `[SocketConfig] minPrivilegedPort` | `50000` | [Template:358](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L358) |
-| `privilegedLocalPort` | Inherits `[SocketConfig] privilegedLocalPort` | `yes` | [Template:357](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L357) |
-| `soTimeOut` | Inherits `[SocketConfig] soTimeOut` | `300000` | [Template:360](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L360) |
+| `maxPrivilegedPort` | Inherits `[SocketConfig] maxPrivilegedPort` | `60000` | [Template:369](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L369) |
+| `minPrivilegedPort` | Inherits `[SocketConfig] minPrivilegedPort` | `50000` | [Template:368](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L368) |
+| `privilegedLocalPort` | Inherits `[SocketConfig] privilegedLocalPort` | `yes` | [Template:367](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L367) |
+| `soTimeOut` | Inherits `[SocketConfig] soTimeOut` | `300000` | [Template:370](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L370) |
 
 ### [Filter]
 
@@ -370,12 +381,12 @@ Virtual FTP/SFTP domain mappings; arbitrary domain names are supported. `*` is t
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
 | `*` | `null` (no reader fallback) | `*` | [DOMAIN:47](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/DOMAIN.java#L47); [MinaFileSystemAccessor:781](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ssh/MinaFileSystemAccessor.java#L781) |
-| `attachments` | No mapping; uses `*` fallback | `attachments:` | [Template:347](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L347) |
-| `countries` | No mapping; uses `*` fallback | `countries:` | [Template:349](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L349) |
-| `data` | No mapping; uses `*` fallback | `data:` | [Template:351](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L351) |
-| `destinations` | No mapping; uses `*` fallback | `destinations:` | [Template:348](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L348) |
-| `hosts` | No mapping; uses `*` fallback | `hosts:` | [Template:350](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L350) |
-| `types` | No mapping; uses `*` fallback | `types:` | [Template:352](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L352) |
+| `attachments` | No mapping; uses `*` fallback | `attachments:` | [Template:357](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L357) |
+| `countries` | No mapping; uses `*` fallback | `countries:` | [Template:359](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L359) |
+| `data` | No mapping; uses `*` fallback | `data:` | [Template:361](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L361) |
+| `destinations` | No mapping; uses `*` fallback | `destinations:` | [Template:358](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L358) |
+| `hosts` | No mapping; uses `*` fallback | `hosts:` | [Template:360](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L360) |
+| `types` | No mapping; uses `*` fallback | `types:` | [Template:362](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L362) |
 
 ### [FtpModuleList]
 
@@ -393,18 +404,18 @@ FTP control listener and behaviour. `welcome`, `browser` and `help` are file pat
 |--------|---------------------------|---------------|--------|
 | `alwaysCheckOnRETR` | `false` | - | [RETR:165](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/RETR.java#L165) |
 | `browser` | `browser.ftp` | `${master.conf}/ftp/browser.txt` | [PASS:165](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/PASS.java#L165) |
-| `dataTimeOut` | No direct literal reader; template entry | `600000` | [Template:334](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L334) |
+| `dataTimeOut` | No direct literal reader; template entry | `600000` | [Template:344](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L344) |
 | `ext` | Empty list | Empty string | [Util:317](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/Util.java#L317) |
 | `extended` | `false` | `no` | [FEAT:49](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/FEAT.java#L49) |
 | `extended` | `true` | `no` | [FtpPlugin:284](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/FtpPlugin.java#L284) |
 | `help` | `help.ftp` | `${master.conf}/ftp/help.txt` | [HELP:57](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/HELP.java#L57) |
 | `hidden` | Empty list | Empty string | [DOMAIN:53](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/DOMAIN.java#L53) |
-| `listenAddress` | Inherits `[SocketConfig] listenAddress` | `${Login[externalAddress]}` | [Template:331](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L331) |
+| `listenAddress` | Inherits `[SocketConfig] listenAddress` | `${Login[externalAddress]}` | [Template:341](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L341) |
 | `passive` | `true` | `yes` | [CurrentContext:150](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/CurrentContext.java#L150) |
 | `port` | `21` | `${Ports[ftp]}` | [DataSocket:129](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/DataSocket.java#L129) |
 | `port` | `null` (no reader fallback) | `${Ports[ftp]}` | [FtpPlugin:129](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/FtpPlugin.java#L129) |
 | `rest` | `true` | - | [FEAT:50](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/FEAT.java#L50); [FtpPlugin:288](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/FtpPlugin.java#L288) |
-| `soTimeOut` | Inherits `[SocketConfig] soTimeOut` | `600000` | [Template:333](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L333) |
+| `soTimeOut` | Inherits `[SocketConfig] soTimeOut` | `600000` | [Template:343](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L343) |
 | `tail` | `Direct comments to ecaccess@ecmwf.int` | `FTP Admin Interface` | [ALIAS:86](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/ALIAS.java#L86); [CHMOD:90](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/CHMOD.java#L90); [DOMAIN:89](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/DOMAIN.java#L89); [UMASK:69](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/UMASK.java#L69) |
 | `welcome` | `welcome.ftp` | `${master.conf}/ftp/welcome.txt` | [PASS:166](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ftpd/PASS.java#L166) |
 
@@ -414,7 +425,7 @@ Template-defined configuration; see the reader links for its consuming component
 
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
-| `forced.136.156` | No direct literal reader; template entry | `44.520320,11.360250,Europe,IT,Bologna` | [Template:369](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L369) |
+| `forced.136.156` | No direct literal reader; template entry | `44.520320,11.360250,Europe,IT,Bologna` | [Template:379](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L379) |
 
 ### [IO]
 
@@ -458,13 +469,13 @@ Component identity, registration credential and addresses. `root` defaults to th
 | `externalAddress` | No direct literal reader; template entry | `${Login[hostName]}` | [Template:19](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L19) |
 | `hostName` | `InetAddress.getLocalHost().getHostName()` | `${ecmwf.common.ecaccess.ECaccessInit.getHostName()}` | [ECaccessScheduler:336](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessScheduler.java#L336); [PluginContainer:149](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/plugin/PluginContainer.java#L149) |
 | `hostName` | `role` | `${ecmwf.common.ecaccess.ECaccessInit.getHostName()}` | [TransferTracing:105](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/telemetry/TransferTracing.java#L105) |
-| `hostName` | `null` (no reader fallback) | `${ecmwf.common.ecaccess.ECaccessInit.getHostName()}` | [MasterServer:7603](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7603) |
+| `hostName` | `null` (no reader fallback) | `${ecmwf.common.ecaccess.ECaccessInit.getHostName()}` | [MasterServer:7652](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7652) |
 | `hostName` | `master` | `${ecmwf.common.ecaccess.ECaccessInit.getHostName()}` | [OperationalEvents:94](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java#L94); [OperationalEvents:121](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java#L121) |
 | `hostName` | `localhost` | `${ecmwf.common.ecaccess.ECaccessInit.getHostName()}` | [ECpdsClient:83](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/plugin/ecpds/ECpdsClient.java#L83) |
 | `internalAddress` | No direct literal reader; template entry | `${master.internalAddress}` | [Template:22](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L22) |
-| `password` | `null` (no reader fallback) | `Protected value/reference` | [MasterServer:7623](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7623) |
+| `password` | `null` (no reader fallback) | `Protected value/reference` | [MasterServer:7686](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7686) |
 | `root` | `Cnf.at("Login", "hostName", role)` | - | [TransferTracing:105](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/telemetry/TransferTracing.java#L105) |
-| `root` | `Cnf.at("Login", "hostName")` | - | [MasterServer:7603](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7603) |
+| `root` | `Cnf.at("Login", "hostName")` | - | [MasterServer:7652](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7652) |
 | `root` | `Cnf.at("Login", "hostName", "master")` | - | [OperationalEvents:94](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java#L94); [OperationalEvents:121](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/OperationalEvents.java#L121) |
 | `service` | `Cnf.at("Login", "hostName", InetAddress.getLocalHost().getHostName())` | - | [ECaccessScheduler:336](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessScheduler.java#L336); [PluginContainer:149](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/plugin/PluginContainer.java#L149) |
 
@@ -509,7 +520,7 @@ Whether Master registration updates a Mover's ECproxy address and port.
 
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
-| `updateECproxyAddressAndPort` | `false` | - | [MasterServer:4621](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L4621) |
+| `updateECproxyAddressAndPort` | `false` | - | [MasterServer:4667](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L4667) |
 
 ### [MetaData]
 
@@ -556,8 +567,9 @@ After a retention change, retained rows receive their new expiry when that Maste
 loads and persists history; already deleted history cannot be recovered.
 The dashboard's **All retained history** time window covers the configured age limit.
 
-Keep `owner` stable across failover and run one active Master per owner; it must
-contain 1-255 characters. Changes require a Master restart. See
+Keep `owner` stable across failover and run only one active Master per database,
+regardless of owner. The owner must contain 1-255 characters. Changes require a
+Master restart. See
 [Monitoring publication activity](../notifications/mqtt-dissemination.md#monitoring-publication-activity).
 
 ### [NetworkWeather]
@@ -651,7 +663,7 @@ OpsView publication endpoints, credentials, filters and TLS verification. URLs d
 | `acquisitionFilterName` | `ECPDS_Acquisition` | - | [OpsViewManager:120](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/opsview/OpsViewManager.java#L120) |
 | `activated` | `true` | `${opsview.activated}` | [OpsViewManager:81](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/opsview/OpsViewManager.java#L81) |
 | `disseminationFilterName` | `ECPDS_Dissemination` | - | [OpsViewManager:116](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/opsview/OpsViewManager.java#L116) |
-| `filterName` | No direct literal reader; template entry | `ECPDS_Destinations` | [Template:303](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L303) |
+| `filterName` | No direct literal reader; template entry | `ECPDS_Destinations` | [Template:313](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L313) |
 | `options` | Empty string | - | [OpsViewManager:84](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/opsview/OpsViewManager.java#L84) |
 | `otherFilterName` | `ECPDS_Other` | - | [OpsViewManager:124](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/opsview/OpsViewManager.java#L124) |
 | `password` | Empty string | `Protected value/reference` | [OpsViewManager:113](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/opsview/OpsViewManager.java#L113) |
@@ -674,7 +686,7 @@ Shared utilities. `buffer` is an I/O buffer size in bytes; `ticketWaitDuration` 
 | `dontCheckIp` | `false` | `yes` | [ECaccessProvider:292](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessProvider.java#L292) |
 | `ecauthTokenCache` | `true` | - | [ECauthTokenManager:52](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECauthTokenManager.java#L52) |
 | `ticketWaitDuration` | `120000` | - | [AttachmentAccessImpl:348](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/AttachmentAccessImpl.java#L348) |
-| `tmp` | No direct literal reader; template entry | `${master.tmp}` | [Template:375](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L375) |
+| `tmp` | No direct literal reader; template entry | `${master.tmp}` | [Template:385](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L385) |
 | `trace` | `false` | - | [MonitorCall:50](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MonitorCall.java#L50) |
 
 ### [PluginList]
@@ -722,10 +734,10 @@ implemented by shortening this shared timeout.
 
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
-| `interruptible` | Inherits `[SocketConfig] interruptible` | `yes` | [Template:274](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L274) |
-| `keepAlive` | Inherits `[SocketConfig] keepAlive` | `yes` | [Template:275](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L275) |
-| `listenAddress` | Inherits `[SocketConfig] listenAddress` | `${Login[internalAddress]}` | [Template:272](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L272) |
-| `publicAddress` | Inherits `[SocketConfig] publicAddress` | `${Login[internalAddress]}` | [Template:273](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L273) |
+| `interruptible` | Inherits `[SocketConfig] interruptible` | `yes` | [Template:284](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L284) |
+| `keepAlive` | Inherits `[SocketConfig] keepAlive` | `yes` | [Template:285](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L285) |
+| `listenAddress` | Inherits `[SocketConfig] listenAddress` | `${Login[internalAddress]}` | [Template:282](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L282) |
+| `publicAddress` | Inherits `[SocketConfig] publicAddress` | `${Login[internalAddress]}` | [Template:283](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L283) |
 
 ### [RMIServerSocketFactory]
 
@@ -733,10 +745,10 @@ Template-defined configuration; see the reader links for its consuming component
 
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
-| `interruptible` | Inherits `[SocketConfig] interruptible` | `yes` | [Template:267](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L267) |
-| `keepAlive` | Inherits `[SocketConfig] keepAlive` | `yes` | [Template:268](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L268) |
-| `listenAddress` | Inherits `[SocketConfig] listenAddress` | `${Login[internalAddress]}` | [Template:265](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L265) |
-| `publicAddress` | Inherits `[SocketConfig] publicAddress` | `${Login[internalAddress]}` | [Template:266](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L266) |
+| `interruptible` | Inherits `[SocketConfig] interruptible` | `yes` | [Template:277](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L277) |
+| `keepAlive` | Inherits `[SocketConfig] keepAlive` | `yes` | [Template:278](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L278) |
+| `listenAddress` | Inherits `[SocketConfig] listenAddress` | `${Login[internalAddress]}` | [Template:275](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L275) |
+| `publicAddress` | Inherits `[SocketConfig] publicAddress` | `${Login[internalAddress]}` | [Template:276](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L276) |
 
 ### [RequestParser]
 
@@ -785,11 +797,11 @@ Worker cadence, concurrency and watchdogs. `*JammedTimeout`, `maximumDuration*` 
 | `downloadScheduler` | `1000` ms (duration fallback) | `1s` | [MasterServer:13261](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L13261) |
 | `downloadSchedulerJammedTimeout` | `600000` ms (duration fallback) | `10m` | [MasterServer:13262](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L13262) |
 | `downloadSchedulerTimeRanges` | Empty list | - | [MasterServer:13263](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L13263) |
-| `eventScheduler` | `5000` ms (duration fallback) | `1s` | [MasterServer:8205](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8205) |
-| `eventSchedulerJammedTimeout` | `600000` ms (duration fallback) | `10m` | [MasterServer:8206](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8206) |
-| `eventSchedulerTimeRanges` | Empty list | - | [MasterServer:8207](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8207) |
-| `eventScriptFile` | Empty string | `${master.etc}/event.js` | [MasterServer:796](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L796); [MasterServer:8375](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8375) |
-| `exportDataBase` | No direct literal reader; template entry | `0` | [Template:221](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L221) |
+| `eventScheduler` | `5000` ms (duration fallback) | `1s` | [MasterServer:8268](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8268) |
+| `eventSchedulerJammedTimeout` | `600000` ms (duration fallback) | `10m` | [MasterServer:8269](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8269) |
+| `eventSchedulerTimeRanges` | Empty list | - | [MasterServer:8270](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8270) |
+| `eventScriptFile` | Empty string | `${master.etc}/event.js` | [MasterServer:798](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L798); [MasterServer:8375](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8375) |
+| `exportDataBase` | No direct literal reader; template entry | `0` | [Template:220](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L220) |
 | `failOnMissingSourceFile` | `false` | - | [MasterServer:14222](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L14222) |
 | `filterScheduler` | `5000` ms (duration fallback) | `1s` | [MasterServer:9450](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L9450) |
 | `filterSchedulerJammedTimeout` | `300000` ms (duration fallback) | `5m` | [MasterServer:9451](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L9451) |
@@ -802,7 +814,7 @@ Worker cadence, concurrency and watchdogs. `*JammedTimeout`, `maximumDuration*` 
 | `maxAcquisitionThreads` | `100` | `140` | [MasterServer:11388](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L11388) |
 | `maxBackupThreads` | `15` | `15` | [MasterServer:10529](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L10529) |
 | `maxDownloadThreads` | `60` | `${retrieval.maxPoolSize}` | [MasterServer:13224](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L13224) |
-| `maxEventThreads` | `200` | `50` | [MasterServer:8186](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8186) |
+| `maxEventThreads` | `200` | `50` | [MasterServer:8249](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8249) |
 | `maxFilterThreads` | `15` | `100` | [MasterServer:9431](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L9431) |
 | `maxPresetPerDestination` | `60` | - | [MasterServer:13125](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L13125) |
 | `maxProxyThreads` | `15` | `150` | [MasterServer:10909](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L10909) |
@@ -828,13 +840,13 @@ Worker cadence, concurrency and watchdogs. `*JammedTimeout`, `maximumDuration*` 
 | `purgeScheduler` | `5000` ms (duration fallback) | `1s` | [MasterServer:10264](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L10264) |
 | `purgeSchedulerJammedTimeout` | `600000` ms (duration fallback) | - | [MasterServer:10265](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L10265) |
 | `purgeSchedulerTimeRanges` | Empty list | - | [MasterServer:10266](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L10266) |
-| `removeExpiredDataTransfers` | No direct literal reader; template entry | `1` | [Template:215](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L215) |
-| `removeExpiredRoots` | No direct literal reader; template entry | `1` | [Template:216](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L216) |
+| `removeExpiredDataTransfers` | No direct literal reader; template entry | `1` | [Template:214](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L214) |
+| `removeExpiredRoots` | No direct literal reader; template entry | `1` | [Template:215](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L215) |
 | `replicateScheduler` | `5000` ms (duration fallback) | `1s` | [MasterServer:9840](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L9840) |
 | `replicateSchedulerJammedTimeout` | `600000` ms (duration fallback) | `10m` | [MasterServer:9841](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L9841) |
 | `replicateSchedulerTimeRanges` | Empty list | - | [MasterServer:9842](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L9842) |
 | `timeOutBackupThread` | `-1` ms (duration fallback) | `20m` | [MasterServer:10526](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L10526) |
-| `timeOutEventThread` | `-1` ms (duration fallback) | `5m` | [MasterServer:8183](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8183) |
+| `timeOutEventThread` | `-1` ms (duration fallback) | `5m` | [MasterServer:8246](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8246) |
 | `timeOutFilterThread` | `-1` ms (duration fallback) | - | [MasterServer:9428](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L9428) |
 | `timeOutProxyThread` | `-1` ms (duration fallback) | - | [MasterServer:10906](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L10906) |
 | `timeOutPurgeThread` | `-1` ms (duration fallback) | - | [MasterServer:10242](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L10242) |
@@ -885,9 +897,9 @@ Authentication, secret protection, socket TLS and optional HTTPS store defaults.
 | `check` | `false` | - | [ECaccessServer:188](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessServer.java#L188) |
 | `checkCertificates` | `true` | - | [SSLSocketFactory:373](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/security/SSLSocketFactory.java#L373) |
 | `cliSharedSecret` | Empty string | `Protected value/reference` | [SimplePlugin:62](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/plugin/SimplePlugin.java#L62); [ProxySocket:82](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/technical/ProxySocket.java#L82); [ECpdsClient:98](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/plugin/ecpds/ECpdsClient.java#L98) |
-| `ejbPassword` | No direct literal reader; template entry | `Protected value/reference` | [Template:249](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L249) |
-| `ejbUser` | No direct literal reader; template entry | `${Login[hostName]}` | [Template:248](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L248) |
-| `jaasModule` | No direct literal reader; template entry | `ecmwf` | [Template:247](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L247) |
+| `ejbPassword` | No direct literal reader; template entry | `Protected value/reference` | [Template:259](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L259) |
+| `ejbUser` | No direct literal reader; template entry | `${Login[hostName]}` | [Template:258](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L258) |
+| `jaasModule` | No direct literal reader; template entry | `ecmwf` | [Template:257](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L257) |
 
 ### [Server]
 
@@ -895,54 +907,54 @@ Per-process service switches and local paths. Master readers enable schedulers/r
 
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
-| `acqDownloadScheduler` | `true` | - | [MasterServer:1010](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L1010) |
-| `acquisitionScheduler` | `true` | `yes` | [MasterServer:996](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L996) |
-| `allowPasswordOn` | `"(" + getRoot() + "\|" + Format.getHostAddress(getRoot()) + ")"` | - | [MasterServer:808](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L808) |
-| `anonymousPass` | `anonymous` | - | [MasterServer:7239](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7239) |
-| `anonymousUser` | `anonymous` | - | [MasterServer:6287](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L6287); [MasterServer:7040](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7040); [MasterServer:7217](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7217); [MasterServer:7238](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7238) |
-| `anonymousUser` | `"anonymous".equals(user)` | - | [MasterServer:7308](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7308) |
+| `acqDownloadScheduler` | `true` | - | [MasterServer:1012](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L1012) |
+| `acquisitionScheduler` | `true` | `yes` | [MasterServer:998](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L998) |
+| `allowPasswordOn` | `"(" + getRoot() + "\|" + Format.getHostAddress(getRoot()) + ")"` | - | [MasterServer:810](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L810) |
+| `anonymousPass` | `anonymous` | - | [MasterServer:7288](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7288) |
+| `anonymousUser` | `anonymous` | - | [MasterServer:6333](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L6333); [MasterServer:7089](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7089); [MasterServer:7266](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7266); [MasterServer:7287](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7287) |
+| `anonymousUser` | `"anonymous".equals(user)` | - | [MasterServer:7357](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7357) |
 | `attachments` | `/tmp/ecpds-attachments` | `${master.data}/attachments` | [AttachmentAccessImpl:57](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/AttachmentAccessImpl.java#L57); [ManagementImpl:126](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/ManagementImpl.java#L126) |
-| `backupScheduler` | `true` | `yes` | [MasterServer:982](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L982) |
+| `backupScheduler` | `true` | `yes` | [MasterServer:984](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L984) |
 | `checkFileName` | `ecpds.tst` | - | [MasterServer:9135](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L9135) |
-| `containersToNotify` | `"ECpdsMonitor/" + getRoot()` | `ECpdsMonitor/(.*)` | [MasterServer:804](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L804) |
-| `dataTransferCheck` | `true` | - | [MasterServer:948](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L948) |
+| `containersToNotify` | `"ECpdsMonitor/" + getRoot()` | `ECpdsMonitor/(.*)` | [MasterServer:806](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L806) |
+| `dataTransferCheck` | `true` | - | [MasterServer:950](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L950) |
 | `defaultTransferGroup` | `null` (no reader fallback) | `internet` | [DataBaseImpl:2288](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/DataBaseImpl.java#L2288); [TransferServerProvider:1249](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/transfer/TransferServerProvider.java#L1249) |
-| `dissDownloadScheduler` | `true` | - | [MasterServer:1017](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L1017) |
-| `dontRecordActions` | `"output", "report"` | `output,report` | [MasterServer:7113](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7113) |
-| `dontRecordTransferActions` | `true` | `yes` | [MasterServer:7112](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7112) |
+| `dissDownloadScheduler` | `true` | - | [MasterServer:1019](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L1019) |
+| `dontRecordActions` | `"output", "report"` | `output,report` | [MasterServer:7162](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7162) |
+| `dontRecordTransferActions` | `true` | `yes` | [MasterServer:7161](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7161) |
 | `downloadScheduler` | No direct literal reader; template entry | `yes` | [Template:102](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L102) |
 | `ecauth` | `Cnf.at("ECauthSession", "cmd")` | `ecauth` | [ECauthTokenGenerator:47](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECauthTokenGenerator.java#L47) |
-| `email` | Empty string | Empty string | [MasterServer:7063](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7063) |
-| `eventRepository` | `true` | `yes` | [MasterServer:910](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L910) |
-| `eventScheduler` | `true` | `yes` | [MasterServer:914](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L914) |
-| `filterScheduler` | `true` | `yes` | [MasterServer:1024](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L1024) |
+| `email` | Empty string | Empty string | [MasterServer:7112](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7112) |
+| `eventRepository` | `true` | `yes` | [MasterServer:912](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L912) |
+| `eventScheduler` | `true` | `yes` | [MasterServer:916](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L916) |
+| `filterScheduler` | `true` | `yes` | [MasterServer:1026](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L1026) |
 | `geoip2DataFile` | `null` (no reader fallback) | `${master.conf}/GeoLite2-City.mmdb` | [GeoIP2Helper:81](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/technical/GeoIP2Helper.java#L81) |
-| `groupNameTranslationList` | Empty list | - | [MasterServer:6849](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L6849) |
-| `historyRepository` | `true` | `yes` | [MasterServer:903](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L903) |
-| `hostCheckScheduler` | `true` | `no` | [MasterServer:940](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L940) |
-| `hostoutputs` | `null` (no reader fallback) | `${master.data}/hostoutputs` | [MasterServer:299](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L299) |
-| `liveTransferMonitoringForceEnabled` | `false` | - | [MasterServer:874](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L874) |
-| `mailRepository` | `true` | `${mail.activated}` | [MasterServer:925](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L925) |
-| `mailSubjectTag` | `getRoot()` | - | [MasterServer:826](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L826); [ECpdsPlugin:176](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/plugin/ecpds/ECpdsPlugin.java#L176) |
+| `groupNameTranslationList` | Empty list | - | [MasterServer:6898](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L6898) |
+| `historyRepository` | `true` | `yes` | [MasterServer:905](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L905) |
+| `hostCheckScheduler` | `true` | `no` | [MasterServer:942](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L942) |
+| `hostoutputs` | `null` (no reader fallback) | `${master.data}/hostoutputs` | [MasterServer:301](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L301) |
+| `liveTransferMonitoringForceEnabled` | `false` | - | [MasterServer:876](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L876) |
+| `mailRepository` | `true` | `${mail.activated}` | [MasterServer:927](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L927) |
+| `mailSubjectTag` | `getRoot()` | - | [MasterServer:828](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L828); [ECpdsPlugin:176](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/plugin/ecpds/ECpdsPlugin.java#L176) |
 | `maxIncomingConnections` | `10` | - | [ECtransOptions:1750](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ectrans/ECtransOptions.java#L1750) |
-| `monitoring` | Empty string | `https://${Login[hostName]}` | [MasterServer:7001](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7001) |
+| `monitoring` | Empty string | `https://${Login[hostName]}` | [MasterServer:7050](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7050) |
 | `monitoringTaskScheduler` | No direct literal reader; template entry | `no` | [Template:115](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L115) |
-| `moverAvailabilityScheduler` | `true` | - | [MasterServer:1049](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L1049) |
-| `notificationRepository` | `true` | `yes` | [MasterServer:933](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L933) |
-| `notifyLocalContainer` | `true` | `no` | [MasterServer:799](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L799) |
-| `portalBytesScheduler` | `true` | - | [MasterServer:1038](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L1038) |
-| `portalTrafficScheduler` | `true` | - | [MasterServer:1031](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L1031) |
+| `moverAvailabilityScheduler` | `true` | - | [MasterServer:1051](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L1051) |
+| `notificationRepository` | `true` | `yes` | [MasterServer:935](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L935) |
+| `notifyLocalContainer` | `true` | `no` | [MasterServer:801](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L801) |
+| `portalBytesScheduler` | `true` | - | [MasterServer:1040](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L1040) |
+| `portalTrafficScheduler` | `true` | - | [MasterServer:1033](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L1033) |
 | `providerMBeanTimeout` | `120000` | `180000` | [ECaccessProvider:550](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessProvider.java#L550) |
-| `proxyHostRepository` | `true` | - | [MasterServer:896](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L896) |
-| `proxyScheduler` | `true` | - | [MasterServer:989](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L989) |
-| `purgeScheduler` | `true` | - | [MasterServer:1003](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L1003) |
-| `replicateScheduler` | `true` | `yes` | [MasterServer:975](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L975) |
-| `sendMailNotificationsForTransfers` | `true` | - | [MasterServer:822](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L822) |
+| `proxyHostRepository` | `true` | - | [MasterServer:898](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L898) |
+| `proxyScheduler` | `true` | - | [MasterServer:991](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L991) |
+| `purgeScheduler` | `true` | - | [MasterServer:1005](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L1005) |
+| `replicateScheduler` | `true` | `yes` | [MasterServer:977](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L977) |
+| `sendMailNotificationsForTransfers` | `true` | - | [MasterServer:824](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L824) |
 | `systemTopologyProbeTimeout` | `3000` ms (duration fallback) | - | [ManagementImpl:147](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/ManagementImpl.java#L147) |
 | `testPhrase` | `Test transfer file` | - | [MasterServer:9136](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L9136) |
-| `ticketRepository` | `true` | `yes` | [MasterServer:882](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L882) |
-| `transferRepository` | `true` | `yes` | [MasterServer:889](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L889) |
-| `transferScheduler` | `true` | `yes` | [MasterServer:875](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L875) |
+| `ticketRepository` | `true` | `yes` | [MasterServer:884](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L884) |
+| `transferRepository` | `true` | `yes` | [MasterServer:891](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L891) |
+| `transferScheduler` | `true` | `yes` | [MasterServer:877](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L877) |
 | `useDataProxy` | No direct literal reader; template entry | `no` | [Template:122](https://github.com/ecmwf/open-ecpds/blob/master/etc/master/conf/ecmwf.properties#L122) |
 
 ### [SessionCache]
@@ -1000,7 +1012,7 @@ Storage lifecycle worker. `batchSize` counts files, `maxRelatedTransfers` bounds
 | `interval` | `30000` ms (duration fallback) | `30s` | [StorageLifecycleScheduler:80](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/storage/StorageLifecycleScheduler.java#L80) |
 | `jammedTimeout` | `600000` ms (duration fallback) | - | [StorageLifecycleScheduler:81](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/storage/StorageLifecycleScheduler.java#L81) |
 | `maxRelatedTransfers` | `10000` | `10000` | [StorageLifecycleScheduler:170](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/storage/StorageLifecycleScheduler.java#L170) |
-| `maxUsageAge` | `120000` ms (duration fallback) | - | [MasterServer:3552](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L3552) |
+| `maxUsageAge` | `120000` ms (duration fallback) | - | [MasterServer:3598](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L3598) |
 | `stepBudget` | `10000` ms (duration fallback) | `10s` | [StorageLifecycleScheduler:128](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/storage/StorageLifecycleScheduler.java#L128) |
 | `timeRanges` | Empty list | - | [StorageLifecycleScheduler:82](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/storage/StorageLifecycleScheduler.java#L82) |
 
@@ -1010,12 +1022,12 @@ Asynchronous persistence. `*Size` means storage-worker thread count, **not queue
 
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
-| `eventDelay` | `30000` | `1000` | [MasterServer:8095](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8095) |
-| `eventMaxAuthorisedSize` | `0` | - | [MasterServer:8096](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8096) |
-| `eventSize` | `5` | `15` | [MasterServer:8094](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8094) |
-| `historyDelay` | `30000` | `1000` | [MasterServer:7909](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7909) |
-| `historyMaxAuthorisedSize` | `0` | - | [MasterServer:7910](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7910) |
-| `historySize` | `5` | `15` | [MasterServer:7908](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7908) |
+| `eventDelay` | `30000` | `1000` | [MasterServer:8158](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8158) |
+| `eventMaxAuthorisedSize` | `0` | - | [MasterServer:8159](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8159) |
+| `eventSize` | `5` | `15` | [MasterServer:8157](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8157) |
+| `historyDelay` | `30000` | `1000` | [MasterServer:7972](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7972) |
+| `historyMaxAuthorisedSize` | `0` | - | [MasterServer:7973](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7973) |
+| `historySize` | `5` | `15` | [MasterServer:7971](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7971) |
 | `notificationDelay` | `1000` | `45000` | [MasterServer:8806](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8806) |
 | `notificationSize` | `5` | `25` | [MasterServer:8805](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L8805) |
 | `providerDelay` | `30000` | `1000` | [ECaccessProvider:509](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/ECaccessProvider.java#L509) |
@@ -1028,8 +1040,8 @@ Asynchronous persistence. `*Size` means storage-worker thread count, **not queue
 | `ticketSize` | `0` | `1` | [TicketRepository:60](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/TicketRepository.java#L60) |
 | `ticketTimeOut` | `18000000` | - | [TicketRepository:62](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/TicketRepository.java#L62) |
 | `ticketTimeOutAfterCompletion` | `180000` | - | [TicketRepository:63](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/common/ecaccess/TicketRepository.java#L63) |
-| `transferDelay` | `250` | `1000` | [MasterServer:7761](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7761) |
-| `transferSize` | `5` | `25` | [MasterServer:7760](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7760) |
+| `transferDelay` | `250` | `1000` | [MasterServer:7824](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7824) |
+| `transferSize` | `5` | `25` | [MasterServer:7823](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/MasterServer.java#L7823) |
 
 ### [StreamPlug]
 

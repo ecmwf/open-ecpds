@@ -1,51 +1,57 @@
 <img src="img/OpenECPDS.svg" alt="OpenECPDS" width="500">
 
 > **Our mission with OpenECPDS is to keep data moving.**  
-> Inspired by operational excellence. Powered by open-source innovation.  
 > Acquire from anywhere. Deliver everywhere. Connect with confidence. Share without limits.
 
----
+OpenECPDS is an open-source data management platform developed at
+[ECMWF](https://www.ecmwf.int/). Built for demanding meteorological operations, it
+works with files from any domain: automate provider ingestion, distribute data to
+partners, and offer self-service access across on-premises and cloud environments.
 
-OpenECPDS is a mature, production-grade data management platform developed at [ECMWF](https://www.ecmwf.int/) and distributed as open-source software to encourage collaboration.
-
-**[Watch the introduction on YouTube ▶](https://www.youtube.com/watch?v=GQj0Q0Nd9to)**
-
-**Built for demanding meteorological operations, designed for any data domain.** OpenECPDS is **domain-agnostic**, not a meteorology-specific platform: its core transfers, stores and distributes files without requiring a particular scientific format or subject matter. Research, industry, public services and enterprise teams can use it to automate provider ingestion, distribute datasets to partners, and offer self-service data access across on-premises and cloud environments.
-
-See **[Why OpenECPDS?](https://ecmwf.github.io/open-ecpds/why-openecpds/)** for its benefits, potential use cases and comparison with Managed File Transfer platforms.
-
-It delivers three strategic services from a single system:
-
-| Service | Description |
+| Service | What it does |
 |---|---|
-| **Data Acquisition** | Automatic discovery and retrieval of data from remote providers |
-| **Data Dissemination** | Automatic distribution of data products to remote sites |
-| **Data Portal** | Pull/push access initiated by remote sites, with real-time monitoring |
+| **Data Acquisition** | Discovers and retrieves data from remote providers |
+| **Data Dissemination** | Distributes data products to remote sites |
+| **Data Portal** | Provides client-initiated upload and download access |
 
-Built on container technologies, it scales from a laptop to hundreds of systems managing petabytes of data. It supports a wide range of protocols (FTP, SFTP, HTTP/S, WebDAV, S3, GCS, Azure Blob, MQTT/WIS2, …) and integrates with object storage, MQTT brokers, and Kubernetes.
+OpenECPDS scales from a laptop to large deployments and supports protocols including
+FTP, SFTP, HTTPS, WebDAV, S3, cloud object storage and MQTT.
 
-### OpenECPDS in ten minutes — from first launch to real workflows
+[Watch the introduction](https://www.youtube.com/watch?v=GQj0Q0Nd9to) ·
+[Why OpenECPDS?](https://ecmwf.github.io/open-ecpds/why-openecpds/) ·
+[Documentation](https://ecmwf.github.io/open-ecpds/)
 
-A narrated introduction to the standalone environment, transfer controls, custom MQTT notifications, S3 access and the Monitor UI.
+### OpenECPDS in ten minutes
+
+A narrated introduction to the standalone environment, transfer controls, MQTT
+notifications, S3 access and the Monitor UI.
 
 https://github.com/user-attachments/assets/951b8fcf-59a8-4de8-b876-d73c2c99aec6
 
 ---
 
-## 🚀 Try It Now — No Build Required
+## 🚀 Try it now — no build required
 
-Experience the full OpenECPDS stack in a single command. The standalone image bundles MariaDB, Master, Data Mover, and Monitor — everything pre-configured and ready to go.
+The standalone image bundles the Master, Data Mover, Monitor, MariaDB and OpenBao
+in one container. It is intended for **evaluation, demos and local exploration**,
+not production.
 
-> **Requirements:** 4 GB RAM and 6 GB free disk recommended. See [System Requirements](https://ecmwf.github.io/open-ecpds/getting-started/requirements/) for details.
+**Requirements:** Docker 20.10+, 4 GB RAM recommended, 4.5 GB for the image and
+10 GB or more recommended for data. See the
+[standalone guide](https://ecmwf.github.io/open-ecpds/getting-started/standalone/)
+for minimum requirements and deployment details.
 
 ```bash
 docker run -d \
   --name standalone \
-  -v $(pwd)/ecpds-data:/data \
+  --stop-timeout 180 \
+  -v "$(pwd)/ecpds-data:/data" \
   -p 7443:7443 \
   -p 7022:7022 \
   -p 8443:8443 \
   -p 8883:8883 \
+  -p 127.0.0.1:9640:9640 \
+  -p 127.0.0.1:7640:7640 \
   -p 127.0.0.1:8080:8080 \
   -p 127.0.0.1:9404:9404 \
   -p 127.0.0.1:9405:9405 \
@@ -53,334 +59,88 @@ docker run -d \
   ghcr.io/ecmwf/open-ecpds/standalone:latest
 ```
 
-The database initialises automatically on first start. The `/data` volume persists everything across restarts.
+Start with an **empty** `./ecpds-data` directory and allow about 30 seconds for
+startup. The database and embedded vault initialize automatically. Preserve
+`./ecpds-data` and the matching image build: the volume is tied to that build. See
+[backup and recovery](https://ecmwf.github.io/open-ecpds/getting-started/standalone/#backup-and-recovery).
 
-> **Note:** The container uses a self-signed TLS certificate — accept the browser security warning on first visit.
-
-### Access
-
-| Service | URL | Credentials |
-|---|---|---|
-| Monitoring UI | `https://localhost:8443` | admin / admin2021 · monitor / monitor2021 · operator / operator2021 |
-| Data Portal (HTTPS) | `https://localhost:7443` | test / test2021 |
-| Data Portal (S3) | `https://localhost:7443/s3` | test / test2021 |
-| Data Portal (WebDAV) | `https://localhost:7443/webdav` | test / test2021 |
-| Data Portal (SFTP) | `sftp://localhost:7022` | test / test2021 |
-| MQTTS broker | `mqtts://localhost:8883` | test / test2021 |
-| Hawtio (JMX console) | `https://localhost:8080` | hawtio / hawtio2021 (Jolokia login: jolokia / jolokia2021) |
-
-### Exposed ports
-
-| Port | Service |
-|---|---|
-| `7443` | Data Mover — HTTPS portal |
-| `7022` | Data Mover — SFTP |
-| `8883` | Data Mover — MQTTS (MQTT over TLS) |
-| `8443` | Monitor — HTTPS UI |
-| `9640` | Master — ECpds CLI |
-| `8080` | Hawtio — authenticated HTTPS JMX console (preset Master, Monitor and Mover connections) |
-| `9404` / `9405` / `9406` | Prometheus JMX exporter — Master / Mover / Monitor |
-
-> **Note on FTP:** OpenECPDS fully supports FTP in production deployments. However, FTP passive mode (PASV) is not compatible with Docker port mapping — the server advertises its internal container address for data connections, which external clients cannot reach. For that reason, FTP is disabled in this standalone image. Use SFTP (port 7022) as a drop-in alternative for file transfers in Docker.
-
-> **Note on JMX monitoring:** The standalone image includes Hawtio and the Prometheus JMX exporter ([details](https://ecmwf.github.io/open-ecpds/monitoring/jmx-export/)). Point Prometheus/Grafana at `http://localhost:9404/metrics` (Master), `:9405` (Mover) and `:9406` (Monitor). The credentials above are for evaluation only, and the exporter endpoints are unauthenticated — keep these ports bound to localhost (as in the command above) and never expose them on an untrusted network.
-
-### Populate some data
-
-The standalone image ships with a few example destinations (e.g. `hourly_aq`), but they start out empty and switched off. Before testing the protocols below, log into the Monitoring UI and start one or two of them so there is some data to experiment with. This requires the container to have outbound Internet access, as these destinations acquire data from external providers:
-
-1. Open `https://localhost:8443` and log in as `admin` / `admin2021`.
-2. On the main page, in the **Transmission** section, select **Destinations**.
-3. Click a destination's name (e.g. `hourly_aq`) in the table to open its **Data** page.
-4. Click the green **Start Destination** (▶) button above the transfers table.
-
-Once started, the destination retrieves files from its source host and makes them available through the Data Portal, so the commands below have something to list and download.
-
-### Testing the protocols
-
-All examples below use the pre-configured `test / test2021` account. The container uses a self-signed certificate — pass the appropriate insecure/skip-verify flag for each tool.
-
-**S3** — using [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html):
-```bash
-aws configure set aws_access_key_id test
-aws configure set aws_secret_access_key test2021
-aws s3 ls s3:// --endpoint-url https://localhost:7443/s3 --no-verify-ssl
-```
-
-Or with [rclone](https://rclone.org/):
-```bash
-rclone lsd :s3: \
-  --s3-provider=Other \
-  --s3-endpoint=https://localhost:7443/s3 \
-  --s3-access-key-id=test \
-  --s3-secret-access-key=test2021 \
-  --s3-v2-auth \
-  --no-check-certificate
-```
-
-> **Note:** `--s3-v2-auth` selects AWS Signature V2 authentication. Use this setting with the rclone example to avoid `SignatureDoesNotMatch` errors from incompatible V4 request signing.
-
-**WebDAV** — using [curl](https://curl.se/):
-```bash
-# List root directory (PROPFIND)
-curl -k -u test:test2021 -X PROPFIND https://localhost:7443/webdav/
-```
-
-Or with [rclone](https://rclone.org/):
-```bash
-rclone lsd :webdav: \
-  --webdav-url=https://localhost:7443/webdav \
-  --webdav-vendor=other \
-  --webdav-user=test \
-  --webdav-pass=$(rclone obscure test2021) \
-  --no-check-certificate
-```
-
-Or mount directly from your OS file manager:
-
-- **macOS Finder:** Go → **Connect to Server…** (⌘K), enter `https://localhost:7443/webdav`, click **Connect**, then log in with `test` / `test2021`.
-- **Windows Explorer:** Right-click **This PC → Map network drive**, choose a drive letter, enter `https://localhost:7443/webdav` as the folder, check **Connect using different credentials** and log in with `test` / `test2021`.
-- **Linux (GNOME Files / Nautilus):** Go → **Connect to Server…**, enter `davs://localhost:7443/webdav`, log in with `test` / `test2021`.
-- **Linux (command-line):** mount with `davfs2`: `sudo mount -t davfs https://localhost:7443/webdav /mnt/webdav`
-
-> **Note:** All OS file managers will warn about the self-signed certificate — accept it to proceed.
-> The WebDAV share appears as a network drive alongside your local disks.
-
-**SFTP** — using the `sftp` command-line client:
-```bash
-sftp -P 7022 -o StrictHostKeyChecking=no test@localhost
-# Password: test2021
-```
-
-
-**MQTTS** — The broker uses TLS with a self-signed certificate.
-
-Using [mqttx](https://mqttx.app/cli) CLI (recommended — supports true `--insecure`):
-```bash
-mqttx sub \
-  -h localhost -p 8883 \
-  -l mqtts \
-  -u test -P test2021 \
-  --insecure \
-  -t '#'
-```
-
-### Try MQTT upload notifications
-
-The pre-configured **`mqtt_demo`** destination lets you try upload notifications
-without an external data provider. **Leave this destination stopped in the Monitor**:
-its standby settings keep uploaded files in **HOLD**, available for download without
-outbound delivery, and trigger MQTT publication.
-
-In one terminal, subscribe with [mqttx CLI](https://mqttx.app/cli):
+Retrieve the generated initial credentials as the container administrator:
 
 ```bash
-mqttx sub \
-  -h localhost -p 8883 \
-  -l mqtts \
-  -u test -P test2021 \
-  --insecure \
-  -t 'openecpds/demo/#'
+docker exec standalone cat /data/lib/standalone/initial-accounts
 ```
 
-Wait for a successful connection/subscription and leave it running. Messages are
-non-retained, so subscribing after publication will not replay them. `--insecure`
-is only for the evaluation container's self-signed certificate.
+This root-only file contains sensitive credentials: record them securely and
+remove it afterwards. It does not reflect later password changes. The REST API
+secret is stored separately; see
+[access instructions](https://ecmwf.github.io/open-ecpds/getting-started/standalone/#access).
 
-In a second terminal, create a small file and connect over SFTP:
+Open **[the Monitor](https://localhost:8443)** and sign in as `admin` using its
+generated password. The **[Data Portal](https://localhost:7443)** uses the `test`
+account; S3 has a separate generated secret. In the Monitor, open **Transmission
+→ Destinations**, select `hourly_aq` and click **Start Destination** to acquire
+sample data. This requires outbound Internet access.
 
-```bash
-printf 'Hello from the standalone MQTT demo!\n' > mqtt-demo.txt
-sftp -P 7022 test@localhost
-```
+> The initial TLS certificates are self-signed. For connections beyond a trusted
+> test environment, configure clients to verify a trusted certificate and
+> hostname. See [HTTPS certificate guidance](https://ecmwf.github.io/open-ecpds/getting-started/standalone/#trusting-or-replacing-the-https-certificate)
+> and [SFTP host-key verification](https://ecmwf.github.io/open-ecpds/getting-started/sftp-host-keys/).
 
-Enter password `test2021`, accept the host key after checking it is your evaluation
-container, then run at the SFTP prompt:
+The command publishes the portal, SFTP, Monitor and MQTT ports on all host
+interfaces. Restrict their exposure as appropriate. CLI, Hawtio and unauthenticated
+metrics ports are bound to localhost; keep them off untrusted networks. CLI
+connections are unencrypted: use an encrypted tunnel for remote access. See the
+[CLI guide](https://ecmwf.github.io/open-ecpds/getting-started/ecpds-cli/#using-the-cli-against-the-standalone-container).
 
-```text
-put mqtt-demo.txt /mqtt_demo/mqtt-demo.txt
-bye
-```
-
-Allow roughly a minute for asynchronous publication. The subscriber receives JSON
-on `openecpds/demo/mqtt-demo.txt`, including authenticated download links and, for
-files up to **16 KiB**, inline Base64 content. Base64 is not encryption.
-Verify the file through HTTPS:
-
-```bash
-curl --fail -k -u test:test2021 \
-  https://localhost:7443/ecpds/data/file/mqtt_demo/mqtt-demo.txt
-```
-
-In the Monitor, open **Operations → MQTT Activity** and filter on `mqtt_demo`.
-**ACCEPTED means broker acceptance, not proof of subscriber receipt.** Use a
-different filename for another test upload.
-
-See the [full MQTT upload walkthrough](https://ecmwf.github.io/open-ecpds/getting-started/standalone/#try-mqtt-upload-notifications)
-for troubleshooting and public endpoint configuration. For a remote container,
-replace `localhost` in the commands and update the destination's public endpoint
-settings so notification links use the reachable hostname and mapped ports.
-
-### Submitting files with the ecpds CLI
-
-The `ecpds` command-line client submits files directly to the Master Server (port **9640**).
-It is included in the standalone image — no separate installation needed:
-
-```bash
-docker exec standalone ecpds \
-  -host localhost -port 9640 \
-  -user test -pass test2021 \
-  -dest TEST \
-  /path/to/myfile.dat
-```
-
-Alternatively, pull the dedicated CLI image and point it at the container:
-
-```bash
-# Pull the CLI image
-docker pull ghcr.io/ecmwf/open-ecpds/cli:latest
-
-# Submit a file (Linux — use --network host to reach the standalone container)
-docker run --rm --network host \
-  -v /path/to/myfile.dat:/myfile.dat \
-  ghcr.io/ecmwf/open-ecpds/cli:latest \
-  -host localhost -port 9640 \
-  -user test -pass test2021 \
-  -dest TEST \
-  /myfile.dat
-```
-
-Or download a pre-compiled binary from the
-[GitHub Releases page](https://github.com/ecmwf/open-ecpds/releases) (`ecpds-amd64` /
-`ecpds-arm64`) and run it directly — the binary only requires OpenSSL:
-
-```bash
-curl -Lo /usr/local/bin/ecpds \
-  https://github.com/ecmwf/open-ecpds/releases/latest/download/ecpds-amd64
-chmod +x /usr/local/bin/ecpds
-ecpds -host localhost -port 9640 -user test -pass test2021 -dest TEST /path/to/myfile.dat
-```
-
-See [Getting the ecpds CLI](https://ecmwf.github.io/open-ecpds/getting-started/ecpds-cli/)
-for the full list of options and installation methods.
-
-### Logs
-
-```bash
-# All services (supervisord output)
-docker logs -f standalone
-
-# Individual service logs
-docker exec standalone tail -f /data/log/master/master.log
-docker exec standalone tail -f /data/log/mover/mover.log
-docker exec standalone tail -f /data/log/monitor/monitor.log
-```
-
-> **Note:** The standalone image runs with `DEBUG` logging enabled by default. This produces
-> verbose output that is useful for exploring how OpenECPDS processes transfers, connects to
-> data movers, and handles incoming requests. In a production deployment the log level can be
-> controlled via the `LOG_LEVEL` environment variable (e.g. `LOG_LEVEL=warn`).
+For protocol examples, MQTT notifications, logs and troubleshooting, continue to
+the **[standalone guide](https://ecmwf.github.io/open-ecpds/getting-started/standalone/)**.
 
 ---
 
 ## 📖 Documentation
 
-Browse the **[Documentation guide](https://ecmwf.github.io/open-ecpds/documentation-guide/)** for a map of all sections, search the [full documentation](https://ecmwf.github.io/open-ecpds/), or jump straight to a common task:
+Browse the [documentation guide](https://ecmwf.github.io/open-ecpds/documentation-guide/)
+or jump to a common task:
 
 | I want to… | Start here |
 |---|---|
 | Try OpenECPDS or understand how it works | [Standalone container](https://ecmwf.github.io/open-ecpds/getting-started/standalone/) · [Architecture overview](https://ecmwf.github.io/open-ecpds/architecture/overview/) |
-| Install and configure a deployment | [Installation](https://ecmwf.github.io/open-ecpds/getting-started/installation/) · [Kubernetes](https://ecmwf.github.io/open-ecpds/deployment/kubernetes/) · Service configuration: [Master](https://ecmwf.github.io/open-ecpds/configuration/master/), [Monitor](https://ecmwf.github.io/open-ecpds/configuration/monitor/), [Data Mover](https://ecmwf.github.io/open-ecpds/configuration/mover/) |
-| Set up data exchange | [Acquisition](https://ecmwf.github.io/open-ecpds/use-cases/acquisition/) · [Dissemination](https://ecmwf.github.io/open-ecpds/use-cases/dissemination/) · [Data Portal](https://ecmwf.github.io/open-ecpds/use-cases/data-portal/) · [Transfer modules](https://ecmwf.github.io/open-ecpds/transfer-modules/) · [Host Directory](https://ecmwf.github.io/open-ecpds/host-directory/) |
-| Notify consumers, replay events, or replicate a destination | [MQTT notifications](https://ecmwf.github.io/open-ecpds/notifications/mqtt-overview/) · [Notification history and Aviso replay](https://ecmwf.github.io/open-ecpds/notifications/history/) · [One-way replication with Aviso](https://ecmwf.github.io/open-ecpds/notifications/aviso-acquisition/) |
-| Operate, secure, or troubleshoot the service | [Monitor UI](https://ecmwf.github.io/open-ecpds/monitor-ui/overview/) · [TLS certificates](https://ecmwf.github.io/open-ecpds/administration/certificates/) · [Transfer statistics](https://ecmwf.github.io/open-ecpds/monitoring/transfer-statistics/) · [JMX and Prometheus](https://ecmwf.github.io/open-ecpds/monitoring/jmx-export/) · [Event logging](https://ecmwf.github.io/open-ecpds/event-logging/overview/) |
-| Automate, integrate, or contribute | [ECPDS CLI](https://ecmwf.github.io/open-ecpds/getting-started/ecpds-cli/) · [REST API](https://ecmwf.github.io/open-ecpds/rest-api/) · [Java API reference](https://ecmwf.github.io/open-ecpds/api-reference/) · [Contributing](https://ecmwf.github.io/open-ecpds/contributing/) |
+| Install and configure a deployment | [Installation](https://ecmwf.github.io/open-ecpds/getting-started/installation/) · [Kubernetes](https://ecmwf.github.io/open-ecpds/deployment/kubernetes/) · [Service configuration](https://ecmwf.github.io/open-ecpds/configuration/master/) |
+| Set up data exchange | [Acquisition](https://ecmwf.github.io/open-ecpds/use-cases/acquisition/) · [Dissemination](https://ecmwf.github.io/open-ecpds/use-cases/dissemination/) · [Data Portal](https://ecmwf.github.io/open-ecpds/use-cases/data-portal/) · [Transfer modules](https://ecmwf.github.io/open-ecpds/transfer-modules/) |
+| Notify consumers or replicate a destination | [MQTT](https://ecmwf.github.io/open-ecpds/notifications/mqtt-overview/) · [Notification history and Aviso](https://ecmwf.github.io/open-ecpds/notifications/history/) · [Aviso replication](https://ecmwf.github.io/open-ecpds/notifications/aviso-acquisition/) |
+| Operate or troubleshoot the service | [Monitor UI](https://ecmwf.github.io/open-ecpds/monitor-ui/overview/) · [TLS certificates](https://ecmwf.github.io/open-ecpds/administration/certificates/) · [Monitoring](https://ecmwf.github.io/open-ecpds/monitoring/jmx-export/) · [Event logging](https://ecmwf.github.io/open-ecpds/event-logging/overview/) |
+| Automate, integrate or contribute | [CLI](https://ecmwf.github.io/open-ecpds/getting-started/ecpds-cli/) · [REST API](https://ecmwf.github.io/open-ecpds/rest-api/) · [Java API](https://ecmwf.github.io/open-ecpds/api-reference/) · [Contributing](https://ecmwf.github.io/open-ecpds/contributing/) |
 
-[Changelog](https://ecmwf.github.io/open-ecpds/changelog/) · [Glossary](https://ecmwf.github.io/open-ecpds/glossary/) · [Support](https://ecmwf.github.io/open-ecpds/support/)
+[Changelog](https://ecmwf.github.io/open-ecpds/changelog/) ·
+[Glossary](https://ecmwf.github.io/open-ecpds/glossary/) ·
+[Support](https://ecmwf.github.io/open-ecpds/support/)
 
 ---
 
-## 🛠 Going Further — Build from Source
+## 🛠 Build from source
 
-To build the platform from source and develop against it, you need **Docker** (with the default socket enabled). Tested on Linux, macOS (Intel/Apple Silicon), and Windows WSL 2.
-
-The development container includes Oracle GraalVM JDK `25.0.5.1` and `kubectl`
-with Kustomize for rendering the native Kubernetes manifests. See the [tooling versions](https://ecmwf.github.io/open-ecpds/support/#tooling-dependencies)
-for the full list.
-
-> Run `make help` at any time to list all available targets.
-
-### 1 — Outside the development container
+From the repository root, with Docker available:
 
 ```bash
-# Build the development container image, start it, and open a shell inside it
 make dev
 ```
 
-If the container already exists, you can reuse it without rebuilding, replace it
-after a successful build, or cancel. Replacement discards container-only files,
-not bind-mounted host files.
-
-Alternatively, download a published dev image instead of building it:
+Inside the development container:
 
 ```bash
-make dev-pull
-```
-
-Run this on the host from the repository root. It detects the architecture
-(override with `ARCH=amd64` or `ARCH=arm64`) and offers to reuse or replace an
-existing container, or cancel. This requires a published architecture tag.
-See the [installation guide](https://ecmwf.github.io/open-ecpds/getting-started/installation/#download-the-dev-image-instead-of-building-it)
-for authentication and runtime credential details.
-
-### 2 — Inside the development container
-
-```bash
-# Compile Java sources, build RPM packages, and create Docker images
 make build
-
-# Start all OpenECPDS services
 cd run/bin/ecpds && make up
 ```
 
-The monitoring UI is then available at `https://localhost:3443` and the data portal at `https://localhost:4443`.
+The Monitor is available at `https://localhost:3443` and the Data Portal at
+`https://localhost:4443`. To build the standalone image instead, run `make build-sa`
+inside the development container. Use `make help` to list available targets.
 
-Local images use the `open-ecpds/*` namespace. Containers use short names such as
-`master`, `mover`, `monitor` and `standalone`.
-Use service keys in Makefile commands, for example `make logs svc=master`.
-Registry images are published under `ghcr.io/ecmwf/open-ecpds/*`.
-
-For local OpenBao testing, run `make start-openbao`. On first use it generates
-a development CA and a server certificate for `localhost`, `127.0.0.1`, and
-`openbao` using OpenSSL. It may prompt for `sudo` to make the server key
-readable by the vault's UID 100 without making it world-readable. Existing
-`tls.crt` and `tls.key` in `run/etc/ecpds/openbao/tls/` are reused, not replaced.
-Use `run/etc/ecpds/openbao/tls/ca.crt` to verify the generated certificate and
-keep the CA private key in `run/etc/ecpds/openbao/operator/` offline.
-
-The HTTPS port is published on host loopback only. `make stop-openbao` preserves
-vault data. Initialize and unseal the vault separately as described in the
-[Kubernetes guide](https://ecmwf.github.io/open-ecpds/deployment/kubernetes/#openbao-credential-vault).
-For the single-container application setup, see
-[Standalone OpenBao](https://ecmwf.github.io/open-ecpds/getting-started/standalone/#optional-openbao-credential-rotation).
-
-For optional local OpenTelemetry testing, run `make start-otel` from the
-repository root, then `make logs-otel` to inspect decoded logs, traces and
-metrics. Use `make stop-otel` when finished. This diagnostic Collector is not
-started by the commands above and is not durable telemetry storage.
-See [local telemetry setup](https://ecmwf.github.io/open-ecpds/getting-started/ide-setup/#local-opentelemetry-and-journal-testing)
-for JVM configuration and container networking.
-
-See [Getting Started](https://ecmwf.github.io/open-ecpds/getting-started/requirements/) for the full walkthrough, including log inspection, stopping services, IDE setup, and Kubernetes deployment.
-
-### Building the standalone image locally
-
-```bash
-# Inside the development container:
-make build-sa
-```
-
-This stages the RPMs (including the `ecpds` CLI binary) into `docker/ecpds/standalone/` and builds the `open-ecpds/standalone:<tag>` image locally.
+See the [installation guide](https://ecmwf.github.io/open-ecpds/getting-started/installation/)
+for the complete development workflow, including `make dev-pull` and its
+requirements. For optional local services, see
+[OpenBao setup](https://ecmwf.github.io/open-ecpds/deployment/kubernetes/#openbao-credential-vault)
+and [OpenTelemetry testing](https://ecmwf.github.io/open-ecpds/getting-started/ide-setup/#local-opentelemetry-and-journal-testing).
 
 ---
 

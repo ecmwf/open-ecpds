@@ -450,7 +450,7 @@ $(document).ready(function () {
             <div class="form-check mb-0">
               <input class="form-check-input api-perm-chk" type="checkbox" id="apc-showSensitiveInfo" data-group="datavisibility" value="showSensitiveInfo">
               <label class="form-check-label small font-monospace" for="apc-showSensitiveInfo"
-                     title="Include sensitive fields (e.g. host, incoming-user and web-user passwords, and destination-metadata fields of type &quot;password&quot;) in REST JSON responses. Disabled by default. This does not grant access to any service - it only controls whether sensitive fields are included in responses already permitted by other checkboxes.">showSensitiveInfo</label>
+                     title="Include host passwords and destination-metadata fields of type &quot;password&quot; in otherwise permitted REST responses. Data User and Web User passwords are never returned.">showSensitiveInfo</label>
             </div>
           </div>
         </div>

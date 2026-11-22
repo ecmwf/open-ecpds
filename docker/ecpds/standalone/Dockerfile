@@ -1,3 +1,4 @@
+FROM docker.io/openbao/openbao:2.7.2@sha256:5046911075e137e154ce49ab051502f4ec7cf367d484ae4a4dce665d9b90561f AS openbao
 FROM open-ecpds/java:graalvm
 
 ARG TAG
@@ -18,17 +19,17 @@ ENV LOG_ROLLOVER_SIZE_MAX=100MB
 ENV LOG_ROLLOVER_SIZE_KEEP=5
 ENV LOG_ROLLOVER_DATE_PATTERN=dd-MM-yyyy
 ENV LOG_ROLLOVER_DATE_KEEP=5d
-# Evaluation-only credentials for local JMX and Hawtio access.
+# Local JMX and Hawtio identities; passwords are generated on first startup.
 ENV JOLOKIA_USER=jolokia
-ENV JOLOKIA_PASSWORD=jolokia2021
 ENV JOLOKIA_POLICY_LOCATION=file:/etc/ecpds/jolokia-access.xml
 ENV HAWTIO_USER=hawtio
-ENV HAWTIO_PASSWORD=hawtio2021
 ENV HAWTIO_GATEWAY_PORT=8080
 # The container's stdout is not rotated, so do not log every Hawtio request there.
 ENV HAWTIO_ACCESS_LOG=off
 ENV HAWTIO_PRESET_CONNECTIONS="master=http://127.0.0.1:2062/jolokia,monitor=http://127.0.0.1:3062/jolokia,mover=http://127.0.0.1:4062/jolokia"
 ENV JAVA_OPTS="-Dhawtio.proxyAllowlist=127.0.0.1,localhost"
+ENV ECPDS_OPENBAO_ENABLED=embedded
+ENV ECPDS_INTERNAL_MTLS=true
 
 # ── Master settings ────────────────────────────────────────────────────────────
 ENV DATABASE_ALIAS="sequential://127.0.0.1/ecpds"
@@ -41,13 +42,7 @@ ENV METADATA_MISSING_CONTACTS_MAIL=""
 ENV SMTP_HOST=""
 ENV SMTP_FROM=""
 ENV OPSVIEW_HOST=""
-# Shared secret for the ecpds CLI <-> Master-Server challenge-response authentication
-ENV CLI_SHARED_SECRET="dboUz95GH4U8LihvnJPGfBce5/rFJdbYXoZesRXBIyQ="
-
 # ── Mover settings ─────────────────────────────────────────────────────────────
-ENV KEYSTORE_PASSWORD=s5w8g771
-# Shared secret for the Mover/Proxy REST control channel authentication (independent from CLI_SHARED_SECRET above)
-ENV RCC_SHARED_SECRET="2z14vqbu75XB3IRsddH0gztpXHbUGg9e2GaX3jFq3p0="
 ENV MOVER_TITLE="Personal Data Store (PDS)"
 ENV MOVER_COLOR="#0079d3"
 ENV OPERATION=yes
@@ -60,12 +55,11 @@ ENV MONITOR_NICKNAME="PDS"
 ENV MONITOR_TITLE="Personal Data Store"
 ENV MONITOR_COLOR="#0079d3"
 
-# ── Database settings ──────────────────────────────────────────────────────────
-ENV MYSQL_ROOT_PASSWORD=ecpds2020!
-
 # ── Install MariaDB, tools, and supervisord ────────────────────────────────────
-RUN dnf -y install mariadb-server lbzip2 zstd nmap mtr supervisor nginx openssl && \
+RUN dnf -y install mariadb-server lbzip2 zstd nmap mtr supervisor nginx openssl jq && \
     dnf clean all
+COPY --from=openbao /usr/bin/bao /usr/local/bin/bao
+COPY --from=openbao /licenses/mozilla.txt /usr/share/licenses/openbao/mozilla.txt
 
 # The base image's SDKMAN installation is below /root and cannot be traversed
 # by the isolated service identities. Keep the same JDK in an accessible path.
@@ -142,6 +136,9 @@ RUN mkdir -p /etc/ecpds/default /usr/local/ecpds/standalone && \
 RUN sed -i 's/^\(\[Server\]\)$/\1\nallowPasswordOn=.*/' \
         /usr/local/ecpds/master/conf/ecmwf.properties
 
+# Older staged RPMs may still contain the former shared standalone API client.
+RUN sed -i '/^api=api2021:\.\*$/d' /usr/local/ecpds/master/conf/ecmwf.properties
+
 # ── Disable FTP plugin (not needed in standalone) ─────────────────────────────
 RUN sed -i 's/^ftp=ecmwf\.common\.ftpd\.FtpPlugin/#ftp=ecmwf.common.ftpd.FtpPlugin/' \
         /usr/local/ecpds/master/conf/ecmwf.properties \
@@ -152,6 +149,9 @@ RUN sed -i 's/^ftp=ecmwf\.common\.ftpd\.FtpPlugin/#ftp=ecmwf.common.ftpd.FtpPlug
 RUN if ! grep -q '^\[OpenBao\]$' /usr/local/ecpds/master/conf/ecmwf.properties; then \
         printf '\n[OpenBao]\nenabled=no\naddress=https://openbao:8200\nmount=ecpds\ntokenFile=/run/ecpds/openbao/token\n' \
             >> /usr/local/ecpds/master/conf/ecmwf.properties; \
+    fi && \
+    if ! grep -q '^\[DatabaseEncryption\]$' /usr/local/ecpds/master/conf/ecmwf.properties; then \
+        printf '\n[DatabaseEncryption]\n' >> /usr/local/ecpds/master/conf/ecmwf.properties; \
     fi
 
 # ── Mover: bind service ports on all interfaces (not loopback only) ───────────
@@ -161,10 +161,14 @@ RUN if ! grep -q '^\[OpenBao\]$' /usr/local/ecpds/master/conf/ecmwf.properties; 
 RUN sed -i \
     's/listenAddress=\${Login\[externalAddress\]}/listenAddress=0.0.0.0/g' \
     /usr/local/ecpds/mover/conf/ecmwf.properties
+RUN sed -i 's|SSLKeyStore=${monitor.etc}/ecpds-monitor.pfx|SSLKeyStore=/data/lib/monitor/tls/ecpds-monitor.pfx|' \
+        /usr/local/ecpds/monitor/conf/ecmwf.properties && \
+    sed -i 's|SSLKeyStore=${mover.etc}/ecpds-mover.pfx|SSLKeyStore=/data/lib/mover/tls/ecpds-mover.pfx|' \
+        /usr/local/ecpds/mover/conf/ecmwf.properties
 
 # ── MariaDB datadir → /data/db ────────────────────────────────────────────────
 RUN mkdir -p /etc/my.cnf.d && \
-    printf '[mysqld]\ndatadir=/data/db\nsocket=/run/mysqld/mysqld.sock\ncharacter_set_server=utf8mb4\ncollation_server=utf8mb4_unicode_ci\n\n[client]\nsocket=/run/mysqld/mysqld.sock\ndefault_character_set=utf8mb4\n' \
+    printf '[mysqld]\ndatadir=/data/db\nsocket=/run/mysqld/mysqld.sock\nbind-address=127.0.0.1\ncharacter_set_server=utf8mb4\ncollation_server=utf8mb4_unicode_ci\n\n[client]\nsocket=/run/mysqld/mysqld.sock\ndefault_character_set=utf8mb4\n' \
         > /etc/my.cnf.d/zz-ecpds-standalone.cnf
 
 # ── Isolate service processes ──────────────────────────────────────────────────
@@ -173,9 +177,11 @@ RUN mkdir -p /etc/my.cnf.d && \
 RUN groupadd --system --gid 12001 ecpds-master && \
     groupadd --system --gid 12002 ecpds-mover && \
     groupadd --system --gid 12003 ecpds-monitor && \
+    groupadd --system --gid 12005 ecpds-openbao && \
     useradd --system --uid 12001 --gid ecpds-master --no-create-home --shell /sbin/nologin ecpds-master && \
     useradd --system --uid 12002 --gid ecpds-mover --no-create-home --shell /sbin/nologin ecpds-mover && \
-    useradd --system --uid 12003 --gid ecpds-monitor --no-create-home --shell /sbin/nologin ecpds-monitor
+    useradd --system --uid 12003 --gid ecpds-monitor --no-create-home --shell /sbin/nologin ecpds-monitor && \
+    useradd --system --uid 12005 --gid ecpds-openbao --no-create-home --shell /sbin/nologin ecpds-openbao
 
 # ── Configuration and startup scripts ─────────────────────────────────────────
 COPY ecpds.sql /ecpds-init.sql
@@ -187,15 +193,25 @@ RUN mkdir -p /opt/hawtio/classes && \
     javac -d /opt/hawtio/classes -cp "/opt/hawtio/lib/*" /opt/hawtio/HawtioLauncher.java && \
     rm /opt/hawtio/HawtioLauncher.java && \
     sed -i -e '/^user nginx;$/d' \
-        -e 's#error_log /dev/stderr;#error_log /run/hawtio/nginx-error.log;#' /entrypoint.sh && \
+        -e 's#error_log /dev/stderr;#error_log /run/hawtio/nginx-error.log;#' \
+        -e 's#chmod 0644 /run/hawtio/htpasswd#chmod 0600 /run/hawtio/htpasswd#' \
+        -e 's#chmod 0755 /run/hawtio$#chmod 0700 /run/hawtio#' /entrypoint.sh && \
     chmod 0755 /entrypoint.sh
 COPY supervisord.conf /etc/supervisord.conf
-COPY entrypoint.sh start-master.sh start-mover.sh start-monitor.sh start-hawtio.sh \
+COPY entrypoint.sh check-data-version.sh data-lock.sh healthcheck.sh internal-rmi-tls.sh renew-internal-rmi-tls.sh start-master.sh start-mover.sh start-monitor.sh start-hawtio.sh start-openbao.sh openbao-operator.sh \
      /usr/local/ecpds/standalone/
+COPY openbao.hcl openbao-policy.hcl /etc/ecpds/
+COPY Dockerfile /tmp/standalone-Dockerfile
 RUN chmod +x /usr/local/ecpds/standalone/*.sh && \
     mkdir -p /run/ecpds/openbao /etc/pki/ca-trust/source/anchors && \
     chown ecpds-master:ecpds-master /run/ecpds/openbao && \
-    chmod 0700 /run/ecpds/openbao
+    chmod 0700 /run/ecpds/openbao && \
+    openssl rand -hex 32 > /etc/ecpds/standalone-build-id && \
+    printf '%s\n' "${TAG:-unversioned}" > /etc/ecpds/standalone-release && \
+    rm /tmp/standalone-Dockerfile
+
+HEALTHCHECK --interval=30s --timeout=15s --start-period=120s --retries=3 \
+    CMD ["/usr/local/ecpds/standalone/healthcheck.sh"]
 
 # ── Single persistent volume ───────────────────────────────────────────────────
 # Mount /data to persist all service data, logs, and the database across restarts

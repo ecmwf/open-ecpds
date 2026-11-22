@@ -42,7 +42,15 @@ public class IncomingUser extends DataBaseObject {
     protected String INU_ID;
 
     /** The inu password. */
-    protected String INU_PASSWORD;
+    protected transient String INU_PASSWORD;
+    protected transient String INU_PASSWORD_HASH;
+    protected transient String INU_S3_SECRET;
+
+    private String newPassword;
+    private String newS3Secret;
+    private boolean disableS3Secret;
+    private boolean passwordSet;
+    private String s3CredentialStatus = "Not set";
 
     /** The inu comment. */
     protected String INU_COMMENT;
@@ -69,7 +77,7 @@ public class IncomingUser extends DataBaseObject {
     protected boolean INU_SYNCHRONIZED;
 
     /** The inu portal service. */
-    protected String INU_PORTAL_SERVICE;
+    protected String INU_PORTAL_SERVICE = "standard-login";
 
     /** The inu verify token. */
 
@@ -136,7 +144,7 @@ public class IncomingUser extends DataBaseObject {
      * @return the password
      */
     public String getPassword() {
-        return INU_PASSWORD;
+        return newPassword;
     }
 
     /**
@@ -146,7 +154,62 @@ public class IncomingUser extends DataBaseObject {
      *            the new password
      */
     public void setPassword(final String param) {
-        INU_PASSWORD = param;
+        newPassword = param;
+    }
+
+    public String legacyPassword() {
+        return INU_PASSWORD;
+    }
+
+    public String passwordHash() {
+        return INU_PASSWORD_HASH;
+    }
+
+    public String encryptedS3Secret() {
+        return INU_S3_SECRET;
+    }
+
+    public void setNewS3Secret(final String secret) {
+        newS3Secret = secret;
+    }
+
+    String newS3Secret() {
+        return newS3Secret;
+    }
+
+    public void setDisableS3Secret(final boolean disable) {
+        disableS3Secret = disable;
+    }
+
+    boolean disableS3Secret() {
+        return disableS3Secret;
+    }
+
+    public boolean hasPassword() {
+        return passwordSet || INU_PASSWORD_HASH != null || INU_PASSWORD != null && !INU_PASSWORD.isEmpty();
+    }
+
+    public String s3CredentialStatus() {
+        return s3CredentialStatus;
+    }
+
+    public IncomingUser withoutCredentials() {
+        final var copy = (IncomingUser) clone();
+        copy.passwordSet = hasPassword();
+        if ("".equals(INU_S3_SECRET)) {
+            copy.s3CredentialStatus = "Disabled";
+        } else if (INU_S3_SECRET != null) {
+            copy.s3CredentialStatus = "Separate secret set";
+        } else if (INU_PASSWORD != null && !INU_PASSWORD.isEmpty()) {
+            copy.s3CredentialStatus = "Legacy secret retained";
+        }
+        copy.INU_PASSWORD = null;
+        copy.INU_PASSWORD_HASH = null;
+        copy.INU_S3_SECRET = null;
+        copy.newPassword = null;
+        copy.newS3Secret = null;
+        copy.disableS3Secret = false;
+        return copy;
     }
 
     /**

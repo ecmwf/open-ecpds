@@ -9,6 +9,20 @@ ready to use. No build step, no manual database setup, no separate compose file 
     It is not intended for production use. For a full deployment, see
     [Installation](installation.md) and [First Run](first-run.md).
 
+## Architecture at a glance
+
+![Data flows from providers to the Data Mover for acquisition and from the Mover to customers for dissemination. The Mover includes the Data Portal. Users connect to one container holding the Master, Mover, Monitor, MariaDB and OpenBao, with /data mounted on persistent host storage.](../img/Figure28.png)
+
+The Master schedules transfers, the Data Mover handles data protocols, and the
+Monitor provides the UI and REST API. MariaDB stores the database; OpenBao is
+the credential vault and is enabled by default. The arrows show data flow,
+not which side initiates a network connection.
+
+The services run together in one container; `/data` is mounted from the host.
+Preserve and back up the host data directory to retain the environment across
+container recreation. Externally supplied keys and secrets need their own
+backups; see [backup and recovery](#backup-and-recovery).
+
 ## Requirements
 
 | Resource | Minimum | Recommended |
@@ -23,11 +37,14 @@ ready to use. No build step, no manual database setup, no separate compose file 
 ```bash
 docker run -d \
   --name standalone \
-  -v $(pwd)/ecpds-data:/data \
+  --stop-timeout 180 \
+  -v "$(pwd)/ecpds-data:/data" \
   -p 7443:7443 \
   -p 7022:7022 \
   -p 8443:8443 \
   -p 8883:8883 \
+  -p 127.0.0.1:9640:9640 \
+  -p 127.0.0.1:7640:7640 \
   -p 127.0.0.1:8080:8080 \
   -p 127.0.0.1:9404:9404 \
   -p 127.0.0.1:9405:9405 \
@@ -35,120 +52,25 @@ docker run -d \
   ghcr.io/ecmwf/open-ecpds/standalone:latest
 ```
 
-Start with an empty `/data` volume to initialise the database. Standalone does not
-migrate existing databases. The volume persists everything across ordinary
-restarts. Wait about 30 seconds for all services to become available.
+Start with an empty `/data` volume to initialise the database. The embedded
+vault initializes and unseals automatically. A build-specific
+marker is recorded there; the same image build can reuse the volume across
+restarts or recreation. A different build, or a nonempty directory without a
+marker, is rejected without deleting anything. Restore the matching image or
+map a different empty directory. Keep the image as well as a backup of the data.
+Wait about 30 seconds for all
+services to become available.
 
-## Optional OpenBao credential rotation
-
-Standalone uses configured Host credentials by default and does not require OpenBao.
-Enable OpenBao if you want to use self-service credential rotation.
-It uses a separate OpenBao container with persistent Raft storage and
-TLS; OpenBao has no published host port and is reachable only over the Compose
-network. The standalone Master runs under its own Linux identity. Mover and
-Monitor use separate identities; Hawtio shares Monitor's identity to access its
-TLS keystore. None can read the Master token or inspect
-the Master process environment/file descriptors. The root-owned supervisor and
-container administrator remain trusted.
-
-The standalone authentication flow uses local-password reauthentication only;
-standalone does not provide the identity-provider MFA option. Enabling this
-backend does **not** enable credential rotation by itself. Configure the
-[rotation prerequisites and feature settings](../deployment/kubernetes.md#credential-rotation-enablement)
-on the Master, Monitor and participating Movers before enabling the action.
-
-1. Build the optional OpenBao image and standalone image. From the repository's
-   `docker` directory, stage the normal standalone inputs and build
-   `open-ecpds/openbao:2.7.2` and the desired standalone image tag:
-
-   ```bash
-   make get-rpms
-   make build-openbao ARCH=amd64
-   make build-sa ARCH=amd64
-   ```
-
-   Use the local standalone tag produced by `build-sa` in `STANDALONE_IMAGE`,
-   or select the matching GHCR tag. Use a Java 25 base image when building
-   the standalone image from the OpenECPDS RPMs.
-2. From `docker/ecpds/standalone`, start the vault with the local launcher:
-
-   ```bash
-   bash openbao/standalone-openbao-start.sh
-   ```
-
-   The launcher uses OpenSSL to generate the development CA and server certificate
-   on first use and may prompt for `sudo` to set the server key's ownership.
-   It reuses existing `tls.crt`, `tls.key`, and `ca.crt` in `openbao/tls/` without
-   replacing them. Keep `openbao/operator/ca.key` offline and out of the
-   containers. For a shared environment, supply a certificate issued by the site's
-   trusted CA and grant the vault's UID 100 read access to the private key.
-3. Initialize the vault once. Protect the initialization output
-   as recovery material; split and store the five key shares separately offline.
-   Never put these keys or the initial root token in Compose environment variables,
-   command-line arguments, image layers, or the Raft volume.
-
-   ```bash
-   umask 077
-   ./openbao/standalone-openbao-control.sh init > openbao/operator/init-response.json
-   ```
-
-   Enter three distinct shares when prompted by `unseal` (run it three times):
-
-   ```bash
-   ./openbao/standalone-openbao-control.sh unseal
-   ```
-
-4. Configure the KV v2 mount and Master policy, then issue a 30-day,
-   non-renewable Master token. Both commands prompt for the root token without
-   echoing it. Store the generated application token with the protected helper:
-
-   ```bash
-   ./openbao/standalone-openbao-control.sh bootstrap
-   ./openbao/standalone-openbao-control.sh issue-token
-   ./openbao/standalone-openbao-save-token.sh
-   ./openbao/standalone-openbao-control.sh revoke-root
-   ```
-
-   The token file is created mode `0600`; keep it outside version control and
-   replace it before expiry. Revoking the initial root token leaves only the
-   least-privilege application token for runtime access. After separately storing
-   the unseal shares, remove the local initialization response. To replace the
-   application token, first use the recovery shares to generate a temporary root
-   token, issue the replacement, and revoke that root token. Remove the old token
-   file, use the helper to save its replacement, then recreate the container to
-   remount the new file and copy it into the Master-only `/run` path:
-
-   ```bash
-   docker compose -f compose.openbao.yml up -d --force-recreate standalone
-   ```
-5. Start the standalone service using the opt-in Compose file:
-
-   ```bash
-   STANDALONE_IMAGE=ghcr.io/ecmwf/open-ecpds/standalone:latest \
-     docker compose -f compose.openbao.yml up -d standalone
-   ```
-
-The entrypoint installs only the public CA certificate into the Java trust store
-and copies the protected token to a `0600` runtime file owned by the Master.
-Ordinary `docker run` startup does not require OpenBao. OpenBao data survives restarts
-and `docker compose down`; do not use `down -v` unless you intend to erase it.
-After a host/container restart, OpenBao remains sealed and requires the operator
-to enter the threshold of offline shares again. There is deliberately no
-auto-unseal key stored beside the encrypted Raft data.
-
-If the initial root token is lost while the recovery shares remain available,
-use OpenBao's `operator generate-root` workflow inside the vault container with
-the required offline shares. If the shares are lost, restore both an encrypted
-Raft backup and its separately protected recovery material; the data volume
-alone is not a recovery backup. Revoke expired/replaced application tokens
-through OpenBao after confirming the Master is using the replacement.
-
-For automated regression commands, see
-[Credential rotation checks](../contributing.md#credential-rotation-checks).
+Standalone holds an advisory lock on `/data/.standalone.lock` while it runs.
+A second standalone container using the same volume fails to start. Use storage
+that supports shared file locks, and do not remove or replace the lock file
+while a container is running. The lock does not protect against non-cooperating
+programs or make a running database safe to copy.
 
 !!! note "Self-signed certificate"
-    The container uses a self-signed TLS certificate. Accept the browser security
-    warning on first visit, or pass `--insecure` / `--no-verify-ssl` to CLI tools.
+    The container initially uses self-signed TLS certificates. For any service
+    accessible beyond a trusted test environment, configure clients to verify a
+    trusted certificate and hostname instead of bypassing certificate checks.
 
 ## Access
 
@@ -159,28 +81,112 @@ For automated regression commands, see
 
 | Service | URL | Credentials |
 |---|---|---|
-| Monitoring UI | `https://localhost:8443` | `admin` / `admin2021` · `monitor` / `monitor2021` · `operator` / `operator2021` |
-| REST API | `https://localhost:8443/ecpds/v1/` | `api` / `api2021` |
-| Data Portal (HTTPS) | `https://localhost:7443` | `test` / `test2021` |
-| Data Portal (S3) | `https://localhost:7443/s3` | `test` / `test2021` |
-| Data Portal (WebDAV) | `https://localhost:7443/webdav` | `test` / `test2021` |
-| Data Portal (SFTP) | `sftp://localhost:7022` | `test` / `test2021` |
-| MQTTS broker | `mqtts://localhost:8883` | `test` / `test2021` |
-| Hawtio | `https://localhost:8080` | `hawtio` / `hawtio2021` |
+| Monitoring UI | `https://localhost:8443` | `admin`, `monitor`, or `operator` / generated password |
+| REST API | `https://localhost:8443/ecpds/v1/` | `api` / generated secret |
+| Data Portal (HTTPS) | `https://localhost:7443` | `test` / generated password |
+| Data Portal (S3) | `https://localhost:7443/s3` | `test` / separate generated S3 secret |
+| Data Portal (WebDAV) | `https://localhost:7443/webdav` | `test` / generated password |
+| Data Portal (SFTP) | `sftp://localhost:7022` | `test` / generated password |
+| MQTTS broker | `mqtts://localhost:8883` | `test` / generated password |
+| Hawtio | `https://localhost:8080` | `hawtio` / generated password |
+
+Retrieve the generated passwords and S3 secret as the container administrator with
+`docker exec standalone cat /data/lib/standalone/initial-accounts`. The file is
+root-only; store its contents securely and remove it after recording them. Password
+changes in the UI do not update this initial file. The API secret is in the separate
+root-only `/data/lib/standalone/api-client-secret` file.
 
 Hawtio includes preset connections for the Master, Monitor, and Mover Jolokia agents.
-When prompted by Hawtio, use `jolokia` / `jolokia2021` for the Jolokia login. These
-credentials are for evaluation only; do not expose the standalone image to an untrusted
-network.
+When prompted by Hawtio, use `jolokia` and the generated Jolokia password.
 
 Hawtio is served over HTTPS using the same keystore as the Monitor UI
-(`/etc/ecpds/monitor/ecpds-monitor.pfx`), so the browser shows the same self-signed
+(`/data/lib/monitor/tls/ecpds-monitor.pfx`), so the browser shows the same self-signed
 certificate warning. Hawtio reads the certificate at startup: after replacing the Monitor
 certificate, restart Hawtio with `docker exec standalone supervisorctl restart hawtio`.
 Set `HAWTIO_TLS_KEYSTORE` to another PKCS#12 file to use a different certificate, or to
 `none` to fall back to plain HTTP.
 
-## Exposed ports
+### Trusting or replacing the HTTPS certificate
+
+Sign in as an administrator and open **Administration → Certificates**
+(`/do/admin/certificates`). Generate a self-signed certificate for the hostname
+clients use, or import a certificate issued by a trusted CA with the required
+subject alternative names. Deploy the Monitor certificate to the Data Mover from
+the same page. Restart Hawtio as described above so it loads the new certificate.
+Certificate changes affect client connections and should be planned in advance.
+
+For a self-signed certificate, download the **public** Monitor certificate from
+that page and verify its fingerprint over a trusted, independent channel before
+installing it as a trust anchor on clients. For example, after saving it as
+`monitor-cert.pem`, use `curl --cacert monitor-cert.pem https://hostname:8443/`.
+The hostname in the URL must match a certificate subject alternative name.
+Repeat the trust configuration when replacing the certificate; do not distribute
+the private key or disable verification as a substitute for trust.
+
+### Internal service connections
+
+The Master, Monitor and Mover use mutual TLS for their internal RMI callbacks by
+default. First startup creates a private internal CA and separate service
+identities under `/data`; the CA private key is root-only and each service's
+private key is restricted to that service. The RMI trust store contains only
+this CA and does not replace the JVM's normal trust store for outbound HTTPS.
+The certificates establish membership in the internal CA, not separate
+authorization for each service role. These internal ports should not be
+published to untrusted networks.
+
+An empty installation can explicitly opt out with `-e ECPDS_INTERNAL_MTLS=false`;
+this disables mutual TLS and is not suitable for production. Once initialized
+with mutual TLS, the same data directory cannot be restarted with it disabled.
+Back up the internal CA and service keys with `/data`. There is not yet a
+need to renew individual keys independently: replace the CA and all three
+service identities together, with the container stopped. This interrupts the
+service and invalidates the old internal identities. Mutual TLS alone does not
+enable Host credential rotation.
+
+Monitor the internal CA expiry with:
+
+```bash
+docker exec standalone openssl x509 -in /data/lib/standalone/internal-rmi-ca/ca.crt -noout -enddate
+```
+
+Before expiry, stop the container cleanly and take and verify a stopped-volume
+backup as described in [Backup and recovery](#backup-and-recovery). Then use the
+**same image build** and data mount to replace the internal identities. For the
+bind mount shown above:
+
+```bash
+image=$(docker inspect --format '{{.Image}}' standalone)
+docker stop -t 180 standalone
+```
+
+Take and verify the stopped-volume backup. Then run:
+
+```bash
+docker run --rm --network none \
+  -v "$(pwd)/ecpds-data:/data" \
+  --entrypoint /usr/local/ecpds/standalone/renew-internal-rmi-tls.sh \
+  "$image"
+```
+
+Only if renewal succeeds, restart the original container:
+
+```bash
+docker start standalone
+```
+
+Unseal OpenBao again if using manual mode, and verify service health and
+transfers. The renewal command retains the previous private material in a
+root-only `internal-rmi-renewal.*` directory under `/data/lib/standalone`;
+protect it as part of the backup. If renewal fails or is interrupted, do not
+remove the incomplete marker or retry against a partially replaced volume:
+restore the stopped-volume backup. A second running standalone container is
+refused by the data-volume lock.
+
+## Service ports
+
+These are container ports. The example publishes the CLI's Master and Mover
+ports on localhost. To use the CLI from another machine, see
+[using the CLI with standalone](ecpds-cli.md#using-the-cli-against-the-standalone-container).
 
 | Port | Service |
 |---|---|
@@ -189,6 +195,7 @@ Set `HAWTIO_TLS_KEYSTORE` to another PKCS#12 file to use a different certificate
 | `8883` | Data Mover — MQTTS (MQTT over TLS) |
 | `8443` | Monitor — HTTPS UI |
 | `9640` | Master — ECpds CLI |
+| `7640` | Data Mover — ECpds CLI file uploads |
 | `8080` | Hawtio — authenticated JMX console (HTTPS, Monitor certificate) |
 | `9404` | Prometheus JMX exporter — Master |
 | `9405` | Prometheus JMX exporter — Mover |
@@ -201,11 +208,10 @@ Set `HAWTIO_TLS_KEYSTORE` to another PKCS#12 file to use a different certificate
     drop-in alternative.
 
 !!! warning "Evaluation credentials and management ports"
-    The standalone image includes demo Hawtio and Jolokia credentials and exposes
-    unauthenticated Prometheus exporter endpoints. The command above binds Hawtio and
-    metrics ports to localhost only. Do not publish these ports on an untrusted network,
-    and replace the demo `HAWTIO_USER`, `HAWTIO_PASSWORD`, `JOLOKIA_USER`, and
-    `JOLOKIA_PASSWORD` values for any shared environment.
+    The standalone image exposes unauthenticated Prometheus exporter endpoints.
+    The command above binds Hawtio, metrics and CLI ports to localhost only.
+    The CLI ports use an unencrypted protocol; use an encrypted tunnel for
+    remote access. Do not publish these ports on an untrusted network.
 
 ### Connect Grafana to Prometheus metrics
 
@@ -225,7 +231,7 @@ Monitoring UI and start one or two of them so there is some data to experiment w
 requires the container to have outbound Internet access, as these destinations acquire
 data from external providers:
 
-1. Open `https://localhost:8443` and log in as `admin` / `admin2021`.
+1. Open `https://localhost:8443` and log in as `admin` with its generated password.
 2. On the main page, in the **Transmission** section, select **Destinations**.
 3. Click a destination's name (e.g. `hourly_aq`) in the table to open its **Data** page.
 4. Click the green **Start Destination** (▶) button above the transfers table.
@@ -235,7 +241,16 @@ available through the Data Portal, so the commands below have something to list 
 
 ## Try the protocols
 
-All examples use the pre-configured `test / test2021` account.
+The examples use the `test` account. Enter its generated password when prompted.
+For tools that require a command-line password, use a protected mechanism supported
+by the tool; command-line arguments can be visible to other users on the host.
+For the examples using shell variables, enter the generated `test` and `test_s3`
+values without echo:
+
+```bash
+read -rs -p 'Test password: ' TEST_PASSWORD; echo
+read -rs -p 'Test S3 secret: ' S3_SECRET; echo
+```
 
 ### HTTPS — browser or curl
 
@@ -243,7 +258,7 @@ Open `https://localhost:7443` in a browser to access the Data Portal UI, or use 
 
 ```bash
 # List available destinations as JSON
-curl -k -u test:test2021 -H "Accept: application/json" \
+curl -k -u test -H "Accept: application/json" \
   https://localhost:7443/ecpds/data/list/
 ```
 
@@ -255,7 +270,7 @@ Example output:
 
 ```bash
 # List files in a destination
-curl -k -u test:test2021 -H "Accept: application/json" \
+curl -k -u test -H "Accept: application/json" \
   https://localhost:7443/ecpds/data/list/hourly_aq
 ```
 
@@ -267,9 +282,11 @@ Example output (trimmed):
 
 ### SFTP
 
+First, [verify and trust the server's SSH host key](sftp-host-keys.md).
+
 ```bash
-sftp -P 7022 -o StrictHostKeyChecking=no test@localhost
-# Password: test2021
+sftp -P 7022 test@localhost
+# Enter the generated test password when prompted.
 ```
 
 ### S3
@@ -278,7 +295,8 @@ Using [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started
 
 ```bash
 aws configure set aws_access_key_id test
-aws configure set aws_secret_access_key test2021
+aws configure
+# Enter test as the access key ID and the generated test_s3 value as the secret.
 aws s3 ls s3:// --endpoint-url https://localhost:7443/s3 --no-verify-ssl
 ```
 
@@ -289,7 +307,7 @@ rclone lsd :s3: \
   --s3-provider=Other \
   --s3-endpoint=https://localhost:7443/s3 \
   --s3-access-key-id=test \
-  --s3-secret-access-key=test2021 \
+  --s3-secret-access-key="$S3_SECRET" \
   --s3-v2-auth \
   --no-check-certificate
 ```
@@ -302,7 +320,7 @@ Using [curl](https://curl.se/):
 
 ```bash
 # List root directory (PROPFIND)
-curl -k -u test:test2021 -X PROPFIND https://localhost:7443/webdav/
+curl -k -u test -X PROPFIND https://localhost:7443/webdav/
 ```
 
 Using [rclone](https://rclone.org/):
@@ -312,7 +330,7 @@ rclone lsd :webdav: \
   --webdav-url=https://localhost:7443/webdav \
   --webdav-vendor=other \
   --webdav-user=test \
-  --webdav-pass=$(rclone obscure test2021) \
+  --webdav-pass="$(rclone obscure "$TEST_PASSWORD")" \
   --no-check-certificate
 ```
 
@@ -322,15 +340,15 @@ Using [cadaver](https://notroj.github.io/cadaver/) (interactive WebDAV client):
 # cadaver does not support self-signed certs natively — set SSL_CERT_FILE or
 # configure ~/.cadaverrc: use-ssl-noverify=yes
 cadaver https://localhost:7443/webdav
-# Username: test  Password: test2021
+# Username: test; enter the generated test password.
 dav:/webdav/> ls
 ```
 
 Or mount directly from your OS file manager:
 
-- **macOS Finder:** Go → **Connect to Server…** (⌘K), enter `https://localhost:7443/webdav`, click **Connect**, then log in with `test` / `test2021`.
-- **Windows Explorer:** Right-click **This PC → Map network drive**, choose a drive letter, enter `https://localhost:7443/webdav` as the folder, check **Connect using different credentials** and log in with `test` / `test2021`.
-- **Linux (GNOME Files / Nautilus):** Go → **Connect to Server…**, enter `davs://localhost:7443/webdav`, log in with `test` / `test2021`.
+- **macOS Finder:** Go → **Connect to Server…** (⌘K), enter `https://localhost:7443/webdav`, click **Connect**, then log in as `test`.
+- **Windows Explorer:** Right-click **This PC → Map network drive**, choose a drive letter, enter `https://localhost:7443/webdav` as the folder, check **Connect using different credentials** and log in as `test`.
+- **Linux (GNOME Files / Nautilus):** Go → **Connect to Server…**, enter `davs://localhost:7443/webdav`, log in as `test`.
 - **Linux (command-line):** mount with `davfs2`: `sudo mount -t davfs https://localhost:7443/webdav /mnt/webdav`
 
 !!! note
@@ -345,16 +363,19 @@ Using [mqttx CLI](https://mqttx.app/cli) (recommended):
 mqttx sub \
   -h localhost -p 8883 \
   -l mqtts \
-  -u test -P test2021 \
+  -u test -P "$TEST_PASSWORD" \
   --insecure \
   -t '#'
 ```
 
 ### REST API
 
-The REST API is served by the Monitor on port `8443`. All examples use the pre-configured
-`api / api2021` super-user (full permissions). See the [REST API Reference](../rest-api.md)
-for the complete endpoint list.
+The REST API is served by the Monitor on port `8443`. The initial `api` client has full
+permissions and a randomly generated secret. Retrieve it as the container administrator
+with `docker exec standalone cat /data/lib/standalone/api-client-secret`, and protect
+it like a password. Each authenticated curl example prompts for the secret. Manage
+or reset the client in the Monitor UI; resetting it does not update the initial secret file.
+See the [REST API Reference](../rest-api.md) for the complete endpoint list.
 
 ```bash
 # Check server version (no auth required)
@@ -367,50 +388,56 @@ curl -k https://localhost:8443/ecpds/v1/version
 
 ```bash
 # List all destinations
-curl -k -u api:api2021 https://localhost:8443/ecpds/v1/destination/list
+curl -k -u api https://localhost:8443/ecpds/v1/destination/list
 ```
 
 ```bash
 # Get details for a specific destination
-curl -k -u api:api2021 https://localhost:8443/ecpds/v1/destination/hourly_aq
+curl -k -u api https://localhost:8443/ecpds/v1/destination/hourly_aq
 ```
 
 ```bash
 # List all incoming (data) users
-curl -k -u api:api2021 https://localhost:8443/ecpds/v1/incoming/user/list
+curl -k -u api https://localhost:8443/ecpds/v1/incoming/user/list
 ```
 
 ```bash
-# Create a new incoming user (portalService is optional, defaults to
-# "standard-login"; other values are "open-access" and "self-service").
-# active=true is required here since a new incoming user is inactive by
-# default, and incoming/association/add fails with "User newuser not
-# found/active" until the user is active.
-curl -k -u api:api2021 -X POST \
-  "https://localhost:8443/ecpds/v1/incoming/user/add?id=newuser&pass=secret&email=newuser@example.com&iso=gb&portalService=standard-login&active=true"
+# Create a disposable example user with a generated password.
+# The response contains the password; save it in a private file.
+response_file=$(mktemp)
+curl -k -u api -X POST -o "$response_file" \
+  "https://localhost:8443/ecpds/v1/incoming/user/add2?id=newuser&email=newuser@example.com&iso=gb&portalService=standard-login&active=true"
 ```
+
+The generated password is returned in the response's `pass` field, not in the
+URL. Protect the response like a password, remove the file when no longer
+needed, and do not reuse this example account or its password elsewhere.
+Deactivate the example user after trying it. Unlike `add2`, the `add` endpoint
+accepts `pass` only as a query parameter: URLs can be recorded in shell history,
+access logs, proxies and diagnostics. Do not put a real or reusable password
+in a URL.
 
 ```bash
 # Associate a user with a destination
-curl -k -u api:api2021 -X POST \
+curl -k -u api -X POST \
   "https://localhost:8443/ecpds/v1/incoming/association/add?id=newuser&destination=hourly_aq"
 ```
 
 ```bash
 # List a user's destination associations
-curl -k -u api:api2021 \
+curl -k -u api \
   "https://localhost:8443/ecpds/v1/incoming/association/list?id=newuser"
 ```
 
 ```bash
 # Remove a user–destination association
-curl -k -u api:api2021 -X DELETE \
+curl -k -u api -X DELETE \
   "https://localhost:8443/ecpds/v1/incoming/association/del?id=newuser&destination=hourly_aq"
 ```
 
 ```bash
 # Deactivate a user
-curl -k -u api:api2021 -X DELETE \
+curl -k -u api -X DELETE \
   https://localhost:8443/ecpds/v1/incoming/user/del/newuser
 ```
 
@@ -433,13 +460,16 @@ for its settings.
 ### 1. Subscribe before uploading
 
 In one terminal, use [mqttx CLI](https://mqttx.app/cli) to connect to the standalone
-MQTTS broker and leave the subscription running:
+MQTTS broker and leave the subscription running. Enter the generated `test`
+password without echoing it first; the expanded argument may still be visible
+in process listings:
 
 ```bash
+read -rs -p 'Test password: ' TEST_PASSWORD; echo
 mqttx sub \
   -h localhost -p 8883 \
   -l mqtts \
-  -u test -P test2021 \
+  -u test -P "$TEST_PASSWORD" \
   --insecure \
   -t 'openecpds/demo/#'
 ```
@@ -457,8 +487,8 @@ printf 'Hello from the standalone MQTT demo!\n' > mqtt-demo.txt
 sftp -P 7022 test@localhost
 ```
 
-Enter password `test2021`, accept the host key after checking it is your evaluation
-container, then run these commands at the SFTP prompt:
+Enter the generated test password. If necessary, first
+[verify the SSH host key](sftp-host-keys.md), then run these commands at the SFTP prompt:
 
 ```text
 put mqtt-demo.txt /mqtt_demo/mqtt-demo.txt
@@ -498,7 +528,7 @@ any subscriber authorized for the topic can read embedded file content.
 Verify the uploaded file through HTTPS:
 
 ```bash
-curl --fail -k -u test:test2021 \
+curl --fail -k -u test \
   https://localhost:7443/ecpds/data/file/mqtt_demo/mqtt-demo.txt
 ```
 
@@ -555,7 +585,7 @@ curl --fail-with-body -k -N -i --user test \
   https://localhost:7443/ecpds/aviso/api/v1/watch
 ```
 
-Enter the standalone Data Portal password `test2021`. The `-i` flag shows the
+Enter the generated Data Portal password. The `-i` flag shows the
 response headers. Once you see **HTTP 200** with `Content-Type: text/event-stream`,
 leave the watch running and continue to the upload. The stream normally starts
 with a `live-notification` frame whose JSON `type` is `connection_established`,
@@ -580,7 +610,8 @@ printf 'Hello from the standalone Aviso demo!\n' > aviso-demo.txt
 sftp -P 7022 test@localhost
 ```
 
-Enter password `test2021`, verify and accept the host key, then upload:
+Enter the generated test password. If necessary, first
+[verify the SSH host key](sftp-host-keys.md), then upload:
 
 ```text
 put aviso-demo.txt /aviso_demo/aviso-demo.txt
@@ -671,15 +702,116 @@ docker rm standalone
     There is no workaround for Docker Desktop itself — to validate MTR/traceroute
     behaviour, run the standalone container on a Linux host/VM instead.
 
+<a id="optional-openbao-credential-rotation"></a>
+## Embedded OpenBao
+
+OpenBao starts and unseals automatically, without extra setup.
+
+!!! warning "Evaluation only"
+    The default stores vault unseal material on `/data` and is not suitable for
+    production credentials. For an independently protected key or manual
+    unsealing, see [Standalone vault modes](../deployment/standalone-vault.md).
+
+Host password rotation remains opt-in; see the
+[credential rotation guide](../deployment/kubernetes.md#credential-rotation-enablement).
+
+## Database encryption key
+
+By default the database-encryption key and its password are generated under
+`/data/lib/master/database-encryption`. A backup of `/data` therefore contains
+both the database and its key. Protect the entire backup as sensitive material.
+
+To keep that key off the data volume, provision a PKCS#12 AES-256 key and its
+configuration separately before the first start. For example, on a Linux host,
+as root:
+
+```bash
+install -d -m 0750 -o root -g 12001 /secure/ecpds-database-key
+umask 077
+export ECPDS_DATABASE_KEY_PASSWORD="$(openssl rand -hex 24)"
+keytool -genseckey -alias database-encryption -keyalg AES -keysize 256 \
+  -storetype PKCS12 -keystore /secure/ecpds-database-key/key.p12 \
+  -storepass:env ECPDS_DATABASE_KEY_PASSWORD -keypass:env ECPDS_DATABASE_KEY_PASSWORD
+printf '[DatabaseEncryption]\nkeyStore=/run/ecpds/database-key/key.p12\nkeyStorePassword=%s\nkeyAlias=database-encryption\n' \
+  "$ECPDS_DATABASE_KEY_PASSWORD" > /secure/ecpds-database-key/ecmwf.properties
+unset ECPDS_DATABASE_KEY_PASSWORD
+chown root:12001 /secure/ecpds-database-key/key.p12 /secure/ecpds-database-key/ecmwf.properties
+chmod 0640 /secure/ecpds-database-key/key.p12 /secure/ecpds-database-key/ecmwf.properties
+```
+
+Add these arguments to the `docker run` command:
+
+```bash
+--mount type=bind,source=/secure/ecpds-database-key,target=/run/ecpds/database-key,readonly \
+-e ECPDS_DATABASE_ENCRYPTION_DIR=/run/ecpds/database-key \
+```
+
+UID/GID `12001` is the container's Master identity; adapt host ownership or ACLs
+if user namespaces remap it. The Master must be able to read `key.p12`, while
+the other service identities must not be able to read either file. Both files
+must be root-owned in the container, must not be symbolic links, group-writable
+or world-accessible. The root-owned configuration contains
+the keystore password. Protect and back up this directory separately from
+`/data`, and mount the same key at the same path after every restart or restore.
+Changing or losing it makes existing encrypted database values unreadable.
+Standalone records a fingerprint of the PKCS#12 file and refuses to start if
+it changes. Keep the original file byte-for-byte; key rotation is not yet
+supported.
+
+## Backup and recovery
+
+Stop the container gracefully before copying `/data`, so MariaDB files and
+OpenBao Raft data are consistent. Allow enough time for all services to stop;
+if Docker forcibly kills the container, do not treat that stop as a clean backup.
+Preserve numeric ownership and permissions, and protect
+the backup: it includes service credentials, private keys and, unless configured
+separately as above, the database-encryption key. Save the exact image used by
+the container. For non-default vault modes, protect and back up the required
+seal and recovery material separately; see [vault modes](../deployment/standalone-vault.md).
+
+For the bind mount shown in the start command, an example is:
+
+```bash
+docker stop -t 180 standalone
+sudo tar --numeric-owner --xattrs -cpf /secure/standalone-data.tar -C "$(pwd)/ecpds-data" .
+docker image save -o /secure/standalone-image.tar "$(docker inspect -f '{{.Image}}' standalone)"
+docker start standalone
+```
+
+The archives above are **not encrypted**. Store them in encrypted, access-controlled
+backup storage. The default vault unseals automatically when restarted.
+To restore, load the saved image, extract the trusted data archive into a new,
+empty directory with numeric ownership preserved, and mount it as `/data` with
+the same external secrets, if used. Follow the relevant
+[vault recovery steps](../deployment/standalone-vault.md) and verify application
+access. Rehearse this procedure on an isolated host.
+
+The data marker rejects any different image build; do not remove or edit the
+marker to bypass this check.
+
+Docker health reports supervisor status, MariaDB connectivity and the local
+service ports. In manual OpenBao mode the container remains unhealthy until the
+vault is unsealed and the Master token is ready. Check its state with:
+
+```bash
+docker inspect -f 'running={{.State.Running}} health={{.State.Health.Status}}' standalone
+```
+
+Configure an independent monitoring system to alert when the container stops,
+stays unhealthy or cannot be inspected, or when host disk capacity is low.
+Also monitor transfer failures and certificate expiry: Docker health does not
+verify transfers, remote endpoints or certificate validity. Allow for manual
+unsealing during planned restarts if using manual vault mode.
+
 ## Next steps
 
 - Explore the [Monitoring UI](https://localhost:8443) to see destinations, hosts, and
   transfer history. Three accounts give different perspectives:
-    - **`admin` / `admin2021`** — full administrator view with access to all destinations,
+    - **`admin`** — full administrator view with access to all destinations,
       hosts, transfer queues, users, and system configuration.
-    - **`monitor` / `monitor2021`** — restricted user view showing only a limited set of
+    - **`monitor`** — restricted user view showing only a limited set of
       destinations and features, as a regular monitoring user would experience it.
-    - **`operator` / `operator2021`** — operator view: all destinations and the Operations
+    - **`operator`** — operator view: all destinations and the Operations
       section, without the administration pages.
 
   See [Monitor UI overview](../monitor-ui/overview.md) for how the three profiles differ.
