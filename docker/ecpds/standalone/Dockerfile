@@ -70,12 +70,24 @@ ENV PATH=/opt/ecpds-java/bin:${PATH}
 
 # ── Install OpenECPDS RPMs ─────────────────────────────────────────────────────
 COPY rpms/ /tmp/rpms/
-RUN yum install -d1 -y \
+RUN for package in /tmp/rpms/*.rpm; do \
+        if rpm -qpl "$package" | grep -Eq '(^|/)id_(rsa|dsa|ecdsa|ed25519)(\.pub)?$|\.(key|pem|p12|pfx|jks|keystore)$'; then \
+            echo "Refusing RPM containing key or keystore material: $package" >&2; exit 1; \
+        fi; \
+    done && \
+    yum install -d1 -y \
         /tmp/rpms/ecpds-common-*.noarch.rpm \
         /tmp/rpms/ecpds-master-*.rpm \
         /tmp/rpms/ecpds-mover-*.rpm \
         /tmp/rpms/ecpds-monitor-*.noarch.rpm \
         /tmp/rpms/ecpds-tools-*.rpm && \
+    awk '\
+        /^\[/ { section = $0 } \
+        (section == "[DataBase]" || section == "[OpsViewManager]") && /^[[:space:]]*password[[:space:]]*=/ { \
+            count++; if ($0 !~ /^[[:space:]]*password[[:space:]]*=[[:space:]]*$/) invalid = 1 \
+        } \
+        END { exit (count != 2 || invalid) }' /usr/local/ecpds/master/conf/ecmwf.properties || \
+        { echo "Refusing Master RPM with missing or embedded passwords" >&2; exit 1; } && \
     yum clean all && rm -rf /tmp/rpms
 
 # Verify the embedded compiler can initialize against the packaged Truffle libraries.
@@ -161,6 +173,9 @@ RUN if ! grep -q '^\[OpenBao\]$' /usr/local/ecpds/master/conf/ecmwf.properties; 
 RUN sed -i \
     's/listenAddress=\${Login\[externalAddress\]}/listenAddress=0.0.0.0/g' \
     /usr/local/ecpds/mover/conf/ecmwf.properties
+RUN sed -i 's|^keyPairsDir=.*|keyPairsDir=/data/lib/mover/ssh/keys|' \
+        /usr/local/ecpds/mover/conf/ecmwf.properties && \
+    grep -qx 'keyPairsDir=/data/lib/mover/ssh/keys' /usr/local/ecpds/mover/conf/ecmwf.properties
 RUN sed -i 's|SSLKeyStore=${monitor.etc}/ecpds-monitor.pfx|SSLKeyStore=/data/lib/monitor/tls/ecpds-monitor.pfx|' \
         /usr/local/ecpds/monitor/conf/ecmwf.properties && \
     sed -i 's|SSLKeyStore=${mover.etc}/ecpds-mover.pfx|SSLKeyStore=/data/lib/mover/tls/ecpds-mover.pfx|' \

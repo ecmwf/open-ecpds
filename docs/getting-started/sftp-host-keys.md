@@ -4,45 +4,25 @@ SSH host keys identify the SFTP server; they are separate from HTTPS
 certificates. Checking a fingerprint is meaningful only if the server's
 private host key is unique to that installation and kept secret.
 
-!!! warning "Provision a unique host key"
-    A standalone image can contain host keys from its build environment. Such
-    keys can be shared with other containers or exposed to anyone with the
-    image. Do not rely on their fingerprints to authenticate your server.
-    Provision a unique private host key outside the image before trusting it.
-    The default key directory is also outside `/data`, so preserve your
-    independently provisioned keys when recreating the container.
+When no host keys exist, the standalone Mover generates them on first startup and
+stores them in `/data/lib/mover/ssh/keys`. They are reused on restart and when the container is
+recreated with the same data directory and image build. Back up `/data` securely:
+the private keys identify the server and must remain secret.
 
-## Provision a key
-
-On the container host, an administrator can generate an Ed25519 host key in a
-new, empty directory. For example, with an existing `/secure` parent directory:
-
-```bash
-sudo mkdir -m 0700 /secure/openecpds-sftp
-sudo ssh-keygen -q -t ed25519 -N '' -f /secure/openecpds-sftp/id_ed25519
-sudo chown 12002:12002 /secure/openecpds-sftp \
-  /secure/openecpds-sftp/id_ed25519 /secure/openecpds-sftp/id_ed25519.pub
-```
-
-UID and GID `12002` are the standalone Mover identity. Restrict access to the
-directory and private key, and back them up securely. When creating the
-container, add this argument to the [standalone `docker run`](standalone.md#start):
-
-```bash
---mount type=bind,source=/secure/openecpds-sftp,target=/usr/local/ecpds/mover/conf/ssh/keys,readonly
-```
-
-The bind mount must preserve ownership and allow UID `12002` to read the key.
-Recreate an existing container to add the mount, retaining the same data volume
-and image build. Reuse the protected key directory across recreation; never
-copy its private key into the image.
+!!! warning "Older images"
+    Older standalone images may contain host keys from their build environment.
+    Such keys can be shared or exposed to anyone with the image; do not rely on
+    their fingerprints to authenticate your server. Use an updated image and a
+    new empty data directory. The instructions below apply to updated images.
 
 ## Verify and trust the key
 
-The administrator obtains the fingerprint from the provisioned **public** key:
+After the container is healthy, its administrator obtains the fingerprint from
+the generated **public** key:
 
 ```bash
-sudo ssh-keygen -lf /secure/openecpds-sftp/id_ed25519.pub -E sha256
+docker exec standalone cat /data/lib/mover/ssh/keys/id_ed25519.pub |
+  ssh-keygen -lf - -E sha256
 ```
 
 Obtain that fingerprint from the administrator over a trusted, independent

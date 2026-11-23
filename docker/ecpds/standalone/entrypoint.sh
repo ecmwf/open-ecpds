@@ -43,6 +43,13 @@ chown ecpds-monitor:ecpds-monitor /data/log/monitor /data/tmp/monitor /data/lib/
 chown ecpds-mover:ecpds-mover /data/lib/mover/data /data/lib/mover/mqtt
 chown ecpds-mover:ecpds-mover /data/lib/mover/tls
 chown ecpds-monitor:ecpds-monitor /data/lib/monitor/tls
+for directory in /data/lib/mover/ssh /data/lib/mover/ssh/keys; do
+    if [ -L "$directory" ] || { [ -e "$directory" ] && [ ! -d "$directory" ]; }; then
+        echo "[standalone] SFTP host key directory must be a directory, not a symlink." >&2
+        exit 1
+    fi
+    install -d -o ecpds-mover -g ecpds-mover -m 0700 "$directory"
+done
 for service in master mover monitor; do
     if [ -d "/etc/ecpds/${service}" ]; then
         chown "ecpds-${service}:ecpds-${service}" "/etc/ecpds/${service}"

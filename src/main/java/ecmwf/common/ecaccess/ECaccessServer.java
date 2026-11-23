@@ -27,6 +27,8 @@ package ecmwf.common.ecaccess;
  */
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.SQLException;
 
 import javax.management.AttributeNotFoundException;
@@ -162,7 +164,7 @@ public abstract class ECaccessServer extends StarterServer {
                 _log.info("Initializing the DataBase connection");
                 dataBase.initialize(Cnf.at("DataBase", "brokerFactory", "ecmwf.common.database.BrokerFactoryOJB"),
                         Cnf.at("DataBase", "driver"), Cnf.at("DataBase", "protocol"), Cnf.at("DataBase", "subProtocol"),
-                        Cnf.at("DataBase", "alias"), Cnf.at("DataBase", "user"), Cnf.at("DataBase", "password"),
+                        Cnf.at("DataBase", "alias"), Cnf.at("DataBase", "user"), databasePassword(),
                         Cnf.at("DataBase", "server"), Cnf.at("DataBase", "repository"),
                         Cnf.at("DataBase", "logEvents", true), Cnf.at("DataBase", "debugSql", false));
                 _log.debug("DataBase initialized");
@@ -206,6 +208,21 @@ public abstract class ECaccessServer extends StarterServer {
             getMBeanCenter().scheduleNotifications(this, Cnf.getTime(time, null),
                     Cnf.at("Scheduler", "purgeDataBase", 24) * Timer.ONE_HOUR, "purgeDataBase");
         }
+    }
+
+    private static String databasePassword() throws IOException {
+        final var override = System.getenv("ECPDS_DATABASE_PASSWORD");
+        if (StringUtils.isNotEmpty(override))
+            return override;
+        final var file = StringUtils.defaultIfEmpty(System.getenv("ECPDS_DATABASE_PASSWORD_FILE"),
+                System.getProperty("database.passwordFile"));
+        if (StringUtils.isNotEmpty(file)) {
+            final var password = Files.readString(Path.of(file));
+            if (password.isEmpty() || password.indexOf('\n') >= 0 || password.indexOf('\r') >= 0)
+                throw new IOException("Invalid database password file");
+            return password;
+        }
+        return Cnf.at("DataBase", "password");
     }
 
     /**

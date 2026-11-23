@@ -66,6 +66,12 @@ services:
     volumes:
       - "${ECPDS_ROOT_PATH:-}/var/lib/ecpds/database:/var/lib/mysql"
       - "${ECPDS_ROOT_PATH:-}/etc/ecpds/database:/etc/mysql/conf.d"
+      - type: bind
+        source: ${ECPDS_ROOT_PATH:-}/etc/ecpds/master/development-database-password
+        target: /run/ecpds-development/database-password
+        read_only: true
+        bind:
+          create_host_path: false
     networks:
       - backbone
 
@@ -117,6 +123,8 @@ services:
       CLI_SHARED_SECRET: "dboUz95GH4U8LihvnJPGfBce5/rFJdbYXoZesRXBIyQ="
       # Database related parameters (database interface/port must be the same as in 'etc/ecpds/database/mysqld.cnf')
       DATABASE_ALIAS: sequential://ecpds-database:3309/ecpds
+      ECPDS_DATABASE_PASSWORD: ${ECPDS_DATABASE_PASSWORD:-}
+      ECPDS_DATABASE_PASSWORD_FILE: /etc/ecpds/master/development-database-password
       DATABASE_MIN_SPOOL_SIZE: 5
       DATABASE_MAX_SPOOL_SIZE: 50
       # Define rollover strategy for master.log
@@ -132,6 +140,7 @@ services:
       SMTP_HOST:
       SMTP_FROM:
       OPSVIEW_HOST:
+      ECPDS_OPSVIEW_PASSWORD: ${ECPDS_OPSVIEW_PASSWORD:-}
       # Miscellaneous parameters
       RETRIEVAL_MAX_SPOOL_SIZE: 50 # Maximum number of parallel retrievals
       # Java Virtual Machine options

@@ -10,7 +10,7 @@ if [ "${ECPDS_OPENBAO_ENABLED:-embedded}" = manual ] || [ "${ECPDS_OPENBAO_ENABL
 fi
 timeout 5s mysql --defaults-extra-file=/data/lib/standalone/mysql-client.cnf \
     -N -e 'SELECT 1' ecpds >/dev/null
-for port in 9600 7600 7443 8600 8443 8080; do
+for port in 9600 7600 7022 7443 8600 8443 8080; do
     nc -z -w 1 127.0.0.1 "$port"
 done
 curl --fail --silent --show-error --max-time 5 --noproxy '*' \

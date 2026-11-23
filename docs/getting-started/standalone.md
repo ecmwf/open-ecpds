@@ -101,7 +101,7 @@ that error first; for example, an existing container may already use the name
 `standalone`.
 
 The health check covers service processes, database connectivity, local ports
-and the Hawtio web application; it does not verify transfers, external endpoints
+(including SFTP) and the Hawtio web application; it does not verify transfers, external endpoints
 or certificate validity. In manual OpenBao mode the container cannot become
 healthy until the vault is unsealed and the Master token is ready; see
 [standalone vault modes](../deployment/standalone-vault.md).
