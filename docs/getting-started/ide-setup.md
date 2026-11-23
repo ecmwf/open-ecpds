@@ -20,6 +20,15 @@ This command creates the Docker network for OpenECPDS and starts only the databa
 service, while the Master, Monitor, and Mover services can be launched directly from the
 IDE.
 
+On first initialization, `make start-db` creates a private development password
+file at `run/etc/ecpds/master/development-database-password`. Both the database
+and the shared Eclipse/VS Code Master launch configuration use it; no IDE
+environment setup is needed. Keep this file with the database data. If it is
+missing for an existing database, supply the current `master` password at the
+prompt or set `ECPDS_DATABASE_PASSWORD` before starting the database. A nonempty
+`ECPDS_DATABASE_PASSWORD` also overrides the file for the Master process; set it
+in the IDE's launch environment if an override is needed there.
+
 To reset a disposable development database, stop all IDE-launched Masters first,
 then run `make start-db` and confirm reinitialization. The target stops the
 database container before deleting its data, and also detects incomplete

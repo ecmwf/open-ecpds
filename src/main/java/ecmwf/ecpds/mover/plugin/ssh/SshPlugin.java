@@ -35,7 +35,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.GeneralSecurityException;
-import java.security.KeyPairGenerator;
 import java.security.PublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
@@ -58,6 +57,7 @@ import org.apache.sshd.common.SshException;
 import org.apache.sshd.common.config.keys.AuthorizedKeyEntry;
 import org.apache.sshd.common.config.keys.KeyUtils;
 import org.apache.sshd.common.config.keys.writer.openssh.OpenSSHKeyPairResourceWriter;
+import org.apache.sshd.common.util.security.SecurityUtils;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.keyboard.DefaultKeyboardInteractiveAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
@@ -209,7 +209,7 @@ public final class SshPlugin extends PluginThread {
     /**
      * Ensures that at least one SSH host key exists in {@code keysDir}. If the directory contains no private key files
      * (files whose name starts with {@code id_} and does not end with {@code .pub}), three key pairs are generated
-     * automatically: ECDSA (P-256), Ed25519, and RSA (4096-bit). Each private key is written in OpenSSH format and its
+     * automatically: ECDSA (P-521), Ed25519, and RSA (4096-bit). Each private key is written in OpenSSH format and its
      * permissions are set to {@code 600}; the matching public key is written alongside it.
      */
     private static void ensureHostKeys(final Path keysDir) throws IOException, GeneralSecurityException {
@@ -218,7 +218,7 @@ public final class SshPlugin extends PluginThread {
         try (var stream = Files.list(keysDir)) {
             existing = stream.filter(p -> {
                 final var n = p.getFileName().toString();
-                return n.startsWith("id_") && !n.endsWith(".pub");
+                return n.startsWith("id_") && !n.endsWith(".pub") && !n.endsWith(".tmp");
             }).count();
         }
         if (existing > 0) {
@@ -227,8 +227,6 @@ public final class SshPlugin extends PluginThread {
         }
         _log.info("No SSH host keys found in {}; auto-generating default key pairs", keysDir);
         generateHostKey(keysDir, "ecdsa", "EC", new ECGenParameterSpec("secp521r1"), 0);
-        // "Ed25519" has been natively supported by the JDK's own security providers since JDK 15 (JEP 339), so no
-        // external provider/parameter spec (formerly net.i2p.crypto:eddsa) is needed to generate this key.
         generateHostKey(keysDir, "ed25519", "Ed25519", null, 0);
         generateHostKey(keysDir, "rsa", "RSA", null, 4096);
     }
@@ -240,7 +238,7 @@ public final class SshPlugin extends PluginThread {
      */
     private static void generateHostKey(final Path keysDir, final String name, final String algorithm,
             final AlgorithmParameterSpec spec, final int keySize) throws IOException, GeneralSecurityException {
-        final var kpg = KeyPairGenerator.getInstance(algorithm);
+        final var kpg = SecurityUtils.getKeyPairGenerator(algorithm);
         if (spec != null)
             kpg.initialize(spec);
         else if (keySize > 0)
@@ -269,7 +267,7 @@ public final class SshPlugin extends PluginThread {
             }
             Files.move(tmpPrivate, privateKeyPath);
             Files.move(tmpPublic, publicKeyPath);
-        } catch (final IOException | GeneralSecurityException e) {
+        } catch (final IOException | GeneralSecurityException | RuntimeException e) {
             Files.deleteIfExists(tmpPrivate);
             Files.deleteIfExists(tmpPublic);
             throw e;

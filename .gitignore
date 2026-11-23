@@ -33,6 +33,7 @@ bin/
 **/*.p12
 /run/etc/ecpds/openbao/tls/
 /run/etc/ecpds/openbao/operator/
+/run/etc/ecpds/master/development-database-password
 
 # flatten-maven-plugin: resolved POM generated during build, removed by mvn clean
 **/.flattened-pom.xml

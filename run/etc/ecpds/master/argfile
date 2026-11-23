@@ -15,6 +15,7 @@
 -Decaccess.address=''
 -Deccmd.address=''
 -Ddatabase.alias='//localhost:3309,host.docker.internal:3309,ecpds-database:3309/ecpds?failOverReadOnly=false'
+-Ddatabase.passwordFile='run/etc/ecpds/master/development-database-password'
 -Dhibernate.minPoolSize='5'
 -Dhibernate.maxPoolSize='50'
 -Dretrieval.maxPoolSize='50'

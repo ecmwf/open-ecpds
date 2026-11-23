@@ -50,6 +50,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -115,7 +116,8 @@ public final class OpsViewManager {
     private static final String USER = Cnf.at("OpsViewManager", "user", "");
 
     /** The Constant PASSWORD. */
-    private static final String PASSWORD = Cnf.at("OpsViewManager", "password", "");
+    private static final String PASSWORD = StringUtils.defaultIfEmpty(System.getenv("ECPDS_OPSVIEW_PASSWORD"),
+            Cnf.at("OpsViewManager", "password", ""));
 
     /** The Constant DISSEMINATION_FILTER_NAME. */
     public static final String DISSEMINATION_FILTER_NAME = Cnf.at("OpsViewManager", "disseminationFilterName",

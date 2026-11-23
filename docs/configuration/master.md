@@ -200,6 +200,14 @@ External helper commands. `ecauth` overrides the token-generation executable; `s
 
 ### [DataBase]
 
+The `ECPDS_DATABASE_PASSWORD` environment variable, when nonempty, overrides
+the password file specified by `ECPDS_DATABASE_PASSWORD_FILE` or the
+`database.passwordFile` JVM property, then the configured `password`. Password
+files must contain a nonempty single-line value without a trailing newline.
+Supply credentials at deployment time rather than
+putting them in an RPM or image. Environment variables may be visible to
+privileged users and container administrators; protect access accordingly.
+
 Database broker and JDBC configuration. `initSleep` is seconds; `purge` is hours and `maxTransferLife` is days. `fetchSize` is rows; retry delays are milliseconds. Broker-specific flags only apply to that broker. The shipped Hibernate broker deliberately differs from the generic broker fallback.
 
 | Option | Code fallback when absent | Shipped value | Reader |
@@ -655,6 +663,11 @@ Transfer-operation message template. `$destination[...]`, `$dataFile[...]` and r
 | `template` | `null` (no reader fallback) | `$destination[name]: $dataFile[metaTime]-$dataFile[metaStream]($dataFile[timeStep]) -> $dataTransfer[target]($dataFile[formatSize]) $system[message] on $transferMethod[name]://$host[login]@$host[host]($host[nickname];$host[networkCode]) $dataTransfer[comment]` | [TransferScheduler:3222](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/master/transfer/TransferScheduler.java#L3222) |
 
 ### [OpsViewManager]
+
+The `ECPDS_OPSVIEW_PASSWORD` environment variable, when nonempty, overrides
+the configured `password`. Supply credentials at deployment time rather than
+putting them in an RPM or image. Environment variables may be visible to
+privileged users and container administrators; protect access accordingly.
 
 OpsView publication endpoints, credentials, filters and TLS verification. URLs default relative to `url`; filter names differ by acquisition/dissemination/other roles. `trustAllCerts=true` skips certificate validation.
 

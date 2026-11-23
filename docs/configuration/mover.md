@@ -733,6 +733,11 @@ Defaults for sockets. Buffers are bytes (`-1` leaves OS defaults), timeouts are 
 
 SSH/SFTP listener and server identity. `keyPairsDir` stores host keys, `banner` is a file path and `softwareVersion` is the advertised server string. `maxConcurrentSessions=0` means unlimited. `hidden` controls virtual-domain visibility.
 
+RPMs do not include SSH host keys. Provision unique keys or ensure `keyPairsDir`
+is writable by the Mover so it can generate them on startup. Restrict access to
+the directory and preserve it across restarts. The standalone image uses a
+private directory under `/data`; see [SFTP host keys](../getting-started/sftp-host-keys.md).
+
 | Option | Code fallback when absent | Shipped value | Reader |
 |--------|---------------------------|---------------|--------|
 | `banner` | Empty string | `${mover.conf}/ssh/welcome.txt` | [SshPlugin:179](https://github.com/ecmwf/open-ecpds/blob/master/src/main/java/ecmwf/ecpds/mover/plugin/ssh/SshPlugin.java#L179) |

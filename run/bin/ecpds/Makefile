@@ -120,6 +120,9 @@ mariadb-exec:
 # ─── Containers ───────────────────────────────────────────────────────────────
 
 up: check-yaml ## Create and start containers (arg: svc, default: all)
+	@if [ -z "$(svc)" ] || [ "$(svc)" = database ] || [ "$(svc)" = master ]; then \
+		bash ../../../scripts/dev-database-password.sh; \
+	fi
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml up -d $(svc)
 
 ps: check-yaml ## List running containers

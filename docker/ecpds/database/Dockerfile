@@ -9,9 +9,13 @@ ENV MYSQL_ROOT_PASSWORD=ecpds2020!
 
 # Init script to create the OpenECPDS database
 COPY ecpds.sql /docker-entrypoint-initdb.d/
+COPY zz-development-password.sh /docker-entrypoint-initdb.d/
+COPY development-entrypoint.sh /usr/local/bin/ecpds-development-entrypoint.sh
 
 # Make it readable to mysql
 RUN chown mysql:mysql /docker-entrypoint-initdb.d/ecpds.sql
+RUN chmod 0644 /docker-entrypoint-initdb.d/zz-development-password.sh && \
+    chmod 0755 /usr/local/bin/ecpds-development-entrypoint.sh
 
 # Make directories readable to mysql
 RUN chown mysql:mysql /etc/mysql/conf.d
@@ -26,3 +30,6 @@ VOLUME /var/lib/mysql
 
 # Expose the port
 EXPOSE 3306
+
+ENTRYPOINT ["/usr/local/bin/ecpds-development-entrypoint.sh"]
+CMD ["mariadbd"]

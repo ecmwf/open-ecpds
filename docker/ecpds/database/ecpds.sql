@@ -1,5 +1,5 @@
 -- Create users for the Master (master)
-CREATE OR REPLACE USER master@'%' IDENTIFIED BY 'ecmasdb';
+CREATE OR REPLACE USER master@'%';
 GRANT ALL PRIVILEGES ON ecpds.* TO 'master'@'%';
 FLUSH PRIVILEGES;
 

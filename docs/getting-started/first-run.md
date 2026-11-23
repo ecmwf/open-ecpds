@@ -5,6 +5,10 @@ interfaces, and check the containers and logs.
 
 ## Starting OpenECPDS
 
+The first start creates a local development database password file automatically.
+If an existing database has no password file, provide its current `master` password
+when prompted or via `ECPDS_DATABASE_PASSWORD`. This setup is for development only.
+
 From the repository root, start the application using the Compose Makefile:
 
 ```bash
@@ -29,6 +33,12 @@ It might take a few seconds for all the services to start. Once they are up, you
 access the following URLs (update them if you changed the configuration in the compose
 files):
 
+!!! info "Running on a remote machine?"
+    These addresses refer to the machine running your browser or client. Start the
+    services locally before using them, or replace `127.0.0.1` with the remote host's
+    hostname or IP address if its published ports are reachable. A local tunnel can
+    also provide access.
+
 !!! warning "Development environment"
     The seed credentials below are for the multi-container development setup only;
     do not use them in production. The standalone container instead generates
@@ -38,8 +48,8 @@ files):
 
 | Interface | URL | Login Details |
 |-----------|-----|---------------|
-| Monitoring | [https://127.0.0.1:3443](https://127.0.0.1:3443) | admin/admin2021 |
-| Data Portal | [https://127.0.0.1:4443](https://127.0.0.1:4443) | test/test2021 |
+| Monitoring | [https://127.0.0.1:3443](https://127.0.0.1:3443){: target="_blank" rel="noopener noreferrer" } | admin/admin2021 |
+| Data Portal | [https://127.0.0.1:4443](https://127.0.0.1:4443){: target="_blank" rel="noopener noreferrer" } | test/test2021 |
 | | [ftp://127.0.0.1:4021](ftp://127.0.0.1:4021) | test/test2021 |
 | MQTT Broker | mqtt://127.0.0.1:4883 | test/test2021 |
 | Virtual FTP Server | [ftp://127.0.0.1:2021](ftp://127.0.0.1:2021) | admin/admin2021 |
