@@ -272,7 +272,6 @@ and the current assessment do not survive a restart.
 Movers negotiate by default (`[Server] networkWeatherNegotiation=yes`).
 An explicit `no` is a per-Mover opt-out. Negotiation alone captures nothing.
 Continental routes require `[Security] rccSharedSecret` signing at every hop.
-Deploy matching Master, Monitor, local relay and Continental Mover versions.
 Sources must be registered and verified before collection can start; the
 **Sources** tab shows their current registration state.
 
@@ -327,8 +326,7 @@ available and identify missing provenance; the sending index is not a requeue co
 
 ### Deployment validation
 
-1. Keep collection disabled and deploy matching components. Confirm database
-   readiness on the administration page.
+1. Keep collection disabled and confirm database readiness on the administration page.
    **Do not load the destructive full installation dump into a populated database.**
    Schema operations require the site's database change procedure, backups and DBA
    review.

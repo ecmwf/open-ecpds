@@ -91,8 +91,7 @@ Connect/read timeouts are ten seconds and response bodies are limited to 512 KiB
 JWKS keys are cached using the JOSE library's cache and refresh/rate-limit handling.
 The Master must trust the TLS certificates of the token and JWKS endpoints.
 
-Restart the Master after configuration or mapping changes. The Master and Monitor
-must use matching application versions for the interactive management methods.
+Restart the Master after configuration or mapping changes.
 The provider implementation runs on the Master application classpath; it is not
 a `[PluginList]` server plugin.
 

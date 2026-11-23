@@ -107,8 +107,6 @@ The report controls below the table generate a CSV for notices created in the se
 filtered by status. The on-page summary shows status totals and the most affected products. The CSV includes affected
 product/cycle rows; message history and recipient addresses are optional, and addresses are excluded by default.
 
-Deploy matching Master and Monitor versions, as the Monitor calls Master operations.
-
 ## From a monitoring page
 
 The **Email Notifications** card contains two inner cards: **Delay Notification** on the left and

@@ -195,9 +195,8 @@ Mover startup rather than silently resetting accounting. Local checkpoint/delive
 failures are logged and retried; shutdown attempts a final checkpoint.
 
 !!! warning "Accuracy"
-    Master, Mover (including Continental Movers and their REST relays) and Monitor
-    components must use matching versions. Only Movers providing application-stream
-    counters contribute; progress-sample history is not mixed into this counter.
+    Only Movers providing application-stream counters contribute; progress-sample
+    history is not mixed into this counter.
     Allow 24 hours of continuous collection for a full window. Keep host clocks
     synchronized: future-minute snapshots are rejected until time catches up.
     A process crash can lose increments after the last successful local checkpoint

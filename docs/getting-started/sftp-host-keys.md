@@ -9,11 +9,9 @@ stores them in `/data/lib/mover/ssh/keys`. They are reused on restart and when t
 recreated with the same data directory and image build. Back up `/data` securely:
 the private keys identify the server and must remain secret.
 
-!!! warning "Older images"
-    Older standalone images may contain host keys from their build environment.
-    Such keys can be shared or exposed to anyone with the image; do not rely on
-    their fingerprints to authenticate your server. Use an updated image and a
-    new empty data directory. The instructions below apply to updated images.
+!!! warning "Existing host keys"
+    When reusing existing host keys, verify that they are unique to the installation
+    and have not been exposed. Rotate them if necessary.
 
 ## Verify and trust the key
 
