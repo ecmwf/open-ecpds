@@ -13,3 +13,5 @@ timeout 5s mysql --defaults-extra-file=/data/lib/standalone/mysql-client.cnf \
 for port in 9600 7600 7443 8600 8443 8080; do
     nc -z -w 1 127.0.0.1 "$port"
 done
+curl --fail --silent --show-error --max-time 5 --noproxy '*' \
+    -o /dev/null http://127.0.0.1:8081/hawtio/
