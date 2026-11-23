@@ -5,8 +5,8 @@ downloads and requeue, per destination, destination type, transfer group or file
 `/do/admin/storagepolicies` (Administration → **Storage Lifecycle Policies**).
 
 !!! warning "Opt-in enforcement"
-    The feature defaults to **disabled**. With the required database tables and matching
-    Master, Monitor and Mover components in place, set `[StoragePolicy] enabled=yes` on the Master.
+    The feature defaults to **disabled**. With the required database tables in place,
+    set `[StoragePolicy] enabled=yes` on the Master.
     **Existing `ENFORCE` policies take effect immediately when enabled.**
     Use `DRY_RUN` policies first if you want estimates without deletion.
     The original is **never released early**. Normal transfer expiry and explicit purge apply independently.
@@ -136,9 +136,8 @@ The supplied configuration reloads the `StoragePolicy` group automatically. Pres
 the Master after configuration changes. Enablement, batch/budget limits and usage age
 are read dynamically; interval, time ranges and jammed timeout require a restart.
 
-Lifecycle deletion requires compatible Movers; unsupported Movers are excluded
-from deletion. With lifecycle disabled, ordinary replication, downloads and expiry
-continue unchanged.
+Unavailable or busy Movers retain their replicas for a later retry. With lifecycle
+disabled, ordinary replication, downloads and expiry continue unchanged.
 Set `enabled=no` as the kill switch; a removal already in progress may finish.
 Full release of an unexpired original, automatic original promotion, checksum
 deduplication and size/metadata matching extensions are **not included**.

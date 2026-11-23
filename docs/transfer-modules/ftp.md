@@ -44,7 +44,7 @@ The host name / IP and port are taken from the host record. Use the options belo
 
 ### DissFTPd shared-key authentication
 
-With an updated DissFTPd server, a host can require proof of a separate shared
+A DissFTPd server can require proof of a separate shared
 key as well as its normal password. Generate a different key for each account
 on the server, without printing it:
 
@@ -110,8 +110,7 @@ Keep accounts files and shared keys accessible only to the service account.
 Use absolute container paths for `sharedKeyFile.<account>` and mount those key
 files read-only too. Relative key paths still resolve under the packaged
 configuration directory. Restart the container after changing accounts, groups
-or properties. Rebuild the DissFTPd RPM and container image to enable this
-override support.
+or properties.
 
 ### Data channel mode
 

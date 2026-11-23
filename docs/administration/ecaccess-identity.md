@@ -39,7 +39,7 @@ repository for reproducible builds beyond a local checkout.
 
 Install the built `ecpds-ecaccess/target/ecpds-ecaccess-<version>.jar` and
 `ecaccess-eccmd-client-1.0.0.jar` on the **Master application classpath**, alongside
-the matching OpenECPDS core and runtime libraries. The adapter jar does not bundle
+the OpenECPDS core and runtime libraries. The adapter jar does not bundle
 core classes. Do not install the external `eccmd.jar`, `gateway.jar` or `monitor.jar`
 alongside upstream: they contain overlapping implementations.
 

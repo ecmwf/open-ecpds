@@ -15,7 +15,7 @@ Build the adapter and extracted client-contract jar using the
 [ECaccess extension build instructions](../administration/ecaccess-identity.md#build-the-client-contracts-and-extension).
 The ordinary OpenECPDS build does not include them.
 
-Install the matching `ecpds-ecaccess-<version>.jar` on the application classpaths of
+Install the built `ecpds-ecaccess-<version>.jar` on the application classpaths of
 the Master, Monitor and every Mover/Proxy executing this transfer method. Install
 `ecaccess-eccmd-client-1.0.0.jar` on the Master classpath as well. The
 ECCMD wire contracts are confined to the Master-side adapter; Movers use the
@@ -23,7 +23,6 @@ extension's own `EcaccessGatewayAccess` remote interface. Do not add external
 server archives containing overlapping core implementations to OpenECPDS:
 classpath precedence is not a supported way to replace core classes.
 
-Master and participating Movers must use matching core and extension versions.
 Restart affected services after installation or configuration changes.
 
 The Transfer Module definition must use class
@@ -99,7 +98,7 @@ For a Host whose Transfer Method selects this module:
 
 These option definitions and editor help are supplied by the extension's
 [option provider](../concepts/plugin-infrastructure.md#extension-owned-transfer-options),
-not the core enum. Install the matching extension on the Monitor as well to
+not the core enum. Install the extension on the Monitor as well to
 enable editor completion and validation. The property names and defaults are
 listed below.
 

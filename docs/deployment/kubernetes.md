@@ -374,8 +374,7 @@ per Host per rolling hour, even if a pending password is replaced.
 
 ### Credential rotation enablement
 
-Credential rotation is an opt-in feature. Deploy matching Master, Monitor and
-Mover components, then complete these prerequisites:
+Credential rotation is an opt-in feature. Complete these prerequisites:
 
 1. Verify the rotation tables are present, configure Master-only OpenBao access,
    and establish vault backup, unseal and application-token replacement procedures.

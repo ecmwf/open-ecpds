@@ -253,8 +253,7 @@ Master connection. Continental Movers use the existing REST relay path.
 Forwarding queues are bounded and held in memory; connection failures are
 retried while the process is running, but full queues and shutdown can discard
 spans. Check Mover, relay and Master service logs for forwarding/export errors.
-Trace forwarding does not block transfers. The Master, Movers and Continental
-relays must use matching versions for the retrieval-span wire format.
+Trace forwarding does not block transfers.
 
 Traces cover dispatch, transfer execution and completion for dissemination
 attempts. Retries have separate traces. UPH and dissemination ERR native logs

@@ -203,7 +203,6 @@ and Host options, so changing a protocol or its configuration invalidates them.
 
 Credential rotation is disabled by default. It requires authorization, explicit
 endpoint approval, fleet draining and evidence-based retirement.
-Use matching OpenECPDS versions on the Master, Monitor and participating Movers.
 Hosts that are not enrolled in rotation can continue using their configured
 credentials. This workflow stages and switches credentials;
 it does not create replacement cloud keys or revoke them at the remote service.
