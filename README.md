@@ -59,10 +59,35 @@ docker run -d \
   ghcr.io/ecmwf/open-ecpds/standalone:latest
 ```
 
-Start with an **empty** `./ecpds-data` directory and allow about 30 seconds for
-startup. The database and embedded vault initialize automatically. Preserve
+Start with an **empty** `./ecpds-data` directory. The database and embedded vault
+initialize automatically. Preserve
 `./ecpds-data` and the matching image build: the volume is tied to that build. See
 [backup and recovery](https://ecmwf.github.io/open-ecpds/getting-started/standalone/#backup-and-recovery).
+
+### Check startup
+
+`docker run -d` returns before initialization finishes. Check the container's
+state and health:
+
+```bash
+docker inspect -f 'state={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' standalone
+```
+
+Wait until it reports `state=running health=healthy`; initialization may take
+longer than 30 seconds. `health=none` means the image has no Docker health
+check. If it has exited or remains unhealthy, inspect its logs:
+
+```bash
+docker logs --tail 100 standalone
+```
+
+An unmarked or incompatible data directory is rejected without deleting its data.
+Keep that directory and either use its matching image build or start a new
+container with a different, empty directory. See
+[startup checks](https://ecmwf.github.io/open-ecpds/getting-started/standalone/#check-startup)
+for details.
+
+### Access
 
 Retrieve the generated initial credentials as the container administrator:
 

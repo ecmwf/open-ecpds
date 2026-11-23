@@ -12,7 +12,7 @@ RUN dnf groupinstall -y "Development Tools" && \
     dnf install -y \
         make rpm-build binutils joe file ftp awscli iputils net-tools \
         telnet clang-tools-extra gnupg2 ca-certificates sudo which unzip wget tar \
-        openssl-devel nodejs gh \
+        openssl-devel nodejs gh jq ShellCheck iproute bind-utils nmap-ncat \
     && dnf clean all
 
 # Install Docker CE (via official repository)

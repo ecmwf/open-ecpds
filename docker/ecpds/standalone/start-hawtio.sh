@@ -7,6 +7,7 @@ HAWTIO_PASSWORD=${HAWTIO_PASSWORD:-$(< /data/lib/monitor/standalone-secrets/hawt
 export KEYSTORE_PASSWORD
 KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD:-$(< /data/lib/monitor/standalone-secrets/keystore)}
 keystore=${HAWTIO_TLS_KEYSTORE:-/data/lib/monitor/tls/ecpds-monitor.pfx}
+export JAVA_OPTS="${JAVA_OPTS:-} -Duser.home=/run/hawtio"
 
 if [[ "$keystore" == "none" ]]; then
     unset HAWTIO_TLS_KEYSTORE

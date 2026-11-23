@@ -58,8 +58,6 @@ marker is recorded there; the same image build can reuse the volume across
 restarts or recreation. A different build, or a nonempty directory without a
 marker, is rejected without deleting anything. Restore the matching image or
 map a different empty directory. Keep the image as well as a backup of the data.
-Wait about 30 seconds for all
-services to become available.
 
 Standalone holds an advisory lock on `/data/.standalone.lock` while it runs.
 A second standalone container using the same volume fails to start. Use storage
@@ -73,6 +71,40 @@ programs or make a running database safe to copy.
     configure clients to verify a trusted certificate and hostname instead of
     bypassing certificate checks. See
     [standalone TLS guidance](standalone-security.md).
+
+## Check startup
+
+`docker run -d` returns a container ID before initialization finishes; this
+does not mean the services are ready. Check the container's state and health:
+
+```bash
+docker inspect -f 'state={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' standalone
+```
+
+Wait for `state=running health=healthy` before accessing the services. Health
+initially reports `starting`; startup often takes about 30 seconds but can take
+longer. `none` means the image has no Docker health check, so it cannot confirm
+readiness this way.
+
+If the container exits or remains unhealthy, inspect its startup messages:
+
+```bash
+docker logs --tail 100 standalone
+```
+
+For example, an old unmarked data directory or one created by a different image
+build is rejected. Preserve the existing directory and restore its matching
+image build, or create a new container using a different, empty data directory.
+Do not delete or edit the build marker to bypass the check. `docker ps -a`
+also shows stopped containers. If `docker run` itself reports an error, resolve
+that error first; for example, an existing container may already use the name
+`standalone`.
+
+The health check covers service processes, database connectivity, local ports
+and the Hawtio web application; it does not verify transfers, external endpoints
+or certificate validity. In manual OpenBao mode the container cannot become
+healthy until the vault is unsealed and the Master token is ready; see
+[standalone vault modes](../deployment/standalone-vault.md).
 
 ## Access
 
@@ -715,13 +747,8 @@ access. Rehearse this procedure on an isolated host.
 The data marker rejects any different image build; do not remove or edit the
 marker to bypass this check.
 
-Docker health reports supervisor status, MariaDB connectivity and the local
-service ports. In manual OpenBao mode the container remains unhealthy until the
-vault is unsealed and the Master token is ready. Check its state with:
-
-```bash
-docker inspect -f 'running={{.State.Running}} health={{.State.Health.Status}}' standalone
-```
+Use the [startup check](#check-startup) to inspect Docker health, including after
+a restore.
 
 Configure an independent monitoring system to alert when the container stops,
 stays unhealthy or cannot be inspected, or when host disk capacity is low.
