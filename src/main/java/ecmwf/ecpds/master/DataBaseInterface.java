@@ -54,6 +54,7 @@ import ecmwf.common.database.Destination;
 import ecmwf.common.database.DestinationBackup;
 import ecmwf.common.database.DestinationECUser;
 import ecmwf.common.database.ECUser;
+import ecmwf.common.database.ECpdsBase;
 import ecmwf.common.database.ECtransModule;
 import ecmwf.common.database.Event;
 import ecmwf.common.database.Host;
@@ -1885,12 +1886,13 @@ public interface DataBaseInterface extends Remote {
      * Checks whether the API client encoded in the given "clientId:secret" credentials string is active, has a matching
      * secret, and is granted a permission pattern that matches the given service name - throwing a
      * {@link DataBaseException} (and recording an {@link ApiEvent}) if not. Used by the REST API (v1) to gate access to
-     * a given service the same way the legacy SOAP/RMI API does via the internal {@code checkUser()}.
+     * a given service the same way the legacy SOAP/RMI API does via the internal {@code checkUser()}. A {@code null}
+     * service authenticates the client without requiring a service permission.
      *
      * @param userNameAndPassword
      *            the "clientId:secret" credentials string
      * @param service
-     *            the service name to check permission for
+     *            the service name to check permission for, or {@code null} for authentication only
      *
      * @throws ecmwf.common.database.DataBaseException
      *             if the client is unknown/inactive, the secret is invalid, or no permission pattern matches
@@ -1907,10 +1909,10 @@ public interface DataBaseInterface extends Remote {
      * @param userNameAndPassword
      *            the "clientId:secret" credentials string
      * @param service
-     *            the service name to check permission for
+     *            the service name to check permission for, or {@code null} for authentication only
      *
      * @return {@code true} if the client is active, has a matching secret, and is granted a permission pattern matching
-     *         the given service name
+     *         the given service name (or no service permission was requested)
      *
      * @throws ecmwf.common.database.DataBaseException
      *             the data base exception
@@ -2014,6 +2016,37 @@ public interface DataBaseInterface extends Remote {
      *             the remote exception
      */
     DataTransfer getDataTransfer(long dataTransferId) throws DataBaseException, RemoteException;
+
+    /**
+     * Gets the transfer's destination directly from the database without entity or scheduler caches.
+     *
+     * @param dataTransferId
+     *            the data transfer id
+     *
+     * @return the destination name, or null if the transfer no longer exists
+     *
+     * @throws DataBaseException
+     *             if the transfer cannot be read
+     * @throws RemoteException
+     *             if the remote call fails
+     */
+    String getDataTransferDestinationById(long dataTransferId) throws DataBaseException, RemoteException;
+
+    /**
+     * Reads a bounded batch of current transfer destinations, bypassing entity and scheduler caches.
+     *
+     * @param dataTransferIds
+     *            up to {@link ECpdsBase#TRANSFER_DESTINATION_BATCH_SIZE} transfer ids
+     *
+     * @return the destinations by transfer id, omitting missing transfers
+     *
+     * @throws DataBaseException
+     *             if the batch is invalid or cannot be read
+     * @throws RemoteException
+     *             if the remote call fails
+     */
+    Map<Long, String> getDataTransferDestinationsByIds(long[] dataTransferIds)
+            throws DataBaseException, RemoteException;
 
     /**
      * Gets the destination array.

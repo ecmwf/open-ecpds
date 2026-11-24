@@ -240,7 +240,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     private DataTransfer getDataTransfer(final Destination destination, final String source) throws MasterException {
         if (source.startsWith("DataTransferId=")) {
             // The DataTransfer id is provided directly for better performance!
-            return getDataTransfer(source.substring(15));
+            return checkDestination(destination, getDataTransfer(source.substring(15)));
         }
         final var tokenizer = new StringTokenizer(source, "/");
         if (destination.getGroupByDate()) {
@@ -260,7 +260,8 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                         2)) {
                     if (transfers.hasNext()) {
                         try {
-                            return master.getDataBase(ECpdsBase.class).getDataTransfer(transfers.next().getId());
+                            return checkDestination(destination,
+                                    master.getDataBase(ECpdsBase.class).getDataTransfer(transfers.next().getId()));
                         } catch (final DataBaseException e) {
                             _log.warn(e);
                             throw new MasterException("DataBase error");
@@ -270,7 +271,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                 // File not found!
             } else if (tokenizer.countTokens() == 1) {
                 // This is supposed to be the DataTransfer id!
-                return getDataTransfer(source);
+                return checkDestination(destination, getDataTransfer(source));
             } else {
                 // This is not a valid path!
                 throw new MasterException("Invalid path: " + source);
@@ -281,7 +282,8 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
             try (var transfers = getDataTransfers(destination.getName(), source, -1, -1)) {
                 if (transfers.hasNext()) {
                     try {
-                        return master.getDataBase(ECpdsBase.class).getDataTransfer(transfers.next().getId());
+                        return checkDestination(destination,
+                                master.getDataBase(ECpdsBase.class).getDataTransfer(transfers.next().getId()));
                     } catch (final DataBaseException e) {
                         _log.warn(e);
                         throw new MasterException("DataBase error");
@@ -291,6 +293,14 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
         }
         // We couldn't find the file!
         throw new MasterException("File not found: " + source);
+    }
+
+    private static DataTransfer checkDestination(final Destination destination, final DataTransfer transfer)
+            throws MasterException {
+        if (transfer == null || !destination.getName().equals(transfer.getDestinationName())) {
+            throw new MasterException("DataTransfer not found in destination: " + destination.getName());
+        }
+        return transfer;
     }
 
     /**
@@ -423,10 +433,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
     public List<ProxySocket> getDownloadProxies(final String destinationName, final String transferId,
             final String etag, final List<DownloadRange> ranges, final boolean storedOnly) throws MasterException {
         final var destination = getDestination(destinationName);
-        final var transfer = (DataTransfer) getDataTransfer(transferId).clone();
-        if (!destinationName.equals(transfer.getDestinationName())) {
-            throw new MasterException("DataTransfer not found in destination: " + destinationName);
-        }
+        final var transfer = (DataTransfer) checkDestination(destination, getDataTransfer(transferId)).clone();
         final var file = (DataFile) transfer.getDataFile().clone();
         if (!DataFileVersion.etag(file).equals(etag)) {
             throw new MasterException("File version changed while opening the stream");
@@ -1000,7 +1007,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
         final var size = path != null ? path.length() : 0;
         // The DataTransfer id is provided directly for better performance!
         if (size > 0 && path.startsWith("DataTransferId=")) {
-            final var transfer = getDataTransfer(path.substring(15));
+            final var transfer = getDataTransfer(destination, path);
             return getFileListElement(destination, transfer, new File(transfer.getTarget()).getName());
         }
         final var currentTime = System.currentTimeMillis();

@@ -33,6 +33,11 @@ stopped and the requests are in **StandBy**, awaiting manual queueing; no
 external delivery is implied. The header shows the destination state, and the
 table shows each target, scheduled time and status.
 
+Transfer lists and basket selections are restricted to destinations the user can
+view. Before a bulk action starts, every selected transfer is checked. If any
+selected transfer is missing or belongs to another destination, the action is
+rejected before execution.
+
 ### Filtering the queue
 
 This silent recording enters `target=forecast*`, presses Enter to show the
@@ -63,6 +68,10 @@ scope and the upper bound for this Destination.
 Counts represent scheduled jobs, not physical sockets. Zero-count activity pills
 are hidden. For a shared acquisition Host limit, the retrieval pill's tooltip also
 shows combined Host slot usage across Destinations on the same Master.
+
+Activating or deactivating a Host requires it to be associated with the current
+Destination. The Host's enabled state is global, so this also affects any other
+Destinations that share it.
 
 **Dissemination** uses Host priority and failover settings. Lower priority numbers
 take precedence, but the scheduler can remain on a working fallback Host rather

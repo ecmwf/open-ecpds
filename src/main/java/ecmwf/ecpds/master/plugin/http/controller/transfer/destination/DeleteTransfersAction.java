@@ -42,7 +42,6 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
-import ecmwf.common.technical.ExecutorRepository;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
@@ -94,6 +93,7 @@ public class DeleteTransfersAction extends PDSAction {
             final Iterator<?> i = c.iterator();
             final var destination = DestinationHome.findByPrimaryKey(i.next().toString());
             final var subAction = i.next().toString();
+            daf.setId(destination.getName());
             daf.setIsMemberState(!user.hasAccess(getResource(request, "nonmemberstate.basepath")));
             request.setAttribute("destination", destination);
             return executeSubActionOnSelectedDataTransfers(request, mapping, destination, subAction, daf, user);
@@ -195,12 +195,14 @@ public class DeleteTransfersAction extends PDSAction {
             throw new ECMWFActionFormException(
                     "The subAction '" + subAction + "' is not defined for class " + this.getClass().getName());
         }
-        new ExecutorRepository<>(exceptions, processedCount, form.getActionTransfers()) {
-            @Override
-            public void exec(final DataTransfer transfer) throws Exception {
-                transfer.delete(u);
-            }
-        };
+        final var ids = form.getActionTransferIds();
+        DestinationAccess.validateTransfers(ids, d.getName(), exceptions);
+        if (!exceptions.isEmpty()) {
+            form.setMessagesFromExceptions(exceptions);
+            return mapping.findForward("validate.redir");
+        }
+        DestinationAccess.executeTransfers(ids, d.getName(), exceptions, processedCount,
+                transfer -> transfer.delete(u));
         form.cleanActionTransfers();
         forward = mapping.findForward("validate.redir");
         if (processedCount.get() > 0) {

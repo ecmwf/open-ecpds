@@ -26,13 +26,19 @@ package ecmwf.ecpds.master.plugin.http.home.transfer;
  * @since 2004-10-09
  */
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ecmwf.common.database.DataBaseCursor;
+import ecmwf.common.database.ECpdsBase;
+import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.dao.transfer.DataTransferLightBean;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.BadDataTransferCountByDestination;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.BadDataTransfersByDestination;
@@ -110,6 +116,43 @@ public class DataTransferHome extends ModelHomeBase {
         } catch (final DAOException e) {
             log.error("Error retrieving object by key", e);
             throw new TransferException("Error retrieving object by key", e);
+        }
+    }
+
+    public static String findDestinationByPrimaryKeyUncached(final String key) throws TransferException {
+        try {
+            return MasterManager.getDB().getDataTransferDestinationById(Long.parseLong(key));
+        } catch (final Exception e) {
+            throw new TransferException("Error retrieving current data transfer '" + key + "'", e);
+        }
+    }
+
+    public static Map<String, String> findDestinationsByPrimaryKeysUncached(final Collection<String> ids)
+            throws TransferException {
+        try {
+            final var keys = new ArrayList<>(ids);
+            final var values = new long[keys.size()];
+            for (var i = 0; i < values.length; i++) {
+                values[i] = Long.parseLong(keys.get(i));
+                if (values[i] < 0) {
+                    throw new IllegalArgumentException("Invalid data transfer id");
+                }
+            }
+            final Map<String, String> destinations = new HashMap<>();
+            for (var from = 0; from < values.length; from += ECpdsBase.TRANSFER_DESTINATION_BATCH_SIZE) {
+                final var to = Math.min(from + ECpdsBase.TRANSFER_DESTINATION_BATCH_SIZE, values.length);
+                final var current = MasterManager.getDB()
+                        .getDataTransferDestinationsByIds(Arrays.copyOfRange(values, from, to));
+                for (var i = from; i < to; i++) {
+                    final var destination = current.get(values[i]);
+                    if (destination != null) {
+                        destinations.put(keys.get(i), destination);
+                    }
+                }
+            }
+            return destinations;
+        } catch (final Exception e) {
+            throw new TransferException("Error retrieving current data transfer destinations", e);
         }
     }
 

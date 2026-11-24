@@ -34,7 +34,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -179,15 +178,23 @@ public class DetailActionDestinationCache {
      */
     public Collection<DataTransfer> getActionTransfers() {
         final List<DataTransfer> l = new ArrayList<>(actionTransfers.size());
+        final Map<String, DataTransfer> transfers;
+        try {
+            transfers = DestinationAccess.loadTransfers(getActionTransferIds(), getDestination());
+        } catch (final TransferException e) {
+            log.warn("Problem checking action transfer destinations", e);
+            return l;
+        }
         final List<String> deadKeys = new ArrayList<>();
         for (final String key : actionTransfers.keySet()) {
             final var value = String.valueOf(actionTransfers.get(key));
             if ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value)) {
-                try {
-                    l.add(DataTransferHome.findByPrimaryKey(key));
-                } catch (final TransferException e) {
+                final var transfer = transfers.get(key);
+                if (transfer != null) {
+                    l.add(transfer);
+                } else {
                     // Transfer no longer exists in DB — remove it as a ghost entry
-                    log.warn("Transfer key '" + key + "' not found; removing from action/selected sets", e);
+                    log.warn("Transfer key '" + key + "' unavailable; removing from action/selected sets");
                     deadKeys.add(key);
                 }
             }
@@ -197,6 +204,16 @@ public class DetailActionDestinationCache {
             selectedTransfers.remove(key);
         }
         return l;
+    }
+
+    public Collection<String> getActionTransferIds() {
+        final List<String> ids = new ArrayList<>();
+        for (final var entry : actionTransfers.entrySet()) {
+            if ("on".equalsIgnoreCase(entry.getValue()) || "true".equalsIgnoreCase(entry.getValue())) {
+                ids.add(entry.getKey());
+            }
+        }
+        return ids;
     }
 
     /**
@@ -460,6 +477,7 @@ public class DetailActionDestinationCache {
      */
     public Collection<DataTransfer> getSelectedTransfers(final int from, final int to) {
         final List<DataTransfer> l = new ArrayList<>(to - from);
+        final List<String> ids = new ArrayList<>(to - from);
         final var treeSet = new TreeSet<String>(
                 (s1, s2) -> Integer.compare(Integer.parseInt(s1), Integer.parseInt(s2)));
         treeSet.addAll(selectedTransfers.keySet());
@@ -472,16 +490,25 @@ public class DetailActionDestinationCache {
                 if (count < from) {
                     count++;
                 } else {
-                    try {
-                        l.add(DataTransferHome.findByPrimaryKey(id));
-                        count++;
-                    } catch (final TransferException e) {
-                        // Transfer no longer exists — remove ghost entry and advance cursor
-                        log.warn("Transfer key '" + id + "' not found; removing from selected set", e);
-                        selectedTransfers.remove(id);
-                        count++;
-                    }
+                    ids.add(id);
+                    count++;
                 }
+            }
+        }
+        final Map<String, DataTransfer> transfers;
+        try {
+            transfers = DestinationAccess.loadTransfers(ids, getDestination());
+        } catch (final TransferException e) {
+            log.warn("Problem checking selected transfer destinations", e);
+            return l;
+        }
+        for (final var id : ids) {
+            final var transfer = transfers.get(id);
+            if (transfer != null) {
+                l.add(transfer);
+            } else {
+                log.warn("Transfer key '" + id + "' unavailable; removing from selected set");
+                selectedTransfers.remove(id);
             }
         }
         return l;
@@ -497,7 +524,7 @@ public class DetailActionDestinationCache {
      */
     public DataTransfer getDataTransfer(final String id) {
         try {
-            return DataTransferHome.findByPrimaryKey(id);
+            return DestinationAccess.requireTransfer(id, getDestination());
         } catch (final TransferException e) {
             log.warn("Problem getting Transfer with key '" + id + "' to list selected transfers", e);
             return null;
@@ -549,13 +576,16 @@ public class DetailActionDestinationCache {
             }
         }
 
-        // Load all basket objects from the database (one call per item — the slow part).
-        final Map<String, DataTransfer> newCache = new LinkedHashMap<>(snapshotIds.size() * 2);
+        final Map<String, DataTransfer> newCache;
+        try {
+            newCache = DestinationAccess.loadTransfers(snapshotIds, getDestination());
+        } catch (final TransferException e) {
+            log.warn("Problem checking basket transfer destinations", e);
+            return List.of();
+        }
         final List<String> deadKeys = new ArrayList<>();
         for (final String id : snapshotIds) {
-            try {
-                newCache.put(id, DataTransferHome.findByPrimaryKey(id));
-            } catch (final Exception _) {
+            if (!newCache.containsKey(id)) {
                 deadKeys.add(id); // ghost: no longer in DB
             }
         }

@@ -161,6 +161,13 @@ public abstract class UserSession {
     }
 
     /**
+     * Checks whether file metadata may be returned for a resolved portal path.
+     */
+    public void checkFileMetadataPermission(final String path, final FileListElement element) throws EccmdException {
+        throw new EccmdException("Permission denied for file metadata");
+    }
+
+    /**
      * Chmod.
      *
      * @param mode

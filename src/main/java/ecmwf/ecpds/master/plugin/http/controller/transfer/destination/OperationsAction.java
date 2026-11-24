@@ -47,7 +47,6 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
-import ecmwf.common.technical.ExecutorRepository;
 import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
@@ -175,6 +174,7 @@ public class OperationsAction extends PDSAction {
             final Iterator<?> i = c.iterator();
             final var destination = DestinationHome.findByPrimaryKey(i.next().toString());
             final var subAction = i.next().toString();
+            daf.setId(destination.getName());
             daf.setIsMemberState(!user.hasAccess(getResource(request, "nonmemberstate.basepath")));
             request.setAttribute("destination", destination);
             return executeSubActionOnSelectedDataTransfers(request, mapping, destination, subAction, daf, user);
@@ -271,11 +271,13 @@ public class OperationsAction extends PDSAction {
             transfer.interruptRetrieval(u);
         } else if (DEACTIVATE_HOST.equals(subAction)) {
             final var h = HostHome.findByPrimaryKey(subActionParameter);
+            DestinationAccess.requireHost(d, h);
             h.setActive(false);
             h.save(u);
             return mapping.findForward("detail");
         } else if (ACTIVATE_HOST.equals(subAction)) {
             final var h = HostHome.findByPrimaryKey(subActionParameter);
+            DestinationAccess.requireHost(d, h);
             h.setActive(true);
             h.save(u);
             return mapping.findForward("detail");
@@ -352,17 +354,26 @@ public class OperationsAction extends PDSAction {
         final var processedCount = new AtomicLong(0);
         final var startTime = System.currentTimeMillis();
         final ActionForward forward;
+        final var ids = form.getActionTransferIds();
+        if (EXTEND_LIFETIME.equals(subAction) || INCREASE_TRANSFER_PRIORITY.equals(subAction)
+                || DECREASE_TRANSFER_PRIORITY.equals(subAction) || SET_TRANSFER_PRIORITY.equals(subAction)
+                || REQUEUE.equals(subAction) || STOP.equals(subAction)) {
+            DestinationAccess.validateTransfers(ids, d.getName(), exceptions);
+            if (!exceptions.isEmpty()) {
+                form.setMessagesFromExceptions(exceptions);
+                return mapping.findForward("validate.redir");
+            }
+        }
         Integer extensionDays = null;
         if (VALIDATE.equals(subAction)) {
             // Just changed to the screen without performing an action
             forward = mapping.findForward("validate");
         } else if (SELECT_FILTERED.equals(subAction)) {
-            var hasAccess = true;
+            var hasAccess = false;
             try {
                 hasAccess = u.hasAccess(getResource(request, "datatransfer.basepath"));
             } catch (final Exception e) {
-                log.error("Problem checking access for user '" + u
-                        + "' to this destination data transfers. Returning all without filtering.");
+                log.error("Problem checking access to destination data transfers. Applying restricted filtering.", e);
             }
             form.addToSelections(form.getDataTransfers(hasAccess));
             forward = mapping.findForward("validate");
@@ -373,56 +384,32 @@ public class OperationsAction extends PDSAction {
                 exceptions.add(new ECMWFActionFormException(
                         "Extension days must be a whole number from 1 to " + MAX_EXTEND_DAYS + "."));
             } else {
-                new ExecutorRepository<>(exceptions, processedCount, form.getActionTransfers()) {
-                    @Override
-                    public void exec(final DataTransfer transfer) throws Exception {
-                        transfer.setExpiryDate(new Date(transfer.getExpiryDate().getTime() + days * Timer.ONE_DAY), u);
-                    }
-                };
+                DestinationAccess.executeTransfers(ids, d.getName(), exceptions, processedCount, transfer -> transfer
+                        .setExpiryDate(new Date(transfer.getExpiryDate().getTime() + days * Timer.ONE_DAY), u));
             }
             forward = mapping.findForward("validate.redir");
         } else if (INCREASE_TRANSFER_PRIORITY.equals(subAction)) {
-            new ExecutorRepository<>(exceptions, processedCount, form.getActionTransfers()) {
-                @Override
-                public void exec(final DataTransfer transfer) throws Exception {
-                    transfer.setPriority(transfer.getPriority() - TRANSFER_PRIORITY_STEP, u);
-                }
-            };
+            DestinationAccess.executeTransfers(ids, d.getName(), exceptions, processedCount,
+                    transfer -> transfer.setPriority(transfer.getPriority() - TRANSFER_PRIORITY_STEP, u));
             forward = mapping.findForward("validate.redir");
         } else if (DECREASE_TRANSFER_PRIORITY.equals(subAction)) {
-            new ExecutorRepository<>(exceptions, processedCount, form.getActionTransfers()) {
-                @Override
-                public void exec(final DataTransfer transfer) throws Exception {
-                    transfer.setPriority(transfer.getPriority() + TRANSFER_PRIORITY_STEP, u);
-                }
-            };
+            DestinationAccess.executeTransfers(ids, d.getName(), exceptions, processedCount,
+                    transfer -> transfer.setPriority(transfer.getPriority() + TRANSFER_PRIORITY_STEP, u));
             forward = mapping.findForward("validate.redir");
         } else if (SET_TRANSFER_PRIORITY.equals(subAction)) {
-            new ExecutorRepository<>(exceptions, processedCount, form.getActionTransfers()) {
-                @Override
-                public void exec(final DataTransfer transfer) throws Exception {
-                    transfer.setPriority(Integer.parseInt(form.getNewPriority()), u);
-                }
-            };
+            DestinationAccess.executeTransfers(ids, d.getName(), exceptions, processedCount,
+                    transfer -> transfer.setPriority(Integer.parseInt(form.getNewPriority()), u));
             if (!exceptions.isEmpty()) {
                 form.setNewPriority("");
             }
             forward = mapping.findForward("validate.redir");
         } else if (REQUEUE.equals(subAction)) {
-            new ExecutorRepository<>(exceptions, processedCount, form.getActionTransfers()) {
-                @Override
-                public void exec(final DataTransfer transfer) throws Exception {
-                    transfer.requeue(u);
-                }
-            };
+            DestinationAccess.executeTransfers(ids, d.getName(), exceptions, processedCount,
+                    transfer -> transfer.requeue(u));
             forward = mapping.findForward("validate.redir");
         } else if (STOP.equals(subAction)) {
-            new ExecutorRepository<>(exceptions, processedCount, form.getActionTransfers()) {
-                @Override
-                public void exec(final DataTransfer transfer) throws Exception {
-                    transfer.stop(u);
-                }
-            };
+            DestinationAccess.executeTransfers(ids, d.getName(), exceptions, processedCount,
+                    transfer -> transfer.stop(u));
             forward = mapping.findForward("validate.redir");
         } else if (CANCEL.equals(subAction)) {
             forward = mapping.findForward("detail");
