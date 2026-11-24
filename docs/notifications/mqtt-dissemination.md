@@ -162,8 +162,8 @@ IDs are strings except `size`; timestamps are UTC ISO-8601.
 The target filename is relative to the destination; the script adds the destination
 directory and URL-encodes each segment. This preserves spaces, Unicode and literal
 percent signs without treating quotes in filenames as JavaScript.
-`$`-placeholder scripts are also supported. Database seed edits do not update
-existing destinations automatically.
+`$`-placeholder scripts are also supported. Changes to bundled examples do not
+update existing destinations automatically; edit their settings in the Monitor UI.
 
 #### Inline content for small files
 
@@ -256,8 +256,8 @@ This view covers outgoing **destination event publications**, not all MQTT clien
 traffic or subscriptions.
 
 History is independent of the OpenTelemetry Journal and its telemetry admission
-limits. The Master keeps a bounded in-memory cache backed by the `MQTT_ACTIVITY`
-database table. `[MQTTActivity] maxEntries`, `maxBytes` and `retentionHours` configure
+limits. The Master persists activity history and keeps a bounded in-memory cache.
+`[MQTTActivity] maxEntries`, `maxBytes` and `retentionHours` configure
 its bounds (defaults: 2,000 entries, 8 MiB serialized metadata, 24 hours since last
 update); changes require a Master restart. See
 [MQTT Activity configuration](../configuration/master.md#mqttactivity).
@@ -270,7 +270,7 @@ covers the configured retention.
 Charts and totals describe the latest
 known outcome of retained publications, not a complete historical counter or audit log.
 
-`[MQTTActivity] owner` identifies the logical Master in this table. It defaults to
+`[MQTTActivity] owner` identifies the logical Master that owns the history. It defaults to
 `[Login] root`, then `[Login] hostName` (finally `master`). Keep it stable. A
 failover Master with the same database and owner can recover history without the
 former Master's filesystem after the former Master has stopped. Run only one
@@ -287,7 +287,7 @@ recovered as `UNCONFIRMED`, not falsely reported as accepted.
 
 Message payloads, client IDs and connection credentials are not retained; topic
 and file metadata are visible only for destinations the viewer is authorized to
-operate. This table is dashboard history, not the `PUBLICATION` processing queue,
+operate. These records are dashboard history, not the publication processing queue,
 the OpenTelemetry delivery queue, or a permanent audit archive.
 Long metadata fields are limited to 1,024 characters; per-publication broker details
 are limited to 128 Movers, with an explicit unconfirmed outcome if that limit is exceeded.

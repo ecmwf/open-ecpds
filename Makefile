@@ -470,26 +470,9 @@ docs-embed: ## Build the documentation site (MkDocs + JavaDocs) directly into th
 
 docs-screenshots: ## Regenerate Monitor UI screenshots from a running standalone container (**)
 	@$(call is-dev-container,"",inside)
-	@echo ""
-	@echo "=== Monitor UI Screenshot Generator ==="
-	@read -p "Monitor UI URL       [https://$(MONITOR_UI_HOST):$(MONITOR_UI_PORT)]: " ui_base; \
-	 ui_base=$${ui_base:-"https://$(MONITOR_UI_HOST):$(MONITOR_UI_PORT)"}; \
-	 read -p "Admin username       [admin]: " admin_user; \
-	 admin_user=$${admin_user:-admin}; \
-	 read -s -p "Admin password       [admin2021]: " admin_pass; echo; \
-	 admin_pass=$${admin_pass:-admin2021}; \
-	 read -p "Monitor username     [monitor]: " mon_user; \
-	 mon_user=$${mon_user:-monitor}; \
-	 read -s -p "Monitor password     [monitor2021]: " mon_pass; echo; \
-	 mon_pass=$${mon_pass:-monitor2021}; \
-	 echo "Capturing screenshots from $$ui_base ..."; \
-	 MONITOR_UI_BASE="$$ui_base" \
-	 MONITOR_ADMIN_USER="$$admin_user" \
-	 MONITOR_ADMIN_PASS="$$admin_pass" \
-	 MONITOR_MON_USER="$$mon_user" \
-	 MONITOR_MON_PASS="$$mon_pass" \
-	 python3 scripts/crawl_monitor_ui.py
-	@echo "Screenshots updated in docs/monitor-ui/img/"
+	@echo "Use a disposable instance with synthetic data; screenshots may contain sensitive information."
+	@MONITOR_UI_BASE="$${MONITOR_UI_BASE:-https://$(MONITOR_UI_HOST):$(MONITOR_UI_PORT)}" \
+	 python3 scripts/crawl_monitor_ui.py $(SCREENSHOT_FLAGS)
 
 docs-preview: ## Serve the documentation locally for testing, accessible from the Docker host (**)
 	@$(call is-dev-container,"",inside)

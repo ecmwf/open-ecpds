@@ -11,7 +11,8 @@ one or more associated hosts, and a set of options that control scheduling behav
 The destination list shows all configured destinations with their type (Acquisition, Dissemination, Time Critical, or any custom type defined in the server configuration), status (active/stopped/held), queue depth, and last transfer time. Click a destination name to open its detail page.
 
 !!! note "Standalone container"
-    All four sample destinations (`efas_iconeu_opendata`, `hourly_aq`, `s2s_kwbc_enfo`, `wis2_sbo`) are of type **Acquisition** — they pull data from external sources.
+    The four provider examples acquire data from external sources when started.
+    `aviso_demo` and `mqtt_demo` are separate upload demonstrations.
 
 
 ![Destination List](img/destinations.png)
@@ -20,10 +21,27 @@ The destination list shows all configured destinations with their type (Acquisit
 
 ## Destination Detail
 
-The destination detail page shows the current queue for that destination: pending, running, done, and failed transfers. The toolbar provides actions to hold, release, flush, or reconfigure the destination. The Properties tab shows the destination's scheduler and incoming options.
+The destination detail page shows transfer requests and their statuses. Use the
+status and production-date buttons to narrow the table, or enter a query and
+press Enter. The toolbar provides destination actions and configuration.
 
 
 ![Destination Detail](img/destination-detail.png)
+
+Here, example files were uploaded to `aviso_demo`. The destination is
+stopped and the requests are in **StandBy**, awaiting manual queueing; no
+external delivery is implied. The header shows the destination state, and the
+table shows each target, scheduled time and status.
+
+### Filtering the queue
+
+This silent recording enters `target=forecast*`, presses Enter to show the
+matching requests, and then clears the query and presses Enter to restore the list.
+
+<video controls preload="metadata" width="100%" aria-label="Filtering and clearing the destination transfer queue">
+  <source src="../img/destination-filter.webm" type="video/webm">
+  Your browser cannot play this video; follow the written steps above.
+</video>
 
 ### Host activity and discovery
 

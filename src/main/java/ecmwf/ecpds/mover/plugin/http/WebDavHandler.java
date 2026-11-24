@@ -87,11 +87,13 @@ import org.apache.logging.log4j.Logger;
 import ecmwf.common.ecaccess.EccmdException;
 import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.common.ecaccess.NativeAuthenticationProvider;
+import ecmwf.common.ecaccess.StarterServer;
 import ecmwf.common.ecaccess.UserSession;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ProxyEvent;
 import ecmwf.common.technical.ProxySocket;
+import ecmwf.ecpds.mover.MoverServer;
 
 /**
  * Jetty servlet exposing the ECPDS virtual file system as WebDAV.
@@ -633,9 +635,11 @@ public final class WebDavHandler extends HttpServlet {
                 proxy = session.getUserSession().getProxySocketInput(toFtpPath(getResourcePath()), 0);
                 final var event = new ProxyEvent(proxy);
                 event.setProtocol("webdav");
+                event.setLocalHost(StarterServer.getInstance(MoverServer.class).getRoot());
                 event.setRemoteHost(session.getRemoteAddr());
                 event.setUserType(ProxyEvent.UserType.DATA_USER);
                 event.setUserName(session.getUserSession().getUser());
+                event.setStartTime(System.currentTimeMillis());
                 final var us = session.getUserSession();
                 us.startStreamOut();
                 try (InputStream in = proxy.getDataInputStream(); OutputStream out = outputContext.getOutputStream()) {
@@ -649,9 +653,10 @@ public final class WebDavHandler extends HttpServlet {
                             return n;
                         }
                     };
-                    wrapped.transferTo(out);
+                    event.setSent(wrapped.transferTo(out));
                 } finally {
                     us.endStreamOut();
+                    event.setDuration(Math.max(1L, System.currentTimeMillis() - event.getStartTime()));
                 }
                 session.getUserSession().check(proxy);
             } catch (final EccmdException e) {
@@ -759,10 +764,12 @@ public final class WebDavHandler extends HttpServlet {
                     proxy = session.getUserSession().getProxySocketOutput(toFtpPath(targetPath), 0, 0640);
                     final var event = new ProxyEvent(proxy);
                     event.setProtocol("webdav");
+                    event.setLocalHost(StarterServer.getInstance(MoverServer.class).getRoot());
                     event.setRemoteHost(session.getRemoteAddr());
                     event.setUserType(ProxyEvent.UserType.DATA_USER);
                     event.setUserName(session.getUserSession().getUser());
                     event.setUpload(true);
+                    event.setStartTime(System.currentTimeMillis());
                     final var us = session.getUserSession();
                     us.startStreamIn();
                     try (InputStream in = inputContext.getInputStream();
@@ -777,9 +784,10 @@ public final class WebDavHandler extends HttpServlet {
                                 return n;
                             }
                         };
-                        wrapped.transferTo(out);
+                        event.setSent(wrapped.transferTo(out));
                     } finally {
                         us.endStreamIn();
+                        event.setDuration(Math.max(1L, System.currentTimeMillis() - event.getStartTime()));
                     }
                     session.getUserSession().check(proxy);
                 } finally {

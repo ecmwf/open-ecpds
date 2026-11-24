@@ -505,9 +505,9 @@ database journal. It stores each native event **before** attempting delivery,
 not only after an export has already failed. The `splunk.log` output remains
 independent and is not replayed by this feature.
 
-Journaling requires the `OPERATIONAL_EVENT` table in the Master's database,
-included in the supplied installation schema. The running service does not
-create tables. The Master uses the supplied SQL files to access the journal.
+Journal persistence is included in the supplied database installation schema.
+Manage journal settings and delivery through the supported configuration and
+**Operations → OpenTelemetry Journal**, not by editing database records.
 
 Then configure and restart the Master:
 

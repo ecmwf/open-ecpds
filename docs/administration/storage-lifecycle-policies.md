@@ -5,8 +5,8 @@ downloads and requeue, per destination, destination type, transfer group or file
 `/do/admin/storagepolicies` (Administration → **Storage Lifecycle Policies**).
 
 !!! warning "Opt-in enforcement"
-    The feature defaults to **disabled**. With the required database tables in place,
-    set `[StoragePolicy] enabled=yes` on the Master.
+    The feature defaults to **disabled**. Set `[StoragePolicy] enabled=yes` on the Master
+    to enable it.
     **Existing `ENFORCE` policies take effect immediately when enabled.**
     Use `DRY_RUN` policies first if you want estimates without deletion.
     The original is **never released early**. Normal transfer expiry and explicit purge apply independently.
@@ -109,9 +109,8 @@ for successful replica removals.
 
 ## Deployment and sizing
 
-The database must contain `STORAGE_POLICY`, `STORAGE_LIFECYCLE` and
-`STORAGE_POLICY_METRIC`. The supplied installation schema includes these tables.
-The scheduler does not modify the schema.
+Lifecycle persistence is included in the supplied database installation schema.
+Create and edit policies through the administration page, not by changing database records.
 
 ```ini
 [StoragePolicy]

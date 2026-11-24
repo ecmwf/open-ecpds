@@ -39,8 +39,7 @@ draft or save them; use **Apply to draft** when ready.
 
 Up to 50 entries are supported. Select **Monitor** or **Data Portal** beside
 **Preview** to show unsaved content in the preview panel, using the same rendering as the
-login pages. Saving persists the shared configuration in `SYS_CONFIG`, under
-`LoginPageContent/configuration`; no additional database table is required.
+login pages. Saving persists the shared application configuration.
 New login page requests see saved changes without restarting services. Pages
 already open retain their existing content until reloaded.
 

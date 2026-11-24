@@ -7,7 +7,12 @@ and failed transfers across all destinations.
 
 ## Transfer History
 
-The history page lists completed transfer requests with their destination, target filename, size, duration, status, and Data Mover. Use the filters at the top to narrow by date range, destination, or status. Click a row to see the full transfer detail including error messages for failures. The screenshot below shows transfers for the `hourly_aq` destination on 2026-07-24.
+The history page lists transfer events, including status changes and their
+comments. Select a date and use the search box to narrow the results. The
+example shows recent arrival and standby events for local `aviso_demo` uploads,
+including the recorded byte counts, protocol and serving Data Mover. These are
+not completed deliveries. The page-size selector limits the example to the ten
+most recent events.
 
 
 ![Transfer History](img/transfer-history.png)

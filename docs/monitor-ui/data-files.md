@@ -7,11 +7,16 @@ handle them.
 
 ## Data Files
 
-Lists all data files in the system with their unique identifier, size, checksum (ADLER32), storage volume, and creation time. Each file can have multiple associated transfer requests across different destinations. Use the date selector in the left-hand panel to browse files by ingestion date, or apply filters on target name or field values to narrow the results.
+Lists data files known to the system. Each file can have multiple associated
+transfer requests across destinations. Select a date and use the original-name
+filter to narrow the list; column options provide additional details.
 
 
 ![Data Files](img/datafiles.png)
 
+The list shows original names and sizes, while the
+[destination page](destinations.md#destination-detail) shows the corresponding
+transfer status. A stored file and its transfer requests are separate objects.
 
 
 ## Transfer Groups
@@ -45,21 +50,34 @@ groups are not polled.
 
 ## Data Rates
 
-Shows throughput charts per Data Mover and per destination over a configurable time window. Useful for capacity planning and spotting performance degradation.
+The global Data Rates page combines daily transfer figures across destinations.
+The summary cards show volume, average rate and file counts for the selected
+period. Volume bars and the rate line make it easier to distinguish a busy day
+from a slow delivery period; rate is computed from bytes and cumulative transfer
+duration, not from the length of the day.
 
 
 ![Data Rates](img/datarates.png)
 
+Choose **30d**, **90d** or **Custom range** to focus on a period.
+Switch to **Table** to read the daily figures; the period controls update the
+cards, chart and table together. Individual destinations also have a Traffic view.
 
 
 ## Portal Traffic
 
-Displays upload and download activity through the Data Portal, broken down by Data User and destination. Helps identify heavy users and quota candidates.
+Displays upload and download activity through the Data Portal, aggregated across
+Data Users. Open a Data User's Portal Traffic page for that user's figures.
 
 The Connections chart shows daily authenticated connections alongside denied access attempts (DEA) from portal authentication and access checks. Other charts show upload/download rates in Mbps and upload/download volumes for the selected period. The same charts are available for an individual Data User's Portal Traffic page.
 
 
 ![Portal Traffic](img/portal-traffic.png)
+
+Read the charts together: **Connections** shows demand and denied attempts,
+**Transfer Rates** compares upload and download throughput, and **Volume** shows
+the bytes moved in each direction. More connections do not necessarily mean
+more transferred data. Use the same period and custom-range controls as Data Rates.
 
 
 
