@@ -52,6 +52,67 @@ not distributed in this repository. Component and integration checks do not
 replace deployment acceptance with the actual Monitor, Master and Movers.
 Keep application validation separate from changes to shared running services.
 
+## Documentation conventions
+
+Describe configuration and operations through the Monitor UI, command-line tools
+and supported APIs. Do not instruct users, including administrators, to edit
+application records directly in the database.
+Physical database table names belong only in the [database reference](architecture/database.md)
+and [changelog](changelog.md), not in other documentation or user-facing option help.
+
+## Regenerating documentation screenshots
+
+Use a disposable instance, not production: screenshots and recordings can expose
+hostnames, user names, file names and configuration. The examples below use
+the standalone image and keep its destinations stopped. The
+[standalone access instructions](getting-started/standalone.md#access) explain
+how to obtain its generated passwords.
+
+Upload a synthetic file to the stopped `aviso_demo` destination through the Data
+Portal. Repeat with other names to populate the table; include `forecast.txt`
+for the optional recording:
+
+```sh
+printf 'Synthetic forecast for documentation\n' |
+  curl --insecure --user test --upload-file - \
+    https://localhost:7443/webdav/aviso_demo/forecast.txt
+```
+
+`--insecure` is for the standalone's self-signed certificate only. Do not start
+the other example destinations merely to create screenshots: acquisition may
+contact external providers.
+
+From the development container, set `MONITOR_UI_BASE` to the reachable Monitor
+URL and run:
+
+```sh
+MONITOR_UI_BASE=https://localhost:8443 make docs-screenshots \
+  SCREENSHOT_FLAGS="--insecure --video --globe-demo"
+```
+
+The tool prompts privately for the generated `admin` and `monitor` passwords.
+For automated use, `MONITOR_ADMIN_PASS` and `MONITOR_MON_PASS` can be supplied
+through the environment; avoid exposing them in shell history or logs. Omit
+`--insecure` when the certificate is trusted. Dark theme is the default;
+`--theme light` selects the light theme instead. `--video` is optional and
+records queue filtering, MQTT publication details and the Live Earth views.
+`--globe-demo` supplies sample transfer events in the capture browser only;
+it does not send transfers to the Master or contact remote hosts.
+The capture excludes the product monitoring dashboard, which has no product
+records in a fresh standalone.
+Use `--destination NAME` to
+choose another destination or `--output-dir PATH` to review captures separately.
+Use `--api-client ID` if the existing client is named something other than `api`.
+Run `python3 scripts/crawl_monitor_ui.py --help` for all options.
+All selected pages must load successfully before generated files are replaced.
+Review the resulting media for private information before committing it.
+
+For populated traffic charts, use an evaluation instance with recorded transfer
+and Data Portal activity. Do not edit database counters to populate screenshots.
+Use the [MQTT upload example](getting-started/standalone.md#try-mqtt-upload-notifications)
+to populate MQTT Activity and wait for broker outcomes before capture. The
+capture tool itself does not insert statistics, upload files or modify accounts.
+
 ## Database requests
 
 Keep application SQL in `etc/master/conf/sql` and execute it through
@@ -63,12 +124,12 @@ type, and use an **unquoted** `:name` placeholder:
 
 ```sql
 #menu "ECpdsBase"
-#name "lockHostPasswordActive"
+#name "boundHostExample"
 #group "select"
 #timeout "5"
 #prompt "host;Host identifier;;"
 #bind "host;LONG"
-SELECT 1 FROM HOST_PASSWORD_ACTIVE WHERE HOS_NAME=:host FOR UPDATE
+SELECT :host
 ```
 
 `#prompt` remains available to existing request-discovery and prompting tools.

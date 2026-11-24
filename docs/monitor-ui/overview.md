@@ -30,22 +30,30 @@ or by the global `operations` category, which gives access to all destinations. 
 The monitor is accessible at `https://<host>:8443`.
 
 !!! note
-    All screenshots below were captured from the standalone container using the `admin` account
-    unless otherwise noted.
-
-
+    The screenshots show the standalone instance in **dark theme**.
+    Unless noted otherwise, they use the `admin` account. Stopped destinations
+    and standby uploads are intentional; they do not represent failed transfers.
 
 ## Navigation structure
 
-The main navigation bar divides the interface into five sections:
+The start page and navigation menu provide these main areas:
 
 | Section | Purpose |
 |---|---|
-| **Monitoring** | Real-time dashboard and transfer status overview |
-| **Transfers** | Destinations, hosts, transfer history, methods, and modules |
-| **Data Files** | Data file inventory, transfer groups, movers, and traffic stats |
-| **Users** | Data portal users, web users, categories, policies, and resources |
+| **Operations** | Monitoring overview, acquisition, dissemination, topology and live activity |
+| **Transmission** | Destinations, hosts, transfer history, methods, and modules |
+| **Data Storage** | Data file inventory, transfer groups, movers, and traffic stats |
+| **Access Control** | Data portal users, web users, API clients, categories, policies, and resources |
 | **Admin** | System-wide tools: metadata, requeue, upload, and audit |
+
+The Operations page is a useful starting point for investigating live status:
+
+![Operations page with monitoring and activity views](img/operations.png)
+
+For comparison, the restricted standalone `monitor` account sees only its
+authorised destination, `hourly_aq`, in the destination list:
+
+![Restricted user's destination list](img/destinations-monitor.png)
 
 ## Contextual help
 

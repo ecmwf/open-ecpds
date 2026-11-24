@@ -8,7 +8,7 @@ It does not replace Host Map/Live Earth locations or change topology host groupi
 
 ## Architecture and persistence
 
-Only the **Master JVM** collects SNMP and accesses `SYSTEM_PHYSICAL_LOCATION`.
+Only the **Master JVM** collects SNMP and persists the location metadata.
 Each **Monitor JVM** obtains the cached display metadata over its existing
 management **RMI connection** to the Master. **Mover JVMs need no SNMP changes**.
 The Master polls each eligible target once, even when several components share it.
@@ -81,7 +81,7 @@ The Master reconciles the following inventory in its own background worker:
 | Component | Address source |
 |---|---|
 | Master | `[Login] hostName` (not a custom root identity) |
-| Data Movers | Current `TRANSFER_SERVER` host fields, including configured inactive Movers |
+| Data Movers | Registered Data Mover host settings, including configured inactive Movers |
 | Connected Monitors | Peer address recorded by their existing Master registration |
 | Database endpoints | Hosts parsed from the configured JDBC alias, as in topology |
 
@@ -172,7 +172,7 @@ Mappings are **exact and case-sensitive**:
 | Key | Identity |
 |---|---|
 | `master` | This Master deployment |
-| `mover.NAME` | Data Mover's configured `TRANSFER_SERVER` name |
+| `mover.NAME` | Configured Data Mover name |
 | `monitor.ROOT` | Monitor's registered `[Login] root` identity, not its nickname |
 | `database.HOST:PORT` | Individual host as reported by topology and configured JDBC port (`3306` when omitted) |
 

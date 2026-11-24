@@ -1,6 +1,6 @@
 # Standalone Container
 
-The standalone image packages the complete OpenECPDS stack — MariaDB, Master Server,
+The standalone image packages the complete OpenECPDS stack — MariaDB 11.4, Master Server,
 Data Mover, and Monitor — in a single Docker container that starts pre-configured and
 ready to use. No build step, no manual database setup, no separate compose file required.
 

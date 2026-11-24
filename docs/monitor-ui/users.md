@@ -1,9 +1,10 @@
 # Users & Access Control
 
-OpenECPDS has two distinct user types:
+Access Control separates three kinds of identity:
 
 - **Data Users** (`IncomingUser`) — external users who access data through the Data Portal
 - **Web Users** — operators and administrators who access the monitoring interface
+- **API Clients** — applications using the Master REST API with service permissions
 
 Access is further controlled by **Categories**, **Policies**, and **Resources**.
 
@@ -66,6 +67,29 @@ For a full reference including authentication options and access-control details
 
 
 ![Web Users](img/web-users.png)
+
+Open a Web User to inspect its assigned Web Categories. Categories control which
+destinations and operations are available; a Web User is not a Data Portal account.
+
+![Web User detail showing assigned categories](img/web-user-detail.png)
+
+## API Clients
+
+The API Clients list shows application identities separately from human Web Users
+and Data Users. Open a client to inspect its active state, usage and service permissions.
+
+![API Clients list](img/api-clients.png)
+
+The detail page groups identity, status and **Service Permissions**. The permission
+picker and guide explain which Master REST services each pattern grants.
+The initial standalone client shown below has broad access; applications should
+receive only the permissions they need.
+
+![API Client detail showing status and service permission patterns](img/api-client-detail.png)
+
+A client secret is shown only when created or reset. It is not recoverable from
+the detail page, and resetting it invalidates the previous credential.
+See [REST API authentication](../rest-api.md) for client usage.
 
 
 

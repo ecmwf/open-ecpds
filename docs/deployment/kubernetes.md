@@ -271,9 +271,9 @@ Monitor **Destination Operations** access for the exact destination and a
 separate, revocable per-user rotation grant for that destination. Both
 [reauthentication policies](../administration/openid-connect.md#credential-rotation-and-fresh-mfa)
 bind the challenge to the exact pending reference.
-An administrator grants or revokes the separate permission in
-`HOST_PASSWORD_ROTATION_GRANT (DES_NAME, WEU_ID)` using the normal
-restricted database administration channel. Adding a grant does not add
+The current Monitor and API do not provide management of the separate rotation
+grants. If the required grant is missing, activation remains unavailable; do not
+edit the database to bypass this requirement. A rotation grant does not add
 Operations access, and removing either permission blocks subsequent requests
 and promotion. The pending-password dialog cannot grant itself access.
 The database promotion transaction checks the current probe proof, Operations
@@ -282,7 +282,7 @@ records a password-free audit entry and retains the previous vault reference
 until retirement. Monitor invokes it only through the gated, reauthenticated
 activation RPC.
 Switching a Host from configured credentials to OpenBao requires a persistent
-fence in `HOST_PASSWORD_LEGACY_FENCE`, a confirmed drain, and no open
+configured-credential fence, a confirmed drain, and no open
 admissions on the configured-credential path. The Master rejects operations
 that would use the configured credential for a fenced Host or one with an active
 vault reference. The fence does not cancel requests admitted before it was set
@@ -341,7 +341,7 @@ The opt-in Master coordinator persists route coverage, approved keys and
 tracking incarnations before sending fences. Configure `[PasswordDrainFleet]`
 entries as `relay-root proxy-host-id final-mover-root`; direct routes use
 proxy `0` and the same root twice. Coverage conservatively includes **every**
-registered `TRANSFER_SERVER` and every Proxy Host, including inactive records.
+registered Data Mover and every Proxy Host, including inactive records.
 Historical records can therefore block preparation: inventory them rather
 than assuming an unreachable route has zero sessions. Continental final
 roots must match `[PasswordDeliveryRelayMovers]`.
@@ -354,8 +354,8 @@ current Host configuration, zero Master admissions and fresh, signed zero
 session receipts received within 30 seconds. The coordinator can reconcile
 outstanding Master dispatch acknowledgements only after every enrolled process
 is persistently fenced and confirms that no configured-credential sessions remain. It
-atomically retains the exact admission IDs and signed receipts in
-`HOST_PASSWORD_LEGACY_RECONCILIATION` before removing those admissions.
+atomically retains an audit record of the exact admission IDs and signed receipts
+before removing those admissions.
 Timeout alone never reconciles them. Changed keys, changed tracking
 incarnations and unreachable routes fail closed; an unknown session or a
 predecessor lost before recording a confirmed drain still requires operator
@@ -376,7 +376,7 @@ per Host per rolling hour, even if a pending password is replaced.
 
 Credential rotation is an opt-in feature. Complete these prerequisites:
 
-1. Verify the rotation tables are present, configure Master-only OpenBao access,
+1. Use the supplied database installation schema, configure Master-only OpenBao access,
    and establish vault backup, unseal and application-token replacement procedures.
 2. Require mutual TLS between Monitor, Master and direct Movers. For Continental
    routes, additionally configure verified HTTPS and control-channel signing.
@@ -385,7 +385,7 @@ Credential rotation is an opt-in feature. Complete these prerequisites:
 4. Inventory every registered Mover and Proxy Host, configure complete
    `[PasswordDrainFleet]` coverage and probe/relay routing, and enable persistent
    session tracking from Mover startup for every enrolled Host.
-5. Grant the exact Destination Operations permission and destination-specific
+5. Verify the exact Destination Operations permission and destination-specific
    rotation grant. Configure local reauthentication or fresh IdP MFA as required.
 6. Enable the Master settings shown below, the Monitor's `monitorEnabled`, and
    `[PasswordProbe] enabled` / `[PasswordDelivery] enabled` on final Movers.

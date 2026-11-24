@@ -144,17 +144,8 @@ delivery to drain it. When full, capture of MQTT-enabled events fails and is
 logged, rather than silently deleting pending deliveries. A destination with
 no configured Movers cannot capture MQTT-enabled events.
 
-Database administrators can inspect pending deliveries without changing them:
-
-```sql
-SELECT NOS_PAYLOAD_BYTES FROM NOTIFICATION_OUTBOX_STATE WHERE NOS_ID=1;
-
-SELECT t.TRS_NAME, COUNT(*) AS pending, MAX(t.NOT_ATTEMPTS) AS max_attempts,
-       CASE WHEN s.TRS_NAME IS NULL THEN 'removed' ELSE 'configured' END AS mover
-FROM NOTIFICATION_OUTBOX_TARGET t
-LEFT JOIN TRANSFER_SERVER s ON s.TRS_NAME=t.TRS_NAME
-GROUP BY t.TRS_NAME, s.TRS_NAME;
-```
+Use the Master service logs to investigate delivery failures. Do not edit pending
+deliveries directly in the database.
 
 For a removed Mover, restore a working Mover with the same configured name to
 deliver its pending events. There is no automatic discard or management

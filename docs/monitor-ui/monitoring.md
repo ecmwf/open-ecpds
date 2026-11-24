@@ -18,14 +18,6 @@ that cycle, without applying saved model or generation-timing filters. The **Cyc
 selector can restore all cycles; row selection and bulk actions respect the visible cycle.
 
 
-## Dashboard (admin view)
-
-The dashboard shows all destinations and their current transfer status. Each row represents a destination with colour-coded status indicators for queued, running, done, and failed transfers. The toolbar at the top provides quick access to filtering and refresh controls.
-
-
-![Dashboard (admin view)](img/dashboard.png)
-
-
 ## Chart and table filters
 
 **Arrival Chart**, **Transfer Chart** and **Transfer Rates** results have a search box, marked with
@@ -62,6 +54,26 @@ searching for one group or mover does not include other groups or movers on the
 same day. Table sorting and pagination remain available; charts retain date order.
 
 ## Live Earth
+
+Live Earth places transfer endpoints on a globe and draws directional routes
+between them and the OpenECPDS origin. The KPI panel combines current transfer
+activity, 24-hour volume, Data Portal activity and storage usage.
+
+![Live Earth with acquisition and dissemination routes in dark theme](img/live-earth.png)
+
+Use the **Transfer Host type** filter to focus on acquisition, dissemination
+or another Host type. **Per host / Per country** changes the grouping; select
+a marker to inspect its transfers and protocols.
+
+![Live Earth flat-map view with transfer routes](img/live-earth-map.png)
+
+The map button switches between the 3D Earth and the flat map without leaving
+the page. This silent recording shows the two views while transfer rates update:
+
+<video controls preload="metadata" width="100%" aria-label="Live Earth transfer routes and flat-map view">
+  <source src="../img/live-earth.webm" type="video/webm">
+  Your browser cannot play this video; use the screenshots and instructions above.
+</video>
 
 Cloud hosts have provider-coloured outlines: AWS orange, GCS green and Azure (AZ)
 blue. Clusters containing multiple providers use equal ring segments for each
@@ -294,9 +306,40 @@ do not add clutter, and topology refresh never triggers an SNMP query.
 
 **System Topology** is a live node/edge diagram of the OpenECPDS deployment itself, available from the Monitoring card on the start page (`/do/monitoring/topology`), right next to Live Earth. Where Live Earth visualises data in transit, System Topology visualises the infrastructure that moves it: the Master Server, the database it relies on, every registered Data Mover, and the Monitor instance you are currently using — grouped visually into dashed boxes by host, so it is easy to see at a glance which components share a machine (or container) and which run on separate ones, whatever your specific deployment layout happens to be. An in-page **ⓘ** button next to the title explains the diagram in full, including every symbol and colour used.
 
+![Standalone topology showing Master, Monitor, database and Data Mover](img/topology.png)
+
+The example shows one Data Mover up. Use **Zoom out to see all Data Movers**
+to fit the diagram, and select a component for connection details.
+
 Components are drawn as coloured boxes (blue for the Master, cyan for this Monitor, purple for the database, green for an up Data Mover, grey/dashed for a down one), connected by labelled arrows showing the direction of each control connection (Monitor → Master over RMI, Master → Database over JDBC, Master → each Data Mover, labelled with its registration port). Clicking any component opens a details panel with its host, port(s) and status; for the Master and this Monitor, every network plugin currently loaded in that JVM (e.g. `ecpds`, `ftp`, `http`) is listed together with its live port and status, read directly from that JVM's own plugin container — no extra configuration needed. A `15s`/`30s`/`1m`/`5m`/`Off` pill selector (defaulting to `30s`, remembered per-browser) controls how often the diagram re-fetches itself in the background with no page reload; a manual refresh button is also available regardless of that setting. The diagram follows the page's light/dark theme like the rest of the Monitor UI.
 
 All the data behind the diagram is fetched by the Monitor from the Master over the same RMI management interface already used elsewhere in the UI (e.g. for the Data Movers page) — the Monitor never contacts a Data Mover directly. Figures shown for a Data Mover (host, port, enabled flag, up/down state, plus its live per-plugin port list when connected) are all obtained by the Master itself: the up/down state reuses the per-minute availability history already powering the uptime view on the Data Movers page, while the plugin/port list is read by the Master over its existing control connection to that Data Mover. Every connected Monitor is reported through its own existing Master–Monitor RMI connection; each JVM reports its own plugins. Physical-location collection adds an optional Master-to-SNMP management path, separate from those RMI connections.
+
+## MQTT Activity
+
+Open **Operations → MQTT Activity** to follow a notification from its publication
+queue to the Data Mover's broker. The summary cards, publication timeline, outcome
+distribution and recent-publications table share the same filters.
+
+![MQTT Activity showing upload notifications and broker outcomes](img/mqtt-activity.png)
+
+Choose a **Time window**, **Destination**, topic fragment or **Outcome**, then
+**Apply filters**. **Pause updates** freezes the five-second refresh while you
+inspect a result. **View** opens publication metadata and each broker's outcome:
+
+![MQTT publication details with per-broker acceptance](img/mqtt-details.png)
+
+**Broker accepted** does not confirm delivery to a subscriber. The details
+show metadata and processing outcomes, not the notification's payload or credentials.
+The following silent recording opens and closes one publication's details:
+
+<video controls preload="metadata" width="100%" aria-label="Inspecting MQTT publication and broker details">
+  <source src="../img/mqtt-activity.webm" type="video/webm">
+  Your browser cannot play this video; follow the written steps above.
+</video>
+
+The [standalone MQTT example](../getting-started/standalone.md#try-mqtt-upload-notifications)
+explains how to create notifications with local uploads while leaving `mqtt_demo` stopped.
 
 ## Related
 

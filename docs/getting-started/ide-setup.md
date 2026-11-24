@@ -163,8 +163,8 @@ The development overrides in `run/etc/ecpds/master/ecmwf.properties` enable
 `openTelemetryEnabled=yes` and `journalEnabled=yes` in `[OperationalEvents]`.
 Traces and metrics are separately controlled by the Master settings.
 
-Start the development database first and ensure it has the
-`OPERATIONAL_EVENT` journal table. Start only one Master for the development
+Start the development database first using the supplied installation schema.
+Start only one Master for the development
 configuration; start the Monitor separately to inspect
 **Operations → OpenTelemetry Journal**.
 

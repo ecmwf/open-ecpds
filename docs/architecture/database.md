@@ -5,14 +5,18 @@ access control and monitoring history. This page is a logical catalog of the tab
 the base schema. It describes their purpose without listing columns or prescribing
 database maintenance procedures.
 
+The database image and the embedded standalone database use **MariaDB 11.4**.
+The standalone installs the signed upstream 11.4 packages rather than the
+distribution's older default packages. The standalone build verifies the server version.
+
 The catalog reflects the schema defined in
 [`docker/ecpds/database/ecpds.sql`](https://github.com/ecmwf/open-ecpds/blob/master/docker/ecpds/database/ecpds.sql).
 Deployments with site-specific changes may have additional or different tables.
 The standalone image build copies this schema into its build context; an existing
 local copy there may be stale until the build context is refreshed.
 
-Use `ecpds.sql` to initialize a new MariaDB database. It includes the
-operational event, storage lifecycle and credential rotation tables.
+The database image initializes new installations from `ecpds.sql`. The schema
+includes the operational event, storage lifecycle and credential rotation tables.
 
 ## Transfers, files and products
 
@@ -142,9 +146,11 @@ and durable MQTT CloudEvents delivery.
 
 ## How to read this catalog
 
-This catalog is a database administration reference, not an end-user configuration
-interface. Use the Monitor UI or supported APIs to manage operational records.
-This catalog describes tables managed by the application's supplied schema.
+This catalog is an implementation reference, not a configuration interface.
+Use the Monitor UI, command-line tools or supported APIs to manage operational
+records, including when acting as an administrator. Do not insert, update or
+delete application records directly in the database. The application manages
+these tables and their consistency.
 
 Do not load the destructive full installation dump into a populated database.
 Schema operations must follow the site's backup and database change procedures.

@@ -6,8 +6,8 @@ progress; Movers perform bounded inventory/replay discovery and ordinary HTTPS
 retrieval. This is additive, one-way replication, not bidirectional synchronization
 or deletion propagation. Do not configure replication cycles.
 
-The receiving Master stores acquisition progress in the
-`ACQUISITION_CHECKPOINT` database table.
+The receiving Master durably saves acquisition progress so discovery can resume
+after a restart.
 
 ## Source destination
 

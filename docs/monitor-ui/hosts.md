@@ -19,9 +19,6 @@ The host list shows all configured hosts with their type, associated transfer me
 The host list also provides a **Map** view (toggle with the List/Map buttons in the toolbar). Each host is plotted on a world map at its resolved geographic location, colour-coded by status. This gives a quick visual overview of where your remote endpoints are distributed globally.
 
 
-![Host Map View](img/hosts-map.png)
-
-
 ## Host Detail
 
 The host detail page shows connection parameters, the associated method, current transfer statistics, and recent transfer history. The Properties editor allows configuring per-host ECtrans options. Use the icon bar to edit, delete, duplicate, or view the network report for this host.
@@ -34,8 +31,5 @@ The host detail page shows connection parameters, the associated method, current
 ## Host Network Report
 
 The network report page tests connectivity from the Data Mover to the remote host and displays latency, DNS resolution, and port reachability. This is useful for diagnosing connection problems without leaving the UI.
-
-
-![Host Network Report](img/host-report.png)
 
 
