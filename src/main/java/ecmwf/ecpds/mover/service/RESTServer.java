@@ -1307,7 +1307,7 @@ public final class RESTServer {
     public Response homeHead(@Context final UriInfo ui, @PathParam("user") final String user,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
             @Context final HttpServletResponse response) {
-        return fileHead(ui, getBasicAuth(user + ":" + user), range, request, response, "");
+        return fileHead(ui, getHomeAuthorization(user, request), range, request, response, "");
     }
 
     /**
@@ -1333,7 +1333,7 @@ public final class RESTServer {
     public Response homeHead(@Context final UriInfo ui, @PathParam("user") final String user,
             @HeaderParam("range") final String range, @Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("filename") final String filename) {
-        return fileHead(ui, getBasicAuth(user + ":" + user), range, request, response, filename);
+        return fileHead(ui, getHomeAuthorization(user, request), range, request, response, filename);
     }
 
     /**
@@ -1353,7 +1353,7 @@ public final class RESTServer {
     public Response homeOptions(@PathParam("user") final String user, @Context final HttpServletRequest request,
             @Context final HttpServletResponse response) {
         _log.debug("REST received request: homeOptions({})", user);
-        final var session = getUserSession(getBasicAuth(user + ":" + user), request, response);
+        final var session = getUserSession(getHomeAuthorization(user, request), request, response);
         try {
             final var builder = Response.noContent();
             addCorsHeaders(session, request, builder);
@@ -1385,7 +1385,7 @@ public final class RESTServer {
     public Response homeOptions(@PathParam("user") final String user, @Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("filename") final String filename) {
         _log.debug("REST received request: homeOptions({}/{})", user, filename);
-        final var session = getUserSession(getBasicAuth(user + ":" + user), request, response);
+        final var session = getUserSession(getHomeAuthorization(user, request), request, response);
         try {
             final var builder = Response.noContent();
             addCorsHeaders(session, request, builder);
@@ -1513,7 +1513,7 @@ public final class RESTServer {
         if (redirect != null) {
             return redirect;
         }
-        return fileGet(ui, getBasicAuth(user + ":" + user), range, request, response, headers, "");
+        return fileGet(ui, getHomeAuthorization(user, request), range, request, response, headers, "");
     }
 
     /**
@@ -1546,7 +1546,24 @@ public final class RESTServer {
         if (redirect != null) {
             return redirect;
         }
-        return fileGet(ui, getBasicAuth(user + ":" + user), range, request, response, headers, filename);
+        return fileGet(ui, getHomeAuthorization(user, request), range, request, response, headers, filename);
+    }
+
+    private String getHomeAuthorization(final String user, final HttpServletRequest request) {
+        final var authorization = request.getHeader("Authorization");
+        if (authorization != null) {
+            return authorization;
+        }
+        try {
+            final var profile = mover.getMasterInterface().getIncomingProfileNoAuth(user);
+            if (profile != null && "open-access".equals(profile.getIncomingUser().getPortalService())) {
+                // Only explicitly public portals may authenticate without caller-supplied credentials.
+                return getBasicAuth(user + ":" + user);
+            }
+        } catch (final Exception e) {
+            _log.debug("Unable to determine whether '{}' is an open-access user", user, e);
+        }
+        return null;
     }
 
     /**
