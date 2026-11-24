@@ -94,6 +94,16 @@ public class GetValidateTransferListJsonAction extends PDSAction {
             length = 25;
         }
         final var destinationName = request.getParameter("destinationName");
+        if (!DestinationAccess.canRead(user, destinationName)) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType("application/json; charset=UTF-8");
+            try {
+                response.getWriter().write("{\"draw\":" + draw
+                        + ",\"recordsTotal\":0,\"recordsFiltered\":0,\"data\":[],\"error\":\"Access denied\"}");
+            } catch (final Exception _) {
+            }
+            return null;
+        }
         final var orderCol = parseSafeInt(request.getParameter("order[0][column]"), -1);
         final var orderDir = request.getParameter("order[0][dir]");
         final var ascending = !"desc".equalsIgnoreCase(orderDir);

@@ -42,6 +42,8 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.destination;
  */
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
@@ -55,6 +57,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
+import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.web.controller.ECMWFActionFormException;
 import ecmwf.web.model.users.User;
 
@@ -80,10 +83,25 @@ public class GetDestinationSyncSelectionAction extends PDSAction {
 
             final var destinationName = root.path("destinationName").asText("").trim();
             final var type = root.path("type").asText("replace");
+            if (!DestinationAccess.canRead(user, destinationName)) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("application/json; charset=UTF-8");
+                response.getWriter().write("{\"error\":\"Access denied\"}");
+                return null;
+            }
 
             final var daf = (DetailActionForm) request.getSession().getAttribute("destinationDetailActionForm");
             if (daf != null && !destinationName.isEmpty()) {
                 daf.setId(destinationName);
+                try {
+                    validateIds(destinationName, "delta".equals(type) ? root.path("add").asText("")
+                            : "basketAction".equals(type) ? root.path("on").asText("") : root.path("ids").asText(""));
+                } catch (final Exception e) {
+                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    response.setContentType("application/json; charset=UTF-8");
+                    response.getWriter().write("{\"error\":\"Invalid transfer selection\"}");
+                    return null;
+                }
                 if ("delta".equals(type)) {
                     // Apply incremental changes: add → "on", del → "off" (both comma-separated)
                     applyIds(daf, root.path("add").asText(""), "on");
@@ -106,6 +124,8 @@ public class GetDestinationSyncSelectionAction extends PDSAction {
                 }
             }
         } catch (final Exception _) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return null;
         }
 
         try {
@@ -114,6 +134,18 @@ public class GetDestinationSyncSelectionAction extends PDSAction {
         } catch (final Exception _) {
         }
         return null;
+    }
+
+    private static void validateIds(final String destination, final String csv) throws TransferException {
+        if (csv == null || csv.isBlank()) {
+            return;
+        }
+        final var ids = Arrays.stream(csv.split(",")).map(String::trim).filter(id -> !id.isEmpty()).toList();
+        final var exceptions = new ArrayList<Exception>();
+        DestinationAccess.validateTransfers(ids, destination, exceptions);
+        if (!exceptions.isEmpty()) {
+            throw new TransferException("Invalid transfer selection", exceptions.getFirst());
+        }
     }
 
     private static void applyIds(final DetailActionForm daf, final String csv, final String value) {

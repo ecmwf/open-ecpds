@@ -920,7 +920,10 @@ public final class ECpdsRESTV1 {
             @Context final HttpServletRequest request, @PathParam("name") final String name) {
         _log.debug("destination");
         try {
-            _getUserNameAndPassword(authString, request);
+            final var credentials = _getUserNameAndPassword(authString, request);
+            if (!MasterManager.getDB().hasApiPermission(credentials, null)) {
+                throw _newException(Status.UNAUTHORIZED, "Operation only available to registered users");
+            }
             _checkParameter("name", name);
             final var message = RESTMessage.getSuccessMessage();
             message.put("destination",

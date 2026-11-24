@@ -53,6 +53,9 @@ WHERE
 #if ('$to' != '9223372036854775807')
 	AND DAT_TIME_BASE < '$to'
 #fi
+#if ('$privilegedUser' == 'false')
+	AND DAT_SCHEDULED_TIME <= '$scheduledBefore'
+#fi
 #if ('$status' != 'All')
 	AND STA_CODE = '$status'
 #fi

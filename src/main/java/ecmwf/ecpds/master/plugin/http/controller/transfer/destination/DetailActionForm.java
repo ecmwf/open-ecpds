@@ -416,6 +416,10 @@ public class DetailActionForm extends ECMWFActionForm {
         return getCache().getActionTransfers();
     }
 
+    public Collection<String> getActionTransferIds() {
+        return getCache().getActionTransferIds();
+    }
+
     /**
      * Gets the display tags param collection.
      *

@@ -97,6 +97,10 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
             throws ECMWFActionFormException {
         final var draw = parseSafeInt(request.getParameter("draw"), 1);
         final var destinationName = Util.getValue(request, "destinationName", "");
+        if (!DestinationAccess.canRead(user, destinationName)) {
+            writeError(response, draw, "Access denied", HttpServletResponse.SC_FORBIDDEN);
+            return null;
+        }
         final var disseminationStream = Util.getValue(request, "disseminationStream", "");
         final var dataStream = Util.getValue(request, "dataStream", "");
         final var dataTime = Util.getValue(request, "dataTime", "");
@@ -116,7 +120,7 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
         // If date is null ("All" or not defined), leave as null to fetch all dates
 
         // Compute permissions server-side
-        boolean hasAccess = true;
+        boolean hasAccess = false;
         try {
             hasAccess = user.hasAccess(getResource(request, "datatransfer.basepath"));
         } catch (final Exception e) {
@@ -507,9 +511,14 @@ public class GetDestinationTransferListJsonAction extends PDSAction {
     }
 
     private static void writeError(final HttpServletResponse response, final int draw, final String message) {
+        writeError(response, draw, message, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+    }
+
+    private static void writeError(final HttpServletResponse response, final int draw, final String message,
+            final int status) {
         try {
             response.setContentType("application/json; charset=UTF-8");
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.setStatus(status);
             final ObjectNode err = MAPPER.createObjectNode();
             err.put("draw", draw);
             err.put("recordsTotal", 0);

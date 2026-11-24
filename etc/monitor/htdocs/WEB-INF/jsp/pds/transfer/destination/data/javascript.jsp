@@ -430,8 +430,10 @@
 	                type:        'POST',
 	                contentType: 'application/json',
 	                data:        JSON.stringify(payload)
-	            }).always(function () {
+	            }).done(function () {
 	                _orig();
+	            }).fail(function () {
+	                window.alert('Unable to update the transfer selection. Please try again.');
 	            });
 	        };
 	    }

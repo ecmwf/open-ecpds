@@ -32,6 +32,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -58,6 +59,8 @@ import ecmwf.common.text.DateUtil;
  * The Class ECpdsBase.
  */
 public final class ECpdsBase extends DataBase {
+
+    public static final int TRANSFER_DESTINATION_BATCH_SIZE = 256;
 
     public void migrateLocalPassword(final String user, final String legacy, final String hash, final boolean incoming)
             throws SQLException, IOException {
@@ -5598,6 +5601,55 @@ public final class ECpdsBase extends DataBase {
         } catch (final Exception e) {
             _log.warn("deleteAllDataImmediately", e);
             throw new DataBaseException("deleteAllDataImmediately", e);
+        }
+    }
+
+    /**
+     * Reads a transfer's destination directly from the database, bypassing entity caches.
+     *
+     * @param id
+     *            the data transfer id
+     *
+     * @return the destination name, or {@code null} if no transfer exists
+     *
+     * @throws DataBaseException
+     *             if the database query fails
+     */
+    public String getDataTransferDestinationById(final long id) throws DataBaseException {
+        try (var rs = executeSelect("ECpdsBase", "getDataTransferDestinationById", Map.of("id", id))) {
+            return rs.next() ? rs.getString("DES_NAME") : null;
+        } catch (final Exception e) {
+            throw new DataBaseException("getDataTransferDestinationById", e);
+        }
+    }
+
+    /**
+     * Reads a bounded batch of transfer destinations without entity caches. Missing transfers are omitted.
+     *
+     * @param ids
+     *            the data transfer ids
+     *
+     * @return the current destinations by transfer id
+     *
+     * @throws DataBaseException
+     *             if the batch is invalid or the database query fails
+     */
+    public Map<Long, String> getDataTransferDestinationsByIds(final long[] ids) throws DataBaseException {
+        if (ids == null || ids.length > TRANSFER_DESTINATION_BATCH_SIZE || Arrays.stream(ids).anyMatch(id -> id < 0)) {
+            throw new DataBaseException("Invalid parameter(s) for getDataTransferDestinationsByIds");
+        }
+        final Map<Long, String> destinations = new HashMap<>();
+        if (ids.length == 0) {
+            return destinations;
+        }
+        try (var rs = executeSelect("ECpdsBase", "getDataTransferDestinationsByIds",
+                Map.of("ids", Arrays.toString(ids)))) {
+            while (rs.next()) {
+                destinations.put(rs.getLong("DAT_ID"), rs.getString("DES_NAME"));
+            }
+            return destinations;
+        } catch (final Exception e) {
+            throw new DataBaseException("getDataTransferDestinationsByIds", e);
         }
     }
 

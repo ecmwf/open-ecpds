@@ -57,12 +57,23 @@ public class GetBasketIdListAction extends PDSAction {
             final HttpServletRequest request, final HttpServletResponse response, final User user)
             throws ECMWFActionFormException {
 
+        final var destinationName = request.getParameter("destinationName");
+        if (!DestinationAccess.canRead(user, destinationName)) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType("application/json; charset=UTF-8");
+            try {
+                response.getWriter().write("{\"ids\":[],\"error\":\"Access denied\"}");
+            } catch (final Exception _) {
+            }
+            return null;
+        }
         final var root = MAPPER.createObjectNode();
         final var ids = root.putArray("ids");
 
         try {
             final var daf = (DetailActionForm) request.getSession().getAttribute("destinationDetailActionForm");
             if (daf != null) {
+                daf.setId(destinationName);
                 for (final String id : daf.getSelectedTransferIds()) {
                     ids.add(id);
                 }

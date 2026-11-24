@@ -483,7 +483,7 @@ Returns details for a single destination.
 |---|---|
 | `name` | Destination name |
 
-**Service name:** *(basic auth only — no per-service check)*
+**Service name:** *(Basic authentication with a valid, active API client — no per-service check)*
 
 **Response:**
 ```json

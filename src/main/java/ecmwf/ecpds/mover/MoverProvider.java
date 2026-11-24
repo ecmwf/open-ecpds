@@ -63,6 +63,7 @@ import ecmwf.common.rmi.SocketConfig;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ProxySocket;
 import ecmwf.common.technical.SessionCache;
+import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.IncomingProfile;
 import ecmwf.ecpds.master.MasterException;
 
@@ -1299,6 +1300,32 @@ public final class MoverProvider extends NativeAuthenticationProvider {
         @Override
         public FileListElement getFileListElement(final String path) throws EccmdException, IOException {
             return _getFileListElement(new FtpURL(_defaultDestination, path), path);
+        }
+
+        @Override
+        public void checkFileMetadataPermission(final String path, final FileListElement element)
+                throws EccmdException {
+            var resolved = path;
+            final var slash = path.lastIndexOf('/');
+            if (slash >= 0 && path.substring(slash + 1).startsWith("DataTransferId=")) {
+                if (element.getTarget() == null) {
+                    throw new EccmdException("Permission denied for file metadata");
+                }
+                try {
+                    resolved = path.substring(0, slash + 1) + Format.normalizePath(element.getTarget()).substring(1);
+                } catch (final FileNotFoundException e) {
+                    throw new EccmdException("Permission denied for file metadata");
+                }
+            }
+            final var parentSlash = resolved.lastIndexOf('/');
+            if (parentSlash < 0) {
+                throw new EccmdException("Permission denied for file metadata");
+            }
+            var parent = resolved.substring(0, parentSlash);
+            if (parent.endsWith(":")) {
+                parent += "/";
+            }
+            _profile.checkFileMetadataPermission(resolved, parent);
         }
 
         /**

@@ -1444,7 +1444,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         final var monitor = new MonitorCall("getDataTransfersByFilter(" + destination + "," + target + "," + stream
                 + "," + time + "," + status + "," + fileName + "," + from + "," + to + ")");
         final var transfers = ecpds.getDataTransfersByFilter(master.dataCache, destination, target, stream, time,
-                status, "false", new Date(Long.MAX_VALUE), fileName, from, to, cursor);
+                status, privilegedUser, scheduledBefore, fileName, from, to, cursor);
         final var array = new ArrayList<DataTransferWithPermissions>();
         for (final DataTransfer transfer : transfers) {
             array.add(
@@ -2755,6 +2755,17 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
         return monitor.done(transfer != null ? transfer : ecpds.getDataTransfer(dataTransferId));
     }
 
+    @Override
+    public String getDataTransferDestinationById(final long dataTransferId) throws DataBaseException, RemoteException {
+        return ecpds.getDataTransferDestinationById(dataTransferId);
+    }
+
+    @Override
+    public Map<Long, String> getDataTransferDestinationsByIds(final long[] dataTransferIds)
+            throws DataBaseException, RemoteException {
+        return ecpds.getDataTransferDestinationsByIds(dataTransferIds);
+    }
+
     /**
      * Gets the destination array.
      *
@@ -3871,8 +3882,8 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
     }
 
     private void checkUser(final String userNameAndPassword, final String service) throws DataBaseException {
-        final var credentials = userNameAndPassword.split(":");
-        if (service != null && credentials.length == 2) {
+        final var credentials = userNameAndPassword == null ? new String[0] : userNameAndPassword.split(":");
+        if (credentials.length == 2) {
             final var clientId = credentials[0];
             final var secret = credentials[1];
             try {
@@ -3880,7 +3891,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
                 if (client != null) {
                     final var event = new ApiEvent();
                     event.setClientId(clientId);
-                    event.setService(service);
+                    event.setService(service == null ? "authenticate" : service);
                     event.setDate(new java.sql.Timestamp(System.currentTimeMillis()));
                     boolean authorized = false;
                     String message = null;
@@ -3889,15 +3900,18 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
                     } else if (!sha256Hex(secret).equals(client.getSecretHash())) {
                         message = "Invalid credentials";
                     } else {
-                        final var perms = ecpds.getApiPermissionsForClient(clientId);
-                        for (final var p : perms) {
-                            try {
-                                if (service.matches(p.getPattern())) {
-                                    authorized = true;
-                                    break;
+                        authorized = service == null;
+                        if (!authorized) {
+                            final var perms = ecpds.getApiPermissionsForClient(clientId);
+                            for (final var p : perms) {
+                                try {
+                                    if (service.matches(p.getPattern())) {
+                                        authorized = true;
+                                        break;
+                                    }
+                                } catch (final PatternSyntaxException e) {
+                                    _log.warn("Pattern matching {} -> {}", service, p.getPattern(), e);
                                 }
-                            } catch (final PatternSyntaxException e) {
-                                _log.warn("Pattern matching {} -> {}", service, p.getPattern(), e);
                             }
                         }
                         if (!authorized) {
@@ -3935,7 +3949,7 @@ final class DataBaseImpl extends CallBackObject implements DataBaseInterface {
                 _log.warn("ApiClient '{}' authenticated via Cnf fallback – entry should be in DB, not in [API] config",
                         clientId);
                 try {
-                    if (service.matches(permissions[1])) {
+                    if (service == null || service.matches(permissions[1])) {
                         return;
                     }
                 } catch (final PatternSyntaxException e) {

@@ -1453,7 +1453,7 @@ public final class RESTServer {
             // Check if this is a list or get request?
             final var list = session.getFileListElement(path);
             if (!list.isDirectory()) {
-                return dataFileHead(ui, authString, range, request, response, filename);
+                return fileMetadataHead(session, request, filename, list);
             }
             // Let's treat it as a list request!
             final var elements = session.getFileList(path);
@@ -1748,10 +1748,8 @@ public final class RESTServer {
         final var session = getUserSession(authString, request, response);
         try {
             checkParameter("filename", filename);
-            final var builder = Response.ok();
-            final var mediaRequest = processGet(session, request, builder, filename);
-            addCorsHeaders(session, request, builder);
-            return builder.header(CONTENT_LENGTH, mediaRequest.size).build();
+            final var element = session.getFileListElement(getFilename(session, filename));
+            return fileMetadataHead(session, request, filename, element);
         } catch (final WebApplicationException w) {
             _log.warn("dataFileHead - {}", describe(w));
             throw w;
@@ -1773,6 +1771,19 @@ public final class RESTServer {
                 session.close(true);
             }
         }
+    }
+
+    private static Response fileMetadataHead(final UserSession session, final HttpServletRequest request,
+            final String filename, final FileListElement element) throws EccmdException, IOException {
+        try {
+            session.checkFileMetadataPermission(getFilename(session, filename), element);
+        } catch (final EccmdException denied) {
+            throw newException(403, "Forbidden: file metadata permission required");
+        }
+        final var builder = Response.ok();
+        final var mediaRequest = processGet(session, request, builder, filename, null, element);
+        addCorsHeaders(session, request, builder);
+        return builder.header(CONTENT_LENGTH, mediaRequest.size).build();
     }
 
     /**
@@ -2857,8 +2868,15 @@ public final class RESTServer {
     private static MediaRequest processGet(final UserSession session, final HttpServletRequest request,
             final ResponseBuilder builder, final String filename, final DownloadFile download)
             throws EccmdException, IOException {
+        return processGet(session, request, builder, filename, download, null);
+    }
+
+    private static MediaRequest processGet(final UserSession session, final HttpServletRequest request,
+            final ResponseBuilder builder, final String filename, final DownloadFile download,
+            final FileListElement resolved) throws EccmdException, IOException {
         final var name = getFilename(session, filename);
-        final var element = download != null ? download.element() : session.getFileListElement(name);
+        final var element = download != null ? download.element()
+                : resolved != null ? resolved : session.getFileListElement(name);
         if (element.isDirectory() || element.getSize() == null || element.getComment() == null) {
             throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).type(MediaType.TEXT_PLAIN)
                     .entity(filename + ": Not a regular file").build());

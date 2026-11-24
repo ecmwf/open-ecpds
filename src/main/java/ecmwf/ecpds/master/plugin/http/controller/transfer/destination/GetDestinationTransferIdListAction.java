@@ -65,6 +65,15 @@ public class GetDestinationTransferIdListAction extends PDSAction {
             throws ECMWFActionFormException {
 
         final var destinationName = Util.getValue(request, "destinationName", "");
+        if (!DestinationAccess.canRead(user, destinationName)) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType("application/json; charset=UTF-8");
+            try {
+                response.getWriter().write("{\"ids\":[],\"error\":\"Access denied\"}");
+            } catch (final Exception _) {
+            }
+            return null;
+        }
         final var disseminationStream = Util.getValue(request, "disseminationStream", "");
         final var dataStream = Util.getValue(request, "dataStream", "");
         final var dataTime = Util.getValue(request, "dataTime", "");
@@ -81,7 +90,7 @@ public class GetDestinationTransferIdListAction extends PDSAction {
             }
         }
 
-        boolean hasAccess = true;
+        boolean hasAccess = false;
         try {
             hasAccess = user.hasAccess(getResource(request, "datatransfer.basepath"));
         } catch (final Exception _) {

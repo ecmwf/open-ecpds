@@ -1816,6 +1816,20 @@ final class DataBaseProxy implements DataBaseInterface {
         return monitor.done(result);
     }
 
+    @Override
+    public String getDataTransferDestinationById(final long dataTransferId) throws DataBaseException, RemoteException {
+        if (dataTransferId < 0) {
+            throw new DataBaseException("Invalid parameter(s) for getDataTransferDestinationById");
+        }
+        return dataBaseInterface.getDataTransferDestinationById(dataTransferId);
+    }
+
+    @Override
+    public Map<Long, String> getDataTransferDestinationsByIds(final long[] dataTransferIds)
+            throws DataBaseException, RemoteException {
+        return dataBaseInterface.getDataTransferDestinationsByIds(dataTransferIds);
+    }
+
     /**
      * {@inheritDoc}
      *

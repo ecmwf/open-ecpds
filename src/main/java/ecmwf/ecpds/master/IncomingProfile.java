@@ -163,6 +163,25 @@ public final class IncomingProfile implements Serializable {
     }
 
     /**
+     * File metadata is available to readers, size/mtime users, or users who can list its parent.
+     */
+    public void checkFileMetadataPermission(final String filename, final String parent) throws EccmdException {
+        for (final var operation : new String[] { "get", "size", "mtime" }) {
+            try {
+                checkPermission(operation, filename);
+                return;
+            } catch (final EccmdException denied) {
+                // Try another permission.
+            }
+        }
+        try {
+            checkPermission("dir", parent);
+        } catch (final EccmdException denied) {
+            throw new EccmdException("Permission denied for file metadata");
+        }
+    }
+
+    /**
      * Gets the ectrans options.
      *
      * @param actionName

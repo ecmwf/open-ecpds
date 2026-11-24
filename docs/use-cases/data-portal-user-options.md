@@ -109,6 +109,12 @@ Each option takes a Java regex applied to the **full path** (including domain na
 | `portal.sizePathPermRegex` | Regex | *none* | Restrict file size queries to matching paths |
 | `portal.mtimePathPermRegex` | Regex | *none* | Restrict modification-time queries to matching paths |
 
+HTTP HEAD on a file is permitted when the user has `get`, `size`, or `mtime` permission for that file,
+or `dir` permission for its parent directory. The corresponding path regex must match. A transfer-ID
+alias is checked against the resolved file path, not the alias. Upload-only users therefore cannot
+use HEAD to inspect existing files; grant one of these permissions if metadata access is needed.
+HEAD on a directory continues to require `dir` permission.
+
 ### Quick-start example — allow uploads only under `/incoming`
 
 ```properties
