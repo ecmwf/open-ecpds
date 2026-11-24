@@ -96,11 +96,64 @@ Local images are tagged `open-ecpds/<service>:<version>-<build>`; the shared Jav
 base is `open-ecpds/java:graalvm`. Standalone, CLI and Hawtio images use the same
 namespace. Registry images are published under `ghcr.io/ecmwf/open-ecpds/*`.
 
-!!! warning
-    In a production environment, `ENV` should be avoided in Dockerfiles for sensitive
-    data like `MYSQL_ROOT_PASSWORD` for the Database, or `KEYSTORE_PASSWORD` for the
-    Monitor and Mover. Docker secrets or environment variable files should be used
-    instead.
+Component images contain no default database root password, keystore password or
+control-channel shared secret. Supply credentials at runtime through protected
+configuration files, environment files or Kubernetes Secrets, never image build
+arguments. Monitor and Mover containers require `KEYSTORE_PASSWORD`; Master and
+Mover containers require the same `CLI_SHARED_SECRET`, and Movers also require
+`RCC_SHARED_SECRET`. Jolokia, when enabled, requires both its username and password.
+The database accepts the MariaDB image's runtime root-password settings, including
+`MYSQL_ROOT_PASSWORD_FILE`.
+The database component also requires its application's current password through
+`ECPDS_DATABASE_PASSWORD` or `ECPDS_DATABASE_PASSWORD_FILE`; local Compose supplies
+the private development password mount instead. Startup refuses a missing or
+empty application password before database initialization.
+
+The local Compose workflow generates private credentials automatically through
+`scripts/dev-secrets.py`, also available as `make dev-secrets`. It saves them under
+`run/etc/ecpds/development-secrets/`, which is excluded from Git, using a private
+directory and owner-readable files. Repeated setup preserves the same values.
+Do not publish that directory or the resolved output of `make config`, which
+contains runtime credentials.
+
+For an existing development database, provide its current root password through
+`MYSQL_ROOT_PASSWORD` before the first setup. For existing Monitor/Mover TLS keystores,
+interactive `make dev-secrets` offers to keep them and securely enter their current
+password, back them up for recreation, or cancel. Keeping them validates the password
+with the JDK's `keytool` before saving credentials. Noninteractive setup requires the
+current `KEYSTORE_PASSWORD` instead of prompting. If their keystore passwords differ, use
+separate runtime overrides for the affected services rather than a shared local
+development configuration.
+
+Stop the affected IDE/container services before choosing recreation. Confirming
+`RECREATE` acknowledges they are stopped; the helper does not stop services for you
+and refuses recreation when a recorded service PID is still alive. Original TLS
+keystores and any pending TLS keys are moved into a private directory under
+`run/etc/ecpds/development-secrets/keystore-backups/`. Replacement self-signed
+certificates are generated on the next service start, changing the TLS identity
+and potentially requiring clients to trust the new certificates. Database data,
+other encryption keys and previously saved development credentials are preserved.
+
+For explicitly acknowledged, noninteractive recreation, run:
+
+```bash
+python3 scripts/dev-secrets.py --recreate-keystores --services-stopped
+```
+
+Imported development credentials must use letters, digits or `._~!@%+/=-` so they
+can be shared safely between Compose and JVM argument files. Other credential
+formats require a deployment-specific runtime configuration.
+
+Image builds reject RPMs containing SSH keys or private-key/keystore file paths.
+Mount deployment-specific key material at runtime, or let the configured services
+generate their own local keys.
+
+!!! warning "Previously published credentials"
+    Removing a default from an image does not revoke it. Rotate any credentials or
+    SSH host keys previously copied from public examples or repository history,
+    update their authorized clients, and rebuild and replace affected images.
+    Remove obsolete published image versions according to your registry policy.
+    These deployment and revocation actions are not performed by the source changes.
 
 Once the build process is complete, navigate to the directory where another `Makefile`
 is available:

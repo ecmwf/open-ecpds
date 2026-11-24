@@ -72,7 +72,7 @@ are case-sensitive and must match the configured services.
 
 | Secret | Required keys |
 |---|---|
-| `ecpds-database-credentials` | `MYSQL_ROOT_PASSWORD` |
+| `ecpds-database-credentials` | `MYSQL_ROOT_PASSWORD`, `ECPDS_DATABASE_PASSWORD` (shared by database initialization and Master) |
 | `ecpds-master-credentials` | `CLI_SHARED_SECRET`, `JOLOKIA_USER`, `JOLOKIA_PASSWORD` |
 | `ecpds-monitor-credentials` | `KEYSTORE_PASSWORD`, `JOLOKIA_USER`, `JOLOKIA_PASSWORD` |
 | `ecpds-mover-credentials` | `KEYSTORE_PASSWORD`, `RCC_SHARED_SECRET`, `JOLOKIA_USER`, `JOLOKIA_PASSWORD` |

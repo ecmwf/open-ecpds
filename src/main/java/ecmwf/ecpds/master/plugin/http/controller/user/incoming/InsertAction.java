@@ -38,6 +38,7 @@ import org.apache.struts.action.ActionMapping;
 import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingUserHome;
+import ecmwf.ecpds.master.plugin.http.home.transfer.OperationHome;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.controller.ECMWFActionFormException;
 import ecmwf.web.model.users.User;
@@ -64,13 +65,27 @@ public class InsertAction extends PDSAction {
         }
         try {
             final var iuaf = (IncomingUserActionForm) form;
+            final var preset = iuaf.getPermissionPreset();
+            if (!"none".equals(preset) && !"all".equals(preset) && !"read-only".equals(preset)) {
+                throw new ECMWFActionFormException("Please choose permissions: None, All or Read Only.");
+            }
             final var incomingUser = IncomingUserHome.create();
             // Make sure the id is a valid identifier!
             final var id = iuaf.getId();
             if (Format.isValidId(id, "_.")) {
                 iuaf.setId(id.trim());
                 iuaf.populateUser(incomingUser);
+                if (!"none".equals(preset)) {
+                    for (final var operation : OperationHome.findAll()) {
+                        if ("all".equals(preset) || OperationHome.isReadOnly(operation)) {
+                            incomingUser.addOperation(operation);
+                        }
+                    }
+                }
                 incomingUser.insert(user);
+                if (!"none".equals(preset)) {
+                    incomingUser.save(user);
+                }
                 response.sendRedirect(request.getContextPath() + "/do/user/incoming/edit/update_form/" + id.trim());
                 return null;
             } else {

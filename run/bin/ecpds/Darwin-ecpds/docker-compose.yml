@@ -61,6 +61,8 @@ services:
     hostname: ecpds-database
     image: ${ECPDS_REPOSITORY:-open-ecpds}/database:${TAG:-latest}
     restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-}
     ports:
       - "3309:3309" # Mysqld port must be the same as in 'etc/ecpds/database/mysqld.cnf'
     volumes:
@@ -108,19 +110,17 @@ services:
       INTERNAL_ADDRESS: 0.0.0.0
       # Ports for the Master-Server services
       # Jolokia (JMX-over-HTTP), browsable from the hawtio service below. JOLOKIA_USER/
-      # JOLOKIA_PASSWORD are read from your shell environment (not committed here) -
-      # export them before 'make up svc=master' (from run/bin/ecpds), otherwise Jolokia
-      # runs with no authentication at all.
+      # Credentials come from the private development env file or your environment.
       JOLOKIA_PORT: 2062
       JOLOKIA_HOST: 0.0.0.0
       JOLOKIA_USER: ${JOLOKIA_USER:-jolokia}
-      JOLOKIA_PASSWORD: ${JOLOKIA_PASSWORD:-jolokia2021}
+      JOLOKIA_PASSWORD: ${JOLOKIA_PASSWORD:-}
       PORT_CALLBACK: 2600 # Java Remote Method Invocation (communication between components)
       PORT_ECPDS: 2640 # Dedicated service for ecpds command
       PORT_FTP: 2021 # Virtual FTP Server
       # Shared secret for the ecpds CLI <-> Master-Server challenge-response authentication
       # (independent from, and does not need to match, the mover's RCC_SHARED_SECRET)
-      CLI_SHARED_SECRET: "dboUz95GH4U8LihvnJPGfBce5/rFJdbYXoZesRXBIyQ="
+      CLI_SHARED_SECRET: ${CLI_SHARED_SECRET:-}
       # Database related parameters (database interface/port must be the same as in 'etc/ecpds/database/mysqld.cnf')
       DATABASE_ALIAS: sequential://ecpds-database:3309/ecpds
       ECPDS_DATABASE_PASSWORD: ${ECPDS_DATABASE_PASSWORD:-}
@@ -144,7 +144,7 @@ services:
       # Miscellaneous parameters
       RETRIEVAL_MAX_SPOOL_SIZE: 50 # Maximum number of parallel retrievals
       # Java Virtual Machine options
-      JAVA_OPTS: -XX:+UseG1GC # The Garbage Collector
+      JAVA_OPTS: -XX:+UseG1GC -Ddevelopment.api.secret=${DEVELOPMENT_API_SECRET:-}
     image: ${ECPDS_REPOSITORY:-open-ecpds}/master:${TAG:-latest}
     restart: unless-stopped
     ports:
@@ -177,13 +177,11 @@ services:
       INTERNAL_ADDRESS: ecpds-monitor
       # Ports for the Monitor-Server services
       # Jolokia (JMX-over-HTTP), browsable from the hawtio service below. JOLOKIA_USER/
-      # JOLOKIA_PASSWORD are read from your shell environment (not committed here) -
-      # export them before 'make up svc=monitor' (from run/bin/ecpds), otherwise Jolokia
-      # runs with no authentication at all.
+      # Credentials come from the private development env file or your environment.
       JOLOKIA_PORT: 3062
       JOLOKIA_HOST: 0.0.0.0
       JOLOKIA_USER: ${JOLOKIA_USER:-jolokia}
-      JOLOKIA_PASSWORD: ${JOLOKIA_PASSWORD:-jolokia2021}
+      JOLOKIA_PASSWORD: ${JOLOKIA_PASSWORD:-}
       PORT_CALLBACK: 3600 # Java Remote Method Invocation (communication between components)
       PORT_HTTPS: 3443 # Web monitoring interface (https)
       # Connectivity to the Master-Server
@@ -195,7 +193,7 @@ services:
       # Log levels for log4j2 (off, fatal, error, warn, info, debug, trace, all)
       LOG_LEVEL: debug
       # Password to unlock the 'etc/ecpds/monitor/ecpds-monitor.pfx' keystore
-      KEYSTORE_PASSWORD: s5w8g771
+      KEYSTORE_PASSWORD: ${KEYSTORE_PASSWORD:-}
       # Personalisation of monitoring web interface
       MONITOR_NICKNAME: "PDS"
       MONITOR_TITLE: "Personal Data Store"
@@ -236,13 +234,11 @@ services:
       INTERNAL_ADDRESS: ecpds-mover
       # Ports for the Monitor-Server services
       # Jolokia (JMX-over-HTTP), browsable from the hawtio service below. JOLOKIA_USER/
-      # JOLOKIA_PASSWORD are read from your shell environment (not committed here) -
-      # export them before 'make up svc=mover' (from run/bin/ecpds), otherwise Jolokia
-      # runs with no authentication at all.
+      # Credentials come from the private development env file or your environment.
       JOLOKIA_PORT: 4062
       JOLOKIA_HOST: 0.0.0.0
       JOLOKIA_USER: ${JOLOKIA_USER:-jolokia}
-      JOLOKIA_PASSWORD: ${JOLOKIA_PASSWORD:-jolokia2021}
+      JOLOKIA_PASSWORD: ${JOLOKIA_PASSWORD:-}
       PORT_CALLBACK: 4600 # Java Remote Method Invocation (communication between components)
       PORT_HTTP: 4080 # Web data-portal interface (http)
       PORT_HTTPS: 4443 # Web data-portal interface (https)
@@ -260,9 +256,10 @@ services:
       # Log levels for log4j2 (off, fatal, error, warn, info, debug, trace, all)
       LOG_LEVEL: debug
       # Password to unlock the 'etc/ecpds/mover/ecpds-mover.pfx' keystore
-      KEYSTORE_PASSWORD: s5w8g771
+      KEYSTORE_PASSWORD: ${KEYSTORE_PASSWORD:-}
       # Shared secret for the Mover/Proxy REST control channel (RCC) authentication
-      RCC_SHARED_SECRET: "2z14vqbu75XB3IRsddH0gztpXHbUGg9e2GaX3jFq3p0="
+      RCC_SHARED_SECRET: ${RCC_SHARED_SECRET:-}
+      CLI_SHARED_SECRET: ${CLI_SHARED_SECRET:-}
       # Personalisation of monitoring web interface
       MOVER_TITLE: "Personal Data Store (PDS)"
       MOVER_COLOR: "#0079d3"
@@ -316,7 +313,7 @@ services:
     restart: unless-stopped
     environment:
       HAWTIO_USER: ${HAWTIO_USER:-hawtio}
-      HAWTIO_PASSWORD: ${HAWTIO_PASSWORD:-hawtio2021}
+      HAWTIO_PASSWORD: ${HAWTIO_PASSWORD:-}
       # Set HAWTIO_JOLOKIA_HOST=host.docker.internal when master/monitor/mover run outside
       # Docker (e.g. launched from Eclipse/VS Code on the Mac host).
       HAWTIO_PRESET_CONNECTIONS: >-

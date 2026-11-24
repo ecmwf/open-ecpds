@@ -23,11 +23,15 @@ JOLOKIA_USER="jolokia"
 JOLOKIA_PASSWORD="replace-with-a-secret"
 ```
 
-Use the corresponding `master.cnf` or `mover.cnf` for those services. Jolokia has no
-authentication by default. Set both `JOLOKIA_USER` and `JOLOKIA_PASSWORD` to enable it.
-The agent listens on all interfaces by default; restrict access with a firewall or set
-`JOLOKIA_HOST=127.0.0.1` when Hawtio is on the same host. Do not expose an
-unauthenticated Jolokia endpoint to an untrusted network.
+Use the corresponding `master.cnf` or `mover.cnf` for those services. Jolokia is
+disabled until its port is configured, and the launcher requires both `JOLOKIA_USER`
+and `JOLOKIA_PASSWORD` when it is enabled. The agent binds to `127.0.0.1` by default.
+Set `JOLOKIA_HOST` explicitly for remote access and restrict that listener to trusted
+clients with a firewall; credentials do not encrypt the HTTP connection.
+
+For local development, `make dev-secrets` prepares private credentials used by
+Compose and IDE launches. `make start-hawtio` reports the location of the private
+credential file rather than printing a password. Do not share that file.
 
 Run the Hawtio gateway separately and configure its login and the Jolokia endpoints it
 should offer. For example, in `hawtio.cnf`:

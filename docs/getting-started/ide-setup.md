@@ -20,6 +20,19 @@ This command creates the Docker network for OpenECPDS and starts only the databa
 service, while the Master, Monitor, and Mover services can be launched directly from the
 IDE.
 
+Run `make dev-secrets` before the first IDE launch; `make start-db` also prepares
+these credentials. The Eclipse and VS Code configurations read private, generated
+argument files from `run/etc/ecpds/development-secrets/`. These supply the local
+keystore password, CLI/RCC secrets, development API key and authenticated Jolokia
+connections. No fixed service-login password is needed: the services retain their
+normal generated registration credentials.
+
+Generated secrets persist across launches and are excluded from Git. For existing
+database data or keystores, follow the current-password import instructions in
+[Installation](installation.md#build-and-configure-openecpds). IDE Jolokia and
+Prometheus agents bind to loopback; use an authenticated tunnel or an explicit
+deployment configuration for remote access.
+
 On first initialization, `make start-db` creates a private development password
 file at `run/etc/ecpds/master/development-database-password`. Both the database
 and the shared Eclipse/VS Code Master launch configuration use it; no IDE

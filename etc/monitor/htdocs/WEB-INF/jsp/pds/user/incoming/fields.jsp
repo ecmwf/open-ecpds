@@ -145,6 +145,21 @@
             </div>
           </div>
 
+          <div class="col-12 col-md-6">
+            <label for="initialPermissionPreset" class="form-label form-label-sm fw-semibold text-muted mb-1">Permissions
+              <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em"
+                 data-bs-toggle="popover" data-bs-placement="top"
+                 data-bs-content="Initial permissions for this user. All grants every available permission. Read Only grants non-writing permissions such as dir, get, mtime and size."
+                 tabindex="0"></i>
+            </label>
+            <html:select property="permissionPreset" styleId="initialPermissionPreset" styleClass="form-select form-select-sm">
+              <html:option value="none">None</html:option>
+              <html:option value="all">All</html:option>
+              <html:option value="read-only">Read Only</html:option>
+            </html:select>
+            <div class="form-text">None prevents login until permissions are added.</div>
+          </div>
+
           <%-- TOTP + Password (standard-login only, shown/hidden by JS) --%>
           <div id="standardLoginFields" class="col-12">
             <div class="row g-3">

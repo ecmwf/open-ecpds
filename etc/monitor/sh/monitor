@@ -22,6 +22,10 @@ for envfile in default/monitor.cnf monitor.cnf; do
   fi
 done
 
+if [ -n "$CONTAINER" ] && [ "$1" = start ]; then
+  : "${KEYSTORE_PASSWORD:?Set KEYSTORE_PASSWORD at runtime}"
+fi
+
 ####################################################
 ## Set memory options from ALLOCATED_MEMORY if unset
 ####################################################
@@ -121,13 +125,14 @@ fi
 ## by this server. Works regardless of USE_JCONSOLE, since Jolokia
 ## merges every MBeanServer it finds in the JVM. Set JOLOKIA_PORT to
 ## enable, and optionally JOLOKIA_HOST to bind to a specific address
-## (default: 0.0.0.0). Strongly recommended: also set JOLOKIA_USER and
-## JOLOKIA_PASSWORD, otherwise anyone who can reach this port can read
-## and invoke every MBean with no authentication at all. Agent jar is
+## (default: 127.0.0.1). JOLOKIA_USER and JOLOKIA_PASSWORD are required.
+## Anyone authenticated on this port can read and invoke MBeans. Agent jar is
 ## fetched by Maven at build time - see docs/monitoring/jmx-export.md.
 ###################################################################
-if [ -n "$JOLOKIA_PORT" ]; then
-  JOLOKIA_OPTS="port=$JOLOKIA_PORT,host=${JOLOKIA_HOST:-0.0.0.0}"
+if [ -n "$JOLOKIA_PORT" ] && [ "$1" = start ]; then
+  : "${JOLOKIA_USER:?Set JOLOKIA_USER when enabling Jolokia}"
+  : "${JOLOKIA_PASSWORD:?Set JOLOKIA_PASSWORD when enabling Jolokia}"
+  JOLOKIA_OPTS="port=$JOLOKIA_PORT,host=${JOLOKIA_HOST:-127.0.0.1}"
   if [ -n "${JOLOKIA_POLICY_LOCATION:-}" ]; then
     case "$JOLOKIA_POLICY_LOCATION" in
       *[!a-zA-Z0-9_./:-]*) echo "Invalid JOLOKIA_POLICY_LOCATION: use a file:/absolute/path URL without spaces" >&2; exit 1 ;;

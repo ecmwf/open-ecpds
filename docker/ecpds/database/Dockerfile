@@ -4,8 +4,7 @@ LABEL maintainer="Laurent.Gougeon@ecmwf.int"
 LABEL org.opencontainers.image.source="https://github.com/ecmwf/open-ecpds"
 LABEL org.opencontainers.image.description="OpenECPDS Database"
 
-# Root password to connect to the database
-ENV MYSQL_ROOT_PASSWORD=ecpds2020!
+# Supply the database root password at runtime, never in the image.
 
 # Init script to create the OpenECPDS database
 COPY ecpds.sql /docker-entrypoint-initdb.d/

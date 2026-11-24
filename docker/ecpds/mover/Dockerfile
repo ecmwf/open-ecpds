@@ -16,8 +16,8 @@ ENV ALLOCATED_MEMORY=1G
 ENV EXTERNAL_ADDRESS=0.0.0.0
 ENV INTERNAL_ADDRESS=localhost
 ENV MASTER_ADDRESS=localhost
-ENV KEYSTORE_PASSWORD=s5w8g771
-ENV RCC_SHARED_SECRET="2z14vqbu75XB3IRsddH0gztpXHbUGg9e2GaX3jFq3p0="
+ENV KEYSTORE_PASSWORD=""
+ENV RCC_SHARED_SECRET=""
 ENV CLI_SHARED_SECRET=""
 ENV MOVER_TITLE="Personal Data Store (PDS)"
 ENV MOVER_COLOR="#0079d3"
@@ -48,7 +48,13 @@ ENV LOG_LEVEL=warn
 COPY rpms/ecpds-common-${TAG}.noarch.rpm rpms/ecpds-mover-${TAG}.*.rpm ./
 
 # Install OpenECPDS rpms, lbzip2, zstd, nmap and mtr
-RUN yum install -d1 -y lbzip2 zstd nmap mtr && \
+RUN for package in ./*.rpm; do \
+        rpm -qpl "$package" > /tmp/ecpds-rpm-files || exit 1; \
+        if grep -Eq '(^|/)id_(rsa|dsa|ecdsa|ed25519)(\.pub)?$|\.(key|pem|p12|pfx|jks|keystore)$' /tmp/ecpds-rpm-files; then \
+            echo "Refusing RPM containing key or keystore material: $package" >&2; exit 1; \
+        fi; \
+    done && rm /tmp/ecpds-rpm-files && \
+    yum install -d1 -y lbzip2 zstd nmap mtr && \
     yum install -d1 -y ecpds-common-${TAG}.noarch.rpm ecpds-mover-${TAG}.*.rpm && \
     yum clean all && rm -f ecpds-common-${TAG}.noarch.rpm ecpds-mover-${TAG}.*.rpm
 

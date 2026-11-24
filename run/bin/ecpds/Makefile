@@ -39,6 +39,8 @@ else
   COMPOSE=podman-compose
 endif
 
+COMPOSE += $(if $(wildcard ../../../run/etc/ecpds/development-secrets/compose.env),--env-file ../../../run/etc/ecpds/development-secrets/compose.env)
+
 # Set the docker or podman version
 DOCKER_VERSION = $(shell $(DOCKER) --version)
 
@@ -74,7 +76,7 @@ endif
 # Display help by default
 .DEFAULT_GOAL := help
 
-.PHONY: help up ps logs connect config down prune mariadb dump-full dump-conf import clean info
+.PHONY: help up ps logs connect config down prune mariadb dump-full dump-conf import clean info dev-secrets
 
 # ─── Help ─────────────────────────────────────────────────────────────────────
 
@@ -113,13 +115,16 @@ check-db:
 		printf "No active connections from user 'master'.\n"; \
 	fi
 
-mariadb-exec:
+dev-secrets:
+	@python3 ../../../scripts/dev-secrets.py
+
+mariadb-exec: dev-secrets
 	@$(COMPOSE) -f $(DOCKER_HOST_OS)-ecpds/docker-compose.yml exec -T \
 		database sh -c 'env MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" mariadb -N -s ecpds' < /dev/stdin
 
 # ─── Containers ───────────────────────────────────────────────────────────────
 
-up: check-yaml ## Create and start containers (arg: svc, default: all)
+up: check-yaml $(if $(strip $(svc)),$(if $(filter database master monitor mover hawtio,$(svc)),dev-secrets),dev-secrets) ## Create and start containers (arg: svc, default: all)
 	@if [ -z "$(svc)" ] || [ "$(svc)" = database ] || [ "$(svc)" = master ]; then \
 		bash ../../../scripts/dev-database-password.sh; \
 	fi
@@ -134,7 +139,7 @@ logs: check-yaml ## View output from a container (arg: svc)
 connect: check-yaml ## Open a bash session in a running container (arg: svc)
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml exec $(svc) bash
 
-config: check-yaml ## Validate and view the Compose file
+config: check-yaml dev-secrets ## Validate and view the Compose file
 	@$(COMPOSE) -f ${DOCKER_HOST_OS}-ecpds/docker-compose.yml config
 
 down: check-yaml ## Stop and remove containers, networks, images, and volumes (arg: svc, default: all)
