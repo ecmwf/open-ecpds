@@ -16,7 +16,7 @@ ENV ALLOCATED_MEMORY=1G
 ENV EXTERNAL_ADDRESS=0.0.0.0
 ENV INTERNAL_ADDRESS=localhost
 ENV MASTER_ADDRESS=localhost
-ENV KEYSTORE_PASSWORD=s5w8g771
+ENV KEYSTORE_PASSWORD=""
 ENV USE_CACHE=no
 ENV MASTER_URL_LIST=""
 ENV DEFAULT_SOURCE_HOST_ID=""
@@ -43,7 +43,13 @@ ENV LOG_LEVEL=warn
 COPY rpms/ecpds-common-${TAG}.noarch.rpm rpms/ecpds-monitor-${TAG}.noarch.rpm ./
 
 # Install OpenECPDS rpms
-RUN yum install -d1 -y ecpds-common-${TAG}.noarch.rpm ecpds-monitor-${TAG}.noarch.rpm && \
+RUN for package in ./*.rpm; do \
+        rpm -qpl "$package" > /tmp/ecpds-rpm-files || exit 1; \
+        if grep -Eq '(^|/)id_(rsa|dsa|ecdsa|ed25519)(\.pub)?$|\.(key|pem|p12|pfx|jks|keystore)$' /tmp/ecpds-rpm-files; then \
+            echo "Refusing RPM containing key or keystore material: $package" >&2; exit 1; \
+        fi; \
+    done && rm /tmp/ecpds-rpm-files && \
+    yum install -d1 -y ecpds-common-${TAG}.noarch.rpm ecpds-monitor-${TAG}.noarch.rpm && \
     yum clean all && rm -f ecpds-common-${TAG}.noarch.rpm ecpds-monitor-${TAG}.noarch.rpm
 
 # Mountable volumes

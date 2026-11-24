@@ -197,7 +197,7 @@ variable name (though it is read directly by the C binary at runtime, not via th
 indirection used server-side):
 
 ```bash
-export CLI_SHARED_SECRET="dboUz95GH4U8LihvnJPGfBce5/rFJdbYXoZesRXBIyQ="
+export CLI_SHARED_SECRET="<your-runtime-cli-shared-secret>"
 ecpds \
   -echost master.example.com \
   -user mylogin -pass mypassword \
@@ -227,7 +227,7 @@ cliSharedSecret=${clisharedsecret.value}
 
 ```bash
 # mover.cnf, or the CLI_SHARED_SECRET container/environment variable
-export CLI_SHARED_SECRET="dboUz95GH4U8LihvnJPGfBce5/rFJdbYXoZesRXBIyQ="
+export CLI_SHARED_SECRET="<your-runtime-cli-shared-secret>"
 ```
 
 !!! danger "An unconfigured Mover fails silently, not immediately"

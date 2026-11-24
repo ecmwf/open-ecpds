@@ -150,7 +150,7 @@ build-dev-image = cd .devcontainer && $(DOCKER) build --platform linux/$(ARCH) -
 # Conditional targets based on the environment
 .PHONY: help dev dev-pull .dev-cntnr .run login rm-dev git-publish git-merge \
         get-geodb get-licenses build build-sa build-cli cr-login push push-dev push-sa push-cli push-native push-sa-native push-cli-native manifest sa-manifest cli-manifest release-tools \
-        start-db stop-db start-openbao stop-openbao start-ai stop-ai start-hawtio stop-hawtio start-otel stop-otel logs-otel start-backend stop-backend \
+        dev-secrets start-db stop-db start-openbao stop-openbao start-ai stop-ai start-hawtio stop-hawtio start-otel stop-otel logs-otel start-backend stop-backend \
         docs docs-embed docs-screenshots docs-preview docs-publish \
         clean info
 
@@ -338,6 +338,9 @@ cli-manifest: ## Combine arch CLI images into a multi-arch manifest on CR (~)
 	@cd docker && $(MAKE) cli-manifest
 
 # ─── Local services (database + AI) ───────────────────────────────────────────
+dev-secrets: ## Prepare private credentials for local Compose and IDE launches
+	@python3 scripts/dev-secrets.py
+
 start-db: ## Build and start the database service (~)
 	@$(call check-docker)
 	@if [ -d "$(DB_DATA_DIR)/mysql" ] || [ -d "$(DB_DATA_DIR)/ecpds" ]; then \
@@ -416,9 +419,6 @@ stop-ai: ## Stop the AI service (~)
 
 start-hawtio: ## Build and start the Hawtio JMX web console, with its integrated Basic Auth gateway (~)
 	@$(call check-docker)
-	@echo "NOTE: using the fixed local-testing credentials hawtio/hawtio2021 and"; \
-	echo "jolokia/jolokia2021 (same convention as the monitor UI's admin/admin2021)"; \
-	echo "unless HAWTIO_USER/HAWTIO_PASSWORD/JOLOKIA_USER/JOLOKIA_PASSWORD are exported."
 	@cd docker && $(MAKE) build-hawtio
 	@# On macOS, target the host when master/monitor/mover are not running as containers
 	@# (e.g. launched from an IDE); unused by the Linux compose file (host networking).
@@ -428,8 +428,8 @@ start-hawtio: ## Build and start the Hawtio JMX web console, with its integrated
 	fi; \
 	[ -n "$$jhost" ] && echo "Hawtio preset connections target: $$jhost"; \
 	cd run/bin/ecpds && HAWTIO_JOLOKIA_HOST="$$jhost" $(MAKE) up svc=hawtio
-	@printf "\n$(GREEN)Hawtio:$(RESET) http://localhost:8080/hawtio  (login: %s / %s)\n" \
-		"$${HAWTIO_USER:-hawtio}" "$${HAWTIO_PASSWORD:-hawtio2021}"
+	@printf "\n$(GREEN)Hawtio:$(RESET) http://localhost:8080/hawtio\n"
+	@echo "Credentials: run/etc/ecpds/development-secrets/compose.env (private local file)."
 	@printf "$(GREEN)Connect/Remote page pre-filled:$(RESET) http://localhost:8080/hawtio/connect/remote\n"
 
 stop-hawtio: ## Stop the Hawtio JMX web console and its integrated gateway (~)

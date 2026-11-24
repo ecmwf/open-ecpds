@@ -181,6 +181,11 @@ spec:
             secretKeyRef:
               name: ecpds-mover-credentials
               key: RCC_SHARED_SECRET
+        - name: CLI_SHARED_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: ecpds-master-credentials
+              key: CLI_SHARED_SECRET
         - name: MOVER_TITLE
           value: Personal Data Store (PDS)
         - name: MOVER_COLOR

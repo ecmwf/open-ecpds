@@ -139,6 +139,11 @@ spec:
               key: CLI_SHARED_SECRET
         - name: DATABASE_ALIAS
           value: sequential://ecpds-database:3309/ecpds
+        - name: ECPDS_DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecpds-database-credentials
+              key: ECPDS_DATABASE_PASSWORD
         - name: DATABASE_MIN_SPOOL_SIZE
           value: '5'
         - name: DATABASE_MAX_SPOOL_SIZE

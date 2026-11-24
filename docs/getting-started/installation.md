@@ -96,11 +96,46 @@ Local images are tagged `open-ecpds/<service>:<version>-<build>`; the shared Jav
 base is `open-ecpds/java:graalvm`. Standalone, CLI and Hawtio images use the same
 namespace. Registry images are published under `ghcr.io/ecmwf/open-ecpds/*`.
 
-!!! warning
-    In a production environment, `ENV` should be avoided in Dockerfiles for sensitive
-    data like `MYSQL_ROOT_PASSWORD` for the Database, or `KEYSTORE_PASSWORD` for the
-    Monitor and Mover. Docker secrets or environment variable files should be used
-    instead.
+Component images contain no default database root password, keystore password or
+control-channel shared secret. Supply credentials at runtime through protected
+configuration files, environment files or Kubernetes Secrets, never image build
+arguments. Monitor and Mover containers require `KEYSTORE_PASSWORD`; Master and
+Mover containers require the same `CLI_SHARED_SECRET`, and Movers also require
+`RCC_SHARED_SECRET`. Jolokia, when enabled, requires both its username and password.
+The database accepts the MariaDB image's runtime root-password settings, including
+`MYSQL_ROOT_PASSWORD_FILE`.
+The database component also requires its application's current password through
+`ECPDS_DATABASE_PASSWORD` or `ECPDS_DATABASE_PASSWORD_FILE`; local Compose supplies
+the private development password mount instead. Startup refuses a missing or
+empty application password before database initialization.
+
+The local Compose workflow generates private credentials automatically through
+`scripts/dev-secrets.py`, also available as `make dev-secrets`. It saves them under
+`run/etc/ecpds/development-secrets/`, which is excluded from Git, using a private
+directory and owner-readable files. Repeated setup preserves the same values.
+Do not publish that directory or the resolved output of `make config`, which
+contains runtime credentials.
+
+For an existing development database, provide its current root password through
+`MYSQL_ROOT_PASSWORD` before the first setup; for existing Monitor/Mover keystores,
+also provide their current `KEYSTORE_PASSWORD`. Setup refuses to invent replacement
+credentials for those existing resources. If their keystore passwords differ, use
+separate runtime overrides for the affected services rather than a shared local
+development configuration.
+Imported development credentials must use letters, digits or `._~!@%+/=-` so they
+can be shared safely between Compose and JVM argument files. Other credential
+formats require a deployment-specific runtime configuration.
+
+Image builds reject RPMs containing SSH keys or private-key/keystore file paths.
+Mount deployment-specific key material at runtime, or let the configured services
+generate their own local keys.
+
+!!! warning "Previously published credentials"
+    Removing a default from an image does not revoke it. Rotate any credentials or
+    SSH host keys previously copied from public examples or repository history,
+    update their authorized clients, and rebuild and replace affected images.
+    Remove obsolete published image versions according to your registry policy.
+    These deployment and revocation actions are not performed by the source changes.
 
 Once the build process is complete, navigate to the directory where another `Makefile`
 is available:

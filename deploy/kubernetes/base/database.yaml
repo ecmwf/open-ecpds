@@ -56,6 +56,11 @@ spec:
             secretKeyRef:
               name: ecpds-database-credentials
               key: MYSQL_ROOT_PASSWORD
+        - name: ECPDS_DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecpds-database-credentials
+              key: ECPDS_DATABASE_PASSWORD
         ports:
         - name: mysql
           containerPort: 3309

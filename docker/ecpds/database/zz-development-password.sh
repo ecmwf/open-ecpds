@@ -1,5 +1,9 @@
 #!/bin/bash
 set +x
+if [ ! -f /run/ecpds-development-private/database-password ]; then
+    echo "Missing runtime application database password." >&2
+    exit 1
+fi
 password=$(cat /run/ecpds-development-private/database-password)
 if [ -z "$password" ] || [[ "$password" == *$'\n'* || "$password" == *$'\r'* ]]; then
     echo "Invalid development database password." >&2

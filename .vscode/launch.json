@@ -7,7 +7,8 @@
 			"request": "launch",
 			"mainClass": "ecmwf.common.starter.Starter",
 			"vmArgs": [
-				"@run/etc/ecpds/master/argfile"
+				"@run/etc/ecpds/master/argfile",
+				"@run/etc/ecpds/development-secrets/master.args"
 			],
 			"shortenCommandLine": "none"
 		},
@@ -17,7 +18,8 @@
 			"request": "launch",
 			"mainClass": "ecmwf.common.starter.Starter",
 			"vmArgs": [
-				"@run/etc/ecpds/mover/argfile"
+				"@run/etc/ecpds/mover/argfile",
+				"@run/etc/ecpds/development-secrets/mover.args"
 			],
 			"shortenCommandLine": "none"
 		},
@@ -27,7 +29,8 @@
 			"request": "launch",
 			"mainClass": "ecmwf.common.starter.Starter",
 			"vmArgs": [
-				"@run/etc/ecpds/monitor/argfile"
+				"@run/etc/ecpds/monitor/argfile",
+				"@run/etc/ecpds/development-secrets/monitor.args"
 			],
 			"shortenCommandLine": "none"
 		}
