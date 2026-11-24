@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -141,6 +142,9 @@ public final class OpsViewManager {
      * Keep in cache the list of Destinations to avoid sending the same list twice!
      */
     private static final HashMap<String, ArrayList<String>> _cacheList = new HashMap<>();
+
+    /** Host updates whose reload has not yet been confirmed, including uncertain PUT outcomes. */
+    private static final HashSet<String> _pendingReloads = new HashSet<>();
 
     /** Keep a token in the cache and renew it only if required! *. */
     private static final StringBuilder _token = new StringBuilder();
@@ -361,6 +365,7 @@ public final class OpsViewManager {
      *             Signals that an I/O exception has occurred.
      */
     public static void sync(final Destination[] destinations) throws OpsViewManagerException, IOException {
+        final var start = System.nanoTime();
         final var cacheList = new HashMap<String, ArrayList<String>>();
         for (final String filterName : filtersList) {
             if (!"".equals(filterName)) {
@@ -383,7 +388,7 @@ public final class OpsViewManager {
             }
             final var existingList = _cacheList.get(filterName);
             final var currentList = cacheList.get(filterName);
-            if (currentList.equals(existingList)) {
+            if (currentList.equals(existingList) && !_pendingReloads.contains(filterName)) {
                 _log.debug("No changes detected for {}, reload delayed", filterName);
                 continue;
             }
@@ -396,6 +401,8 @@ public final class OpsViewManager {
                 existingList.addAll(currentList);
             }
         }
+        _log.debug("Synchronization completed for {} destinations in {} ms", destinations.length,
+                (System.nanoTime() - start) / 1_000_000);
     }
 
     /**
@@ -529,6 +536,7 @@ public final class OpsViewManager {
                 final var list = (ArrayNode) listNode;
                 ArrayNode hostattributes = null;
                 final List<String> fromClient = new ArrayList<>(Arrays.asList(destinations));
+                fromClient.replaceAll(OpsViewManager::getDestinationName);
                 final List<String> fromServer = new ArrayList<>();
                 for (final JsonNode host : list) {
                     if (host != null && filterName.equals(host.path("name").asText())) {
@@ -553,29 +561,35 @@ public final class OpsViewManager {
                 if (hostattributes == null) {
                     throw new IOException("No hostattributes found");
                 }
+                var updateRequired = true;
                 if (fromClient.size() == fromServer.size()) {
                     fromClient.removeAll(fromServer);
-                    if (fromClient.isEmpty()) {
-                        return;
+                    updateRequired = !fromClient.isEmpty();
+                }
+                if (!updateRequired && !_pendingReloads.contains(filterName)) {
+                    return;
+                }
+                if (updateRequired) {
+                    hostattributes.removeAll();
+                    for (final String destination : destinations) {
+                        final var newdes = OBJECT_MAPPER.createObjectNode();
+                        newdes.put("name", "DESTINATION");
+                        newdes.put("value", getDestinationName(destination));
+                        hostattributes.add(newdes);
                     }
-                }
-                hostattributes.removeAll();
-                for (final String destination : destinations) {
-                    final var newdes = OBJECT_MAPPER.createObjectNode();
-                    newdes.put("name", "DESTINATION");
-                    newdes.put("value", getDestinationName(destination));
-                    hostattributes.add(newdes);
-                }
-                try (final var response = send(URL_HOST, "PUT",
-                        Map.of("X-Opsview-Username", USER, "X-Opsview-Token", token), Map.of(), json)) {
-                    final var code = response.getStatusCode();
-                    if (code != 200) {
-                        _log.warn("URL: {}, Code: {}, Message: {}, Request: {}", URL_HOST, code, response.getMessage(),
-                                OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(json));
-                        if (code == 401) {
-                            throw new OpsViewAuthException("Host request failed (unauthorized)");
+                    _pendingReloads.add(filterName);
+                    try (final var response = send(URL_HOST, "PUT",
+                            Map.of("X-Opsview-Username", USER, "X-Opsview-Token", token), Map.of(), json)) {
+                        final var code = response.getStatusCode();
+                        if (code != 200) {
+                            _log.warn("URL: {}, Code: {}, Message: {}, Request: {}", URL_HOST, code,
+                                    response.getMessage(),
+                                    OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(json));
+                            if (code == 401) {
+                                throw new OpsViewAuthException("Host request failed (unauthorized)");
+                            }
+                            throw new IOException("Host request failed");
                         }
-                        throw new IOException("Host request failed");
                     }
                 }
                 try (final var response = send(URL_RELOAD, "POST",
@@ -589,6 +603,7 @@ public final class OpsViewManager {
                         throw new IOException("Reload request failed");
                     }
                 }
+                _pendingReloads.remove(filterName);
                 break;
             } catch (final OpsViewAuthException e) {
                 if (!lastTry.compareAndSet(false, true)) {

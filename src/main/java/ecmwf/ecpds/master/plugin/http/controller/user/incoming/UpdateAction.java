@@ -88,10 +88,6 @@ public class UpdateAction extends PDSAction {
     /** The Constant DELETE_ALL_OPERATIONS. */
     private static final String DELETE_ALL_OPERATIONS = "deleteAllOperations";
 
-    /** Operations that modify data — excluded from the read-only preset. */
-    private static final java.util.Set<String> WRITE_OPERATIONS = java.util.Set.of("delete", "mkdir", "put", "rename",
-            "rmdir");
-
     /** The Constant CLOSE_SESSION. */
     private static final String CLOSE_SESSION = "closeSession";
 
@@ -193,13 +189,13 @@ public class UpdateAction extends PDSAction {
                     .collect(java.util.stream.Collectors.toSet());
             // Remove write operations that are currently assigned
             for (final var op : currentOps) {
-                if (WRITE_OPERATIONS.contains(op.getName())) {
+                if (!OperationHome.isReadOnly(op)) {
                     iu.deleteOperation(op);
                 }
             }
             // Add read-only operations not yet assigned
             for (final var op : OperationHome.findAll()) {
-                if (!WRITE_OPERATIONS.contains(op.getName()) && !currentNames.contains(op.getName())) {
+                if (OperationHome.isReadOnly(op) && !currentNames.contains(op.getName())) {
                     iu.addOperation(op);
                 }
             }

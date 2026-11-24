@@ -109,6 +109,8 @@ public class IncomingUserActionForm extends ECMWFActionForm {
     /** The portal service. */
     private String portalService = "standard-login";
 
+    private String permissionPreset = "read-only";
+
     /** The user. */
     private IncomingUser user = null;
 
@@ -182,6 +184,14 @@ public class IncomingUserActionForm extends ECMWFActionForm {
      */
     public String getPortalService() {
         return portalService;
+    }
+
+    public String getPermissionPreset() {
+        return permissionPreset;
+    }
+
+    public void setPermissionPreset(final String preset) {
+        permissionPreset = preset != null ? preset : "read-only";
     }
 
     /**

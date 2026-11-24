@@ -117,11 +117,29 @@ Do not publish that directory or the resolved output of `make config`, which
 contains runtime credentials.
 
 For an existing development database, provide its current root password through
-`MYSQL_ROOT_PASSWORD` before the first setup; for existing Monitor/Mover keystores,
-also provide their current `KEYSTORE_PASSWORD`. Setup refuses to invent replacement
-credentials for those existing resources. If their keystore passwords differ, use
+`MYSQL_ROOT_PASSWORD` before the first setup. For existing Monitor/Mover TLS keystores,
+interactive `make dev-secrets` offers to keep them and securely enter their current
+password, back them up for recreation, or cancel. Keeping them validates the password
+with the JDK's `keytool` before saving credentials. Noninteractive setup requires the
+current `KEYSTORE_PASSWORD` instead of prompting. If their keystore passwords differ, use
 separate runtime overrides for the affected services rather than a shared local
 development configuration.
+
+Stop the affected IDE/container services before choosing recreation. Confirming
+`RECREATE` acknowledges they are stopped; the helper does not stop services for you
+and refuses recreation when a recorded service PID is still alive. Original TLS
+keystores and any pending TLS keys are moved into a private directory under
+`run/etc/ecpds/development-secrets/keystore-backups/`. Replacement self-signed
+certificates are generated on the next service start, changing the TLS identity
+and potentially requiring clients to trust the new certificates. Database data,
+other encryption keys and previously saved development credentials are preserved.
+
+For explicitly acknowledged, noninteractive recreation, run:
+
+```bash
+python3 scripts/dev-secrets.py --recreate-keystores --services-stopped
+```
+
 Imported development credentials must use letters, digits or `._~!@%+/=-` so they
 can be shared safely between Compose and JVM argument files. Other credential
 formats require a deployment-specific runtime configuration.

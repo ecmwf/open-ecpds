@@ -27,6 +27,7 @@ package ecmwf.ecpds.master.plugin.http.home.transfer;
  */
 
 import java.util.Collection;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,6 +51,12 @@ public class OperationHome extends ModelHomeBase {
 
     /** The Constant INTERFACE. */
     private static final String INTERFACE = Operation.class.getName();
+
+    private static final Set<String> WRITE_OPERATIONS = Set.of("delete", "mkdir", "put", "rename", "rmdir");
+
+    public static boolean isReadOnly(final Operation operation) {
+        return !WRITE_OPERATIONS.contains(operation.getName());
+    }
 
     /**
      * Creates the.
