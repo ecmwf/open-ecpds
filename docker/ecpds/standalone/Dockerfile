@@ -56,7 +56,9 @@ ENV MONITOR_TITLE="Personal Data Store"
 ENV MONITOR_COLOR="#0079d3"
 
 # ── Install MariaDB, tools, and supervisord ────────────────────────────────────
-RUN dnf -y install mariadb-server lbzip2 zstd nmap mtr supervisor nginx openssl jq && \
+COPY MariaDB.repo /etc/yum.repos.d/MariaDB.repo
+RUN dnf -y install MariaDB-server MariaDB-client lbzip2 zstd nmap mtr supervisor nginx openssl jq && \
+    mariadbd --version | grep -Eq '11\.4\.[0-9]+-MariaDB' && \
     dnf clean all
 COPY --from=openbao /usr/bin/bao /usr/local/bin/bao
 COPY --from=openbao /licenses/mozilla.txt /usr/share/licenses/openbao/mozilla.txt

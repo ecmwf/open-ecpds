@@ -1,0 +1,7 @@
+[mariadb]
+name=MariaDB 11.4
+baseurl=https://dlm.mariadb.com/repo/mariadb-server/11.4/yum/rhel/9/$basearch
+gpgkey=https://supplychain.mariadb.com/MariaDB-Server-GPG-KEY
+gpgcheck=1
+enabled=1
+module_hotfixes=1
