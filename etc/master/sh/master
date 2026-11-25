@@ -22,10 +22,6 @@ for envfile in default/master.cnf master.cnf; do
   fi
 done
 
-if [ -n "$CONTAINER" ] && [ "$1" = start ]; then
-  : "${CLI_SHARED_SECRET:?Set CLI_SHARED_SECRET at runtime}"
-fi
-
 ####################################################
 ## Set memory options from ALLOCATED_MEMORY if unset
 ####################################################
