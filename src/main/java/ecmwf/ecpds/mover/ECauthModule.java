@@ -307,9 +307,12 @@ public final class ECauthModule extends ProxyModule {
             suffix = ".tmp";
         }
         final var ecauthUser = currentSetup.get(HOST_ECAUTH_USER, Cnf.at("ECauthModule", "user", "ecauth"));
-        final var ecauthPass = currentSetup.get(HOST_ECAUTH_PASS, Cnf.at("ECauthModule", "pass", "ecauth"));
+        final var ecauthPass = currentSetup.get(HOST_ECAUTH_PASS, Cnf.at("ECauthModule", "pass"));
         final var ecauthProtocol = currentSetup.get(HOST_ECAUTH_PROTOCOL, Cnf.at("ECauthModule", "protocol", "ssh"));
         final var telnet = "telnet".equalsIgnoreCase(ecauthProtocol);
+        if (telnet && ecauthPass == null) {
+            throw new IOException("An ECauth password must be configured for Telnet");
+        }
         username = msuser.getLogin();
         var originalHost = msuser.getHost();
         if (currentSetup.getBoolean(HOST_ECAUTH_RESOLVE_IP)) {
