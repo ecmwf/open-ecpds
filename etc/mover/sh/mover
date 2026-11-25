@@ -24,8 +24,6 @@ done
 
 if [ -n "$CONTAINER" ] && [ "$1" = start ]; then
   : "${KEYSTORE_PASSWORD:?Set KEYSTORE_PASSWORD at runtime}"
-  : "${RCC_SHARED_SECRET:?Set RCC_SHARED_SECRET at runtime}"
-  : "${CLI_SHARED_SECRET:?Set CLI_SHARED_SECRET at runtime}"
 fi
 
 ####################################################
