@@ -145,7 +145,7 @@
             </div>
           </div>
 
-          <div class="col-12 col-md-6">
+          <div class="col-6">
             <label for="initialPermissionPreset" class="form-label form-label-sm fw-semibold text-muted mb-1">Permissions
               <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em"
                  data-bs-toggle="popover" data-bs-placement="top"
@@ -158,6 +158,16 @@
               <html:option value="read-only">Read Only</html:option>
             </html:select>
             <div class="form-text">None prevents login until permissions are added.</div>
+          </div>
+
+          <div class="col-6">
+            <label for="incomingActive" class="form-label form-label-sm fw-semibold text-muted mb-1">Enabled
+              <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em"
+                 data-bs-toggle="popover" data-bs-placement="top"
+                 data-bs-content="When disabled, this user cannot connect."
+                 tabindex="0"></i>
+            </label>
+            <div class="form-check form-switch mb-0"><html:checkbox property="active" styleId="incomingActive" styleClass="form-check-input" /></div>
           </div>
 
           <%-- TOTP + Password (standard-login only, shown/hidden by JS) --%>
@@ -191,18 +201,6 @@
                   <button type="button" id="buttonPassword" name="buttonPassword"
                     class="btn btn-sm btn-outline-secondary" onclick="generatePassword(); return false">Generate</button>
                 </div>
-              </div>
-              <%-- Enabled: sits as 3rd col-md-6 in this row. When passwordRow is hidden (TOTP on),
-                   it automatically slots into the vacated 2nd column. When passwordRow is visible,
-                   it wraps to the start of a new row. --%>
-              <div class="col-12 col-md-6">
-                <label class="form-label form-label-sm fw-semibold text-muted mb-1">Enabled
-                  <i class="bi bi-question-circle text-muted ms-1" style="cursor:pointer;font-size:0.8em"
-                     data-bs-toggle="popover" data-bs-placement="top"
-                     data-bs-content="When disabled, this user cannot connect."
-                     tabindex="0"></i>
-                </label>
-                <div class="form-check form-switch mb-0"><html:checkbox property="active" styleClass="form-check-input" /></div>
               </div>
             </div>
           </div><%-- /standardLoginFields (insert) --%>
