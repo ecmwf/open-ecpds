@@ -27,7 +27,7 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.host;
  * Before executing, resolves all placeholder families supported by TransferManagement:
  * - Always: $host[...], $transferMethod[...], $ectransModule[...] (via MasterServer.execDirScript)
  * - When transferId is supplied: $dataFile[...], $dataTransfer[...], $destination[...],
- *   $country[...], $transferGroup[...], $transferServer[...], $moverName
+ *   $country[...], $transferGroup[...], $transferServer[...], $moverName, $metadata[...]
  * - When valuesJson is supplied: arbitrary key→value substitutions from the JSON map
  *
  * @author Laurent Gougeon - syi@ecmwf.int, ECMWF.
@@ -58,6 +58,7 @@ import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
+import ecmwf.ecpds.master.transfer.DirectoryTestVariables;
 import ecmwf.ecpds.master.transfer.StatusFactory;
 import ecmwf.web.ECMWFException;
 import ecmwf.web.controller.ECMWFActionForm;
@@ -160,7 +161,7 @@ public class TestScriptAction extends PDSAction {
     /**
      * Resolves all transfer-specific placeholders by loading the DataTransfer with the given ID and substituting
      * $dataFile[...], $dataTransfer[...], $destination[...], $country[...], $transferGroup[...], $transferServer[...],
-     * and $moverName — exactly matching the production substitutions performed by TransferManagement.getTargetName().
+     * $moverName, and $metadata[...] for a Directory script preview.
      */
     private static String resolveTransferPlaceholders(final String script, final String transferId) {
         try {
@@ -228,6 +229,10 @@ public class TestScriptAction extends PDSAction {
             Format.replaceAll(sb, "$dataTransfer[path]", nullSafe(target.getPath()));
             Format.replaceAll(sb, "$dataTransfer[parent]", nullSafe(target.getParent()));
             Format.replaceAll(sb, "$dataTransfer[asap]", transfer.getAsap());
+            if (sb.indexOf("$metadata[") != -1) {
+                DirectoryTestVariables.resolveMetadata(sb,
+                        MasterManager.getDB().getMetaDataByDataFileId(transfer.getDataFileId()));
+            }
             return sb.toString();
         } catch (final Exception e) {
             _log.warn("Could not resolve transfer placeholders for transferId={}: {}", transferId, e.getMessage());
@@ -261,7 +266,7 @@ public class TestScriptAction extends PDSAction {
     }
 
     private static String toString(final java.util.Date d) {
-        return d != null ? d.toString() : "";
+        return DirectoryTestVariables.timestamp(d);
     }
 
     private static void writeError(final HttpServletResponse response, final ObjectNode node, final String message) {

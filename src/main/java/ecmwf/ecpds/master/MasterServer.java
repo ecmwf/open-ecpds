@@ -189,6 +189,7 @@ import ecmwf.ecpds.master.scheduler.PortalBytesScheduler;
 import ecmwf.ecpds.master.scheduler.MoverAvailabilityScheduler;
 import ecmwf.ecpds.master.scheduler.TrafficAccountingMaintenance;
 import ecmwf.ecpds.master.transfer.DestinationOption;
+import ecmwf.ecpds.master.transfer.DirectoryTestVariables;
 import ecmwf.ecpds.master.transfer.HostOption;
 import ecmwf.ecpds.master.transfer.HostConnectionLimits;
 import ecmwf.ecpds.master.transfer.StatusFactory;
@@ -2974,9 +2975,9 @@ public final class MasterServer extends ECaccessProvider
     /**
      * Same as {@link #resolveDirText(Host, String)}, but also substitutes transfer-specific placeholders
      * ($dataFile[...], $dataTransfer[...], $destination[...], $country[...], $transferServer[...], $transferGroup[...],
-     * $moverName) — the token families a Dissemination host's Directory field template is actually built from (see the
-     * Directory Guide), which the host-only substitutions above never touch. Without either {@code transferId} or
-     * {@code valuesJson}, behaves exactly like the two-argument overload.
+     * $moverName, $metadata[...]) — the token families a Dissemination host's Directory field template is built from
+     * (see the Directory Guide), which the host-only substitutions above never touch. Without either {@code transferId}
+     * or {@code valuesJson}, behaves exactly like the two-argument overload.
      *
      * @param host
      *            the host whose fields are used for substitution
@@ -3009,9 +3010,7 @@ public final class MasterServer extends ECaccessProvider
     /**
      * Resolves all transfer-specific placeholders by loading the DataTransfer with the given id and substituting
      * $dataFile[...], $dataTransfer[...], $destination[...], $country[...], $transferGroup[...], $transferServer[...],
-     * and $moverName — exactly matching the production substitutions performed by TransferManagement.getTargetName().
-     * Shared by {@link #resolveDirText(Host, String, String, String)} (Directory field preview) and
-     * {@code TestScriptAction} (Directory script preview).
+     * $moverName, and $metadata[...] for a Directory field preview.
      *
      * @param text
      *            the text containing placeholder tokens
@@ -3087,6 +3086,10 @@ public final class MasterServer extends ECaccessProvider
             Format.replaceAll(sb, "$dataTransfer[path]", _dirTextNullSafe(target.getPath()));
             Format.replaceAll(sb, "$dataTransfer[parent]", _dirTextNullSafe(target.getParent()));
             Format.replaceAll(sb, "$dataTransfer[asap]", transfer.getAsap());
+            if (sb.indexOf("$metadata[") != -1) {
+                DirectoryTestVariables.resolveMetadata(sb,
+                        getECpdsBase().getMetaDataByDataFileId(transfer.getDataFileId()));
+            }
             return sb.toString();
         } catch (final Exception e) {
             _log.warn("Could not resolve transfer placeholders for transferId={}: {}", transferId, e.getMessage());
@@ -3134,11 +3137,11 @@ public final class MasterServer extends ECaccessProvider
     }
 
     /**
-     * Null-safe {@link java.util.Date#toString()}, returning {@code ""} for a {@code null} value. Used by
+     * Null-safe epoch milliseconds, returning {@code ""} for a {@code null} value. Used by
      * {@link #resolveTransferPlaceholders(String, String)}.
      */
     private static String _dirTextToString(final java.util.Date d) {
-        return d != null ? d.toString() : "";
+        return DirectoryTestVariables.timestamp(d);
     }
 
     /**

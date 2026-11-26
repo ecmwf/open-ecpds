@@ -1584,14 +1584,14 @@ function _showFetchBtn(show) {
 
 
 /** Placeholder families that require a live DataTransfer to resolve. */
-var _TRANSFER_PLACEHOLDER_RE = /\$(?:dataFile|dataTransfer|destination|country|transferGroup|transferServer)\[|\$moverName\b/;
+var _TRANSFER_PLACEHOLDER_RE = /\$(?:dataFile|dataTransfer|destination|country|transferGroup|transferServer|metadata)\[|\$moverName\b/;
 
 /**
  * Extract all unique placeholder tokens from a script string, e.g. "$dataFile[original]".
  * Returns an array of unique tokens like ["$dataFile[original]", "$dataTransfer[target]"].
  */
 function _extractPlaceholders(script) {
-  var re = /\$(?:dataFile|dataTransfer|destination|country|transferGroup|transferServer)\[[^\]]+\]|\$moverName\b/g;
+  var re = /\$(?:dataFile|dataTransfer|destination|country|transferGroup|transferServer|metadata)\[[^\]]+\]|\$moverName\b/g;
   var seen = {}, result = [];
   var m;
   while ((m = re.exec(script)) !== null) {
