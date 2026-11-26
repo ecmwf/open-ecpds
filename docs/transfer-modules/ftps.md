@@ -30,13 +30,19 @@
 
 Only relevant when `ftps.connectionType` is `FTPS` or `FTPES`.
 
+FTPS requests a private data channel (`PROT P`). The connection fails if the
+server does not accept it; there is no automatic clear-data fallback.
+
 | Option | Default | Description |
 |---|---|---|
 | `ftps.protocol` | `TLS` | SSL/TLS protocol name passed to `SSLContext.getInstance()` (e.g. `TLSv1.2`, `TLSv1.3`) |
 | `ftps.strict` | `false` | When `false` all server certificates are accepted (trust-all). Set to `true` to use the JVM default trust store for strict certificate validation. |
 
 !!! warning
-    Leaving `ftps.strict=false` (the default) disables certificate validation. Use `true` in production environments to prevent man-in-the-middle attacks.
+    Leaving `ftps.strict=false` (the default) disables certificate validation.
+    Set it to `true` to validate the certificate chain. Ordinary transfers do
+    not verify the server hostname, so chain validation alone does not prevent
+    all man-in-the-middle attacks.
 
 ## Transfer
 

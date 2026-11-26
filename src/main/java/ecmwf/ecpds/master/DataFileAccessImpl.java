@@ -1437,7 +1437,9 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
 
     static void recordPortalAccessDenial(final String userId) {
         final var now = System.currentTimeMillis();
-        final var user = userId == null ? "" : userId;
+        final var user = userId == null || userId.length() > 64
+                || !java.nio.charset.Charset.forName("windows-1252").newEncoder().canEncode(userId)
+                || userId.chars().anyMatch(Character::isISOControl) ? "" : userId;
         final var minuteKey = user + "|"
                 + new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(new java.util.Date(now));
         PORTAL_TRAFFIC_BUFFER.computeIfAbsent(minuteKey, _ -> {

@@ -2216,7 +2216,7 @@ LOCK TABLES `TRANSFER_METHOD` WRITE;
 INSERT INTO `TRANSFER_METHOD` VALUES
 ('genericAzure','azure','$msuser[login]:$msuser[passwd]@$msuser[host]/$msuser[dir]$target',0,1,'Microsoft Azure protocol implementation (azure-storage-blob-12.14.3)',1),
 ('genericFtp','ftp','$msuser[login]:$msuser[passwd]@$msuser[host]/$msuser[dir]$target',0,1,'FTP protocol implementation',1),
-('genericFtps','ftps','$msuser[login]:$msuser[passwd]@$msuser[host]/$msuser[dir]$target',0,1,'FTPS protocol implementation (ftp4j-rv1.7.2)',1),
+('genericFtps','ftps','$msuser[login]:$msuser[passwd]@$msuser[host]/$msuser[dir]$target',0,1,'FTPS protocol implementation (Apache Commons Net)',1),
 ('genericGcs','gcs','$msuser[login]:$msuser[passwd]@$msuser[host]/$msuser[dir]$target',0,1,'Google Cloud Storage protocol implementation (google-cloud-storage-2.38.0)',1),
 ('genericHttp','http','$msuser[login]:$msuser[passwd]@$msuser[host]/$msuser[dir]$target',0,1,'HTTP/S & MQTT protocol implementation (httpclient5-5.3.1/paho.mqttv5-1.2.5)',1),
 ('genericPortal','portal','$msuser[login]:$msuser[passwd]@$msuser[host]/$msuser[dir]$target',0,1,'Notification only with no data transfer',1),

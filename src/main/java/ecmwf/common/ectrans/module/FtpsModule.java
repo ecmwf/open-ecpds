@@ -73,6 +73,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ConnectException;
+import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -88,6 +89,12 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.commons.net.ProtocolCommandEvent;
+import org.apache.commons.net.ProtocolCommandListener;
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPReply;
+import org.apache.commons.net.ftp.FTPSClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -100,17 +107,18 @@ import ecmwf.common.technical.SessionCache;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.technical.ThreadService.ConfigurableRunnable;
 import ecmwf.common.text.Format;
-import it.sauronsoftware.ftp4j.FTPClient;
-import it.sauronsoftware.ftp4j.FTPCommunicationListener;
-import it.sauronsoftware.ftp4j.FTPDataTransferListener;
 
 /**
  * The Class FtpsModule.
  */
 public final class FtpsModule extends TransferModule {
+    private enum ConnectionType {
+        FTP, FTPS, FTPES
+    }
+
     private boolean rotatingCredential;
     private volatile boolean rotationClosed;
-    private java.util.concurrent.CompletableFuture<Void> pendingCredentialUpload;
+    private java.util.concurrent.CompletableFuture<Void> pendingTransfer;
 
     @Override
     public java.util.Optional<ecmwf.common.ectrans.PasswordRotation> passwordRotation() {
@@ -135,20 +143,17 @@ public final class FtpsModule extends TransferModule {
                 module.keepAlive = 0;
                 module.usetmp = false;
                 module.ignoreDelete = true;
-                module.ftp = new FTPClient();
-                module.ftp.setSecurity("implicit".equals(endpoint.option("mode")) ? FTPClient.SECURITY_FTPS
-                        : FTPClient.SECURITY_FTPES);
-                module.ftp.setSSLSocketFactory(strictTlsFactory(endpoint.host()));
-                module.ftp.setPassive(true);
-                module.ftp.setAutoNoopTimeout(0);
-                module.ftp.getConnector().setConnectionTimeout(30000);
-                module.ftp.getConnector().setReadTimeout(60000);
-                module.ftp.getConnector().setCloseTimeout(10000);
-                module.ftp.connect(endpoint.host(), endpoint.port());
-                module.ftp.login(endpoint.login(), credential);
-                module.ftp.setType(FTPClient.TYPE_BINARY);
+                module.ftp = new VerifiedFTPSClient("implicit".equals(endpoint.option("mode")), endpoint.host());
+                module.closeTimeout = 10000;
+                module.ftp.setConnectTimeout(30000);
+                module.ftp.setDefaultTimeout(60000);
+                module.ftp.setDataTimeout(60000);
+                module.ftp.setControlEncoding(java.nio.charset.Charset.defaultCharset().name());
+                module.connectAndLogin(endpoint.host(), endpoint.port(), endpoint.login(), credential);
+                module.ftp.enterLocalPassiveMode();
+                require(module.ftp.setFileType(FTP.BINARY_FILE_TYPE), module.ftp);
                 if (directory != null && !directory.isBlank()) {
-                    module.ftp.changeDirectory(directory);
+                    require(module.ftp.changeWorkingDirectory(directory), module.ftp);
                 }
             }
         });
@@ -170,6 +175,10 @@ public final class FtpsModule extends TransferModule {
 
     /** The ftp client. */
     private FTPClient ftp;
+
+    private ProtocolCommandListener commandListener;
+
+    private int closeTimeout;
 
     /** The input. */
     private InputStream ftpsInput;
@@ -262,7 +271,7 @@ public final class FtpsModule extends TransferModule {
     private ECtransSetup currentSetup = null;
 
     /** The transferError. */
-    private String transferError = null;
+    private volatile String transferError = null;
 
     /** The send buffer size. */
     private int sendBufferSize = -1;
@@ -366,19 +375,19 @@ public final class FtpsModule extends TransferModule {
         var connected = false;
         var fromCache = false;
         final var connectionTypeName = setup.getString(HOST_FTPS_CONNECTION_TYPE);
-        var connectionType = FTPClient.SECURITY_FTP;
+        var connectionType = ConnectionType.FTP;
         if (isNotEmpty(connectionTypeName)) {
             if ("FTP".equalsIgnoreCase(connectionTypeName)) {
-                connectionType = FTPClient.SECURITY_FTP;
+                connectionType = ConnectionType.FTP;
             } else if ("FTPS".equalsIgnoreCase(connectionTypeName)) {
-                connectionType = FTPClient.SECURITY_FTPS;
+                connectionType = ConnectionType.FTPS;
             } else if ("FTPES".equalsIgnoreCase(connectionTypeName)) {
-                connectionType = FTPClient.SECURITY_FTPES;
+                connectionType = ConnectionType.FTPES;
             } else {
                 throw new IOException("connectionType not recognized: " + connectionTypeName);
             }
         }
-        final var closeTimeout = (int) setup.getDuration(HOST_FTPS_CLOSE_TIME_OUT).toMillis();
+        closeTimeout = (int) setup.getDuration(HOST_FTPS_CLOSE_TIME_OUT).toMillis();
         final var connectionTimeout = (int) setup.getDuration(HOST_FTPS_CONNECTION_TIME_OUT).toMillis();
         final var readTimeout = (int) setup.getDuration(HOST_FTPS_READ_TIME_OUT).toMillis();
         final var listenAddress = setup.getString(HOST_FTPS_LISTEN_ADDRESS);
@@ -389,10 +398,12 @@ public final class FtpsModule extends TransferModule {
         setAttribute("remote.hostName", host);
         try {
             key = SessionCache.getKey(host, port, user, dir, connectionType, closeTimeout, connectionTimeout,
-                    readTimeout, sendBufferSize, receiveBufferSize, listenAddress == null ? "default" : listenAddress);
+                    readTimeout, sendBufferSize, receiveBufferSize, listenAddress == null ? "default" : listenAddress,
+                    setup.getBoolean(HOST_FTPS_STRICT), setup.getString(HOST_FTPS_PROTOCOL));
             if (keepAlive <= 0 || (ftp = cache.remove(key)) == null || !serverIsOpen(ftp)) {
-                ftp = new FTPClient();
-                if (!setup.getBoolean(HOST_FTPS_STRICT)) {
+                if (connectionType == ConnectionType.FTP) {
+                    ftp = new RawFTPClient();
+                } else if (!setup.getBoolean(HOST_FTPS_STRICT)) {
                     _log.debug("Disable SSL Validation");
                     final var sslcontext = SSLContext.getInstance(setup.getString(HOST_FTPS_PROTOCOL));
                     final X509TrustManager tm = new X509TrustManager() {
@@ -421,26 +432,39 @@ public final class FtpsModule extends TransferModule {
                         }
                     };
                     sslcontext.init(null, new TrustManager[] { tm }, new SecureRandom());
-                    ftp.setSSLSocketFactory(sslcontext.getSocketFactory());
+                    ftp = new RawFTPSClient(connectionType == ConnectionType.FTPS, sslcontext);
+                } else {
+                    ftp = new RawFTPSClient(connectionType == ConnectionType.FTPS, SSLContext.getDefault());
                 }
-                final var connector = ftp.getConnector();
-                connector.setCloseTimeout(closeTimeout);
-                connector.setConnectionTimeout(connectionTimeout);
-                connector.setReadTimeout(readTimeout);
-                connector.setSendBufferSize(sendBufferSize);
-                connector.setReceiveBufferSize(receiveBufferSize);
-                connector.setListenAddress(listenAddress);
+                ftp.setConnectTimeout(connectionTimeout);
+                ftp.setDefaultTimeout(readTimeout);
+                ftp.setDataTimeout(readTimeout);
+                ftp.setControlEncoding(java.nio.charset.Charset.defaultCharset().name());
+                if (sendBufferSize > 0) {
+                    ftp.setSendBufferSize(sendBufferSize);
+                    ftp.setSendDataSocketBufferSize(sendBufferSize);
+                }
+                if (receiveBufferSize > 0) {
+                    ftp.setReceiveBufferSize(receiveBufferSize);
+                    ftp.setReceieveDataSocketBufferSize(receiveBufferSize);
+                }
                 setupSession(ftp);
-                ftp.setSecurity(connectionType);
-                ftp.connect(host, port);
-                ftp.login(user, password);
+                connectAndLogin(host, port, user, password);
+                setDataMode(ftp);
+                if (isNotEmpty(listenAddress)) {
+                    ftp.setActiveExternalIPAddress(listenAddress);
+                    if ("0.0.0.0".equals(listenAddress) || "::".equals(listenAddress)) {
+                        ftp.setReportActiveExternalIPAddress(ftp.getLocalAddress().getHostAddress());
+                    }
+                }
             } else {
                 _log.debug("Found cached ftp connection (keepAlive: {})", keepAlive);
+                ftp.setSoTimeout(readTimeout);
                 setupSession(ftp);
                 fromCache = true;
             }
             if (!fromCache) {
-                ftp.setType(FTPClient.TYPE_BINARY);
+                require(ftp.setFileType(FTP.BINARY_FILE_TYPE), ftp);
                 if (!dir.isEmpty()) {
                     if (mkdirs) {
                         try {
@@ -478,6 +502,13 @@ public final class FtpsModule extends TransferModule {
             if (!connected) {
                 setStatus("ERROR");
                 if (ftp != null) {
+                    if (ftp.isConnected()) {
+                        try {
+                            ftp.setSoTimeout(closeTimeout);
+                        } catch (final IOException ignored) {
+                            // Disconnect below.
+                        }
+                    }
                     closeServer(ftp);
                 }
             }
@@ -494,25 +525,54 @@ public final class FtpsModule extends TransferModule {
      *             Signals that an I/O exception has occurred.
      */
     private void setupSession(final FTPClient ftp) throws IOException {
-        ftp.setPassive(getSetup().getBoolean(HOST_FTPS_PASSIVE));
+        setDataMode(ftp);
         if (getDebug()) {
             _log.debug("Adding Communication Listener for Debug");
-            ftp.addCommunicationListener(new FTPCommunicationListener() {
+            commandListener = new ProtocolCommandListener() {
                 @Override
-                public void sent(final String arg0) {
-                    _log.debug("Sent: {}", arg0);
+                public void protocolCommandSent(final ProtocolCommandEvent event) {
+                    if ("PASS".equalsIgnoreCase(event.getCommand()) || "ACCT".equalsIgnoreCase(event.getCommand())) {
+                        _log.debug("Sent: {} ******", event.getCommand());
+                    } else {
+                        _log.debug("Sent: {}", event.getMessage().trim());
+                    }
                 }
 
                 @Override
-                public void received(final String arg0) {
-                    _log.debug("Received: {}", arg0);
+                public void protocolReplyReceived(final ProtocolCommandEvent event) {
+                    _log.debug("Received: {}", event.getMessage().trim());
                 }
-            });
+            };
+            ftp.addProtocolCommandListener(commandListener);
+        }
+    }
+
+    private void setDataMode(final FTPClient ftp) throws IOException {
+        if (getSetup().getBoolean(HOST_FTPS_PASSIVE)) {
+            ftp.enterLocalPassiveMode();
         } else {
-            // Remove all communication listeners!
-            for (final FTPCommunicationListener listener : ftp.getCommunicationListeners()) {
-                ftp.removeCommunicationListener(listener);
-            }
+            ftp.enterLocalActiveMode();
+        }
+    }
+
+    private void connectAndLogin(final String host, final int port, final String login, final String password)
+            throws IOException {
+        ftp.connect(host, port);
+        require(FTPReply.isPositiveCompletion(ftp.getReplyCode()), ftp);
+        require(ftp.login(login, password), ftp);
+        if (ftp.hasFeature("UTF8") || ftp.hasFeature("UTF-8")) {
+            ((RawListing) ftp).useUtf8();
+            ftp.sendCommand("OPTS", "UTF8 ON");
+        }
+        if (ftp instanceof final FTPSClient secure) {
+            secure.execPBSZ(0);
+            secure.execPROT("P");
+        }
+    }
+
+    private static void require(final boolean success, final FTPClient ftp) throws IOException {
+        if (!success) {
+            throw new IOException(ftp.getReplyString());
         }
     }
 
@@ -536,9 +596,15 @@ public final class FtpsModule extends TransferModule {
      */
     private static void closeServer(final FTPClient ftp) {
         try {
-            ftp.disconnect(true);
+            ftp.logout();
         } catch (final Exception _) {
-            ftp.abruptlyCloseCommunication();
+            // Close the socket even if the server does not acknowledge logout.
+        } finally {
+            try {
+                ftp.disconnect();
+            } catch (final IOException _) {
+                // Ignored.
+            }
         }
     }
 
@@ -719,7 +785,10 @@ public final class FtpsModule extends TransferModule {
      */
     @Override
     public void check(final long sent, final String checksum, final boolean error) throws IOException {
-        awaitCredentialUpload();
+        if (error) {
+            closeStreams();
+        }
+        awaitTransfer();
         _log.debug("Check file");
         setStatus("CHECK");
         if (putName == null && getName == null) {
@@ -767,7 +836,8 @@ public final class FtpsModule extends TransferModule {
                 }
             }
             try {
-                ftp.upload(md5Name, new ByteArrayInputStream(checksum.getBytes(StandardCharsets.UTF_8)), 0, 0, null);
+                require(ftp.storeFile(md5Name, new ByteArrayInputStream(checksum.getBytes(StandardCharsets.UTF_8))),
+                        ftp);
             } catch (final Throwable t) {
                 throw new IOException(Format.getMessage(t));
             }
@@ -870,12 +940,18 @@ public final class FtpsModule extends TransferModule {
     public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
             if (rotatingCredential || hasTransferSession()) {
-                closeSessionResources(ftpsInput, ftpsOutput, this::awaitCredentialUpload, () -> {
+                closeSessionResources(ftpsInput, ftpsOutput, this::awaitTransfer, () -> {
                     if (ftp != null && ftp.isConnected()) {
                         try {
-                            ftp.disconnect(true);
+                            ftp.setSoTimeout(closeTimeout);
+                            require(ftp.logout(), ftp);
+                            ftp.disconnect();
                         } catch (final Exception failure) {
-                            ftp.abruptlyCloseCommunication();
+                            try {
+                                ftp.disconnect();
+                            } catch (final IOException ignored) {
+                                failure.addSuppressed(ignored);
+                            }
                             throw new IOException("Unable to confirm encrypted FTP session closure");
                         }
                     }
@@ -887,6 +963,7 @@ public final class FtpsModule extends TransferModule {
             currentStatus = "CLOSE";
             closeStreams();
             try {
+                awaitTransfer();
                 if (ftp != null && serverIsOpen(ftp)) {
                     if (putName != null && !checked) {
                         try {
@@ -902,8 +979,14 @@ public final class FtpsModule extends TransferModule {
                         }
                     }
                     if (checked && keepAlive > 0 && serverIsOpen(ftp) && key != null) {
+                        if (commandListener != null) {
+                            ftp.removeProtocolCommandListener(commandListener);
+                            commandListener = null;
+                        }
+                        ftp.setSoTimeout(closeTimeout);
                         cache.put(key, ftp, keepAlive, useNoop);
                     } else {
+                        ftp.setSoTimeout(closeTimeout);
                         closeServer(ftp);
                     }
                 }
@@ -936,7 +1019,7 @@ public final class FtpsModule extends TransferModule {
      */
     private void ftpCd(final String directory) throws IOException {
         try {
-            ftp.changeDirectory(directory);
+            require(ftp.changeWorkingDirectory(directory), ftp);
         } catch (final Throwable t) {
             throw new IOException(Format.getMessage(t));
         }
@@ -953,7 +1036,7 @@ public final class FtpsModule extends TransferModule {
      */
     private void ftpDel(final String fileName) throws IOException {
         try {
-            ftp.deleteFile(fileName);
+            require(ftp.deleteFile(fileName), ftp);
         } catch (final Throwable t) {
             throw new IOException(Format.getMessage(t));
         }
@@ -970,7 +1053,7 @@ public final class FtpsModule extends TransferModule {
      */
     private void ftpRmdir(final String fileName) throws IOException {
         try {
-            ftp.deleteDirectory(fileName);
+            require(ftp.removeDirectory(fileName), ftp);
         } catch (final Throwable t) {
             throw new IOException(Format.getMessage(t));
         }
@@ -996,7 +1079,7 @@ public final class FtpsModule extends TransferModule {
             }
         }
         try {
-            ftp.rename(source, target);
+            require(ftp.rename(source, target), ftp);
         } catch (final Throwable t) {
             throw new IOException(Format.getMessage(t));
         }
@@ -1013,7 +1096,7 @@ public final class FtpsModule extends TransferModule {
      */
     private void ftpMkdir(final String dirName) throws IOException {
         try {
-            ftp.createDirectory(dirName);
+            require(ftp.makeDirectory(dirName), ftp);
         } catch (final Throwable t) {
             throw new IOException(Format.getMessage(t));
         }
@@ -1037,38 +1120,14 @@ public final class FtpsModule extends TransferModule {
         final var in = new PipedInputStream();
         final var out = new PipedOutputStream(in);
         ftpsInput = in;
+        final var completion = new java.util.concurrent.CompletableFuture<Void>();
+        pendingTransfer = completion;
         new ConfigurableRunnable() {
             @Override
             public void configurableRun() {
                 try {
-                    ftp.download(fileName, out, posn, new FTPDataTransferListener() {
-                        @Override
-                        public void transferred(final int paramInt) {
-                            // Ignored!
-                        }
-
-                        @Override
-                        public void started() {
-                            _log.debug("Started");
-                        }
-
-                        @Override
-                        public void failed() {
-                            transferError = "Transfer failed";
-                            _log.debug(transferError);
-                        }
-
-                        @Override
-                        public void completed() {
-                            _log.debug("Completed");
-                        }
-
-                        @Override
-                        public void aborted() {
-                            transferError = "Transfer aborted";
-                            _log.debug(transferError);
-                        }
-                    });
+                    ftp.setRestartOffset(posn);
+                    require(ftp.retrieveFile(fileName, out), ftp);
                 } catch (final Throwable t) {
                     transferError = Format.getMessage(t);
                 } finally {
@@ -1079,6 +1138,7 @@ public final class FtpsModule extends TransferModule {
                             transferError = Format.getMessage(t);
                         }
                     }
+                    completion.complete(null);
                 }
             }
         }.execute();
@@ -1097,63 +1157,9 @@ public final class FtpsModule extends TransferModule {
      */
     private List<String> ftpList(final String directory) throws IOException {
         try {
-            return ftp.listDirectory(directory);
+            return ((RawListing) ftp).listDirectory(directory);
         } catch (final Throwable t) {
             throw new IOException(Format.getMessage(t));
-        }
-    }
-
-    /**
-     * The listener interface for receiving customFTPDataTransfer events. The class that is interested in processing a
-     * customFTPDataTransfer event implements this interface, and the object created with that class is registered with
-     * a component using the component's addCustomFTPDataTransferListener method. When the customFTPDataTransfer event
-     * occurs, that object's appropriate method is invoked.
-     */
-    public class CustomFTPDataTransferListener implements FTPDataTransferListener {
-
-        /**
-         * Transferred.
-         *
-         * @param paramInt
-         *            the param int
-         */
-        @Override
-        public void transferred(final int paramInt) {
-            // Ignored!
-        }
-
-        /**
-         * Started.
-         */
-        @Override
-        public void started() {
-            _log.debug("Started");
-        }
-
-        /**
-         * Failed.
-         */
-        @Override
-        public void failed() {
-            transferError = "Transfer failed";
-            _log.debug(transferError);
-        }
-
-        /**
-         * Completed.
-         */
-        @Override
-        public void completed() {
-            _log.debug("Completed");
-        }
-
-        /**
-         * Aborted.
-         */
-        @Override
-        public void aborted() {
-            transferError = "Transfer aborted";
-            _log.debug(transferError);
         }
     }
 
@@ -1174,18 +1180,18 @@ public final class FtpsModule extends TransferModule {
         }
         final var in = new PipedInputStream();
         ftpsOutput = new PipedOutputStream(in);
-        final var completion = rotatingCredential || hasTransferSession()
-                ? new java.util.concurrent.CompletableFuture<Void>() : null;
-        pendingCredentialUpload = completion;
+        final var completion = new java.util.concurrent.CompletableFuture<Void>();
+        pendingTransfer = completion;
         new ConfigurableRunnable() {
             @Override
             public void configurableRun() {
                 try {
-                    final FTPDataTransferListener listener = new CustomFTPDataTransferListener();
                     if (useAppend) {
-                        ftp.append(fileName, in, posn, listener);
+                        in.skipNBytes(posn);
+                        require(ftp.appendFile(fileName, in), ftp);
                     } else {
-                        ftp.upload(fileName, in, posn, 0, listener);
+                        ftp.setRestartOffset(posn);
+                        require(ftp.storeFile(fileName, in), ftp);
                     }
                 } catch (final Throwable t) {
                     transferError = Format.getMessage(t);
@@ -1197,27 +1203,29 @@ public final class FtpsModule extends TransferModule {
                             transferError = Format.getMessage(t);
                         }
                     }
-                    if (completion != null) {
-                        completion.complete(null);
-                    }
+                    completion.complete(null);
                 }
             }
         }.execute();
 
     }
 
-    private void awaitCredentialUpload() throws IOException {
-        if (pendingCredentialUpload != null) {
+    private void awaitTransfer() throws IOException {
+        if (pendingTransfer != null) {
             if (ftpsOutput != null) {
                 ftpsOutput.close();
             }
             try {
-                pendingCredentialUpload.get(65, java.util.concurrent.TimeUnit.SECONDS);
+                if (rotatingCredential || hasTransferSession()) {
+                    pendingTransfer.get(65, java.util.concurrent.TimeUnit.SECONDS);
+                } else {
+                    pendingTransfer.get();
+                }
             } catch (final InterruptedException failure) {
                 Thread.currentThread().interrupt();
-                throw new IOException("Encrypted FTP transfer interrupted");
+                throw new IOException("FTP transfer interrupted", failure);
             } catch (final Exception failure) {
-                throw new IOException("Encrypted FTP transfer completion unconfirmed");
+                throw new IOException("FTP transfer completion unconfirmed", failure);
             }
         }
     }
@@ -1235,7 +1243,11 @@ public final class FtpsModule extends TransferModule {
      */
     private long ftpSize(final String name) throws IOException {
         try {
-            return ftp.fileSize(name);
+            final var size = ftp.getSize(name);
+            if (size == null) {
+                throw new IOException(ftp.getReplyString());
+            }
+            return Long.parseLong(size);
         } catch (final Throwable t) {
             throw new IOException(Format.getMessage(t));
         }
@@ -1255,14 +1267,10 @@ public final class FtpsModule extends TransferModule {
             return;
         }
         try {
-            final var reply = ftp.sendCustomCommand(command);
-            if (!reply.isSuccessCode()) {
-                final var sb = new StringBuilder();
-                for (final String message : reply.getMessages()) {
-                    sb.append(sb.length() > 0 ? " <- " : "").append(message);
-                }
-                throw new IOException(sb.toString());
-            }
+            final var space = command.indexOf(' ');
+            final var code = space < 0 ? ftp.sendCommand(command)
+                    : ftp.sendCommand(command.substring(0, space), command.substring(space + 1));
+            require(FTPReply.isPositiveCompletion(code), ftp);
         } catch (final Throwable t) {
             throw new IOException(Format.getMessage(t));
         }
@@ -1298,6 +1306,119 @@ public final class FtpsModule extends TransferModule {
         final var pathName = file.getParent();
         return (isNotEmpty(pathName) ? pathName + File.separator : "")
                 + (usetmp ? prefix + file.getName() + suffix : file.getName());
+    }
+
+    private interface RawListing {
+        List<String> listDirectory(String directory) throws IOException;
+
+        void useUtf8() throws IOException;
+    }
+
+    private static List<String> readListing(final FTPClient client, final Socket socket, final boolean machineReadable)
+            throws IOException {
+        if (socket == null) {
+            throw new IOException(client.getReplyString());
+        }
+        final var lines = new ArrayList<String>();
+        final var charset = machineReadable ? StandardCharsets.UTF_8
+                : java.nio.charset.Charset.forName(client.getControlEncoding());
+        try (socket; var reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(socket.getInputStream(), charset))) {
+            for (String line; (line = reader.readLine()) != null;) {
+                if (!line.isEmpty()) {
+                    lines.add(line);
+                }
+            }
+        }
+        require(client.completePendingCommand(), client);
+        return lines;
+    }
+
+    private static class RawFTPClient extends FTPClient implements RawListing {
+        @Override
+        public void useUtf8() throws IOException {
+            setControlEncoding(StandardCharsets.UTF_8.name());
+            _controlInput_ = new org.apache.commons.net.io.CRLFLineReader(
+                    new java.io.InputStreamReader(_socket_.getInputStream(), StandardCharsets.UTF_8));
+            _controlOutput_ = new java.io.BufferedWriter(
+                    new java.io.OutputStreamWriter(_socket_.getOutputStream(), StandardCharsets.UTF_8));
+        }
+
+        @Override
+        public List<String> listDirectory(final String directory) throws IOException {
+            final var machineReadable = hasFeature("MLSD");
+            require(setFileType(FTP.ASCII_FILE_TYPE), this);
+            try {
+                return readListing(this,
+                        _openDataConnection_(machineReadable ? "MLSD" : "LIST", directory.isEmpty() ? null : directory),
+                        machineReadable);
+            } finally {
+                require(setFileType(FTP.BINARY_FILE_TYPE), this);
+            }
+        }
+    }
+
+    private static class RawFTPSClient extends FTPSClient implements RawListing {
+        RawFTPSClient(final boolean implicit, final SSLContext context) {
+            super(implicit, context);
+        }
+
+        @Override
+        public void useUtf8() throws IOException {
+            setControlEncoding(StandardCharsets.UTF_8.name());
+            _controlInput_ = new org.apache.commons.net.io.CRLFLineReader(
+                    new java.io.InputStreamReader(_socket_.getInputStream(), StandardCharsets.UTF_8));
+            _controlOutput_ = new java.io.BufferedWriter(
+                    new java.io.OutputStreamWriter(_socket_.getOutputStream(), StandardCharsets.UTF_8));
+        }
+
+        @Override
+        protected void execAUTH() throws IOException {
+            var reply = execAUTH("TLS");
+            if (reply != 234 && reply != 334) {
+                reply = execAUTH("SSL");
+            }
+            if (reply != 234 && reply != 334) {
+                throw new javax.net.ssl.SSLException(getReplyString());
+            }
+        }
+
+        @Override
+        public List<String> listDirectory(final String directory) throws IOException {
+            final var machineReadable = hasFeature("MLSD");
+            require(setFileType(FTP.ASCII_FILE_TYPE), this);
+            try {
+                return readListing(this,
+                        _openDataConnection_(machineReadable ? "MLSD" : "LIST", directory.isEmpty() ? null : directory),
+                        machineReadable);
+            } finally {
+                require(setFileType(FTP.BINARY_FILE_TYPE), this);
+            }
+        }
+    }
+
+    private static final class VerifiedFTPSClient extends RawFTPSClient {
+        private final String approvedHost;
+
+        VerifiedFTPSClient(final boolean implicit, final String host) throws java.security.NoSuchAlgorithmException {
+            super(implicit, SSLContext.getDefault());
+            approvedHost = host;
+            setEndpointCheckingEnabled(true);
+            setEnabledProtocols(new String[] { "TLSv1.3", "TLSv1.2" });
+        }
+
+        @Override
+        protected Socket _openDataConnection_(final String command, final String argument) throws IOException {
+            final var socket = super._openDataConnection_(command, argument);
+            // Commons Net's endpoint checking covers the control socket, not the data socket.
+            if (socket != null && (!(socket instanceof final javax.net.ssl.SSLSocket tls)
+                    || !new org.apache.hc.client5.http.ssl.DefaultHostnameVerifier().verify(approvedHost,
+                            tls.getSession()))) {
+                socket.close();
+                throw new javax.net.ssl.SSLHandshakeException("FTPS data channel hostname mismatch");
+            }
+            return socket;
+        }
     }
 
     /**
@@ -1341,7 +1462,7 @@ public final class FtpsModule extends TransferModule {
         @Override
         public void update(final FTPClient ftp) throws IOException {
             try {
-                ftp.noop();
+                require(ftp.sendNoOp(), ftp);
             } catch (final Throwable t) {
                 throw new IOException(Format.getMessage(t));
             }
