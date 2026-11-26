@@ -2598,6 +2598,10 @@ public final class ECpdsPlugin extends SimplePlugin implements ProgressInterface
                     if (provider == null && groupBy == null) { // Only process the provider for the first transfer!
                         provider = new TransferServerProvider("download", transferGroup, selectedDestination,
                                 transfer.getTransferServer(), dataFile.getFileSystem());
+                        final var group = provider.getTransferGroup();
+                        dataFile.setTransferGroup(group);
+                        dataFile.setTransferGroupName(group.getName());
+                        dataFile.setFileSystem(provider.getFileSystem());
                     }
                     transfer.setTransferServer(null);
                     transfer.setTransferServerName(null);

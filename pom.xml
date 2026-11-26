@@ -372,11 +372,6 @@
 					<version>3.11.1</version>
 				</dependency>
 				<dependency>
-					<groupId>it.sauronsoftware</groupId>
-					<artifactId>ftp4j</artifactId>
-					<version>1.7.2</version>
-				</dependency>
-				<dependency>
 					<groupId>at.yawk.lz4</groupId>
 					<artifactId>lz4-java</artifactId>
 					<version>[1.8.1,)</version>

@@ -93,7 +93,6 @@ are separate from the JDK distribution license.
 | Library | Version | License | Purpose |
 |---|---|---|---|
 | [Apache Commons Net](https://commons.apache.org/proper/commons-net/) | 3.11.x | Apache 2.0 | FTP/FTPS client for outbound FTP transfers |
-| [ftp4j](http://www.sauronsoftware.it/projects/ftp4j/) | 1.7.2 | LGPL | Alternative FTP client library |
 | [Jackrabbit WebDAV](https://jackrabbit.apache.org/jcr/components/jackrabbit-webdav-library.html) | 2.22.x | Apache 2.0 | WebDAV server (Data Portal) and client support |
 | [LZ4 Java](https://github.com/lz4/lz4-java) | 1.8.1+ | Apache 2.0 | LZ4 fast compression for data transfer optimisation |
 
