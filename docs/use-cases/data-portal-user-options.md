@@ -36,7 +36,9 @@ portal.geoblocking = "Europe,US"
 | `portal.uploadPeriod` | Duration | *none* | Rolling window for the upload quota. Both this and `portal.maxUploadBytes` must be set to activate the quota |
 | `portal.maxDownloadBytes` | ByteSize | *none* | Maximum bytes the user may download within the rolling window defined by `portal.downloadPeriod`. New connections are refused once the limit is reached. Disabled when unset |
 | `portal.downloadPeriod` | Duration | *none* | Rolling window for the download quota. Both this and `portal.maxDownloadBytes` must be set to activate the quota |
-| `portal.maxRangesAllowed` | Integer | *none* | Maximum number of byte ranges permitted in a single HTTP `multipart/byteranges` request |
+| `portal.maxRangesAllowed` | Integer | `128` | Maximum number of byte ranges permitted in a single HTTP `multipart/byteranges` request |
+
+Download byte quota accounting requires `portal.triggerEvent` to be enabled.
 
 ### Quick-start example
 
@@ -134,7 +136,7 @@ portal.putPathPermRegex = "(.*):/data/incoming/(.*)"
 | `portal.recordHistory` | Boolean | `true` | Record each upload/download in the data transfer history list. Disable for anonymous users that generate high request volumes |
 | `portal.recordSplunk` | Boolean | `true` | Emit an INH (Incoming History) event for each upload/download to the enabled [operational event outputs](../event-logging/overview.md#choosing-event-outputs): Splunk file and/or OpenTelemetry |
 | `portal.triggerEvent` | Boolean | `true` | Allow transfer history or operational event recording to be initiated. When `false`, this recording is suppressed regardless of `portal.recordHistory` or `portal.recordSplunk` |
-| `portal.triggerLastRangeOnly` | Boolean | `false` | For HTTP `multipart/byteranges` requests, emit a single event only after the final range completes rather than one event per range |
+| `portal.triggerLastRangeOnly` | Boolean | `true` | For HTTP `multipart/byteranges` requests, emit one aggregate event rather than one per range. If the download is interrupted, the event records bytes written before the interruption |
 | `portal.updateLastLoginInformation` | Boolean | `true` | Record the last-login timestamp for this user. Consider disabling for anonymous/high-frequency users to avoid database flooding |
 
 ## Self-Service Registration

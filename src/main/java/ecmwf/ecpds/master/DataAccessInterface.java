@@ -143,6 +143,15 @@ public interface DataAccessInterface extends Remote {
         throw new IOException("Prepared downloads are not supported by this data service");
     }
 
+    default void cancelDownloadProxies(final List<ProxySocket> proxies) throws IOException, MasterException {
+        throw new IOException("Download cancellation is not supported by this data service");
+    }
+
+    default void recordDownloadEvent(final ProxySocket proxy, final boolean success)
+            throws IOException, MasterException {
+        throw new IOException("Download event recording is not supported by this data service");
+    }
+
     /**
      * Gets the proxy socket output.
      *

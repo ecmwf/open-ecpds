@@ -1271,7 +1271,7 @@ Allow specifying whether the traffic statistics section (connection count and qu
 If deactivated, block any transfer history or Splunk recording from being initiated.
 
 ### portal.triggerLastRangeOnly
-If activated, and in the case of an HTTP multipart/byteranges request, an event is generated only upon the completion of the final range download. Otherwise, an event is generated for each individual range.
+If enabled, generate one aggregate event when an HTTP multipart/byteranges download ends, including bytes written before an interruption. Otherwise, generate an event for each individual range.
 
 ### portal.updateLastLoginInformation
 Specify whether the last login information should be recorded for this user. For anonymous access, it might be desirable to deactivate recording to prevent flooding the underlying database.

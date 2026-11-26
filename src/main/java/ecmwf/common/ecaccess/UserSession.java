@@ -32,6 +32,7 @@ import java.util.List;
 
 import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.technical.ProxySocket;
+import ecmwf.common.technical.ProxyEvent;
 
 /**
  * The Class UserSession.
@@ -51,6 +52,17 @@ public abstract class UserSession {
 
     public DownloadFile prepareDownload(final String source) throws EccmdException, IOException {
         throw new IOException("Prepared downloads are not supported by this data service");
+    }
+
+    public void cancelDownloads(final List<ProxySocket> proxies) throws EccmdException, IOException {
+        for (final var proxy : proxies) {
+            proxy.close();
+        }
+    }
+
+    public void recordDownloadEvent(final ProxySocket proxy, final ProxyEvent event, final boolean success)
+            throws EccmdException, IOException {
+        throw new IOException("Download event recording is not supported by this data service");
     }
 
     /** The _user. */

@@ -1133,8 +1133,7 @@ public final class MasterServer extends ECaccessProvider
     public String getIncomingUserHash(final String incomingUser) {
         try {
             final var user = getECpdsBase().getIncomingUser(incomingUser);
-            return user.passwordHash() == null && LocalPassword.isSet(user.legacyPassword())
-                    ? _getIncomingUserHash(user) : null;
+            return legacyIncomingUserHash(user, Cnf.at("LocalPasswords", "allowEmptyDataUserPasswords", false));
         } catch (final DataBaseException e) {
             return null;
         }
@@ -1236,6 +1235,30 @@ public final class MasterServer extends ECaccessProvider
         return Format.getHash((user.getId() + ":" + user.legacyPassword()).getBytes(StandardCharsets.UTF_8));
     }
 
+    static String legacyIncomingUserHash(final IncomingUser user, final boolean allowEmptyPassword) {
+        final var legacy = user.legacyPassword();
+        return user.passwordHash() == null && (LocalPassword.isSet(legacy) || allowEmptyPassword && "".equals(legacy))
+                ? _getIncomingUserHash(user) : null;
+    }
+
+    static boolean matchesEmptyIncomingPassword(final IncomingUser user, final String submitted,
+            final boolean allowEmptyPassword) {
+        return allowEmptyPassword && user.passwordHash() == null && "".equals(user.legacyPassword())
+                && ("".equals(submitted) || LocalPassword.equal(_getIncomingUserHash(user), submitted));
+    }
+
+    static boolean allowsEmptyLegacyS3Secret(final IncomingUser user, final boolean allowEmptyPassword) {
+        return allowEmptyPassword && user.encryptedS3Secret() == null && "".equals(user.legacyPassword());
+    }
+
+    static boolean hasSignedS3Credential(final IncomingUser user, final boolean allowEmptyPassword) {
+        return !"".equals(user.encryptedS3Secret())
+                && (user.encryptedS3Secret() != null || LocalPassword.isSet(user.legacyPassword())
+                        || allowsEmptyLegacyS3Secret(user, allowEmptyPassword))
+                && ("open-access".equals(user.getPortalService())
+                        || !user.getSynchronized() && !"self-service".equals(user.getPortalService()));
+    }
+
     /**
      * Gets the s 3 authorization signature.
      *
@@ -1255,15 +1278,15 @@ public final class MasterServer extends ECaccessProvider
             final String algorithm) {
         try {
             final var user = getECpdsBase().getIncomingUser(incomingUser);
-            if (!user.getActive() || "".equals(user.encryptedS3Secret())
-                    || !"open-access".equals(user.getPortalService())
-                            && (user.getSynchronized() || "self-service".equals(user.getPortalService()))) {
+            if (!user.getActive()
+                    || !hasSignedS3Credential(user, Cnf.at("LocalPasswords", "allowEmptyDataUserPasswords", false))) {
                 return null;
             }
             final byte[] secret;
             if (user.encryptedS3Secret() != null) {
                 secret = S3SigningSecret.decrypt(user.getId(), user.encryptedS3Secret());
-            } else if (LocalPassword.isSet(user.legacyPassword())) {
+            } else if (LocalPassword.isSet(user.legacyPassword()) || allowsEmptyLegacyS3Secret(user,
+                    Cnf.at("LocalPasswords", "allowEmptyDataUserPasswords", false))) {
                 secret = user.legacyPassword().getBytes(StandardCharsets.UTF_8);
             } else {
                 return null;
@@ -1386,10 +1409,7 @@ public final class MasterServer extends ECaccessProvider
                 throw new MasterException("Login failed");
             }
             if (signedS3) {
-                if ("".equals(user.encryptedS3Secret())
-                        || user.encryptedS3Secret() == null && !LocalPassword.isSet(user.legacyPassword())
-                        || !"open-access".equals(user.getPortalService())
-                                && (user.getSynchronized() || "self-service".equals(user.getPortalService()))) {
+                if (!hasSignedS3Credential(user, Cnf.at("LocalPasswords", "allowEmptyDataUserPasswords", false))) {
                     throw new MasterException("Login failed");
                 }
             } else if ("open-access".equals(user.getPortalService())) {
@@ -1427,17 +1447,20 @@ public final class MasterServer extends ECaccessProvider
                     } else {
                         // Standard login: check the IncomingUser's own password
                         final var legacy = user.legacyPassword();
-                        if (!user.hasPassword()) {
+                        final var emptyPasswordMatches = matchesEmptyIncomingPassword(user, incomingPassword,
+                                Cnf.at("LocalPasswords", "allowEmptyDataUserPasswords", false));
+                        if (!user.hasPassword() && !emptyPasswordMatches) {
                             recordPortalAccessDenial(incomingUser, "Password not set", from);
                             _log.debug("Password not set for IncomingUser {}", incomingUser);
                             throw new MasterException("Login failed");
                         }
-                        if (LocalPassword.matches(user.passwordHash(), legacy, incomingPassword)) {
+                        if (!emptyPasswordMatches
+                                && LocalPassword.matches(user.passwordHash(), legacy, incomingPassword)) {
                             if (user.passwordHash() == null) {
                                 migrateLocalPassword(base, user.getId(), legacy, true);
                             }
-                        } else if (user.passwordHash() != null || !LocalPassword.isSet(legacy)
-                                || !LocalPassword.equal(_getIncomingUserHash(user), incomingPassword)) {
+                        } else if (!emptyPasswordMatches && (user.passwordHash() != null || !LocalPassword.isSet(legacy)
+                                || !LocalPassword.equal(_getIncomingUserHash(user), incomingPassword))) {
                             recordPortalAccessDenial(incomingUser, "Password authentication failed", from);
                             throw new MasterException("Login failed");
                         }

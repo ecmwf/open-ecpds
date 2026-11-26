@@ -62,6 +62,7 @@ import ecmwf.common.ectrans.ECtransSetup;
 import ecmwf.common.rmi.SocketConfig;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.ProxySocket;
+import ecmwf.common.technical.ProxyEvent;
 import ecmwf.common.technical.SessionCache;
 import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.IncomingProfile;
@@ -1199,15 +1200,46 @@ public final class MoverProvider extends NativeAuthenticationProvider {
                 try {
                     final var proxies = _mover.getDataFileAccessInterface().getDownloadProxies(destination,
                             element.getComment(), element.getETag(), ranges, storedOnly);
-                    for (final var proxy : proxies) {
-                        proxy.addObject(FileElement.class.getName(), file);
-                        proxy.addObject(IncomingProfile.class.getName(), _profile);
+                    try {
+                        for (final var proxy : proxies) {
+                            proxy.addObject(FileElement.class.getName(), file);
+                            proxy.addObject(IncomingProfile.class.getName(), _profile);
+                        }
+                    } catch (final RuntimeException e) {
+                        try {
+                            cancelDownloads(proxies);
+                        } catch (final Exception cleanup) {
+                            e.addSuppressed(cleanup);
+                        }
+                        throw e;
                     }
                     return proxies;
                 } catch (final MasterException e) {
                     throw new EccmdException(e.getMessage());
                 }
             });
+        }
+
+        @Override
+        public void cancelDownloads(final List<ProxySocket> proxies) throws EccmdException, IOException {
+            try {
+                proxies.forEach(proxy -> proxy.addObject(FileElement.class.getName(), null));
+                _mover.getDataFileAccessInterface().cancelDownloadProxies(List.copyOf(proxies));
+            } catch (final MasterException e) {
+                throw new EccmdException(e.getMessage());
+            }
+        }
+
+        @Override
+        public void recordDownloadEvent(final ProxySocket proxy, final ProxyEvent event, final boolean success)
+                throws EccmdException, IOException {
+            proxy.addObject(FileElement.class.getName(), null);
+            proxy.addObject(ProxyEvent.class.getName(), event);
+            try {
+                _mover.getDataFileAccessInterface().recordDownloadEvent(proxy, success);
+            } catch (final MasterException e) {
+                throw new EccmdException(e.getMessage());
+            }
         }
 
         /**

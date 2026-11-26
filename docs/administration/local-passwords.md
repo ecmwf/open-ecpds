@@ -19,12 +19,27 @@ back to plaintext or a `user:password` digest. Disabling hash writes can store
 unhashed passwords and is not recommended for normal operation; accounts with
 an existing hash continue to use hashes.
 
+`[LocalPasswords] allowEmptyDataUserPasswords` defaults to `no`. When set to
+`yes`, an active local standard-login Data User with an explicitly empty stored
+password and no password hash can authenticate with an empty password or its
+`user:password` digest. Anyone who knows the account name can authenticate;
+use a nonempty password or an SSH key instead. With `no`, empty password
+logins and empty passwords used as S3 signing secrets are rejected. A NULL
+password is not accepted. Empty passwords are not hashed on login. The browser
+sign-in form requires a nonempty password. This setting does not affect Web
+User login, external authentication, self-service login, open access or SSH-key
+authentication.
+
 ## S3 signing secrets
 
 Signed S3 needs a shared secret, not a password hash. Data Users with hashed
 logins need a separate S3 secret unless a retained signing credential is present.
 Changing the login password does not rotate a retained S3 secret. Unsigned S3
-for Open Access is supported.
+for Open Access is supported. An active local standard-login or open-access user
+can also use an explicitly empty stored password as an S3 Signature V4 secret
+when `allowEmptyDataUserPasswords` is enabled and no separate S3 secret is
+configured. This permits signing without a secret, including after the login
+password is changed. Set a separate S3 secret or disable signed S3 to retire it.
 
 Edit the Data User to set a separate random S3 signing secret and update its
 clients, or disable **signed** S3 access if it is not used. Both actions retire
