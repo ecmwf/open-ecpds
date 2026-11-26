@@ -472,6 +472,8 @@ JavaScript
 	<%-- Directory Guide offcanvas --%>
 	<jsp:include page="/WEB-INF/jsp/pds/transfer/host/directory_guide.jsp"/>
 
+	<jsp:include page="/WEB-INF/jsp/pds/transfer/host/test_variable_modals.jsp"/>
+
 	<%-- Memory Estimator modal (S3/Azure) --%>
 	<c:if test="${host.transferMethod.ecTransModuleName == 's3' || host.transferMethod.ecTransModuleName == 'azure'}">
 	<div class="modal fade" id="memoryEstimatorModal" tabindex="-1" aria-labelledby="memoryEstimatorLabel" aria-hidden="true">
