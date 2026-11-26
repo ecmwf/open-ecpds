@@ -7,6 +7,7 @@ Releases use a `MAJOR.MINOR.PATCH-DDMMYYYY` build identifier (e.g. `8.3.0-221020
 
 ## open-ecpds 8.3.0-22112026
 
+- **HTTPS multipart downloads**: Cancel unused range tickets on failure, account for interrupted transfers, and limit multipart requests to 128 ranges by default.
 - **FTPS client**: Replaced ftp4j with Apache Commons Net. Encrypted FTP now fails if the server rejects private data-channel protection.
 - **Standalone security bootstrap**: Generates per-installation account and service credentials and starts an automatically unsealed evaluation vault. Safer vault modes are available separately. Full Host credential rotation remains separately gated. See [Embedded OpenBao](getting-started/standalone.md#embedded-openbao).
 - **Local account passwords**: Web User and Data User logins migrate to Argon2id, with write-only Monitor forms and separate encrypted S3 credentials. See [local passwords and S3 setup](administration/local-passwords.md).

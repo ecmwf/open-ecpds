@@ -438,6 +438,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
         if (!DataFileVersion.etag(file).equals(etag)) {
             throw new MasterException("File version changed while opening the stream");
         }
+
         transfer.setDataFile(file);
         final var setup = DESTINATION_INCOMING.getECtransSetup(destination.getData());
         checkDownloadQuota(destinationName, setup);
@@ -453,6 +454,11 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
             _log.warn(transferId, e);
             throw new MasterException("Master error");
         }
+    }
+
+    @Override
+    public void cancelDownloadProxies(final List<ProxySocket> proxies) {
+        TransferScheduler.cancelDownloads(proxies);
     }
 
     private ProxySocket openProxySocketInput(final String destinationName, final String source, final long offset,
@@ -1209,6 +1215,16 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
      */
     @Override
     public void check(final ProxySocket proxy) throws MasterException, IOException {
+        check(proxy, null);
+    }
+
+    @Override
+    public void recordDownloadEvent(final ProxySocket proxy, final boolean success)
+            throws MasterException, IOException {
+        check(proxy, success);
+    }
+
+    private void check(final ProxySocket proxy, final Boolean eventOnly) throws MasterException, IOException {
         final var monitor = new MonitorCall(
                 "check(" + proxy.getDataHost() + ":" + proxy.getDataPort() + "->" + proxy.getTicket() + ")");
         final List<DataTransfer> transfers = new ArrayList<>();
@@ -1230,17 +1246,25 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                     _log.warn(t);
                     // We forget about the history!
                 }
+            } else if (eventOnly != null) {
+                final var transfer = (DataTransfer) proxy.getObject(DataTransfer.class.getName());
+                if (transfer != null) {
+                    transfers.add(transfer);
+                }
+                success = eventOnly;
             } else {
                 // This is a download operation so we have to check on the
                 // remote data mover!
-                TransferScheduler.check(proxy);
                 // Now we get the DataTransfer for the history!
                 final var transfer = (DataTransfer) proxy.getObject(DataTransfer.class.getName());
                 if (transfer != null) {
                     transfers.add(transfer);
                 }
+                TransferScheduler.check(proxy);
             }
-            success = true;
+            if (eventOnly == null) {
+                success = true;
+            }
         } finally {
             final var event = (ProxyEvent) proxy.getObject(ProxyEvent.class.getName());
             if (event != null) {
@@ -1402,7 +1426,7 @@ final class DataFileAccessImpl extends CallBackObject implements DataAccessInter
                             _log.error("Creating IncomingHistory", t);
                         }
                     }
-                    if (success) {
+                    if (success || !event.getUpload() && event.getSent() > 0) {
                         final var minuteKey = event.getUserName() + "|"
                                 + new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm")
                                         .format(new java.util.Date(event.getStartTime()));

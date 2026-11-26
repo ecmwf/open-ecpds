@@ -343,8 +343,15 @@ public abstract class AbstractTicket implements Serializable, Closeable {
      *            the to close
      */
     public void toClose(final Closeable toClose) {
+        final boolean closeNow;
         synchronized (_toClose) {
-            _toClose.add(toClose);
+            closeNow = _closed.get();
+            if (!closeNow) {
+                _toClose.add(toClose);
+            }
+        }
+        if (closeNow) {
+            StreamPlugThread.closeQuietly(toClose);
         }
     }
 
@@ -389,13 +396,17 @@ public abstract class AbstractTicket implements Serializable, Closeable {
         }
         _log.debug("Ticket{} is ready to be closed", sid);
         if (_closed.compareAndSet(false, true)) {
-            for (final Closeable toClose : _toClose) {
-                if (toClose != null) {
-                    _log.debug("Closing: {}", () -> Format.getClassName(toClose));
-                    StreamPlugThread.closeQuietly(toClose);
+            final List<Closeable> toClose;
+            synchronized (_toClose) {
+                toClose = new ArrayList<>(_toClose);
+                _toClose.clear();
+            }
+            for (final Closeable closeable : toClose) {
+                if (closeable != null) {
+                    _log.debug("Closing: {}", () -> Format.getClassName(closeable));
+                    StreamPlugThread.closeQuietly(closeable);
                 }
             }
-            _toClose.clear();
             _log.debug("Closing ticket{}", sid);
             close();
             _closeTime = System.currentTimeMillis();

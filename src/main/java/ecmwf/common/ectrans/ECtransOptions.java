@@ -1828,7 +1828,7 @@ public enum ECtransOptions implements ECtransOptionDefinition {
     USER_PORTAL_TRIGGER_LAST_RANGE_ONLY("triggerLastRangeOnly", Boolean.class, true),
 
     /** The user portal max ranges allowed. */
-    USER_PORTAL_MAX_RANGES_ALLOWED("maxRangesAllowed", ByteSize.class, ByteSize.of(Long.MAX_VALUE)),
+    USER_PORTAL_MAX_RANGES_ALLOWED("maxRangesAllowed", ByteSize.class, ByteSize.of(128)),
 
     /** The user portal destination. */
     USER_PORTAL_DESTINATION("destination", String.class, STRING_NONE),

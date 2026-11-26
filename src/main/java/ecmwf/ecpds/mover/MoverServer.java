@@ -1556,6 +1556,19 @@ public final class MoverServer extends StarterServer implements MoverInterface {
         }
     }
 
+    @Override
+    public void cancelDownload(final long ticket) throws RemoteException {
+        try {
+            ticketRepository.removeAfter(ticket, current -> {
+                if (current != null && !(current instanceof FileDescriptorTicket)) {
+                    throw new IllegalArgumentException("Not a download ticket");
+                }
+            });
+        } catch (final Throwable t) {
+            throw Format.getRemoteException("DataMover=" + getRoot(), t);
+        }
+    }
+
     /**
      * Size.
      *

@@ -31,6 +31,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -50,6 +51,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 
 import jakarta.servlet.http.Cookie;
@@ -101,6 +103,7 @@ import ecmwf.common.technical.Cnf;
 import ecmwf.common.technical.MonitoredInputStream;
 import ecmwf.common.technical.MonitoredOutputStream;
 import ecmwf.common.technical.ProxyEvent;
+import ecmwf.common.technical.ByteSize;
 import ecmwf.common.technical.ProxySocket;
 import ecmwf.common.technical.StreamPlugThread;
 import ecmwf.common.text.BASE64Coder;
@@ -3325,6 +3328,7 @@ public final class RESTServer {
     private Response serveDataFile(final UserSession session, final HttpServletRequest request, final String filename,
             final DownloadFile prepared) {
         var success = false;
+        List<ProxySocket> opened = List.of();
         try {
             checkParameter("filename", filename);
             final var builder = Response.ok();
@@ -3337,16 +3341,22 @@ public final class RESTServer {
             if (rangeHeader == null) {
                 // Full file — open proxy socket eagerly so any retrieval error is reported
                 // before the 200 OK headers are committed.
-                final var proxy = _openProxySocket(download, mediaRequest, 0, -1);
+                final var proxy = _openProxySocket(session, download, mediaRequest, 0, -1);
+                opened = List.of(proxy);
                 builder.header(CONTENT_LENGTH, fullRange.length);
                 streamer = new SingleStreamer(session, proxy, mediaRequest, -1, -1);
             } else {
                 // Found a Range request, returning HTTP 206 Partial Content
                 builder.status(206);
-                final var ranges = getRanges(rangeHeader, fullRange, filename, mediaRequest.size, request);
+                final var setup = session.getECtransSetup();
+                final var maxRanges = setup != null
+                        ? setup.getByteSize(ECtransOptions.USER_PORTAL_MAX_RANGES_ALLOWED).size()
+                        : ECtransOptions.USER_PORTAL_MAX_RANGES_ALLOWED.getDefaultValue(ByteSize.class).size();
+                final var ranges = getRanges(rangeHeader, fullRange, filename, mediaRequest.size, request, maxRanges);
                 if (ranges.isEmpty() || ranges.get(0) == fullRange) {
                     // Return full file via range request — also open eagerly
-                    final var proxy = _openProxySocket(download, mediaRequest, 0, -1);
+                    final var proxy = _openProxySocket(session, download, mediaRequest, 0, -1);
+                    opened = List.of(proxy);
                     builder.header(CONTENT_RANGE,
                             "bytes " + fullRange.start + "-" + fullRange.end + "/" + fullRange.total);
                     builder.header(CONTENT_LENGTH, fullRange.length);
@@ -3354,21 +3364,18 @@ public final class RESTServer {
                 } else if (ranges.size() == 1) {
                     // Only one range requested — open eagerly
                     final var singleRange = ranges.get(0);
-                    final var proxy = _openProxySocket(download, mediaRequest, singleRange.start, singleRange.length);
+                    final var proxy = _openProxySocket(session, download, mediaRequest, singleRange.start,
+                            singleRange.length);
+                    opened = List.of(proxy);
                     builder.header(CONTENT_RANGE,
                             "bytes " + singleRange.start + "-" + singleRange.end + "/" + singleRange.total);
                     builder.header(CONTENT_LENGTH, singleRange.length);
                     streamer = new SingleStreamer(session, proxy, mediaRequest, -1, -1);
                 } else {
-                    // Multiple ranges — open all proxy sockets eagerly before committing headers
-                    final var rangeSize = ranges.size();
-                    final var setup = session.getECtransSetup();
-                    if (setup != null
-                            && rangeSize > setup.getByteSize(ECtransOptions.USER_PORTAL_MAX_RANGES_ALLOWED).size()) {
-                        throw newException(429, "Too Many Requests: Max ranges allowed exceeded (" + rangeSize + ")");
-                    }
-                    final var proxies = openDownload(download, mediaRequest.etag, mediaRequest.pinned,
+                    // Allocate all range tickets before committing headers.
+                    final var proxies = openDownload(session, download, mediaRequest.etag, mediaRequest.pinned,
                             ranges.stream().map(range -> new DownloadRange(range.start, range.length)).toList());
+                    opened = proxies;
                     // Remove any Content-Type set by processGet (e.g. from portal.headerRegistry for
                     // *.grib2 files) before setting the multipart boundary type. Without this,
                     // Jersey throws HeaderValueException("Too many Content-Type header values") when
@@ -3379,9 +3386,10 @@ public final class RESTServer {
                     streamer = new MultiStreamer(session, proxies, mediaRequest, ranges);
                 }
             }
-            success = true;
             addCorsHeaders(session, request, builder);
-            return builder.entity(streamer).build();
+            final var response = builder.entity(streamer).build();
+            success = true;
+            return response;
         } catch (final WebApplicationException w) {
             _log.warn("serveDataFile - {}", describe(w));
             throw _toBrowserError(request, w);
@@ -3396,6 +3404,7 @@ public final class RESTServer {
             throw _toBrowserError(request, newException(t, 500, Format.getMessage(t)));
         } finally {
             if (!success && session != null) {
+                cancelDownloads(session, opened);
                 session.close(true);
             }
         }
@@ -3431,14 +3440,15 @@ public final class RESTServer {
      * @throws IOException
      *             for low-level I/O errors
      */
-    private static ProxySocket _openProxySocket(final DownloadFile download, final MediaRequest mediaRequest,
-            final long posn, final long length) throws FileNotFoundException, EccmdException, IOException {
-        return openDownload(download, mediaRequest.etag, mediaRequest.pinned, List.of(new DownloadRange(posn, length)))
-                .getFirst();
+    private static ProxySocket _openProxySocket(final UserSession session, final DownloadFile download,
+            final MediaRequest mediaRequest, final long posn, final long length)
+            throws FileNotFoundException, EccmdException, IOException {
+        return openDownload(session, download, mediaRequest.etag, mediaRequest.pinned,
+                List.of(new DownloadRange(posn, length))).getFirst();
     }
 
-    static List<ProxySocket> openDownload(final DownloadFile download, final String etag, final boolean storedOnly,
-            final List<DownloadRange> ranges) throws EccmdException, IOException {
+    static List<ProxySocket> openDownload(final UserSession session, final DownloadFile download, final String etag,
+            final boolean storedOnly, final List<DownloadRange> ranges) throws EccmdException, IOException {
         final var proxies = download.opener().open(ranges, storedOnly);
         try {
             if (proxies.size() != ranges.size()) {
@@ -3449,8 +3459,18 @@ public final class RESTServer {
             }
             return proxies;
         } catch (final IOException | RuntimeException e) {
-            proxies.forEach(ProxySocket::close);
+            cancelDownloads(session, proxies);
             throw e;
+        }
+    }
+
+    private static void cancelDownloads(final UserSession session, final List<ProxySocket> proxies) {
+        if (!proxies.isEmpty()) {
+            try {
+                session.cancelDownloads(proxies);
+            } catch (final Exception e) {
+                _log.warn("Could not cancel download tickets", e);
+            }
         }
     }
 
@@ -4100,7 +4120,7 @@ public final class RESTServer {
      * @return the ranges
      */
     private static List<Range> getRanges(final String rangeHeader, final Range full, final String fileName,
-            final long fileSize, final HttpServletRequest request) {
+            final long fileSize, final HttpServletRequest request, final long maxRanges) {
         // The full Range represents the complete file.
         final List<Range> ranges = new ArrayList<>();
         // Remove all spaces/tab from the range header
@@ -4122,7 +4142,9 @@ public final class RESTServer {
         }
         // If any valid If-Range header, then process each part of byte range
         if (ranges.isEmpty()) {
-            for (final String part : range.substring(6).split(",")) {
+            final var parts = new StringTokenizer(range.substring(6), ",");
+            while (parts.hasMoreTokens()) {
+                final var part = parts.nextToken();
                 // Assuming a file with length of 100, the following examples returns bytes at:
                 // 50-80 (50 to 80), 40- (40 to length=100), -20 (length-20=80 to length=100).
                 var start = Range.sublong(part, 0, part.indexOf("-"));
@@ -4139,6 +4161,9 @@ public final class RESTServer {
                 }
                 // Add range.
                 ranges.add(new Range(start, end, fileSize));
+                if (ranges.size() > 1 && ranges.size() > maxRanges) {
+                    throw newException(429, "Too Many Requests: Max ranges allowed exceeded (" + ranges.size() + ")");
+                }
             }
         }
         return ranges;
@@ -4202,8 +4227,10 @@ public final class RESTServer {
          */
         @Override
         public void write(final OutputStream out) throws IOException, WebApplicationException {
+            var completed = false;
             try {
                 _copyFromProxy(out, session, proxy, mediaRequest, startTime, fullLength);
+                completed = true;
             } catch (final EofException e) {
                 _log.debug("Download client disconnected: user={}, remote={}, reason={}", session.getUser(),
                         mediaRequest.remoteAddr, e.getMessage());
@@ -4211,6 +4238,9 @@ public final class RESTServer {
                 throw new WebApplicationException(e, Response.status(Response.Status.SERVICE_UNAVAILABLE)
                         .entity("File temporarily unavailable: " + e.getMessage()).type(MediaType.TEXT_PLAIN).build());
             } finally {
+                if (!completed) {
+                    cancelDownloads(session, List.of(proxy));
+                }
                 session.close(true);
             }
         }
@@ -4267,6 +4297,25 @@ public final class RESTServer {
          */
         @Override
         public void write(final OutputStream out) throws IOException, WebApplicationException {
+            var next = 0;
+            var completed = false;
+            var aggregate = false;
+            var startTime = 0L;
+            ProxySocket lastProxy = null;
+            final long[] bytes = { 0 };
+            final var countingOutput = new FilterOutputStream(out) {
+                @Override
+                public void write(final byte[] buffer, final int offset, final int length) throws IOException {
+                    out.write(buffer, offset, length);
+                    bytes[0] += length;
+                }
+
+                @Override
+                public void write(final int value) throws IOException {
+                    out.write(value);
+                    bytes[0]++;
+                }
+            };
             try {
                 final var setup = session.getECtransSetup();
                 final boolean triggerEvent;
@@ -4278,13 +4327,12 @@ public final class RESTServer {
                     triggerEvent = true;
                     triggerLastRangeOnly = true;
                 }
-                final var startTime = System.currentTimeMillis();
+                aggregate = triggerEvent && triggerLastRangeOnly;
+                startTime = System.currentTimeMillis();
                 final var rangesCount = ranges.size();
-                var fullLength = 0L;
                 // Copy multipart range
                 for (var i = 0; i < rangesCount; i++) {
                     final var range = ranges.get(i);
-                    fullLength += range.length;
                     // Print the MIME multipart header for this part
                     println(out, "");
                     println(out, "--" + MULTIPART_BOUNDARY);
@@ -4292,13 +4340,15 @@ public final class RESTServer {
                     println(out, "Content-Range: bytes " + range.start + "-" + range.end + "/" + range.total);
                     println(out, "");
                     // Stream the content from the pre-opened proxy socket
-                    final var eventFullLength = triggerEvent
-                            ? triggerLastRangeOnly ? i == rangesCount - 1 ? fullLength : 0 : -1 : 0;
-                    _copyFromProxy(out, session, proxies.get(i), mediaRequest, startTime, eventFullLength);
+                    lastProxy = proxies.get(i);
+                    _copyFromProxy(aggregate ? countingOutput : out, session, lastProxy, mediaRequest, startTime,
+                            triggerEvent && !aggregate ? -1 : 0);
+                    next = i + 1;
                 }
                 // End with multipart boundary.
                 println(out, "");
                 println(out, "--" + MULTIPART_BOUNDARY + "--");
+                completed = true;
             } catch (final EofException e) {
                 _log.debug("Download client disconnected: user={}, remote={}, reason={}", session.getUser(),
                         mediaRequest.remoteAddr, e.getMessage());
@@ -4306,7 +4356,25 @@ public final class RESTServer {
                 throw new WebApplicationException(e, Response.status(Response.Status.SERVICE_UNAVAILABLE)
                         .entity("File temporarily unavailable: " + e.getMessage()).type(MediaType.TEXT_PLAIN).build());
             } finally {
-                session.close(true);
+                try {
+                    if (aggregate && lastProxy != null && (completed || bytes[0] > 0)) {
+                        final var event = new ProxyEvent(lastProxy);
+                        event.setProtocol("https");
+                        event.setLocalHost(mover.getRoot());
+                        event.setRemoteHost(mediaRequest.remoteAddr);
+                        event.setUserType(ProxyEvent.UserType.DATA_USER);
+                        event.setUserName(session.getUser());
+                        event.setStartTime(startTime);
+                        event.setDuration(System.currentTimeMillis() - startTime);
+                        event.setSent(bytes[0]);
+                        session.recordDownloadEvent(lastProxy, event, completed);
+                    }
+                } catch (final Exception e) {
+                    _log.warn("Could not record multipart download event", e);
+                } finally {
+                    cancelDownloads(session, proxies.subList(next, proxies.size()));
+                    session.close(true);
+                }
             }
         }
 
@@ -4410,6 +4478,20 @@ public final class RESTServer {
     private static void _copyFromProxy(final OutputStream out, final UserSession session, final ProxySocket proxy,
             final MediaRequest mediaRequest, final long startTime, final long fullLength)
             throws IOException, WebApplicationException {
+        final long[] written = { 0 };
+        final var countingOutput = new FilterOutputStream(out) {
+            @Override
+            public void write(final byte[] buffer, final int offset, final int length) throws IOException {
+                out.write(buffer, offset, length);
+                written[0] += length;
+            }
+
+            @Override
+            public void write(final int value) throws IOException {
+                out.write(value);
+                written[0]++;
+            }
+        };
         final InputStream in = new MonitoredInputStream(proxy.getDataInputStream()) {
             {
                 // Count this as an active download stream for the session monitor.
@@ -4449,22 +4531,25 @@ public final class RESTServer {
                             // Single-range or full-file transfer
                             event.setDuration(getDuration());
                             event.setStartTime(getStartTime());
-                            event.setSent(getByteSent());
+                            event.setSent(written[0]);
                         }
                     }
                     try {
-                        session.check(proxy);
-                    } catch (final EccmdException e) {
-                        throw newException(e, 500, e.getMessage());
+                        try {
+                            session.check(proxy);
+                        } catch (final EccmdException e) {
+                            throw newException(e, 500, e.getMessage());
+                        }
+                    } finally {
+                        session.endStreamOut();
                     }
-                    // Bytes already added incrementally in read(); no addBytesOut here.
-                    session.endStreamOut();
                 }
             }
         };
-        StreamPlugThread.copy(out, in, StreamPlugThread.DEFAULT_BUFF_SIZE);
-        out.flush();
-        in.close();
+        try (in) {
+            StreamPlugThread.copy(countingOutput, in, StreamPlugThread.DEFAULT_BUFF_SIZE);
+            countingOutput.flush();
+        }
     }
 
     /**

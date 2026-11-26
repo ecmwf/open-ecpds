@@ -1104,8 +1104,26 @@ public final class TransferScheduler extends MBeanScheduler {
             }
             return proxies;
         } catch (final DataBaseException | MasterException | TransferServerException | RuntimeException e) {
-            proxies.forEach(ProxySocket::close);
+            cancelDownloads(proxies);
             throw e;
+        }
+    }
+
+    public static void cancelDownloads(final List<ProxySocket> proxies) {
+        for (final var proxy : proxies) {
+            try {
+                final var root = (String) proxy.getObject(MoverInterface.class.getName());
+                final var mover = root == null ? null : MASTER.getDataMoverInterface(root);
+                if (mover == null) {
+                    _log.warn("Cannot cancel download ticket {}: DataMover unavailable", proxy.getTicket());
+                } else {
+                    mover.cancelDownload(proxy.getTicket());
+                }
+            } catch (final Exception e) {
+                _log.warn("Cannot cancel download ticket {}", proxy.getTicket(), e);
+            } finally {
+                proxy.close();
+            }
         }
     }
 

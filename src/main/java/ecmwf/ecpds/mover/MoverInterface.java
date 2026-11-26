@@ -535,6 +535,8 @@ public interface MoverInterface extends ClientInterface {
      */
     void check(long ticket) throws RemoteException;
 
+    void cancelDownload(long ticket) throws RemoteException;
+
     /**
      * Gets the mover report.
      *

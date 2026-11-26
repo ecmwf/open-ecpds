@@ -42,7 +42,11 @@ provider, full configuration and account requirements.
 ## Credential storage and rotation
 
 `[LocalPasswords] hashWritesEnabled` defaults to `yes` and controls hashed local
-password writes. `[DatabaseEncryption]`
+password writes. `[LocalPasswords] allowEmptyDataUserPasswords` defaults to `no`,
+rejecting empty local Data User passwords and empty passwords used as S3 signing
+secrets. Setting it to `yes` permits authentication without a secret.
+See the security warning in [Local account passwords](../administration/local-passwords.md).
+`[DatabaseEncryption]`
 configures the external PKCS#12 key used for separate S3 signing secrets. See
 [Local account passwords](../administration/local-passwords.md) for the settings
 and key backup requirements.
