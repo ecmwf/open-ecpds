@@ -43,10 +43,10 @@ import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.dao.PDSDAOBase;
 import ecmwf.ecpds.master.plugin.http.home.datafile.searches.MetaDataValuesByAttributeName;
 import ecmwf.ecpds.master.plugin.http.model.datafile.MetaData;
-import ecmwf.web.model.ModelSearch;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.services.persistence.DAOHandler;
-import ecmwf.web.util.search.BooleanExpressionException;
+import ecmwf.ecpds.master.plugin.http.model.ModelSearch;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOHandler;
+import ecmwf.ecpds.master.plugin.http.util.search.BooleanExpressionException;
 
 /**
  * The Class MetaDataDAOHandler.

@@ -37,7 +37,7 @@ import ecmwf.ecpds.master.plugin.http.home.transfer.HostHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Host;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.ecpds.master.transfer.HostOption;
-import ecmwf.web.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
 
 /**
  * The Class UploadActionForm.

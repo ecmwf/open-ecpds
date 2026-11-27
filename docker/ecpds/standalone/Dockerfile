@@ -10,7 +10,7 @@ LABEL org.opencontainers.image.description="OpenECPDS Standalone (all-in-one)"
 
 # ── Shared settings ────────────────────────────────────────────────────────────
 ENV CONTAINER=podman
-ENV CONSOLE_LOG_LEVEL=warn
+ENV CONSOLE_LOG_LEVEL=off
 ENV ALLOCATED_MEMORY=512M
 ENV EXTERNAL_ADDRESS=0.0.0.0
 ENV INTERNAL_ADDRESS=localhost
@@ -91,19 +91,6 @@ RUN for package in /tmp/rpms/*.rpm; do \
         END { exit (count != 2 || invalid) }' /usr/local/ecpds/master/conf/ecmwf.properties || \
         { echo "Refusing Master RPM with missing or embedded passwords" >&2; exit 1; } && \
     yum clean all && rm -rf /tmp/rpms
-
-# Verify the embedded compiler can initialize against the packaged Truffle libraries.
-RUN printf '%s\n' \
-        'import org.graalvm.polyglot.Context;' \
-        'class ScriptSmokeTest {' \
-        '  public static void main(String[] args) {' \
-        '    try (var context = Context.newBuilder("js").build()) {' \
-        '      if (context.eval("js", "1 + 1").asInt() != 2) throw new AssertionError();' \
-        '    }' \
-        '  }' \
-        '}' > /tmp/ScriptSmokeTest.java && \
-    java --class-path '/usr/local/ecpds/lib/*' /tmp/ScriptSmokeTest.java && \
-    rm /tmp/ScriptSmokeTest.java
 
 # ── Redirect all runtime data to /data (single mountable volume) ──────────────
 # Patch ecenv files so services write logs/tmp/data under /data
@@ -199,6 +186,26 @@ RUN groupadd --system --gid 12001 ecpds-master && \
     useradd --system --uid 12002 --gid ecpds-mover --no-create-home --shell /sbin/nologin ecpds-mover && \
     useradd --system --uid 12003 --gid ecpds-monitor --no-create-home --shell /sbin/nologin ecpds-monitor && \
     useradd --system --uid 12005 --gid ecpds-openbao --no-create-home --shell /sbin/nologin ecpds-openbao
+
+# Verify the optimized runtime as the same unprivileged identities used by the services.
+RUN printf '%s\n' \
+        'import org.graalvm.polyglot.Context;' \
+        'class ScriptSmokeTest {' \
+        '  public static void main(String[] args) {' \
+        '    try (var context = Context.newBuilder("js").build()) {' \
+        '      if (!"Oracle GraalVM".equals(context.getEngine().getImplementationName())) throw new AssertionError("Fallback runtime");' \
+        '      if (context.eval("js", "1 + 1").asInt() != 2) throw new AssertionError();' \
+        '    }' \
+        '  }' \
+        '}' > /tmp/ScriptSmokeTest.java && \
+    for service in master mover monitor; do \
+        runuser -u "ecpds-${service}" -- java --enable-native-access=ALL-UNNAMED \
+            -Dpolyglotimpl.AttachLibraryFailureAction=throw \
+            "-Dpolyglot.engine.userResourceCache=/tmp/ecpds-graal-${service}" \
+            --class-path '/usr/local/ecpds/lib/*' /tmp/ScriptSmokeTest.java || exit 1; \
+    done && \
+    rm /tmp/ScriptSmokeTest.java && \
+    rm -rf /tmp/ecpds-graal-master /tmp/ecpds-graal-mover /tmp/ecpds-graal-monitor
 
 # ── Configuration and startup scripts ─────────────────────────────────────────
 COPY ecpds.sql /ecpds-init.sql

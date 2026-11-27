@@ -32,7 +32,7 @@ package ecmwf.ecpds.master.plugin.http.model.transfer;
 import java.awt.Color;
 import java.util.Date;
 
-import ecmwf.web.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
 
 /**
  * The Interface ArrivalMonitoringParameters.

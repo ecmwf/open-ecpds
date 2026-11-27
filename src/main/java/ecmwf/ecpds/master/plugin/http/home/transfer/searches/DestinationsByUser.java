@@ -26,8 +26,8 @@ package ecmwf.ecpds.master.plugin.http.home.transfer.searches;
  * @since 2004-10-09
  */
 
-import ecmwf.web.dao.ModelSearchBase;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.dao.ModelSearchBase;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class DestinationsByUser.

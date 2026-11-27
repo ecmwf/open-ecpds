@@ -3,6 +3,7 @@
 export PORT_CALLBACK=9600
 export PORT_ECPDS=9640
 export LOG_LEVEL=debug
+export JAVA_OPTS="${JAVA_OPTS:-} -Dpolyglot.engine.userResourceCache=/data/tmp/master/graal"
 export JOLOKIA_PASSWORD
 JOLOKIA_PASSWORD=${JOLOKIA_PASSWORD:-$(< /data/lib/master/standalone-secrets/jolokia)}
 export CLI_SHARED_SECRET

@@ -33,13 +33,13 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import ecmwf.ecpds.master.plugin.http.model.monitoring.ProductStatus;
-import ecmwf.web.dao.ReadOnlyDAOHandler;
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.ModelSearch;
-import ecmwf.web.services.cache.CacheService;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.services.persistence.DAOHandler;
-import ecmwf.web.util.bean.Pair;
+import ecmwf.ecpds.master.plugin.http.dao.ReadOnlyDAOHandler;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelSearch;
+import ecmwf.ecpds.master.plugin.http.services.cache.CacheService;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOHandler;
+import ecmwf.ecpds.master.plugin.http.util.bean.Pair;
 
 /**
  * The Class ProductStatusDAOHandler.

@@ -27,7 +27,7 @@ package ecmwf.ecpds.master.plugin.http.dao.transfer;
  */
 
 import ecmwf.ecpds.master.plugin.http.model.transfer.Country;
-import ecmwf.web.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
 
 /**
  * The Class CountryBean.

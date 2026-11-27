@@ -33,10 +33,10 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.ecpds.master.plugin.http.model.transfer.Status;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
-import ecmwf.web.home.ModelHomeBase;
-import ecmwf.web.model.ModelSearch;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.services.persistence.DAOService;
+import ecmwf.ecpds.master.plugin.http.home.ModelHomeBase;
+import ecmwf.ecpds.master.plugin.http.model.ModelSearch;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOService;
 
 /**
  * The Class StatusHome.

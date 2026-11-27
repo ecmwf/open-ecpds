@@ -58,11 +58,11 @@ import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Status;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.controller.ECMWFActionForm;
-import ecmwf.web.controller.ECMWFActionFormException;
-import ecmwf.web.model.users.User;
-import ecmwf.web.util.bean.Pair;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
+import ecmwf.ecpds.master.plugin.http.util.bean.Pair;
 
 /**
  * The Class OperationsAction.

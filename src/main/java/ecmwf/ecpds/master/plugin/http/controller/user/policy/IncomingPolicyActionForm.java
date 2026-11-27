@@ -40,8 +40,8 @@ import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicy;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
-import ecmwf.web.controller.ECMWFActionForm;
-import ecmwf.web.util.bean.Pair;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.util.bean.Pair;
 
 /**
  * The Class IncomingPolicyActionForm.

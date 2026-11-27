@@ -18,7 +18,7 @@
     <servlet-class>org.apache.struts.action.ActionServlet</servlet-class>
     <init-param>
       <param-name>application</param-name>
-      <param-value>ecmwf.web.controller.ECMWFResources</param-value>
+      <param-value>ecmwf.ecpds.master.plugin.http.ECMWFResources</param-value>
     </init-param>
     <init-param>
       <param-name>config</param-name>

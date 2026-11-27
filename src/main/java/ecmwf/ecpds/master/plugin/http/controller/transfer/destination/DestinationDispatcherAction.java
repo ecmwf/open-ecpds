@@ -36,8 +36,8 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class DestinationDispatcherAction.
@@ -93,7 +93,7 @@ public class DestinationDispatcherAction extends PDSAction {
      * Propagates this dispatcher's {@link org.apache.struts.action.ActionServlet} to a directly-instantiated
      * sub-action, since Struts only calls {@code setServlet} on actions it creates itself via the action mapping. Not
      * doing so leaves {@code action.getServlet()} {@code null}, which makes any call relying on it (e.g.
-     * {@link ecmwf.web.controller.ECMWFAction#getResource}) throw a {@link NullPointerException}.
+     * {@link ecmwf.ecpds.master.plugin.http.controller.ECMWFAction#getResource}) throw a {@link NullPointerException}.
      *
      * @param action
      *            the newly created sub-action

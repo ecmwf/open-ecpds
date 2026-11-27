@@ -87,7 +87,7 @@ import ecmwf.common.security.HttpCertificateProvider;
 import ecmwf.common.security.Tools;
 import ecmwf.common.technical.Cnf;
 import ecmwf.common.version.Version;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 import ecmwf.ecpds.master.ChangeHostEvent;
 import ecmwf.ecpds.master.DataBaseInterface;
 import ecmwf.ecpds.master.DataTransferEvent;

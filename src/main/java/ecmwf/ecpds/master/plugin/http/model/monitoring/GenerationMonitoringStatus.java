@@ -28,7 +28,7 @@ package ecmwf.ecpds.master.plugin.http.model.monitoring;
 
 import java.util.Date;
 
-import ecmwf.web.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
 
 /**
  * The Interface GenerationMonitoringStatus.

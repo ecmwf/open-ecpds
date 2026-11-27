@@ -41,9 +41,8 @@ import ecmwf.ecpds.master.plugin.http.HandlerReceiver;
 import ecmwf.ecpds.master.plugin.http.dao.monitoring.DestinationProductStatusResetterTask;
 import ecmwf.ecpds.master.plugin.http.dao.monitoring.MonitoringEventHandler;
 import ecmwf.ecpds.master.plugin.http.dao.monitoring.MonitoringStatusCalculatorTask;
-import ecmwf.web.controller.CmsInfo;
-import ecmwf.web.services.config.ConfigException;
-import ecmwf.web.services.config.ConfigService;
+import ecmwf.ecpds.master.plugin.http.services.config.ConfigException;
+import ecmwf.ecpds.master.plugin.http.services.config.ConfigService;
 
 /**
  * The listener interface for receiving PDSContext events. The class that is interested in processing a PDSContext event

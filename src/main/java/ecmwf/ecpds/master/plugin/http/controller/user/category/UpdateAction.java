@@ -38,13 +38,13 @@ import org.apache.struts.action.ActionMapping;
 
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebCategory;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.controller.ECMWFActionForm;
-import ecmwf.web.controller.ECMWFActionFormException;
-import ecmwf.web.home.users.CategoryHome;
-import ecmwf.web.home.users.ResourceHome;
-import ecmwf.web.model.users.Category;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException;
+import ecmwf.ecpds.master.plugin.http.home.users.CategoryHome;
+import ecmwf.ecpds.master.plugin.http.home.users.ResourceHome;
+import ecmwf.ecpds.master.plugin.http.model.users.Category;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class UpdateAction.
@@ -127,7 +127,7 @@ public class UpdateAction extends PDSAction {
             return mapping.findForward("edit");
         } else if (DELETE_ALL_RESOURCES.equals(subAction)) {
             for (final var resource : new java.util.ArrayList<>(category.getAccessibleResources())) {
-                webCategory.deleteResource((ecmwf.web.model.users.Resource) resource);
+                webCategory.deleteResource((ecmwf.ecpds.master.plugin.http.model.users.Resource) resource);
             }
             webCategory.save(u);
             return mapping.findForward("edit");

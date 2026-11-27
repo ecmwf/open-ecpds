@@ -33,7 +33,7 @@ import ecmwf.ecpds.master.plugin.http.dao.OjbImplementedBean;
 import ecmwf.ecpds.master.plugin.http.home.transfer.OperationHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Operation;
 import ecmwf.ecpds.master.plugin.http.model.transfer.OperationException;
-import ecmwf.web.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
 
 /**
  * The Class OperationBean.

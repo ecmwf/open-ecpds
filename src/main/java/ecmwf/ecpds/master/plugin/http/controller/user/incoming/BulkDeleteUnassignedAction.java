@@ -34,8 +34,8 @@ import ecmwf.ecpds.master.plugin.http.home.transfer.IncomingUserHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicy;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUser;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * Bulk-deletes all Data Users that have no reachable destinations (neither directly assigned nor via any Data Policy).

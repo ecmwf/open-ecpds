@@ -35,11 +35,11 @@ import org.apache.logging.log4j.Logger;
 import ecmwf.common.ectrans.ECtransGroups;
 import ecmwf.common.ectrans.ECtransOptions;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebUser;
-import ecmwf.web.controller.ECMWFActionForm;
-import ecmwf.web.controller.ECMWFActionFormException;
-import ecmwf.web.home.users.CategoryHome;
-import ecmwf.web.model.users.User;
-import ecmwf.web.model.users.UserException;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException;
+import ecmwf.ecpds.master.plugin.http.home.users.CategoryHome;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
+import ecmwf.ecpds.master.plugin.http.model.users.UserException;
 
 /**
  * The Class UserActionForm.
@@ -253,7 +253,7 @@ public class UserActionForm extends ECMWFActionForm {
      * @param u
      *            the u
      *
-     * @throws ecmwf.web.controller.ECMWFActionFormException
+     * @throws ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException
      *             the ECMWF action form exception
      */
     protected void populateUser(final User u) throws ECMWFActionFormException {

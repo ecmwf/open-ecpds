@@ -33,11 +33,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebCategory;
-import ecmwf.web.controller.ECMWFActionForm;
-import ecmwf.web.controller.ECMWFActionFormException;
-import ecmwf.web.home.users.ResourceHome;
-import ecmwf.web.model.users.Category;
-import ecmwf.web.model.users.UserException;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException;
+import ecmwf.ecpds.master.plugin.http.home.users.ResourceHome;
+import ecmwf.ecpds.master.plugin.http.model.users.Category;
+import ecmwf.ecpds.master.plugin.http.model.users.UserException;
 
 /**
  * The Class CategoryActionForm.
@@ -199,7 +199,7 @@ public class CategoryActionForm extends ECMWFActionForm {
      * @param category
      *            the category
      *
-     * @throws ecmwf.web.controller.ECMWFActionFormException
+     * @throws ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException
      *             the ECMWF action form exception
      */
     protected void populateCategory(final Category category) throws ECMWFActionFormException {
@@ -218,7 +218,7 @@ public class CategoryActionForm extends ECMWFActionForm {
      * @param category
      *            the category
      *
-     * @throws ecmwf.web.controller.ECMWFActionFormException
+     * @throws ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException
      *             the ECMWF action form exception
      */
     protected void populateFromCategory(final Category category) throws ECMWFActionFormException {

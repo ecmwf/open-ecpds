@@ -49,8 +49,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import ecmwf.common.database.GeoIpData;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class GetGeoIpJsonAction.

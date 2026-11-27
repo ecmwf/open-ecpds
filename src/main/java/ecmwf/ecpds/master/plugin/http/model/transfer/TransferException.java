@@ -27,7 +27,7 @@ package ecmwf.ecpds.master.plugin.http.model.transfer;
  */
 
 import ecmwf.common.text.Format;
-import ecmwf.web.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
 
 /**
  * The Class TransferException.

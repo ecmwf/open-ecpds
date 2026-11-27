@@ -52,8 +52,8 @@ import ecmwf.ecpds.master.plugin.http.dao.transfer.DataTransferLightBean;
 import ecmwf.ecpds.master.plugin.http.home.transfer.StatusHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
-import ecmwf.web.controller.ECMWFActionForm;
-import ecmwf.web.util.bean.Pair;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.util.bean.Pair;
 
 /**
  * The Class DetailActionForm.

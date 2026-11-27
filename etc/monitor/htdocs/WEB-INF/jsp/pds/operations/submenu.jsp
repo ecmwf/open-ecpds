@@ -1,6 +1,6 @@
 <%@ taglib uri="/WEB-INF/tld/auth2-taglib.tld" prefix="auth"%>
 <%
-    final var operationsUser = ecmwf.web.controller.ECMWFAction.getUser(request);
+    final var operationsUser = ecmwf.ecpds.master.plugin.http.controller.ECMWFAction.getUser(request);
     if (request.getAttribute("_operationsNavRendered") == null && operationsUser != null
             && (operationsUser.hasAccess("/do/monitoring") || operationsUser.hasAccess("/do/monitoring/"))
             && operationsUser.hasAccess("/do/transfer/history/")) {

@@ -46,10 +46,10 @@ import ecmwf.ecpds.master.plugin.http.home.monitoring.ProductStatusHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.controller.ECMWFActionForm;
-import ecmwf.web.controller.ECMWFActionFormException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class GetTransferDisplayAction.

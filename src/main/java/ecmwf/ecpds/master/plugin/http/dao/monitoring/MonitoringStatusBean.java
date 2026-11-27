@@ -29,7 +29,7 @@ package ecmwf.ecpds.master.plugin.http.dao.monitoring;
 import ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringStatus;
 import ecmwf.ecpds.master.plugin.http.model.transfer.ArrivalMonitoringParameters;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferMonitoringParameters;
-import ecmwf.web.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
 
 /**
  * The Class MonitoringStatusBean.

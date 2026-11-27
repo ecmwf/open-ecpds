@@ -25,7 +25,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /** Retains only a short-lived PKCE code across the redirect; a Monitor password is never persisted. */
 public final class HostPasswordMfaCallbackAction extends PDSAction {
@@ -37,7 +37,7 @@ public final class HostPasswordMfaCallbackAction extends PDSAction {
     @Override
     public ActionForward safeAuthorizedPerform(final ActionMapping mapping, final ActionForm form,
             final HttpServletRequest request, final HttpServletResponse response, final User user)
-            throws ecmwf.web.ECMWFException {
+            throws ecmwf.ecpds.master.plugin.http.ECMWFException {
         response.setHeader("Cache-Control", "no-store");
         response.setHeader("Referrer-Policy", "no-referrer");
         final var session = request.getSession(false);

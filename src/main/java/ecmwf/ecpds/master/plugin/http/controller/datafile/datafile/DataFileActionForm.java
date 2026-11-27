@@ -27,7 +27,7 @@ package ecmwf.ecpds.master.plugin.http.controller.datafile.datafile;
  */
 
 import ecmwf.ecpds.master.plugin.http.model.datafile.DataFile;
-import ecmwf.web.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
 
 /**
  * The Class DataFileActionForm.

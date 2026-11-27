@@ -41,14 +41,14 @@ import ecmwf.common.database.DataBaseException;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.dao.PDSDAOBase;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.ModelSearch;
-import ecmwf.web.model.users.Resource;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.services.persistence.DAOHandler;
-import ecmwf.web.util.search.BooleanExpressionException;
-import ecmwf.web.util.search.QueryExpressionParser;
-import ecmwf.web.util.search.elements.EqualElement;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelSearch;
+import ecmwf.ecpds.master.plugin.http.model.users.Resource;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOHandler;
+import ecmwf.ecpds.master.plugin.http.util.search.BooleanExpressionException;
+import ecmwf.ecpds.master.plugin.http.util.search.QueryExpressionParser;
+import ecmwf.ecpds.master.plugin.http.util.search.elements.EqualElement;
 
 /**
  * The Class CategoryDAOHandler.

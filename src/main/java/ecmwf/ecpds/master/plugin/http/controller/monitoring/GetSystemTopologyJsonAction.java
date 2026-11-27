@@ -52,9 +52,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.controller.ECMWFActionForm;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * Serves the system topology (Master/DataMovers/Database/this Monitor) as JSON for the topology diagram.

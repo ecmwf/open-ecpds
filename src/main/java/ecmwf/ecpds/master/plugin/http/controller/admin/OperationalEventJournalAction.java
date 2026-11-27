@@ -37,8 +37,8 @@ import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.OperationalEventJournalStatus;
 import ecmwf.ecpds.master.plugin.http.controller.OperationsAction;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /** Operational event journal monitoring and runtime controls. */
 public class OperationalEventJournalAction extends OperationsAction {

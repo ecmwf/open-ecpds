@@ -24,8 +24,8 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ecmwf.web.model.users.User;
-import ecmwf.web.view.taglibs.auth2.conditional.IfTag;
+import ecmwf.ecpds.master.plugin.http.view.auth2.conditional.IfTag;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * Keeps missing-session authorization conditions false without reporting expected unauthenticated rendering as errors.

@@ -38,9 +38,9 @@ import ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException;
 import ecmwf.ecpds.master.plugin.http.model.datafile.TransferGroup;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.EcUser;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.EcUserException;
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.users.User;
-import ecmwf.web.util.bean.StringPair;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
+import ecmwf.ecpds.master.plugin.http.util.bean.StringPair;
 
 /**
  * The Interface Host.

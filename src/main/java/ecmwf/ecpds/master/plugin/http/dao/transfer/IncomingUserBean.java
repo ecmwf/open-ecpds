@@ -54,8 +54,8 @@ import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUserException;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Operation;
 import ecmwf.ecpds.master.plugin.http.model.transfer.OperationException;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
-import ecmwf.web.dao.ModelBeanBase;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class IncomingUserBean.

@@ -1,0 +1,67 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * In applying the License, ECMWF does not waive the privileges and immunities
+ * granted to it by virtue of its status as an inter-governmental organization
+ * nor does it submit to any jurisdiction.
+ */
+
+package ecmwf.ecpds.master.plugin.http.util.search.elements;
+
+import java.util.Iterator;
+import ecmwf.ecpds.master.plugin.http.model.AttributedBean;
+
+/**
+ * OrElement.java
+ *
+ * Created: Fri May 17 15:11:23 2002
+ *
+ * @author <a href="mailto:dvarela@ecmwf.int">Daniel Varela Santoalla</a>
+ *
+ * @version 0.1.0
+ */
+
+public class OrElement extends BooleanContainerElement implements BooleanExpression {
+
+    public OrElement() {
+        super();
+    }
+
+    public boolean match(AttributedBean bean) {
+
+        for (Iterator e = this.getElements().iterator(); e.hasNext();) {
+            BooleanExpression b = (BooleanExpression) e.next();
+            if (b.match(bean))
+                return true;
+        }
+        return false;
+
+    }
+
+    public String dump() {
+
+        String out = " OR{";
+        Iterator i = this.getElements().iterator();
+        if (i.hasNext()) {
+            BooleanExpression b = (BooleanExpression) i.next();
+            out += b.dump();
+            while (i.hasNext()) {
+                out += " or " + ((BooleanExpression) i.next()).dump();
+            }
+        }
+        out += "} ";
+        return out;
+
+    }
+
+} // OrElement

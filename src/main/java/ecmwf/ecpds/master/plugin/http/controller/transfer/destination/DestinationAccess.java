@@ -27,7 +27,7 @@ import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Host;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 final class DestinationAccess {
     private static final String BASE = "/do/transfer/destination/";

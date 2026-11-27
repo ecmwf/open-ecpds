@@ -2617,8 +2617,8 @@ public final class HttpModule extends TransferModule {
     }
 
     /**
-     * Execute the http request using high-level execute() (non-deprecated). Ensures the request URI is absolute by
-     * resolving against the provided targetHost.
+     * Execute the http request with an open streaming response. Ensures the request URI is absolute by resolving
+     * against the provided targetHost.
      *
      * @param targetHost
      *            the target host
@@ -2665,8 +2665,8 @@ public final class HttpModule extends TransferModule {
                 // Rate-limiting: never start a request less than "http.minRequestInterval" after the previous one,
                 // across all threads sharing this module instance (e.g. concurrent listing).
                 paceRequest();
-                // High-level execute -> redirect/cookie/auth handling is automatic.
-                final var httpResponse = httpClient.execute(targetHost, httpRequest, context);
+                // Redirect, cookie and authentication handling is automatic.
+                final var httpResponse = httpClient.executeOpen(targetHost, httpRequest, context);
                 if (getDebug()) {
                     _log.debug("Protocol version: {}", httpResponse.getVersion());
                 }

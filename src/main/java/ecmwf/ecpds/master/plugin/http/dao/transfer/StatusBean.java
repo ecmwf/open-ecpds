@@ -28,7 +28,7 @@ package ecmwf.ecpds.master.plugin.http.dao.transfer;
 
 import ecmwf.ecpds.master.plugin.http.model.transfer.Status;
 import ecmwf.ecpds.master.transfer.StatusFactory;
-import ecmwf.web.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
 
 /**
  * The Class StatusBean.

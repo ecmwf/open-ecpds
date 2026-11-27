@@ -60,6 +60,7 @@
 													<location>${project.basedir}/../lib</location>
 													<excludes>
 														<exclude>opentelemetry-*.jar</exclude>
+														<exclude>ecmwf-webgrp-*.jar</exclude>
 													</excludes>
 												</source>
 											</sources>

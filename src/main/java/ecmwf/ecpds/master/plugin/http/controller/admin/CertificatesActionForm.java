@@ -28,7 +28,7 @@ package ecmwf.ecpds.master.plugin.http.controller.admin;
 
 import org.apache.struts.upload.FormFile;
 
-import ecmwf.web.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
 
 /**
  * The Class CertificatesActionForm.

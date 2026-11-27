@@ -58,8 +58,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
-import ecmwf.web.controller.ECMWFActionFormException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class GetDestinationSyncSelectionAction.

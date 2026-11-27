@@ -49,8 +49,8 @@ import org.apache.struts.action.ActionMapping;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.controller.monitoring.ProductStatusMessages;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class ProductMessagesAction.

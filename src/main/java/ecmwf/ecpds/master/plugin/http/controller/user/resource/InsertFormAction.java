@@ -34,10 +34,10 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.controller.ECMWFActionFormException;
-import ecmwf.web.model.ModelException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException;
+import ecmwf.ecpds.master.plugin.http.model.ModelException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class InsertFormAction.

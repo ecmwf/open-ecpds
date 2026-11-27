@@ -38,8 +38,8 @@ import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.plugin.http.home.datafile.TransferServerHome;
 import ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException;
 import ecmwf.ecpds.master.plugin.http.model.datafile.TransferServer;
-import ecmwf.web.controller.ECMWFActionForm;
-import ecmwf.web.util.bean.Pair;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.util.bean.Pair;
 
 /**
  * The Class RatesActionForm.

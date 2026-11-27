@@ -25,11 +25,11 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.ecpds.master.plugin.http.model.ecuser.ApiClient;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.ApiClientException;
-import ecmwf.web.home.ModelHomeBase;
-import ecmwf.web.model.ModelSearch;
-import ecmwf.web.model.users.User;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.services.persistence.DAOService;
+import ecmwf.ecpds.master.plugin.http.home.ModelHomeBase;
+import ecmwf.ecpds.master.plugin.http.model.ModelSearch;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOService;
 
 public class ApiClientHome extends ModelHomeBase {
 

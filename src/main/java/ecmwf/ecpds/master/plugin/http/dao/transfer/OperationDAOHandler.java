@@ -36,9 +36,9 @@ import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.dao.PDSDAOBase;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.SearchByIncomingUser;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Operation;
-import ecmwf.web.model.ModelSearch;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.services.persistence.DAOHandler;
+import ecmwf.ecpds.master.plugin.http.model.ModelSearch;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOHandler;
 
 /**
  * The Class OperationDAOHandler.

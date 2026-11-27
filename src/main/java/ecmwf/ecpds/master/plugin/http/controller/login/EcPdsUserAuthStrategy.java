@@ -35,11 +35,11 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ecmwf.web.home.users.UserHome;
-import ecmwf.web.model.users.UnrecoverableUserException;
-import ecmwf.web.model.users.User;
-import ecmwf.web.model.users.UserException;
-import ecmwf.web.services.users.UserAuthStrategy;
+import ecmwf.ecpds.master.plugin.http.home.users.UserHome;
+import ecmwf.ecpds.master.plugin.http.model.users.UnrecoverableUserException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
+import ecmwf.ecpds.master.plugin.http.model.users.UserException;
+import ecmwf.ecpds.master.plugin.http.services.users.UserAuthStrategy;
 
 /**
  * The Class EcPdsUserAuthStrategy.
@@ -120,7 +120,7 @@ public class EcPdsUserAuthStrategy implements UserAuthStrategy {
      *
      * @return the public user
      *
-     * @throws ecmwf.web.model.users.UserException
+     * @throws ecmwf.ecpds.master.plugin.http.model.users.UserException
      *             the user exception
      */
     public User getPublicUser(final HttpServletRequest request) throws UserException {

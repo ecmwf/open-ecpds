@@ -72,8 +72,8 @@ import ecmwf.ecpds.master.plugin.http.home.transfer.DestinationHome;
 import ecmwf.ecpds.master.plugin.http.home.transfer.HostHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Host;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
-import ecmwf.web.controller.ECMWFActionFormException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class GetHostListJsonAction.

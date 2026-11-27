@@ -31,7 +31,7 @@ package ecmwf.ecpds.master.plugin.http.model.datafile;
 import java.util.Collection;
 
 import ecmwf.ecpds.master.plugin.http.model.transfer.Host;
-import ecmwf.web.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
 
 /**
  * The Interface TransferGroup.

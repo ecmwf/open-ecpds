@@ -18,7 +18,7 @@
 
 package ecmwf.ecpds.master.plugin.http.model.ecuser;
 
-import ecmwf.web.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
 
 public class ApiClientException extends ECMWFException {
     private static final long serialVersionUID = 1L;

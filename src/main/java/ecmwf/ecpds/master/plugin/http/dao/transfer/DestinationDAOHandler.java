@@ -60,11 +60,11 @@ import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Host;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicy;
 import ecmwf.ecpds.master.transfer.StatusFactory;
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.ModelSearch;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.services.persistence.DAOHandler;
-import ecmwf.web.util.bean.Pair;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelSearch;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOHandler;
+import ecmwf.ecpds.master.plugin.http.util.bean.Pair;
 
 /**
  * The Class DestinationDAOHandler.
@@ -101,7 +101,7 @@ public class DestinationDAOHandler extends PDSDAOBase implements DAOHandler {
      *
      * @return the destination
      *
-     * @throws ecmwf.web.services.persistence.DAOException
+     * @throws ecmwf.ecpds.master.plugin.http.services.persistence.DAOException
      *             the DAO exception
      */
     public Destination findByPrimaryKey(final String key, final boolean useCache) throws DAOException {

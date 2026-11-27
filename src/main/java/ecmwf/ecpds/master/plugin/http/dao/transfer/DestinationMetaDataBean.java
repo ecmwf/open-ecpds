@@ -38,10 +38,10 @@ import ecmwf.common.ecaccess.FileListElement;
 import ecmwf.ecpds.master.MasterException;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DestinationMetaData;
-import ecmwf.web.dao.ModelBeanBase;
-import ecmwf.web.model.users.Resource;
-import ecmwf.web.services.content.Content;
-import ecmwf.web.services.content.ContentProcessorException;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.model.users.Resource;
+import ecmwf.ecpds.master.plugin.http.services.content.Content;
+import ecmwf.ecpds.master.plugin.http.services.content.ContentProcessorException;
 
 /**
  * The Class DestinationMetaDataBean.

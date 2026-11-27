@@ -32,10 +32,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebUser;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.home.users.UserHome;
-import ecmwf.web.model.users.Category;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.home.users.UserHome;
+import ecmwf.ecpds.master.plugin.http.model.users.Category;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * Bulk-deletes all Web Users that are classified as Monitor users but have no destination category assigned (i.e. their

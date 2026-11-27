@@ -41,13 +41,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ecmwf.ecpds.master.MasterManager;
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.ModelSearch;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.util.bean.Pair;
-import ecmwf.web.util.search.BooleanExpressionException;
-import ecmwf.web.util.search.QueryExpressionParser;
-import ecmwf.web.util.search.elements.EqualElement;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelSearch;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.util.bean.Pair;
+import ecmwf.ecpds.master.plugin.http.util.search.BooleanExpressionException;
+import ecmwf.ecpds.master.plugin.http.util.search.QueryExpressionParser;
+import ecmwf.ecpds.master.plugin.http.util.search.elements.EqualElement;
 
 /**
  * The Class PDSDAOBase.
@@ -63,7 +63,7 @@ public class PDSDAOBase {
      * @param bean
      *            the bean
      *
-     * @throws ecmwf.web.services.persistence.DAOException
+     * @throws ecmwf.ecpds.master.plugin.http.services.persistence.DAOException
      *             the DAO exception
      */
     public void insert(final ModelBean bean) throws DAOException {
@@ -76,7 +76,7 @@ public class PDSDAOBase {
      * @param bean
      *            the bean
      *
-     * @throws ecmwf.web.services.persistence.DAOException
+     * @throws ecmwf.ecpds.master.plugin.http.services.persistence.DAOException
      *             the DAO exception
      */
     public void save(final ModelBean bean) throws DAOException {
@@ -89,7 +89,7 @@ public class PDSDAOBase {
      * @param bean
      *            the bean
      *
-     * @throws ecmwf.web.services.persistence.DAOException
+     * @throws ecmwf.ecpds.master.plugin.http.services.persistence.DAOException
      *             the DAO exception
      */
     public void delete(final ModelBean bean) throws DAOException {
@@ -104,7 +104,7 @@ public class PDSDAOBase {
      * @param context
      *            the context
      *
-     * @throws ecmwf.web.services.persistence.DAOException
+     * @throws ecmwf.ecpds.master.plugin.http.services.persistence.DAOException
      *             the DAO exception
      */
     public void save(final ModelBean bean, final Object context) throws DAOException {
@@ -124,7 +124,7 @@ public class PDSDAOBase {
      * @param context
      *            the context
      *
-     * @throws ecmwf.web.services.persistence.DAOException
+     * @throws ecmwf.ecpds.master.plugin.http.services.persistence.DAOException
      *             the DAO exception
      */
     public void insert(final ModelBean bean, final Object context) throws DAOException {
@@ -144,7 +144,7 @@ public class PDSDAOBase {
      * @param context
      *            the context
      *
-     * @throws ecmwf.web.services.persistence.DAOException
+     * @throws ecmwf.ecpds.master.plugin.http.services.persistence.DAOException
      *             the DAO exception
      */
     public void delete(final ModelBean bean, final Object context) throws DAOException {
@@ -164,7 +164,7 @@ public class PDSDAOBase {
      *
      * @return the equality clause leaves from expression
      *
-     * @throws ecmwf.web.util.search.BooleanExpressionException
+     * @throws ecmwf.ecpds.master.plugin.http.util.search.BooleanExpressionException
      *             the boolean expression exception
      * @throws java.lang.ClassCastException
      *             the class cast exception

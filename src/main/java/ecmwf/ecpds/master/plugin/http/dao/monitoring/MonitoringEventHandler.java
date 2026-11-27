@@ -55,7 +55,7 @@ import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Status;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferMonitoringParameters;
-import ecmwf.web.model.ModelException;
+import ecmwf.ecpds.master.plugin.http.model.ModelException;
 
 /**
  * The Class MonitoringEventHandler.

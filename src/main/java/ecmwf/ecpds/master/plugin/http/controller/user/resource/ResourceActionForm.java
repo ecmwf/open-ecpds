@@ -32,11 +32,11 @@ import java.util.Collection;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ecmwf.web.controller.ECMWFActionForm;
-import ecmwf.web.home.users.CategoryHome;
-import ecmwf.web.model.users.Category;
-import ecmwf.web.model.users.Resource;
-import ecmwf.web.model.users.UserException;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.home.users.CategoryHome;
+import ecmwf.ecpds.master.plugin.http.model.users.Category;
+import ecmwf.ecpds.master.plugin.http.model.users.Resource;
+import ecmwf.ecpds.master.plugin.http.model.users.UserException;
 
 /**
  * The Class ResourceActionForm.

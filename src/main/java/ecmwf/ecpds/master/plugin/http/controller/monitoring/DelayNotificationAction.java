@@ -45,9 +45,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ecmwf.common.text.MarkdownUtil;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.web.controller.ECMWFActionForm;
-import ecmwf.web.controller.ECMWFActionFormException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * ECMWF Product Data Store (OpenECPDS) Project

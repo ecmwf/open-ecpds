@@ -35,12 +35,12 @@ import ecmwf.ecpds.master.plugin.http.dao.OjbImplementedBean;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebCategory;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebResource;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebUser;
-import ecmwf.web.dao.ModelBeanBase;
-import ecmwf.web.home.ModelHomeBase;
-import ecmwf.web.home.users.ResourceHome;
-import ecmwf.web.home.users.UserHome;
-import ecmwf.web.model.users.Resource;
-import ecmwf.web.model.users.UserException;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.home.ModelHomeBase;
+import ecmwf.ecpds.master.plugin.http.home.users.ResourceHome;
+import ecmwf.ecpds.master.plugin.http.home.users.UserHome;
+import ecmwf.ecpds.master.plugin.http.model.users.Resource;
+import ecmwf.ecpds.master.plugin.http.model.users.UserException;
 
 /**
  * The Class CategoryBean.
@@ -73,7 +73,7 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
      */
     @Override
     public String getBeanInterfaceName() {
-        return ecmwf.web.model.users.Category.class.getName();
+        return ecmwf.ecpds.master.plugin.http.model.users.Category.class.getName();
     }
 
     /**
@@ -202,7 +202,7 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
      */
     @Override
     public boolean equals(final Object o) {
-        return o instanceof final ecmwf.web.model.users.Category category && equals(category);
+        return o instanceof final ecmwf.ecpds.master.plugin.http.model.users.Category category && equals(category);
     }
 
     /**
@@ -211,7 +211,7 @@ public class CategoryBean extends ModelBeanBase implements WebCategory, OjbImple
      * Equals.
      */
     @Override
-    public boolean equals(final ecmwf.web.model.users.Category c) {
+    public boolean equals(final ecmwf.ecpds.master.plugin.http.model.users.Category c) {
         return getName().equals(c.getName());
     }
 
