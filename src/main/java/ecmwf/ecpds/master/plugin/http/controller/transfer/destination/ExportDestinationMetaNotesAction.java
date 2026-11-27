@@ -59,8 +59,8 @@ import ecmwf.common.database.DestinationMetaValue;
 import ecmwf.common.text.MarkdownUtil;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.web.controller.ECMWFActionFormException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class ExportDestinationMetaNotesAction.

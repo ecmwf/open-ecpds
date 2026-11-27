@@ -38,11 +38,11 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.controller.ECMWFActionFormException;
-import ecmwf.web.home.users.ResourceHome;
-import ecmwf.web.home.users.UserHome;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException;
+import ecmwf.ecpds.master.plugin.http.home.users.ResourceHome;
+import ecmwf.ecpds.master.plugin.http.home.users.UserHome;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class DetailerAction.

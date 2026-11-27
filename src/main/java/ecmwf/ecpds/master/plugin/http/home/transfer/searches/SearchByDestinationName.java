@@ -26,7 +26,7 @@ package ecmwf.ecpds.master.plugin.http.home.transfer.searches;
  * @since 2004-10-09
  */
 
-import ecmwf.web.dao.ModelSearchBase;
+import ecmwf.ecpds.master.plugin.http.dao.ModelSearchBase;
 
 /**
  * Search for IncomingUsers directly associated to a Destination via INCOMING_ASSOCIATION.

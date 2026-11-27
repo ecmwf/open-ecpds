@@ -27,7 +27,7 @@ package ecmwf.ecpds.master.plugin.http.controller.datafile.metadata;
  */
 
 import ecmwf.ecpds.master.plugin.http.model.datafile.MetaData;
-import ecmwf.web.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
 
 /**
  * The Class MetaDataActionForm.

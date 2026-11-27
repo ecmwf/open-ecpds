@@ -46,11 +46,11 @@ import ecmwf.ecpds.master.plugin.http.home.transfer.OperationHome;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.EcUserException;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUser;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.controller.ECMWFActionForm;
-import ecmwf.web.controller.ECMWFActionFormException;
-import ecmwf.web.model.ModelException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException;
+import ecmwf.ecpds.master.plugin.http.model.ModelException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class UpdateAction.

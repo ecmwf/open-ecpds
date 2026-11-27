@@ -30,7 +30,7 @@ import ecmwf.common.database.DataBaseObject;
 import ecmwf.common.database.ECUser;
 import ecmwf.ecpds.master.plugin.http.dao.OjbImplementedBean;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.EcUser;
-import ecmwf.web.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
 
 /**
  * The Class EcUserBean.

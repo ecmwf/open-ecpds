@@ -37,7 +37,7 @@ import ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException;
 import ecmwf.ecpds.master.plugin.http.model.datafile.TransferGroup;
 import ecmwf.ecpds.master.plugin.http.model.datafile.TransferServer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Host;
-import ecmwf.web.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
 
 /**
  * The Class TransferGroupBean.

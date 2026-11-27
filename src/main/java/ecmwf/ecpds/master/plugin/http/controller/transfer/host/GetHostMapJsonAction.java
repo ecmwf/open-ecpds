@@ -46,8 +46,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ecmwf.common.database.HostMapData;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class GetHostMapJsonAction.

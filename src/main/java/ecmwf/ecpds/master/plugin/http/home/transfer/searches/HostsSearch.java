@@ -27,7 +27,7 @@ package ecmwf.ecpds.master.plugin.http.home.transfer.searches;
  */
 
 import ecmwf.common.database.DataBaseCursor;
-import ecmwf.web.dao.ModelSearchBase;
+import ecmwf.ecpds.master.plugin.http.dao.ModelSearchBase;
 
 /**
  * The Class HostsSearch.

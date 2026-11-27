@@ -63,7 +63,7 @@
         <action path="/monitoring/weather"
             type="ecmwf.ecpds.master.plugin.http.controller.monitoring.GetWeatherAction"/>
 		<action path="/handleError"
-			type="ecmwf.web.controller.ErrorHandlerAction">
+			type="ecmwf.ecpds.master.plugin.http.controller.ErrorHandlerAction">
 			<forward name="error" path=".error" />
 		</action>
 

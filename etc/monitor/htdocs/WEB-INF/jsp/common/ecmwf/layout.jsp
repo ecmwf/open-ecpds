@@ -1,4 +1,4 @@
-<%@ page session="true" import ="ecmwf.web.view.taglibs.util.TagUtils"%>
+<%@ page session="true" import ="ecmwf.ecpds.master.plugin.http.view.util.TagUtils"%>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
 <%@ taglib uri="/WEB-INF/tld/struts-logic.tld" prefix="logic" %>
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
@@ -91,7 +91,7 @@ body{background:#fff;color:#000;font-family:Arial,sans-serif;margin:0;padding:0;
   </div>
 </div>
 
-<logic:present name="<%=ecmwf.web.model.users.User.SESSION_KEY%>">
+<logic:present name="<%=ecmwf.ecpds.master.plugin.http.model.users.User.SESSION_KEY%>">
 <button id="ai-chat-open">Ask <%=System.getProperty("monitor.nickName")%></button>
 <div id="ai-chat-widget">
     <div id="ai-chat-header">

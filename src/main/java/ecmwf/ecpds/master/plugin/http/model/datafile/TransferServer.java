@@ -31,8 +31,8 @@ import java.util.Date;
 
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Host;
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Interface TransferServer.

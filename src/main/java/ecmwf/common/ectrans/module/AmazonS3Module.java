@@ -254,8 +254,7 @@ public final class AmazonS3Module extends TransferModule {
                             .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true)
                                     .chunkedEncodingEnabled(false).build())
                             .overrideConfiguration(configuration -> configuration
-                                    .retryPolicy(software.amazon.awssdk.core.retry.RetryPolicy.none())
-                                    .addExecutionInterceptor(
+                                    .retryStrategy(AwsRetryStrategy.doNotRetry()).addExecutionInterceptor(
                                             new software.amazon.awssdk.core.interceptor.ExecutionInterceptor() {
                                                 @Override
                                                 public void beforeTransmission(

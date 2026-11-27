@@ -34,7 +34,7 @@ import ecmwf.ecpds.master.plugin.http.home.datafile.DataFileHome;
 import ecmwf.ecpds.master.plugin.http.model.datafile.DataFile;
 import ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException;
 import ecmwf.ecpds.master.plugin.http.model.datafile.MetaData;
-import ecmwf.web.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
 
 /**
  * The Class MetaDataBean.

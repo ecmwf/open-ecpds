@@ -35,9 +35,9 @@ import org.apache.struts.action.ActionMapping;
 import ecmwf.ecpds.extension.InteractiveLogins;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.dao.users.UserBean;
-import ecmwf.web.controller.ECMWFAction;
-import ecmwf.web.controller.ECMWFActionForm;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFAction;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * Thin browser boundary: protocol validation and local account authorization stay on the Master.

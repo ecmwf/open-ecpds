@@ -32,8 +32,8 @@ import ecmwf.ecpds.master.plugin.http.model.ecuser.ApiClient;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.ApiClientException;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Country;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
-import ecmwf.web.dao.ModelBeanBase;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 public class ApiClientBean extends ModelBeanBase implements ApiClient, OjbImplementedBean {
 

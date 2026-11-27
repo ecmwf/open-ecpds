@@ -36,8 +36,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ecmwf.common.database.DestinationMetaValue;
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.web.controller.ECMWFActionFormException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * Saves destination metadata values via JSON POST. Returns JSON: {"success":true} or {"success":false,"error":"..."}

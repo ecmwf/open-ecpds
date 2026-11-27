@@ -6,7 +6,7 @@
 <%@ taglib uri="/WEB-INF/tld/c.tld" prefix="c"%>
 <%
     boolean _showFeedbackBtn = true;
-    Object _sessionUser = session.getAttribute(ecmwf.web.model.users.User.SESSION_KEY);
+    Object _sessionUser = session.getAttribute(ecmwf.ecpds.master.plugin.http.model.users.User.SESSION_KEY);
     if (_sessionUser instanceof ecmwf.ecpds.master.plugin.http.model.ecuser.WebUser) {
         _showFeedbackBtn = ((ecmwf.ecpds.master.plugin.http.model.ecuser.WebUser) _sessionUser).isShareFeedbackEnabled();
     }
@@ -46,7 +46,7 @@
         <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
             <tiles:insert name="submenu_top" />
 
-            <logic:present name="<%=ecmwf.web.model.users.User.SESSION_KEY%>">
+            <logic:present name="<%=ecmwf.ecpds.master.plugin.http.model.users.User.SESSION_KEY%>">
                 <div class="dropdown">
                     <a class="dropdown-toggle text-white text-decoration-none fw-semibold small"
                        href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -68,7 +68,7 @@
                title="<%=_docsTitle%>" style="width:28px;height:28px;">
               <i class="bi bi-book" style="font-size:0.85rem;"></i>
             </a>
-            <logic:present name="<%=ecmwf.web.model.users.User.SESSION_KEY%>">
+            <logic:present name="<%=ecmwf.ecpds.master.plugin.http.model.users.User.SESSION_KEY%>">
             <% if (_showFeedbackBtn) { %>
             <button class="btn btn-sm btn-outline-light p-1 lh-1" type="button"
                     data-bs-toggle="offcanvas" data-bs-target="#feedbackOffcanvas" aria-controls="feedbackOffcanvas"
@@ -176,7 +176,7 @@ function ecpdsToggleTheme() {
 </script>
 
 <!-- Feedback offcanvas -->
-<logic:present name="<%=ecmwf.web.model.users.User.SESSION_KEY%>">
+<logic:present name="<%=ecmwf.ecpds.master.plugin.http.model.users.User.SESSION_KEY%>">
 <div class="offcanvas offcanvas-end" tabindex="-1" id="feedbackOffcanvas" aria-labelledby="feedbackOffcanvasLabel" style="width:380px;max-width:95vw;">
   <div class="offcanvas-header border-bottom">
     <h6 class="offcanvas-title fw-semibold" id="feedbackOffcanvasLabel">

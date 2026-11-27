@@ -46,10 +46,10 @@ import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.ECpdsSession;
 import ecmwf.ecpds.master.plugin.http.model.CollectionSizeBean;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
-import ecmwf.web.model.ModelException;
-import ecmwf.web.model.users.User;
-import ecmwf.web.model.users.UserException;
-import ecmwf.web.util.bean.Pair;
+import ecmwf.ecpds.master.plugin.http.model.ModelException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
+import ecmwf.ecpds.master.plugin.http.model.users.UserException;
+import ecmwf.ecpds.master.plugin.http.util.bean.Pair;
 
 /**
  * The Class Util.

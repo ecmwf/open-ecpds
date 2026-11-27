@@ -80,6 +80,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -147,7 +148,7 @@ public final class FtpsModule extends TransferModule {
                 module.closeTimeout = 10000;
                 module.ftp.setConnectTimeout(30000);
                 module.ftp.setDefaultTimeout(60000);
-                module.ftp.setDataTimeout(60000);
+                module.ftp.setDataTimeout(Duration.ofSeconds(60));
                 module.ftp.setControlEncoding(java.nio.charset.Charset.defaultCharset().name());
                 module.connectAndLogin(endpoint.host(), endpoint.port(), endpoint.login(), credential);
                 module.ftp.enterLocalPassiveMode();
@@ -438,7 +439,7 @@ public final class FtpsModule extends TransferModule {
                 }
                 ftp.setConnectTimeout(connectionTimeout);
                 ftp.setDefaultTimeout(readTimeout);
-                ftp.setDataTimeout(readTimeout);
+                ftp.setDataTimeout(Duration.ofMillis(readTimeout));
                 ftp.setControlEncoding(java.nio.charset.Charset.defaultCharset().name());
                 if (sendBufferSize > 0) {
                     ftp.setSendBufferSize(sendBufferSize);

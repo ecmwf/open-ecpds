@@ -29,7 +29,7 @@ package ecmwf.ecpds.master.plugin.http.dao.transfer;
 import ecmwf.common.database.DataBaseObject;
 import ecmwf.ecpds.master.plugin.http.dao.OjbImplementedBean;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Alias;
-import ecmwf.web.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
 
 /**
  * The Class AliasBean.

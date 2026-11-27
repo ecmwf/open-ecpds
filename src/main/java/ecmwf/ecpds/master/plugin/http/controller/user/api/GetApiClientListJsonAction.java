@@ -34,9 +34,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
 import ecmwf.ecpds.master.plugin.http.home.ecuser.ApiClientHome;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.ApiClient;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * Returns a DataTables-compatible JSON payload for the API Clients list page.

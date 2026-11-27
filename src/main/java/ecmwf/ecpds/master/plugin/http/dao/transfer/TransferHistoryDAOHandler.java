@@ -37,11 +37,11 @@ import ecmwf.ecpds.master.plugin.http.dao.PDSDAOBase;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.TransferHistoryByDataTransfer;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.TransferHistoryByDestinationAndDate;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferHistory;
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.ModelSearch;
-import ecmwf.web.model.users.User;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.services.persistence.DAOHandler;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelSearch;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOHandler;
 
 /**
  * The Class TransferHistoryDAOHandler.

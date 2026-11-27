@@ -31,7 +31,7 @@ package ecmwf.ecpds.master.plugin.http.model.transfer;
 
 import java.util.Date;
 
-import ecmwf.web.services.content.Content;
+import ecmwf.ecpds.master.plugin.http.services.content.Content;
 
 /**
  * The Interface DestinationMetaData.

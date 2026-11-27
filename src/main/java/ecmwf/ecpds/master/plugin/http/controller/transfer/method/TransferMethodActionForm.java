@@ -36,7 +36,7 @@ import ecmwf.ecpds.master.plugin.http.home.transfer.EcTransModuleHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.EcTransModule;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferMethod;
-import ecmwf.web.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
 
 /**
  * The Class TransferMethodActionForm.

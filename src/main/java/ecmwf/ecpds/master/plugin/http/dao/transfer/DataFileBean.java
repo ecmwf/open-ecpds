@@ -46,8 +46,8 @@ import ecmwf.ecpds.master.plugin.http.model.datafile.DataFileException;
 import ecmwf.ecpds.master.plugin.http.model.datafile.MetaData;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
-import ecmwf.web.dao.ModelBeanBase;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class DataFileBean.

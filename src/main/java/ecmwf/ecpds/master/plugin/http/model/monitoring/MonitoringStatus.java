@@ -26,7 +26,7 @@ package ecmwf.ecpds.master.plugin.http.model.monitoring;
  * @since 2004-10-09
  */
 
-import ecmwf.web.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
 
 /**
  * The Interface MonitoringStatus.

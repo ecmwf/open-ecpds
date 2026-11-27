@@ -28,7 +28,7 @@ package ecmwf.ecpds.master.plugin.http.dao.transfer;
 
 import ecmwf.common.text.Format;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Traffic;
-import ecmwf.web.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
 
 /**
  * The Class TrafficBean.

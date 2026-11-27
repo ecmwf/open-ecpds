@@ -37,10 +37,10 @@ import ecmwf.ecpds.master.plugin.http.model.ecuser.EcUser;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.EcUserException;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Host;
-import ecmwf.web.home.ModelHomeBase;
-import ecmwf.web.model.ModelSearch;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.services.persistence.DAOService;
+import ecmwf.ecpds.master.plugin.http.home.ModelHomeBase;
+import ecmwf.ecpds.master.plugin.http.model.ModelSearch;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOService;
 
 /**
  * The Class EcUserHome.

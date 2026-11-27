@@ -9,6 +9,7 @@ export PORT_HTTPS=8443
 export PORT_MASTER=9600
 export MASTER_ADDRESS=localhost
 export LOG_LEVEL=debug
+export JAVA_OPTS="${JAVA_OPTS:-} -Dpolyglot.engine.userResourceCache=/data/tmp/monitor/graal"
 export JOLOKIA_PASSWORD
 JOLOKIA_PASSWORD=${JOLOKIA_PASSWORD:-$(< /data/lib/monitor/standalone-secrets/jolokia)}
 export KEYSTORE_PASSWORD

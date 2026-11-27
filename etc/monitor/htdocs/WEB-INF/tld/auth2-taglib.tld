@@ -62,7 +62,7 @@
 
   <tag>
     <name>then</name>
-    <tagclass>ecmwf.web.view.taglibs.auth2.conditional.ThenTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.auth2.conditional.ThenTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>
 	This tag should be used inside a "if" one, and shows its content if the user IS included into any of the realms provided.
@@ -71,7 +71,7 @@
 
   <tag>
     <name>else</name>
-    <tagclass>ecmwf.web.view.taglibs.auth2.conditional.ElseTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.auth2.conditional.ElseTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>
 	This tag should be used inside a "if" one, and shows its content if the user IS NOT included into any of the realms provided.
@@ -81,7 +81,7 @@
 
   <tag>
     <name>link</name>
-    <tagclass>ecmwf.web.view.taglibs.auth2.conditional.AuthorizedLinkTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.auth2.conditional.AuthorizedLinkTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>Builds a link if the current user has permissions to see it.</info>
     <attribute>
@@ -151,40 +151,8 @@
   </tag>
 
   <tag>
-    <name>check</name>
-    <tagclass>ecmwf.web.view.taglibs.auth2.CheckUser2Tag</tagclass>
-    <bodycontent>JSP</bodycontent>
-    <info>
-	Checks if there is a WebUser object in the current session. If there's one, it will
-        optionally recheck it (default no) and if not, it tries to find one one which matches the
-        current MDAAuth cookie.
-    </info>
-    <attribute>
-	<name>refresh</name>
-	<required>false</required>
-    </attribute>
-
-  </tag>
-
-  <tag>
-    <name>emsCheck</name>
-    <tagclass>ecmwf.web.view.taglibs.auth2.CheckUser2Tag</tagclass>
-    <bodycontent>JSP</bodycontent>
-    <info>
-	Checks if there is a User object in the current session. If there's one, it will
-        optionally recheck it (default no) and if not, it tries to find one one which matches the
-        WebAuth EMS cookie.
-    </info>
-    <attribute>
-		<name>refresh</name>
-		<required>false</required>
-    </attribute>
-
-  </tag>
-
-  <tag>
     <name>info</name>
-    <tagclass>ecmwf.web.view.taglibs.auth2.UserInfo</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.auth2.UserInfo</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>
 	Shows an attribute from the user, optionally using a default value it there is no user,

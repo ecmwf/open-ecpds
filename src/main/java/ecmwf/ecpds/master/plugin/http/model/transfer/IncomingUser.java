@@ -33,8 +33,8 @@ import java.util.Collection;
 import java.util.Date;
 
 import ecmwf.common.database.IncomingConnection;
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Interface IncomingUser.

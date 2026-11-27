@@ -29,7 +29,7 @@ package ecmwf.ecpds.master.plugin.http.controller.transfer.module;
  */
 
 import ecmwf.ecpds.master.plugin.http.model.transfer.EcTransModule;
-import ecmwf.web.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
 
 /**
  * The Class EcTransModuleActionForm.

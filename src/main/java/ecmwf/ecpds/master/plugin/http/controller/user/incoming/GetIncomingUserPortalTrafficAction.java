@@ -31,9 +31,9 @@ import org.apache.struts.action.ActionMapping;
 
 import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.controller.ECMWFActionForm;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /** Action for per-user portal traffic page (/do/user/incoming/{id}/portaltraffic). */
 public class GetIncomingUserPortalTrafficAction extends PDSAction {

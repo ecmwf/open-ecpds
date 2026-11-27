@@ -47,17 +47,17 @@ import ecmwf.ecpds.master.plugin.http.dao.OjbImplementedBean;
 import ecmwf.ecpds.master.plugin.http.dao.PDSDAOBase;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebUser;
-import ecmwf.web.home.users.UserByUidAndPass;
-import ecmwf.web.home.users.UserHome;
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.ModelSearch;
-import ecmwf.web.model.users.Category;
-import ecmwf.web.model.users.User;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.services.persistence.DAOHandler;
-import ecmwf.web.util.search.BooleanExpressionException;
-import ecmwf.web.util.search.QueryExpressionParser;
-import ecmwf.web.util.search.elements.EqualElement;
+import ecmwf.ecpds.master.plugin.http.home.users.UserByUidAndPass;
+import ecmwf.ecpds.master.plugin.http.home.users.UserHome;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelSearch;
+import ecmwf.ecpds.master.plugin.http.model.users.Category;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOHandler;
+import ecmwf.ecpds.master.plugin.http.util.search.BooleanExpressionException;
+import ecmwf.ecpds.master.plugin.http.util.search.QueryExpressionParser;
+import ecmwf.ecpds.master.plugin.http.util.search.elements.EqualElement;
 
 /**
  * The Class UserDAOHandler.

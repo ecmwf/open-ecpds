@@ -22,7 +22,7 @@ import java.util.Collection;
 
 import ecmwf.ecpds.master.plugin.http.home.transfer.CountryHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Country;
-import ecmwf.web.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
 
 public class ApiClientActionForm extends ECMWFActionForm {
     private static final long serialVersionUID = 1L;

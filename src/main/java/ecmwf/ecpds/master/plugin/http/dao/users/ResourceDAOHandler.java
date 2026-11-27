@@ -43,12 +43,12 @@ import ecmwf.ecpds.master.MasterManager;
 import ecmwf.ecpds.master.plugin.http.dao.PDSDAOBase;
 import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebResource;
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.ModelSearch;
-import ecmwf.web.model.users.Category;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.services.persistence.DAOHandler;
-import ecmwf.web.util.search.BooleanExpressionException;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelSearch;
+import ecmwf.ecpds.master.plugin.http.model.users.Category;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOHandler;
+import ecmwf.ecpds.master.plugin.http.util.search.BooleanExpressionException;
 
 /**
  * The Class ResourceDAOHandler.
@@ -223,7 +223,7 @@ public class ResourceDAOHandler extends PDSDAOBase implements DAOHandler {
      *
      * @return the web resource
      *
-     * @throws ecmwf.web.services.persistence.DAOException
+     * @throws ecmwf.ecpds.master.plugin.http.services.persistence.DAOException
      *             the DAO exception
      */
     public static final WebResource findAuthoritative(final String path) throws DAOException {

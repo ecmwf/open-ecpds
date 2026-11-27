@@ -33,7 +33,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-import ecmwf.web.controller.ECMWFActionFormException;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException;
 
 /**
  * The Class Constants.
@@ -92,7 +92,7 @@ public class Constants {
      *
      * @return the date
      *
-     * @throws ecmwf.web.controller.ECMWFActionFormException
+     * @throws ecmwf.ecpds.master.plugin.http.controller.ECMWFActionFormException
      *             the ECMWF action form exception
      */
     public static final Date getDate(final String date) throws ECMWFActionFormException {

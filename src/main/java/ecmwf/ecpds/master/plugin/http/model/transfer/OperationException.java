@@ -26,7 +26,7 @@ package ecmwf.ecpds.master.plugin.http.model.transfer;
  * @since 2004-10-09
  */
 
-import ecmwf.web.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
 
 /**
  * The Class OperationException.

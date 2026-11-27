@@ -21,8 +21,8 @@ package ecmwf.ecpds.master.plugin.http.model.ecuser;
 import java.util.Collection;
 import java.util.Date;
 
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 public interface ApiClient extends ModelBean {
     @Override

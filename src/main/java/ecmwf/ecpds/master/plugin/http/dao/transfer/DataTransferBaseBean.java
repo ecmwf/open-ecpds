@@ -55,8 +55,8 @@ import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferHistory;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferMonitoringParameters;
 import ecmwf.ecpds.master.transfer.StatusFactory;
-import ecmwf.web.dao.ModelBeanBase;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class DataTransferBaseBean.

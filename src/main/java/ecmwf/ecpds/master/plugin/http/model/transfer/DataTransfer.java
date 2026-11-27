@@ -35,7 +35,7 @@ import java.util.Date;
 import ecmwf.ecpds.master.plugin.http.model.CollectionSizeBean;
 import ecmwf.ecpds.master.plugin.http.model.datafile.DataFile;
 import ecmwf.ecpds.master.plugin.http.model.datafile.TransferServer;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Interface DataTransfer.

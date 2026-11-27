@@ -33,11 +33,11 @@ import org.apache.logging.log4j.Logger;
 
 import ecmwf.ecpds.master.plugin.http.model.monitoring.DestinationStatus;
 import ecmwf.ecpds.master.plugin.http.model.monitoring.MonitoringException;
-import ecmwf.web.home.ModelHomeBase;
-import ecmwf.web.services.cache.CacheException;
-import ecmwf.web.services.cache.CacheService;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.services.persistence.DAOService;
+import ecmwf.ecpds.master.plugin.http.home.ModelHomeBase;
+import ecmwf.ecpds.master.plugin.http.services.cache.CacheException;
+import ecmwf.ecpds.master.plugin.http.services.cache.CacheService;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOService;
 
 /**
  * The Class DestinationStatusHome.

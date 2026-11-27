@@ -12,7 +12,7 @@
 
    <tag>
     <name>attributed</name>
-    <tagclass>ecmwf.web.view.taglibs.general.AttributeBeanSearch</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.general.AttributeBeanSearch</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>Deprecated: This is a tag which shows content from any AttributedBean. Used ModelBeanSearchTag or derivates instead.</info>
     <attribute>
@@ -83,7 +83,7 @@
 
    <tag>
     <name>bibliography</name>
-    <tagclass>ecmwf.web.view.taglibs.references.ReferenceBeanSearchTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.references.ReferenceBeanSearchTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>This tag shows information about Library References.</info>
 	<attribute>
@@ -192,7 +192,7 @@
 
   <tag>
     <name>news</name>
-    <tagclass>ecmwf.web.view.taglibs.news.NewsBeanSearchTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.news.NewsBeanSearchTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>This tag shows information about News Channels and News Items.</info>
     <attribute>
@@ -359,7 +359,7 @@
 
  <tag>
     <name>model</name>
-    <tagclass>ecmwf.web.view.taglibs.general.ModelBeanSearchTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.general.ModelBeanSearchTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>This tag shows information about any Model object.</info>
     <attribute>
@@ -494,7 +494,7 @@
 
    <tag>
     <name>help</name>
-    <tagclass>ecmwf.web.view.taglibs.general.HelpTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.general.HelpTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>This tag shows an icon (configurable in ECMWFResources.properties) which links to the relevant help page for the 
     supplied key. This key is resolved in the file ECMWFResources.properties.</info>
@@ -515,7 +515,7 @@
 
   <tag>
     <name>config</name>
-    <tagclass>ecmwf.web.view.taglibs.general.ConfigTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.general.ConfigTag</tagclass>
     <info>Looks up up a config parameter and sets up a pageContext variable IF it is defined AND matches some optional value</info>
     <attribute>
 	<name>var</name>
@@ -537,7 +537,7 @@
 
  <tag>
     <name>message</name>
-    <tagclass>ecmwf.web.view.taglibs.general.MessageTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.general.MessageTag</tagclass>
     <info>Looks up up a message and sets up a pageContext variable IF it is defined AND matches some optional value</info>
     <attribute>
 	<name>var</name>
@@ -555,7 +555,7 @@
 
    <tag>
     <name>content</name>
-    <tagclass>ecmwf.web.view.taglibs.content.ContentProcessTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.content.ContentProcessTag</tagclass>
     <bodycontent>EMPTY</bodycontent>
     <info>Gets the value of a property of a bean and show it after either passing it to the ContentProcessor for the required
     outputContentType or, if it is the property is a Data and the dateFormat attribute is present, format the date.</info>
@@ -616,7 +616,7 @@
 
    <tag>
     <name>icon</name>
-    <tagclass>ecmwf.web.view.taglibs.content.ContentIconTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.content.ContentIconTag</tagclass>
     <bodycontent>EMPTY</bodycontent>
     <info>Gets the URL of an icon pointing to some content, which is a property of a bean. This property is expected to be of type Content.</info>
 	<attribute>
@@ -676,7 +676,7 @@
 
    <tag>
     <name>organigram</name>
-    <tagclass>ecmwf.web.view.taglibs.users.OrganigramUnitsTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.users.OrganigramUnitsTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>Shows an HTML organigram, starting at where pointed by startId, and showing a number of levels, as required.</info>
     <attribute>
@@ -749,24 +749,9 @@
     </attribute>
   </tag>
 
-   <tag>
-    <name>menu</name>
-    <tagclass>ecmwf.web.view.taglibs.navig.MenuDrawTag</tagclass>
-    <bodycontent>JSP</bodycontent>
-    <info>Shows a menu table.</info>
-    <attribute>
-	<name>name</name>
-	<required>false</required>
-	</attribute>
-    <attribute>
-	<name>what</name>
-	<required>false</required>
-	</attribute>
-   </tag>
-
  <tag>
     <name>menuInsert</name>
-    <tagclass>ecmwf.web.view.taglibs.navig.MenuTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.navig.MenuTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>Shows a menu table.</info>
     <attribute>
@@ -779,7 +764,7 @@
 
   <tag>
     <name>tree</name>
-    <tagclass>ecmwf.web.view.taglibs.navig.MenuTreeTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.navig.MenuTreeTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>Shows the menu tree.</info>
     <attribute>
@@ -799,7 +784,7 @@
 
  <tag>
     <name>next</name>
-    <tagclass>ecmwf.web.view.taglibs.navig.PriorNextIconTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.navig.PriorNextIconTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>Gets next (or prior) bean.</info>
     <attribute>
@@ -843,7 +828,7 @@
 
 <tag>
     <name>comments</name>
-    <tagclass>ecmwf.web.view.taglibs.news.CommentsTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.news.CommentsTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>Gets the list of dependent items for a NewsItem, formatted as comments.</info>
     <attribute>
@@ -882,7 +867,7 @@
 
 <tag>
     <name>components</name>
-    <tagclass>ecmwf.web.view.taglibs.news.ComponentsTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.news.ComponentsTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>Gets the list of components belonging to the current item</info>
     <attribute>
@@ -981,7 +966,7 @@
 
 <tag>
     <name>channelTree</name>
-    <tagclass>ecmwf.web.view.taglibs.news.ChannelTreeTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.news.ChannelTreeTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <info>Gets the list of components belonging to the current item</info>
     <attribute>
@@ -1025,7 +1010,7 @@
 
 <tag>
     <name>item</name>
-    <tagclass>ecmwf.web.view.taglibs.news.ItemPropertyTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.news.ItemPropertyTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <attribute>
 	<name>name</name>
@@ -1055,7 +1040,7 @@
 
 <tag>
     <name>itemInclude</name>
-    <tagclass>ecmwf.web.view.taglibs.news.ItemIncludeTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.news.ItemIncludeTag</tagclass>
     <bodycontent>JSP</bodycontent>
     <attribute>
 	<name>name</name>
@@ -1069,7 +1054,7 @@
 
 <tag>
     <name>selector</name>
-    <tagclass>ecmwf.web.view.taglibs.content.ContentSelectorTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.content.ContentSelectorTag</tagclass>
     <attribute>
 	<name>title</name>
 	<required>false</required>
@@ -1117,7 +1102,7 @@
 
 <tag>
     <name>timer</name>
-    <tagclass>ecmwf.web.view.taglibs.util.TimerTag</tagclass>
+    <tagclass>ecmwf.ecpds.master.plugin.http.view.util.TimerTag</tagclass>
     <attribute>
 	<name>name</name>
 	<required>false</required>
@@ -1127,16 +1112,5 @@
 	<required>false</required>
 	</attribute>
 </tag>
-
-<tag>
-    <name>monitor</name>
-    <tagclass>ecmwf.web.view.taglibs.monitor.MonitoredSystemsTag</tagclass>
-    <attribute>
-	<name>name</name>
-	<required>false</required>
-	</attribute>
-</tag>
-
-
 
 </taglib>

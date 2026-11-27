@@ -37,8 +37,8 @@ import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
 import ecmwf.ecpds.master.plugin.http.model.datafile.DataFile;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
-import ecmwf.web.dao.ModelBeanBase;
-import ecmwf.web.home.users.UserHome;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.home.users.UserHome;
 
 /**
  * The Class MonitoringParametersBaseBean.

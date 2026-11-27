@@ -33,13 +33,13 @@ import ecmwf.common.database.DataBaseObject;
 import ecmwf.common.database.Url;
 import ecmwf.ecpds.master.plugin.http.dao.OjbImplementedBean;
 import ecmwf.ecpds.master.plugin.http.model.ecuser.WebResource;
-import ecmwf.web.dao.ModelBeanBase;
-import ecmwf.web.home.ModelHomeBase;
-import ecmwf.web.home.users.CategoryHome;
-import ecmwf.web.model.users.ACL;
-import ecmwf.web.model.users.Category;
-import ecmwf.web.model.users.Resource;
-import ecmwf.web.model.users.UserException;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.home.ModelHomeBase;
+import ecmwf.ecpds.master.plugin.http.home.users.CategoryHome;
+import ecmwf.ecpds.master.plugin.http.model.users.ACL;
+import ecmwf.ecpds.master.plugin.http.model.users.Category;
+import ecmwf.ecpds.master.plugin.http.model.users.Resource;
+import ecmwf.ecpds.master.plugin.http.model.users.UserException;
 
 /**
  * The Class ResourceBean.

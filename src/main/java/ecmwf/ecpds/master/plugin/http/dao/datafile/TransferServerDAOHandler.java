@@ -40,13 +40,13 @@ import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
 import ecmwf.ecpds.master.plugin.http.model.datafile.TransferServer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.ModelSearch;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.services.persistence.DAOHandler;
-import ecmwf.web.util.search.BooleanExpressionException;
-import ecmwf.web.util.search.QueryExpressionParser;
-import ecmwf.web.util.search.elements.EqualElement;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelSearch;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOHandler;
+import ecmwf.ecpds.master.plugin.http.util.search.BooleanExpressionException;
+import ecmwf.ecpds.master.plugin.http.util.search.QueryExpressionParser;
+import ecmwf.ecpds.master.plugin.http.util.search.elements.EqualElement;
 
 /**
  * The Class TransferServerDAOHandler.

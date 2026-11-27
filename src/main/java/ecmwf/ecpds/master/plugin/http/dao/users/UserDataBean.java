@@ -32,8 +32,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import ecmwf.web.model.ModelException;
-import ecmwf.web.model.users.UserData;
+import ecmwf.ecpds.master.plugin.http.model.ModelException;
+import ecmwf.ecpds.master.plugin.http.model.users.UserData;
 
 /**
  * The Class UserDataBean.

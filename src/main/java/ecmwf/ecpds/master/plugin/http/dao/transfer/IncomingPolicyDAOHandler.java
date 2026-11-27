@@ -43,10 +43,10 @@ import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.SearchByDestination;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.SearchByIncomingUser;
 import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingPolicy;
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.ModelSearch;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.services.persistence.DAOHandler;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelSearch;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOHandler;
 
 /**
  * The Class IncomingPolicyDAOHandler.

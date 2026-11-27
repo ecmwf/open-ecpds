@@ -48,8 +48,8 @@ import ecmwf.ecpds.master.plugin.http.model.transfer.IncomingUser;
 import ecmwf.ecpds.master.plugin.http.model.transfer.Operation;
 import ecmwf.ecpds.master.plugin.http.model.transfer.OperationException;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
-import ecmwf.web.controller.ECMWFActionForm;
-import ecmwf.web.util.bean.Pair;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFActionForm;
+import ecmwf.ecpds.master.plugin.http.util.bean.Pair;
 
 /**
  * The Class IncomingUserActionForm.

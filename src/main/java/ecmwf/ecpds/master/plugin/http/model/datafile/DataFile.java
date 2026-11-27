@@ -36,8 +36,8 @@ import java.util.Map;
 
 import ecmwf.ecpds.master.plugin.http.model.CollectionSizeBean;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Interface DataFile.

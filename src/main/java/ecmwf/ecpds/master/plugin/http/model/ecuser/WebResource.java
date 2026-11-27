@@ -26,8 +26,8 @@ package ecmwf.ecpds.master.plugin.http.model.ecuser;
  * @since 2004-10-09
  */
 
-import ecmwf.web.model.users.Category;
-import ecmwf.web.model.users.Resource;
+import ecmwf.ecpds.master.plugin.http.model.users.Category;
+import ecmwf.ecpds.master.plugin.http.model.users.Resource;
 
 /**
  * The Interface WebResource.

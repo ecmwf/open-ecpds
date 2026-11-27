@@ -21,7 +21,7 @@ package ecmwf.ecpds.master.plugin.http.model.ecuser;
 /**
  * ECMWF Product Data Store (OpenECPDS) Project
  *
- * This is an extention to the generic ecmwf.web.model.users.User interface to
+ * This is an extention to the generic ecmwf.ecpds.master.plugin.http.model.users.User interface to
  * enable setting of properties. The generic one doesn't provide it because its
  * instances are supposed to be handled only by an authentication external
  * method.
@@ -31,8 +31,8 @@ package ecmwf.ecpds.master.plugin.http.model.ecuser;
  * @since 2004-10-09
  */
 
-import ecmwf.web.model.users.Category;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.model.users.Category;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Interface WebUser.

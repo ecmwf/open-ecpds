@@ -51,7 +51,7 @@ import ecmwf.ecpds.master.plugin.http.dao.Util;
 import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * Handles AJAX DataTables server-side requests for the admin requeue page. Returns JSON in the standard DataTables

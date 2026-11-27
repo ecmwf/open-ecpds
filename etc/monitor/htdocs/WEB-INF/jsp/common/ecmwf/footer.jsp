@@ -14,7 +14,7 @@
           String _fwdQuery = (String) request.getAttribute("javax.servlet.forward.query_string");
           String _fwdPath  = (String) request.getAttribute("javax.servlet.forward.servlet_path");
           String _anyUri   = (_fwdUri != null ? _fwdUri : "") + (_fwdPath != null ? _fwdPath : "") + request.getRequestURI();
-          boolean _showDetails = session.getAttribute(ecmwf.web.model.users.User.SESSION_KEY) != null
+          boolean _showDetails = session.getAttribute(ecmwf.ecpds.master.plugin.http.model.users.User.SESSION_KEY) != null
                                  && !_anyUri.contains("/detailer");
           if (_showDetails) {
               String _refUrl = (_fwdUri != null ? _fwdUri : request.getRequestURI());

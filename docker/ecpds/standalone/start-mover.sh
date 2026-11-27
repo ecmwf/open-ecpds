@@ -16,6 +16,7 @@ export MASTER_ADDRESS=localhost
 export EXTERNAL_ADDRESS=ecpds-mover
 export INTERNAL_ADDRESS=localhost
 export LOG_LEVEL=debug
+export JAVA_OPTS="${JAVA_OPTS:-} -Dpolyglot.engine.userResourceCache=/data/tmp/mover/graal"
 export JOLOKIA_PASSWORD
 JOLOKIA_PASSWORD=${JOLOKIA_PASSWORD:-$(< /data/lib/mover/standalone-secrets/jolokia)}
 export CLI_SHARED_SECRET RCC_SHARED_SECRET KEYSTORE_PASSWORD

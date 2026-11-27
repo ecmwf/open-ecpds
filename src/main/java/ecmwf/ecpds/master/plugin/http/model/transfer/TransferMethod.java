@@ -28,7 +28,7 @@ package ecmwf.ecpds.master.plugin.http.model.transfer;
 
 import java.util.Collection;
 
-import ecmwf.web.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
 
 /**
  * The Interface TransferMethod.

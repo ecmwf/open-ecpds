@@ -38,9 +38,9 @@ import org.apache.struts.action.ActionMapping;
 
 import ecmwf.common.technical.Cnf;
 import ecmwf.ecpds.master.plugin.http.controller.PDSAction;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.controller.ECMWFAction;
-import ecmwf.web.model.users.User;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.controller.ECMWFAction;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
 
 /**
  * The Class LogoutAction.

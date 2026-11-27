@@ -85,13 +85,13 @@ import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 import ecmwf.ecpds.master.transfer.HostOption;
 import ecmwf.ecpds.master.transfer.StatusFactory;
-import ecmwf.web.dao.ModelBeanBase;
-import ecmwf.web.model.ModelException;
-import ecmwf.web.model.users.User;
-import ecmwf.web.services.content.Content;
-import ecmwf.web.services.content.DefaultContent;
-import ecmwf.web.util.bean.Pair;
-import ecmwf.web.util.bean.StringPair;
+import ecmwf.ecpds.master.plugin.http.dao.ModelBeanBase;
+import ecmwf.ecpds.master.plugin.http.model.ModelException;
+import ecmwf.ecpds.master.plugin.http.model.users.User;
+import ecmwf.ecpds.master.plugin.http.services.content.Content;
+import ecmwf.ecpds.master.plugin.http.services.content.DefaultContent;
+import ecmwf.ecpds.master.plugin.http.util.bean.Pair;
+import ecmwf.ecpds.master.plugin.http.util.bean.StringPair;
 
 /**
  * The Class DestinationBean.

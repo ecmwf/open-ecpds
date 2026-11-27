@@ -28,7 +28,7 @@ package ecmwf.ecpds.master.plugin.http.home.datafile.searches;
 
 import java.util.Date;
 
-import ecmwf.web.dao.ModelSearchBase;
+import ecmwf.ecpds.master.plugin.http.dao.ModelSearchBase;
 
 /**
  * The Class RatesByDates.

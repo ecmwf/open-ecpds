@@ -29,7 +29,7 @@ package ecmwf.ecpds.master.plugin.http.home.transfer.searches;
 import java.util.Date;
 
 import ecmwf.ecpds.master.plugin.http.model.transfer.Destination;
-import ecmwf.web.dao.ModelSearchBase;
+import ecmwf.ecpds.master.plugin.http.dao.ModelSearchBase;
 
 /**
  * The Class DataTransfersByDestination.

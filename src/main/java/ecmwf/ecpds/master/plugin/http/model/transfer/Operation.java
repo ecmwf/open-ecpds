@@ -29,7 +29,7 @@ package ecmwf.ecpds.master.plugin.http.model.transfer;
  * @since 2004-10-09
  */
 
-import ecmwf.web.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
 
 /**
  * The Interface Operation.

@@ -28,7 +28,7 @@ package ecmwf.ecpds.master.plugin.http.home.transfer.searches;
 
 import ecmwf.common.database.DataBaseCursor;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
-import ecmwf.web.dao.ModelSearchBase;
+import ecmwf.ecpds.master.plugin.http.dao.ModelSearchBase;
 
 /**
  * The Class TransferHistoryByDataTransfer.

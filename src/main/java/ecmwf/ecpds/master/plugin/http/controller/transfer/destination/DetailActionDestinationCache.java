@@ -49,9 +49,9 @@ import ecmwf.ecpds.master.plugin.http.home.transfer.DataTransferHome;
 import ecmwf.ecpds.master.plugin.http.model.datafile.MetaData;
 import ecmwf.ecpds.master.plugin.http.model.transfer.DataTransfer;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
+import ecmwf.ecpds.master.plugin.http.util.bean.Treble;
 import ecmwf.ecpds.master.transfer.StatusFactory;
-import ecmwf.web.util.bean.Pair;
-import ecmwf.web.util.bean.Treble;
+import ecmwf.ecpds.master.plugin.http.util.bean.Pair;
 
 /**
  * The Class DetailActionDestinationCache.

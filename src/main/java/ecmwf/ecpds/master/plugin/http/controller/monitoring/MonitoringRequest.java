@@ -78,8 +78,8 @@ import ecmwf.ecpds.master.plugin.http.model.transfer.TransferException;
 import ecmwf.ecpds.master.plugin.http.model.transfer.TransferMonitoringParameters;
 import ecmwf.ecpds.master.transfer.DestinationOption;
 import ecmwf.ecpds.master.transfer.HostOption;
-import ecmwf.web.ECMWFException;
-import ecmwf.web.util.bean.StringPair;
+import ecmwf.ecpds.master.plugin.http.ECMWFException;
+import ecmwf.ecpds.master.plugin.http.util.bean.StringPair;
 
 /**
  * The Class MonitoringRequest.

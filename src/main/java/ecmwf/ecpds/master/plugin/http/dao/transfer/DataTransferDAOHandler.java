@@ -60,10 +60,10 @@ import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersByTran
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersCountByFilter;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.DataTransfersCountByMetaData;
 import ecmwf.ecpds.master.plugin.http.home.transfer.searches.NotDoneTransferCount;
-import ecmwf.web.model.ModelBean;
-import ecmwf.web.model.ModelSearch;
-import ecmwf.web.services.persistence.DAOException;
-import ecmwf.web.services.persistence.DAOHandler;
+import ecmwf.ecpds.master.plugin.http.model.ModelBean;
+import ecmwf.ecpds.master.plugin.http.model.ModelSearch;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOException;
+import ecmwf.ecpds.master.plugin.http.services.persistence.DAOHandler;
 
 /**
  * The Class DataTransferDAOHandler.
